@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { safeJsonFetch } from "@/lib/safeFetch";
+import { nextSftLevel, SftLevel } from "@/lib/adaptive";
 
 type SFTTask = { instruction: string; constraints: string[]; rubrics: string[] };
 type EvalResp = { scores: Record<string, number>; feedback: string; rewrite_best?: string; overall?: number };
@@ -24,6 +25,8 @@ export default function SFTPage() {
   const [template, setTemplate] = useState<string>("polite_mail");
   const [topic, setTopic] = useState<string>(lang === "ja" ? "約束の時間調整" : "Travel plan");
   const [model, setModel] = useState<string>("deepseek-chat");
+  const [sftLevel, setSftLevel] = useState<SftLevel>("standard");
+  const [startedAt, setStartedAt] = useState<number|null>(null);
 
   const [loadingTask, setLoadingTask] = useState(false);
   const [task, setTask] = useState<SFTTask | null>(null);
@@ -41,10 +44,11 @@ export default function SFTPage() {
       const r = await safeJsonFetch("/api/generate/sft-task", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, topic, template, model }),
+        body: JSON.stringify({ lang, topic, template, model, difficulty: sftLevel }),
       });
       if (!r.ok || !r.data) return setError(`任务生成失败 (${r.status}): ${r.error || r.text || "unknown"}`);
       setTask(r.data);
+      setStartedAt(Date.now());
       // 给一个初始提示
       if (!userOutput) setUserOutput("");
     } catch (e:any) {
@@ -72,6 +76,10 @@ export default function SFTPage() {
       if (!r.ok || !r.data) return setError(`打分失败 (${r.status}): ${r.error || r.text || "unknown"}`);
       setEvalRes(r.data);
 
+      // 建议下次难度（仅提示，不强制）
+      const suggested = nextSftLevel(sftLevel, r.data?.overall);
+      setSftLevel(suggested);
+
       // 保存 sessions
       const { data: u } = await supabase.auth.getUser();
       const uid = u?.user?.id;
@@ -83,7 +91,9 @@ export default function SFTPage() {
           input: { instruction: task.instruction, rubrics: task.rubrics },
           output: { user_output: userOutput },
           ai_feedback: r.data,
-          score: r.data?.overall ?? null
+          score: r.data?.overall ?? null,
+          duration_sec: startedAt ? Math.max(1, Math.round((Date.now()-startedAt)/1000)) : null,
+          difficulty: sftLevel
         });
       }
     } catch (e:any) {
@@ -114,6 +124,15 @@ export default function SFTPage() {
           <span className="w-28">模板</span>
           <select value={template} onChange={e=>setTemplate(e.target.value)} className="border rounded px-2 py-1">
             {TEMPLATES.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
+          </select>
+        </label>
+
+        <label className="flex items-center gap-2">
+          <span className="w-28">难度</span>
+          <select value={sftLevel} onChange={e=>setSftLevel(e.target.value as any)} className="border rounded px-2 py-1">
+            <option value="basic">basic</option>
+            <option value="standard">standard</option>
+            <option value="advanced">advanced</option>
           </select>
         </label>
 

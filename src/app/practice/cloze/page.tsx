@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { safeJsonFetch } from "@/lib/safeFetch";
+import { recommendClozeLevel, ClozeLevel } from "@/lib/adaptive";
 
 type Blank = { idx: number; answer: string };
 type Explain = { idx:number; why:string };
@@ -13,17 +14,30 @@ export default function ClozePage() {
   const [model, setModel] = useState<"deepseek-chat"|"deepseek-reasoner">("deepseek-reasoner");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ClozeResp|null>(null);
+  const [mode, setMode] = useState<"auto"|"manual">("auto");
+  const [level, setLevel] = useState<ClozeLevel>("mid");
+  const [startedAt, setStartedAt] = useState<number|null>(null);
   const [answers, setAnswers] = useState<Record<number,string>>({});
   const [score, setScore] = useState<number|null>(null);
   const [error, setError] = useState<string>("");
 
+  const prepareLevel = async () => {
+    if (mode === "manual") return level;
+    const { data: u } = await supabase.auth.getUser();
+    const uid = u?.user?.id;
+    const rec = uid ? await recommendClozeLevel(uid) : "mid";
+    setLevel(rec);
+    return rec;
+  };
+
   const gen = async () => {
     setScore(null); setError(""); setLoading(true);
     try {
+      const finalLevel = await prepareLevel();
       const r = await safeJsonFetch("/api/generate/cloze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, topic, level: "mid", model })
+        body: JSON.stringify({ lang, topic, level: finalLevel, model })
       });
       if (!r.ok || !r.data) {
         setError(`生成失败 (${r.status}): ${r.error || r.text || "unknown"}`);
@@ -31,6 +45,7 @@ export default function ClozePage() {
       } else {
         setData(r.data as any);
         setAnswers({});
+        setStartedAt(Date.now());
       }
     } catch (e:any) {
       setError(e?.message || "网络错误");
@@ -61,7 +76,9 @@ export default function ClozePage() {
         input: { cloze: data.cloze, blanks: data.blanks },
         output: { answers },
         ai_feedback: null,
-        score: sc
+        score: sc,
+        duration_sec: startedAt ? Math.max(1, Math.round((Date.now()-startedAt)/1000)) : null,
+        difficulty: level
       });
     }
   };
@@ -95,6 +112,21 @@ export default function ClozePage() {
           <option value="ja">日语</option>
           <option value="en">英语</option>
         </select>
+        <label className="flex items-center gap-1 text-sm">
+          <span>难度</span>
+          <select value={mode} onChange={e=>setMode(e.target.value as any)} className="border rounded px-2 py-1">
+            <option value="auto">自动</option>
+            <option value="manual">手动</option>
+          </select>
+        </label>
+        {mode === "manual" && (
+          <select value={level} onChange={e=>setLevel(e.target.value as any)} className="border rounded px-2 py-1">
+            <option value="easy">easy</option>
+            <option value="mid">mid</option>
+            <option value="hard">hard</option>
+          </select>
+        )}
+        {mode === "auto" && <span className="text-xs text-gray-500">推荐：{level}</span>}
         <select value={model} onChange={e=>setModel(e.target.value as any)} className="border rounded px-2 py-1">
           <option value="deepseek-reasoner">Reasoner</option>
           <option value="deepseek-chat">Chat</option>

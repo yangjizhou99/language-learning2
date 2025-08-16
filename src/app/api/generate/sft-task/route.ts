@@ -7,19 +7,20 @@ type SFTTask = {
   rubrics: string[]; // e.g. ["Task","Naturalness","Tone"]
 };
 
-const sys = (lang: string, topic: string, template: string) => `
+const sys = (lang: string, topic: string, template: string, difficulty: string) => `
 你是语言学习的“任务生成器”。仅输出 JSON（instruction, constraints[], rubrics[]）。
 要求：
 - 语言=${lang}（instruction 用此语言书写）
 - 话题=${topic}
 - 模板=${template}（如：polite_mail, time_request, apology, request_favor, status_update）
+- 难度=${difficulty}（basic/standard/advanced）
 - constraints：3~5 条，短而可执行（例如 “≤120字/词；使用丁寧語；给出2个时间备选”）
 - rubrics 固定用 ["Task","Naturalness","Tone"] 三维
 仅输出 JSON。`;
 
 export async function POST(req: NextRequest) {
   try {
-    const { lang, topic, template = "polite_mail", model } = await req.json();
+    const { lang, topic, template = "polite_mail", model, difficulty = "standard" } = await req.json();
     if (!lang || !topic) {
       return NextResponse.json({ error: "missing params: lang, topic" }, { status: 400 });
     }
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     const resp = await client.chat.completions.create({
       model: model || "deepseek-chat",
       messages: [
-        { role: "system", content: sys(lang, topic, template) },
+        { role: "system", content: sys(lang, topic, template, difficulty) },
         { role: "user", content: "生成 1 条任务" }
       ],
       // @ts-ignore
