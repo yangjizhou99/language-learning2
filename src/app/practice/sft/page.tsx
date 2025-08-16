@@ -3,6 +3,7 @@ import React, { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { safeJsonFetch } from "@/lib/safeFetch";
 import { nextSftLevel, SftLevel } from "@/lib/adaptive";
+import { buildRAG } from "@/lib/rag";
 
 type SFTTask = { instruction: string; constraints: string[]; rubrics: string[] };
 type EvalResp = { scores: Record<string, number>; feedback: string; rewrite_best?: string; overall?: number };
@@ -35,16 +36,26 @@ export default function SFTPage() {
   const [loadingEval, setLoadingEval] = useState(false);
   const [evalRes, setEvalRes] = useState<EvalResp | null>(null);
   const [error, setError] = useState("");
+  const [useRAG, setUseRAG] = useState(true);
+  const [ragStats, setRagStats] = useState<{terms:number;phrases:number;hasProfile:boolean}>({terms:0,phrases:0,hasProfile:false});
 
   const canEval = useMemo(() => !!(task && userOutput.trim().length > 0), [task, userOutput]);
 
   const genTask = async () => {
     setError(""); setTask(null); setEvalRes(null); setLoadingTask(true);
     try {
+      let rag = "";
+      if (useRAG) {
+        const r = await buildRAG(lang, topic);
+        rag = r.text;
+        setRagStats(r.stats);
+      } else {
+        setRagStats({terms:0, phrases:0, hasProfile:false});
+      }
       const r = await safeJsonFetch("/api/generate/sft-task", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, topic, template, model, difficulty: sftLevel }),
+        body: JSON.stringify({ lang, topic, template, model, difficulty: sftLevel, rag }),
       });
       if (!r.ok || !r.data) return setError(`任务生成失败 (${r.status}): ${r.error || r.text || "unknown"}`);
       setTask(r.data);
@@ -62,6 +73,14 @@ export default function SFTPage() {
     if (!task) return;
     setError(""); setLoadingEval(true); setEvalRes(null);
     try {
+      let rag = "";
+      if (useRAG) {
+        const r = await buildRAG(lang, topic);
+        rag = r.text;
+        setRagStats(r.stats);
+      } else {
+        setRagStats({terms:0, phrases:0, hasProfile:false});
+      }
       const r = await safeJsonFetch("/api/eval", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,6 +90,7 @@ export default function SFTPage() {
           user_output: userOutput,
           rubrics: task.rubrics,
           model,
+          rag
         })
       });
       if (!r.ok || !r.data) return setError(`打分失败 (${r.status}): ${r.error || r.text || "unknown"}`);
@@ -149,10 +169,15 @@ export default function SFTPage() {
         </label>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-3 items-center">
         <button onClick={genTask} disabled={loadingTask} className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">
           {loadingTask ? "生成中..." : "生成任务"}
         </button>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={useRAG} onChange={e=>setUseRAG(e.target.checked)} />
+          使用我的 RAG（画像/术语/常用表达）
+        </label>
+        {useRAG && <div className="text-xs text-gray-500">RAG 注入：profile {ragStats.hasProfile?"✓":"×"} · terms {ragStats.terms} · phrases {ragStats.phrases}</div>}
       </div>
 
       {error && <div className="text-red-600 text-sm whitespace-pre-wrap">{error}</div>}

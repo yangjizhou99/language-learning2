@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { buildRAG } from "@/lib/rag";
 import { safeJsonFetch } from "@/lib/safeFetch";
 import { recommendClozeLevel, ClozeLevel } from "@/lib/adaptive";
 
@@ -20,6 +21,8 @@ export default function ClozePage() {
   const [answers, setAnswers] = useState<Record<number,string>>({});
   const [score, setScore] = useState<number|null>(null);
   const [error, setError] = useState<string>("");
+  const [useRAG, setUseRAG] = useState(true);
+  const [ragStats, setRagStats] = useState<{terms:number;phrases:number;hasProfile:boolean}>({terms:0,phrases:0,hasProfile:false});
 
   const prepareLevel = async () => {
     if (mode === "manual") return level;
@@ -34,10 +37,18 @@ export default function ClozePage() {
     setScore(null); setError(""); setLoading(true);
     try {
       const finalLevel = await prepareLevel();
+      let rag = "";
+      if (useRAG) {
+        const r = await buildRAG(lang, topic);
+        rag = r.text;
+        setRagStats(r.stats);
+      } else {
+        setRagStats({terms:0, phrases:0, hasProfile:false});
+      }
       const r = await safeJsonFetch("/api/generate/cloze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, topic, level: finalLevel, model })
+        body: JSON.stringify({ lang, topic, level: finalLevel, model, rag })
       });
       if (!r.ok || !r.data) {
         setError(`生成失败 (${r.status}): ${r.error || r.text || "unknown"}`);
@@ -138,6 +149,13 @@ export default function ClozePage() {
                 className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">
           {loading ? "生成中..." : "生成题目"}
         </button>
+      </div>
+      <div className="flex gap-2 items-center">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={useRAG} onChange={e=>setUseRAG(e.target.checked)} />
+          使用我的 RAG（画像/术语/常用表达）
+        </label>
+        {useRAG && <div className="text-xs text-gray-500">RAG 注入：profile {ragStats.hasProfile?"✓":"×"} · terms {ragStats.terms} · phrases {ragStats.phrases}</div>}
       </div>
 
       {error && <div className="text-red-600 text-sm whitespace-pre-wrap">{error}</div>}
