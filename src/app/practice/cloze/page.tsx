@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 type Blank = { idx: number; answer: string };
 type Explain = { idx:number; why:string };
@@ -36,7 +37,7 @@ export default function ClozePage() {
     }
   };
 
-  const grade = () => {
+  const grade = async () => {
     if (!data) return;
     const total = data.blanks.length || 1;
     let hit = 0;
@@ -44,7 +45,23 @@ export default function ClozePage() {
       const u = (answers[b.idx] || "").trim();
       if (u && u === b.answer) hit++;
     }
-    setScore(Math.round((hit/total)*100));
+    const sc = Math.round((hit/total)*100);
+    setScore(sc);
+
+    // 保存 sessions
+    const { data: u } = await supabase.auth.getUser();
+    const uid = u?.user?.id;
+    if (uid) {
+      await supabase.from("sessions").insert({
+        user_id: uid,
+        task_type: "cloze",
+        topic,
+        input: { cloze: data.cloze, blanks: data.blanks },
+        output: { answers },
+        ai_feedback: null,
+        score: sc
+      });
+    }
   };
 
   const renderCloze = () => {

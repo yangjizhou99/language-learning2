@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 type SFTTask = { instruction: string; constraints: string[]; rubrics: string[] };
 type EvalResp = { scores: Record<string, number>; feedback: string; rewrite_best?: string; overall?: number };
@@ -71,6 +72,21 @@ export default function SFTPage() {
       const j = await r.json();
       if (!r.ok) return setError(j?.error || "打分失败");
       setEvalRes(j);
+
+      // 保存 sessions
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u?.user?.id;
+      if (uid) {
+        await supabase.from("sessions").insert({
+          user_id: uid,
+          task_type: "sft",
+          topic,
+          input: { instruction: task.instruction, rubrics: task.rubrics },
+          output: { user_output: userOutput },
+          ai_feedback: j,
+          score: j?.overall ?? null
+        });
+      }
     } catch (e:any) {
       setError(e?.message || "网络错误");
     } finally {
