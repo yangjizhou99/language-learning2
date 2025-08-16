@@ -47,11 +47,24 @@ export default function PhraseBankPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lang, topic, k, model }),
       });
-      const j = await r.json();
-      if (!r.ok) { setErr(j?.error || "生成失败"); setCandidates([]); }
-      else setCandidates(j);
-    } catch (e:any) {
-      setErr(e?.message || "网络错误");
+      
+      const text = await r.text();
+      try {
+        const j = JSON.parse(text);
+        if (!r.ok) {
+          setErr(j?.message || j?.error || "生成失败");
+          if (j?.details) console.error("API Error Details:", j.details);
+          setCandidates([]);
+        } else {
+          setCandidates(j);
+        }
+      } catch (e) {
+        throw new Error(`无效的API响应: ${text.slice(0, 100)}`);
+      }
+    } catch (e: any) {
+      setErr(e?.message || "请求失败");
+      console.error("生成短语错误:", e);
+      setCandidates([]);
     } finally {
       setLoading(false);
     }

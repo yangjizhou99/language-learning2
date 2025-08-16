@@ -1,6 +1,7 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { safeJsonFetch } from "@/lib/safeFetch";
 
 type SFTTask = { instruction: string; constraints: string[]; rubrics: string[] };
 type EvalResp = { scores: Record<string, number>; feedback: string; rewrite_best?: string; overall?: number };
@@ -37,14 +38,13 @@ export default function SFTPage() {
   const genTask = async () => {
     setError(""); setTask(null); setEvalRes(null); setLoadingTask(true);
     try {
-      const r = await fetch("/api/generate/sft-task", {
+      const r = await safeJsonFetch("/api/generate/sft-task", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lang, topic, template, model }),
       });
-      const j = await r.json();
-      if (!r.ok) return setError(j?.error || "任务生成失败");
-      setTask(j);
+      if (!r.ok || !r.data) return setError(`任务生成失败 (${r.status}): ${r.error || r.text || "unknown"}`);
+      setTask(r.data);
       // 给一个初始提示
       if (!userOutput) setUserOutput("");
     } catch (e:any) {
@@ -58,7 +58,7 @@ export default function SFTPage() {
     if (!task) return;
     setError(""); setLoadingEval(true); setEvalRes(null);
     try {
-      const r = await fetch("/api/eval", {
+      const r = await safeJsonFetch("/api/eval", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -69,9 +69,8 @@ export default function SFTPage() {
           model,
         })
       });
-      const j = await r.json();
-      if (!r.ok) return setError(j?.error || "打分失败");
-      setEvalRes(j);
+      if (!r.ok || !r.data) return setError(`打分失败 (${r.status}): ${r.error || r.text || "unknown"}`);
+      setEvalRes(r.data);
 
       // 保存 sessions
       const { data: u } = await supabase.auth.getUser();
@@ -83,8 +82,8 @@ export default function SFTPage() {
           topic,
           input: { instruction: task.instruction, rubrics: task.rubrics },
           output: { user_output: userOutput },
-          ai_feedback: j,
-          score: j?.overall ?? null
+          ai_feedback: r.data,
+          score: r.data?.overall ?? null
         });
       }
     } catch (e:any) {
@@ -137,7 +136,7 @@ export default function SFTPage() {
         </button>
       </div>
 
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {error && <div className="text-red-600 text-sm whitespace-pre-wrap">{error}</div>}
 
       {task && (
         <section className="space-y-3">

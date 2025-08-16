@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { safeJsonFetch } from "@/lib/safeFetch";
 
 type Blank = { idx: number; answer: string };
 type Explain = { idx:number; why:string };
@@ -19,16 +20,17 @@ export default function ClozePage() {
   const gen = async () => {
     setScore(null); setError(""); setLoading(true);
     try {
-      const r = await fetch("/api/generate/cloze", {
+      const r = await safeJsonFetch("/api/generate/cloze", {
         method: "POST",
-        body: JSON.stringify({ lang, topic, level: "mid", model }),
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lang, topic, level: "mid", model })
       });
-      const j = await r.json();
-      if (!r.ok) {
-        setError(j?.error || "生成失败"); setData(null);
+      if (!r.ok || !r.data) {
+        setError(`生成失败 (${r.status}): ${r.error || r.text || "unknown"}`);
+        setData(null);
       } else {
-        setData(j); setAnswers({});
+        setData(r.data as any);
+        setAnswers({});
       }
     } catch (e:any) {
       setError(e?.message || "网络错误");
@@ -106,7 +108,7 @@ export default function ClozePage() {
         </button>
       </div>
 
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {error && <div className="text-red-600 text-sm whitespace-pre-wrap">{error}</div>}
 
       {data && (
         <div className="space-y-3">
