@@ -18,6 +18,75 @@ export default function ShadowingPage() {
   const [err, setErr] = useState("");
 
   // TTS
+  const [voices, setVoices] = useState<{name:string; type:string; ssmlGender:string; naturalSampleRateHertz:number}[]>([]);
+  const [voiceName, setVoiceName] = useState<string>("");
+  const [rate, setRate] = useState<number>(1.0);
+  const [pitch, setPitch] = useState<number>(0);
+  const [ttsBlob, setTtsBlob] = useState<Blob|null>(null);
+  const [ttsUrl, setTtsUrl] = useState<string>("");
+
+  // MediaRecorder
+  const [recState, setRecState] = useState<"idle"|"recording"|"stopped">("idle");
+  const mediaStreamRef = useRef<MediaStream|null>(null);
+  const recorderRef = useRef<MediaRecorder|null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const [localUrl, setLocalUrl] = useState<string>("");
+
+  // 当语言变化或点击“刷新声音”时获取声音列表
+  const fetchVoices = async (kind: "Neural2" | "WaveNet" | "all" = "Neural2") => {
+    try {
+      const r = await fetch(`/api/tts/voices?lang=${lang}&kind=${kind}`);
+      const j = await r.json();
+      if (Array.isArray(j)) {
+        setVoices(j);
+        // 自动选第一个
+        if (j.length && !voiceName) setVoiceName(j[0].name);
+      } else {
+        setErr(j?.error || "无法获取声音列表");
+      }
+    } catch (e:any) {
+      setErr(e?.message || "获取声音失败");
+    }
+  };
+
+  // 页面挂载或 lang 改变时刷新
+  useEffect(() => { fetchVoices("Neural2"); }, [lang]);
+
+  // Google 服务端合成（失败回退 Web Speech）
+  const synthGoogle = async () => {
+    if (!data?.text) return;
+    setErr("");
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: data.text,
+          lang,
+          voiceName: voiceName || undefined,
+          speakingRate: rate,
+          pitch
+        })
+      });
+      if (!res.ok) {
+        // 回退
+        speak();
+        const t = await res.text();
+        setErr(`Google TTS 失败，已回退本地合成：${t.slice(0,200)}`);
+        return;
+      }
+      const ab = await res.arrayBuffer();
+      const blob = new Blob([ab], { type: "audio/mpeg" });
+      setTtsBlob(blob);
+      const url = URL.createObjectURL(blob);
+      setTtsUrl(url);
+    } catch (e:any) {
+      speak();
+      setErr(e?.message || "TTS 网络错误，已回退 Web Speech");
+    }
+  };
+
+  // Web Speech 本地合成
   const speak = () => {
     if (!data?.text) return;
     const synth = window.speechSynthesis;
@@ -34,13 +103,29 @@ export default function ShadowingPage() {
     synth.speak(u);
   };
 
-  // MediaRecorder
-  const [recState, setRecState] = useState<"idle"|"recording"|"stopped">("idle");
-  const mediaStreamRef = useRef<MediaStream|null>(null);
-  const recorderRef = useRef<MediaRecorder|null>(null);
-  const chunksRef = useRef<BlobPart[]>([]);
-  const [localUrl, setLocalUrl] = useState<string>("");
+  // 保存到 tts 桶
+  const saveTts = async () => {
+    try {
+      if (!ttsBlob) { setErr("没有可保存的 TTS 音频"); return; }
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u?.user?.id;
+      if (!uid) { setErr("未登录"); return; }
+      const ts = Date.now();
+      const path = `${uid}/tts-${ts}.mp3`;
+      const { error: upErr } = await supabase.storage.from("tts").upload(path, ttsBlob, {
+        cacheControl: "3600", upsert: false, contentType: "audio/mpeg",
+      });
+      if (upErr) { setErr(upErr.message); return; }
+      const { data: signed, error: sErr } = await supabase.storage.from("tts").createSignedUrl(path, 60*60*24*7);
+      if (sErr) { setErr(sErr.message); return; }
+      setTtsUrl(signed!.signedUrl);
+      alert("TTS 已保存到我的库（链接 7 天有效）");
+    } catch (e:any) {
+      setErr(e?.message || "保存失败");
+    }
+  };
 
+  // 录音功能保持不变
   const startRec = async () => {
     setErr("");
     try {
@@ -170,20 +255,57 @@ export default function ShadowingPage() {
       {err && <div className="text-red-600 text-sm">{err}</div>}
 
       {data && (
-        <section className="p-4 bg-white rounded-2xl shadow space-y-3">
-          <div className="text-sm text-gray-600">话题：{data.topic} · 语言：{data.lang}</div>
-          <p className="whitespace-pre-wrap">{data.text}</p>
+        <>
+          <section className="p-4 bg-white rounded-2xl shadow space-y-3">
+            <div className="text-sm text-gray-600">话题：{data.topic} · 语言：{data.lang}</div>
+            <p className="whitespace-pre-wrap">{data.text}</p>
+          </section>
 
-          <div className="flex gap-2">
-            <button onClick={speak} className="px-3 py-1 rounded border">▶ 听 TTS</button>
-            {recState !== "recording" && <button onClick={startRec} className="px-3 py-1 rounded bg-emerald-600 text-white">● 开始录音</button>}
-            {recState === "recording" && <button onClick={stopRec} className="px-3 py-1 rounded bg-red-600 text-white">■ 停止</button>}
-            <button onClick={upload} disabled={!localUrl} className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">↑ 上传保存</button>
-            {localUrl && <a className="px-3 py-1 rounded border" href={localUrl} download>下载本地录音</a>}
-          </div>
+          <section className="p-4 bg-white rounded-2xl shadow space-y-3">
+            <h3 className="font-medium">Google TTS（WaveNet / Neural2）</h3>
 
-          {localUrl && <audio className="mt-2 w-full" controls src={localUrl}></audio>}
-        </section>
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={()=>fetchVoices("Neural2")} className="px-3 py-1 rounded border">刷新 Neural2</button>
+              <button onClick={()=>fetchVoices("WaveNet")} className="px-3 py-1 rounded border">刷新 WaveNet</button>
+              <button onClick={()=>fetchVoices("all")} className="px-3 py-1 rounded border">全部声音</button>
+
+              <select value={voiceName} onChange={e=>setVoiceName(e.target.value)} className="border rounded px-2 py-1 min-w-[280px]">
+                {voices.map(v => (
+                  <option key={v.name} value={v.name}>
+                    {v.name} · {v.type} · {v.ssmlGender?.toString().replace("SSML_VOICE_GENDER_","")}
+                  </option>
+                ))}
+              </select>
+
+              <label className="flex items-center gap-1 text-sm">
+                语速
+                <input type="number" step="0.1" min="0.25" max="4" value={rate} onChange={e=>setRate(Number(e.target.value)||1)} className="w-20 border rounded px-2 py-1" />
+              </label>
+              <label className="flex items-center gap-1 text-sm">
+                音高
+                <input type="number" step="1" min="-20" max="20" value={pitch} onChange={e=>setPitch(Number(e.target.value)||0)} className="w-20 border rounded px-2 py-1" />
+              </label>
+
+              <button onClick={synthGoogle} className="px-3 py-1 rounded bg-black text-white">▶ Google TTS 合成</button>
+              <button onClick={saveTts} disabled={!ttsBlob} className="px-3 py-1 rounded bg-emerald-600 text-white disabled:opacity-60">↑ 保存到库</button>
+              <button onClick={speak} className="px-3 py-1 rounded border">回退：Web Speech</button>
+            </div>
+
+            {ttsUrl && <audio className="mt-2 w-full" controls src={ttsUrl}></audio>}
+          </section>
+
+          <section className="p-4 bg-white rounded-2xl shadow space-y-3">
+            <h3 className="font-medium">录音</h3>
+            <div className="flex gap-2">
+              {recState !== "recording" && <button onClick={startRec} className="px-3 py-1 rounded bg-emerald-600 text-white">● 开始录音</button>}
+              {recState === "recording" && <button onClick={stopRec} className="px-3 py-1 rounded bg-red-600 text-white">■ 停止</button>}
+              <button onClick={upload} disabled={!localUrl} className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">↑ 上传保存</button>
+              {localUrl && <a className="px-3 py-1 rounded border" href={localUrl} download>下载本地录音</a>}
+            </div>
+
+            {localUrl && <audio className="mt-2 w-full" controls src={localUrl}></audio>}
+          </section>
+        </>
       )}
     </main>
   );

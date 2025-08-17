@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@google-cloud/text-to-speech": "^6.2.0",
     "@supabase/supabase-js": "^2.55.0",
     "next": "15.4.6",
     "openai": "^5.12.2",
