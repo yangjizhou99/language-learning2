@@ -64,7 +64,7 @@ export default function ShadowingPage() {
   const [recordedBlob, setRecordedBlob] = useState<Blob|null>(null);
 
   // ASR State
-  const [asrBackend, setAsrBackend] = useState<"local-whisper"|"web-speech"|"safari-speech"|"wasm-vosk"|"deepgram">("web-speech");
+  const [asrBackend, setAsrBackend] = useState<"local-whisper"|"web-speech"|"safari-speech"|"wasm-vosk"|"deepgram">("local-whisper");
   const WHISPER_MODELS = [
     { id: "Xenova/whisper-tiny", label: "whisper-tiny（最快）" },
     { id: "Xenova/whisper-base", label: "whisper-base" },
@@ -529,14 +529,6 @@ export default function ShadowingPage() {
         <button onClick={gen} disabled={loading} className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">
           {loading ? "生成中..." : "生成文本"}
         </button>
-        <button onClick={warmUpWhisper} disabled={whisperLoading} className="px-3 py-1 rounded border disabled:opacity-60">
-          {whisperLoading ? "下载模型中..." : (whisperReady ? "模型已就绪" : "下载/预热 Whisper 模型")}
-        </button>
-        {whisperProgress && (
-          <span className="text-sm text-gray-600">
-            {whisperProgress.status} {whisperProgress.pct}% {whisperProgress.file ? `· ${whisperProgress.file}` : ""}
-          </span>
-        )}
       </div>
 
       {err && <div className="text-red-600 text-sm">{err}</div>}
@@ -612,12 +604,22 @@ export default function ShadowingPage() {
                 </select>
               </label>
               {asrBackend === 'local-whisper' && (
-                <label className="flex items-center gap-2">
-                  <span>Whisper 模型</span>
-                  <select value={whisperModel} onChange={e=>setWhisperModel(e.target.value)} className="border rounded px-2 py-1">
-                    {WHISPER_MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
-                  </select>
-                </label>
+                <>
+                  <label className="flex items-center gap-2">
+                    <span>Whisper 模型</span>
+                    <select value={whisperModel} onChange={e=>setWhisperModel(e.target.value)} className="border rounded px-2 py-1">
+                      {WHISPER_MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                    </select>
+                  </label>
+                  <button onClick={warmUpWhisper} disabled={whisperLoading} className="px-3 py-1 rounded border disabled:opacity-60">
+                    {whisperLoading ? "下载模型中..." : (whisperReady ? "模型已就绪" : "下载/预热 Whisper 模型")}
+                  </button>
+                  {whisperProgress && (
+                    <span className="text-sm text-gray-600">
+                      {whisperProgress.status} {whisperProgress.pct}% {whisperProgress.file ? `· ${whisperProgress.file}` : ""}
+                    </span>
+                  )}
+                </>
               )}
               
               {asrBackend === 'wasm-vosk' && (
@@ -645,14 +647,12 @@ export default function ShadowingPage() {
               )}
               <button 
                 onClick={evaluate} 
-                disabled={
-                  asrLoading || (
-                    asrBackend === 'local-whisper' ? (!recordedBlob && !ttsBlob) || !whisperReady :
-                    asrBackend === 'deepgram' ? (!recordedBlob && !ttsBlob) :
-                    asrBackend === 'wasm-vosk' ? (!recordedBlob && !ttsBlob) || !voskReady || !voskModelUrl :
-                    false
-                  )
-                }
+                disabled={asrLoading || (
+                  asrBackend === 'local-whisper' ? (!recordedBlob && !ttsBlob) || !whisperReady :
+                  asrBackend === 'deepgram' ? (!recordedBlob && !ttsBlob) :
+                  asrBackend === 'wasm-vosk' ? (!recordedBlob && !ttsBlob) || !voskReady || !voskModelUrl :
+                  false
+                )}
                 className="px-3 py-1 rounded bg-black text-white disabled:opacity-60"
               >
                 {asrLoading ? "评测中..." : "开始评测"}

@@ -44,6 +44,7 @@ export async function transcribeBlob(blob: Blob, lang: string, modelId = "Xenova
     chunk_length_s: 15,
     stride_length_s: 5,
     language: langHint,
+    task: "transcribe",
     return_timestamps: true,
   });
   // out.text; out.chunks: [{text, timestamp: [start,end]}]
