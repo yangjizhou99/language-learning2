@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-type ShadowingData = { text: string; lang: "ja"|"en"; topic: string; approx_duration_sec?: number };
+type ShadowingData = { text: string; lang: "ja"|"en"|"zh"; topic: string; approx_duration_sec?: number };
 
 const MODELS = [
   { id: "deepseek-chat", label: "deepseek-chat（推荐）" },
@@ -10,8 +10,8 @@ const MODELS = [
 ];
 
 export default function ShadowingPage() {
-  const [lang, setLang] = useState<"ja"|"en">("ja");
-  const [topic, setTopic] = useState(lang === "ja" ? "日程の調整" : "Travel plan");
+  const [lang, setLang] = useState<"ja"|"en"|"zh">("ja");
+  const [topic, setTopic] = useState(lang === "ja" ? "日程の調整" : lang === "zh" ? "自我介绍" : "Travel plan");
   const [model, setModel] = useState("deepseek-chat");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ShadowingData|null>(null);
@@ -33,7 +33,7 @@ export default function ShadowingPage() {
   const [localUrl, setLocalUrl] = useState<string>("");
 
   // 当语言变化或点击“刷新声音”时获取声音列表
-  const fetchVoices = async (kind: "Neural2" | "WaveNet" | "all" = "Neural2") => {
+  const fetchVoices = async (kind: "Neural2" | "WaveNet" | "Standard" | "all" = "Neural2") => {
     try {
       const r = await fetch(`/api/tts/voices?lang=${lang}&kind=${kind}`);
       const j = await r.json();
@@ -44,13 +44,17 @@ export default function ShadowingPage() {
       } else {
         setErr(j?.error || "无法获取声音列表");
       }
-    } catch (e:any) {
-      setErr(e?.message || "获取声音失败");
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "无法获取声音列表");
     }
   };
 
   // 页面挂载或 lang 改变时刷新
-  useEffect(() => { fetchVoices("Neural2"); }, [lang]);
+  useEffect(() => {
+    setVoiceName("");
+    // 中文默认取全部，避免没有中文选项
+    fetchVoices(lang === "zh" ? "all" : "Neural2");
+  }, [lang]);
 
   // Google 服务端合成（失败回退 Web Speech）
   const synthGoogle = async () => {
@@ -80,9 +84,9 @@ export default function ShadowingPage() {
       setTtsBlob(blob);
       const url = URL.createObjectURL(blob);
       setTtsUrl(url);
-    } catch (e:any) {
+    } catch (e: unknown) {
       speak();
-      setErr(e?.message || "TTS 网络错误，已回退 Web Speech");
+      setErr(e instanceof Error ? e.message : "TTS 网络错误，已回退 Web Speech");
     }
   };
 
@@ -94,7 +98,7 @@ export default function ShadowingPage() {
     const u = new SpeechSynthesisUtterance(data.text);
     // 尝试选择对应语言的 voice
     const voices = synth.getVoices();
-    const targetLang = lang === "ja" ? "ja" : "en";
+    const targetLang = lang === "ja" ? "ja" : lang === "zh" ? "zh" : "en";
     const v = voices.find(v => v.lang?.toLowerCase().startsWith(targetLang));
     if (v) u.voice = v;
     u.rate = 1.0;
@@ -182,6 +186,7 @@ export default function ShadowingPage() {
         await supabase.from("sessions").insert({
           user_id: uid,
           task_type: "shadowing",
+          lang: data.lang,
           topic: data.topic,
           input: { text: data.text },
           output: { audio_path: path, audio_url: signed?.signedUrl },
@@ -227,9 +232,10 @@ export default function ShadowingPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <label className="flex items-center gap-2">
           <span className="w-24">语言</span>
-          <select value={lang} onChange={e=>{const v=e.target.value as "ja"|"en"; setLang(v); setTopic(v==="ja"?"日程の調整":"Travel plan");}} className="border rounded px-2 py-1">
+          <select value={lang} onChange={e=>{const v=e.target.value as "ja"|"en"|"zh"; setLang(v); setTopic(v==="ja"?"日程の調整":v==="zh"?"自我介绍":"Travel plan");}} className="border rounded px-2 py-1">
             <option value="ja">日语</option>
             <option value="en">英语</option>
+            <option value="zh">中文（普通话）</option>
           </select>
         </label>
 
@@ -267,6 +273,7 @@ export default function ShadowingPage() {
             <div className="flex flex-wrap items-center gap-2">
               <button onClick={()=>fetchVoices("Neural2")} className="px-3 py-1 rounded border">刷新 Neural2</button>
               <button onClick={()=>fetchVoices("WaveNet")} className="px-3 py-1 rounded border">刷新 WaveNet</button>
+              <button onClick={()=>fetchVoices("all")} className="px-3 py-1 rounded border">全部/Standard</button>
               <button onClick={()=>fetchVoices("all")} className="px-3 py-1 rounded border">全部声音</button>
 
               <select value={voiceName} onChange={e=>setVoiceName(e.target.value)} className="border rounded px-2 py-1 min-w-[280px]">

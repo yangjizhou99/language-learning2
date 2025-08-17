@@ -2,7 +2,7 @@ import { supabase } from "./supabase";
 
 export type RAGStats = { terms: number; phrases: number; hasProfile: boolean };
 
-export async function buildRAG(lang: "en"|"ja", topic: string, kTerms = 8, kPhrases = 5): Promise<{ text: string; stats: RAGStats }> {
+export async function buildRAG(lang: "en"|"ja"|"zh", topic: string, kTerms = 8, kPhrases = 5): Promise<{ text: string; stats: RAGStats }> {
   const { data: u } = await supabase.auth.getUser();
   const uid = u?.user?.id;
   if (!uid) return { text: "", stats: { terms: 0, phrases: 0, hasProfile: false } };

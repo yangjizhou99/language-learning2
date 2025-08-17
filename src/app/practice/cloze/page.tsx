@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { Lang } from "@/types/lang";
 import { readSSE } from "@/lib/sse";
 import { supabase } from "@/lib/supabase";
 import { buildRAG } from "@/lib/rag";
@@ -11,7 +12,7 @@ type Explain = { idx:number; why:string };
 type ClozeResp = { passage: string; cloze: string; blanks: Blank[]; explain: Explain[] };
 
 export default function ClozePage() {
-  const [lang, setLang] = useState<"en"|"ja">("ja");
+  const [lang, setLang] = useState<Lang>("ja");
   const [topic, setTopic] = useState("約束の時間調整");
   const [model, setModel] = useState<"deepseek-chat"|"deepseek-reasoner">("deepseek-reasoner");
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,7 @@ export default function ClozePage() {
         setError(`生成失败 (${r.status}): ${r.error || r.text || "unknown"}`);
         setData(null);
       } else {
-        setData(r.data as any);
+        setData(r.data as ClozeResp);
         setAnswers({});
         setStartedAt(Date.now());
       }
@@ -94,20 +95,21 @@ export default function ClozePage() {
       });
 
       const trimmed = acc.trim();
-      let parsed: any;
+      let parsed: ClozeResp;
       try {
-        parsed = JSON.parse(trimmed);
+        parsed = JSON.parse(trimmed) as ClozeResp;
       } catch {
         const m = trimmed.match(/\{[\s\S]*\}/);
         if (!m) throw new Error("LLM returned non-JSON");
-        parsed = JSON.parse(m[0]);
+        parsed = JSON.parse(m[0]) as ClozeResp;
       }
       if (!parsed?.cloze || !Array.isArray(parsed?.blanks)) throw new Error("invalid cloze payload");
       setData(parsed); 
       setAnswers({});
       setStartedAt(Date.now());
-    } catch (e:any) {
-      setError(e?.message || "流式生成失败，尝试回退普通请求…");
+    } catch (e: unknown) {
+      const err = e instanceof Error ? e.message : String(e);
+      setError(err || "流式生成失败，尝试回退普通请求…");
       await gen();
     } finally {
       setLoading(false);
@@ -132,6 +134,7 @@ export default function ClozePage() {
       await supabase.from("sessions").insert({
         user_id: uid,
         task_type: "cloze",
+        lang,
         topic,
         input: { cloze: data.cloze, blanks: data.blanks },
         output: { answers },
@@ -168,26 +171,27 @@ export default function ClozePage() {
       <h1 className="text-2xl font-semibold">Cloze 预测练习（DeepSeek）</h1>
 
       <div className="flex gap-2">
-        <select value={lang} onChange={e=>setLang(e.target.value as any)} className="border rounded px-2 py-1">
+        <select value={lang} onChange={e=>setLang(e.target.value as Lang)} className="border rounded px-2 py-1">
           <option value="ja">日语</option>
           <option value="en">英语</option>
+          <option value="zh">中文（普通话）</option>
         </select>
         <label className="flex items-center gap-1 text-sm">
           <span>难度</span>
-          <select value={mode} onChange={e=>setMode(e.target.value as any)} className="border rounded px-2 py-1">
+          <select value={mode} onChange={e=>setMode(e.target.value as "auto"|"manual")} className="border rounded px-2 py-1">
             <option value="auto">自动</option>
             <option value="manual">手动</option>
           </select>
         </label>
         {mode === "manual" && (
-          <select value={level} onChange={e=>setLevel(e.target.value as any)} className="border rounded px-2 py-1">
+          <select value={level} onChange={e=>setLevel(e.target.value as ClozeLevel)} className="border rounded px-2 py-1">
             <option value="easy">easy</option>
             <option value="mid">mid</option>
             <option value="hard">hard</option>
           </select>
         )}
         {mode === "auto" && <span className="text-xs text-gray-500">推荐：{level}</span>}
-        <select value={model} onChange={e=>setModel(e.target.value as any)} className="border rounded px-2 py-1">
+        <select value={model} onChange={e=>setModel(e.target.value as "deepseek-chat"|"deepseek-reasoner")} className="border rounded px-2 py-1">
           <option value="deepseek-reasoner">Reasoner</option>
           <option value="deepseek-chat">Chat</option>
         </select>

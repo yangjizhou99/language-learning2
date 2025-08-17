@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import textToSpeech from "@google-cloud/text-to-speech";
+import { toLocaleCode } from "@/types/lang";
 
 function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
@@ -10,12 +11,6 @@ function makeClient() {
   const credentials = JSON.parse(raw);
   const projectId = process.env.GOOGLE_TTS_PROJECT_ID || credentials.project_id;
   return new textToSpeech.TextToSpeechClient({ credentials, projectId });
-}
-
-function codeOf(lang: string) {
-  if (lang === "ja") return "ja-JP";
-  if (lang === "en") return "en-US";
-  return lang; // 兼容直接传语言代码
 }
 
 export async function GET(req: NextRequest) {
@@ -26,7 +21,12 @@ export async function GET(req: NextRequest) {
     const client = makeClient();
 
     // 按语言过滤（Google 也支持不带 languageCode 的全量，但我们先缩小）
-    const [res] = await client.listVoices({ languageCode: codeOf(lang) });
+    // 为兼容中文在部分地区以 cmn-CN/zh-CN 报告，必要时改用更宽松策略
+    const locale = toLocaleCode(lang);
+    // 如果是中文，直接全量拉取，后续手动过滤，避免 GCP 不按 zh/zh-CN 返回
+    const [res] = locale.toLowerCase().startsWith("zh")
+      ? await client.listVoices({})
+      : await client.listVoices({ languageCode: locale });
     const voices = (res.voices || []).map(v => ({
       name: v.name || "",
       languageCodes: v.languageCodes || [],
@@ -36,7 +36,18 @@ export async function GET(req: NextRequest) {
         (v.name || "").toLowerCase().includes("neural2") ? "Neural2" :
         (v.name || "").toLowerCase().includes("wavenet") ? "WaveNet" : "Standard"
     }))
-    .filter(v => v.languageCodes?.some(c => c.startsWith(codeOf(lang))))
+    .filter(v => {
+      const codes = v.languageCodes || [];
+      const target = locale.toLowerCase();
+      // 兼容 cmn-CN / zh-CN / zh-HK / zh-TW 等
+      return codes.some(c => {
+        const lc = (c || "").toLowerCase();
+        if (target.startsWith("zh")) {
+          return lc.startsWith("zh-") || lc.startsWith("cmn-");
+        }
+        return lc.startsWith(target);
+      });
+    })
     .filter(v => kind === "all" ? true : v.type.toLowerCase() === kind)
     .sort((a,b) => a.name.localeCompare(b.name));
 

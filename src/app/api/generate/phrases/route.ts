@@ -48,10 +48,10 @@ export async function POST(req: NextRequest) {
         { 
           role: "system", 
           content: useFunctionCalling 
-            ? `从话题=${topic}中生成${k}条${lang}语短语，包含功能标签、短语和示例`
+            ? `你是一名语言学习助手。根据用户提供的话题生成${k}条目标语言（${lang}）的学习短语，每条包含：功能标签（如 EN-Softener/JA-敬語/ZH-表达礼貌）、短语（≤12词/字）、以及使用示例。`
             : `请严格按照JSON格式输出: {"items":[{"tag":"标签","text":"短语","example":"示例"}]}`
         },
-        { role: "user", content: `生成${k}条短语` }
+        { role: "user", content: `话题：${topic}。请用 ${lang} 生成 ${k} 条短语。` }
       ],
       ...(useFunctionCalling ? { tools, tool_choice: "required" } : { 
         response_format: { type: "json_object" } 

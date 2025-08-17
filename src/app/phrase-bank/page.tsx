@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-type Phrase = { id?: string; user_id?: string; lang: "en"|"ja"; tag: string; text: string; example: string; created_at?: string };
+type Phrase = { id?: string; user_id?: string; lang: "en"|"ja"|"zh"; tag: string; text: string; example: string; created_at?: string };
 
 const MODELS = [
   { id: "deepseek-chat", label: "deepseek-chat（推荐）" },
@@ -10,8 +10,8 @@ const MODELS = [
 ];
 
 export default function PhraseBankPage() {
-  const [lang, setLang] = useState<"ja"|"en">("ja");
-  const [topic, setTopic] = useState(lang === "ja" ? "約束の時間調整" : "Travel plan");
+  const [lang, setLang] = useState<"ja"|"en"|"zh">("ja");
+  const [topic, setTopic] = useState(lang === "ja" ? "約束の時間調整" : lang === "zh" ? "自我介绍" : "Travel plan");
   const [model, setModel] = useState("deepseek-chat");
   const [k, setK] = useState(10);
 
@@ -72,7 +72,7 @@ export default function PhraseBankPage() {
 
   const saveAll = async () => {
     if (!uid || candidates.length === 0) return;
-    const rows = candidates.map(c => ({ ...c, user_id: uid }));
+    const rows = candidates.map(c => ({ ...c, user_id: uid, lang }));
     const { error } = await supabase.from("phrases").insert(rows);
     if (error) setErr(error.message);
     else { setCandidates([]); await refreshMine(); }
@@ -91,9 +91,10 @@ export default function PhraseBankPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <label className="flex items-center gap-2">
           <span className="w-24">语言</span>
-          <select value={lang} onChange={e=>{const v=e.target.value as "ja"|"en"; setLang(v); setTopic(v==="ja"?"約束の時間調整":"Travel plan");}} className="border rounded px-2 py-1">
+          <select value={lang} onChange={e=>{const v=e.target.value as "ja"|"en"|"zh"; setLang(v); setTopic(v==="ja"?"約束の時間調整":v==="zh"?"自我介绍":"Travel plan");}} className="border rounded px-2 py-1">
             <option value="ja">日语</option>
             <option value="en">英语</option>
+            <option value="zh">中文（普通话）</option>
           </select>
         </label>
         <label className="flex items-center gap-2">

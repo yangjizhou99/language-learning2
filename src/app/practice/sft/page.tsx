@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
+import { Lang } from "@/types/lang";
 import { readSSE } from "@/lib/sse";
 import { supabase } from "@/lib/supabase";
 import { safeJsonFetch } from "@/lib/safeFetch";
@@ -23,7 +24,7 @@ const MODELS = [
 ];
 
 export default function SFTPage() {
-  const [lang, setLang] = useState<"ja"|"en">("ja");
+  const [lang, setLang] = useState<Lang>("ja");
   const [template, setTemplate] = useState<string>("polite_mail");
   const [topic, setTopic] = useState<string>(lang === "ja" ? "約束の時間調整" : "Travel plan");
   const [model, setModel] = useState<string>("deepseek-chat");
@@ -79,7 +80,7 @@ export default function SFTPage() {
       let rag = "";
       try {
         // 若已实现 buildRAG
-        const mod: any = (globalThis as any);
+        const mod = globalThis as typeof globalThis & { buildRAG?: typeof buildRAG };
         if (mod.buildRAG) rag = (await mod.buildRAG(lang, topic)).text;
       } catch {}
 
@@ -101,7 +102,7 @@ export default function SFTPage() {
 
       // 解析 JSON
       const trimmed = acc.trim();
-      let parsed: any;
+      let parsed: EvalResp;
       try { parsed = JSON.parse(trimmed); }
       catch {
         const m = trimmed.match(/\{[\s\S]*\}/);
@@ -125,20 +126,21 @@ export default function SFTPage() {
       const { data: u } = await supabase.auth.getUser();
       const uid = u?.user?.id;
       if (uid) {
-        await supabase.from("sessions").insert({
-          user_id: uid,
-          task_type: "sft",
-          topic,
-          input: { instruction: task.instruction, rubrics: task.rubrics },
-          output: { user_output: userOutput },
-          ai_feedback: parsed,
-          score: parsed?.overall ?? null,
-          duration_sec: startedAt ? Math.max(1, Math.round((Date.now()-startedAt)/1000)) : null,
-          difficulty: sftLevel
-        });
+          await supabase.from("sessions").insert({
+            user_id: uid,
+            task_type: "sft",
+            lang,
+            topic,
+            input: { instruction: task.instruction, rubrics: task.rubrics },
+            output: { user_output: userOutput },
+            ai_feedback: parsed,
+            score: parsed?.overall ?? null,
+            duration_sec: startedAt ? Math.max(1, Math.round((Date.now()-startedAt)/1000)) : null,
+            difficulty: sftLevel
+          });
       }
-    } catch (e:any) {
-      setError(e?.message || "流式打分失败，尝试回退普通请求…");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "流式打分失败，尝试回退普通请求…");
       await doEval();
     } finally {
       setLoadingEval(false);
@@ -183,6 +185,7 @@ export default function SFTPage() {
         await supabase.from("sessions").insert({
           user_id: uid,
           task_type: "sft",
+          lang,
           topic,
           input: { instruction: task.instruction, rubrics: task.rubrics },
           output: { user_output: userOutput },
@@ -192,8 +195,8 @@ export default function SFTPage() {
           difficulty: sftLevel
         });
       }
-    } catch (e:any) {
-      setError(e?.message || "网络错误");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "网络错误");
     } finally {
       setLoadingEval(false);
     }
@@ -210,9 +213,10 @@ export default function SFTPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <label className="flex items-center gap-2">
           <span className="w-28">语言</span>
-          <select value={lang} onChange={e=>{const v=e.target.value as "ja"|"en"; setLang(v); setTopic(v==="ja"?"約束の時間調整":"Travel plan");}} className="border rounded px-2 py-1">
+          <select value={lang} onChange={e=>{const v=e.target.value as Lang; setLang(v); setTopic(v==="ja"?"約束の時間調整":v==="zh"?"自我介绍":"Travel plan");}} className="border rounded px-2 py-1">
             <option value="ja">日语</option>
             <option value="en">英语</option>
+            <option value="zh">中文（普通话）</option>
           </select>
         </label>
 
@@ -225,7 +229,7 @@ export default function SFTPage() {
 
         <label className="flex items-center gap-2">
           <span className="w-28">难度</span>
-          <select value={sftLevel} onChange={e=>setSftLevel(e.target.value as any)} className="border rounded px-2 py-1">
+          <select value={sftLevel} onChange={e=>setSftLevel(e.target.value as SftLevel)} className="border rounded px-2 py-1">
             <option value="basic">basic</option>
             <option value="standard">standard</option>
             <option value="advanced">advanced</option>
