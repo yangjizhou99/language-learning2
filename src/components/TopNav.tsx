@@ -42,10 +42,10 @@ export default function TopNav() {
       setEmail(undefined);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      router.replace("/auth");
+      window.location.assign("/auth");
     } catch (error) {
       console.error('Logout error:', error);
-      router.replace("/auth");
+      window.location.assign("/auth");
     }
   };
 

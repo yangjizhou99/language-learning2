@@ -44,6 +44,7 @@ export default function AuthGate() {
   const publicRoutes = ["/auth", "/auth/callback"];
   const isPublic = publicRoutes.some(p => pathname?.startsWith(p));
   
-  if (isPublic) return null;
+  // Only hide TopNav on explicit auth pages, show for all others
+  if (isPublic && pathname !== "/") return null;
   return <TopNav />;
 }
