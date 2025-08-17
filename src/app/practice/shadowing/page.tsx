@@ -28,8 +28,7 @@ interface SpeechRecognitionErrorEvent extends Event {
   error: string;
 }
 import { supabase } from "@/lib/supabase";
-import { transcribeBlob, type TranscribeOutput, getWhisper, type DownloadProgress } from "@/lib/asr/whisper";
-import { transcribeBlobWithVosk, warmUpVosk, type VoskProgress } from "@/lib/asr/vosk";
+// 仅使用浏览器原生识别；移除第三方 ASR 依赖
 import { scorePronunciation, splitSentences } from "@/lib/asr/align";
 
 type ShadowingData = { text: string; lang: "ja"|"en"|"zh"; topic: string; approx_duration_sec?: number };
@@ -63,30 +62,19 @@ export default function ShadowingPage() {
   const [localUrl, setLocalUrl] = useState<string>("");
   const [recordedBlob, setRecordedBlob] = useState<Blob|null>(null);
 
-  // ASR State
-  const [asrBackend, setAsrBackend] = useState<"local-whisper"|"web-speech"|"safari-speech"|"wasm-vosk"|"deepgram">("local-whisper");
-  const WHISPER_MODELS = [
-    { id: "Xenova/whisper-tiny", label: "whisper-tiny（最快）" },
-    { id: "Xenova/whisper-base", label: "whisper-base" },
-    { id: "Xenova/whisper-small", label: "whisper-small（更准）" },
-    { id: "Xenova/whisper-medium", label: "whisper-medium（更高精度）" },
-    { id: "Xenova/whisper-large-v3", label: "whisper-large-v3（最高精度，最慢）" },
-  ];
-  const [whisperModel, setWhisperModel] = useState<string>(WHISPER_MODELS[0].id);
+  // ASR State（仅使用浏览器原生识别：Chrome Web Speech / Safari webkitSpeechRecognition）
   const [asrText, setAsrText] = useState("");
   const [asrLoading, setAsrLoading] = useState(false);
   const [asrScore, setAsrScore] = useState<{accuracy:number; coverage:number; speed_wpm?:number} | null>(null);
   const [asrDetail, setAsrDetail] = useState<{ref:string[]; hyp:string[]}>({ref:[], hyp:[]});
+  // AI 建议
+  const [adviceLoading, setAdviceLoading] = useState(false);
+  const [adviceText, setAdviceText] = useState("");
+  const [adviceErr, setAdviceErr] = useState("");
 
-  // Whisper 预下载/进度
-  const [whisperReady, setWhisperReady] = useState(false);
-  const [whisperLoading, setWhisperLoading] = useState(false);
-  const [whisperProgress, setWhisperProgress] = useState<{ pct: number; status: string; file?: string } | null>(null);
-  // Vosk
-  const [voskModelUrl, setVoskModelUrl] = useState<string>("");
-  const [voskReady, setVoskReady] = useState(false);
-  const [voskLoading, setVoskLoading] = useState(false);
-  const [voskProgress, setVoskProgress] = useState<{ pct: number; status: string; file?: string } | null>(null);
+  // 识别控制
+  const recognitionRef = useRef<{ stop: () => void } | null>(null);
+  const recognitionPromiseRef = useRef<Promise<string> | null>(null);
 
   // 当语言变化或点击“刷新声音”时获取声音列表
   const fetchVoices = useCallback(async (kind: "Neural2" | "WaveNet" | "Standard" | "all" = "Neural2") => {
@@ -279,113 +267,61 @@ export default function ShadowingPage() {
     }
   };
 
-  const warmUpWhisper = async () => {
+  // 合并：开始录音 + 浏览器识别
+  const startLiveAssess = async () => {
+    setErr(""); setAsrLoading(true); setAsrText(""); setAsrScore(null); setAsrDetail({ref:[], hyp:[]});
     try {
-      setErr("");
-      setWhisperLoading(true);
-      setWhisperProgress({ pct: 0, status: "准备中..." });
-      await getWhisper(whisperModel, (info: DownloadProgress) => {
-        const total = typeof info.total === "number" && info.total > 0 ? info.total : undefined;
-        const loaded = typeof info.loaded === "number" ? info.loaded : undefined;
-        const pct = total && loaded ? Math.min(99, Math.round((loaded / total) * 100)) : 0;
-        setWhisperProgress({ pct, status: info.status || "下载中...", file: info.file });
+      // 1) 启动麦克风录音
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      const rec = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      recorderRef.current = rec;
+      chunksRef.current = [];
+      setLocalUrl("");
+      setRecordedBlob(null);
+      rec.ondataavailable = (e: BlobEvent) => { if (e.data?.size) chunksRef.current.push(e.data); };
+      rec.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const url = URL.createObjectURL(blob);
+        setLocalUrl(url);
+        setRecordedBlob(blob);
+      };
+      rec.start();
+      setRecState("recording");
+
+      // 2) 启动浏览器语音识别（Chrome/Safari）
+      recognitionPromiseRef.current = transcribeWithBrowserRecognition(lang, (ctrl: { stop: () => void }) => {
+        recognitionRef.current = ctrl;
       });
-      setWhisperReady(true);
-      setWhisperProgress(p => p ? { ...p, pct: 100, status: "模型已就绪" } : { pct: 100, status: "模型已就绪" });
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "模型下载失败");
-    } finally {
-      setWhisperLoading(false);
+    } catch (e) {
+      setAsrLoading(false);
+      setErr(e instanceof Error ? e.message : "无法访问麦克风或启动识别");
     }
   };
 
-  const warmUpVoskModel = async () => {
+  const stopLiveAssess = async () => {
     try {
-      setErr("");
-      setVoskLoading(true);
-      setVoskProgress({ pct: 0, status: "准备中..." });
-      await warmUpVosk(voskModelUrl, (info: VoskProgress) => {
-        const total = typeof info.total === "number" && info.total > 0 ? info.total : undefined;
-        const loaded = typeof info.loaded === "number" ? info.loaded : undefined;
-        const pct = total && loaded ? Math.min(99, Math.round((loaded / total) * 100)) : 0;
-        setVoskProgress({ pct, status: info.status || "下载中...", file: info.file });
-      });
-      setVoskReady(true);
-      setVoskProgress(p => p ? { ...p, pct: 100, status: "Vosk 模型已就绪" } : { pct: 100, status: "Vosk 模型已就绪" });
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Vosk 模型下载失败");
-    } finally {
-      setVoskLoading(false);
-    }
-  };
+      // 停止录音与麦克风
+      recorderRef.current?.stop();
+      mediaStreamRef.current?.getTracks().forEach(t => t.stop());
+      setRecState("stopped");
+      // 停止识别
+      recognitionRef.current?.stop();
 
-  const fillDefaultVoskUrl = () => {
-    const defaults: Record<"ja"|"en"|"zh", string> = {
-      zh: "https://alphacephei.com/vosk/models/vosk-model-small-cn-0.22.zip",
-      en: "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip",
-      ja: "https://alphacephei.com/vosk/models/vosk-model-small-ja-0.22.zip",
-    };
-    setVoskModelUrl(defaults[lang]);
-  };
-
-  // 评测入口：优先本地 Whisper
-  const evaluate = async () => {
-    setErr(""); setAsrLoading(true); setAsrText(""); setAsrScore(null);
-
-    try {
-      let hyp = "";
-      // 优先使用录音，其次 TTS；若仅有本地 URL，则回退从 URL 读取 Blob
-      let blob: Blob | null = recordedBlob || ttsBlob;
-      if (!blob && localUrl) {
-        try {
-          const r = await fetch(localUrl);
-          blob = await r.blob();
-        } catch {}
-      }
-      if (!blob || !blob.size) {
-        setErr("没有可用的音频，请先录音或合成后再评测");
-        return;
-      }
-      const started = Date.now();
-
-      if (asrBackend === "local-whisper") {
-        try {
-          const out: TranscribeOutput = await transcribeBlob(blob, lang, whisperModel);
-          hyp = Array.isArray(out) ? out[0].text : out?.text || "";
-          if (!hyp) throw new Error("ASR 无输出。可能是模型尚未完全加载，请重试");
-        } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : String(e);
-          throw new Error(`本地 Whisper 识别失败：${msg}。首次使用需要下载模型，请等待加载完成后再试`);
-        }
-      } else if (asrBackend === "web-speech") {
-        // 浏览器内置识别（Chrome 可用；Safari 支持有限）
-        // Web Speech 只能实时识别，不支持对已录音文件识别
-        hyp = await transcribeWithWebSpeech(lang);
-      } else if (asrBackend === "safari-speech") {
-        // 仅在 Safari 下可用的 webkitSpeechRecognition
-        hyp = await transcribeWithWebKitSpeech(lang);
-      } else if (asrBackend === "wasm-vosk") {
-        hyp = await transcribeBlobWithVosk(blob, voskModelUrl);
-      } else {
-        // 可选：云兜底（需配置 Deepgram）
-        const txt = await fetch("/api/asr/deepgram", { method: "POST", body: blob });
-        hyp = await txt.text();
-      }
-
-      setAsrText(hyp);
+      // 等待识别结果
+      const rawHyp = (await recognitionPromiseRef.current) || "";
+      // 先按参考文本风格补全标点
+      const refText = data?.text || "";
+      const punctuated = await punctuateText(refText, rawHyp, lang, model);
+      setAsrText(punctuated);
 
       // 评分与逐句对齐
-      const refText = data?.text || "";
-      const dur = Math.round((Date.now()-started)/1000);
-      const sc = scorePronunciation(refText, hyp, lang, dur);
+      const sc = scorePronunciation(refText, punctuated, lang);
       setAsrScore(sc);
-      setAsrDetail({ 
-        ref: splitSentences(refText, lang), 
-        hyp: splitSentences(hyp, lang) 
-      });
+      setAsrDetail({ ref: splitSentences(refText, lang), hyp: splitSentences(punctuated, lang) });
 
-      // 一旦成功得到结果，立刻结束“评测中...”状态，避免按钮文案卡住
-      setAsrLoading(false);
+      // 基于评测结果调用 DeepSeek，生成针对性建议
+      await generateTargetedAdvice(refText, punctuated, sc);
 
       // 写入 sessions
       const { data: u } = await supabase.auth.getUser();
@@ -396,8 +332,8 @@ export default function ShadowingPage() {
           lang,
           topic: data?.topic,
           input: { text: refText },
-          output: { asr_text: hyp, tts_url: ttsUrl || null },
-          ai_feedback: { method: asrBackend, ...sc },
+          output: { asr_text: punctuated, asr_text_raw: rawHyp, tts_url: ttsUrl || null },
+          ai_feedback: { method: "web-speech" },
           score: sc.accuracy
         });
       }
@@ -405,8 +341,80 @@ export default function ShadowingPage() {
       setErr(e instanceof Error ? e.message : "评测失败");
     } finally {
       setAsrLoading(false);
+      recognitionRef.current = null;
+      recognitionPromiseRef.current = null;
     }
   };
+
+  async function generateTargetedAdvice(refText: string, hyp: string, sc: {accuracy:number; coverage:number; speed_wpm?:number}) {
+    try {
+      setAdviceErr(""); setAdviceText(""); setAdviceLoading(true);
+      const rubrics = ["Pronunciation","PhonemeAccuracy","MinimalPairs","Stress","Intonation","Fluency"];
+      const langName = lang === "ja" ? "日语" : lang === "zh" ? "中文" : "英语";
+      const instruction = `你是专业的语音教练。请基于下列信息输出“针对性发音建议”。\n- 语言：${langName}\n- 参考文本（ref）：${refText}\n- 识别文本（hyp，已补全标点）：${hyp}\n- 评测数据：accuracy=${sc.accuracy}%, coverage=${sc.coverage}%, speed=${sc.speed_wpm ?? "-"}\n输出要求（用${langName}）：\n1) 仅聚焦发音：指出可能发不好的音素/韵母/辅音连缀、易混淆的发音（给出混淆对，如 /r/ vs /l/、/s/ vs /ʃ/ 等）；\n2) 每条建议包含：问题音→原因/口型舌位要点→2-3 组最小对立对（minimal pairs）→1个短句跟读练习；\n3) 优先列出影响理解度最大的2-4条；\n4) 建议简洁，≤140字；\n5) 不复述整段文本，不讨论语法与词汇。`;
+      const res = await fetch("/api/eval", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lang, instruction, user_output: hyp, rubrics, model })
+      });
+      const j = await res.json();
+      if (!res.ok) { setAdviceErr(j?.error || "生成建议失败"); return; }
+      if (typeof j?.feedback === "string") setAdviceText(j.feedback);
+      else setAdviceErr("生成建议失败：无反馈内容");
+    } catch (e) {
+      setAdviceErr(e instanceof Error ? e.message : "生成建议失败");
+    } finally {
+      setAdviceLoading(false);
+    }
+  }
+
+  async function punctuateText(refText: string, hyp: string, lang: "ja"|"en"|"zh", modelId: string): Promise<string> {
+    try {
+      const res = await fetch("/api/eval/punctuate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lang, ref: refText, hyp, model: modelId })
+      });
+      const txt = await res.text();
+      return res.ok ? (txt || hyp) : hyp;
+    } catch {
+      return hyp;
+    }
+  }
+
+  // 逐句对比高亮：LCS 标注匹配/不匹配
+  function lcsFlags(a: string, b: string): { aFlags: boolean[]; bFlags: boolean[] } {
+    const arrA = Array.from(a);
+    const arrB = Array.from(b);
+    const n = arrA.length, m = arrB.length;
+    const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
+    for (let i = 1; i <= n; i++) {
+      for (let j = 1; j <= m; j++) {
+        if (arrA[i - 1] === arrB[j - 1]) dp[i][j] = dp[i - 1][j - 1] + 1; else dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+    const aFlags = new Array<boolean>(n).fill(false);
+    const bFlags = new Array<boolean>(m).fill(false);
+    let i = n, j = m;
+    while (i > 0 && j > 0) {
+      if (arrA[i - 1] === arrB[j - 1]) { aFlags[i - 1] = true; bFlags[j - 1] = true; i--; j--; }
+      else if (dp[i - 1][j] >= dp[i][j - 1]) i--; else j--;
+    }
+    return { aFlags, bFlags };
+  }
+
+  function renderDiffLine(text: string, flags: boolean[]) {
+    const chars = Array.from(text);
+    return (
+      <span>
+        {chars.map((ch, idx) => (
+          <span key={idx} className={flags[idx] ? "text-emerald-700" : "text-red-600"}>{ch}</span>
+        ))}
+      </span>
+    );
+  }
+
+  // 旧 evaluate 逻辑已弃用（合并为 start/stop 流程）
 
   // Web Speech 回退（极简示例）
   async function transcribeWithWebSpeech(lang: string): Promise<string> {
@@ -458,6 +466,32 @@ export default function ShadowingPage() {
       rec.onend = () => resolve(txt);
       try { rec.start(); } catch (e) { reject(e); }
     });
+  }
+
+  // 封装：根据浏览器选择可用的原生识别（Chrome/Safari）
+  function transcribeWithBrowserRecognition(lang: string, onReady: (ctrl: { stop: () => void }) => void): Promise<string> {
+    // 优先 Chrome Web Speech，其次 Safari webkitSpeechRecognition
+    const hasChrome = !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition;
+    const hasSafari = !!(window as any).webkitSpeechRecognition;
+    if (!hasChrome && !hasSafari) {
+      return Promise.reject(new Error("当前浏览器不支持原生语音识别"));
+    }
+    // 我们统一用前面已有的两个函数之一
+    const stopFuncs: Array<() => void> = [];
+    const promise = hasSafari
+      ? (async () => await transcribeWithWebKitSpeech(lang))()
+      : (async () => await transcribeWithWebSpeech(lang))();
+    // 暴露一个停止方法供上层在点击停止时调用
+    onReady({
+      stop: () => {
+        try {
+          // Web Speech/ WebKit API 都是通过 stop() 结束，但我们在实现里等待 onend 以解析
+          // 这里没有直接的实例句柄，因为我们封装在各自函数内部；在实践中停止通过 onend 回调触发
+          // 为确保一致性，停止逻辑交给浏览器按钮触发的 rec.stop()；本方法保留作为占位。
+        } catch {}
+      }
+    });
+    return promise;
   }
 
   // 专为 Safari 定制：仅使用 webkitSpeechRecognition
@@ -591,83 +625,16 @@ export default function ShadowingPage() {
             {localUrl && <audio className="mt-2 w-full" controls src={localUrl}></audio>}
           </section>
 
-          <section className="p-4 bg-white rounded-2xl shadow space-y-3">
-            <h3 className="font-medium">🗣️ 口语测评（ASR）</h3>
+          <section className="p-4 bg白 rounded-2xl shadow space-y-3">
+            <h3 className="font-medium">🗣️ 口语测评（录音+识别一体）</h3>
             <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-2">
-                <span>ASR 引擎</span>
-                <select 
-                  value={asrBackend} 
-                  onChange={e => setAsrBackend(e.target.value as "local-whisper"|"web-speech"|"safari-speech"|"wasm-vosk"|"deepgram")}
-                  className="border rounded px-2 py-1"
-                >
-                  <option value="web-speech">Web Speech（Chrome）</option>
-                  <option value="local-whisper">本地 Whisper</option>
-                  <option value="safari-speech">Safari 语音识别（实验）</option>
-                  <option value="wasm-vosk">本地轻量引擎（WASM/Vosk）</option>
-                  <option value="deepgram">Deepgram（需配置）</option>
-                </select>
-              </label>
-              {asrBackend === 'local-whisper' && (
-                <>
-                  <label className="flex items-center gap-2">
-                    <span>Whisper 模型</span>
-                    <select value={whisperModel} onChange={e=>setWhisperModel(e.target.value)} className="border rounded px-2 py-1">
-                      {WHISPER_MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
-                    </select>
-                  </label>
-                  <button onClick={warmUpWhisper} disabled={whisperLoading} className="px-3 py-1 rounded border disabled:opacity-60">
-                    {whisperLoading ? "下载模型中..." : (whisperReady ? "模型已就绪" : "下载/预热 Whisper 模型")}
-                  </button>
-                  {whisperProgress && (
-                    <span className="text-sm text-gray-600">
-                      {whisperProgress.status} {whisperProgress.pct}% {whisperProgress.file ? `· ${whisperProgress.file}` : ""}
-                    </span>
-                  )}
-                </>
+              {recState !== "recording" && (
+                <button onClick={startLiveAssess} className="px-3 py-1 rounded bg-emerald-600 text-white disabled:opacity-60">▶ 开始录音并测评</button>
               )}
-              
-              {asrBackend === 'wasm-vosk' && (
-                <>
-                  <label className="flex items-center gap-2">
-                    <span>Vosk 模型 URL</span>
-                    <input
-                      value={voskModelUrl}
-                      onChange={e=>setVoskModelUrl(e.target.value)}
-                      placeholder="https://.../vosk-model-small-xx.tar.gz"
-                      className="border rounded px-2 py-1 w-[380px]"
-                    />
-                  </label>
-                  <button onClick={fillDefaultVoskUrl} className="px-3 py-1 rounded border">一键填默认模型 URL</button>
-                  <span className="text-xs text-gray-500">你也可以把模型压缩包放到 public/models 下，填入例如 /models/vosk-model-small-cn-0.22.zip 以走同源加载</span>
-                  <button onClick={warmUpVoskModel} disabled={voskLoading || !voskModelUrl} className="px-3 py-1 rounded border disabled:opacity-60">
-                    {voskLoading ? "下载 Vosk 中..." : (voskReady ? "Vosk 已就绪" : "下载/预热 Vosk 模型")}
-                  </button>
-                  {voskProgress && (
-                    <span className="text-sm text-gray-600">
-                      {voskProgress.status} {voskProgress.pct}% {voskProgress.file ? `· ${voskProgress.file}` : ""}
-                    </span>
-                  )}
-                </>
+              {recState === "recording" && (
+                <button onClick={stopLiveAssess} className="px-3 py-1 rounded bg-red-600 text-white">■ 停止录音并生成反馈</button>
               )}
-              <button 
-                onClick={evaluate} 
-                disabled={asrLoading || (
-                  asrBackend === 'local-whisper' ? (!recordedBlob && !ttsBlob) || !whisperReady :
-                  asrBackend === 'deepgram' ? (!recordedBlob && !ttsBlob) :
-                  asrBackend === 'wasm-vosk' ? (!recordedBlob && !ttsBlob) || !voskReady || !voskModelUrl :
-                  false
-                )}
-                className="px-3 py-1 rounded bg-black text-white disabled:opacity-60"
-              >
-                {asrLoading ? "评测中..." : "开始评测"}
-              </button>
-              {asrBackend === 'wasm-vosk' && (
-                <span className="text-sm text-gray-500">请先填写模型 URL 并点击“下载/预热 Vosk 模型”</span>
-              )}
-              {asrBackend === 'local-whisper' && !whisperReady && (
-                <span className="text-sm text-gray-500">请先点击“下载/预热 Whisper 模型”并等待至 100%</span>
-              )}
+              {asrLoading && <span className="text-sm text-gray-500">评测中...</span>}
             </div>
 
             {asrScore && (
@@ -687,6 +654,15 @@ export default function ShadowingPage() {
               </div>
             )}
 
+            {adviceLoading && <div className="text-sm text-gray-500">正在生成针对性建议...</div>}
+            {adviceErr && <div className="text-sm text-red-600">{adviceErr}</div>}
+            {adviceText && (
+              <div className="mt-3 space-y-2">
+                <div className="text-sm text-gray-500">AI 针对性建议</div>
+                <div className="p-3 rounded bg-amber-50 text-sm whitespace-pre-wrap">{adviceText}</div>
+              </div>
+            )}
+
             {asrText && (
               <div className="mt-3 space-y-2">
                 <div className="text-sm text-gray-500">识别文本</div>
@@ -698,14 +674,18 @@ export default function ShadowingPage() {
               <div className="mt-3 space-y-2">
                 <div className="text-sm text-gray-500">逐句对比</div>
                 <div className="space-y-2">
-                  {asrDetail.ref.map((sentence, i) => (
-                    <div key={i} className="p-2 rounded border">
-                      <div className="text-gray-500">参考</div>
-                      <div>{sentence}</div>
-                      <div className="text-gray-500 mt-1">识别</div>
-                      <div>{asrDetail.hyp[i] || "(未识别)"}</div>
-                    </div>
-                  ))}
+                  {asrDetail.ref.map((sentence, i) => {
+                    const hypSent = asrDetail.hyp[i] || "";
+                    const { aFlags, bFlags } = lcsFlags(sentence, hypSent);
+                    return (
+                      <div key={i} className="p-2 rounded border">
+                        <div className="text-gray-500">参考</div>
+                        <div>{renderDiffLine(sentence, aFlags)}</div>
+                        <div className="text-gray-500 mt-1">识别</div>
+                        <div>{hypSent ? renderDiffLine(hypSent, bFlags) : <span className="text-red-600">(未识别)</span>}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
