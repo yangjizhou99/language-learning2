@@ -349,18 +349,14 @@ export default function ShadowingPage() {
   async function generateTargetedAdvice(refText: string, hyp: string, sc: {accuracy:number; coverage:number; speed_wpm?:number}) {
     try {
       setAdviceErr(""); setAdviceText(""); setAdviceLoading(true);
-      const rubrics = ["Pronunciation","PhonemeAccuracy","MinimalPairs","Stress","Intonation","Fluency"];
-      const langName = lang === "ja" ? "日语" : lang === "zh" ? "中文" : "英语";
-      const instruction = `你是专业的语音教练。请基于下列信息输出“针对性发音建议”。\n- 语言：${langName}\n- 参考文本（ref）：${refText}\n- 识别文本（hyp，已补全标点）：${hyp}\n- 评测数据：accuracy=${sc.accuracy}%, coverage=${sc.coverage}%, speed=${sc.speed_wpm ?? "-"}\n输出要求（用${langName}）：\n1) 仅聚焦发音：指出可能发不好的音素/韵母/辅音连缀、易混淆的发音（给出混淆对，如 /r/ vs /l/、/s/ vs /ʃ/ 等）；\n2) 每条建议包含：问题音→原因/口型舌位要点→2-3 组最小对立对（minimal pairs）→1个短句跟读练习；\n3) 优先列出影响理解度最大的2-4条；\n4) 建议简洁，≤140字；\n5) 不复述整段文本，不讨论语法与词汇。`;
-      const res = await fetch("/api/eval", {
+      const res = await fetch("/api/advice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, instruction, user_output: hyp, rubrics, model })
+        body: JSON.stringify({ lang, ref: refText, hyp, metrics: sc, model })
       });
-      const j = await res.json();
-      if (!res.ok) { setAdviceErr(j?.error || "生成建议失败"); return; }
-      if (typeof j?.feedback === "string") setAdviceText(j.feedback);
-      else setAdviceErr("生成建议失败：无反馈内容");
+      const txt = await res.text();
+      if (!res.ok) { setAdviceErr(txt || "生成建议失败"); return; }
+      setAdviceText(txt);
     } catch (e) {
       setAdviceErr(e instanceof Error ? e.message : "生成建议失败");
     } finally {
@@ -471,13 +467,13 @@ export default function ShadowingPage() {
   // 封装：根据浏览器选择可用的原生识别（Chrome/Safari）
   function transcribeWithBrowserRecognition(lang: string, onReady: (ctrl: { stop: () => void }) => void): Promise<string> {
     // 优先 Chrome Web Speech，其次 Safari webkitSpeechRecognition
-    const hasChrome = !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition;
-    const hasSafari = !!(window as any).webkitSpeechRecognition;
+    const w = window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown };
+    const hasChrome = !!w.SpeechRecognition || !!w.webkitSpeechRecognition;
+    const hasSafari = !!w.webkitSpeechRecognition;
     if (!hasChrome && !hasSafari) {
       return Promise.reject(new Error("当前浏览器不支持原生语音识别"));
     }
     // 我们统一用前面已有的两个函数之一
-    const stopFuncs: Array<() => void> = [];
     const promise = hasSafari
       ? (async () => await transcribeWithWebKitSpeech(lang))()
       : (async () => await transcribeWithWebSpeech(lang))();
