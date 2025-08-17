@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 export default function TopNav() {
   const [email, setEmail] = useState<string|undefined>();
@@ -35,26 +36,16 @@ export default function TopNav() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const router = useRouter();
   const signOut = async () => {
     try {
-      // 先清除当前状态
       setEmail(undefined);
-      
-      // 执行登出
-      const { error: signOutError } = await supabase.auth.signOut();
-      if (signOutError) throw signOutError;
-      
-      // 立即创建匿名会话
-      const { error: anonError } = await supabase.auth.signInAnonymously();
-      if (anonError) throw anonError;
-      
-      // 强制重新获取会话状态
-      const { data: { session } } = await supabase.auth.getSession();
-      setEmail(session?.user?.email || undefined);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      router.replace("/auth");
     } catch (error) {
       console.error('Logout error:', error);
-      // 如果出错，尝试恢复匿名状态
-      await supabase.auth.signInAnonymously();
+      router.replace("/auth");
     }
   };
 
