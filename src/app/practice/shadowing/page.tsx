@@ -69,6 +69,8 @@ export default function ShadowingPage() {
     { id: "Xenova/whisper-tiny", label: "whisper-tiny（最快）" },
     { id: "Xenova/whisper-base", label: "whisper-base" },
     { id: "Xenova/whisper-small", label: "whisper-small（更准）" },
+    { id: "Xenova/whisper-medium", label: "whisper-medium（更高精度）" },
+    { id: "Xenova/whisper-large-v3", label: "whisper-large-v3（最高精度，最慢）" },
   ];
   const [whisperModel, setWhisperModel] = useState<string>(WHISPER_MODELS[0].id);
   const [asrText, setAsrText] = useState("");
@@ -381,6 +383,9 @@ export default function ShadowingPage() {
         ref: splitSentences(refText, lang), 
         hyp: splitSentences(hyp, lang) 
       });
+
+      // 一旦成功得到结果，立刻结束“评测中...”状态，避免按钮文案卡住
+      setAsrLoading(false);
 
       // 写入 sessions
       const { data: u } = await supabase.auth.getUser();

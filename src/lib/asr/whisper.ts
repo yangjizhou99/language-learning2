@@ -39,8 +39,10 @@ export async function getWhisper(modelId = "Xenova/whisper-tiny", progressCallba
 export async function transcribeBlob(blob: Blob, lang: string, modelId = "Xenova/whisper-tiny"): Promise<TranscribeOutput> {
   const pipe = await getWhisper(modelId);
   const langHint = lang === "zh" ? "zh" : lang; // zh-CN -> zh
-  const float32 = await decodeToFloat32Mono(blob);
-  const out: unknown = await pipe(float32, {
+  const { data: audioF32, sampleRate } = await decodeToFloat32MonoWithRate(blob);
+  const targetRate = 16000;
+  const audio16k = sampleRate === targetRate ? audioF32 : resampleFloat32(audioF32, sampleRate, targetRate);
+  const out: unknown = await pipe(audio16k, {
     chunk_length_s: 15,
     stride_length_s: 5,
     language: langHint,
@@ -51,26 +53,38 @@ export async function transcribeBlob(blob: Blob, lang: string, modelId = "Xenova
   return out as unknown as TranscribeOutput;
 }
 
-async function decodeToFloat32Mono(blob: Blob): Promise<Float32Array> {
+async function decodeToFloat32MonoWithRate(blob: Blob): Promise<{ data: Float32Array; sampleRate: number }> {
   const arrayBuffer = await blob.arrayBuffer();
   const AC: typeof AudioContext | undefined = (window as unknown as { AudioContext?: typeof AudioContext }).AudioContext
     || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AC) {
-    // 无法解码时回退为空数组，交由上层报错
-    return new Float32Array();
-  }
+  if (!AC) throw new Error("AudioContext 不可用");
   const audioCtx = new AC();
   const audioBuffer: AudioBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
-    // 使用带回调的重载，兼容性更好
     audioCtx.decodeAudioData(arrayBuffer.slice(0), resolve, reject);
   });
   const channels = Math.max(1, audioBuffer.numberOfChannels);
-  if (channels === 1) return audioBuffer.getChannelData(0);
+  const sr = audioBuffer.sampleRate;
+  if (channels === 1) return { data: audioBuffer.getChannelData(0), sampleRate: sr };
   const length = audioBuffer.length;
   const mixed = new Float32Array(length);
   for (let ch = 0; ch < channels; ch++) {
     const data = audioBuffer.getChannelData(ch);
     for (let i = 0; i < length; i++) mixed[i] += data[i] / channels;
   }
-  return mixed;
+  return { data: mixed, sampleRate: sr };
+}
+
+function resampleFloat32(input: Float32Array, fromRate: number, toRate: number): Float32Array {
+  if (fromRate === toRate) return input;
+  const ratio = toRate / fromRate;
+  const outLen = Math.max(1, Math.round(input.length * ratio));
+  const out = new Float32Array(outLen);
+  for (let i = 0; i < outLen; i++) {
+    const pos = i / ratio;
+    const i0 = Math.floor(pos);
+    const i1 = Math.min(i0 + 1, input.length - 1);
+    const frac = pos - i0;
+    out[i] = input[i0] * (1 - frac) + input[i1] * frac;
+  }
+  return out;
 }
