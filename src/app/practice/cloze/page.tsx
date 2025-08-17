@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { readSSE } from "@/lib/sse";
 import { supabase } from "@/lib/supabase";
 import { buildRAG } from "@/lib/rag";
 import { safeJsonFetch } from "@/lib/safeFetch";
@@ -23,6 +24,8 @@ export default function ClozePage() {
   const [error, setError] = useState<string>("");
   const [useRAG, setUseRAG] = useState(true);
   const [ragStats, setRagStats] = useState<{terms:number;phrases:number;hasProfile:boolean}>({terms:0,phrases:0,hasProfile:false});
+  const [streamMode, setStreamMode] = useState(true);
+  const [liveText, setLiveText] = useState("");
 
   const prepareLevel = async () => {
     if (mode === "manual") return level;
@@ -60,6 +63,52 @@ export default function ClozePage() {
       }
     } catch (e:any) {
       setError(e?.message || "网络错误");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const genStream = async () => {
+    setScore(null); setError(""); setLoading(true); setLiveText("");
+    try {
+      const finalLevel = await prepareLevel();
+      let rag = "";
+      if (useRAG) {
+        const r = await buildRAG(lang, topic);
+        rag = r.text;
+        setRagStats(r.stats);
+      } else {
+        setRagStats({terms:0, phrases:0, hasProfile:false});
+      }
+
+      const res = await fetch("/api/generate/cloze/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lang, topic, level: finalLevel, model: "deepseek-chat", rag })
+      });
+
+      let acc = "";
+      await readSSE(res, (t) => {
+        acc += t;
+        setLiveText(acc);
+      });
+
+      const trimmed = acc.trim();
+      let parsed: any;
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch {
+        const m = trimmed.match(/\{[\s\S]*\}/);
+        if (!m) throw new Error("LLM returned non-JSON");
+        parsed = JSON.parse(m[0]);
+      }
+      if (!parsed?.cloze || !Array.isArray(parsed?.blanks)) throw new Error("invalid cloze payload");
+      setData(parsed); 
+      setAnswers({});
+      setStartedAt(Date.now());
+    } catch (e:any) {
+      setError(e?.message || "流式生成失败，尝试回退普通请求…");
+      await gen();
     } finally {
       setLoading(false);
     }
@@ -145,11 +194,24 @@ export default function ClozePage() {
         <input className="border rounded px-2 py-1 flex-1"
                value={topic} onChange={e=>setTopic(e.target.value)}
                placeholder="话题，如：レストランで注文 / 約束の時間調整 / Travel plan" />
-        <button onClick={gen} disabled={loading}
-                className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">
-          {loading ? "生成中..." : "生成题目"}
-        </button>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1 text-sm">
+            <input type="checkbox" checked={streamMode} onChange={e=>setStreamMode(e.target.checked)} />
+            流式
+          </label>
+          <button
+            onClick={streamMode ? genStream : gen}
+            disabled={loading}
+            className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">
+            {loading ? "生成中..." : "生成题目"}
+          </button>
+        </div>
       </div>
+      {streamMode && loading && (
+        <pre className="p-3 bg-gray-50 rounded text-xs overflow-auto max-h-40 whitespace-pre-wrap">
+          {liveText || "（流式输出中…）"}
+        </pre>
+      )}
       <div className="flex gap-2 items-center">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={useRAG} onChange={e=>setUseRAG(e.target.checked)} />

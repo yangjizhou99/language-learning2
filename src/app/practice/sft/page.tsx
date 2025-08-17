@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
+import { readSSE } from "@/lib/sse";
 import { supabase } from "@/lib/supabase";
 import { safeJsonFetch } from "@/lib/safeFetch";
 import { nextSftLevel, SftLevel } from "@/lib/adaptive";
@@ -37,6 +38,8 @@ export default function SFTPage() {
   const [evalRes, setEvalRes] = useState<EvalResp | null>(null);
   const [error, setError] = useState("");
   const [useRAG, setUseRAG] = useState(true);
+  const [streamMode, setStreamMode] = useState(true);
+  const [liveEval, setLiveEval] = useState("");
   const [ragStats, setRagStats] = useState<{terms:number;phrases:number;hasProfile:boolean}>({terms:0,phrases:0,hasProfile:false});
 
   const canEval = useMemo(() => !!(task && userOutput.trim().length > 0), [task, userOutput]);
@@ -66,6 +69,79 @@ export default function SFTPage() {
       setError(e?.message || "网络错误");
     } finally {
       setLoadingTask(false);
+    }
+  };
+
+  const doEvalStream = async () => {
+    if (!task) return;
+    setError(""); setLoadingEval(true); setEvalRes(null); setLiveEval("");
+    try {
+      let rag = "";
+      try {
+        // 若已实现 buildRAG
+        const mod: any = (globalThis as any);
+        if (mod.buildRAG) rag = (await mod.buildRAG(lang, topic)).text;
+      } catch {}
+
+      const res = await fetch("/api/eval/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lang,
+          instruction: task.instruction,
+          user_output: userOutput,
+          rubrics: task.rubrics,
+          model,
+          rag
+        })
+      });
+
+      let acc = "";
+      await readSSE(res, (t) => { acc += t; setLiveEval(acc); });
+
+      // 解析 JSON
+      const trimmed = acc.trim();
+      let parsed: any;
+      try { parsed = JSON.parse(trimmed); }
+      catch {
+        const m = trimmed.match(/\{[\s\S]*\}/);
+        if (!m) throw new Error("LLM non-JSON");
+        parsed = JSON.parse(m[0]);
+      }
+
+      // 归一化
+      if (!parsed?.scores || typeof parsed?.feedback !== "string") throw new Error("invalid eval payload");
+      for (const k of Object.keys(parsed.scores)) {
+        let v = Number(parsed.scores[k]);
+        if (!Number.isFinite(v)) v = 1;
+        parsed.scores[k] = Math.max(1, Math.min(5, Math.round(v)));
+      }
+      const vals = Object.values(parsed.scores) as number[];
+      parsed.overall = vals.length ? Math.round((vals.reduce((a,b)=>a+b,0)/vals.length)*10)/10 : undefined;
+
+      setEvalRes(parsed);
+
+      // 写入 sessions（沿用你原有逻辑）
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u?.user?.id;
+      if (uid) {
+        await supabase.from("sessions").insert({
+          user_id: uid,
+          task_type: "sft",
+          topic,
+          input: { instruction: task.instruction, rubrics: task.rubrics },
+          output: { user_output: userOutput },
+          ai_feedback: parsed,
+          score: parsed?.overall ?? null,
+          duration_sec: startedAt ? Math.max(1, Math.round((Date.now()-startedAt)/1000)) : null,
+          difficulty: sftLevel
+        });
+      }
+    } catch (e:any) {
+      setError(e?.message || "流式打分失败，尝试回退普通请求…");
+      await doEval();
+    } finally {
+      setLoadingEval(false);
     }
   };
 
@@ -203,12 +279,22 @@ export default function SFTPage() {
               placeholder={lang === "ja" ? "ここに丁寧語で書いてみよう..." : "Write here in a polite tone..."}
             />
             <div className="flex items-center gap-3">
-              <button onClick={doEval} disabled={!canEval || loadingEval} className="px-3 py-1 rounded bg-emerald-600 text-white disabled:opacity-60">
+              <label className="flex items-center gap-1 text-sm">
+                <input type="checkbox" checked={streamMode} onChange={e=>setStreamMode(e.target.checked)} />
+                流式
+              </label>
+              <button onClick={streamMode ? doEvalStream : doEval} disabled={!canEval || loadingEval} className="px-3 py-1 rounded bg-emerald-600 text-white disabled:opacity-60">
                 {loadingEval ? "打分中..." : "AI 打分"}
               </button>
               {evalRes?.overall!=null && <span className="text-sm">总体：<b>{evalRes.overall}</b>/5</span>}
             </div>
           </div>
+
+          {streamMode && loadingEval && (
+            <pre className="p-3 bg-gray-50 rounded text-xs overflow-auto max-h-40 whitespace-pre-wrap">
+              {liveEval || "（流式输出中…）"}
+            </pre>
+          )}
 
           {evalRes && (
             <div className="p-4 bg-gray-50 rounded-2xl shadow-inner space-y-3">
