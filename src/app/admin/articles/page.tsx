@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function AdminArticles() {
@@ -148,23 +148,45 @@ function AIForm() {
   const [difficulty, setDifficulty] = useState(3);
   const [topic, setTopic] = useState("");
   const [words, setWords] = useState(300);
-  const [model, setModel] = useState("deepseek-chat");
+  const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("openrouter");
+  const [models, setModels] = useState<{id:string;name:string}[]>([]);
+  const [model, setModel] = useState("openai/gpt-4o-mini");
   const [temperature, setTemperature] = useState(0.6);
   const [log, setLog] = useState("");
 
+  // 加载模型列表
+  useEffect(()=>{ 
+    (async()=>{
+      if (provider==="openrouter") {
+        const r = await fetch(`/api/ai/models?provider=${provider}`); 
+        const j = await r.json(); 
+        setModels(j||[]);
+        if (j && j.length > 0) setModel(j[0].id);
+      } else if (provider==="deepseek") {
+        const staticModels = [{id:"deepseek-chat", name:"deepseek-chat"},{id:"deepseek-reasoner",name:"deepseek-reasoner"}];
+        setModels(staticModels);
+        setModel("deepseek-chat");
+      } else {
+        const staticModels = [{id:"gpt-4o-mini", name:"gpt-4o-mini"}];
+        setModels(staticModels);
+        setModel("gpt-4o-mini");
+      }
+    })(); 
+  }, [provider]);
+
   const submit = async () => {
-    setLog("生成与入库中…");
+    setLog("生成草稿中…");
     const { data: { session } } = await supabase.auth.getSession();
-    const r = await fetch("/api/admin/ingest/ai", {
+    const r = await fetch("/api/admin/drafts/ai", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
       },
-      body: JSON.stringify({ lang, genre, difficulty, topic: topic||undefined, words, model, temperature })
+      body: JSON.stringify({ lang, genre, difficulty, topic: topic||undefined, words, model, temperature, provider })
     });
     const j = await r.json();
-    setLog(r.ok ? `成功：${j.title}（id=${j.article_id}）` : `失败：${j.error}`);
+    setLog(r.ok ? `草稿已生成：id=${j.draft_id}，标题：${j.title}。请到草稿箱审核发布。` : `失败：${j.error}`);
   };
 
   return (
@@ -174,20 +196,26 @@ function AIForm() {
         value={difficulty} onChange={e=>setDifficulty(Number(e.target.value)||3)} /></Row>
       <Row label="主题"><input className="border rounded px-2 py-1 w-full" placeholder="可选：主题/场景/话题" value={topic} onChange={e=>setTopic(e.target.value)} /></Row>
       <Row label="目标长度"><input type="number" className="border rounded px-2 py-1 w-28" value={words} onChange={e=>setWords(Number(e.target.value)||300)} /></Row>
-      <Row label="模型/温度">
-        <select className="border rounded px-2 py-1" value={model} onChange={e=>setModel(e.target.value)}>
-          <option value="deepseek-chat">deepseek-chat</option>
-          <option value="deepseek-reasoner">deepseek-reasoner</option>
-          {/* 如果你还有别的模型，可继续追加 */}
+      <Row label="模型来源">
+        <select className="border rounded px-2 py-1" value={provider} onChange={e=>setProvider(e.target.value as "openrouter"|"deepseek"|"openai")}>
+          <option value="openrouter">OpenRouter（推荐）</option>
+          <option value="deepseek">DeepSeek 直连</option>
+          <option value="openai">OpenAI 直连</option>
         </select>
+        <select className="border rounded px-2 py-1 ml-2" value={model} onChange={e=>setModel(e.target.value)}>
+          {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+        </select>
+      </Row>
+      <Row label="温度">
         <input type="number" step="0.1" min={0} max={1} className="border rounded px-2 py-1 w-24"
           value={temperature} onChange={e=>setTemperature(Number(e.target.value)||0.6)} />
       </Row>
       <div className="flex gap-2">
-        <button onClick={submit} className="px-3 py-1 rounded bg-black text-white">AI 生成并入库</button>
+        <button onClick={submit} className="px-3 py-1 rounded bg-black text-white">生成草稿</button>
+        <a href="/admin/drafts" className="px-3 py-1 rounded border text-sm">查看草稿箱</a>
       </div>
       {log && <pre className="p-3 bg-gray-50 rounded text-sm whitespace-pre-wrap">{log}</pre>}
-      <p className="text-xs text-gray-500">说明：只生成原创正文；答案键与 Cloze 由规则自动提取，保证可复核。</p>
+      <p className="text-xs text-gray-500">说明：AI 生成草稿 → 管理员审核 → 发布到正式题库。支持 OpenRouter 多模型选择。</p>
     </section>
   );
 }

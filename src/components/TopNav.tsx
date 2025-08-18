@@ -62,6 +62,7 @@ export default function TopNav() {
           <Link href="/review">复盘</Link>
           <Link href="/glossary">术语库</Link>
           <Link href="/settings/profile">我的资料</Link>
+          <Link href="/admin/setup" className="text-orange-600">🔧 管理员</Link>
           <span className="mx-2 text-gray-400">|</span>
           {!email ? (
             <Link href="/auth" className="px-3 py-1 rounded bg-black text-white">登录 / 注册</Link>
