@@ -62,6 +62,7 @@ export default function TopNav() {
           <Link href="/review">复盘</Link>
           <Link href="/glossary">术语库</Link>
           <Link href="/settings/profile">我的资料</Link>
+          <Link href="/admin/drafts" prefetch={false}>草稿箱</Link>
           <Link href="/admin/setup" className="text-orange-600">🔧 管理员</Link>
           <span className="mx-2 text-gray-400">|</span>
           {!email ? (
