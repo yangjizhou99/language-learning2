@@ -22,6 +22,14 @@ export default function DraftDetail() {
   const [sug, setSug] = useState<any>(null);
   const [genLoading, setGenLoading] = useState(false);
 
+  // 文本建议（不带索引）
+  const [tProvider, setTProvider] = useState<"openrouter"|"deepseek"|"openai">("openrouter");
+  const [tModels, setTModels] = useState<{id:string;name:string}[]>([]);
+  const [tModel, setTModel] = useState<string>("");
+  const [tTemp, setTTemp] = useState(0.3);
+  const [textSug, setTextSug] = useState<any>(null);
+  const [textGenLoading, setTextGenLoading] = useState(false);
+
   // 本地可编辑状态
   const [p1, setP1] = useState<KeyP1[]>([]);
   const [p2, setP2] = useState<KeyP2[]>([]);
@@ -61,6 +69,19 @@ export default function DraftDetail() {
       const j=[{id:"gpt-4o-mini",name:"gpt-4o-mini"}]; setModels(j); setModel(j[0].id);
     }
   })(); }, [provider, genMode]);
+
+  useEffect(()=>{ (async()=>{
+    if (tProvider==="openrouter") {
+      const r = await fetch(`/api/ai/models?provider=${tProvider}`); const j = await r.json();
+      setTModels(j||[]); setTModel(j?.[0]?.id||"");
+    } else if (tProvider==="deepseek") {
+      const j=[{id:"deepseek-chat",name:"deepseek-chat"},{id:"deepseek-reasoner",name:"deepseek-reasoner"}];
+      setTModels(j); setTModel(j[0].id);
+    } else {
+      const j=[{id:"gpt-4o-mini",name:"gpt-4o-mini"}];
+      setTModels(j); setTModel(j[0].id);
+    }
+  })(); }, [tProvider]);
 
   const update = async (patch:any) => {
     try {
@@ -105,6 +126,85 @@ export default function DraftDetail() {
           <button onClick={publish} className="px-3 py-1 rounded bg-black text-white">发布 → 正式题库</button>
         </div>
         {log && <pre className="text-sm p-2 bg-gray-50 rounded">{log}</pre>}
+      </section>
+
+      {/* 文本参考意见（不带索引） */}
+      <section className="p-4 bg-white rounded-2xl shadow space-y-3">
+        <h3 className="font-medium">文本参考意见（AI 给文字提示，我来手工标注）</h3>
+        <div className="flex flex-wrap items-center gap-2">
+          <select value={tProvider} onChange={e=>setTProvider(e.target.value as any)} className="border rounded px-2 py-1">
+            <option value="openrouter">OpenRouter</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="openai">OpenAI</option>
+          </select>
+          <select value={tModel} onChange={e=>setTModel(e.target.value)} className="border rounded px-2 py-1 min-w-[220px]">
+            {tModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+          <label className="text-sm">温度</label>
+          <input type="number" step={0.1} min={0} max={1} className="border rounded px-2 py-1 w-24"
+                value={tTemp} onChange={e=>setTTemp(Number(e.target.value)||0.3)} />
+          <button
+            onClick={async ()=>{
+              setTextGenLoading(true);
+              try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const token = session?.access_token;
+                const r = await fetch(`/api/admin/drafts/${id}/suggest-text`, {
+                  method:"POST", headers:{ "Content-Type":"application/json", ...(token?{ Authorization:`Bearer ${token}` }:{} ) },
+                  body: JSON.stringify({ provider: tProvider, model: tModel, temperature: tTemp })
+                });
+                const j = await r.json();
+                setTextGenLoading(false);
+                if (!r.ok) { setLog("文本建议失败：" + (j.error||r.statusText)); return; }
+                setTextSug(j.suggestions);
+                setLog(`AI 文本建议已生成。用量：PT=${j.usage.prompt_tokens}, CT=${j.usage.completion_tokens}, TT=${j.usage.total_tokens}`);
+              } catch (e:any) {
+                setTextGenLoading(false); setLog(`文本建议异常：${e.message||e}`);
+              }
+            }}
+            className="px-3 py-1 rounded bg-indigo-600 text-white">
+            {textGenLoading ? "生成中…" : "生成文本建议"}
+          </button>
+        </div>
+
+        {textSug && (
+          <div className="grid md:grid-cols-2 gap-4 text-sm">
+            <div className="p-3 bg-gray-50 rounded">
+              <div className="font-medium mb-1">Pass1（连接词/时间）</div>
+              <div className="mb-2">
+                <div className="text-xs text-gray-500">连接词</div>
+                <ul className="list-disc pl-5">{(textSug.pass1_suggestions?.connectives||[]).map((s:string,i:number)=><li key={i}>{s}</li>)}</ul>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500">时间表达</div>
+                <ul className="list-disc pl-5">{(textSug.pass1_suggestions?.time||[]).map((s:string,i:number)=><li key={i}>{s}</li>)}</ul>
+              </div>
+            </div>
+            <div className="p-3 bg-gray-50 rounded">
+              <div className="font-medium mb-1">Pass2（指代→先行词 提示）</div>
+              <ul className="list-disc pl-5">
+                {(textSug.pass2_pairs||[]).map((p:any,i:number)=><li key={i}><b>{p.pronoun}</b> → {p.antecedent_hint}</li>)}
+              </ul>
+            </div>
+            <div className="p-3 bg-gray-50 rounded">
+              <div className="font-medium mb-1">Pass3（三元组文字）</div>
+              <ul className="list-disc pl-5">
+                {(textSug.triples_text||[]).map((s:string,i:number)=><li key={i}>{s}</li>)}
+              </ul>
+            </div>
+            <div className="p-3 bg-gray-50 rounded">
+              <div className="font-medium mb-1">Cloze 候选短语</div>
+              <ul className="list-disc pl-5">
+                {(textSug.cloze_candidates||[]).map((c:any,i:number)=><li key={i}>{c.phrase} <span className="text-xs text-gray-500">({c.hint})</span></li>)}
+              </ul>
+            </div>
+            <details className="md:col-span-2">
+              <summary className="cursor-pointer">查看原始 JSON</summary>
+              <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto">{JSON.stringify(textSug, null, 2)}</pre>
+            </details>
+          </div>
+        )}
+        {!textSug && <div className="text-xs text-gray-500">生成后，这里会显示一份“文字清单”。请参照清单，在下方的可视化标注器中手工框选标注。</div>}
       </section>
 
       {/* 生成答案（AI/规则） */}
