@@ -26,16 +26,21 @@ function sub(text:string, span?:[number,number]) { if (!span) return ""; return 
 function fmtSpan(text:string, span?:[number,number]) { return span ? `"${sub(text, span).slice(0,24)}"` : "—"; }
 
 function paint(text:string, spans: {span:[number,number], className:string, title?:string}[]) {
-  // 将 text 切分成片段并包裹样式
+  // 将 text 切分成片段并包裹样式（保证 key 唯一）
   const marks = spans.slice().sort((a,b)=>a.span[0]-b.span[0]);
   const out: React.ReactNode[] = [];
   let cur = 0;
-  for (const m of marks) {
-    if (cur < m.span[0]) out.push(<span key={cur+"t"}>{text.slice(cur, m.span[0])}</span>);
-    out.push(<mark key={m.span[0]} className={m.className} title={m.title}>{text.slice(m.span[0], m.span[1])}</mark>);
+  for (let i = 0; i < marks.length; i++) {
+    const m = marks[i];
+    if (cur < m.span[0]) out.push(<span key={`g-${i}-${cur}`}>{text.slice(cur, m.span[0])}</span>);
+    out.push(
+      <mark key={`m-${i}-${m.span[0]}-${m.span[1]}`} className={m.className} title={m.title}>
+        {text.slice(m.span[0], m.span[1])}
+      </mark>
+    );
     cur = m.span[1];
   }
-  if (cur < text.length) out.push(<span key={"tail"}>{text.slice(cur)}</span>);
+  if (cur < text.length) out.push(<span key={`tail-${cur}`}>{text.slice(cur)}</span>);
   return out;
 }
 
