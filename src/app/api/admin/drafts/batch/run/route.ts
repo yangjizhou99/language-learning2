@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { chatJSON } from "@/lib/ai/client";
-import { normUsage, sumUsage } from "@/lib/ai/usage";
+import { normUsage, sumUsage, type Usage } from "@/lib/ai/usage";
 import { getServiceSupabase } from "@/lib/supabaseAdmin";
 
 function buildPrompt(b: any) {
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 	}
 
 	let processed = 0;
-	let usageDelta = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+	let usageDelta: Usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 	const errors: any[] = [];
 
 	for (const item of candidates) {
