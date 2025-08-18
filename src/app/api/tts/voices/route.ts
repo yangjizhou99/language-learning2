@@ -4,6 +4,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import textToSpeech from "@google-cloud/text-to-speech";
 import { toLocaleCode } from "@/types/lang";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
@@ -13,11 +15,59 @@ function makeClient() {
   return new textToSpeech.TextToSpeechClient({ credentials, projectId });
 }
 
+async function requireUser() {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set() {
+          // no-op for Route Handler; we don't mutate cookies here
+        },
+        remove() {
+          // no-op for Route Handler; we don't mutate cookies here
+        },
+      }
+    }
+  );
+  const { data } = await supabase.auth.getUser();
+  return data.user ?? null;
+}
+
+// 简易进程内限流（按用户+语言 5s 冷却）
+const bucket = new Map<string, number>();
+function hit(key: string, windowMs = 5000) {
+  const now = Date.now();
+  const last = bucket.get(key) || 0;
+  if (now - last < windowMs) return false;
+  bucket.set(key, now);
+  return true;
+}
+
 export async function GET(req: NextRequest) {
   try {
+    const user = await requireUser();
+    if (!user) return new NextResponse("Unauthorized", { status: 401 });
+
     const { searchParams } = new URL(req.url);
     const lang = searchParams.get("lang") || "ja";
     const kind = (searchParams.get("kind") || "Neural2").toLowerCase(); // neural2|wavenet|all
+
+    const gateKey = `${user.id}:${lang}`;
+    if (!hit(gateKey, 5000)) {
+      return new NextResponse(JSON.stringify([]), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "s-maxage=60, stale-while-revalidate=300"
+        }
+      });
+    }
+
     const client = makeClient();
 
     // 按语言过滤（Google 也支持不带 languageCode 的全量，但我们先缩小）
@@ -59,7 +109,8 @@ export async function GET(req: NextRequest) {
         "Cache-Control": "s-maxage=86400, stale-while-revalidate=604800"
       }
     });
-  } catch (e:any) {
-    return NextResponse.json({ error: e?.message || "list voices failed" }, { status: 500 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "list voices failed";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

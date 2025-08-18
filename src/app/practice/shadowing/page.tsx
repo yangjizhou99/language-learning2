@@ -47,7 +47,7 @@ export default function ShadowingPage() {
   const [err, setErr] = useState("");
 
   // TTS
-  const [voices, setVoices] = useState<{name:string; type:string; ssmlGender:string; naturalSampleRateHertz:number}[]>([]);
+  const [voices, setVoices] = useState<{name:string; type?:string; ssmlGender?:string; naturalSampleRateHertz?:number}[]>([]);
   const [voiceName, setVoiceName] = useState<string>("");
   const [rate, setRate] = useState<number>(1.0);
   const [pitch, setPitch] = useState<number>(0);
@@ -76,29 +76,21 @@ export default function ShadowingPage() {
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
   const recognitionPromiseRef = useRef<Promise<string> | null>(null);
 
-  // 当语言变化或点击“刷新声音”时获取声音列表
-  const fetchVoices = useCallback(async (kind: "Neural2" | "WaveNet" | "Standard" | "all" = "Neural2") => {
+  // 懒加载 + 缓存
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
+  const loadVoices = useCallback(async (kind: "Neural2" | "WaveNet" | "all" = "Neural2") => {
     try {
-      const r = await fetch(`/api/tts/voices?lang=${lang}&kind=${kind}`);
-      const j = await r.json();
-      if (Array.isArray(j)) {
-        setVoices(j);
-        // 自动选第一个
-        if (j.length && !voiceName) setVoiceName(j[0].name);
-      } else {
-        setErr(j?.error || "无法获取声音列表");
-      }
+      const { getVoicesCached } = await import("@/lib/voices");
+      const list = await getVoicesCached(lang, kind);
+      setVoices(list);
+      setVoicesLoaded(true);
+      if (!voiceName && list[0]) setVoiceName(list[0].name);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "无法获取声音列表");
     }
   }, [lang, voiceName]);
 
-  // 页面挂载或 lang 改变时刷新
-  useEffect(() => {
-    setVoiceName("");
-    // 中文默认取全部，避免没有中文选项
-    fetchVoices(lang === "zh" ? "all" : "Neural2");
-  }, [lang, fetchVoices]);
+  useEffect(() => { setVoiceName(""); setVoices([]); setVoicesLoaded(false); }, [lang]);
 
   // Google 服务端合成（失败回退 Web Speech）
   const synthGoogle = async () => {
@@ -579,12 +571,12 @@ export default function ShadowingPage() {
             <h3 className="font-medium">Google TTS（WaveNet / Neural2）</h3>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button onClick={()=>fetchVoices("Neural2")} className="px-3 py-1 rounded border">刷新 Neural2</button>
-              <button onClick={()=>fetchVoices("WaveNet")} className="px-3 py-1 rounded border">刷新 WaveNet</button>
-              <button onClick={()=>fetchVoices("all")} className="px-3 py-1 rounded border">全部/Standard</button>
-              <button onClick={()=>fetchVoices("all")} className="px-3 py-1 rounded border">全部声音</button>
+              <button onClick={()=>loadVoices("Neural2")} className="px-3 py-1 rounded border">刷新 Neural2</button>
+              <button onClick={()=>loadVoices("WaveNet")} className="px-3 py-1 rounded border">刷新 WaveNet</button>
+              <button onClick={()=>loadVoices("all")} className="px-3 py-1 rounded border">全部/Standard</button>
+              <button onClick={()=>loadVoices("all")} className="px-3 py-1 rounded border">全部声音</button>
 
-              <select value={voiceName} onChange={e=>setVoiceName(e.target.value)} className="border rounded px-2 py-1 min-w-[280px]">
+              <select onFocus={()=>{ if (!voicesLoaded) loadVoices(lang === "zh" ? "all" : "Neural2"); }} value={voiceName} onChange={e=>setVoiceName(e.target.value)} className="border rounded px-2 py-1 min-w-[280px]">
                 {voices.map(v => (
                   <option key={v.name} value={v.name}>
                     {v.name} · {v.type} · {v.ssmlGender?.toString().replace("SSML_VOICE_GENDER_","")}

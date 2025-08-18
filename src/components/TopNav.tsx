@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 
 export default function TopNav() {
   const [email, setEmail] = useState<string|undefined>();
@@ -36,7 +36,7 @@ export default function TopNav() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const router = useRouter();
+  // const router = useRouter();
   const signOut = async () => {
     try {
       setEmail(undefined);
@@ -56,9 +56,9 @@ export default function TopNav() {
         <div className="flex items-center gap-3">
           <Link href="/practice/cloze">Cloze</Link>
           <Link href="/practice/sft">SFT</Link>
-          <Link href="/practice/wideread">广读</Link>
+          <Link href="/practice/wideread" prefetch={false}>广读</Link>
           <Link href="/phrase-bank">短语库</Link>
-          <Link href="/practice/shadowing">Shadowing</Link>
+          <Link href="/practice/shadowing" prefetch={false}>Shadowing</Link>
           <Link href="/review">复盘</Link>
           <Link href="/glossary">术语库</Link>
           <Link href="/settings/profile">我的资料</Link>

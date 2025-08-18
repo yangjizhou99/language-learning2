@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { LANG_LABEL, type Lang } from "@/types/lang";
+import type { Voice } from "@/lib/voices";
 
 type ArticleMeta = {
   author?: string;
@@ -27,7 +28,7 @@ function fmtSpan(text:string, span?:[number,number]) { return span ? `"${sub(tex
 function paint(text:string, spans: {span:[number,number], className:string, title?:string}[]) {
   // 将 text 切分成片段并包裹样式
   const marks = spans.slice().sort((a,b)=>a.span[0]-b.span[0]);
-  const out: any[] = [];
+  const out: React.ReactNode[] = [];
   let cur = 0;
   for (const m of marks) {
     if (cur < m.span[0]) out.push(<span key={cur+"t"}>{text.slice(cur, m.span[0])}</span>);
@@ -168,7 +169,7 @@ function ClozeView({text, items, answers, onChange}:{
   onChange: (i:number, v:string)=>void;
 }) {
   if (!items.length) return <div className="text-sm text-gray-500">当前文章暂无 Cloze 版本</div>;
-  const parts: any[] = [];
+  const parts: React.ReactNode[] = [];
   let cur = 0;
   items.forEach((it, idx) => {
     if (cur < it.start) parts.push(<span key={cur+"t"}>{text.slice(cur, it.start)}</span>);
@@ -196,7 +197,7 @@ export default function WideReadPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  const fetchList = async () => {
+  const fetchList = useCallback(async () => {
     setErr(""); setLoading(true);
     try {
       const { data, error } = await supabase
@@ -207,11 +208,11 @@ export default function WideReadPage() {
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
-      setArticles((data||[]) as any);
-      setCur((data?.[0] as any) ?? null);
-    } catch (e:any) { setErr(e.message||"加载失败"); }
+      setArticles((data||[]) as Article[]);
+      setCur(((data?.[0] as unknown) as Article) ?? null);
+    } catch (e: unknown) { setErr(e instanceof Error ? e.message : "加载失败"); }
     finally { setLoading(false); }
-  };
+  }, [lang, genre, difficulty]);
 
   const pickRandom = () => {
     if (!articles.length) return;
@@ -228,35 +229,34 @@ export default function WideReadPage() {
         supabase.from("article_cloze").select("*").eq("article_id", cur.id)
       ]);
       if (k.error) setErr(k.error.message);
-      else setKeys({ pass1: (k.data?.pass1||[]) as any, pass2: (k.data?.pass2||[]) as any, pass3: (k.data?.pass3||[]) as any });
+      else setKeys({ pass1: (k.data?.pass1||[]) as KeyPass1, pass2: (k.data?.pass2||[]) as KeyPass2, pass3: (k.data?.pass3||[]) as KeyPass3 });
       if (c.error) setErr(c.error.message);
-      else setClozeSets((c.data||[]) as any);
+      else setClozeSets((c.data||[]) as ClozeSet[]);
       // 重置练习状态
       resetAll();
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cur?.id]);
 
-  useEffect(() => { fetchList(); }, [lang, genre, difficulty]);
+  useEffect(() => { fetchList(); }, [fetchList]);
 
   // ---------- Google TTS ----------
-  const [voices, setVoices] = useState<{name:string;type:string;ssmlGender:string}[]>([]);
+  const [voices, setVoices] = useState<{name:string;type?:string;ssmlGender?:string}[]>([]);
   const [voiceName, setVoiceName] = useState("");
   const [ttsUrl, setTtsUrl] = useState("");
   const [rate, setRate] = useState(1.0);
   const [pitch, setPitch] = useState(0);
 
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
   const loadVoices = async (kind:"Neural2"|"WaveNet"|"all"="Neural2") => {
-    const r = await fetch(`/api/tts/voices?lang=${lang}&kind=${kind}`);
-    const j = await r.json();
-    if (Array.isArray(j)) {
-      setVoices(j);
-      const pref = j.find((v:any)=> v.name.startsWith(lang==="zh"?"zh-CN-Neural2": lang==="ja"?"ja-JP-Neural2":"en-US-Neural2"))
-                || j[0];
-      setVoiceName(prev => prev || pref?.name || "");
-    }
+    const { getVoicesCached } = await import("@/lib/voices");
+    const j = await getVoicesCached(lang, kind);
+    setVoices(j);
+    setVoicesLoaded(true);
+    const pref = j.find((v: Voice)=> v.name.startsWith(lang==="zh"?"zh-CN-Neural2": lang==="ja"?"ja-JP-Neural2":"en-US-Neural2"))
+              || j[0];
+    setVoiceName(prev => prev || pref?.name || "");
   };
-  useEffect(()=>{ loadVoices("Neural2"); }, [lang]);
+  useEffect(()=>{ setVoices([]); setVoiceName(""); setVoicesLoaded(false); }, [lang]);
 
     const synth = async () => {
     if (!cur?.text) return;
@@ -484,8 +484,8 @@ export default function WideReadPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button onClick={()=>loadVoices("Neural2")} className="px-2 py-1 border rounded text-sm">Neural2 声音</button>
             <button onClick={()=>loadVoices("WaveNet")} className="px-2 py-1 border rounded text-sm">WaveNet 声音</button>
-            <select value={voiceName} onChange={e=>setVoiceName(e.target.value)} className="border rounded px-2 py-1 min-w-[260px]">
-              {voices.map(v=> <option key={v.name} value={v.name}>{v.name} · {v.ssmlGender.replace("SSML_VOICE_GENDER_","")}</option>)}
+            <select onFocus={()=>{ if (!voicesLoaded) loadVoices("Neural2"); }} value={voiceName} onChange={e=>setVoiceName(e.target.value)} className="border rounded px-2 py-1 min-w-[260px]">
+              {voices.map(v=> <option key={v.name} value={v.name}>{v.name} · {(v.ssmlGender||"").replace("SSML_VOICE_GENDER_","")}</option>)}
             </select>
             <label className="text-sm flex items-center gap-1">速率
               <input type="number" step="0.1" min="0.25" max="4" value={rate}
