@@ -56,6 +56,7 @@ export default function TopNav() {
         <div className="flex items-center gap-3">
           <Link href="/practice/cloze">Cloze</Link>
           <Link href="/practice/sft">SFT</Link>
+          <Link href="/practice/wideread">广读</Link>
           <Link href="/phrase-bank">短语库</Link>
           <Link href="/practice/shadowing">Shadowing</Link>
           <Link href="/review">复盘</Link>
