@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 type Span = [number,number];
@@ -8,8 +9,8 @@ type KeyP2 = { pron:Span; antecedents:Span[] };
 type KeyP3 = { s:Span; v:Span; o:Span };
 type Cloze = { start:number; end:number; answer:string; hint:string; type:string };
 
-export default function DraftDetail({ params }:{ params:{ id:string }}) {
-  const id = params.id;
+export default function DraftDetail() {
+  const { id } = useParams<{ id: string }>();
   const [d, setD] = useState<any>(null);
   const [log, setLog] = useState("");
   const [saving, setSaving] = useState(false);
