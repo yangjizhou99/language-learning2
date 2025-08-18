@@ -11,19 +11,41 @@ export default function AdminArticles() {
 
   const ingest = async () => {
     setLog("抓取与生成中…");
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { setLog("失败：请先登录管理员账号"); return; }
-    const r = await fetch("/api/admin/ingest", {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${session.access_token}`
-      },
-      body: JSON.stringify({ url, lang, genre, difficulty })
-    });
-    const j = await r.json();
-    if (!r.ok) setLog("失败：" + (j.error || r.statusText));
-    else setLog("成功：已入库 " + j.title + "（id=" + j.article_id + "）");
+    try {
+      const hasErrorField = (x: unknown): x is { error: string } => {
+        if (typeof x !== "object" || x === null) return false;
+        const maybe = x as { error?: unknown };
+        return typeof maybe.error === "string";
+      };
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLog("失败：请先登录管理员账号"); return; }
+      const r = await fetch("/api/admin/ingest", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ url, lang, genre, difficulty })
+      });
+      const isJson = (r.headers.get("content-type") || "").includes("application/json");
+      let body: unknown = null;
+      if (isJson) {
+        try { body = await r.json(); } catch { body = null; }
+      } else {
+        try { body = await r.text(); } catch { body = null; }
+      }
+      if (!r.ok) {
+        const errMsg = (isJson && hasErrorField(body)) ? body.error : (typeof body === "string" && body ? body.slice(0,500) : r.statusText);
+        setLog("失败：" + errMsg);
+        return;
+      }
+      type IngestResponse = { ok?: boolean; article_id?: string; title?: string; error?: string };
+      const j = (isJson ? (body as IngestResponse) : null);
+      setLog("成功：已入库 " + (j?.title ?? "") + "（id=" + (j?.article_id ?? "?") + "）");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setLog("失败：" + msg);
+    }
   };
 
   return (
