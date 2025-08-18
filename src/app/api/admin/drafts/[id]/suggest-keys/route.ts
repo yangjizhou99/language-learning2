@@ -92,7 +92,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const ps = clamp(x.pron?.[0] ?? 0, 0, len), pe = clamp(x.pron?.[1] ?? 0, 0, len);
     const pron: Span = [ps, pe]; if (pe <= ps) return null;
     const ants = (x.antecedents || []).map((a: any) => [clamp(a?.[0] ?? 0, 0, len), clamp(a?.[1] ?? 0, 0, len)] as Span)
-      .filter(a => a[1] > a[0] && a[1] <= pron[0] && sameSentence(a, pron))
+      .filter((a: Span) => a[1] > a[0] && a[1] <= pron[0] && sameSentence(a, pron))
       .slice(-3);
     return ants.length ? { pron, antecedents: ants } : null;
   }).filter(Boolean);
