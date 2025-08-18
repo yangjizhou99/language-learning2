@@ -5,9 +5,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { chatJSON } from "@/lib/ai/client";
 import { normUsage, sumUsage } from "@/lib/ai/usage";
-import { pass1, pass2, pass3, makeCloze } from "@/lib/answerkey/generate";
-import { splitSentencesWithIndex } from "@/lib/nlp/segment";
-import { inBounds, exact } from "@/lib/answerkey/validate";
 import { getServiceSupabase } from "@/lib/supabaseAdmin";
 
 function buildPrompt(b: any) {
@@ -83,34 +80,16 @@ export async function POST(req: NextRequest) {
 			const text: string = String(parsed.text || "").trim();
 			if (text.length < 200) throw new Error("文本过短");
 
-			// 2) 生成答案键 + 验证
-			const lang = batch.lang;
-			const p1 = pass1(text, lang), p2 = pass2(text, lang), p3 = pass3(text, lang);
-			const shortCloze = makeCloze(text, lang, "short");
-			const longCloze = makeCloze(text, lang, "long");
-			const sents = splitSentencesWithIndex(text, lang), len = text.length;
-
-			const p1c = (p1 as any[]).filter((k: any) => inBounds(k.span, len) && exact(text, k.span, text.slice(k.span[0], k.span[1])));
-			const p2c = (p2 as any[]).map((x: any) => ({
-				pron: x.pron,
-				antecedents: (x.antecedents || []).filter((a: any) => inBounds(a, len) && a[1] <= x.pron[0] && sents.some(S => a[0] >= S.start && a[1] <= S.end && x.pron[0] >= S.start && x.pron[1] <= S.end)).slice(-3)
-			})).filter((x: any) => x.antecedents.length > 0);
-			const p3c = (p3 as any[]).filter((t: any) => {
-				const same = sents.some(S => t.s[0] >= S.start && t.o[1] <= S.end);
-				const order = t.s[0] <= t.v[0] && t.v[0] <= t.o[0];
-				const disjoint = t.s[1] <= t.v[0] && t.v[1] <= t.o[0];
-				return same && order && disjoint;
-			});
-
-			// 3) 写入草稿
+			// 2) 写入草稿（不生成答案；keys/cloze 为空，后续在草稿详情页生成）
 			const { data: draft, error: eDraft } = await supabase.from("article_drafts").insert([
 				{
-					source: "ai", lang, genre: batch.genre, difficulty: item.difficulty,
+					source: "ai", lang: batch.lang, genre: batch.genre, difficulty: item.difficulty,
 					title, text, license: "AI-Generated",
 					ai_provider: batch.provider, ai_model: batch.model, ai_params: { temperature: batch.temperature, topic: item.topic, words: batch.words },
-					ai_usage: u, keys: { pass1: p1c, pass2: p2c, pass3: p3c },
-					cloze_short: shortCloze, cloze_long: longCloze,
-					validator_report: { len, sentences: sents.length, p1: p1c.length, p2: p2c.length, p3: p3c.length },
+					ai_usage: u,
+					keys: { pass1: [], pass2: [], pass3: [] },
+					cloze_short: [], cloze_long: [],
+					validator_report: { len: text.length },
 					status: "pending", created_by: auth.user.id
 				}
 			]).select("id").single();

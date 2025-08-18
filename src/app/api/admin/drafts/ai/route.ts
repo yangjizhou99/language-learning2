@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { chatJSON } from "@/lib/ai/client";
-import { pass1, pass2, pass3, makeCloze } from "@/lib/answerkey/generate";
-import { splitSentencesWithIndex } from "@/lib/nlp/segment";
-import { inBounds, exact } from "@/lib/answerkey/validate";
 
 export const runtime = "nodejs"; 
 export const dynamic = "force-dynamic";
@@ -46,32 +43,15 @@ export async function POST(req: NextRequest) {
   const text: string = String(parsed.text||"").trim();
   if (text.length < 200) return NextResponse.json({ error:"文本过短" }, { status: 400 });
 
-  // 2) 规则生成答案键 + Cloze，并做校验过滤
-  const p1 = pass1(text, b.lang), p2 = pass2(text, b.lang), p3 = pass3(text, b.lang);
-  const shortCloze = makeCloze(text, b.lang, "short");
-  const longCloze  = makeCloze(text, b.lang, "long");
-  const sents = splitSentencesWithIndex(text, b.lang), len = text.length;
-
-  const p1c = p1.filter((k:any)=> inBounds(k.span, len) && exact(text, k.span, k.surface));
-  const p2c = p2.map((x:any)=>({
-    pron:x.pron,
-    antecedents:(x.antecedents||[]).filter((a:any)=> inBounds(a,len) && a[1]<=x.pron[0] && sents.some(S=> a[0]>=S.start&&a[1]<=S.end && x.pron[0]>=S.start&&x.pron[1]<=S.end)).slice(-3)
-  })).filter((x:any)=>x.antecedents.length>0);
-  const p3c = p3.filter((t:any)=>{
-    const same = sents.some(S => t.s[0]>=S.start && t.o[1]<=S.end);
-    const order = t.s[0]<=t.v[0] && t.v[0]<=t.o[0];
-    const disjoint = t.s[1]<=t.v[0] && t.v[1]<=t.o[0];
-    return same && order && disjoint;
-  });
-
-  // 3) 存草稿
+  // 2) 直接存草稿（不生成答案；keys/cloze 为空，等待草稿页再生成）
   const { data, error } = await supabase.from("article_drafts").insert([{
     source:"ai", lang:b.lang, genre:b.genre, difficulty:b.difficulty,
     title, text, license:"AI-Generated",
     ai_provider: provider, ai_model: model, ai_params: {temperature, topic:b.topic, words:b.words},
-    ai_usage: usage, keys: { pass1:p1c, pass2:p2c, pass3:p3c },
-    cloze_short: shortCloze, cloze_long: longCloze,
-    validator_report: { len, sentences: sents.length, p1:p1c.length, p2:p2c.length, p3:p3c.length },
+    ai_usage: usage,
+    keys: { pass1:[], pass2:[], pass3:[] },
+    cloze_short: [], cloze_long: [],
+    validator_report: { len: text.length },
     status:"pending", created_by: auth.user.id
   }]).select("id").single();
 

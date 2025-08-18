@@ -10,7 +10,7 @@ type Span = [number,number];
 
 function overlap(a:Span,b:Span){return !(a[1]<=b[0]||b[1]<=a[0]);}
 
-export async function POST(req: NextRequest, { params }:{ params:{ id:string }}) {
+export async function POST(req: NextRequest, { params }:{ params: Promise<{ id:string }> }) {
   const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error:"forbidden" }, { status:403 });
 

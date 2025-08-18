@@ -14,6 +14,13 @@ export default function DraftDetail() {
   const [d, setD] = useState<any>(null);
   const [log, setLog] = useState("");
   const [saving, setSaving] = useState(false);
+  const [genMode, setGenMode] = useState<"ai"|"rule">("ai");
+  const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("openrouter");
+  const [models, setModels] = useState<{id:string;name:string}[]>([]);
+  const [model, setModel] = useState<string>("");
+  const [temp, setTemp] = useState(0.3);
+  const [sug, setSug] = useState<any>(null);
+  const [genLoading, setGenLoading] = useState(false);
 
   // 本地可编辑状态
   const [p1, setP1] = useState<KeyP1[]>([]);
@@ -40,6 +47,20 @@ export default function DraftDetail() {
     }
   };
   useEffect(()=>{ load(); }, [id]);
+
+  useEffect(()=>{ (async()=>{
+    if (genMode!=="ai") { setModels([]); setModel(""); return; }
+    if (provider==="openrouter") {
+      try {
+        const r = await fetch(`/api/ai/models?provider=${provider}`);
+        const j = await r.json(); setModels(j||[]); setModel(j?.[0]?.id||"");
+      } catch {}
+    } else if (provider==="deepseek") {
+      const j=[{id:"deepseek-chat",name:"deepseek-chat"},{id:"deepseek-reasoner",name:"deepseek-reasoner"}]; setModels(j); setModel(j[0].id);
+    } else {
+      const j=[{id:"gpt-4o-mini",name:"gpt-4o-mini"}]; setModels(j); setModel(j[0].id);
+    }
+  })(); }, [provider, genMode]);
 
   const update = async (patch:any) => {
     try {
@@ -84,6 +105,78 @@ export default function DraftDetail() {
           <button onClick={publish} className="px-3 py-1 rounded bg-black text-white">发布 → 正式题库</button>
         </div>
         {log && <pre className="text-sm p-2 bg-gray-50 rounded">{log}</pre>}
+      </section>
+
+      {/* 生成答案（AI/规则） */}
+      <section className="p-4 bg-white rounded-2xl shadow space-y-3">
+        <h3 className="font-medium">生成答案（在这里生成，再到下方编辑/合并）</h3>
+        <div className="flex flex-wrap items-center gap-2">
+          <select value={genMode} onChange={e=>setGenMode(e.target.value as any)} className="border rounded px-2 py-1">
+            <option value="ai">AI 建议</option>
+            <option value="rule">规则提取（免费）</option>
+          </select>
+          {genMode==="ai" && (
+            <>
+              <select value={provider} onChange={e=>setProvider(e.target.value as any)} className="border rounded px-2 py-1">
+                <option value="openrouter">OpenRouter</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="openai">OpenAI</option>
+              </select>
+              <select value={model} onChange={e=>setModel(e.target.value)} className="border rounded px-2 py-1 min-w-[220px]">
+                {models.map(m=> <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+              <label className="text-sm">温度</label>
+              <input type="number" step={0.1} min={0} max={1} className="border rounded px-2 py-1 w-24" value={temp} onChange={e=>setTemp(Number(e.target.value)||0.3)} />
+            </>
+          )}
+          <button
+            onClick={async ()=>{
+              setGenLoading(true);
+              try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const token = session?.access_token;
+                const r = await fetch(`/api/admin/drafts/${id}/suggest-keys`, {
+                  method:"POST", headers:{ "Content-Type":"application/json", ...(token?{ Authorization:`Bearer ${token}` }:{}) },
+                  body: JSON.stringify(genMode==="ai" ? { mode:"ai", provider, model, temperature: temp } : { mode:"rule" })
+                });
+                const j = await r.json();
+                setGenLoading(false);
+                if (!r.ok) { setLog("生成失败：" + (j.error||r.statusText)); return; }
+                setSug(j); setLog(genMode==="ai" ? `AI 用量：PT=${j.usage.prompt_tokens}, CT=${j.usage.completion_tokens}, TT=${j.usage.total_tokens}` : "规则生成完成");
+              } catch (e:any) {
+                setGenLoading(false); setLog(`生成异常：${e.message||e}`);
+              }
+            }}
+            className="px-3 py-1 rounded bg-indigo-600 text-white">
+            {genLoading? "生成中…" : "生成答案建议"}
+          </button>
+          {sug && <span className="text-sm text-gray-600">已生成建议（未合并）</span>}
+        </div>
+
+        {sug && (
+          <div className="p-3 bg-gray-50 rounded">
+            <div className="text-sm mb-2">建议摘要：P1={sug.suggestion.pass1.length} · P2={sug.suggestion.pass2.length} · P3={sug.suggestion.pass3.length} · ClozeS={sug.suggestion.cloze_short.length} · ClozeL={sug.suggestion.cloze_long.length}</div>
+            <div className="flex gap-2">
+              <button
+                onClick={()=>{
+                  setP1(sug.suggestion.pass1);
+                  setP2(sug.suggestion.pass2);
+                  setP3(sug.suggestion.pass3);
+                  setCzShort(sug.suggestion.cloze_short);
+                  setCzLong(sug.suggestion.cloze_long);
+                  setLog("已把建议载入编辑区，请在下方继续修改，然后点“校验并保存”。");
+                }}
+                className="px-3 py-1 rounded border">
+                将建议载入编辑区
+              </button>
+              <button onClick={()=> setSug(null)} className="px-3 py-1 rounded border">清除建议</button>
+            </div>
+            <details className="mt-2 text-xs">
+              <summary>查看原始建议 JSON</summary>
+              <pre className="overflow-auto">{JSON.stringify(sug.suggestion, null, 2)}</pre>
+            </details>
+          </div>
+        )}
       </section>
 
       {/* 可视化标注器 */}
