@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -329,11 +329,11 @@ function Annotator({
   lang, text, p1, setP1, p2, setP2, p3, setP3, czShort, setCzShort, czLong, setCzLong, onValidateSave
 }:{
   lang:"en"|"ja"|"zh"; text:string;
-  p1:KeyP1[]; setP1:(v:KeyP1[])=>void;
-  p2:KeyP2[]; setP2:(v:KeyP2[])=>void;
-  p3:KeyP3[]; setP3:(v:KeyP3[])=>void;
-  czShort:Cloze[]; setCzShort:(v:Cloze[])=>void;
-  czLong:Cloze[]; setCzLong:(v:Cloze[])=>void;
+  p1:KeyP1[]; setP1: Dispatch<SetStateAction<KeyP1[]>>;
+  p2:KeyP2[]; setP2: Dispatch<SetStateAction<KeyP2[]>>;
+  p3:KeyP3[]; setP3: Dispatch<SetStateAction<KeyP3[]>>;
+  czShort:Cloze[]; setCzShort: Dispatch<SetStateAction<Cloze[]>>;
+  czLong:Cloze[]; setCzLong: Dispatch<SetStateAction<Cloze[]>>;
   onValidateSave:(payload:any)=>void;
 }) {
   const [tab, setTab] = useState<"p1"|"p2"|"p3"|"cloze">("p1");
