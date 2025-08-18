@@ -78,10 +78,10 @@ ${text}
 >>>`;
 }
 
-export async function POST(req: NextRequest, { params }:{ params:{ id:string }}) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin(req); if (!auth.ok) return NextResponse.json({ error:"forbidden" }, { status:403 });
   const supabase = auth.supabase;
-  const id = params.id;
+  const { id } = await params;
 
   const { data: d, error } = await supabase.from("article_drafts").select("*").eq("id", id).single();
   if (error || !d) return NextResponse.json({ error: "draft not found" }, { status:404 });
