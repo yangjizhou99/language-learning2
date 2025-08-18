@@ -9,9 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@xenova/transformers": "^2.15.0",
     "@google-cloud/text-to-speech": "^6.2.0",
     "@supabase/supabase-js": "^2.55.0",
+    "@xenova/transformers": "^2.15.0",
+    "html-to-text": "^9.0.5",
     "next": "15.4.6",
     "openai": "^5.12.2",
     "react": "19.1.0",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/html-to-text": "^9.0.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
