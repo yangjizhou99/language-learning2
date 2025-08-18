@@ -11,6 +11,8 @@ export async function requireAdmin(req?: NextRequest) {
   const authHeader = req?.headers.get("authorization") || "";
   const hasBearer = /^Bearer\s+/.test(authHeader);
 
+  const cookieStore = await cookies();
+
   const supabase = hasBearer
     ? createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false },
@@ -18,7 +20,7 @@ export async function requireAdmin(req?: NextRequest) {
       })
     : createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
-          get(name: string) { const c = cookies() as unknown as { get: (n:string)=>{ value?: string }|undefined }; return c.get(name)?.value; },
+          get(name: string) { return cookieStore.get(name)?.value; },
           set() {},
           remove() {},
         }
