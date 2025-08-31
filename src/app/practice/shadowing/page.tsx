@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
 declare global {
   interface Window {
@@ -76,21 +76,39 @@ export default function ShadowingPage() {
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
   const recognitionPromiseRef = useRef<Promise<string> | null>(null);
 
-  // 懒加载 + 缓存
-  const [voicesLoaded, setVoicesLoaded] = useState(false);
-  const loadVoices = useCallback(async (kind: "Neural2" | "WaveNet" | "all" = "Neural2") => {
-    try {
-      const { getVoicesCached } = await import("@/lib/voices");
-      const list = await getVoicesCached(lang, kind);
-      setVoices(list);
-      setVoicesLoaded(true);
-      if (!voiceName && list[0]) setVoiceName(list[0].name);
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "无法获取声音列表");
-    }
-  }, [lang, voiceName]);
+  // 预定义的声音选项（每种语言一个男声一个女声）
+  const predefinedVoices = useMemo(() => {
+    const voices = {
+      ja: [
+        { name: "ja-JP-Wavenet-A", type: "WaveNet", ssmlGender: "FEMALE", naturalSampleRateHertz: 24000 },
+        { name: "ja-JP-Wavenet-C", type: "WaveNet", ssmlGender: "MALE", naturalSampleRateHertz: 24000 }
+      ],
+      en: [
+        { name: "en-US-Wavenet-A", type: "WaveNet", ssmlGender: "FEMALE", naturalSampleRateHertz: 24000 },
+        { name: "en-US-Wavenet-C", type: "WaveNet", ssmlGender: "MALE", naturalSampleRateHertz: 24000 }
+      ],
+      zh: [
+        { name: "cmn-CN-Wavenet-A", type: "WaveNet", ssmlGender: "FEMALE", naturalSampleRateHertz: 24000 },
+        { name: "cmn-CN-Wavenet-C", type: "WaveNet", ssmlGender: "MALE", naturalSampleRateHertz: 24000 }
+      ]
+    };
+    return voices[lang as keyof typeof voices] || voices.ja;
+  }, [lang]);
 
-  useEffect(() => { setVoiceName(""); setVoices([]); setVoicesLoaded(false); }, [lang]);
+  // 直接使用预定义声音，无需 API 调用
+  const [voicesLoaded, setVoicesLoaded] = useState(true);
+  const loadVoices = useCallback(async () => {
+    setVoices(predefinedVoices);
+    setVoicesLoaded(true);
+    if (!voiceName && predefinedVoices[0]) setVoiceName(predefinedVoices[0].name);
+  }, [predefinedVoices, voiceName]);
+
+  useEffect(() => { 
+    setVoiceName(""); 
+    setVoices(predefinedVoices); 
+    setVoicesLoaded(true);
+    if (predefinedVoices[0]) setVoiceName(predefinedVoices[0].name);
+  }, [lang, predefinedVoices]);
 
   // Google 服务端合成（失败回退 Web Speech）
   const synthGoogle = async () => {
@@ -571,12 +589,10 @@ export default function ShadowingPage() {
             <h3 className="font-medium">Google TTS（WaveNet / Neural2）</h3>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button onClick={()=>loadVoices("Neural2")} className="px-3 py-1 rounded border">刷新 Neural2</button>
-              <button onClick={()=>loadVoices("WaveNet")} className="px-3 py-1 rounded border">刷新 WaveNet</button>
-              <button onClick={()=>loadVoices("all")} className="px-3 py-1 rounded border">全部/Standard</button>
-              <button onClick={()=>loadVoices("all")} className="px-3 py-1 rounded border">全部声音</button>
+              <button onClick={()=>loadVoices()} className="px-3 py-1 rounded border">刷新声音列表</button>
+              <span className="text-sm text-gray-500">已预配置最佳声音选项</span>
 
-              <select onFocus={()=>{ if (!voicesLoaded) loadVoices(lang === "zh" ? "all" : "Neural2"); }} value={voiceName} onChange={e=>setVoiceName(e.target.value)} className="border rounded px-2 py-1 min-w-[280px]">
+              <select onFocus={()=>{ if (!voicesLoaded) loadVoices(); }} value={voiceName} onChange={e=>setVoiceName(e.target.value)} className="border rounded px-2 py-1 min-w-[280px]">
                 {voices.map(v => (
                   <option key={v.name} value={v.name}>
                     {v.name} · {v.type} · {v.ssmlGender?.toString().replace("SSML_VOICE_GENDER_","")}

@@ -10,7 +10,30 @@ import { createServerClient } from "@supabase/ssr";
 function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
   if (!raw) throw new Error("GOOGLE_TTS_CREDENTIALS missing");
-  const credentials = JSON.parse(raw);
+  
+  let credentials;
+  try {
+    // 尝试解析为 JSON 字符串
+    credentials = JSON.parse(raw);
+  } catch {
+    // 如果不是 JSON，尝试作为文件路径读取（本地开发环境）
+    try {
+      // 检查是否在云端环境（如 Vercel）
+      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+        throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
+      }
+      
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.resolve(process.cwd(), raw);
+      const fileContent = fs.readFileSync(filePath, 'utf8');
+      credentials = JSON.parse(fileContent);
+    } catch (fileError: unknown) {
+      const errorMessage = fileError instanceof Error ? fileError.message : String(fileError);
+      throw new Error(`Failed to parse GOOGLE_TTS_CREDENTIALS: ${raw}. Error: ${errorMessage}`);
+    }
+  }
+  
   const projectId = process.env.GOOGLE_TTS_PROJECT_ID || credentials.project_id;
   return new textToSpeech.TextToSpeechClient({ credentials, projectId });
 }
