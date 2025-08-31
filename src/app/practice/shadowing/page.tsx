@@ -376,23 +376,73 @@ export default function ShadowingPage() {
     let cursor = 0;
     for (const ref of refSentences) {
       const refTokens = tokenize(removePunct(ref.trim()), langCode);
-      const windowLen = Math.max(refTokens.length + Math.ceil(refTokens.length * 0.5), 1);
-      const hypWindow = hypAllTokens.slice(cursor, Math.min(cursor + windowLen, hypAllTokens.length));
-      const { aFlags, bFlags } = lcsFlagsTokens(refTokens, hypWindow);
-      const matched = aFlags.filter(Boolean).length;
+      const { start, end, aFlags, bFlags, matched, windowTokens } = findBestAlignmentWindow(hypAllTokens, cursor, refTokens, langCode);
       const acc = refTokens.length ? matched / refTokens.length : 0;
       diffs.push({
         refText: ref.trim(),
-        hypText: hypWindow.join(langCode === "en" ? " " : ""),
+        hypText: windowTokens.join(langCode === "en" ? " " : ""),
         refTokens,
         refFlags: aFlags,
-        hypTokens: hypWindow,
+        hypTokens: windowTokens,
         hypFlags: bFlags,
         accuracy: acc,
       });
-      cursor = Math.min(cursor + hypWindow.length, hypAllTokens.length);
+      // 前进游标：防止“吃到下一句”，将窗口长度限制在合理范围
+      // 若匹配很差，谨慎推进；若匹配良好，推进到窗口尾部
+      if (acc >= 0.5) {
+        cursor = Math.min(end, hypAllTokens.length);
+      } else {
+        cursor = Math.min(start + Math.max(1, Math.floor((end - start) * 0.5)), hypAllTokens.length);
+      }
     }
     return diffs;
+  }
+
+  // 在识别 token 序列中为一条参考句寻找“最佳窗口”
+  function findBestAlignmentWindow(
+    hypAll: string[],
+    startIdx: number,
+    refTokens: string[],
+    langCode: "ja"|"en"|"zh"
+  ): { start: number; end: number; aFlags: boolean[]; bFlags: boolean[]; matched: number; windowTokens: string[] } {
+    const hypLen = hypAll.length;
+    const refLen = refTokens.length || 1;
+    // 限制窗口长度，避免把下一句吞进去
+    const minWin = Math.max(1, Math.floor(refLen * 0.6));
+    const maxWin = Math.max(minWin, Math.ceil(refLen * (langCode === "en" ? 1.4 : 1.2)));
+    const lookahead = Math.min(hypLen - startIdx, Math.max(refLen * 2, 8));
+
+    let bestScore = -1;
+    let bestStart = startIdx;
+    let bestEnd = Math.min(startIdx + refLen, hypLen);
+    let bestAFlags: boolean[] = new Array<boolean>(refLen).fill(false);
+    let bestBFlags: boolean[] = new Array<boolean>(Math.max(1, Math.min(refLen, hypLen - startIdx))).fill(false);
+    let bestMatched = 0;
+
+    for (let s = startIdx; s < Math.min(startIdx + lookahead, hypLen); s++) {
+      const maxEnd = Math.min(s + maxWin, hypLen);
+      const minEnd = Math.min(s + minWin, hypLen);
+      for (let e = minEnd; e <= maxEnd; e++) {
+        const windowTokens = hypAll.slice(s, e);
+        const { aFlags, bFlags } = lcsFlagsTokens(refTokens, windowTokens);
+        const matched = aFlags.filter(Boolean).length;
+        const ratio = matched / refLen;
+        // 对过长窗口施加轻微惩罚，避免吞并下一句
+        const lenPenalty = 0.1 * Math.abs(windowTokens.length - refLen) / refLen;
+        const score = ratio - lenPenalty;
+        if (score > bestScore) {
+          bestScore = score;
+          bestStart = s;
+          bestEnd = e;
+          bestAFlags = aFlags;
+          bestBFlags = bFlags;
+          bestMatched = matched;
+        }
+      }
+    }
+
+    const windowTokens = hypAll.slice(bestStart, bestEnd);
+    return { start: bestStart, end: bestEnd, aFlags: bestAFlags, bFlags: bestBFlags, matched: bestMatched, windowTokens };
   }
 
   function removePunct(text: string): string {
@@ -594,44 +644,7 @@ export default function ShadowingPage() {
           )}
           
           {/* 逐句对照表 */}
-          {sentenceAnalysis.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-medium mb-4">📊 逐句发音对照表（基于真实识别）</h3>
-              <div className="space-y-3">
-                {sentenceAnalysis.map((item, index) => (
-                  <div 
-                    key={index} 
-                    className={`p-3 rounded border ${
-                      item.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className={`text-sm font-medium ${
-                            item.isCorrect ? 'text-green-700' : 'text-red-700'
-                          }`}>
-                            {item.isCorrect ? '✅ 正确' : '❌ 需改进'}
-                          </span>
-                          <span className="text-sm text-gray-500">
-                            准确度: {Math.round(item.accuracy * 100)}%
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-700 mb-2">
-                          <span className="font-medium">原文：</span>
-                          {item.sentence}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium">反馈：</span>
-                          {item.feedback}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* 已移除：逐句发音对照表（基于真实识别） */}
 
           {/* 逐句逐字比对（去标点） */}
           {diffRows.length > 0 && (
