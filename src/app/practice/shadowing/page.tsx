@@ -124,7 +124,15 @@ export default function ShadowingPage() {
   const getRecommendation = async () => {
     setRecommendLoading(true);
     try {
-      const res = await fetch(`/api/shadowing/recommend?lang=${lang}`);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`/api/shadowing/recommend?lang=${lang}` , {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      if (res.status === 401) {
+        setErr("未登录或会话失效，请先登录");
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         setRecommendation(data);
@@ -298,9 +306,14 @@ export default function ShadowingPage() {
   const gen = async () => {
     setErr(""); setLoading(true); setData(null); setLocalUrl(""); setRecState("idle");
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
       const r = await fetch("/api/shadowing/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ 
           lang, 
           difficulty,
@@ -309,6 +322,10 @@ export default function ShadowingPage() {
           recommended: difficultyMode === "auto"
         })
       });
+      if (r.status === 401) {
+        setErr("未登录或会话失效，请先登录");
+        return;
+      }
       const j = await r.json();
       if (!r.ok) setErr(j?.error || "生成失败"); else setData(j);
     } catch (e) {

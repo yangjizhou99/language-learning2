@@ -4,7 +4,9 @@ export const runtime = "nodejs"; export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireUser();
+    const authz = req.headers.get("authorization") || req.headers.get("Authorization");
+    console.log("🔍 [AUTH DEBUG] /recommend Authorization header present:", !!authz, authz ? `${authz.slice(0, 16)}...` : "");
+    const auth = await requireUser(req);
     if (!auth) return new NextResponse("Unauthorized", { status: 401 });
     const { supabase, user } = auth;
     const lang = new URL(req.url).searchParams.get("lang") as "en"|"ja"|"zh" || "en";

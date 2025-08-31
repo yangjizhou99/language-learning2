@@ -29,8 +29,10 @@ export async function POST(req: NextRequest) {
     const cookieStore = await cookies();
     const allCookies = cookieStore.getAll();
     console.log("🔍 [DEBUG] Available cookies:", allCookies.map(c => c.name));
+    const authz = req.headers.get("authorization") || req.headers.get("Authorization");
+    console.log("🔍 [DEBUG] Authorization header present:", !!authz, authz ? `${authz.slice(0, 16)}...` : "");
     
-    const auth = await requireUser();
+    const auth = await requireUser(req);
     console.log("🔍 [DEBUG] Auth result:", auth ? `User ID: ${auth.user.id}` : "No auth");
     
     if (!auth) {

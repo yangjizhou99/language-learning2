@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import type { NextRequest } from "next/server";
 
-export async function requireUser() {
+export async function requireUser(req?: NextRequest) {
   try {
     console.log("🔍 [AUTH DEBUG] Starting requireUser check");
     
@@ -22,6 +23,13 @@ export async function requireUser() {
     }
     
     console.log("🔍 [AUTH DEBUG] Environment variables OK");
+
+    // 支持从 Authorization: Bearer <token> 读取 access_token（解决本地存储 session 无法被服务端读取的问题）
+    const authHeader = req?.headers.get("authorization") || req?.headers.get("Authorization");
+    const accessToken = authHeader?.toLowerCase().startsWith("bearer ") ? authHeader.split(" ")[1] : undefined;
+    if (accessToken) {
+      console.log("🔍 [AUTH DEBUG] Found Authorization bearer token in headers");
+    }
     
     const supabase = createServerClient(
       supabaseUrl,
@@ -39,12 +47,17 @@ export async function requireUser() {
           remove() {
             // no-op for Route Handler; we don't mutate cookies here
           },
+        },
+        global: {
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
         }
       }
     );
     
     console.log("🔍 [AUTH DEBUG] Calling supabase.auth.getUser()");
-    const { data, error } = await supabase.auth.getUser();
+    const { data, error } = accessToken
+      ? await supabase.auth.getUser(accessToken)
+      : await supabase.auth.getUser();
     
     if (error) {
       console.error("❌ [AUTH DEBUG] Supabase auth error:", error);
