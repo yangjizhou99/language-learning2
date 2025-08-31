@@ -31,7 +31,13 @@ import { supabase } from "@/lib/supabase";
 // 仅使用浏览器原生识别；移除第三方 ASR 依赖
 import { scorePronunciation, splitSentences } from "@/lib/asr/align";
 
-type ShadowingData = { text: string; lang: "ja"|"en"|"zh"; topic: string; approx_duration_sec?: number };
+type ShadowingData = { 
+  session_id: string;
+  title: string;
+  script: string; 
+  lang: "ja"|"en"|"zh"; 
+  tts_audio_url?: string;
+};
 
 const MODELS = [
   { id: "deepseek-chat", label: "deepseek-chat（推荐）" },
@@ -40,9 +46,13 @@ const MODELS = [
 
 export default function ShadowingPage() {
   const [lang, setLang] = useState<"ja"|"en"|"zh">("ja");
-  const [topic, setTopic] = useState(lang === "ja" ? "日程の調整" : lang === "zh" ? "自我介绍" : "Travel plan");
+  const [difficultyMode, setDifficultyMode] = useState<"auto"|"manual">("auto");
+  const [difficulty, setDifficulty] = useState<number>(3);
+  const [type, setType] = useState<"monologue"|"dialogue"|"news">("monologue");
   const [model, setModel] = useState("deepseek-chat");
   const [loading, setLoading] = useState(false);
+  const [recommendLoading, setRecommendLoading] = useState(false);
+  const [recommendation, setRecommendation] = useState<{level: number; reason: string} | null>(null);
   const [data, setData] = useState<ShadowingData|null>(null);
   const [err, setErr] = useState("");
 
@@ -110,16 +120,41 @@ export default function ShadowingPage() {
     if (predefinedVoices[0]) setVoiceName(predefinedVoices[0].name);
   }, [lang, predefinedVoices]);
 
+  // 获取推荐难度
+  const getRecommendation = async () => {
+    setRecommendLoading(true);
+    try {
+      const res = await fetch(`/api/shadowing/recommend?lang=${lang}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRecommendation(data);
+        if (difficultyMode === "auto") {
+          setDifficulty(data.level);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to get recommendation:", error);
+    } finally {
+      setRecommendLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (difficultyMode === "auto") {
+      getRecommendation();
+    }
+  }, [lang, difficultyMode]);
+
   // Google 服务端合成（失败回退 Web Speech）
   const synthGoogle = async () => {
-    if (!data?.text) return;
+    if (!data?.script) return;
     setErr("");
     try {
       const res = await fetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: data.text,
+          text: data.script,
           lang,
           voiceName: voiceName || undefined,
           speakingRate: rate,
@@ -146,10 +181,10 @@ export default function ShadowingPage() {
 
   // Web Speech 本地合成
   const speak = () => {
-    if (!data?.text) return;
+    if (!data?.script) return;
     const synth = window.speechSynthesis;
     if (!synth) { alert("此浏览器不支持 Web Speech TTS"); return; }
-    const u = new SpeechSynthesisUtterance(data.text);
+    const u = new SpeechSynthesisUtterance(data.script);
     // 尝试选择对应语言的 voice
     const voices = synth.getVoices();
     const targetLang = lang === "ja" ? "ja" : lang === "zh" ? "zh" : "en";
@@ -246,8 +281,8 @@ export default function ShadowingPage() {
           user_id: uid,
           task_type: "shadowing",
           lang: data.lang,
-          topic: data.topic,
-          input: { text: data.text },
+          topic: data.title || "Shadowing练习",
+          input: { text: data.script },
           output: { audio_path: path, audio_url: signed?.signedUrl },
           ai_feedback: null,
           score: null
@@ -263,10 +298,16 @@ export default function ShadowingPage() {
   const gen = async () => {
     setErr(""); setLoading(true); setData(null); setLocalUrl(""); setRecState("idle");
     try {
-      const r = await fetch("/api/generate/shadowing", {
+      const r = await fetch("/api/shadowing/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, topic, model })
+        body: JSON.stringify({ 
+          lang, 
+          difficulty,
+          type,
+          model,
+          recommended: difficultyMode === "auto"
+        })
       });
       const j = await r.json();
       if (!r.ok) setErr(j?.error || "生成失败"); else setData(j);
@@ -321,7 +362,7 @@ export default function ShadowingPage() {
       // 等待识别结果
       const rawHyp = (await recognitionPromiseRef.current) || "";
       // 先按参考文本风格补全标点
-      const refText = data?.text || "";
+      const refText = data?.script || "";
       const punctuated = await punctuateText(refText, rawHyp, lang, model);
       setAsrText(punctuated);
 
@@ -340,7 +381,7 @@ export default function ShadowingPage() {
           user_id: u.user.id,
           task_type: "shadowing",
           lang,
-          topic: data?.topic,
+          topic: data?.title || "Shadowing练习",
           input: { text: refText },
           output: { asr_text: punctuated, asr_text_raw: rawHyp, tts_url: ttsUrl || null },
           ai_feedback: { method: "web-speech" },
@@ -547,13 +588,57 @@ export default function ShadowingPage() {
     <main className="max-w-3xl mx-auto p-6 space-y-5">
       <h1 className="text-2xl font-semibold">Shadowing 跟读练习（TTS + 录音）</h1>
 
+
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <label className="flex items-center gap-2">
           <span className="w-24">语言</span>
-          <select value={lang} onChange={e=>{const v=e.target.value as "ja"|"en"|"zh"; setLang(v); setTopic(v==="ja"?"日程の調整":v==="zh"?"自我介绍":"Travel plan");}} className="border rounded px-2 py-1">
+          <select value={lang} onChange={e=>{const v=e.target.value as "ja"|"en"|"zh"; setLang(v);}} className="border rounded px-2 py-1">
             <option value="ja">日语</option>
             <option value="en">英语</option>
             <option value="zh">中文（普通话）</option>
+          </select>
+        </label>
+
+        <label className="flex items-center gap-2">
+          <span className="w-24">难度模式</span>
+          <select value={difficultyMode} onChange={e=>setDifficultyMode(e.target.value as "auto"|"manual")} className="border rounded px-2 py-1">
+            <option value="auto">自动推荐</option>
+            <option value="manual">手动选择</option>
+          </select>
+        </label>
+
+        {difficultyMode === "auto" && (
+          <label className="flex items-center gap-2">
+            <span className="w-24">推荐难度</span>
+            <div className="border rounded px-2 py-1 bg-gray-100 min-w-[100px]">
+              {recommendLoading ? "加载中..." : recommendation ? `L${recommendation.level}` : "L3"}
+            </div>
+            <button onClick={getRecommendation} disabled={recommendLoading} className="px-2 py-1 text-sm border rounded">
+              {recommendLoading ? "..." : "刷新"}
+            </button>
+          </label>
+        )}
+
+        {difficultyMode === "manual" && (
+          <label className="flex items-center gap-2">
+            <span className="w-24">难度级别</span>
+            <select value={difficulty} onChange={e=>setDifficulty(Number(e.target.value))} className="border rounded px-2 py-1">
+              <option value={1}>L1 (初级)</option>
+              <option value={2}>L2</option>
+              <option value={3}>L3 (中级)</option>
+              <option value={4}>L4</option>
+              <option value={5}>L5 (高级)</option>
+            </select>
+          </label>
+        )}
+
+        <label className="flex items-center gap-2">
+          <span className="w-24">类型</span>
+          <select value={type} onChange={e=>setType(e.target.value as "monologue"|"dialogue"|"news")} className="border rounded px-2 py-1">
+            <option value="monologue">独白</option>
+            <option value="dialogue">对话</option>
+            <option value="news">新闻</option>
           </select>
         </label>
 
@@ -563,12 +648,13 @@ export default function ShadowingPage() {
             {MODELS.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}
           </select>
         </label>
-
-        <label className="flex items-center gap-2 md:col-span-2">
-          <span className="w-24">话题</span>
-          <input value={topic} onChange={e=>setTopic(e.target.value)} className="border rounded px-2 py-1 flex-1" />
-        </label>
       </div>
+
+      {recommendation?.reason && (
+        <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+          {recommendation.reason}
+        </div>
+      )}
 
       <div className="flex gap-2">
         <button onClick={gen} disabled={loading} className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">
@@ -581,8 +667,9 @@ export default function ShadowingPage() {
       {data && (
         <>
           <section className="p-4 bg-white rounded-2xl shadow space-y-3">
-            <div className="text-sm text-gray-600">话题：{data.topic} · 语言：{data.lang}</div>
-            <p className="whitespace-pre-wrap">{data.text}</p>
+            <div className="text-sm text-gray-600">语言：{data.lang} · 难度：L{difficulty} · 类型：{type === "monologue" ? "独白" : type === "dialogue" ? "对话" : "新闻"}</div>
+            {data.title && <h3 className="font-medium">{data.title}</h3>}
+            <p className="whitespace-pre-wrap">{data.script}</p>
           </section>
 
           <section className="p-4 bg-white rounded-2xl shadow space-y-3">

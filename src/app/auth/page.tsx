@@ -65,11 +65,11 @@ export default function AuthPage() {
       </section>
 
       {/* Temporarily disabled Google login */}
-      {/* <section className="p-4 bg-white rounded-2xl shadow space-y-3">
+      <section className="p-4 bg-white rounded-2xl shadow space-y-3">
         <h2 className="font-medium">使用 Google 登录</h2>
         <button onClick={signInWithGoogle}
                 className="px-3 py-1 rounded border">用 Google 登录</button>
-      </section> */}
+      </section>
     </main>
   );
 }
