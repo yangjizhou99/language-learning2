@@ -1,700 +1,678 @@
 "use client";
-import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
-declare global {
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
-}
-
-interface SpeechRecognition extends EventTarget {
-  lang: string;
-  interimResults: boolean;
-  maxAlternatives: number;
-  start(): void;
-  stop(): void;
-  abort(): void;
-  onresult: (event: SpeechRecognitionEvent) => void;
-  onerror: (event: SpeechRecognitionErrorEvent) => void;
-  onend: () => void;
-}
-
-interface SpeechRecognitionEvent extends Event {
+// Web Speech 类型定义，避免 any
+interface WebSpeechRecognitionEvent extends Event {
+  resultIndex: number;
   results: SpeechRecognitionResultList;
 }
 
-interface SpeechRecognitionErrorEvent extends Event {
+interface WebSpeechRecognitionErrorEvent extends Event {
   error: string;
 }
-import { supabase } from "@/lib/supabase";
-// 仅使用浏览器原生识别；移除第三方 ASR 依赖
-import { scorePronunciation, splitSentences } from "@/lib/asr/align";
 
-type ShadowingData = { text: string; lang: "ja"|"en"|"zh"; topic: string; approx_duration_sec?: number };
+interface WebSpeechRecognition extends EventTarget {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  maxAlternatives: number;
+  start(): void;
+  stop(): void;
+  onresult: (event: WebSpeechRecognitionEvent) => void;
+  onerror: (event: WebSpeechRecognitionErrorEvent) => void;
+  onend: () => void;
+}
 
-const MODELS = [
-  { id: "deepseek-chat", label: "deepseek-chat（推荐）" },
-  { id: "deepseek-reasoner", label: "deepseek-reasoner" },
-];
+type WindowWithSpeech = Window & {
+  SpeechRecognition?: new () => WebSpeechRecognition;
+  webkitSpeechRecognition?: new () => WebSpeechRecognition;
+};
+
+type ShadowingData = { 
+  id: string;
+  text: string; 
+  lang: "ja"|"en"|"zh"; 
+  title: string;
+  level: number;
+  audio_url: string;
+};
+
+// 等级选择器组件
+function LevelPicker({ 
+  lang, 
+  value, 
+  onChange, 
+  recommended 
+}: { 
+  lang: string; 
+  value: number; 
+  onChange: (level: number) => void; 
+  recommended: number | null; 
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm font-medium">难度等级：</span>
+      {[1, 2, 3, 4, 5].map(l => (
+        <button
+          key={l}
+          className={`px-3 py-1 rounded border transition-colors ${
+            value === l 
+              ? 'bg-black text-white' 
+              : 'hover:bg-gray-100'
+          }`}
+          onClick={() => onChange(l)}
+        >
+          L{l}
+          {recommended === l && (
+            <span className="ml-1 text-xs px-1 rounded bg-amber-200 text-amber-900">
+              推荐
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export default function ShadowingPage() {
   const [lang, setLang] = useState<"ja"|"en"|"zh">("ja");
-  const [topic, setTopic] = useState(lang === "ja" ? "日程の調整" : lang === "zh" ? "自我介绍" : "Travel plan");
-  const [model, setModel] = useState("deepseek-chat");
+  const [level, setLevel] = useState(2);
+  const [recommendedLevel, setRecommendedLevel] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ShadowingData|null>(null);
   const [err, setErr] = useState("");
+  
+  // 练习相关状态
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string>("");
+  const [score, setScore] = useState<number | null>(null);
+  const [isScoring, setIsScoring] = useState(false);
+  
+  // 语音识别相关状态
+  const [recognizedText, setRecognizedText] = useState<string>("");
+  const [isRecognizing, setIsRecognizing] = useState(false);
+  const [recognitionError, setRecognitionError] = useState<string>("");
+  
+  // 逐句分析状态
+  const [sentenceAnalysis, setSentenceAnalysis] = useState<Array<{
+    sentence: string;
+    isCorrect: boolean;
+    accuracy: number;
+    feedback: string;
+  }>>([]);
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const recognitionRef = useRef<WebSpeechRecognition | null>(null);
+  const [diffRows, setDiffRows] = useState<Array<{
+    refText: string;
+    hypText: string;
+    refTokens: string[];
+    refFlags: boolean[];
+    hypTokens: string[];
+    hypFlags: boolean[];
+    accuracy: number;
+  }>>([]);
 
-  // TTS
-  const [voices, setVoices] = useState<{name:string; type?:string; ssmlGender?:string; naturalSampleRateHertz?:number}[]>([]);
-  const [voiceName, setVoiceName] = useState<string>("");
-  const [rate, setRate] = useState<number>(1.0);
-  const [pitch, setPitch] = useState<number>(0);
-  const [ttsBlob, setTtsBlob] = useState<Blob|null>(null);
-  const [ttsUrl, setTtsUrl] = useState<string>("");
-
-  // MediaRecorder
-  const [recState, setRecState] = useState<"idle"|"recording"|"stopped">("idle");
-  const mediaStreamRef = useRef<MediaStream|null>(null);
-  const recorderRef = useRef<MediaRecorder|null>(null);
-  const chunksRef = useRef<BlobPart[]>([]);
-  const [localUrl, setLocalUrl] = useState<string>("");
-  const [recordedBlob, setRecordedBlob] = useState<Blob|null>(null);
-
-  // ASR State（仅使用浏览器原生识别：Chrome Web Speech / Safari webkitSpeechRecognition）
-  const [asrText, setAsrText] = useState("");
-  const [asrLoading, setAsrLoading] = useState(false);
-  const [asrScore, setAsrScore] = useState<{accuracy:number; coverage:number; speed_wpm?:number} | null>(null);
-  const [asrDetail, setAsrDetail] = useState<{ref:string[]; hyp:string[]}>({ref:[], hyp:[]});
-  // AI 建议
-  const [adviceLoading, setAdviceLoading] = useState(false);
-  const [adviceText, setAdviceText] = useState("");
-  const [adviceErr, setAdviceErr] = useState("");
-
-  // 识别控制
-  const recognitionRef = useRef<{ stop: () => void } | null>(null);
-  const recognitionPromiseRef = useRef<Promise<string> | null>(null);
-
-  // 预定义的声音选项（每种语言一个男声一个女声）
-  const predefinedVoices = useMemo(() => {
-    const voices = {
-      ja: [
-        { name: "ja-JP-Wavenet-A", type: "WaveNet", ssmlGender: "FEMALE", naturalSampleRateHertz: 24000 },
-        { name: "ja-JP-Wavenet-C", type: "WaveNet", ssmlGender: "MALE", naturalSampleRateHertz: 24000 }
-      ],
-      en: [
-        { name: "en-US-Wavenet-A", type: "WaveNet", ssmlGender: "FEMALE", naturalSampleRateHertz: 24000 },
-        { name: "en-US-Wavenet-C", type: "WaveNet", ssmlGender: "MALE", naturalSampleRateHertz: 24000 }
-      ],
-      zh: [
-        { name: "cmn-CN-Wavenet-A", type: "WaveNet", ssmlGender: "FEMALE", naturalSampleRateHertz: 24000 },
-        { name: "cmn-CN-Wavenet-C", type: "WaveNet", ssmlGender: "MALE", naturalSampleRateHertz: 24000 }
-      ]
+  // 获取推荐等级
+  useEffect(() => {
+    const fetchRecommendedLevel = async () => {
+      try {
+        const response = await fetch(`/api/shadowing/recommended?lang=${lang}`);
+        if (response.ok) {
+          const data = await response.json();
+          setRecommendedLevel(data.recommended);
+          if (level !== data.recommended) {
+            setLevel(data.recommended);
+          }
+        }
+      } catch (error) {
+        console.error("获取推荐等级失败:", error);
+      }
     };
-    return voices[lang as keyof typeof voices] || voices.ja;
-  }, [lang]);
 
-  // 直接使用预定义声音，无需 API 调用
-  const [voicesLoaded, setVoicesLoaded] = useState(true);
-  const loadVoices = useCallback(async () => {
-    setVoices(predefinedVoices);
-    setVoicesLoaded(true);
-    if (!voiceName && predefinedVoices[0]) setVoiceName(predefinedVoices[0].name);
-  }, [predefinedVoices, voiceName]);
+    fetchRecommendedLevel();
+  }, [lang, level]);
 
-  useEffect(() => { 
-    setVoiceName(""); 
-    setVoices(predefinedVoices); 
-    setVoicesLoaded(true);
-    if (predefinedVoices[0]) setVoiceName(predefinedVoices[0].name);
-  }, [lang, predefinedVoices]);
-
-  // Google 服务端合成（失败回退 Web Speech）
-  const synthGoogle = async () => {
-    if (!data?.text) return;
+  // 获取下一道题
+  const getNextQuestion = async () => {
     setErr("");
+    setLoading(true);
+    setData(null);
+    setScore(null);
+    setSentenceAnalysis([]);
+    setAudioBlob(null);
+    setAudioUrl("");
+    setRecordingTime(0);
+    setRecognizedText("");
+    setRecognitionError("");
+    
     try {
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: data.text,
-          lang,
-          voiceName: voiceName || undefined,
-          speakingRate: rate,
-          pitch
-        })
-      });
-      if (!res.ok) {
-        // 回退
-        speak();
-        const t = await res.text();
-        setErr(`Google TTS 失败，已回退本地合成：${t.slice(0,200)}`);
+      const response = await fetch(`/api/shadowing/next?lang=${lang}&level=${level}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        setErr(errorData.error || "获取题目失败");
         return;
       }
-      const ab = await res.arrayBuffer();
-      const blob = new Blob([ab], { type: "audio/mpeg" });
-      setTtsBlob(blob);
-      const url = URL.createObjectURL(blob);
-      setTtsUrl(url);
-    } catch (e: unknown) {
-      speak();
-      setErr(e instanceof Error ? e.message : "TTS 网络错误，已回退 Web Speech");
-    }
-  };
-
-  // Web Speech 本地合成
-  const speak = () => {
-    if (!data?.text) return;
-    const synth = window.speechSynthesis;
-    if (!synth) { alert("此浏览器不支持 Web Speech TTS"); return; }
-    const u = new SpeechSynthesisUtterance(data.text);
-    // 尝试选择对应语言的 voice
-    const voices = synth.getVoices();
-    const targetLang = lang === "ja" ? "ja" : lang === "zh" ? "zh" : "en";
-    const v = voices.find(v => v.lang?.toLowerCase().startsWith(targetLang));
-    if (v) u.voice = v;
-    u.rate = 1.0;
-    u.pitch = 1.0;
-    synth.cancel();
-    synth.speak(u);
-  };
-
-  // 保存到 tts 桶
-  const saveTts = async () => {
-    try {
-      if (!ttsBlob) { setErr("没有可保存的 TTS 音频"); return; }
-      const { data: u } = await supabase.auth.getUser();
-      const uid = u?.user?.id;
-      if (!uid) { setErr("未登录"); return; }
-      const ts = Date.now();
-      const path = `${uid}/tts-${ts}.mp3`;
-      const { error: upErr } = await supabase.storage.from("tts").upload(path, ttsBlob, {
-        cacheControl: "3600", upsert: false, contentType: "audio/mpeg",
-      });
-      if (upErr) { setErr(upErr.message); return; }
-      const { data: signed, error: sErr } = await supabase.storage.from("tts").createSignedUrl(path, 60*60*24*7);
-      if (sErr) { setErr(sErr.message); return; }
-      setTtsUrl(signed!.signedUrl);
-      alert("TTS 已保存到我的库（链接 7 天有效）");
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "保存失败");
-    }
-  };
-
-  // 录音功能保持不变
-  const startRec = async () => {
-    setErr("");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
-      const rec = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      recorderRef.current = rec;
-      chunksRef.current = [];
-      // 开始新录音前清理旧的本地音频与评测输入
-      setLocalUrl("");
-      setRecordedBlob(null);
-      rec.ondataavailable = (e: BlobEvent) => { if (e.data?.size) chunksRef.current.push(e.data); };
-      rec.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        const url = URL.createObjectURL(blob);
-        setLocalUrl(url);
-        // 关键：保存录音 Blob 供评测使用
-        setRecordedBlob(blob);
-      };
-      rec.start();
-      setRecState("recording");
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "无法访问麦克风");
-    }
-  };
-
-  const stopRec = () => {
-    recorderRef.current?.stop();
-    mediaStreamRef.current?.getTracks().forEach(t => t.stop());
-    setRecState("stopped");
-  };
-
-  const upload = async () => {
-    try {
-      const { data: u } = await supabase.auth.getUser();
-      const uid = u?.user?.id;
-      if (!uid) { setErr("未登录"); return; }
-      if (chunksRef.current.length === 0) { setErr("没有录音数据"); return; }
-
-      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-      const ts = Date.now();
-      const path = `${uid}/${ts}.webm`;
-
-      const { error: upErr } = await supabase.storage.from("recordings").upload(path, blob, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: "audio/webm",
-      });
-      if (upErr) { setErr(upErr.message); return; }
-
-      // 生成一个短期签名 URL（7 天）
-      const { data: signed, error: sErr } = await supabase.storage
-        .from("recordings")
-        .createSignedUrl(path, 60 * 60 * 24 * 7);
-      if (sErr) { setErr(sErr.message); return; }
-
-      // 写入 sessions
-      if (data) {
-        await supabase.from("sessions").insert({
-          user_id: uid,
-          task_type: "shadowing",
-          lang: data.lang,
-          topic: data.topic,
-          input: { text: data.text },
-          output: { audio_path: path, audio_url: signed?.signedUrl },
-          ai_feedback: null,
-          score: null
-        });
-      }
-
-      alert("上传成功");
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "上传失败");
-    }
-  };
-
-  const gen = async () => {
-    setErr(""); setLoading(true); setData(null); setLocalUrl(""); setRecState("idle");
-    try {
-      const r = await fetch("/api/generate/shadowing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, topic, model })
-      });
-      const j = await r.json();
-      if (!r.ok) setErr(j?.error || "生成失败"); else setData(j);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "网络错误");
+      
+      const result = await response.json();
+      setData(result.item);
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "网络错误");
     } finally {
       setLoading(false);
     }
   };
 
-  // 合并：开始录音 + 浏览器识别
-  const startLiveAssess = async () => {
-    setErr(""); setAsrLoading(true); setAsrText(""); setAsrScore(null); setAsrDetail({ref:[], hyp:[]});
+  // 开始录音和语音识别
+  const startRecording = async () => {
     try {
-      // 1) 启动麦克风录音
+      // 开始录音
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
-      const rec = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      recorderRef.current = rec;
-      chunksRef.current = [];
-      setLocalUrl("");
-      setRecordedBlob(null);
-      rec.ondataavailable = (e: BlobEvent) => { if (e.data?.size) chunksRef.current.push(e.data); };
-      rec.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        const url = URL.createObjectURL(blob);
-        setLocalUrl(url);
-        setRecordedBlob(blob);
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      
+      const chunks: Blob[] = [];
+      mediaRecorder.ondataavailable = (event) => {
+        chunks.push(event.data);
       };
-      rec.start();
-      setRecState("recording");
-
-      // 2) 启动浏览器语音识别（Chrome/Safari）
-      recognitionPromiseRef.current = transcribeWithBrowserRecognition(lang, (ctrl: { stop: () => void }) => {
-        recognitionRef.current = ctrl;
-      });
-    } catch (e) {
-      setAsrLoading(false);
-      setErr(e instanceof Error ? e.message : "无法访问麦克风或启动识别");
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/wav' });
+        setAudioBlob(blob);
+        setAudioUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // 开始计时
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      // 开始语音识别
+      startSpeechRecognition();
+      
+    } catch (error) {
+      console.error("录音失败:", error);
+      setErr("无法访问麦克风，请检查权限设置");
     }
   };
 
-  const stopLiveAssess = async () => {
+  // 开始语音识别
+  const startSpeechRecognition = () => {
     try {
-      // 停止录音与麦克风
-      recorderRef.current?.stop();
-      mediaStreamRef.current?.getTracks().forEach(t => t.stop());
-      setRecState("stopped");
-      // 停止识别
-      recognitionRef.current?.stop();
-
-      // 等待识别结果
-      const rawHyp = (await recognitionPromiseRef.current) || "";
-      // 先按参考文本风格补全标点
-      const refText = data?.text || "";
-      const punctuated = await punctuateText(refText, rawHyp, lang, model);
-      setAsrText(punctuated);
-
-      // 评分与逐句对齐
-      const sc = scorePronunciation(refText, punctuated, lang);
-      setAsrScore(sc);
-      setAsrDetail({ ref: splitSentences(refText, lang), hyp: splitSentences(punctuated, lang) });
-
-      // 基于评测结果调用 DeepSeek，生成针对性建议
-      await generateTargetedAdvice(refText, punctuated, sc);
-
-      // 写入 sessions
-      const { data: u } = await supabase.auth.getUser();
-      if (u?.user?.id) {
-        await supabase.from("sessions").insert({
-          user_id: u.user.id,
-          task_type: "shadowing",
-          lang,
-          topic: data?.topic,
-          input: { text: refText },
-          output: { asr_text: punctuated, asr_text_raw: rawHyp, tts_url: ttsUrl || null },
-          ai_feedback: { method: "web-speech" },
-          score: sc.accuracy
-        });
+      // 检查浏览器支持
+      const SR = (window as unknown as WindowWithSpeech).SpeechRecognition || (window as unknown as WindowWithSpeech).webkitSpeechRecognition;
+      if (!SR) {
+        setRecognitionError("当前浏览器不支持语音识别");
+        return;
       }
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "评测失败");
-    } finally {
-      setAsrLoading(false);
-      recognitionRef.current = null;
-      recognitionPromiseRef.current = null;
+
+      const recognition = new SR();
+      recognitionRef.current = recognition;
+      
+      // 设置语言
+      recognition.lang = lang === "ja" ? "ja-JP" : lang === "zh" ? "zh-CN" : "en-US";
+      recognition.interimResults = true;
+      recognition.continuous = true;
+      recognition.maxAlternatives = 1;
+      
+      let finalTranscript = "";
+      
+      recognition.onresult = (event: WebSpeechRecognitionEvent) => {
+        let interimTranscript = "";
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        setRecognizedText(finalTranscript + interimTranscript);
+      };
+      
+      recognition.onerror = (event: WebSpeechRecognitionErrorEvent) => {
+        console.error("语音识别错误:", event.error);
+        setRecognitionError(`语音识别错误: ${event.error}`);
+      };
+      
+      recognition.onend = () => {
+        setIsRecognizing(false);
+        // 保存最终识别结果
+        setRecognizedText(finalTranscript);
+      };
+      
+      recognition.start();
+      setIsRecognizing(true);
+      setRecognitionError("");
+      
+    } catch (error) {
+      console.error("启动语音识别失败:", error);
+      setRecognitionError("启动语音识别失败");
     }
   };
 
-  async function generateTargetedAdvice(refText: string, hyp: string, sc: {accuracy:number; coverage:number; speed_wpm?:number}) {
+  // 停止录音
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    }
+    
+    // 停止语音识别
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecognizing(false);
+    }
+  };
+
+  // 评分
+  const evaluateRecording = async () => {
+    if (!audioBlob || !data) return;
+    
+    setIsScoring(true);
     try {
-      setAdviceErr(""); setAdviceText(""); setAdviceLoading(true);
-      const res = await fetch("/api/advice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, ref: refText, hyp, metrics: sc, model })
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+      formData.append('text', data.text);
+      formData.append('lang', data.lang);
+      
+      const response = await fetch('/api/eval', {
+        method: 'POST',
+        body: formData
       });
-      const txt = await res.text();
-      if (!res.ok) { setAdviceErr(txt || "生成建议失败"); return; }
-      setAdviceText(txt);
-    } catch (e) {
-      setAdviceErr(e instanceof Error ? e.message : "生成建议失败");
+      
+      if (response.ok) {
+        const result = await response.json();
+        setScore(result.score);
+        
+        // 生成真实的逐句分析
+        generateRealSentenceAnalysis(data.text, recognizedText, result);
+      } else {
+        setErr("评分失败，请重试");
+      }
+    } catch (error) {
+      setErr("评分出错：" + String(error));
     } finally {
-      setAdviceLoading(false);
+      setIsScoring(false);
     }
-  }
+  };
 
-  async function punctuateText(refText: string, hyp: string, lang: "ja"|"en"|"zh", modelId: string): Promise<string> {
-    try {
-      const res = await fetch("/api/eval/punctuate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, ref: refText, hyp, model: modelId })
+  // 生成真实的逐句分析
+  const generateRealSentenceAnalysis = (originalText: string, recognizedText: string, result: { score: number; accuracy: number; fluency: number; feedback: string }) => {
+    // 按句号、问号、感叹号分割句子
+    const sentences = originalText.split(/[。！？.!?]/).filter(s => s.trim().length > 0);
+    
+    // 生成逐句逐字比对
+    const diffs = buildSentenceDiffs(sentences, recognizedText, lang);
+    setDiffRows(diffs);
+
+    const analysis = sentences.map((sentence, index) => {
+      // 计算每句话的识别准确度
+      const sentenceAccuracy = calculateSentenceAccuracy(sentence.trim(), recognizedText);
+      const isCorrect = sentenceAccuracy >= 0.8;
+      
+      let feedback = "";
+      if (sentenceAccuracy >= 0.9) {
+        feedback = "发音完美！";
+      } else if (sentenceAccuracy >= 0.8) {
+        feedback = "发音很好，继续保持！";
+      } else if (sentenceAccuracy >= 0.7) {
+        feedback = "发音不错，注意语调变化";
+      } else if (sentenceAccuracy >= 0.6) {
+        feedback = "发音基本正确，需要多练习";
+      } else {
+        feedback = "发音需要改进，建议重复练习";
+      }
+      
+      return {
+        sentence: sentence.trim(),
+        isCorrect,
+        accuracy: sentenceAccuracy,
+        feedback
+      };
+    });
+    
+    setSentenceAnalysis(analysis);
+  };
+
+  // 计算句子准确度
+  const calculateSentenceAccuracy = (original: string, recognized: string): number => {
+    if (!recognized || recognized.trim() === "") return 0;
+    
+    // 简单的字符串相似度计算
+    const originalWords = original.split(/\s+/).filter(w => w.length > 0);
+    const recognizedWords = recognized.split(/\s+/).filter(w => w.length > 0);
+    
+    if (originalWords.length === 0) return 0;
+    
+    let correctWords = 0;
+    for (const word of originalWords) {
+      if (recognizedWords.some(rw => rw.includes(word) || word.includes(rw))) {
+        correctWords++;
+      }
+    }
+    
+    return correctWords / originalWords.length;
+  };
+
+  // 逐句逐字比对：去标点、分词、LCS 对齐
+  function buildSentenceDiffs(refSentences: string[], hypRaw: string, langCode: "ja"|"en"|"zh") {
+    const diffs: Array<{ refText: string; hypText: string; refTokens: string[]; refFlags: boolean[]; hypTokens: string[]; hypFlags: boolean[]; accuracy: number; }> = [];
+    // 识别文本：去标点再分词
+    const hypAllTokens = tokenize(removePunct(hypRaw), langCode);
+    let cursor = 0;
+    for (const ref of refSentences) {
+      const refTokens = tokenize(removePunct(ref.trim()), langCode);
+      const windowLen = Math.max(refTokens.length + Math.ceil(refTokens.length * 0.5), 1);
+      const hypWindow = hypAllTokens.slice(cursor, Math.min(cursor + windowLen, hypAllTokens.length));
+      const { aFlags, bFlags } = lcsFlagsTokens(refTokens, hypWindow);
+      const matched = aFlags.filter(Boolean).length;
+      const acc = refTokens.length ? matched / refTokens.length : 0;
+      diffs.push({
+        refText: ref.trim(),
+        hypText: hypWindow.join(langCode === "en" ? " " : ""),
+        refTokens,
+        refFlags: aFlags,
+        hypTokens: hypWindow,
+        hypFlags: bFlags,
+        accuracy: acc,
       });
-      const txt = await res.text();
-      return res.ok ? (txt || hyp) : hyp;
-    } catch {
-      return hyp;
+      cursor = Math.min(cursor + hypWindow.length, hypAllTokens.length);
     }
+    return diffs;
   }
 
-  // 逐句对比高亮：LCS 标注匹配/不匹配
-  function lcsFlags(a: string, b: string): { aFlags: boolean[]; bFlags: boolean[] } {
-    const arrA = Array.from(a);
-    const arrB = Array.from(b);
-    const n = arrA.length, m = arrB.length;
+  function removePunct(text: string): string {
+    // 保留字母、数字与空白，去除标点（适配中英日）
+    return text.normalize("NFKC").replace(/[^\p{L}\p{N}\s]/gu, "");
+  }
+
+  function tokenize(text: string, langCode: "ja"|"en"|"zh"): string[] {
+    if (langCode === "en") {
+      return text.toLowerCase().split(/\s+/).filter(Boolean);
+    }
+    // 中文/日文：按字符切分（去空白）
+    return Array.from(text.replace(/\s+/g, ""));
+  }
+
+  function lcsFlagsTokens(a: string[], b: string[]): { aFlags: boolean[]; bFlags: boolean[] } {
+    const n = a.length, m = b.length;
     const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
     for (let i = 1; i <= n; i++) {
       for (let j = 1; j <= m; j++) {
-        if (arrA[i - 1] === arrB[j - 1]) dp[i][j] = dp[i - 1][j - 1] + 1; else dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+        if (a[i - 1] === b[j - 1]) dp[i][j] = dp[i - 1][j - 1] + 1; else dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
       }
     }
     const aFlags = new Array<boolean>(n).fill(false);
     const bFlags = new Array<boolean>(m).fill(false);
     let i = n, j = m;
     while (i > 0 && j > 0) {
-      if (arrA[i - 1] === arrB[j - 1]) { aFlags[i - 1] = true; bFlags[j - 1] = true; i--; j--; }
+      if (a[i - 1] === b[j - 1]) { aFlags[i - 1] = true; bFlags[j - 1] = true; i--; j--; }
       else if (dp[i - 1][j] >= dp[i][j - 1]) i--; else j--;
     }
     return { aFlags, bFlags };
   }
 
-  function renderDiffLine(text: string, flags: boolean[]) {
-    const chars = Array.from(text);
-    return (
-      <span>
-        {chars.map((ch, idx) => (
-          <span key={idx} className={flags[idx] ? "text-emerald-700" : "text-red-600"}>{ch}</span>
-        ))}
-      </span>
-    );
-  }
+  // 格式化时间
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
-  // 旧 evaluate 逻辑已弃用（合并为 start/stop 流程）
-
-  // Web Speech 回退（极简示例）
-  async function transcribeWithWebSpeech(lang: string): Promise<string> {
-    interface WebSpeechRecognitionEvent extends Event {
-      results: SpeechRecognitionResultList;
-    }
-
-    interface WebSpeechRecognitionErrorEvent extends Event {
-      error: string;
-    }
-
-    interface WebSpeechRecognition extends EventTarget {
-      lang: string;
-      interimResults: boolean;
-      maxAlternatives: number;
-      continuous: boolean;
-      start(): void;
-      onresult: (event: WebSpeechRecognitionEvent) => void;
-      onerror: (event: WebSpeechRecognitionErrorEvent) => void;
-      onend: () => void;
-    }
-
-    const SR = ((window as unknown) as {
-      SpeechRecognition?: new() => WebSpeechRecognition;
-      webkitSpeechRecognition?: new() => WebSpeechRecognition;
-    }).SpeechRecognition || 
-    ((window as unknown) as {
-      SpeechRecognition?: new() => WebSpeechRecognition;
-      webkitSpeechRecognition?: new() => WebSpeechRecognition;
-    }).webkitSpeechRecognition;
-    
-    if (!SR) throw new Error("当前浏览器不支持 Web Speech 识别");
-    return new Promise((resolve, reject) => {
-      const rec = new SR();
-      rec.lang = lang === "zh" ? "zh-CN" : (lang === "ja" ? "ja-JP" : "en-US");
-      // 允许中间结果，延长说话时间窗口
-      rec.interimResults = true; 
-      rec.continuous = true;
-      rec.maxAlternatives = 1;
-      let txt = "";
-      rec.onresult = (e: WebSpeechRecognitionEvent) => { 
-        // 累积最终结果，保留更长说话时长
-        for (let i = 0; i < e.results.length; i++) {
-          const res = e.results[i];
-          if (res.isFinal) txt += res[0].transcript;
-        }
-      };
-      rec.onerror = (e: WebSpeechRecognitionErrorEvent) => reject(new Error(e.error || "speech error"));
-      rec.onend = () => resolve(txt);
-      try { rec.start(); } catch (e) { reject(e); }
-    });
-  }
-
-  // 封装：根据浏览器选择可用的原生识别（Chrome/Safari）
-  function transcribeWithBrowserRecognition(lang: string, onReady: (ctrl: { stop: () => void }) => void): Promise<string> {
-    // 优先 Chrome Web Speech，其次 Safari webkitSpeechRecognition
-    const w = window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown };
-    const hasChrome = !!w.SpeechRecognition || !!w.webkitSpeechRecognition;
-    const hasSafari = !!w.webkitSpeechRecognition;
-    if (!hasChrome && !hasSafari) {
-      return Promise.reject(new Error("当前浏览器不支持原生语音识别"));
-    }
-    // 我们统一用前面已有的两个函数之一
-    const promise = hasSafari
-      ? (async () => await transcribeWithWebKitSpeech(lang))()
-      : (async () => await transcribeWithWebSpeech(lang))();
-    // 暴露一个停止方法供上层在点击停止时调用
-    onReady({
-      stop: () => {
-        try {
-          // Web Speech/ WebKit API 都是通过 stop() 结束，但我们在实现里等待 onend 以解析
-          // 这里没有直接的实例句柄，因为我们封装在各自函数内部；在实践中停止通过 onend 回调触发
-          // 为确保一致性，停止逻辑交给浏览器按钮触发的 rec.stop()；本方法保留作为占位。
-        } catch {}
-      }
-    });
-    return promise;
-  }
-
-  // 专为 Safari 定制：仅使用 webkitSpeechRecognition
-  async function transcribeWithWebKitSpeech(lang: string): Promise<string> {
-    interface WKEvent extends Event { results: SpeechRecognitionResultList }
-    interface WKErr extends Event { error: string }
-    interface WKRec extends EventTarget {
-      lang: string;
-      interimResults: boolean;
-      continuous: boolean;
-      maxAlternatives: number;
-      start(): void;
-      stop(): void;
-      onresult: (event: WKEvent) => void;
-      onerror: (event: WKErr) => void;
-      onend: () => void;
-    }
-    const Ctor = (window as unknown as { webkitSpeechRecognition?: new () => WKRec }).webkitSpeechRecognition;
-    if (!Ctor) throw new Error("当前 Safari 未提供语音识别接口（webkitSpeechRecognition）");
-    return new Promise((resolve, reject) => {
-      const rec = new Ctor();
-      rec.lang = lang === "zh" ? "zh-CN" : (lang === "ja" ? "ja-JP" : "en-US");
-      rec.interimResults = true;
-      rec.continuous = true;
-      rec.maxAlternatives = 1;
-      let txt = "";
-      rec.onresult = (e: WKEvent) => {
-        for (let i = 0; i < e.results.length; i++) {
-          const res = e.results[i];
-          if (res.isFinal) txt += res[0].transcript;
-        }
-      };
-      rec.onerror = (e: WKErr) => reject(new Error(e.error || "speech error"));
-      rec.onend = () => resolve(txt);
-      try { rec.start(); } catch (e) { reject(e as Error); }
-    });
-  }
-
-  useEffect(() => {
-    // 某些浏览器需要异步获取 voices
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.onvoiceschanged = () => {};
-    }
-  }, []);
+  // 获取评分等级
+  const getScoreLevel = (score: number) => {
+    if (score >= 0.9) return { level: "优秀", color: "text-green-600", bg: "bg-green-50", border: "border-green-200" };
+    if (score >= 0.8) return { level: "良好", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" };
+    if (score >= 0.7) return { level: "中等", color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" };
+    if (score >= 0.6) return { level: "及格", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" };
+    return { level: "需改进", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
+  };
 
   return (
-    <main className="max-w-3xl mx-auto p-6 space-y-5">
-      <h1 className="text-2xl font-semibold">Shadowing 跟读练习（TTS + 录音）</h1>
+    <main className="max-w-4xl mx-auto p-6 space-y-5">
+      <h1 className="text-2xl font-semibold">Shadowing 跟读练习（真实语音识别）</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <label className="flex items-center gap-2">
           <span className="w-24">语言</span>
-          <select value={lang} onChange={e=>{const v=e.target.value as "ja"|"en"|"zh"; setLang(v); setTopic(v==="ja"?"日程の調整":v==="zh"?"自我介绍":"Travel plan");}} className="border rounded px-2 py-1">
+          <select 
+            value={lang} 
+            onChange={e => {
+              const v = e.target.value as "ja"|"en"|"zh"; 
+              setLang(v); 
+            }} 
+            className="border rounded px-2 py-1"
+          >
             <option value="ja">日语</option>
             <option value="en">英语</option>
-            <option value="zh">中文（普通话）</option>
+            <option value="zh">中文</option>
           </select>
-        </label>
-
-        <label className="flex items-center gap-2">
-          <span className="w-24">模型</span>
-          <select value={model} onChange={e=>setModel(e.target.value)} className="border rounded px-2 py-1">
-            {MODELS.map(m=><option key={m.id} value={m.id}>{m.label}</option>)}
-          </select>
-        </label>
-
-        <label className="flex items-center gap-2 md:col-span-2">
-          <span className="w-24">话题</span>
-          <input value={topic} onChange={e=>setTopic(e.target.value)} className="border rounded px-2 py-1 flex-1" />
         </label>
       </div>
 
+      {/* 等级选择器 */}
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <LevelPicker 
+          lang={lang} 
+          value={level} 
+          onChange={setLevel} 
+          recommended={recommendedLevel} 
+        />
+        {recommendedLevel !== null && recommendedLevel !== level && (
+          <div className="mt-2 text-sm text-amber-600">
+            建议选择 L{recommendedLevel} 等级进行练习
+          </div>
+        )}
+        
+        {/* 生成题库链接 */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="text-sm text-gray-600 mb-2">
+            需要更多练习内容？
+          </div>
+          <a 
+            href="/admin/shadowing/ai" 
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+          >
+            <span>🤖 AI 生成题库</span>
+            <span className="text-xs opacity-80">→</span>
+          </a>
+          <div className="text-xs text-gray-500 mt-1">
+            使用 AI 生成更多适合你当前等级的练习内容
+          </div>
+        </div>
+      </div>
+
       <div className="flex gap-2">
-        <button onClick={gen} disabled={loading} className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">
-          {loading ? "生成中..." : "生成文本"}
+        <button 
+          onClick={getNextQuestion} 
+          disabled={loading} 
+          className="px-3 py-1 rounded bg-black text-white disabled:opacity-60"
+        >
+          {loading ? "加载中..." : "获取下一题"}
         </button>
       </div>
 
       {err && <div className="text-red-600 text-sm">{err}</div>}
 
       {data && (
-        <>
-          <section className="p-4 bg-white rounded-2xl shadow space-y-3">
-            <div className="text-sm text-gray-600">话题：{data.topic} · 语言：{data.lang}</div>
-            <p className="whitespace-pre-wrap">{data.text}</p>
-          </section>
-
-          <section className="p-4 bg-white rounded-2xl shadow space-y-3">
-            <h3 className="font-medium">Google TTS（WaveNet / Neural2）</h3>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <button onClick={()=>loadVoices()} className="px-3 py-1 rounded border">刷新声音列表</button>
-              <span className="text-sm text-gray-500">已预配置最佳声音选项</span>
-
-              <select onFocus={()=>{ if (!voicesLoaded) loadVoices(); }} value={voiceName} onChange={e=>setVoiceName(e.target.value)} className="border rounded px-2 py-1 min-w-[280px]">
-                {voices.map(v => (
-                  <option key={v.name} value={v.name}>
-                    {v.name} · {v.type} · {v.ssmlGender?.toString().replace("SSML_VOICE_GENDER_","")}
-                  </option>
-                ))}
-              </select>
-
-              <label className="flex items-center gap-1 text-sm">
-                语速
-                <input type="number" step="0.1" min="0.25" max="4" value={rate} onChange={e=>setRate(Number(e.target.value)||1)} className="w-20 border rounded px-2 py-1" />
-              </label>
-              <label className="flex items-center gap-1 text-sm">
-                音高
-                <input type="number" step="1" min="-20" max="20" value={pitch} onChange={e=>setPitch(Number(e.target.value)||0)} className="w-20 border rounded px-2 py-1" />
-              </label>
-
-              <button onClick={synthGoogle} className="px-3 py-1 rounded bg-black text-white">▶ Google TTS 合成</button>
-              <button onClick={saveTts} disabled={!ttsBlob} className="px-3 py-1 rounded bg-emerald-600 text-white disabled:opacity-60">↑ 保存到库</button>
-              <button onClick={speak} className="px-3 py-1 rounded border">回退：Web Speech</button>
+        <section className="p-4 bg-white rounded-2xl shadow space-y-4">
+          <div className="flex justify-between items-start">
+            <div className="text-sm text-gray-600">
+              标题：{data.title} · 语言：{data.lang} · 等级：L{data.level}
             </div>
-
-            {ttsUrl && <audio className="mt-2 w-full" controls src={ttsUrl}></audio>}
-          </section>
-
-          <section className="p-4 bg-white rounded-2xl shadow space-y-3">
-            <h3 className="font-medium">录音</h3>
-            <div className="flex gap-2">
-              {recState !== "recording" && <button onClick={startRec} className="px-3 py-1 rounded bg-emerald-600 text-white">● 开始录音</button>}
-              {recState === "recording" && <button onClick={stopRec} className="px-3 py-1 rounded bg-red-600 text-white">■ 停止</button>}
-              <button onClick={upload} disabled={!localUrl} className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">↑ 上传保存</button>
-              {localUrl && <a className="px-3 py-1 rounded border" href={localUrl} download>下载本地录音</a>}
+            <button 
+              onClick={getNextQuestion}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              换一题
+            </button>
+          </div>
+          
+          {/* 原文显示 */}
+          <div className="p-3 bg-gray-50 rounded">
+            <p className="whitespace-pre-wrap text-lg">{data.text}</p>
+          </div>
+          
+          {/* 音频播放器 */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">原音频：</span>
+            <audio controls src={data.audio_url} className="flex-1" />
+          </div>
+          
+          {/* 录音控制 */}
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">跟读录音：</span>
+            {!isRecording ? (
+              <button
+                onClick={startRecording}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                开始录音
+              </button>
+            ) : (
+              <button
+                onClick={stopRecording}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              >
+                停止录音 ({formatTime(recordingTime)})
+              </button>
+            )}
+          </div>
+          
+          {/* 语音识别状态 */}
+          {isRecognizing && (
+            <div className="p-3 bg-blue-50 rounded border border-blue-200">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                <span className="text-sm text-blue-700">正在识别语音...</span>
+              </div>
             </div>
-
-            {localUrl && <audio className="mt-2 w-full" controls src={localUrl}></audio>}
-          </section>
-
-          <section className="p-4 bg白 rounded-2xl shadow space-y-3">
-            <h3 className="font-medium">🗣️ 口语测评（录音+识别一体）</h3>
-            <div className="flex flex-wrap items-center gap-2">
-              {recState !== "recording" && (
-                <button onClick={startLiveAssess} className="px-3 py-1 rounded bg-emerald-600 text-white disabled:opacity-60">▶ 开始录音并测评</button>
-              )}
-              {recState === "recording" && (
-                <button onClick={stopLiveAssess} className="px-3 py-1 rounded bg-red-600 text-white">■ 停止录音并生成反馈</button>
-              )}
-              {asrLoading && <span className="text-sm text-gray-500">评测中...</span>}
+          )}
+          
+          {/* 识别结果显示 */}
+          {recognizedText && (
+            <div className="p-3 bg-green-50 rounded border border-green-200">
+              <div className="text-sm font-medium text-green-700 mb-2">🎤 语音识别结果：</div>
+              <div className="text-sm text-green-600 whitespace-pre-wrap">{recognizedText}</div>
             </div>
-
-            {asrScore && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm mt-3">
-                <div className="p-3 rounded border">
-                  <div className="text-gray-500">准确度</div>
-                  <div className="text-2xl">{asrScore.accuracy}%</div>
-                </div>
-                <div className="p-3 rounded border">
-                  <div className="text-gray-500">覆盖度</div>
-                  <div className="text-2xl">{asrScore.coverage}%</div>
-                </div>
-                <div className="p-3 rounded border">
-                  <div className="text-gray-500">语速</div>
-                  <div className="text-2xl">{asrScore.speed_wpm || '-'} {lang === 'en' ? 'wpm' : '字/分'}</div>
-                </div>
-              </div>
-            )}
-
-            {adviceLoading && <div className="text-sm text-gray-500">正在生成针对性建议...</div>}
-            {adviceErr && <div className="text-sm text-red-600">{adviceErr}</div>}
-            {adviceText && (
-              <div className="mt-3 space-y-2">
-                <div className="text-sm text-gray-500">AI 针对性建议</div>
-                <div className="p-3 rounded bg-amber-50 text-sm whitespace-pre-wrap">{adviceText}</div>
-              </div>
-            )}
-
-            {asrText && (
-              <div className="mt-3 space-y-2">
-                <div className="text-sm text-gray-500">识别文本</div>
-                <div className="p-3 rounded bg-gray-50 text-sm whitespace-pre-wrap">{asrText}</div>
-              </div>
-            )}
-
-            {asrDetail.ref.length > 0 && (
-              <div className="mt-3 space-y-2">
-                <div className="text-sm text-gray-500">逐句对比</div>
-                <div className="space-y-2">
-                  {asrDetail.ref.map((sentence, i) => {
-                    const hypSent = asrDetail.hyp[i] || "";
-                    const { aFlags, bFlags } = lcsFlags(sentence, hypSent);
-                    return (
-                      <div key={i} className="p-2 rounded border">
-                        <div className="text-gray-500">参考</div>
-                        <div>{renderDiffLine(sentence, aFlags)}</div>
-                        <div className="text-gray-500 mt-1">识别</div>
-                        <div>{hypSent ? renderDiffLine(hypSent, bFlags) : <span className="text-red-600">(未识别)</span>}</div>
+          )}
+          
+          {/* 识别错误显示 */}
+          {recognitionError && (
+            <div className="p-3 bg-red-50 rounded border border-red-200">
+              <div className="text-sm text-red-700">{recognitionError}</div>
+            </div>
+          )}
+          
+          {/* 录音播放器 */}
+          {audioUrl && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium">你的录音：</span>
+              <audio controls src={audioUrl} className="flex-1" />
+              <button
+                onClick={evaluateRecording}
+                disabled={isScoring}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                {isScoring ? "评分中..." : "开始评分"}
+              </button>
+            </div>
+          )}
+          
+          {/* 逐句对照表 */}
+          {sentenceAnalysis.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-medium mb-4">📊 逐句发音对照表（基于真实识别）</h3>
+              <div className="space-y-3">
+                {sentenceAnalysis.map((item, index) => (
+                  <div 
+                    key={index} 
+                    className={`p-3 rounded border ${
+                      item.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`text-sm font-medium ${
+                            item.isCorrect ? 'text-green-700' : 'text-red-700'
+                          }`}>
+                            {item.isCorrect ? '✅ 正确' : '❌ 需改进'}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            准确度: {Math.round(item.accuracy * 100)}%
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-700 mb-2">
+                          <span className="font-medium">原文：</span>
+                          {item.sentence}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium">反馈：</span>
+                          {item.feedback}
+                        </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 逐句逐字比对（去标点） */}
+          {diffRows.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-medium mb-3">🔤 逐句逐字比对（识别不含标点）</h3>
+              <div className="space-y-3">
+                {diffRows.map((row, i) => (
+                  <div key={i} className="p-3 rounded border">
+                    <div className="text-xs text-gray-500 mb-1">原文</div>
+                    <div className="text-sm flex flex-wrap gap-1">
+                      {row.refTokens.map((t, idx) => (
+                        <span key={idx} className={row.refFlags[idx] ? "text-emerald-700" : "text-red-600"}>{t}</span>
+                      ))}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2 mb-1">识别</div>
+                    <div className="text-sm flex flex-wrap gap-1">
+                      {row.hypTokens.map((t, idx) => (
+                        <span key={idx} className={row.hypFlags[idx] ? "text-emerald-700" : "text-red-600"}>{t}</span>
+                      ))}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">准确度：{Math.round(row.accuracy * 100)}%</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* 总体评分结果 */}
+          {score !== null && (
+            <div className={`p-4 rounded border ${getScoreLevel(score).bg} ${getScoreLevel(score).border}`}>
+              <div className="text-center">
+                <div className={`text-3xl font-bold ${getScoreLevel(score).color}`}>
+                  {Math.round(score * 100)}%
+                </div>
+                <div className={`text-lg font-medium ${getScoreLevel(score).color} mt-1`}>
+                  {getScoreLevel(score).level}
                 </div>
               </div>
-            )}
-          </section>
-        </>
+            </div>
+          )}
+        </section>
       )}
     </main>
   );
