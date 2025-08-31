@@ -10,19 +10,28 @@ export async function GET(req: NextRequest) {
 		const lang = searchParams.get("lang") || "en";
 		const level = parseInt(searchParams.get("level") || "2");
 		
-		// 验证参数
+		// 参数校验
 		if (!["en", "ja", "zh"].includes(lang)) {
-			return NextResponse.json({ error: "无效的语言参数" }, { status: 400 });
+			return NextResponse.json({ error: "无效的语言参数", code: "BAD_REQUEST_LANG" }, { status: 400 });
 		}
-		
 		if (level < 1 || level > 5) {
-			return NextResponse.json({ error: "无效的等级参数" }, { status: 400 });
+			return NextResponse.json({ error: "无效的等级参数", code: "BAD_REQUEST_LEVEL" }, { status: 400 });
+		}
+
+		// 环境检查（部署最常见问题）
+		const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+		const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+		if (!url || !serviceKey) {
+			return NextResponse.json({
+				error: "服务未配置，请在部署环境设置 SUPABASE_SERVICE_ROLE_KEY 与 NEXT_PUBLIC_SUPABASE_URL",
+				code: "SERVICE_NOT_CONFIGURED"
+			}, { status: 500 });
 		}
 
 		// 使用服务端密钥客户端以绕过 RLS（只读查询）
 		const supabase = getServiceSupabase();
 
-		// 从题库中随机选择一道题
+		// 查询题库
 		const { data: items, error } = await supabase
 			.from("shadowing_items")
 			.select("*")
@@ -32,12 +41,11 @@ export async function GET(req: NextRequest) {
 			.limit(10);
 
 		if (error) {
-			console.error("查询题库失败:", error);
-			return NextResponse.json({ error: "查询题库失败" }, { status: 500 });
+			return NextResponse.json({ error: "查询题库失败", code: "DB_QUERY_FAILED" }, { status: 500 });
 		}
 
 		if (!items || items.length === 0) {
-			return NextResponse.json({ error: "该等级暂无题目" }, { status: 404 });
+			return NextResponse.json({ error: "该等级暂无题目", code: "NO_ITEMS" }, { status: 404 });
 		}
 
 		// 随机选择一道题
@@ -59,8 +67,7 @@ export async function GET(req: NextRequest) {
 			}
 		});
 
-	} catch (error) {
-		console.error("获取下一题失败:", error);
-		return NextResponse.json({ error: "服务器错误" }, { status: 500 });
+	} catch (e) {
+		return NextResponse.json({ error: "服务器错误", code: "UNEXPECTED", detail: e instanceof Error ? e.message : String(e) }, { status: 500 });
 	}
 }
