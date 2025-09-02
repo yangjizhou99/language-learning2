@@ -1,6 +1,8 @@
 "use client";
+export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 export default function AdminArticles() {
   const [tab, setTab] = useState<"fetch"|"manual"|"ai">("fetch");
@@ -212,7 +214,7 @@ function AIForm() {
       </Row>
       <div className="flex gap-2">
         <button onClick={submit} className="px-3 py-1 rounded bg-black text-white">生成草稿</button>
-        <a href="/admin/drafts" className="px-3 py-1 rounded border text-sm">查看草稿箱</a>
+        <Link href="/admin/drafts" className="px-3 py-1 rounded border text-sm">查看草稿箱</Link>
       </div>
       {log && <pre className="p-3 bg-gray-50 rounded text-sm whitespace-pre-wrap">{log}</pre>}
       <p className="text-xs text-gray-500">说明：AI 生成草稿 → 管理员审核 → 发布到正式题库。支持 OpenRouter 多模型选择。</p>

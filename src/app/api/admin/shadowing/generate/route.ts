@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-// import { requireAdmin } from "@/lib/admin"; // 暂时注释掉
+import { requireAdmin } from "@/lib/admin";
 import { chatJSON } from "@/lib/ai/client";
 
 function buildUserPrompt({ 
@@ -23,7 +23,7 @@ function buildUserPrompt({
   const L = lang === "en" ? "English" : lang === "ja" ? "日本語" : "简体中文";
   
   // 每级的长度/词汇约束
-  const perLevel: any = {
+  const perLevel: Record<number, { desc: string; words: [number, number] }> = {
     1: { desc: "超短句·高频词；口语化；避免复杂从句", words: words ?? [40, 80] },
     2: { desc: "短句；基础连接词；简单从句", words: words ?? [60, 120] },
     3: { desc: "中等篇幅；常见并列/从句", words: words ?? [100, 180] },
@@ -57,11 +57,10 @@ ${topic ? `主题：${topic}\n` : ""}
 
 export async function POST(req: NextRequest) {
   try {
-    // 暂时移除管理员权限检查
-    // const auth = await requireAdmin();
-    // if (!auth.ok) {
-    //   return NextResponse.json({ error: "forbidden" }, { status: 403 });
-    // }
+    const auth = await requireAdmin(req);
+    if (!auth.ok) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
 
     const body = await req.json();
     const lang = (body.lang || "en").toLowerCase();
@@ -89,7 +88,7 @@ export async function POST(req: NextRequest) {
       ]
     });
 
-    let parsed: any;
+    let parsed: { items?: Array<{ title?: unknown; text?: unknown }> };
     try {
       parsed = JSON.parse(content);
     } catch {
@@ -101,12 +100,12 @@ export async function POST(req: NextRequest) {
     // 轻量清洗
     const clean = items
       .slice(0, count)
-      .map((it: any, i: number) => ({
+      .map((it: { title?: unknown; text?: unknown }, i: number) => ({
         idx: i,
         title: String(it.title || "Untitled").slice(0, 80),
         text: String(it.text || "").trim()
       }))
-      .filter((it: any) => it.text.length >= 30);
+      .filter((it) => it.text.length >= 30);
 
     return NextResponse.json({
       ok: true,

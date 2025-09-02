@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";

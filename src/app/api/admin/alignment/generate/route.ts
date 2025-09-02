@@ -49,8 +49,7 @@ Ensure the **exemplar** strictly matches the step type and is speakable/natural.
 }
 
 export async function POST(req: NextRequest){
-  // 临时禁用认证检查，允许所有用户访问
-  // const auth = await requireAdmin(); if (!auth.ok) return NextResponse.json({ error:"forbidden" }, { status:403 });
+  const auth = await requireAdmin(req); if (!auth.ok) return NextResponse.json({ error:"forbidden" }, { status:403 });
   
   const b = await req.json();
   const lang = (b.lang || "en").toLowerCase();
