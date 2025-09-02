@@ -71,47 +71,47 @@ export default function AlignmentAIPage(){
         return;
       }
       
-             while (true) {
-         const { done, value } = await reader.read();
-         if (done) break;
-         
-         const chunk = decoder.decode(value);
-         const lines = chunk.split('\n');
-         
-         for (const line of lines) {
-           if (line.startsWith('data: ')) {
-             const data = line.slice(6);
-             if (data === '[START]') {
-               setLive("开始生成...\n");
-             } else if (data === '[DONE]') {
-               setLive(prev => prev + "\n生成完成！");
-               setLog("流式生成完成");
-               break; // 收到完成信号后退出循环
-             } else if (data.trim()) {
-               acc += data;
-               setLive(prev => prev + data);
-             }
-           }
-         }
-       }
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[START]') {
+              setLive("开始生成...\n");
+            } else if (data === '[DONE]') {
+              setLive(prev => prev + "\n生成完成！");
+              setLog("流式生成完成");
+              break;
+            } else if (data.trim()) {
+              acc += data;
+              setLive(prev => prev + data);
+            }
+          }
+        }
+      }
       
-             // 最终解析
-       try {
-         console.log("尝试解析 JSON:", acc);
-         const parsed = JSON.parse(acc);
-         if (parsed.version && parsed.order) {
-           setPack(parsed);
-           setUsage({ prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }); // 流式传输暂时没有用量统计
-           setLog("训练包生成完成");
-         } else {
-           setLog("生成的 JSON 格式不正确，回退普通请求…");
-           await generateFallback();
-         }
-       } catch (e) {
-         console.error("JSON 解析失败:", e, "原始内容:", acc);
-         setLog(`JSON 解析失败：${e.message}，回退普通请求…`);
-         await generateFallback();
-       }
+      // 最终解析
+      try {
+        console.log("尝试解析 JSON:", acc);
+        const parsed = JSON.parse(acc);
+        if (parsed.version && parsed.order) {
+          setPack(parsed);
+          setUsage({ prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 });
+          setLog("训练包生成完成");
+        } else {
+          setLog("生成的 JSON 格式不正确，回退普通请求…");
+          await generateFallback();
+        }
+      } catch (e: any) {
+        console.error("JSON 解析失败:", e, "原始内容:", acc);
+        setLog(`JSON 解析失败：${e?.message || String(e)}，回退普通请求…`);
+        await generateFallback();
+      }
       
     } catch (error) {
       const err = error instanceof Error ? error.message : String(error);
