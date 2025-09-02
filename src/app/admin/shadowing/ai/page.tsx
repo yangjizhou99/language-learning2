@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { readSSE } from "@/lib/sse";
 
 type GenItem = { 
   idx: number; 
@@ -49,6 +50,7 @@ export default function ShadowingAIPage() {
   const [rate, setRate] = useState<number>(1.0);
   const [log, setLog] = useState("");
   const [loading, setLoading] = useState(false);
+  const [live, setLive] = useState("");
 
   // 加载模型列表
   useEffect(() => {
@@ -96,29 +98,71 @@ export default function ShadowingAIPage() {
     })();
   }, [lang]);
 
-  // 生成文本
-  const generate = async () => {
-    setLoading(true);
-    setLog("生成中…");
-    
+  // 回退：非流式生成
+  const generateFallback = async () => {
     try {
       const r = await fetch("/api/admin/shadowing/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lang, level, count, topic, provider, model, temperature })
       });
-      
       const j = await r.json();
       if (!r.ok) {
         setLog("生成失败：" + j.error);
         return;
       }
-      
       setItems(j.items);
       setUsage(j.usage);
       setLog(`已生成 ${j.items.length} 条，Token 用量：PT=${j.usage.prompt_tokens}, CT=${j.usage.completion_tokens}, TT=${j.usage.total_tokens}`);
     } catch (error) {
       setLog("生成失败：" + String(error));
+    }
+  };
+
+  // 生成文本（优先流式）
+  const generate = async () => {
+    setLoading(true);
+    setUsage(null);
+    setItems([]);
+    setLive("");
+    setLog("流式生成中…");
+    try {
+      const r = await fetch("/api/admin/shadowing/generate/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lang, level, count, topic, provider, model, temperature })
+      });
+      let acc = "";
+      await readSSE(r as unknown as Response, (t: string) => {
+        acc += t;
+        setLive(acc);
+      });
+
+      const trimmed = acc.trim();
+      let parsed: any;
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch {
+        const m = trimmed.match(/\{[\s\S]*\}/);
+        if (!m) throw new Error("LLM 返回的不是 JSON");
+        parsed = JSON.parse(m[0]);
+      }
+      const list = Array.isArray(parsed.items) ? parsed.items : [];
+      const clean = list
+        .slice(0, count)
+        .map((it: any, i: number) => ({
+          idx: i,
+          title: String(it.title || "Untitled").slice(0, 80),
+          text: String(it.text || "").trim()
+        }))
+        .filter((it: any) => it.text.length >= 30);
+
+      setItems(clean);
+      setLog(`已生成 ${clean.length} 条（流式）`);
+    } catch (e: unknown) {
+      const err = e instanceof Error ? e.message : String(e);
+      setLog(`流式生成失败：${err}，回退普通请求…`);
+      await generateFallback();
     } finally {
       setLoading(false);
     }
@@ -324,6 +368,11 @@ export default function ShadowingAIPage() {
             </span>
           )}
         </div>
+        {loading && live && (
+          <div className="mt-2 text-xs text-gray-700 bg-gray-50 p-2 rounded max-h-48 overflow-auto">
+            <div className="font-mono whitespace-pre-wrap break-words">{live}</div>
+          </div>
+        )}
       </section>
 
       {/* 文本校对 & TTS 合成 */}
