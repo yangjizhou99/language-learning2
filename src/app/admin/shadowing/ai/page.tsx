@@ -26,6 +26,9 @@ function AdminNav() {
         <Link href="/admin/shadowing/ai" className="text-blue-600 hover:underline font-medium">
           AI生成Shadowing题库
         </Link>
+        <Link href="/admin/alignment/ai" className="text-blue-600 hover:underline">
+          AI生成对齐训练包
+        </Link>
         <Link href="/practice/shadowing" className="text-green-600 hover:underline">
           练习页面
         </Link>
