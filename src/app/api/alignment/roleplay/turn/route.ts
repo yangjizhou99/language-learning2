@@ -2,7 +2,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
 import { chatJSON } from "@/lib/ai/client";
 import { normUsage } from "@/lib/ai/usage";
 
@@ -46,11 +45,6 @@ function buildTurnPrompt({ lang, topic, stepKey, step, role, historyPreview, isK
 }
 
 export async function POST(req: NextRequest) {
-  // 临时禁用认证检查，允许所有用户访问
-  // const supabase = createServerClient();
-  // const user = await supabase.auth.getUser();
-  // if (!user.data.user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
-
   const b = await req.json();
   const { pack_id, step_key, role, messages = [], provider = "openrouter", model = "openai/gpt-4o-mini", temperature = 0.3 } = b as any;
   if (!pack_id || !step_key || !role) return NextResponse.json({ error: "missing fields" }, { status: 400 });
