@@ -84,6 +84,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     { href: "/admin/drafts/batch", label: "批量生成", icon: "⚡" },
     { href: "/admin/alignment/ai", label: "对齐练习", icon: "🤝" },
     { href: "/admin/shadowing/ai", label: "跟读练习", icon: "👂" },
+    { href: "/admin/drafts/simple", label: "草稿箱（简）", icon: "🧪" },
+    { href: "/admin/drafts/test-fix", label: "草稿诊断", icon: "🔧" },
     { href: "/admin/setup", label: "系统设置", icon: "⚙️" },
   ];
 
