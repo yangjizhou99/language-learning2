@@ -3,48 +3,68 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { usePathname, useRouter } from "next/navigation";
 import TopNav from "@/components/TopNav";
+import { User } from "@supabase/supabase-js";
 
 export default function AuthGate() {
   const [checking, setChecking] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    const publicRoutes = ["/auth", "/auth/callback"];
-    const isPublic = publicRoutes.some(p => pathname?.startsWith(p));
+    let mounted = true;
 
-    (async () => {
-      const { data: s } = await supabase.auth.getSession();
-      const user = s?.session?.user;
-      if (!user) {
-        if (!isPublic) router.replace("/auth");
-      } else {
-        await supabase.from("profiles").upsert({ id: user.id }, { onConflict: "id" });
-        if (isPublic) router.replace("/");
+    // 检查初始会话
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          setUser(session?.user || null);
+          setChecking(false);
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+        if (mounted) {
+          setChecking(false);
+        }
       }
-      setChecking(false);
-    })();
+    };
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, sess) => {
-      const user = sess?.user;
-      const isPublicNow = publicRoutes.some(p => pathname?.startsWith(p));
-      if (!user) {
-        if (!isPublicNow) router.replace("/auth");
-      } else {
-        await supabase.from("profiles").upsert({ id: user.id }, { onConflict: "id" });
-        if (isPublicNow) router.replace("/");
+    checkSession();
+
+    // 监听认证状态变化
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      
+      setUser(session?.user || null);
+      
+      // 只在登录/登出时处理路由跳转
+      if (event === 'SIGNED_IN' && session?.user) {
+        // 用户登录后，确保profile存在
+        supabase.from("profiles").upsert({ id: session.user.id }, { onConflict: "id" });
+        
+        // 如果当前在登录页，跳转到首页
+        if (pathname === '/auth') {
+          router.replace('/');
+        }
       }
     });
 
-    return () => { sub.subscription.unsubscribe(); };
-  }, [pathname, router]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []); // 不依赖 pathname 和 router
 
+  // 等待检查完成
   if (checking) return null;
-  
-  const publicRoutes = ["/auth", "/auth/callback"];
+
+  // 定义公开路由
+  const publicRoutes = ["/auth", "/auth/callback", "/practice"];
   const isPublic = publicRoutes.some(p => pathname?.startsWith(p));
-  
-  // Only hide TopNav on explicit auth pages, show for all others
+
+  // 在认证页面隐藏TopNav
   if (isPublic && pathname !== "/") return null;
+  
   return <TopNav />;
-}
+} 

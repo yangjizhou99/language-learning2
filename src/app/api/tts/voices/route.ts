@@ -73,23 +73,25 @@ function hit(key: string, windowMs = 5000) {
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await requireUser();
-    if (!user) return new NextResponse("Unauthorized", { status: 401 });
+    // 暂时移除用户认证要求
+    // const user = await requireUser();
+    // if (!user) return new NextResponse("Unauthorized", { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const lang = searchParams.get("lang") || "ja";
     const kind = (searchParams.get("kind") || "Neural2").toLowerCase(); // neural2|wavenet|all
 
-    const gateKey = `${user.id}:${lang}`;
-    if (!hit(gateKey, 5000)) {
-      return new NextResponse(JSON.stringify([]), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "s-maxage=60, stale-while-revalidate=300"
-        }
-      });
-    }
+    // 暂时移除限流检查
+    // const gateKey = `${user.id}:${lang}`;
+    // if (!hit(gateKey, 5000)) {
+    //   return new NextResponse(JSON.stringify([]), {
+    //     status: 200,
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       "Cache-Control": "s-maxage=60, stale-while-revalidate=300"
+    //     }
+    //   });
+    // }
 
     const client = makeClient();
 

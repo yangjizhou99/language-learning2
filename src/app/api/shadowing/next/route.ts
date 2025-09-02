@@ -1,0 +1,73 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { NextRequest, NextResponse } from "next/server";
+import { getServiceSupabase } from "@/lib/supabaseAdmin";
+
+export async function GET(req: NextRequest) {
+	try {
+		const searchParams = new URL(req.url).searchParams;
+		const lang = searchParams.get("lang") || "en";
+		const level = parseInt(searchParams.get("level") || "2");
+		
+		// 参数校验
+		if (!["en", "ja", "zh"].includes(lang)) {
+			return NextResponse.json({ error: "无效的语言参数", code: "BAD_REQUEST_LANG" }, { status: 400 });
+		}
+		if (level < 1 || level > 5) {
+			return NextResponse.json({ error: "无效的等级参数", code: "BAD_REQUEST_LEVEL" }, { status: 400 });
+		}
+
+		// 环境检查（部署最常见问题）
+		const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+		const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+		if (!url || !serviceKey) {
+			return NextResponse.json({
+				error: "服务未配置，请在部署环境设置 SUPABASE_SERVICE_ROLE_KEY 与 NEXT_PUBLIC_SUPABASE_URL",
+				code: "SERVICE_NOT_CONFIGURED"
+			}, { status: 500 });
+		}
+
+		// 使用服务端密钥客户端以绕过 RLS（只读查询）
+		const supabase = getServiceSupabase();
+
+		// 查询题库
+		const { data: items, error } = await supabase
+			.from("shadowing_items")
+			.select("*")
+			.eq("lang", lang)
+			.eq("level", level)
+			.order("created_at", { ascending: false })
+			.limit(10);
+
+		if (error) {
+			return NextResponse.json({ error: "查询题库失败", code: "DB_QUERY_FAILED" }, { status: 500 });
+		}
+
+		if (!items || items.length === 0) {
+			return NextResponse.json({ error: "该等级暂无题目", code: "NO_ITEMS" }, { status: 404 });
+		}
+
+		// 随机选择一道题
+		const randomIndex = Math.floor(Math.random() * items.length);
+		const selectedItem = items[randomIndex];
+
+		return NextResponse.json({
+			item: {
+				id: selectedItem.id,
+				title: selectedItem.title,
+				text: selectedItem.text,
+				audio_url: selectedItem.audio_url,
+				level: selectedItem.level,
+				lang: selectedItem.lang,
+				duration_ms: selectedItem.duration_ms,
+				tokens: selectedItem.tokens,
+				cefr: selectedItem.cefr,
+				meta: selectedItem.meta
+			}
+		});
+
+	} catch (e) {
+		return NextResponse.json({ error: "服务器错误", code: "UNEXPECTED", detail: e instanceof Error ? e.message : String(e) }, { status: 500 });
+	}
+}
