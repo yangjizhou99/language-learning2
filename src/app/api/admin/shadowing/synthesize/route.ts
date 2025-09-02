@@ -2,15 +2,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-// import { requireAdmin } from "@/lib/admin"; // 暂时注释掉
+import { requireAdmin } from "@/lib/admin";
 
 export async function POST(req: NextRequest) {
   try {
-    // 暂时移除管理员权限检查
-    // const auth = await requireAdmin();
-    // if (!auth.ok) {
-    //   return NextResponse.json({ error: "forbidden" }, { status: 403 });
-    // }
+    const auth = await requireAdmin(req);
+    if (!auth.ok) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
 
     const body = await req.json();
     const { text, lang, voice, speakingRate = 1.0 } = body;
