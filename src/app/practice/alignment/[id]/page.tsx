@@ -303,7 +303,7 @@ export default function AlignmentPracticePage() {
   }
 
   const step = pack.steps[currentStep] as Step;
-  const stepOrder = pack.steps.order || ["D1", "D2", "T3", "W4", "T5", "W6"];
+  const stepOrder: string[] = (pack.steps.order as string[]) || ["D1", "D2", "T3", "W4", "T5", "W6"];
 
   return (
     <main className="max-w-6xl mx-auto p-6 space-y-6">
