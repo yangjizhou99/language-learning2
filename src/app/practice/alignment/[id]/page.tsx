@@ -178,13 +178,13 @@ export default function AlignmentPracticePage() {
       //   body: JSON.stringify(body)
       // });
 
-      const data = await r.json();
-      if (data.ok) {
+      const data: any = await r.json();
+      if (data?.ok) {
         setScores(data.result.scores);
         setFeedback(data.result.feedback);
         setUsage(data.usage);
       } else {
-        setError(data.error);
+        setError(data?.error || "评分接口已停用");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
