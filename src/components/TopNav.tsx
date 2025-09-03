@@ -57,14 +57,14 @@ export default function TopNav() {
         <Link href="/" className="font-semibold">Lang Trainer</Link>
         <div className="flex items-center gap-3">
           <Link href="/practice/cloze">Cloze</Link>
-          <Link href="/practice/sft">SFT</Link>
+          {/* SFT 已移除 */}
           <Link href="/practice/alignment">对齐练习</Link>
           <Link href="/practice/wideread" prefetch={false}>广读</Link>
-          <Link href="/phrase-bank">短语库</Link>
+          {/* 短语库已移除 */}
           <Link href="/practice/shadowing" prefetch={false}>Shadowing</Link>
-          <Link href="/review">复盘</Link>
-          <Link href="/glossary">术语库</Link>
-          <Link href="/settings/profile">我的资料</Link>
+          {/* 复盘已移除 */}
+          {/* 术语库已移除 */}
+          {/* 我的资料已移除 */}
           {isAdmin && <Link href="/admin" className="text-orange-600">🛠️ 管理员</Link>}
           <span className="mx-2 text-gray-400">|</span>
           {!email ? (
