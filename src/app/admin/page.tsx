@@ -50,14 +50,41 @@ export default function AdminDashboard() {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       
+      // 获取 Cloze 统计
+      const clozeDraftsRes = await fetch("/api/admin/cloze/drafts", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      
+      const clozeItemsRes = await fetch("/api/admin/cloze/items", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      
+      let statsData: any = {
+        totalDrafts: 0,
+        pendingDrafts: 0,
+        publishedDrafts: 0,
+        totalClozeDrafts: 0,
+        totalClozeItems: 0
+      };
+      
       if (draftsRes.ok) {
         const draftsData = await draftsRes.json();
-        setStats({
-          totalDrafts: draftsData.length,
-          pendingDrafts: draftsData.filter((d: any) => d.status === 'pending').length,
-          publishedDrafts: draftsData.filter((d: any) => d.status === 'published').length
-        });
+        statsData.totalDrafts = draftsData.length;
+        statsData.pendingDrafts = draftsData.filter((d: any) => d.status === 'pending').length;
+        statsData.publishedDrafts = draftsData.filter((d: any) => d.status === 'published').length;
       }
+      
+      if (clozeDraftsRes.ok) {
+        const clozeDraftsData = await clozeDraftsRes.json();
+        statsData.totalClozeDrafts = clozeDraftsData.length;
+      }
+      
+      if (clozeItemsRes.ok) {
+        const clozeItemsData = await clozeItemsRes.json();
+        statsData.totalClozeItems = clozeItemsData.length;
+      }
+      
+      setStats(statsData);
     } catch (error) {
       console.error("加载统计失败:", error);
     }
@@ -106,17 +133,49 @@ export default function AdminDashboard() {
   }
 
   return (
-    <main className="max-w-6xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-semibold">管理员控制台</h1>
-        <div className="text-sm text-gray-600">
-          欢迎，{user.email}
+    <div className="min-h-screen bg-gray-50">
+      {/* 管理员导航栏 */}
+      <nav className="bg-white border-b shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            <Link href="/" className="text-lg font-semibold text-gray-900">
+              Lang Trainer
+            </Link>
+            <div className="flex items-center space-x-4">
+              <Link href="/admin" className="text-gray-700 hover:text-gray-900">
+                控制台
+              </Link>
+              <Link href="/admin/cloze/ai" className="text-gray-700 hover:text-gray-900">
+                Cloze 管理
+              </Link>
+              <Link href="/admin/cloze/drafts" className="text-blue-600 font-medium">
+                Cloze 草稿箱
+              </Link>
+              <Link href="/admin/setup" className="text-gray-700 hover:text-gray-900">
+                权限设置
+              </Link>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">欢迎，{user.email}</span>
+            <Link 
+              href="/" 
+              className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
+            >
+              返回首页
+            </Link>
+          </div>
         </div>
-      </div>
+      </nav>
+
+      <main className="max-w-6xl mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-semibold">管理员控制台</h1>
+        </div>
 
       {/* 统计概览 */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-white p-6 rounded-lg border shadow-sm">
             <h3 className="text-lg font-medium text-gray-900">总草稿数</h3>
             <p className="text-3xl font-bold text-blue-600">{stats.totalDrafts}</p>
@@ -128,6 +187,14 @@ export default function AdminDashboard() {
           <div className="bg-white p-6 rounded-lg border shadow-sm">
             <h3 className="text-lg font-medium text-gray-900">已发布</h3>
             <p className="text-3xl font-bold text-green-600">{stats.publishedDrafts}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg border shadow-sm">
+            <h3 className="text-lg font-medium text-gray-900">Cloze 草稿</h3>
+            <p className="text-3xl font-bold text-purple-600">{stats.totalClozeDrafts}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg border shadow-sm">
+            <h3 className="text-lg font-medium text-gray-900">Cloze 题目</h3>
+            <p className="text-3xl font-bold text-indigo-600">{stats.totalClozeItems}</p>
           </div>
         </div>
       )}
@@ -158,6 +225,14 @@ export default function AdminDashboard() {
           >
             <h3 className="font-medium text-gray-900">⚡ 批量生成</h3>
             <p className="text-sm text-gray-600 mt-1">批量创建文章草稿</p>
+          </Link>
+          
+          <Link 
+            href="/admin/cloze/ai" 
+            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <h3 className="font-medium text-gray-900">🎯 Cloze 挖空练习</h3>
+            <p className="text-sm text-gray-600 mt-1">AI生成、审核、发布挖空练习</p>
           </Link>
         </div>
       </div>
@@ -197,6 +272,17 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="font-medium">批量生成</h3>
                 <p className="text-sm text-gray-600">批量创建文章草稿</p>
+              </div>
+              <span className="text-gray-400">→</span>
+            </Link>
+            
+            <Link 
+              href="/admin/cloze/ai" 
+              className="flex items-center justify-between p-3 border rounded hover:bg-gray-50"
+            >
+              <div>
+                <h3 className="font-medium">Cloze 挖空练习</h3>
+                <p className="text-sm text-gray-600">AI生成、审核、发布挖空练习</p>
               </div>
               <span className="text-gray-400">→</span>
             </Link>
@@ -252,6 +338,7 @@ export default function AdminDashboard() {
           <p>• 数据库连接: 正常</p>
         </div>
       </div>
-    </main>
+      </main>
+    </div>
   );
 }

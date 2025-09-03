@@ -1,251 +1,346 @@
 "use client";
-import React, { useState } from "react";
-import { Lang } from "@/types/lang";
-import { readSSE } from "@/lib/sse";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { buildRAG } from "@/lib/rag";
-import { safeJsonFetch } from "@/lib/safeFetch";
-import { recommendClozeLevel, ClozeLevel } from "@/lib/adaptive";
+import { Lang } from "@/types/lang";
 
-type Blank = { idx: number; answer: string };
-type Explain = { idx:number; why:string };
-type ClozeResp = { passage: string; cloze: string; blanks: Blank[]; explain: Explain[] };
+interface ClozeBlank {
+  id: number;
+  type: string;
+  explanation: string;
+}
+
+interface ClozeItem {
+  id: string;
+  lang: string;
+  level: number;
+  topic: string;
+  title: string;
+  passage: string;
+  blanks: ClozeBlank[];
+}
+
+interface ScoringResult {
+  per_blank: Array<{
+    id: number;
+    score: number;
+    reason: string;
+    suggestion?: string;
+  }>;
+  overall: {
+    score: number;
+    feedback: string;
+    strengths: string[];
+    improvements: string[];
+  };
+}
 
 export default function ClozePage() {
   const [lang, setLang] = useState<Lang>("ja");
-  const [topic, setTopic] = useState("約束の時間調整");
-  const [model, setModel] = useState<"deepseek-chat"|"deepseek-reasoner">("deepseek-reasoner");
+  const [level, setLevel] = useState<number>(3);
+  const [provider, setProvider] = useState<'deepseek'|'openrouter'|'openai'>("deepseek");
+  const [model, setModel] = useState<string>('deepseek-chat');
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<ClozeResp|null>(null);
-  const [mode, setMode] = useState<"auto"|"manual">("auto");
-  const [level, setLevel] = useState<ClozeLevel>("mid");
-  const [startedAt, setStartedAt] = useState<number|null>(null);
-  const [answers, setAnswers] = useState<Record<number,string>>({});
-  const [score, setScore] = useState<number|null>(null);
+  const [scoring, setScoring] = useState(false);
+  const [currentItem, setCurrentItem] = useState<ClozeItem | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [scoringResult, setScoringResult] = useState<ScoringResult | null>(null);
   const [error, setError] = useState<string>("");
-  const [useRAG, setUseRAG] = useState(true);
-  const [ragStats, setRagStats] = useState<{terms:number;phrases:number;hasProfile:boolean}>({terms:0,phrases:0,hasProfile:false});
-  const [streamMode, setStreamMode] = useState(true);
-  const [liveText, setLiveText] = useState("");
 
-  const prepareLevel = async () => {
-    if (mode === "manual") return level;
-    const { data: u } = await supabase.auth.getUser();
-    const uid = u?.user?.id;
-    const rec = uid ? await recommendClozeLevel(uid) : "mid";
-    setLevel(rec);
-    return rec;
-  };
 
-  const gen = async () => {
-    setScore(null); setError(""); setLoading(true);
+  const loadNextItem = async () => {
+    setLoading(true);
+    setError("");
+    setScoringResult(null);
+    setAnswers({});
+    
     try {
-      const finalLevel = await prepareLevel();
-      let rag = "";
-      if (useRAG) {
-        const r = await buildRAG(lang, topic);
-        rag = r.text;
-        setRagStats(r.stats);
-      } else {
-        setRagStats({terms:0, phrases:0, hasProfile:false});
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('请先登录');
+        setLoading(false);
+        return;
       }
-      const r = await safeJsonFetch("/api/generate/cloze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, topic, level: finalLevel, model, rag })
+      const response = await fetch(`/api/cloze/next?lang=${lang}&level=${level}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
       });
-      if (!r.ok || !r.data) {
-        setError(`生成失败 (${r.status}): ${r.error || r.text || "unknown"}`);
-        setData(null);
+      const result = await response.json();
+      
+      if (result.success) {
+        setCurrentItem(result.item);
       } else {
-        setData(r.data as ClozeResp);
-        setAnswers({});
-        setStartedAt(Date.now());
+        setError(result.error || '获取题目失败');
       }
-    } catch (e:any) {
-      setError(e?.message || "网络错误");
+    } catch (error) {
+      setError('网络错误: ' + error);
     } finally {
       setLoading(false);
     }
   };
 
-  const genStream = async () => {
-    setScore(null); setError(""); setLoading(true); setLiveText("");
+  const submitAnswers = async () => {
+    if (!currentItem) return;
+    
+    setScoring(true);
     try {
-      const finalLevel = await prepareLevel();
-      let rag = "";
-      if (useRAG) {
-        const r = await buildRAG(lang, topic);
-        rag = r.text;
-        setRagStats(r.stats);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('请先登录');
+        setScoring(false);
+        return;
+      }
+      const response = await fetch('/api/cloze/score', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          itemId: currentItem.id,
+          answers,
+          provider,
+          model
+        })
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        setScoringResult(result.result);
       } else {
-        setRagStats({terms:0, phrases:0, hasProfile:false});
+        setError(result.error || '评分失败');
       }
-
-      const res = await fetch("/api/generate/cloze/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lang, topic, level: finalLevel, model: "deepseek-chat", rag })
-      });
-
-      let acc = "";
-      await readSSE(res, (t) => {
-        acc += t;
-        setLiveText(acc);
-      });
-
-      const trimmed = acc.trim();
-      let parsed: ClozeResp;
-      try {
-        parsed = JSON.parse(trimmed) as ClozeResp;
-      } catch {
-        const m = trimmed.match(/\{[\s\S]*\}/);
-        if (!m) throw new Error("LLM returned non-JSON");
-        parsed = JSON.parse(m[0]) as ClozeResp;
-      }
-      if (!parsed?.cloze || !Array.isArray(parsed?.blanks)) throw new Error("invalid cloze payload");
-      setData(parsed); 
-      setAnswers({});
-      setStartedAt(Date.now());
-    } catch (e: unknown) {
-      const err = e instanceof Error ? e.message : String(e);
-      setError(err || "流式生成失败，尝试回退普通请求…");
-      await gen();
+    } catch (error) {
+      setError('评分失败: ' + error);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const grade = async () => {
-    if (!data) return;
-    const total = data.blanks.length || 1;
-    let hit = 0;
-    for (const b of data.blanks) {
-      const u = (answers[b.idx] || "").trim();
-      if (u && u === b.answer) hit++;
-    }
-    const sc = Math.round((hit/total)*100);
-    setScore(sc);
-
-    // 保存 sessions
-    const { data: u } = await supabase.auth.getUser();
-    const uid = u?.user?.id;
-    if (uid) {
-      await supabase.from("sessions").insert({
-        user_id: uid,
-        task_type: "cloze",
-        lang,
-        topic,
-        input: { cloze: data.cloze, blanks: data.blanks },
-        output: { answers },
-        ai_feedback: null,
-        score: sc,
-        duration_sec: startedAt ? Math.max(1, Math.round((Date.now()-startedAt)/1000)) : null,
-        difficulty: level
-      });
+      setScoring(false);
     }
   };
 
   const renderCloze = () => {
-    if (!data) return null;
-    const parts = data.cloze.split("____");
-    const fields = data.blanks.map((b) => (
-      <input
-        key={b.idx}
-        className="border rounded px-2 py-1 mx-1 w-28"
-        placeholder={`#${b.idx}`}
-        value={answers[b.idx] || ""}
-        onChange={e => setAnswers(s => ({ ...s, [b.idx]: e.target.value }))}
+    if (!currentItem) return null;
+    
+    // 将 passage 中的 {{1}}, {{2}} 等替换为输入框
+    let passage = currentItem.passage;
+    const blanks = currentItem.blanks.sort((a, b) => a.id - b.id);
+    
+    blanks.forEach((blank) => {
+      const placeholder = `{{${blank.id}}}`;
+      const inputId = `blank-${blank.id}`;
+      const input = `<input id="${inputId}" class="border-b-2 border-blue-500 bg-yellow-50 px-2 py-1 mx-1 min-w-20" placeholder="填空" value="${answers[blank.id] || ''}" onchange="window.updateAnswer(${blank.id}, this.value)" />`;
+      passage = passage.replace(placeholder, input);
+    });
+    
+    return (
+      <div 
+        className="leading-8 text-lg"
+        dangerouslySetInnerHTML={{ __html: passage }}
       />
-    ));
-    const composed: React.ReactNode[] = [];
-    for (let i=0; i<parts.length; i++){
-      composed.push(<span key={`t${i}`}>{parts[i]}</span>);
-      if (i < fields.length) composed.push(fields[i]);
-    }
-    return <p className="leading-8">{composed}</p>;
+    );
   };
 
-  return (
-    <main className="max-w-2xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Cloze 预测练习（DeepSeek）</h1>
+  // 全局函数，用于更新答案
+  useEffect(() => {
+    (window as unknown as { updateAnswer: (blankId: number, value: string) => void }).updateAnswer = (blankId: number, value: string) => {
+      setAnswers(prev => ({ ...prev, [blankId]: value }));
+    };
+    
+    return () => {
+      delete (window as unknown as { updateAnswer?: (blankId: number, value: string) => void }).updateAnswer;
+    };
+  }, []);
 
-      <div className="flex gap-2">
-        <select value={lang} onChange={e=>setLang(e.target.value as Lang)} className="border rounded px-2 py-1">
-          <option value="ja">日语</option>
-          <option value="en">英语</option>
-          <option value="zh">中文（普通话）</option>
-        </select>
-        <label className="flex items-center gap-1 text-sm">
-          <span>难度</span>
-          <select value={mode} onChange={e=>setMode(e.target.value as "auto"|"manual")} className="border rounded px-2 py-1">
-            <option value="auto">自动</option>
-            <option value="manual">手动</option>
-          </select>
-        </label>
-        {mode === "manual" && (
-          <select value={level} onChange={e=>setLevel(e.target.value as ClozeLevel)} className="border rounded px-2 py-1">
-            <option value="easy">easy</option>
-            <option value="mid">mid</option>
-            <option value="hard">hard</option>
-          </select>
-        )}
-        {mode === "auto" && <span className="text-xs text-gray-500">推荐：{level}</span>}
-        <select value={model} onChange={e=>setModel(e.target.value as "deepseek-chat"|"deepseek-reasoner")} className="border rounded px-2 py-1">
-          <option value="deepseek-reasoner">Reasoner</option>
-          <option value="deepseek-chat">Chat</option>
-        </select>
-        <input className="border rounded px-2 py-1 flex-1"
-               value={topic} onChange={e=>setTopic(e.target.value)}
-               placeholder="话题，如：レストランで注文 / 約束の時間調整 / Travel plan" />
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1 text-sm">
-            <input type="checkbox" checked={streamMode} onChange={e=>setStreamMode(e.target.checked)} />
-            流式
-          </label>
-          <button
-            onClick={streamMode ? genStream : gen}
-            disabled={loading}
-            className="px-3 py-1 rounded bg-black text-white disabled:opacity-60">
-            {loading ? "生成中..." : "生成题目"}
-          </button>
+  return (
+    <main className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold mb-2">Cloze 挖空练习</h1>
+        <p className="text-gray-600">从题库中随机抽取题目，AI 智能评分</p>
+      </div>
+
+      {/* 设置区域 */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <div className="flex gap-4 items-center justify-center">
+          <div>
+            <label className="block text-sm font-medium mb-1">语言</label>
+            <select 
+              value={lang} 
+              onChange={e => setLang(e.target.value as Lang)} 
+              className="border rounded px-3 py-2"
+            >
+              <option value="ja">日本語</option>
+              <option value="en">English</option>
+              <option value="zh">简体中文</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">难度等级</label>
+            <select 
+              value={level} 
+              onChange={e => setLevel(parseInt(e.target.value))} 
+              className="border rounded px-3 py-2"
+            >
+              <option value={1}>L1 - 初级</option>
+              <option value={2}>L2 - 初中级</option>
+              <option value={3}>L3 - 中级</option>
+              <option value={4}>L4 - 中高级</option>
+              <option value={5}>L5 - 高级</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">AI 提供商</label>
+            <select
+              value={provider}
+              onChange={e => {
+                const p = e.target.value as 'deepseek'|'openrouter'|'openai';
+                setProvider(p);
+                const defaults: Record<string,string> = {
+                  deepseek: 'deepseek-chat',
+                  openrouter: 'anthropic/claude-3.5-sonnet',
+                  openai: 'gpt-4o'
+                };
+                setModel(defaults[p] || '');
+              }}
+              className="border rounded px-3 py-2"
+            >
+              <option value="deepseek">DeepSeek</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="openai">OpenAI</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">模型</label>
+            <select
+              value={model}
+              onChange={e => setModel(e.target.value)}
+              className="border rounded px-3 py-2"
+            >
+              {provider === 'deepseek' && (
+                <>
+                  <option value="deepseek-chat">deepseek-chat</option>
+                  <option value="deepseek-reasoner">deepseek-reasoner</option>
+                </>
+              )}
+              {provider === 'openrouter' && (
+                <>
+                  <option value="anthropic/claude-3.5-sonnet">anthropic/claude-3.5-sonnet</option>
+                  <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
+                  <option value="meta-llama/Meta-Llama-3.1-70B-Instruct">meta-llama/Meta-Llama-3.1-70B-Instruct</option>
+                </>
+              )}
+              {provider === 'openai' && (
+                <>
+                  <option value="gpt-4o">gpt-4o</option>
+                  <option value="gpt-4o-mini">gpt-4o-mini</option>
+                </>
+              )}
+            </select>
+          </div>
+          <div className="pt-6">
+            <button
+              onClick={loadNextItem}
+              disabled={loading}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? "加载中..." : "开始练习"}
+            </button>
+          </div>
         </div>
       </div>
-      {streamMode && loading && (
-        <pre className="p-3 bg-gray-50 rounded text-xs overflow-auto max-h-40 whitespace-pre-wrap">
-          {liveText || "（流式输出中…）"}
-        </pre>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
       )}
-      <div className="flex gap-2 items-center">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={useRAG} onChange={e=>setUseRAG(e.target.checked)} />
-          使用我的 RAG（画像/术语/常用表达）
-        </label>
-        {useRAG && <div className="text-xs text-gray-500">RAG 注入：profile {ragStats.hasProfile?"✓":"×"} · terms {ragStats.terms} · phrases {ragStats.phrases}</div>}
-      </div>
 
-      {error && <div className="text-red-600 text-sm whitespace-pre-wrap">{error}</div>}
-
-      {data && (
-        <div className="space-y-3">
-          <div className="text-sm text-gray-500">原文（参考，不要先看）：{data.passage}</div>
-          <div className="p-4 bg-white rounded-2xl shadow">{renderCloze()}</div>
-
-          <div className="flex gap-2 items-center">
-            <button onClick={grade} className="px-3 py-1 rounded bg-emerald-600 text-white">提交判分</button>
-            {score!==null && <span className="font-medium">得分：{score}</span>}
+      {/* 题目区域 */}
+      {currentItem && (
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold mb-2">{currentItem.title}</h2>
+            <div className="text-sm text-gray-500">
+              语言: {currentItem.lang.toUpperCase()} | 难度: L{currentItem.level} | 主题: {currentItem.topic}
+            </div>
           </div>
 
-          {score!==null && (
-            <details className="p-3 bg-gray-50 rounded">
-              <summary className="cursor-pointer">查看答案与解释</summary>
-              <ul className="list-disc pl-6 mt-2">
-                {data.blanks.map(b=>(
-                  <li key={b.idx}>#{b.idx} 正确：<b>{b.answer}</b> —— {data.explain.find(e=>e.idx===b.idx)?.why}</li>
+          <div className="mb-6 p-4 bg-gray-50 rounded">
+            {renderCloze()}
+          </div>
+
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={submitAnswers}
+              disabled={scoring || Object.keys(answers).length === 0}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            >
+              {scoring ? "评分中..." : "提交答案"}
+            </button>
+            <button
+              onClick={loadNextItem}
+              className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              下一题
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 评分结果 */}
+      {scoringResult && (
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-xl font-semibold mb-4">评分结果</h3>
+          
+          <div className="mb-6">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600 mb-2">
+                {Math.round(scoringResult.overall.score * 100)}%
+              </div>
+              <p className="text-gray-600">{scoringResult.overall.feedback}</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-semibold text-green-600 mb-2">优点</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {scoringResult.overall.strengths.map((strength, index) => (
+                  <li key={index} className="text-sm">{strength}</li>
                 ))}
               </ul>
-            </details>
-          )}
+            </div>
+            <div>
+              <h4 className="font-semibold text-orange-600 mb-2">改进建议</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {scoringResult.overall.improvements.map((improvement, index) => (
+                  <li key={index} className="text-sm">{improvement}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h4 className="font-semibold mb-3">详细评分</h4>
+            <div className="space-y-3">
+              {scoringResult.per_blank.map((blank) => (
+                <div key={blank.id} className="p-3 bg-gray-50 rounded">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">第 {blank.id} 空</span>
+                    <span className={`px-2 py-1 rounded text-sm ${
+                      blank.score === 1 ? 'bg-green-100 text-green-800' :
+                      blank.score === 0.5 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {blank.score === 1 ? '完全正确' : blank.score === 0.5 ? '部分正确' : '需要改进'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-1">{blank.reason}</p>
+                  {blank.suggestion && (
+                    <p className="text-sm text-blue-600">💡 {blank.suggestion}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </main>
