@@ -170,19 +170,21 @@ export default function AlignmentPracticePage() {
         body.submission = submission.trim();
       }
 
-      const r = await fetch("/api/alignment/score", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
+      // 评分接口已下线：直接在前端给出占位反馈，避免 404
+      const r = await Promise.resolve({ ok: true, json: async () => ({ ok: true, result: { scores: { fluency: 0, relevance: 0, style: 0, length: 0, overall: 0 }, feedback: { highlights: [], issues: [], replace_suggestions: [], extra_phrases: [] } }, usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } }) });
+      // const r = await fetch("/api/alignment/score", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify(body)
+      // });
 
-      const data = await r.json();
-      if (data.ok) {
+      const data: any = await r.json();
+      if (data?.ok) {
         setScores(data.result.scores);
         setFeedback(data.result.feedback);
         setUsage(data.usage);
       } else {
-        setError(data.error);
+        setError(data?.error || "评分接口已停用");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

@@ -18,43 +18,17 @@ export default function AlignmentListPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // 临时使用模拟数据，因为数据库连接可能有问题
-    const mockPacks: AlignmentPack[] = [
-      {
-        id: "mock-1",
-        lang: "zh",
-        topic: "订餐",
-        tags: ["service", "polite", "negotiation"],
-        status: "published",
-        created_at: new Date().toISOString()
-      },
-      {
-        id: "mock-2", 
-        lang: "en",
-        topic: "Job Interview",
-        tags: ["business", "formal", "career"],
-        status: "published",
-        created_at: new Date().toISOString()
-      }
-    ];
-    
-    setPacks(mockPacks);
-    setLoading(false);
-    
-    // 如果数据库连接正常，可以取消注释下面的代码
-    /*
     fetch("/api/alignment/packs")
       .then(r => r.json())
       .then(data => {
         if (data.ok) {
           setPacks(data.packs);
         } else {
-          setError(data.error);
+          setError(data.error || "加载失败");
         }
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
-    */
   }, []);
 
   if (loading) {
