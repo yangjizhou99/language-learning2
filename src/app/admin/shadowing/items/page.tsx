@@ -12,7 +12,9 @@ export default function ShadowingItemsAdmin(){
 
   const authHeader = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
+    const h = new Headers();
+    if (session?.access_token) h.set('Authorization', `Bearer ${session.access_token}`);
+    return h;
   };
 
   const load = async ()=>{

@@ -66,7 +66,9 @@ export default function ClozeItemsAdmin() {
           if (ids.length===0) return;
           if (!confirm(`确定批量删除 ${ids.length} 条？`)) return;
           const { data: { session } } = await supabase.auth.getSession();
-          const r = await fetch('/api/admin/cloze/items', { method:'DELETE', headers:{ 'Content-Type':'application/json', ...(session?.access_token?{ Authorization:`Bearer ${session.access_token}`}:{}) }, body: JSON.stringify({ ids }) });
+          const h = new Headers({ 'Content-Type':'application/json' });
+          if (session?.access_token) h.set('Authorization', `Bearer ${session.access_token}`);
+          const r = await fetch('/api/admin/cloze/items', { method:'DELETE', headers: h, body: JSON.stringify({ ids }) });
           if (r.ok) { setSelected({}); load(); } else { alert('批量删除失败'); }
         }} className="px-3 py-1 rounded bg-red-600 text-white">批量删除</button>
       </div>
