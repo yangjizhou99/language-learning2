@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       const reader = upstream.body!.getReader();
-      const read = () => reader.read().then(({ done, value }) => {
+      const read: () => Promise<void> = () => reader.read().then(({ done, value }: { done: boolean; value?: Uint8Array }) => {
         if (done) {
           // end
           controller.close();
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
           }
         }
         return read();
-      }).catch(err => { controller.error(err); });
+      }).catch((err: unknown) => { controller.error(err); });
       read();
     }
   });
