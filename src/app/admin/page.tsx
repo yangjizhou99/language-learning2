@@ -11,8 +11,8 @@ export default function AdminDashboard() {
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const headers = new Headers();
+        if (session?.access_token) headers.set('Authorization', `Bearer ${session.access_token}`);
         const [draftsRes, clozeDraftsRes, clozeItemsRes] = await Promise.all([
           fetch("/api/admin/drafts/list?status=all", { headers }),
           fetch("/api/admin/cloze/drafts", { headers }),
