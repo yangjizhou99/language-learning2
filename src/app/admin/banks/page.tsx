@@ -20,8 +20,8 @@ export default function BanksOverview() {
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const headers = new Headers();
+        if (session?.access_token) headers.set('Authorization', `Bearer ${session.access_token}`);
 
         // 后端已有的端点：cloze drafts/items；alignment packs；文章（广读使用 articles）与 shadowing items
         const [clozeDraftsRes, clozeItemsRes, packsRes, articlesRes, shadowingItemsRes] = await Promise.all([
@@ -50,10 +50,9 @@ export default function BanksOverview() {
     try {
       setBusy(id);
       const { data: { session } } = await supabase.auth.getSession();
-      const r = await fetch(`/api/admin/cloze/items?id=${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
-      });
+      const h = new Headers();
+      if (session?.access_token) h.set('Authorization', `Bearer ${session.access_token}`);
+      const r = await fetch(`/api/admin/cloze/items?id=${encodeURIComponent(id)}`, { method: 'DELETE', headers: h });
       if (!r.ok) throw new Error('删除失败');
       // 重新加载统计
       location.reload();
@@ -125,7 +124,9 @@ function LatestClozeList({ onDelete, busyId }:{ onDelete:(id:string)=>void; busy
   const [items, setItems] = useState<any[]>([]);
   useEffect(()=>{ (async()=>{
     const { data: { session } } = await supabase.auth.getSession();
-    const r = await fetch('/api/admin/cloze/items', { headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {} });
+    const h = new Headers();
+    if (session?.access_token) h.set('Authorization', `Bearer ${session.access_token}`);
+    const r = await fetch('/api/admin/cloze/items', { headers: h });
     const j = await r.json();
     if (Array.isArray(j)) setItems(j.slice(0, 10));
   })(); },[]);
