@@ -15,8 +15,15 @@ export async function requireAdmin(req?: NextRequest) {
 
   const supabase = hasBearer
     ? createClient(supabaseUrl, supabaseAnon, {
-        auth: { persistSession: false },
-        global: { headers: { Authorization: authHeader } }
+        auth: { 
+          persistSession: false,
+          autoRefreshToken: false
+        },
+        global: { 
+          headers: { 
+            Authorization: authHeader 
+          } 
+        }
       })
     : createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
@@ -26,14 +33,26 @@ export async function requireAdmin(req?: NextRequest) {
         }
       });
 
+  // 调试日志
+  console.log('Admin check - hasBearer:', hasBearer);
+  console.log('Admin check - authHeader:', authHeader ? 'present' : 'missing');
+
   const { data: { user } } = await supabase.auth.getUser();
+  console.log('Admin check - user:', user ? `${user.email} (${user.id})` : 'null');
   if (!user) return { ok: false as const, reason: "unauthorized" };
+  
   const { data, error } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
-  if (error || !data || data.role !== "admin")
+  
+  console.log('Admin check - profile query result:', { data, error });
+  if (error || !data || data.role !== "admin") {
+    console.log('Admin check - access denied:', { error: error?.message, role: data?.role });
     return { ok: false as const, reason: "forbidden" };
+  }
+  
+  console.log('Admin check - access granted');
   return { ok: true as const, supabase, user };
 }
