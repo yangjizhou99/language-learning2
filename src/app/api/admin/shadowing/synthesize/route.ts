@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { getServiceSupabase } from "@/lib/supabaseAdmin";
+import { synthesizeTTS } from "@/lib/tts";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,21 +20,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "缺少必要参数" }, { status: 400 });
     }
 
-    // 调用现有的 TTS API
-    const ttsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/tts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, lang, voiceName: voice, speakingRate })
-    });
-
-    if (!ttsResponse.ok) {
-      const error = await ttsResponse.text();
-      return NextResponse.json({ error: `TTS 失败: ${error}` }, { status: 500 });
-    }
-
-    // 使用 Node Buffer，避免以 ArrayBuffer 形式上传导致文件为 0 字节或不可播放
-    const audioArrayBuffer = await ttsResponse.arrayBuffer();
-    const audioBuffer = Buffer.from(new Uint8Array(audioArrayBuffer));
+    // 直接调用本地合成函数，避免受保护路由
+    const audioBuffer = await synthesizeTTS({ text, lang, voiceName: voice, speakingRate });
 
     // 上传到 Supabase Storage
     const supabaseAdmin = getServiceSupabase();
@@ -59,8 +47,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, audio_url: audioUrl, bytes: audioBuffer.length, signed: Boolean(signed?.signedUrl) });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("音频合成失败:", error);
-    return NextResponse.json({ error: "服务器错误" }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: message || "服务器错误" }, { status: 500 });
   }
 }

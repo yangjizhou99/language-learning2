@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 type Item = { id:string; lang:"en"|"ja"|"zh"; level:number; genre:string; title:string; status:string; created_at:string; notes?: any };
 
@@ -13,6 +14,9 @@ export default function ShadowingReviewList(){
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [ttsLoading, setTtsLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [ttsTotal, setTtsTotal] = useState(0);
+  const [ttsDone, setTtsDone] = useState(0);
+  const [ttsCurrent, setTtsCurrent] = useState("");
 
   useEffect(()=>{ (async()=>{
     const params = new URLSearchParams({ status:"draft" });
@@ -44,30 +48,52 @@ export default function ShadowingReviewList(){
 
   async function synthOne(id: string){
     const it = items.find(x => x.id === id);
-    if (!it) return;
-    setTtsLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    const detail = await fetch(`/api/admin/shadowing/drafts/${id}`, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
-    const dj = await detail.json();
-    const draft = dj.draft;
-    const r = await fetch('/api/admin/shadowing/synthesize', { method:'POST', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ text: draft.text, lang: draft.lang, voice: draft?.notes?.voice || null, speakingRate: draft?.notes?.speakingRate || 1.0 }) });
-    const j = await r.json();
-    if (r.ok){
+    if (!it) return false;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const detail = await fetch(`/api/admin/shadowing/drafts/${id}`, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
+      if (!detail.ok) throw new Error(`获取草稿失败(${detail.status})`);
+      const dj = await detail.json();
+      const draft = dj.draft;
+      const r = await fetch('/api/admin/shadowing/synthesize', { method:'POST', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ text: draft.text, lang: draft.lang, voice: draft?.notes?.voice || null, speakingRate: draft?.notes?.speakingRate || 1.0 }) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "TTS 失败");
       // 写入 notes.audio_url 并保存
       const next = { ...draft, notes: { ...(draft.notes||{}), audio_url: j.audio_url } };
-      await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
+      const save = await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
+      if (!save.ok) throw new Error(`保存音频地址失败(${save.status})`);
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
     }
-    setTtsLoading(false);
   }
 
   async function synthSelected(){
     if (selected.size === 0) return;
-    for (const id of Array.from(selected)) {
-      await synthOne(id);
+    const ids = Array.from(selected);
+    setTtsLoading(true);
+    setTtsTotal(ids.length);
+    setTtsDone(0);
+    let fail = 0;
+    try {
+      for (const id of ids) {
+        const it = items.find(x => x.id === id);
+        setTtsCurrent(it?.title || "");
+        const ok = await synthOne(id);
+        if (!ok) fail += 1;
+        setTtsDone(v => v + 1);
+      }
+      toast.success(`TTS 合成完成：${ids.length - fail}/${ids.length}`);
+      // 触发刷新
+      setQ(q => q);
+    } catch (e) {
+      toast.error("批量合成失败，请重试");
+    } finally {
+      setTtsCurrent("");
+      setTtsLoading(false);
     }
-    // 触发刷新
-    setQ(q => q);
   }
 
   async function deleteOne(id: string){
@@ -130,6 +156,19 @@ export default function ShadowingReviewList(){
         <button className="px-2 py-1 rounded border disabled:opacity-50" onClick={publishSelected} disabled={publishing || selected.size===0}>批量发布选中</button>
         <button className="px-2 py-1 rounded border text-red-600 disabled:opacity-50" onClick={deleteSelected} disabled={selected.size===0}>删除选中</button>
       </div>
+      {ttsLoading && (
+        <div className="flex items-center gap-3 text-sm text-gray-600">
+          <div>
+            合成中（{ttsDone}/{ttsTotal}）{ttsCurrent ? `· 当前：${ttsCurrent}` : ""}
+          </div>
+          <div className="h-2 bg-gray-200 rounded w-64 overflow-hidden">
+            <div
+              className="h-2 bg-blue-500"
+              style={{ width: `${ttsTotal > 0 ? Math.round((ttsDone/ttsTotal)*100) : 0}%` }}
+            />
+          </div>
+        </div>
+      )}
       <div className="bg-white rounded-lg shadow divide-y">
         {items.map(it=> (
           <div key={it.id} className="p-4 flex items-center justify-between">
