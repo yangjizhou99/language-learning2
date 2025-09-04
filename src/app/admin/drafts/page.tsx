@@ -2,6 +2,9 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Empty } from "@/components/Empty";
 
 type Draft = { 
   id:string; 
@@ -69,53 +72,46 @@ export default function DraftsPage(){
       <h1 className="text-2xl font-semibold">草稿箱</h1>
       <div className="flex gap-2 items-center">
         {["pending","needs_fix","approved","published","rejected"].map(s =>
-          <button 
-            key={s} 
-            onClick={()=>setStatus(s)} 
-            className={`px-3 py-1 border rounded ${status===s?"bg-black text-white":""}`}
+          <Button
+            key={s}
+            onClick={()=>setStatus(s)}
+            variant={status===s?"default":"outline"}
           >
             {s}
-          </button>
+          </Button>
         )}
-        <button 
-          onClick={load}
-          disabled={loading}
-          className="px-3 py-1 border rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 ml-4"
-        >
+        <Button onClick={load} disabled={loading} className="ml-2">
           {loading ? "加载中..." : "🔄 刷新"}
-        </button>
+        </Button>
       </div>
       
       {loading && (
-        <div className="text-center py-8 text-gray-500">
-          加载中...
+        <div className="space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
         </div>
       )}
       
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded text-red-800">
+        <div className="p-4 border rounded text-red-600 border-red-300 bg-red-50">
           <strong>错误:</strong> {error}
           <div className="mt-2">
-            <button 
-              onClick={load} 
-              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-            >
-              重试
-            </button>
+            <Button size="sm" variant="destructive" onClick={load}>重试</Button>
           </div>
         </div>
       )}
       
       {/* 调试信息 */}
-      <div className="bg-yellow-50 p-3 rounded border text-sm">
+      <div className="bg-yellow-50 p-3 rounded border text-sm text-yellow-900">
         <strong>调试信息:</strong> loading={String(loading)}, error="{error}", list.length={list.length}, status="{status}"
       </div>
 
       {!loading && !error && (
         <ul className="space-y-2">
           {list.length === 0 ? (
-            <li className="p-6 text-center text-gray-500 border rounded">
-              暂无 {status} 状态的草稿
+            <li>
+              <Empty title={`暂无 ${status} 状态的草稿`} onRetry={load} />
             </li>
           ) : (
             list.map(d =>

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Container } from "@/components/Container";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 interface AlignmentPack {
   id: string;
@@ -308,13 +311,16 @@ export default function AlignmentPracticePage() {
   const stepOrder: string[] = (pack.steps.order as string[]) || ["D1", "D2", "T3", "W4", "T5", "W6"];
 
   return (
-    <main className="max-w-6xl mx-auto p-6 space-y-6">
+    <main className="p-6">
+      <Container>
+      <Breadcrumbs items={[{ href: "/", label: "首页" }, { href: "/practice/alignment", label: "对齐练习" }, { label: pack.topic }]} />
+      <div className="max-w-6xl mx-auto space-y-6">
       {/* 头部信息 */}
-      <div className="bg-white rounded-2xl shadow p-6">
+      <div className="rounded-2xl border bg-card text-card-foreground p-6">
         <h1 className="text-2xl font-semibold mb-2">
           {pack.topic} - 对齐练习
         </h1>
-        <div className="flex gap-4 text-sm text-gray-600">
+        <div className="flex gap-4 text-sm text-muted-foreground">
           <span>语言：{pack.lang === "en" ? "英语" : pack.lang === "ja" ? "日语" : "中文"}</span>
           <span>标签：{pack.tags.join(", ")}</span>
           <span>状态：{pack.status}</span>
@@ -337,21 +343,17 @@ export default function AlignmentPracticePage() {
       )}
 
       {/* 步骤导航 */}
-      <div className="bg-white rounded-2xl shadow p-4">
+      <div className="rounded-2xl border bg-card text-card-foreground p-4">
         <h3 className="font-medium mb-3">练习步骤</h3>
         <div className="flex gap-2 flex-wrap">
           {stepOrder.map((stepKey) => (
-            <button
+            <Button
               key={stepKey}
               onClick={() => setCurrentStep(stepKey)}
-              className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-                currentStep === stepKey
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              variant={currentStep === stepKey ? "default" : "outline"}
             >
               {stepKey}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -361,7 +363,7 @@ export default function AlignmentPracticePage() {
         {/* 左侧：任务说明和范例 */}
         <div className="space-y-6">
           {/* 任务说明 */}
-          <div className="bg-white rounded-2xl shadow p-6">
+          <div className="rounded-2xl border bg-card text-card-foreground p-6">
             <h3 className="font-medium mb-3">{step.title}</h3>
             <p className="text-gray-700 mb-4">{step.prompt}</p>
             
@@ -405,10 +407,10 @@ export default function AlignmentPracticePage() {
           </div>
 
           {/* 范例 */}
-          <div className="bg-white rounded-2xl shadow p-6">
+          <div className="rounded-2xl border bg-card text-card-foreground p-6">
             <h3 className="font-medium mb-3">范例</h3>
-            <div className="bg-gray-50 p-4 rounded">
-              <pre className="whitespace-pre-wrap text-sm text-gray-700 font-mono">
+            <div className="bg-muted p-4 rounded">
+              <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">
                 {step.exemplar}
               </pre>
             </div>
@@ -418,7 +420,7 @@ export default function AlignmentPracticePage() {
         {/* 右侧：练习区域 */}
         <div className="space-y-6">
           {/* AI 模型选择 */}
-          <div className="bg-white rounded-2xl shadow p-4">
+          <div className="rounded-2xl border bg-card text-card-foreground p-4">
             <h3 className="font-medium mb-3">AI 模型设置</h3>
             <div className="grid grid-cols-3 gap-3">
               <select
@@ -464,18 +466,18 @@ export default function AlignmentPracticePage() {
                 <div className="mb-4">
                   <p className="text-sm text-gray-600 mb-2">选择你要扮演的角色：</p>
                   <div className="flex gap-3">
-                    <button
+                    <Button
                       onClick={() => setUserRole("A")}
-                      className="px-4 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                      variant="outline"
                     >
                       扮演角色 A
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => { setUserRole("B"); kickoffAi("B"); }}
-                      className="px-4 py-2 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                      variant="secondary"
                     >
                       扮演角色 B（由 A 先开场）
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -530,47 +532,35 @@ export default function AlignmentPracticePage() {
                       onChange={(e) => setInputMessage(e.target.value)}
                       onKeyDown={handleKeyPress}
                       placeholder="输入你的对话内容..."
-                      className="flex-1 px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 px-3 py-2 border rounded bg-background focus:ring-2 focus:ring-ring focus:border-transparent"
                       disabled={chatLoading}
                     />
-                    <button
-                      onClick={sendMessage}
-                      disabled={!inputMessage.trim() || chatLoading}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                    >
+                    <Button onClick={sendMessage} disabled={!inputMessage.trim() || chatLoading}>
                       发送
-                    </button>
+                    </Button>
                   </div>
 
                   {/* 提交评分按钮 */}
-                  <button
-                    onClick={submitForScoring}
-                    disabled={loading || messages.length === 0}
-                    className="mt-4 w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+                  <Button onClick={submitForScoring} disabled={loading || messages.length === 0} className="mt-4 w-full">
                     {loading ? "评分中..." : "提交对话评分"}
-                  </button>
+                  </Button>
                 </>
               )}
             </div>
           ) : (
             /* 非对话步骤：文本编辑器 */
-            <div className="bg-white rounded-2xl shadow p-6">
+            <div className="rounded-2xl border bg-card text-card-foreground p-6">
               <h3 className="font-medium mb-3">你的练习</h3>
               <textarea
                 value={submission}
                 onChange={(e) => setSubmission(e.target.value)}
                 placeholder="在这里输入你的练习内容..."
-                className="w-full h-48 p-3 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-48 p-3 border rounded-lg bg-background resize-none focus:ring-2 focus:ring-ring focus:border-transparent"
               />
               
-              <button
-                onClick={submitForScoring}
-                disabled={loading || !submission.trim()}
-                className="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <Button onClick={submitForScoring} disabled={loading || !submission.trim()} className="mt-4 w-full">
                 {loading ? "评分中..." : "提交评分"}
-              </button>
+              </Button>
             </div>
           )}
 
