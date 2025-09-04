@@ -618,6 +618,7 @@ export default function AlignmentPracticePage() {
           <ResultsPanel />
         </div>
       </div>
+      </div>
     </main>
   );
 }
