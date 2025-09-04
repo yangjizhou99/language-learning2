@@ -319,6 +319,7 @@ export default function DraftDetail() {
                   setCzLong(sug.suggestion.cloze_long);
                   setLog("已把建议载入编辑区，请在下方继续修改，然后点“校验并保存”。");
                 }}
+              >
                 将建议载入编辑区
               </Button>
               <Button variant="outline" onClick={()=> setSug(null)}>清除建议</Button>
