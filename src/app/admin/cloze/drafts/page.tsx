@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 type Draft = {
   id: string;
@@ -20,6 +21,7 @@ type Draft = {
 };
 
 export default function ClozeDraftsPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Draft[]>([]);
@@ -213,7 +215,10 @@ export default function ClozeDraftsPage() {
                   <td className="p-3">{d.ai_provider || '-'}{d.ai_model ? ` / ${d.ai_model}` : ''}</td>
                   <td className="p-3">{d.status}</td>
                   <td className="p-3 space-x-2">
-                    <Link href={`/admin/cloze/ai?draft=${d.id}`} className="text-blue-600 hover:underline">编辑</Link>
+                    <button
+                      className="text-blue-600 hover:underline"
+                      onClick={() => router.push(`/admin/cloze/editor/${d.id}`)}
+                    >编辑</button>
                     {d.status !== 'approved' && (
                       <button
                         className="text-purple-600 hover:underline"

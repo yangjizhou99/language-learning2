@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Lang } from "@/types/lang";
 
@@ -119,36 +119,33 @@ export default function ClozePage() {
 
   const renderCloze = () => {
     if (!currentItem) return null;
-    
-    // 将 passage 中的 {{1}}, {{2}} 等替换为输入框
-    let passage = currentItem.passage;
-    const blanks = currentItem.blanks.sort((a, b) => a.id - b.id);
-    
-    blanks.forEach((blank) => {
-      const placeholder = `{{${blank.id}}}`;
-      const inputId = `blank-${blank.id}`;
-      const input = `<input id="${inputId}" class="border-b-2 border-blue-500 bg-yellow-50 px-2 py-1 mx-1 min-w-20" placeholder="填空" value="${answers[blank.id] || ''}" onchange="window.updateAnswer(${blank.id}, this.value)" />`;
-      passage = passage.replace(placeholder, input);
-    });
-    
-    return (
-      <div 
-        className="leading-8 text-lg"
-        dangerouslySetInnerHTML={{ __html: passage }}
-      />
-    );
+    const parts: React.ReactNode[] = [];
+    const re = /(\{\{(\d+)\}\})/g;
+    const text = currentItem.passage;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(text)) !== null) {
+      const full = match[1];
+      const idNum = Number(match[2]);
+      const start = match.index;
+      if (start > lastIndex) parts.push(<span key={`t-${lastIndex}`}>{text.slice(lastIndex, start)}</span>);
+      parts.push(
+        <input
+          key={`i-${idNum}-${start}`}
+          className="border-b-2 border-blue-500 bg-yellow-50 px-2 py-1 mx-1 min-w-20"
+          placeholder="填空"
+          value={answers[String(idNum)] || ''}
+          onChange={e => setAnswers(prev => ({ ...prev, [String(idNum)]: e.target.value }))}
+          autoComplete="off"
+        />
+      );
+      lastIndex = start + full.length;
+    }
+    if (lastIndex < text.length) parts.push(<span key={`t-tail`}>{text.slice(lastIndex)}</span>);
+    return <div className="leading-8 text-lg">{parts}</div>;
   };
 
-  // 全局函数，用于更新答案
-  useEffect(() => {
-    (window as unknown as { updateAnswer: (blankId: number, value: string) => void }).updateAnswer = (blankId: number, value: string) => {
-      setAnswers(prev => ({ ...prev, [blankId]: value }));
-    };
-    
-    return () => {
-      delete (window as unknown as { updateAnswer?: (blankId: number, value: string) => void }).updateAnswer;
-    };
-  }, []);
+  // 全局函数已移除，改为受控输入
 
   return (
     <main className="max-w-4xl mx-auto p-6 space-y-6">
