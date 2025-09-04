@@ -466,22 +466,70 @@ export default function AlignmentPracticePage() {
   const step = pack.steps[currentStep] as Step;
   const stepOrder: string[] = (pack.steps.order as string[]) || ["D1", "D2", "T3", "W4", "T5", "W6"];
 
-  return (
-    <main className="p-6">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8" style={{ maxWidth: 1200 }}>
-      <Breadcrumbs segments={[{ href: "/", label: "首页" }, { href: "/practice/alignment", label: "对齐练习" }, { href: `/practice/alignment/${packId}`, label: pack.topic }]} />
-      <div className="max-w-6xl mx-auto space-y-6">
-      {/* 头部信息 */}
+  function HeaderSection() {
+    return (
       <div className="rounded-2xl border bg-card text-card-foreground p-6">
-        <h1 className="text-2xl font-semibold mb-2">
-          {pack.topic} - 对齐练习
-        </h1>
+        <h1 className="text-2xl font-semibold mb-2">{pack.topic} - 对齐练习</h1>
         <div className="flex gap-4 text-sm text-muted-foreground">
           <span>语言：{pack.lang === "en" ? "英语" : pack.lang === "ja" ? "日语" : "中文"}</span>
           <span>标签：{pack.tags.join(", ")}</span>
           <span>状态：{pack.status}</span>
         </div>
       </div>
+    );
+  }
+
+  function LeftInfoSection() {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-2xl border bg-card text-card-foreground p-6">
+          <h3 className="font-medium mb-3">{step.title}</h3>
+          <p className="text-gray-700 mb-4">{step.prompt}</p>
+          {step.key_phrases && (
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-gray-600 mb-2">关键短语</h4>
+              <div className="flex flex-wrap gap-2">
+                {step.key_phrases.map((phrase, i) => (
+                  <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm">{phrase}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {step.patterns && (
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-gray-600 mb-2">句型模式</h4>
+              <div className="flex flex-wrap gap-2">
+                {step.patterns.map((pattern, i) => (
+                  <span key={i} className="px-2 py-1 bg-green-50 text-green-700 rounded text-sm">{pattern}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {step.hints && (
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-gray-600 mb-2">提示</h4>
+              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                {step.hints.map((hint, i) => (<li key={i}>{hint}</li>))}
+              </ul>
+            </div>
+          )}
+        </div>
+        <div className="rounded-2xl border bg-card text-card-foreground p-6">
+          <h3 className="font-medium mb-3">范例</h3>
+          <div className="bg-muted p-4 rounded">
+            <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">{step.exemplar}</pre>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <main className="p-6">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8" style={{ maxWidth: 1200 }}>
+      <Breadcrumbs segments={[{ href: "/", label: "首页" }, { href: "/practice/alignment", label: "对齐练习" }, { href: `/practice/alignment/${packId}`, label: pack.topic }]} />
+      <div className="max-w-6xl mx-auto space-y-6">
+      <HeaderSection />
 
       {/* 错误显示 */}
       {error && (
@@ -517,61 +565,7 @@ export default function AlignmentPracticePage() {
       {/* 当前步骤内容 */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* 左侧：任务说明和范例 */}
-        <div className="space-y-6">
-          {/* 任务说明 */}
-          <div className="rounded-2xl border bg-card text-card-foreground p-6">
-            <h3 className="font-medium mb-3">{step.title}</h3>
-            <p className="text-gray-700 mb-4">{step.prompt}</p>
-            
-            {/* 支持材料 */}
-            {step.key_phrases && (
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">关键短语</h4>
-                <div className="flex flex-wrap gap-2">
-                  {step.key_phrases.map((phrase, i) => (
-                    <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm">
-                      {phrase}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {step.patterns && (
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">句型模式</h4>
-                <div className="flex flex-wrap gap-2">
-                  {step.patterns.map((pattern, i) => (
-                    <span key={i} className="px-2 py-1 bg-green-50 text-green-700 rounded text-sm">
-                      {pattern}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {step.hints && (
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-600 mb-2">提示</h4>
-                <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                  {step.hints.map((hint, i) => (
-                    <li key={i}>{hint}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* 范例 */}
-          <div className="rounded-2xl border bg-card text-card-foreground p-6">
-            <h3 className="font-medium mb-3">范例</h3>
-            <div className="bg-muted p-4 rounded">
-              <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">
-                {step.exemplar}
-              </pre>
-            </div>
-          </div>
-        </div>
+        <LeftInfoSection />
 
         {/* 右侧：练习区域 */}
         <div className="space-y-6">
