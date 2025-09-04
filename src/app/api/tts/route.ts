@@ -8,7 +8,8 @@ export async function POST(req: NextRequest) {
   try {
     const { text, lang, voiceName, speakingRate = 1.0, pitch = 0 } = await req.json();
     const audio = await synthesizeTTS({ text, lang, voiceName, speakingRate, pitch });
-    const blob = new Blob([audio], { type: "audio/mpeg" });
+    const uint8Array = new Uint8Array(audio);
+    const blob = new Blob([uint8Array], { type: "audio/mpeg" });
 
     return new Response(blob, {
       status: 200,
