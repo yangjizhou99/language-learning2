@@ -2,6 +2,10 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Empty } from "@/components/Empty";
 
 export default function SimpleDraftsPage() {
   const [drafts, setDrafts] = useState<any[]>([]);
@@ -51,20 +55,22 @@ export default function SimpleDraftsPage() {
 
   if (loading) {
     return (
-      <main className="max-w-4xl mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-4">简化版草稿箱</h1>
-        <div className="text-center py-8">加载中...</div>
+      <main className="max-w-4xl mx-auto p-6 space-y-4">
+        <h1 className="text-2xl font-semibold">简化版草稿箱</h1>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </div>
       </main>
     );
   }
 
   if (error) {
     return (
-      <main className="max-w-4xl mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-4">简化版草稿箱</h1>
-        <div className="bg-red-50 p-4 rounded border text-red-800">
-          错误: {error}
-        </div>
+      <main className="max-w-4xl mx-auto p-6 space-y-4">
+        <h1 className="text-2xl font-semibold">简化版草稿箱</h1>
+        <div className="p-4 border rounded text-red-600 bg-red-50">错误: {error}</div>
       </main>
     );
   }
@@ -78,9 +84,7 @@ export default function SimpleDraftsPage() {
       </div>
 
       {drafts.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 border rounded">
-          没有找到pending状态的草稿
-        </div>
+        <Empty title="没有找到 pending 状态的草稿" />
       ) : (
         <div className="space-y-3">
           {drafts.map((draft, index) => (
@@ -98,12 +102,9 @@ export default function SimpleDraftsPage() {
                 创建时间: {new Date(draft.created_at).toLocaleString()}
               </div>
               <div className="mt-2">
-                <a 
-                  href={`/admin/drafts/${draft.id}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  查看详情 →
-                </a>
+                <Button asChild>
+                  <Link href={`/admin/drafts/${draft.id}`}>查看详情 →</Link>
+                </Button>
               </div>
             </div>
           ))}
@@ -111,9 +112,9 @@ export default function SimpleDraftsPage() {
       )}
 
       <div className="text-center">
-        <a href="/admin/drafts" className="text-blue-600 hover:underline">
-          ← 返回正常草稿箱
-        </a>
+        <Button asChild variant="link">
+          <Link href="/admin/drafts">← 返回正常草稿箱</Link>
+        </Button>
       </div>
     </main>
   );

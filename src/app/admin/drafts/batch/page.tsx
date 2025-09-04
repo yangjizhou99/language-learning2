@@ -2,6 +2,8 @@
 export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function BatchPage() {
 	const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("openrouter");
@@ -42,7 +44,8 @@ export default function BatchPage() {
 			body: JSON.stringify({ name, provider, model, lang, genre, words, temperature, topics: t, difficulties: ds })
 		});
 		const j = await r.json();
-		if (!r.ok) { alert("创建失败：" + j.error); return; }
+		if (!r.ok) { toast.error("创建失败：" + j.error); return; }
+		toast.success("批次已创建");
 		setBatchId(j.batch_id); setStatus(null);
 	}
 
@@ -65,10 +68,10 @@ export default function BatchPage() {
 		});
 		await r.json();
 		setRunning(false);
+		toast.success("已执行一轮");
 		await refresh();
 	}
 
-	// 自动循环执行（直到 done）
 	useEffect(()=> {
 		let timer:any;
 		if (batchId) {
@@ -127,14 +130,13 @@ export default function BatchPage() {
 					</label>
 				</div>
 				<div className="flex gap-2">
-					<button onClick={createBatch} className="px-3 py-1 rounded bg-black text-white">创建批次</button>
-					{batchId && <button onClick={refresh} className="px-3 py-1 rounded border">刷新状态</button>}
-					{batchId && <button onClick={()=>runOnce(5)} className="px-3 py-1 rounded border" disabled={running}>{running?"运行中…":"手动执行 5 条"}</button>}
+					<Button onClick={createBatch}>创建批次</Button>
+					{batchId && <Button variant="outline" onClick={refresh}>刷新状态</Button>}
+					{batchId && <Button variant="outline" onClick={()=>runOnce(5)} disabled={running}>{running?"运行中…":"手动执行 5 条"}</Button>}
 				</div>
 				{batchId && <div className="text-sm text-gray-600">当前批次：{batchId}</div>}
 			</section>
 
-			{/* 状态与用量 */}
 			{status && (
 				<section className="p-4 bg-white rounded-2xl shadow space-y-3">
 					<div className="text-lg font-medium">批次状态：{status.batch.status}</div>

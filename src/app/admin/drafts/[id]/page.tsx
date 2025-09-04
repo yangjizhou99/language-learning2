@@ -3,6 +3,14 @@ export const dynamic = "force-dynamic";
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 type Span = [number,number];
 type KeyP1 = { span:Span; tag:"connective"|"time"; surface?:string };
@@ -89,9 +97,10 @@ export default function DraftDetail() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const r = await fetch(`/api/admin/drafts/${id}`, { method:"PATCH", headers:{ "Content-Type":"application/json", ...(token?{ Authorization:`Bearer ${token}` }:{}) }, body: JSON.stringify(patch) });
-      if (!r.ok) { const j = await r.json(); setLog(`更新失败: ${j.error}`); return; }
+      if (!r.ok) { const j = await r.json(); setLog(`更新失败: ${j.error}`); toast.error(`更新失败: ${j.error}`); return; }
       await load();
       setLog("更新成功");
+      toast.success("更新成功");
     } catch (e:any) { setLog(`更新失败: ${e.message||e}`); }
   };
 
@@ -103,10 +112,18 @@ export default function DraftDetail() {
       const r = await fetch(`/api/admin/drafts/${id}/publish`, { method:"POST", headers: token ? { Authorization: `Bearer ${token}` } : {} });
       const j = await r.json();
       setLog(r.ok ? `发布成功：article_id=${j.article_id}` : `失败：${j.error}`);
+      if (r.ok) toast.success(`发布成功 (article_id=${j.article_id})`); else toast.error(`发布失败：${j.error}`);
     } catch (e:any) { setLog(`发布失败: ${e.message||e}`); }
   };
 
-  if (!d) return <main className="p-6">加载中…</main>;
+  if (!d) return (
+    <main className="max-w-6xl mx-auto p-6 space-y-4">
+      <Skeleton className="h-8 w-48" />
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_,i)=>(<Skeleton key={i} className="h-24 w-full" />))}
+      </div>
+    </main>
+  );
 
   return (
     <main className="max-w-6xl mx-auto p-6 space-y-6">
@@ -114,17 +131,35 @@ export default function DraftDetail() {
 
       {/* 顶部基础信息 */}
       <section className="p-4 bg-white rounded-2xl shadow space-y-3">
-        <input className="border rounded px-2 py-1 w-full font-medium text-lg" value={d.title}
+        <Input className="w-full font-medium text-lg" value={d.title}
           onChange={e=>setD({...d,title:e.target.value})} />
         <div className="text-xs text-gray-500">
           {d.lang} · {d.genre}/L{d.difficulty} · 状态：{d.status} · AI:{d.ai_provider||"-"} {d.ai_model||""}
         </div>
         <div className="flex gap-2">
-          <button onClick={()=>update({ title:d.title })} className="px-3 py-1 rounded border">保存标题</button>
-          <button onClick={()=>update({ status:"approved" })} className="px-3 py-1 rounded border">标记为已审</button>
-          <button onClick={()=>update({ status:"needs_fix" })} className="px-3 py-1 rounded border">需要修改</button>
-          <button onClick={()=>update({ status:"rejected" })} className="px-3 py-1 rounded border">拒绝</button>
-          <button onClick={publish} className="px-3 py-1 rounded bg-black text-white">发布 → 正式题库</button>
+          <Button variant="outline" onClick={()=>update({ title:d.title })}>保存标题</Button>
+          <Button variant="outline" onClick={()=>update({ status:"approved" })}>标记为已审</Button>
+          <Button variant="outline" onClick={()=>update({ status:"needs_fix" })}>需要修改</Button>
+          <Button variant="outline" onClick={()=>update({ status:"rejected" })}>拒绝</Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>发布 → 正式题库</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>确认发布</DialogTitle>
+                <DialogDescription>发布后将进入正式题库，是否继续？</DialogDescription>
+              </DialogHeader>
+              <div className="mt-4 flex justify-end gap-2">
+                <DialogClose asChild>
+                  <Button variant="ghost">取消</Button>
+                </DialogClose>
+                <DialogClose asChild>
+                  <Button variant="destructive" onClick={publish}>确认发布</Button>
+                </DialogClose>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
         {log && <pre className="text-sm p-2 bg-gray-50 rounded">{log}</pre>}
       </section>
@@ -133,18 +168,23 @@ export default function DraftDetail() {
       <section className="p-4 bg-white rounded-2xl shadow space-y-3">
         <h3 className="font-medium">文本参考意见（AI 给文字提示，我来手工标注）</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <select value={tProvider} onChange={e=>setTProvider(e.target.value as any)} className="border rounded px-2 py-1">
-            <option value="openrouter">OpenRouter</option>
-            <option value="deepseek">DeepSeek</option>
-            <option value="openai">OpenAI</option>
-          </select>
-          <select value={tModel} onChange={e=>setTModel(e.target.value)} className="border rounded px-2 py-1 min-w-[220px]">
-            {tModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
-          <label className="text-sm">温度</label>
-          <input type="number" step={0.1} min={0} max={1} className="border rounded px-2 py-1 w-24"
-                value={tTemp} onChange={e=>setTTemp(Number(e.target.value)||0.3)} />
-          <button
+          <Select value={tProvider} onValueChange={(v: "openrouter"|"deepseek"|"openai")=>setTProvider(v)}>
+            <SelectTrigger className="w-40"><SelectValue placeholder="Provider" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="openrouter">OpenRouter</SelectItem>
+              <SelectItem value="deepseek">DeepSeek</SelectItem>
+              <SelectItem value="openai">OpenAI</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={tModel} onValueChange={(v)=>setTModel(v)}>
+            <SelectTrigger className="min-w-[220px]"><SelectValue placeholder="选择模型" /></SelectTrigger>
+            <SelectContent>
+              {tModels.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Label className="text-sm">温度</Label>
+          <Input type="number" step={0.1} min={0} max={1} className="w-24" value={tTemp} onChange={e=>setTTemp(Number(e.target.value)||0.3)} />
+          <Button
             onClick={async ()=>{
               setTextGenLoading(true);
               try {
@@ -156,16 +196,17 @@ export default function DraftDetail() {
                 });
                 const j = await r.json();
                 setTextGenLoading(false);
-                if (!r.ok) { setLog("文本建议失败：" + (j.error||r.statusText)); return; }
+                if (!r.ok) { setLog("文本建议失败：" + (j.error||r.statusText)); toast.error("文本建议失败：" + (j.error||r.statusText)); return; }
                 setTextSug(j.suggestions);
                 setLog(`AI 文本建议已生成。用量：PT=${j.usage.prompt_tokens}, CT=${j.usage.completion_tokens}, TT=${j.usage.total_tokens}`);
+                toast.success("AI 文本建议已生成");
               } catch (e:any) {
-                setTextGenLoading(false); setLog(`文本建议异常：${e.message||e}`);
+                setTextGenLoading(false); setLog(`文本建议异常：${e.message||e}`); toast.error(`文本建议异常：${e.message||e}`);
               }
             }}
-            className="px-3 py-1 rounded bg-indigo-600 text-white">
+            >
             {textGenLoading ? "生成中…" : "生成文本建议"}
-          </button>
+          </Button>
         </div>
 
         {textSug && (
@@ -212,25 +253,34 @@ export default function DraftDetail() {
       <section className="p-4 bg-white rounded-2xl shadow space-y-3">
         <h3 className="font-medium">生成答案（在这里生成，再到下方编辑/合并）</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <select value={genMode} onChange={e=>setGenMode(e.target.value as any)} className="border rounded px-2 py-1">
-            <option value="ai">AI 建议</option>
-            <option value="rule">规则提取（免费）</option>
-          </select>
+          <Select value={genMode} onValueChange={(v: "ai"|"rule")=>setGenMode(v)}>
+            <SelectTrigger className="w-44"><SelectValue placeholder="生成方式" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ai">AI 建议</SelectItem>
+              <SelectItem value="rule">规则提取（免费）</SelectItem>
+            </SelectContent>
+          </Select>
           {genMode==="ai" && (
             <>
-              <select value={provider} onChange={e=>setProvider(e.target.value as any)} className="border rounded px-2 py-1">
-                <option value="openrouter">OpenRouter</option>
-                <option value="deepseek">DeepSeek</option>
-                <option value="openai">OpenAI</option>
-              </select>
-              <select value={model} onChange={e=>setModel(e.target.value)} className="border rounded px-2 py-1 min-w-[220px]">
-                {models.map(m=> <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-              <label className="text-sm">温度</label>
-              <input type="number" step={0.1} min={0} max={1} className="border rounded px-2 py-1 w-24" value={temp} onChange={e=>setTemp(Number(e.target.value)||0.3)} />
+              <Select value={provider} onValueChange={(v: "openrouter"|"deepseek"|"openai")=>setProvider(v)}>
+                <SelectTrigger className="w-40"><SelectValue placeholder="Provider" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openrouter">OpenRouter</SelectItem>
+                  <SelectItem value="deepseek">DeepSeek</SelectItem>
+                  <SelectItem value="openai">OpenAI</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={model} onValueChange={(v)=>setModel(v)}>
+                <SelectTrigger className="min-w-[220px]"><SelectValue placeholder="选择模型" /></SelectTrigger>
+                <SelectContent>
+                  {models.map(m=> <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Label className="text-sm">温度</Label>
+              <Input type="number" step={0.1} min={0} max={1} className="w-24" value={temp} onChange={e=>setTemp(Number(e.target.value)||0.3)} />
             </>
           )}
-          <button
+          <Button
             onClick={async ()=>{
               setGenLoading(true);
               try {
@@ -242,15 +292,16 @@ export default function DraftDetail() {
                 });
                 const j = await r.json();
                 setGenLoading(false);
-                if (!r.ok) { setLog("生成失败：" + (j.error||r.statusText)); return; }
+                if (!r.ok) { setLog("生成失败：" + (j.error||r.statusText)); toast.error("生成失败：" + (j.error||r.statusText)); return; }
                 setSug(j); setLog(genMode==="ai" ? `AI 用量：PT=${j.usage.prompt_tokens}, CT=${j.usage.completion_tokens}, TT=${j.usage.total_tokens}` : "规则生成完成");
+                toast.success(genMode==="ai" ? "AI 建议生成完成" : "规则生成完成");
               } catch (e:any) {
-                setGenLoading(false); setLog(`生成异常：${e.message||e}`);
+                setGenLoading(false); setLog(`生成异常：${e.message||e}`); toast.error(`生成异常：${e.message||e}`);
               }
             }}
-            className="px-3 py-1 rounded bg-indigo-600 text-white">
+            >
             {genLoading? "生成中…" : "生成答案建议"}
-          </button>
+          </Button>
           {sug && <span className="text-sm text-gray-600">已生成建议（未合并）</span>}
         </div>
 
@@ -258,7 +309,8 @@ export default function DraftDetail() {
           <div className="p-3 bg-gray-50 rounded">
             <div className="text-sm mb-2">建议摘要：P1={sug.suggestion.pass1.length} · P2={sug.suggestion.pass2.length} · P3={sug.suggestion.pass3.length} · ClozeS={sug.suggestion.cloze_short.length} · ClozeL={sug.suggestion.cloze_long.length}</div>
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="outline"
                 onClick={()=>{
                   setP1(sug.suggestion.pass1);
                   setP2(sug.suggestion.pass2);
@@ -267,10 +319,9 @@ export default function DraftDetail() {
                   setCzLong(sug.suggestion.cloze_long);
                   setLog("已把建议载入编辑区，请在下方继续修改，然后点“校验并保存”。");
                 }}
-                className="px-3 py-1 rounded border">
                 将建议载入编辑区
-              </button>
-              <button onClick={()=> setSug(null)} className="px-3 py-1 rounded border">清除建议</button>
+              </Button>
+              <Button variant="outline" onClick={()=> setSug(null)}>清除建议</Button>
             </div>
             <details className="mt-2 text-xs">
               <summary>查看原始建议 JSON</summary>
@@ -313,9 +364,9 @@ export default function DraftDetail() {
       {/* 正文可编辑（如需改字） */}
       <section className="p-4 bg-white rounded-2xl shadow space-y-2">
         <div className="text-sm text-gray-500">若要改正文，这里编辑后点“保存正文”。（注意：改字会影响所有 span，改完请重新“校验并保存”。）</div>
-        <textarea className="border rounded px-2 py-1 w-full h-72" value={d.text} onChange={e=>setD({...d,text:e.target.value})}/>
+        <Textarea className="w-full h-72" value={d.text} onChange={e=>setD({...d,text:e.target.value})}/>
         <div className="flex gap-2">
-          <button onClick={()=>update({ text:d.text })} className="px-3 py-1 rounded border">保存正文</button>
+          <Button variant="outline" onClick={()=>update({ text:d.text })}>保存正文</Button>
         </div>
       </section>
 

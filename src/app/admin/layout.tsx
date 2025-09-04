@@ -4,6 +4,9 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ADMIN_SECTIONS, AdminNavItem } from "@/config/adminNav";
+import { Container } from "@/components/Container";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { Button } from "@/components/ui/button";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<{ email?: string; id: string } | null>(null);
@@ -94,35 +97,33 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+    <div className="min-h-screen bg-background text-foreground">
+      <nav className="bg-background border-b">
+        <Container>
+          <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
-              <Link href="/admin" className="text-xl font-semibold text-gray-900">
+              <Link href="/admin" className="text-xl font-semibold">
                 🛠️ 管理员控制台
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{user.email}</span>
-              <Link href="/" className="text-sm text-blue-600 hover:text-blue-800">
-                返回首页
-              </Link>
+              <span className="text-sm text-muted-foreground">{user.email}</span>
+              <Button asChild variant="outline" size="sm"><Link href="/">返回首页</Link></Button>
             </div>
           </div>
-        </div>
+        </Container>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex gap-6">
+      <Container>
+        <div className="py-6 flex gap-6">
           <aside className="w-64 flex-shrink-0">
-            <nav className="bg-white rounded-lg shadow-sm p-4">
+            <nav className="rounded-lg border p-4 bg-card text-card-foreground">
               {ADMIN_SECTIONS.map((section, si) => {
                 const items = section.items.filter(i => !i.hidden);
                 if (!items.length) return null;
                 return (
                   <div key={`${section.title}-${si}`} className="mb-4">
-                    <div className="px-3 pb-2 text-xs font-semibold text-gray-400">{section.title}</div>
+                    <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground">{section.title}</div>
                     <ul className="space-y-2">
                       {items.map((item, ii) => (
                         <li key={`${item.href}-${ii}`}>
@@ -131,8 +132,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                             prefetch={false}
                             className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                               isActive(item)
-                                ? "bg-blue-100 text-blue-700"
-                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                ? "bg-accent text-accent-foreground"
+                                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                             }`}
                           >
                             {item.icon && <span className="mr-3">{item.icon}</span>}
@@ -148,18 +149,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </aside>
 
           <main className="flex-1">
-            <div className="text-sm text-gray-500 mb-4">
-              {breadcrumb.map((b, idx) => (
-                <span key={`${b.href}-${idx}`}>
-                  {idx > 0 && <span className="mx-1">/</span>}
-                  <Link href={b.href} className="hover:underline">{b.label}</Link>
-                </span>
-              ))}
-            </div>
+            <Breadcrumbs items={breadcrumb} />
             {children}
           </main>
         </div>
-      </div>
+      </Container>
     </div>
   );
 }

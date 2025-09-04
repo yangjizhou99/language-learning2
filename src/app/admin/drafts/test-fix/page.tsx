@@ -2,6 +2,8 @@
 export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function DraftsTestFixPage() {
   const [result, setResult] = useState<string>("");
@@ -30,18 +32,22 @@ export default function DraftsTestFixPage() {
       
       if (!response.ok) {
         setResult(`❌ API调用失败:\nStatus: ${response.status}\nError: ${JSON.stringify(data, null, 2)}`);
+        toast.error(`API 调用失败 (${response.status})`);
         return;
       }
       
       if (Array.isArray(data)) {
         setResult(`✅ API调用成功!\n找到 ${data.length} 条记录:\n${JSON.stringify(data, null, 2)}`);
+        toast.success(`API 调用成功，记录数：${data.length}`);
       } else {
         setResult(`❌ 返回数据不是数组:\nType: ${typeof data}\nData: ${JSON.stringify(data, null, 2)}`);
+        toast.error("返回数据不是数组");
       }
       
     } catch (error) {
       console.error("Test error:", error);
       setResult(`❌ 测试失败: ${error}`);
+      toast.error("测试失败");
     } finally {
       setLoading(false);
     }
@@ -61,14 +67,17 @@ export default function DraftsTestFixPage() {
       
       if (error) {
         setResult(`❌ Supabase查询失败:\n${JSON.stringify(error, null, 2)}`);
+        toast.error("Supabase 查询失败");
         return;
       }
       
       setResult(`✅ Supabase直接查询成功!\n找到 ${data?.length || 0} 条记录:\n${JSON.stringify(data, null, 2)}`);
+      toast.success(`Supabase 查询成功：${data?.length || 0} 条`);
       
     } catch (error) {
       console.error("Supabase test error:", error);
       setResult(`❌ Supabase测试失败: ${error}`);
+      toast.error("Supabase 测试失败");
     } finally {
       setLoading(false);
     }
@@ -79,20 +88,8 @@ export default function DraftsTestFixPage() {
       <h1 className="text-2xl font-semibold">草稿列表问题诊断</h1>
       
       <div className="space-x-4">
-        <button
-          onClick={testDirectAPI}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          🔧 测试API调用
-        </button>
-        <button
-          onClick={testDirectSupabase}
-          disabled={loading}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-        >
-          🗄️ 直接测试Supabase
-        </button>
+        <Button onClick={testDirectAPI} disabled={loading}>🔧 测试API调用</Button>
+        <Button onClick={testDirectSupabase} disabled={loading} variant="secondary">🗄️ 直接测试Supabase</Button>
       </div>
       
       {result && (
@@ -113,9 +110,7 @@ export default function DraftsTestFixPage() {
       </div>
       
       <div className="text-center">
-        <a href="/admin/drafts" className="text-blue-600 hover:underline">
-          ← 返回草稿箱
-        </a>
+        <Button asChild variant="link"><a href="/admin/drafts">← 返回草稿箱</a></Button>
       </div>
     </main>
   );

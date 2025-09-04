@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type Stats = {
   clozeItems: number;
@@ -54,11 +56,11 @@ export default function BanksOverview() {
       if (session?.access_token) h.set('Authorization', `Bearer ${session.access_token}`);
       const r = await fetch(`/api/admin/cloze/items?id=${encodeURIComponent(id)}`, { method: 'DELETE', headers: h });
       if (!r.ok) throw new Error('删除失败');
-      // 重新加载统计
+      toast.success('已删除');
       location.reload();
     } catch (e) {
       console.error(e);
-      alert('删除失败');
+      toast.error('删除失败');
     } finally {
       setBusy(null);
     }
@@ -80,7 +82,7 @@ export default function BanksOverview() {
       )}
 
       {/* 管理入口 */}
-      <section className="bg-white p-6 rounded-2xl border shadow-sm">
+      <section className="rounded-2xl border p-6 bg-card text-card-foreground">
         <h2 className="text-xl font-semibold mb-2">管理入口</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Entry href="/admin/cloze/ai" title="Cloze 管理" desc="生成、审核、发布挖空练习" emoji="🎯" />
@@ -105,8 +107,8 @@ function Card({ title, value, color }:{ title:string; value:number; color:"indig
     orange: "text-orange-600",
   };
   return (
-    <div className="bg-white p-6 rounded-lg border shadow-sm">
-      <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+    <div className="rounded-lg border p-6 bg-card text-card-foreground">
+      <h3 className="text-lg font-medium">{title}</h3>
       <p className={`text-3xl font-bold ${colorMap[color]}`}>{value}</p>
     </div>
   );
@@ -114,9 +116,9 @@ function Card({ title, value, color }:{ title:string; value:number; color:"indig
 
 function Entry({ href, title, desc, emoji }:{ href:string; title:string; desc:string; emoji:string }){
   return (
-    <Link href={href} className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-      <h3 className="font-medium text-gray-900">{emoji} {title}</h3>
-      <p className="text-sm text-gray-600 mt-1">{desc}</p>
+    <Link href={href} className="p-4 border rounded-lg hover:bg-accent transition-colors">
+      <h3 className="font-medium">{emoji} {title}</h3>
+      <p className="text-sm text-muted-foreground mt-1">{desc}</p>
     </Link>
   );
 }
@@ -135,12 +137,12 @@ function LatestClozeList({ onDelete, busyId }:{ onDelete:(id:string)=>void; busy
       {items.map(it => (
         <div key={it.id} className="flex items-center justify-between p-2 border rounded">
           <div className="text-sm truncate max-w-[70%]">{it.title}</div>
-          <button onClick={()=>onDelete(it.id)} disabled={busyId===it.id} className="px-2 py-1 text-xs rounded bg-red-600 text-white disabled:opacity-50">
+          <Button size="sm" variant="destructive" onClick={()=>onDelete(it.id)} disabled={busyId===it.id}>
             {busyId===it.id? '删除中…':'删除'}
-          </button>
+          </Button>
         </div>
       ))}
-      {items.length===0 && <div className="text-sm text-gray-500">暂无数据</div>}
+      {items.length===0 && <div className="text-sm text-muted-foreground">暂无数据</div>}
     </div>
   );
 }
