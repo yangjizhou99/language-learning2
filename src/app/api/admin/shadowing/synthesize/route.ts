@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { getServiceSupabase } from "@/lib/supabaseAdmin";
+import { synthesizeTTS } from "@/lib/tts";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,28 +20,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "缺少必要参数" }, { status: 400 });
     }
 
-    // 调用现有的 TTS API
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
-      || process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`
-      || process.env.NEXT_PUBLIC_VERCEL_URL && `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-      || (process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:3000');
-    if (!baseUrl) {
-      return NextResponse.json({ error: "TTS 未配置：缺少 NEXT_PUBLIC_BASE_URL/VERCEL_URL" }, { status: 500 });
-    }
-    const ttsResponse = await fetch(`${baseUrl}/api/tts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, lang, voiceName: voice, speakingRate })
-    });
-
-    if (!ttsResponse.ok) {
-      const errorText = await ttsResponse.text();
-      return NextResponse.json({ error: `TTS 失败: ${errorText}` }, { status: 502 });
-    }
-
-    // 使用 Node Buffer，避免以 ArrayBuffer 形式上传导致文件为 0 字节或不可播放
-    const audioArrayBuffer = await ttsResponse.arrayBuffer();
-    const audioBuffer = Buffer.from(new Uint8Array(audioArrayBuffer));
+    // 直接调用本地合成函数，避免受保护路由
+    const audioBuffer = await synthesizeTTS({ text, lang, voiceName: voice, speakingRate });
 
     // 上传到 Supabase Storage
     const supabaseAdmin = getServiceSupabase();
