@@ -20,15 +20,22 @@ export async function POST(req: NextRequest) {
     }
 
     // 调用现有的 TTS API
-    const ttsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/tts`, {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      || process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`
+      || process.env.NEXT_PUBLIC_VERCEL_URL && `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+      || (process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:3000');
+    if (!baseUrl) {
+      return NextResponse.json({ error: "TTS 未配置：缺少 NEXT_PUBLIC_BASE_URL/VERCEL_URL" }, { status: 500 });
+    }
+    const ttsResponse = await fetch(`${baseUrl}/api/tts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, lang, voiceName: voice, speakingRate })
     });
 
     if (!ttsResponse.ok) {
-      const error = await ttsResponse.text();
-      return NextResponse.json({ error: `TTS 失败: ${error}` }, { status: 500 });
+      const errorText = await ttsResponse.text();
+      return NextResponse.json({ error: `TTS 失败: ${errorText}` }, { status: 502 });
     }
 
     // 使用 Node Buffer，避免以 ArrayBuffer 形式上传导致文件为 0 字节或不可播放
@@ -59,8 +66,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, audio_url: audioUrl, bytes: audioBuffer.length, signed: Boolean(signed?.signedUrl) });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("音频合成失败:", error);
-    return NextResponse.json({ error: "服务器错误" }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: message || "服务器错误" }, { status: 500 });
   }
 }
