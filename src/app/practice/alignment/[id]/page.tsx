@@ -613,6 +613,7 @@ export default function AlignmentPracticePage() {
         </div>
       </div>
       </div>
+      </div>
     </main>
   );
 }
