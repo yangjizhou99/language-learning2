@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AdminQuickAccess from "@/components/AdminQuickAccess";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
@@ -7,10 +8,17 @@ export default function Home() {
       <AdminQuickAccess />
       <h1 className="text-3xl font-semibold">Lang Trainer</h1>
       <div className="flex gap-3 flex-wrap justify-center">
-        <Link href="/practice/cloze" className="px-4 py-2 rounded bg-black text-white">Cloze 练习</Link>
-        <Link href="/practice/shadowing" className="px-4 py-2 rounded bg-black text-white">Shadowing</Link>
-        <Link href="/practice/alignment" className="px-4 py-2 rounded bg-black text-white">对齐练习</Link>
+        <Button asChild>
+          <Link href="/practice/cloze">Cloze 练习</Link>
+        </Button>
+        <Button asChild variant="secondary">
+          <Link href="/practice/shadowing">Shadowing</Link>
+        </Button>
+        <Button asChild variant="ghost">
+          <Link href="/practice/alignment">对齐练习</Link>
+        </Button>
       </div>
+      {/* 示例卡片已移除 */}
     </main>
   );
 }

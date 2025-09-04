@@ -1,7 +1,12 @@
 "use client";
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Lang } from "@/types/lang";
+import { Container } from "@/components/Container";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 interface ClozeBlank {
   id: number;
@@ -132,10 +137,16 @@ export default function ClozePage() {
       parts.push(
         <input
           key={`i-${idNum}-${start}`}
-          className="border-b-2 border-blue-500 bg-yellow-50 px-2 py-1 mx-1 min-w-20"
+          className="mx-1 min-w-20 px-2 py-1 bg-background border-0 border-b-2 border-input focus:outline-none focus:ring-2 focus:ring-ring rounded-none"
           placeholder="填空"
           value={answers[String(idNum)] || ''}
           onChange={e => setAnswers(prev => ({ ...prev, [String(idNum)]: e.target.value }))}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              submitAnswers();
+            }
+          }}
           autoComplete="off"
         />
       );
@@ -148,143 +159,130 @@ export default function ClozePage() {
   // 全局函数已移除，改为受控输入
 
   return (
-    <main className="max-w-4xl mx-auto p-6 space-y-6">
+    <main className="p-6">
+      <Container>
+      <Breadcrumbs items={[{ href: "/", label: "首页" }, { label: "Cloze 挖空练习" }]} />
+      <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2">Cloze 挖空练习</h1>
-        <p className="text-gray-600">从题库中随机抽取题目，AI 智能评分</p>
+        <p className="text-muted-foreground">从题库中随机抽取题目，AI 智能评分</p>
       </div>
 
       {/* 设置区域 */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="rounded-lg border bg-card text-card-foreground p-6">
         <div className="flex gap-4 items-center justify-center">
           <div>
-            <label className="block text-sm font-medium mb-1">语言</label>
-            <select 
-              value={lang} 
-              onChange={e => setLang(e.target.value as Lang)} 
-              className="border rounded px-3 py-2"
-            >
-              <option value="ja">日本語</option>
-              <option value="en">English</option>
-              <option value="zh">简体中文</option>
-            </select>
+            <Label className="mb-1 block">语言</Label>
+            <Select value={lang} onValueChange={v => setLang(v as Lang)}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="选择语言" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ja">日本語</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="zh">简体中文</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">难度等级</label>
-            <select 
-              value={level} 
-              onChange={e => setLevel(parseInt(e.target.value))} 
-              className="border rounded px-3 py-2"
-            >
-              <option value={1}>L1 - 初级</option>
-              <option value={2}>L2 - 初中级</option>
-              <option value={3}>L3 - 中级</option>
-              <option value={4}>L4 - 中高级</option>
-              <option value={5}>L5 - 高级</option>
-            </select>
+            <Label className="mb-1 block">难度等级</Label>
+            <Select value={String(level)} onValueChange={v => setLevel(parseInt(v))}>
+              <SelectTrigger className="w-44"><SelectValue placeholder="选择难度" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">L1 - 初级</SelectItem>
+                <SelectItem value="2">L2 - 初中级</SelectItem>
+                <SelectItem value="3">L3 - 中级</SelectItem>
+                <SelectItem value="4">L4 - 中高级</SelectItem>
+                <SelectItem value="5">L5 - 高级</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">AI 提供商</label>
-            <select
-              value={provider}
-              onChange={e => {
-                const p = e.target.value as 'deepseek'|'openrouter'|'openai';
-                setProvider(p);
-                const defaults: Record<string,string> = {
-                  deepseek: 'deepseek-chat',
-                  openrouter: 'anthropic/claude-3.5-sonnet',
-                  openai: 'gpt-4o'
-                };
-                setModel(defaults[p] || '');
-              }}
-              className="border rounded px-3 py-2"
-            >
-              <option value="deepseek">DeepSeek</option>
-              <option value="openrouter">OpenRouter</option>
-              <option value="openai">OpenAI</option>
-            </select>
+            <Label className="mb-1 block">AI 提供商</Label>
+            <Select value={provider} onValueChange={(p: 'deepseek'|'openrouter'|'openai') => {
+              setProvider(p);
+              const defaults: Record<string,string> = {
+                deepseek: 'deepseek-chat',
+                openrouter: 'anthropic/claude-3.5-sonnet',
+                openai: 'gpt-4o'
+              };
+              setModel(defaults[p] || '');
+            }}>
+              <SelectTrigger className="w-56"><SelectValue placeholder="选择提供商" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="deepseek">DeepSeek</SelectItem>
+                <SelectItem value="openrouter">OpenRouter</SelectItem>
+                <SelectItem value="openai">OpenAI</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">模型</label>
-            <select
-              value={model}
-              onChange={e => setModel(e.target.value)}
-              className="border rounded px-3 py-2"
-            >
-              {provider === 'deepseek' && (
-                <>
-                  <option value="deepseek-chat">deepseek-chat</option>
-                  <option value="deepseek-reasoner">deepseek-reasoner</option>
-                </>
-              )}
-              {provider === 'openrouter' && (
-                <>
-                  <option value="anthropic/claude-3.5-sonnet">anthropic/claude-3.5-sonnet</option>
-                  <option value="openai/gpt-4o-mini">openai/gpt-4o-mini</option>
-                  <option value="meta-llama/Meta-Llama-3.1-70B-Instruct">meta-llama/Meta-Llama-3.1-70B-Instruct</option>
-                </>
-              )}
-              {provider === 'openai' && (
-                <>
-                  <option value="gpt-4o">gpt-4o</option>
-                  <option value="gpt-4o-mini">gpt-4o-mini</option>
-                </>
-              )}
-            </select>
+            <Label className="mb-1 block">模型</Label>
+            <Select value={model} onValueChange={setModel}>
+              <SelectTrigger className="w-64"><SelectValue placeholder="选择模型" /></SelectTrigger>
+              <SelectContent>
+                {provider === 'deepseek' && (
+                  <>
+                    <SelectItem value="deepseek-chat">deepseek-chat</SelectItem>
+                    <SelectItem value="deepseek-reasoner">deepseek-reasoner</SelectItem>
+                  </>
+                )}
+                {provider === 'openrouter' && (
+                  <>
+                    <SelectItem value="anthropic/claude-3.5-sonnet">anthropic/claude-3.5-sonnet</SelectItem>
+                    <SelectItem value="openai/gpt-4o-mini">openai/gpt-4o-mini</SelectItem>
+                    <SelectItem value="meta-llama/Meta-Llama-3.1-70B-Instruct">meta-llama/Meta-Llama-3.1-70B-Instruct</SelectItem>
+                  </>
+                )}
+                {provider === 'openai' && (
+                  <>
+                    <SelectItem value="gpt-4o">gpt-4o</SelectItem>
+                    <SelectItem value="gpt-4o-mini">gpt-4o-mini</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
           </div>
           <div className="pt-6">
-            <button
-              onClick={loadNextItem}
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
+            <Button onClick={loadNextItem} disabled={loading}>
               {loading ? "加载中..." : "开始练习"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="px-4 py-3 rounded border border-red-300 bg-red-50 text-red-700">
           {error}
         </div>
       )}
 
       {/* 题目区域 */}
       {currentItem && (
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="rounded-lg border bg-card text-card-foreground p-6">
           <div className="mb-4">
             <h2 className="text-xl font-semibold mb-2">{currentItem.title}</h2>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               语言: {currentItem.lang.toUpperCase()} | 难度: L{currentItem.level} | 主题: {currentItem.topic}
             </div>
           </div>
 
-          <div className="mb-6 p-4 bg-gray-50 rounded">
+          <div className="mb-6 p-4 bg-muted rounded">
             {renderCloze()}
           </div>
 
           <div className="flex gap-4 items-center">
-            <button
-              onClick={submitAnswers}
-              disabled={scoring || Object.keys(answers).length === 0}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-            >
+            <Button onClick={submitAnswers} disabled={scoring || Object.keys(answers).length === 0}>
               {scoring ? "评分中..." : "提交答案"}
-            </button>
-            <button
-              onClick={loadNextItem}
-              className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-            >
+            </Button>
+            <Button variant="secondary" onClick={loadNextItem}>
               下一题
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* 评分结果 */}
       {scoringResult && (
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="rounded-lg border bg-card text-card-foreground p-6">
           <h3 className="text-xl font-semibold mb-4">评分结果</h3>
           
           <div className="mb-6">
@@ -340,6 +338,8 @@ export default function ClozePage() {
           </div>
         </div>
       )}
+      </div>
+      </Container>
     </main>
   );
 }

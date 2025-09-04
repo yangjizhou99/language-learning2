@@ -1,6 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export default function ShadowingItemsAdmin(){
   const [items, setItems] = useState<any[]>([]);
@@ -29,12 +35,11 @@ export default function ShadowingItemsAdmin(){
   const save = async ()=>{
     if (!editing) return;
     const r = await fetch('/api/admin/shadowing/items', { method:'PUT', headers:{ 'Content-Type':'application/json', ...(await authHeader()) }, body: JSON.stringify(editing) });
-    if (r.ok) { setEditing(null); load(); } else alert('保存失败');
+    if (r.ok) { setEditing(null); toast.success('已保存'); load(); } else toast.error('保存失败');
   };
   const remove = async (id:string)=>{
-    if (!confirm('确定删除该素材？')) return;
     const r = await fetch(`/api/admin/shadowing/items?id=${encodeURIComponent(id)}`, { method:'DELETE', headers: await authHeader() });
-    if (r.ok) load(); else alert('删除失败');
+    if (r.ok) { toast.success('已删除'); load(); } else toast.error('删除失败');
   };
 
   return (
@@ -45,17 +50,43 @@ export default function ShadowingItemsAdmin(){
       </div>
       {/* 搜索与筛选 */}
       <div className="flex flex-wrap gap-2 items-center">
-        <input className="border rounded px-2 py-1" placeholder="搜索标题" value={q} onChange={e=>setQ(e.target.value)} />
-        <select className="border rounded px-2 py-1" value={lang} onChange={e=>setLang(e.target.value)}>
-          <option value="all">所有语言</option><option value="en">英语</option><option value="ja">日语</option><option value="zh">中文</option>
-        </select>
-        <button onClick={async()=>{
-          const ids = Object.keys(selected).filter(k=>selected[k]);
-          if (ids.length===0) return;
-          if (!confirm(`确定批量删除 ${ids.length} 条？`)) return;
-          const r = await fetch('/api/admin/shadowing/items', { method:'DELETE', headers:{ 'Content-Type':'application/json', ...(await authHeader()) }, body: JSON.stringify({ ids }) });
-          if (r.ok) { setSelected({}); load(); } else alert('批量删除失败');
-        }} className="px-3 py-1 rounded bg-red-600 text-white">批量删除</button>
+        <Input placeholder="搜索标题" value={q} onChange={e=>setQ(e.target.value)} className="w-64" />
+        <div className="flex items-center gap-2">
+          <Label>语言</Label>
+          <Select value={lang} onValueChange={setLang}>
+            <SelectTrigger className="w-36"><SelectValue placeholder="所有语言" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有语言</SelectItem>
+              <SelectItem value="en">英语</SelectItem>
+              <SelectItem value="ja">日语</SelectItem>
+              <SelectItem value="zh">中文</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="destructive">批量删除</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>确认批量删除</DialogTitle>
+              <DialogDescription>将删除选中的素材，操作不可撤销。</DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button variant="ghost">取消</Button>
+              </DialogClose>
+              <DialogClose asChild>
+                <Button variant="destructive" onClick={async()=>{
+                  const ids = Object.keys(selected).filter(k=>selected[k]);
+                  if (ids.length===0) { toast.message('未选择任何项'); return; }
+                  const r = await fetch('/api/admin/shadowing/items', { method:'DELETE', headers:{ 'Content-Type':'application/json', ...(await authHeader()) }, body: JSON.stringify({ ids }) });
+                  if (r.ok) { setSelected({}); toast.success('已删除'); load(); } else toast.error('批量删除失败');
+                }}>确认删除</Button>
+              </DialogClose>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
       {loading ? <div>加载中…</div> : (
         <div className="grid gap-3">
@@ -70,8 +101,26 @@ export default function ShadowingItemsAdmin(){
                   <div className="font-medium truncate">{it.title}</div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={()=>setEditing(it)} className="px-2 py-1 text-xs rounded border">编辑</button>
-                  <button onClick={()=>remove(it.id)} className="px-2 py-1 text-xs rounded bg-red-600 text-white">删除</button>
+                  <Button size="sm" variant="outline" onClick={()=>setEditing(it)}>编辑</Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="destructive">删除</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>确认删除</DialogTitle>
+                        <DialogDescription>将删除此素材，操作不可撤销。</DialogDescription>
+                      </DialogHeader>
+                      <div className="mt-4 flex justify-end gap-2">
+                        <DialogClose asChild>
+                          <Button variant="ghost">取消</Button>
+                        </DialogClose>
+                        <DialogClose asChild>
+                          <Button variant="destructive" onClick={()=>remove(it.id)}>确认删除</Button>
+                        </DialogClose>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
               <div className="text-xs text-gray-500 mt-1">{it.lang}</div>
@@ -85,19 +134,24 @@ export default function ShadowingItemsAdmin(){
 
       {editing && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-          <div className="bg-white w-full max-w-3xl p-4 rounded shadow space-y-3">
+          <div className="bg-card text-card-foreground w-full max-w-3xl p-4 rounded border space-y-3">
             <div className="text-lg font-semibold">编辑素材</div>
             <div className="flex gap-2">
-              <select className="border rounded px-2 py-1" value={editing.lang} onChange={e=>setEditing({...editing, lang:e.target.value})}>
-                <option value="en">英语</option><option value="ja">日语</option><option value="zh">中文</option>
-              </select>
-              <input className="flex-1 border rounded px-2 py-1" value={editing.title||''} onChange={e=>setEditing({...editing, title:e.target.value})} />
+              <Select value={editing.lang} onValueChange={(v)=>setEditing({...editing, lang:v})}>
+                <SelectTrigger className="w-36"><SelectValue placeholder="语言" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">英语</SelectItem>
+                  <SelectItem value="ja">日语</SelectItem>
+                  <SelectItem value="zh">中文</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input className="flex-1" value={editing.title||''} onChange={e=>setEditing({...editing, title:e.target.value})} />
             </div>
-            <textarea className="w-full border rounded px-2 py-1 h-36" value={editing.text||''} onChange={e=>setEditing({...editing, text:e.target.value})} />
-            <input className="w-full border rounded px-2 py-1" value={editing.audio_url||''} onChange={e=>setEditing({...editing, audio_url:e.target.value})} />
+            <textarea className="w-full border rounded px-2 py-1 h-36 bg-background" value={editing.text||''} onChange={e=>setEditing({...editing, text:e.target.value})} />
+            <Input className="w-full" value={editing.audio_url||''} onChange={e=>setEditing({...editing, audio_url:e.target.value})} />
             <div className="flex justify-end gap-2">
-              <button onClick={()=>setEditing(null)} className="px-3 py-1 rounded border">取消</button>
-              <button onClick={save} className="px-3 py-1 rounded bg-blue-600 text-white">保存</button>
+              <Button variant="outline" onClick={()=>setEditing(null)}>取消</Button>
+              <Button onClick={save}>保存</Button>
             </div>
           </div>
         </div>

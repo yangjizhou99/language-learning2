@@ -1,5 +1,10 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Container } from "@/components/Container";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 // Web Speech 类型定义，避免 any
 interface WebSpeechRecognitionEvent extends Event {
@@ -39,12 +44,10 @@ type ShadowingData = {
 
 // 等级选择器组件
 function LevelPicker({ 
-  lang, 
   value, 
   onChange, 
   recommended 
 }: { 
-  lang: string; 
   value: number; 
   onChange: (level: number) => void; 
   recommended: number | null; 
@@ -96,12 +99,7 @@ export default function ShadowingPage() {
   const [recognitionError, setRecognitionError] = useState<string>("");
   
   // 逐句分析状态
-  const [sentenceAnalysis, setSentenceAnalysis] = useState<Array<{
-    sentence: string;
-    isCorrect: boolean;
-    accuracy: number;
-    feedback: string;
-  }>>([]);
+  // 已去除未使用的逐句分析状态
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -142,7 +140,7 @@ export default function ShadowingPage() {
     setLoading(true);
     setData(null);
     setScore(null);
-    setSentenceAnalysis([]);
+    // 清理上一次的逐句分析（已移除专用状态）
     setAudioBlob(null);
     setAudioUrl("");
     setRecordingTime(0);
@@ -303,7 +301,7 @@ export default function ShadowingPage() {
         setScore(result.score);
         
         // 生成真实的逐句分析
-        generateRealSentenceAnalysis(data.text, recognizedText, result);
+        generateRealSentenceAnalysis(data.text, recognizedText);
       } else {
         setErr("评分失败，请重试");
       }
@@ -315,7 +313,7 @@ export default function ShadowingPage() {
   };
 
   // 生成真实的逐句分析
-  const generateRealSentenceAnalysis = (originalText: string, recognizedText: string, result: { score: number; accuracy: number; fluency: number; feedback: string }) => {
+  const generateRealSentenceAnalysis = (originalText: string, recognizedText: string) => {
     // 按句号、问号、感叹号分割句子
     const sentences = originalText.split(/[。！？.!?]/).filter(s => s.trim().length > 0);
     
@@ -323,7 +321,7 @@ export default function ShadowingPage() {
     const diffs = buildSentenceDiffs(sentences, recognizedText, lang);
     setDiffRows(diffs);
 
-    const analysis = sentences.map((sentence, index) => {
+    const analysis = sentences.map((sentence) => {
       // 计算每句话的识别准确度
       const sentenceAccuracy = calculateSentenceAccuracy(sentence.trim(), recognizedText);
       const isCorrect = sentenceAccuracy >= 0.8;
@@ -349,7 +347,7 @@ export default function ShadowingPage() {
       };
     });
     
-    setSentenceAnalysis(analysis);
+    void analysis;
   };
 
   // 计算句子准确度
@@ -497,31 +495,29 @@ export default function ShadowingPage() {
   };
 
   return (
-    <main className="max-w-4xl mx-auto p-6 space-y-5">
+    <main className="p-6">
+      <Container>
+      <Breadcrumbs items={[{ href: "/", label: "首页" }, { label: "Shadowing 跟读练习" }]} />
+      <div className="max-w-4xl mx-auto space-y-5">
       <h1 className="text-2xl font-semibold">Shadowing 跟读练习（真实语音识别）</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <label className="flex items-center gap-2">
-          <span className="w-24">语言</span>
-          <select 
-            value={lang} 
-            onChange={e => {
-              const v = e.target.value as "ja"|"en"|"zh"; 
-              setLang(v); 
-            }} 
-            className="border rounded px-2 py-1"
-          >
-            <option value="ja">日语</option>
-            <option value="en">英语</option>
-            <option value="zh">中文</option>
-          </select>
-        </label>
+        <div className="flex items-center gap-2">
+          <Label className="w-24">语言</Label>
+          <Select value={lang} onValueChange={(v: "ja"|"en"|"zh")=> setLang(v)}>
+            <SelectTrigger className="w-40"><SelectValue placeholder="选择语言" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ja">日语</SelectItem>
+              <SelectItem value="en">英语</SelectItem>
+              <SelectItem value="zh">中文</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* 等级选择器 */}
-      <div className="p-4 bg-gray-50 rounded-lg">
+      <div className="p-4 bg-muted rounded-lg">
         <LevelPicker 
-          lang={lang} 
           value={level} 
           onChange={setLevel} 
           recommended={recommendedLevel} 
@@ -533,51 +529,39 @@ export default function ShadowingPage() {
         )}
         
         {/* 生成题库链接 */}
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600 mb-2">
+        <div className="mt-4 pt-4 border-t">
+          <div className="text-sm text-muted-foreground mb-2">
             需要更多练习内容？
           </div>
-          <a 
-            href="/admin/shadowing/ai" 
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-          >
+          <a href="/admin/shadowing/ai" className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm">
             <span>🤖 AI 生成题库</span>
             <span className="text-xs opacity-80">→</span>
           </a>
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-xs text-muted-foreground mt-1">
             使用 AI 生成更多适合你当前等级的练习内容
           </div>
         </div>
       </div>
 
       <div className="flex gap-2">
-        <button 
-          onClick={getNextQuestion} 
-          disabled={loading} 
-          className="px-3 py-1 rounded bg-black text-white disabled:opacity-60"
-        >
+        <Button onClick={getNextQuestion} disabled={loading}>
           {loading ? "加载中..." : "获取下一题"}
-        </button>
+        </Button>
       </div>
 
-      {err && <div className="text-red-600 text-sm">{err}</div>}
+      {err && <div className="text-sm text-red-600">{err}</div>}
 
       {data && (
-        <section className="p-4 bg-white rounded-2xl shadow space-y-4">
+        <section className="p-4 rounded-2xl border bg-card text-card-foreground space-y-4">
           <div className="flex justify-between items-start">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-muted-foreground">
               标题：{data.title} · 语言：{data.lang} · 等级：L{data.level}
             </div>
-            <button 
-              onClick={getNextQuestion}
-              className="text-sm text-blue-600 hover:underline"
-            >
-              换一题
-            </button>
+            <Button variant="link" className="px-0" onClick={getNextQuestion}>换一题</Button>
           </div>
           
           {/* 原文显示 */}
-          <div className="p-3 bg-gray-50 rounded">
+          <div className="p-3 bg-muted rounded">
             <p className="whitespace-pre-wrap text-lg">{data.text}</p>
           </div>
           
@@ -591,25 +575,15 @@ export default function ShadowingPage() {
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">跟读录音：</span>
             {!isRecording ? (
-              <button
-                onClick={startRecording}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                开始录音
-              </button>
+              <Button variant="destructive" onClick={startRecording}>开始录音</Button>
             ) : (
-              <button
-                onClick={stopRecording}
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-              >
-                停止录音 ({formatTime(recordingTime)})
-              </button>
+              <Button variant="secondary" onClick={stopRecording}>停止录音 ({formatTime(recordingTime)})</Button>
             )}
           </div>
           
           {/* 语音识别状态 */}
           {isRecognizing && (
-            <div className="p-3 bg-blue-50 rounded border border-blue-200">
+            <div className="p-3 rounded border bg-blue-50 border-blue-200">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
                 <span className="text-sm text-blue-700">正在识别语音...</span>
@@ -619,7 +593,7 @@ export default function ShadowingPage() {
           
           {/* 识别结果显示 */}
           {recognizedText && (
-            <div className="p-3 bg-green-50 rounded border border-green-200">
+            <div className="p-3 rounded border bg-green-50 border-green-200">
               <div className="text-sm font-medium text-green-700 mb-2">🎤 语音识别结果：</div>
               <div className="text-sm text-green-600 whitespace-pre-wrap">{recognizedText}</div>
             </div>
@@ -627,7 +601,7 @@ export default function ShadowingPage() {
           
           {/* 识别错误显示 */}
           {recognitionError && (
-            <div className="p-3 bg-red-50 rounded border border-red-200">
+            <div className="p-3 rounded border bg-red-50 border-red-200">
               <div className="text-sm text-red-700">{recognitionError}</div>
             </div>
           )}
@@ -637,13 +611,9 @@ export default function ShadowingPage() {
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium">你的录音：</span>
               <audio controls src={audioUrl} className="flex-1" />
-              <button
-                onClick={evaluateRecording}
-                disabled={isScoring}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-              >
+              <Button onClick={evaluateRecording} disabled={isScoring}>
                 {isScoring ? "评分中..." : "开始评分"}
-              </button>
+              </Button>
             </div>
           )}
           
@@ -691,6 +661,8 @@ export default function ShadowingPage() {
           )}
         </section>
       )}
+      </div>
+      </Container>
     </main>
   );
 }

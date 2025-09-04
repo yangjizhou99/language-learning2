@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Container } from "@/components/Container";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 interface AlignmentPack {
   id: string;
@@ -34,7 +37,7 @@ export default function AlignmentListPage() {
   if (loading) {
     return (
       <main className="max-w-6xl mx-auto p-6">
-        <div className="text-gray-600">加载中...</div>
+        <div className="text-muted-foreground">加载中...</div>
       </main>
     );
   }
@@ -42,21 +45,24 @@ export default function AlignmentListPage() {
   if (error) {
     return (
       <main className="max-w-6xl mx-auto p-6">
-        <div className="text-red-600">错误：{error}</div>
+        <div className="px-4 py-3 rounded border border-red-300 bg-red-50 text-red-700">错误：{error}</div>
       </main>
     );
   }
 
   return (
-    <main className="max-w-6xl mx-auto p-6 space-y-6">
-      <div className="bg-white rounded-2xl shadow p-6">
+    <main className="p-6">
+      <Container>
+      <Breadcrumbs items={[{ href: "/", label: "首页" }, { label: "对齐练习" }]} />
+      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="rounded-2xl border bg-card text-card-foreground p-6">
         <h1 className="text-2xl font-semibold mb-4">对齐练习训练包</h1>
-        <p className="text-gray-600 mb-6">
+        <p className="text-muted-foreground mb-6">
           选择训练包开始练习，从简单对话到复杂写作，逐步提升语言能力
         </p>
         
         {packs.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-muted-foreground">
             <p>暂无可用的训练包</p>
             <p className="text-sm mt-2">请先在管理端生成训练包</p>
           </div>
@@ -95,19 +101,16 @@ export default function AlignmentListPage() {
                   创建时间：{new Date(pack.created_at).toLocaleDateString()}
                 </div>
                 
-                <Link
-                  href={`/practice/alignment/${pack.id}`}
-                  className="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  开始练习
-                </Link>
+                <Button asChild className="w-full">
+                  <Link href={`/practice/alignment/${pack.id}`}>开始练习</Link>
+                </Button>
               </div>
             ))}
           </div>
         )}
       </div>
       
-      <div className="bg-blue-50 rounded-2xl p-6">
+      <div className="rounded-2xl p-6 bg-blue-50">
         <h3 className="font-medium text-blue-900 mb-2">关于对齐练习</h3>
         <p className="text-blue-800 text-sm">
           对齐练习采用"范例→仿写"的方式，通过 6 个递进步骤帮助学习者掌握特定场景的语言表达：
@@ -115,6 +118,8 @@ export default function AlignmentListPage() {
           D1(简单对话) → D2(复杂对话) → T3(讨论) → W4(短文) → T5(邮件) → W6(长文)
         </p>
       </div>
+      </div>
+      </Container>
     </main>
   );
 }

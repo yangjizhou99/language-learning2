@@ -2,6 +2,11 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function ClozeEditorPage(){
   const { id } = useParams<{ id: string }>();
@@ -76,55 +81,60 @@ export default function ClozeEditorPage(){
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-4">
       <h1 className="text-2xl font-semibold">Cloze 草稿编辑器</h1>
-      <div className="bg-white rounded-lg shadow p-4 space-y-3">
+      <div className="rounded-lg border bg-card text-card-foreground p-4 space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <div className="text-sm text-gray-600">语言</div>
-            <input disabled className="w-full border rounded px-2 py-1 bg-gray-50" value={draft.lang} />
+            <Label>语言</Label>
+            <Input disabled value={draft.lang} />
           </div>
           <div>
-            <div className="text-sm text-gray-600">难度</div>
-            <input disabled className="w-full border rounded px-2 py-1 bg-gray-50" value={`L${draft.level}`} />
+            <Label>难度</Label>
+            <Input disabled value={`L${draft.level}`} />
           </div>
           <div>
-            <div className="text-sm text-gray-600">状态</div>
-            <select className="w-full border rounded px-2 py-1" value={draft.status||'draft'} onChange={e=> setDraft({ ...draft, status: e.target.value })}>
-              <option value="draft">draft</option>
-              <option value="needs_fix">needs_fix</option>
-              <option value="approved">approved</option>
-            </select>
+            <Label>状态</Label>
+            <Select value={draft.status||'draft'} onValueChange={(v)=> setDraft({ ...draft, status: v })}>
+              <SelectTrigger>
+                <SelectValue placeholder="选择状态" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">draft</SelectItem>
+                <SelectItem value="needs_fix">needs_fix</SelectItem>
+                <SelectItem value="approved">approved</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
-            <div className="text-sm text-gray-600">主题</div>
-            <input className="w-full border rounded px-2 py-1" value={draft.topic||''} onChange={e=> setDraft({ ...draft, topic: e.target.value })} />
+            <Label>主题</Label>
+            <Input value={draft.topic||''} onChange={e=> setDraft({ ...draft, topic: e.target.value })} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <div className="text-sm text-gray-600">标题</div>
-            <input className="w-full border rounded px-2 py-1" value={draft.title||''} onChange={e=> setDraft({ ...draft, title: e.target.value })} />
+            <Label>标题</Label>
+            <Input value={draft.title||''} onChange={e=> setDraft({ ...draft, title: e.target.value })} />
           </div>
           <div>
-            <div className="text-sm text-gray-600">提供商/模型</div>
-            <input className="w-full border rounded px-2 py-1" value={`${draft.ai_provider||''}${draft.ai_model? ' / '+draft.ai_model : ''}`} disabled />
+            <Label>提供商/模型</Label>
+            <Input value={`${draft.ai_provider||''}${draft.ai_model? ' / '+draft.ai_model : ''}`} disabled />
           </div>
         </div>
 
         <div>
-          <div className="text-sm text-gray-600">正文（含 {'{{1}}'} 等占位）</div>
-          <textarea className="w-full border rounded px-2 py-1 font-mono" rows={10} value={draft.passage||''} onChange={e=> setDraft({ ...draft, passage: e.target.value })} />
+          <Label>正文（含 {'{{1}}'} 等占位）</Label>
+          <Textarea className="font-mono" rows={10} value={draft.passage||''} onChange={e=> setDraft({ ...draft, passage: e.target.value })} />
         </div>
 
         <div>
-          <div className="text-sm text-gray-600">blanks JSON</div>
-          <textarea className="w-full border rounded px-2 py-1 font-mono" rows={16} value={blanksText} onChange={e=> setBlanksText(e.target.value)} />
+          <Label>blanks JSON</Label>
+          <Textarea className="font-mono" rows={16} value={blanksText} onChange={e=> setBlanksText(e.target.value)} />
         </div>
 
         <div className="flex gap-2 items-center">
-          <button className="px-4 py-2 rounded bg-blue-600 text-white" onClick={save} disabled={saving}>保存</button>
-          <button className="px-4 py-2 rounded border" onClick={publish}>发布</button>
-          <div className="text-sm text-gray-500">{log}</div>
+          <Button onClick={save} disabled={saving}>保存</Button>
+          <Button variant="outline" onClick={publish}>发布</Button>
+          <div className="text-sm text-muted-foreground">{log}</div>
         </div>
       </div>
     </div>

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface ClozeBlank {
   id: number;
@@ -57,7 +59,6 @@ export default function ClozeAIPage() {
         });
         const data = await res.json();
         if (res.ok && Array.isArray(data.models)) {
-          // 排序，优先最近添加的（若有 description/pricing 不作强依赖，仅按名称排序）
           const models = [...data.models].sort((a: any, b: any) => String(a.name||a.id).localeCompare(String(b.name||b.id)));
           setDynamicModels(models);
         } else {
@@ -79,7 +80,7 @@ export default function ClozeAIPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        alert('请先登录');
+        toast.error('请先登录');
         setGenerating(false);
         return;
       }
@@ -97,17 +98,17 @@ export default function ClozeAIPage() {
             : formData.model
         })
       });
-      
       const result = await response.json();
       if (result.success) {
         setGeneratedItems(result.items);
         setCurrentItem(result.items[0]);
         setCurrentIndex(0);
+        toast.success('题目已生成');
       } else {
-        alert('生成失败: ' + result.error);
+        toast.error('生成失败: ' + result.error);
       }
     } catch (error) {
-      alert('生成失败: ' + error);
+      toast.error('生成失败: ' + error);
     } finally {
       setGenerating(false);
     }
@@ -115,12 +116,11 @@ export default function ClozeAIPage() {
 
   const saveDraft = async () => {
     if (!currentItem) return;
-    
     setSaving(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        alert('请先登录');
+        toast.error('请先登录');
         setSaving(false);
         return;
       }
@@ -145,16 +145,15 @@ export default function ClozeAIPage() {
           ai_usage: currentItem.ai_usage
         })
       });
-      
       const result = await response.json();
       if (result.success) {
         setCurrentItem({ ...currentItem, id: result.data.id, status: 'draft' });
-        alert('草稿已保存');
+        toast.success('草稿已保存');
       } else {
-        alert('保存失败: ' + result.error);
+        toast.error('保存失败: ' + result.error);
       }
     } catch (error) {
-      alert('保存失败: ' + error);
+      toast.error('保存失败: ' + error);
     } finally {
       setSaving(false);
     }
@@ -162,12 +161,11 @@ export default function ClozeAIPage() {
 
   const publishItem = async () => {
     if (!currentItem?.id) return;
-    
     setPublishing(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        alert('请先登录');
+        toast.error('请先登录');
         setPublishing(false);
         return;
       }
@@ -180,16 +178,15 @@ export default function ClozeAIPage() {
         },
         body: JSON.stringify({ draftId: currentItem.id })
       });
-      
       const result = await response.json();
       if (result.success) {
-        alert('题目已发布到题库');
+        toast.success('题目已发布到题库');
         setCurrentItem({ ...currentItem, status: 'approved' });
       } else {
-        alert('发布失败: ' + result.error);
+        toast.error('发布失败: ' + result.error);
       }
     } catch (error) {
-      alert('发布失败: ' + error);
+      toast.error('发布失败: ' + error);
     } finally {
       setPublishing(false);
     }
@@ -197,7 +194,6 @@ export default function ClozeAIPage() {
 
   const updateBlank = (blankIndex: number, field: keyof ClozeBlank, value: any) => {
     if (!currentItem) return;
-    
     const newBlanks = [...currentItem.blanks];
     newBlanks[blankIndex] = { ...newBlanks[blankIndex], [field]: value };
     setCurrentItem({ ...currentItem, blanks: newBlanks });
@@ -205,7 +201,6 @@ export default function ClozeAIPage() {
 
   const addAcceptable = (blankIndex: number) => {
     if (!currentItem) return;
-    
     const newBlanks = [...currentItem.blanks];
     newBlanks[blankIndex].acceptable.push('');
     setCurrentItem({ ...currentItem, blanks: newBlanks });
@@ -213,7 +208,6 @@ export default function ClozeAIPage() {
 
   const removeAcceptable = (blankIndex: number, acceptableIndex: number) => {
     if (!currentItem) return;
-    
     const newBlanks = [...currentItem.blanks];
     newBlanks[blankIndex].acceptable.splice(acceptableIndex, 1);
     setCurrentItem({ ...currentItem, blanks: newBlanks });
@@ -221,7 +215,6 @@ export default function ClozeAIPage() {
 
   const updateAcceptable = (blankIndex: number, acceptableIndex: number, value: string) => {
     if (!currentItem) return;
-    
     const newBlanks = [...currentItem.blanks];
     newBlanks[blankIndex].acceptable[acceptableIndex] = value;
     setCurrentItem({ ...currentItem, blanks: newBlanks });
@@ -386,19 +379,17 @@ export default function ClozeAIPage() {
               )}
             </div>
           </div>
-          <button
-            onClick={generateItems}
-            disabled={generating}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
+          <Button onClick={generateItems} disabled={generating}>
             {generating ? '生成中...' : '生成题目'}
-          </button>
+          </Button>
           {formData.provider === 'openrouter' && (
-            <button
+            <Button
+              className="ml-3"
+              variant="secondary"
               onClick={async () => {
                 try {
                   const { data: { session } } = await supabase.auth.getSession();
-                  if (!session) { alert('请先登录'); return; }
+                  if (!session) { toast.error('请先登录'); return; }
                   const res = await fetch(`/api/admin/providers/models?provider=openrouter`, {
                     headers: { 'Authorization': `Bearer ${session.access_token}` }
                   });
@@ -406,16 +397,15 @@ export default function ClozeAIPage() {
                   if (res.ok && Array.isArray(data.models)) {
                     const models = [...data.models].sort((a: any, b: any) => String(a.name||a.id).localeCompare(String(b.name||b.id)));
                     setDynamicModels(models);
-                    alert('模型列表已刷新，共 ' + models.length + ' 个');
+                    toast.success('模型列表已刷新，共 ' + models.length + ' 个');
                   } else {
-                    alert('刷新失败: ' + (data?.error || 'unknown'));
+                    toast.error('刷新失败: ' + (data?.error || 'unknown'));
                   }
                 } catch (e: any) {
-                  alert('刷新失败: ' + (e?.message || String(e)));
+                  toast.error('刷新失败: ' + (e?.message || String(e)));
                 }
               }}
-              className="ml-3 bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-            >刷新模型列表</button>
+            >刷新模型列表</Button>
           )}
         </div>
 
@@ -447,20 +437,12 @@ export default function ClozeAIPage() {
                 </div>
               </div>
               <div className="flex space-x-2">
-                <button
-                  onClick={saveDraft}
-                  disabled={saving}
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-                >
+                <Button onClick={saveDraft} disabled={saving}>
                   {saving ? '保存中...' : '保存草稿'}
-                </button>
-                <button
-                  onClick={publishItem}
-                  disabled={publishing || !currentItem?.id}
-                  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
-                >
+                </Button>
+                <Button onClick={publishItem} disabled={publishing || !currentItem?.id}>
                   {publishing ? '发布中...' : '发布题目'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
