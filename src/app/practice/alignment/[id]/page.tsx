@@ -295,6 +295,162 @@ export default function AlignmentPracticePage() {
     }
   };
 
+  function DialoguePanel() {
+    return (
+      <div className="bg-white rounded-2xl shadow p-6">
+        <h3 className="font-medium mb-3">角色扮演对话</h3>
+        {!userRole && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-600 mb-2">选择你要扮演的角色：</p>
+            <div className="flex gap-3">
+              <Button onClick={() => setUserRole("A")} variant="outline">扮演角色 A</Button>
+              <Button onClick={() => { setUserRole("B"); kickoffAi("B"); }} variant="secondary">扮演角色 B（由 A 先开场）</Button>
+            </div>
+          </div>
+        )}
+
+        {userRole && (
+          <>
+            <div className="mb-4 p-3 bg-gray-50 rounded text-sm">
+              <span className="font-medium">你正在扮演：角色 {userRole}</span>
+              {chatLoading && <span className="ml-3 text-xs text-gray-500">AI 正在回复…</span>}
+              <button
+                onClick={() => { setUserRole(null); setMessages([]); setInputMessage(""); }}
+                className="ml-3 text-blue-600 hover:underline text-xs"
+              >
+                重新选择
+              </button>
+            </div>
+
+            <div className="h-64 overflow-y-auto border rounded p-3 mb-4 bg-gray-50">
+              {messages.length === 0 ? (
+                <div className="text-gray-500 text-center py-8">
+                  {userRole === "B" ? "正在等待 A 开场…" : "开始对话吧！输入你的第一句话"}
+                </div>
+              ) : (
+                messages.map((msg, i) => (
+                  <div key={i} className={`mb-3 ${msg.role === "user" ? "text-right" : "text-left"}`}>
+                    <div className={`inline-block max-w-xs p-2 rounded ${msg.role === "user" ? "bg-blue-600 text-white" : "bg-white text-gray-800 border"}`}>
+                      <div className="text-xs opacity-75 mb-1">
+                        {msg.role === "user" ? `角色 ${userRole}` : `角色 ${userRole === "A" ? "B" : "A"}`}
+                      </div>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="输入你的对话内容..."
+                className="flex-1 px-3 py-2 border rounded bg-background focus:ring-2 focus:ring-ring focus:border-transparent"
+                disabled={chatLoading}
+              />
+              <Button onClick={sendMessage} disabled={!inputMessage.trim() || chatLoading}>发送</Button>
+            </div>
+
+            <Button onClick={submitForScoring} disabled={loading || messages.length === 0} className="mt-4 w-full">
+              {loading ? "评分中..." : "提交对话评分"}
+            </Button>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  function EditorPanel() {
+    return (
+      <div className="rounded-2xl border bg-card text-card-foreground p-6">
+        <h3 className="font-medium mb-3">你的练习</h3>
+        <textarea
+          value={submission}
+          onChange={(e) => setSubmission(e.target.value)}
+          placeholder="在这里输入你的练习内容..."
+          className="w-full h-48 p-3 border rounded-lg bg-background resize-none focus:ring-2 focus:ring-ring focus:border-transparent"
+        />
+        <Button onClick={submitForScoring} disabled={loading || !submission.trim()} className="mt-4 w-full">
+          {loading ? "评分中..." : "提交评分"}
+        </Button>
+      </div>
+    );
+  }
+
+  function ResultsPanel() {
+    if (!scores) return null;
+    return (
+      <div className="bg-white rounded-2xl shadow p-6">
+        <h3 className="font-medium mb-4">AI 评分结果</h3>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">{scores.overall}</div>
+            <div className="text-sm text-gray-600">总分</div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between"><span className="text-sm">流畅性</span><span className="font-medium">{scores.fluency}</span></div>
+            <div className="flex justify-between"><span className="text-sm">相关性</span><span className="font-medium">{scores.relevance}</span></div>
+            <div className="flex justify-between"><span className="text-sm">风格</span><span className="font-medium">{scores.style}</span></div>
+            <div className="flex justify-between"><span className="text-sm">长度</span><span className="font-medium">{scores.length}</span></div>
+          </div>
+        </div>
+
+        {feedback && (
+          <div className="space-y-4">
+            {feedback.highlights.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-green-600 mb-2">亮点</h4>
+                <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                  {feedback.highlights.map((highlight, i) => (<li key={i}>{highlight}</li>))}
+                </ul>
+              </div>
+            )}
+            {feedback.issues.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-red-600 mb-2">需要改进</h4>
+                <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                  {feedback.issues.map((issue, i) => (<li key={i}>{issue}</li>))}
+                </ul>
+              </div>
+            )}
+            {feedback.replace_suggestions.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-blue-600 mb-2">替换建议</h4>
+                <div className="space-y-2">
+                  {feedback.replace_suggestions.map((suggestion, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <span className="text-red-600">{suggestion.from}</span>
+                      <span>→</span>
+                      <span className="text-green-600">{suggestion.to}</span>
+                      <button onClick={() => applySuggestion(suggestion.from, suggestion.to)} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">应用</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {feedback.extra_phrases.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-purple-600 mb-2">补充短语</h4>
+                <div className="flex flex-wrap gap-2">
+                  {feedback.extra_phrases.map((phrase, i) => (<span key={i} className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-sm">{phrase}</span>))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {usage && (
+          <div className="mt-4 pt-4 border-t text-xs text-gray-500">
+            Token 用量：PT={usage.prompt_tokens} · CT={usage.completion_tokens} · TT={usage.total_tokens}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (!pack) {
     return (
       <main className="max-w-6xl mx-auto p-6">
@@ -456,214 +612,10 @@ export default function AlignmentPracticePage() {
             </div>
           </div>
 
-          {/* 对话步骤：角色选择和聊天界面 */}
-          {isDialogueStep && (
-            <div className="bg-white rounded-2xl shadow p-6">
-              <h3 className="font-medium mb-3">角色扮演对话</h3>
-              
-              {/* 角色选择 */}
-              {!userRole && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-2">选择你要扮演的角色：</p>
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={() => setUserRole("A")}
-                      variant="outline"
-                    >
-                      扮演角色 A
-                    </Button>
-                    <Button
-                      onClick={() => { setUserRole("B"); kickoffAi("B"); }}
-                      variant="secondary"
-                    >
-                      扮演角色 B（由 A 先开场）
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* 聊天窗口 */}
-              {userRole && (
-                <>
-                  <div className="mb-4 p-3 bg-gray-50 rounded text-sm">
-                    <span className="font-medium">你正在扮演：角色 {userRole}</span>
-                    {chatLoading && <span className="ml-3 text-xs text-gray-500">AI 正在回复…</span>}
-                    <button
-                      onClick={() => {
-                        setUserRole(null);
-                        setMessages([]);
-                        setInputMessage("");
-                      }}
-                      className="ml-3 text-blue-600 hover:underline text-xs"
-                    >
-                      重新选择
-                    </button>
-                  </div>
-
-                  {/* 消息列表 */}
-                  <div className="h-64 overflow-y-auto border rounded p-3 mb-4 bg-gray-50">
-                    {messages.length === 0 ? (
-                      <div className="text-gray-500 text-center py-8">
-                        {userRole === "B" ? "正在等待 A 开场…" : "开始对话吧！输入你的第一句话"}
-                      </div>
-                    ) : (
-                      messages.map((msg, i) => (
-                        <div key={i} className={`mb-3 ${msg.role === "user" ? "text-right" : "text-left"}`}>
-                          <div className={`inline-block max-w-xs p-2 rounded ${
-                            msg.role === "user" 
-                              ? "bg-blue-600 text-white" 
-                              : "bg-white text-gray-800 border"
-                          }`}>
-                            <div className="text-xs opacity-75 mb-1">
-                              {msg.role === "user" ? `角色 ${userRole}` : `角色 ${userRole === "A" ? "B" : "A"}`}
-                            </div>
-                            {msg.content}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  {/* 输入框 */}
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyDown={handleKeyPress}
-                      placeholder="输入你的对话内容..."
-                      className="flex-1 px-3 py-2 border rounded bg-background focus:ring-2 focus:ring-ring focus:border-transparent"
-                      disabled={chatLoading}
-                    />
-                    <Button onClick={sendMessage} disabled={!inputMessage.trim() || chatLoading}>
-                      发送
-                    </Button>
-                  </div>
-
-                  {/* 提交评分按钮 */}
-                  <Button onClick={submitForScoring} disabled={loading || messages.length === 0} className="mt-4 w-full">
-                    {loading ? "评分中..." : "提交对话评分"}
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
-          {!isDialogueStep && (
-            <div className="rounded-2xl border bg-card text-card-foreground p-6">
-              <h3 className="font-medium mb-3">你的练习</h3>
-              <textarea
-                value={submission}
-                onChange={(e) => setSubmission(e.target.value)}
-                placeholder="在这里输入你的练习内容..."
-                className="w-full h-48 p-3 border rounded-lg bg-background resize-none focus:ring-2 focus:ring-ring focus:border-transparent"
-              />
-              
-              <Button onClick={submitForScoring} disabled={loading || !submission.trim()} className="mt-4 w-full">
-                {loading ? "评分中..." : "提交评分"}
-              </Button>
-            </div>
-          )}
-
-          {/* 评分结果 */}
-          {scores && (
-            <div className="bg-white rounded-2xl shadow p-6">
-              <h3 className="font-medium mb-4">AI 评分结果</h3>
-              
-              {/* 分数 */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{scores.overall}</div>
-                  <div className="text-sm text-gray-600">总分</div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm">流畅性</span>
-                    <span className="font-medium">{scores.fluency}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">相关性</span>
-                    <span className="font-medium">{scores.relevance}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">风格</span>
-                    <span className="font-medium">{scores.style}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">长度</span>
-                    <span className="font-medium">{scores.length}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 反馈 */}
-              {feedback && (
-                <div className="space-y-4">
-                  {feedback.highlights.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-green-600 mb-2">亮点</h4>
-                      <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                        {feedback.highlights.map((highlight, i) => (
-                          <li key={i}>{highlight}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {feedback.issues.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-red-600 mb-2">需要改进</h4>
-                      <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                        {feedback.issues.map((issue, i) => (
-                          <li key={i}>{issue}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {feedback.replace_suggestions.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-blue-600 mb-2">替换建议</h4>
-                      <div className="space-y-2">
-                        {feedback.replace_suggestions.map((suggestion, i) => (
-                          <div key={i} className="flex items-center gap-2 text-sm">
-                            <span className="text-red-600">{suggestion.from}</span>
-                            <span>→</span>
-                            <span className="text-green-600">{suggestion.to}</span>
-                            <button
-                              onClick={() => applySuggestion(suggestion.from, suggestion.to)}
-                              className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200"
-                            >
-                              应用
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {feedback.extra_phrases.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-purple-600 mb-2">补充短语</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {feedback.extra_phrases.map((phrase, i) => (
-                          <span key={i} className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-sm">
-                            {phrase}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 用量统计 */}
-              {usage && (
-                <div className="mt-4 pt-4 border-t text-xs text-gray-500">
-                  Token 用量：PT={usage.prompt_tokens} · CT={usage.completion_tokens} · TT={usage.total_tokens}
-                </div>
-              )}
-            </div>
-          )}
+          {/* 对话/编辑/结果分块 */}
+          {isDialogueStep && <DialoguePanel />}
+          {!isDialogueStep && <EditorPanel />}
+          <ResultsPanel />
         </div>
       </div>
     </main>
