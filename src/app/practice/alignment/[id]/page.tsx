@@ -548,7 +548,6 @@ export default function AlignmentPracticePage() {
               )}
             </div>
           ) : (
-            {/* 非对话步骤：文本编辑器 */}
             <div className="rounded-2xl border bg-card text-card-foreground p-6">
               <h3 className="font-medium mb-3">你的练习</h3>
               <textarea
