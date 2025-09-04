@@ -527,7 +527,7 @@ export default function AlignmentPracticePage() {
   return (
     <main className="p-6">
       <div className="mx-auto px-4 sm:px-6 lg:px-8" style={{ maxWidth: 1200 }}>
-      <Breadcrumbs segments={[{ href: "/", label: "首页" }, { href: "/practice/alignment", label: "对齐练习" }, { href: `/practice/alignment/${packId}`, label: pack.topic }]} />
+      <Breadcrumbs items={[{ href: "/", label: "首页" }, { href: "/practice/alignment", label: "对齐练习" }, { href: `/practice/alignment/${packId}`, label: pack.topic }]} />
       <div className="max-w-6xl mx-auto space-y-6">
       <HeaderSection pack={pack} />
 
