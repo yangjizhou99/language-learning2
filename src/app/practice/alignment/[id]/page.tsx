@@ -666,7 +666,7 @@ export default function AlignmentPracticePage() {
           )}
         </div>
       </div>
-    </Container>
+      </Container>
     </main>
   );
 }
