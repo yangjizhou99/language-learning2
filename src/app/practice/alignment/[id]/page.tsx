@@ -313,7 +313,7 @@ export default function AlignmentPracticePage() {
   return (
     <main className="p-6">
       <Container>
-      <Breadcrumbs items={[{ href: "/", label: "首页" }, { href: "/practice/alignment", label: "对齐练习" }, { label: pack.topic }]} />
+      <Breadcrumbs segments={[{ href: "/", label: "首页" }, { href: "/practice/alignment", label: "对齐练习" }, { href: `/practice/alignment/${packId}`, label: pack.topic }]} />
       <div className="max-w-6xl mx-auto space-y-6">
       {/* 头部信息 */}
       <div className="rounded-2xl border bg-card text-card-foreground p-6">
