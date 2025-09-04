@@ -11,9 +11,8 @@ export type AdminNavSection = {
   items: AdminNavItem[];
 };
 
-const showDebug = typeof window !== "undefined"
-  ? (process.env.NEXT_PUBLIC_SHOW_DEBUG === "1")
-  : false;
+// 保持 SSR/CSR 一致，避免 hydration mismatch
+const showDebug = process.env.NEXT_PUBLIC_SHOW_DEBUG === "1";
 
 export const ADMIN_SECTIONS: AdminNavSection[] = [
   {
@@ -28,10 +27,13 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
   {
     title: "生成 / AI",
     items: [
-      { href: "/admin/drafts/batch", label: "批量生成", icon: "⚡" },
+      { href: "/admin/batch-gen", label: "批量生成中心", icon: "⚡" },
       { href: "/admin/cloze/ai", label: "Cloze 生成/审核", icon: "🎯", match: "startsWith" },
+      { href: "/admin/cloze/drafts", label: "Cloze 草稿箱", icon: "🗂️", match: "startsWith" },
       { href: "/admin/alignment/ai", label: "对齐练习生成", icon: "🤝", match: "startsWith" },
       { href: "/admin/shadowing/ai", label: "Shadowing 生成", icon: "👂", match: "startsWith" },
+      { href: "/admin/alignment/review", label: "对齐草稿审核", icon: "🧾", match: "startsWith" },
+      { href: "/admin/shadowing/review", label: "Shadowing 草稿审核", icon: "🧾", match: "startsWith" },
     ],
   },
   {

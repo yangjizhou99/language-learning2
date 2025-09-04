@@ -288,6 +288,10 @@ export default function ShadowingPage() {
       formData.append('audio', audioBlob, 'recording.wav');
       formData.append('text', data.text);
       formData.append('lang', data.lang);
+      // 传递浏览器端识别文本，便于后端进行更准确的比对评分
+      if (recognizedText && recognizedText.trim()) {
+        formData.append('recognized', recognizedText);
+      }
       
       const response = await fetch('/api/eval', {
         method: 'POST',

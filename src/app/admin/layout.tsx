@@ -117,15 +117,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <div className="flex gap-6">
           <aside className="w-64 flex-shrink-0">
             <nav className="bg-white rounded-lg shadow-sm p-4">
-              {ADMIN_SECTIONS.map(section => {
+              {ADMIN_SECTIONS.map((section, si) => {
                 const items = section.items.filter(i => !i.hidden);
                 if (!items.length) return null;
                 return (
-                  <div key={section.title} className="mb-4">
+                  <div key={`${section.title}-${si}`} className="mb-4">
                     <div className="px-3 pb-2 text-xs font-semibold text-gray-400">{section.title}</div>
                     <ul className="space-y-2">
-                      {items.map(item => (
-                        <li key={item.href}>
+                      {items.map((item, ii) => (
+                        <li key={`${item.href}-${ii}`}>
                           <Link
                             href={item.href}
                             prefetch={false}
@@ -150,7 +150,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <main className="flex-1">
             <div className="text-sm text-gray-500 mb-4">
               {breadcrumb.map((b, idx) => (
-                <span key={b.href}>
+                <span key={`${b.href}-${idx}`}>
                   {idx > 0 && <span className="mx-1">/</span>}
                   <Link href={b.href} className="hover:underline">{b.label}</Link>
                 </span>

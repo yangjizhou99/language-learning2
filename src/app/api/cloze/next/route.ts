@@ -70,6 +70,25 @@ export async function GET(req: NextRequest) {
 
     const item = items[0];
 
+    // 兼容缺失 id 的 blanks（从 placeholder 提取或按顺序补齐）
+    const blanksRaw = Array.isArray(item.blanks) ? item.blanks : [];
+    const blanks = blanksRaw
+      .map((blank: any, idx: number) => {
+        let id: number | null = null;
+        if (typeof blank?.id === 'number') id = blank.id;
+        if (id === null && typeof blank?.placeholder === 'string') {
+          const m = blank.placeholder.match(/\{\{(\d+)\}\}/);
+          if (m) id = Number(m[1]);
+        }
+        if (id === null) id = idx + 1;
+        return {
+          id,
+          type: blank?.type || 'mixed',
+          explanation: blank?.explanation || ''
+        };
+      })
+      .sort((a: any, b: any) => a.id - b.id);
+
     return NextResponse.json({
       success: true,
       item: {
@@ -79,11 +98,7 @@ export async function GET(req: NextRequest) {
         topic: item.topic,
         title: item.title,
         passage: item.passage,
-        blanks: item.blanks.map((blank: any) => ({
-          id: blank.id,
-          type: blank.type,
-          explanation: blank.explanation
-        }))
+        blanks
       }
     });
 

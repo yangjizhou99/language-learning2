@@ -3,12 +3,14 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { readSSE } from "@/lib/sse";
+import { supabase } from "@/lib/supabase";
 
 type GenItem = { 
   idx: number; 
   title: string; 
   text: string; 
-  audio_url?: string;
+  audio_url?: string;         // 远端存储 URL（签名或公共）
+  play_url?: string;          // 本地播放 URL（Blob 对象 URL）
   duration_ms?: number;
   tokens?: number;
 };
@@ -55,6 +57,39 @@ export default function ShadowingAIPage() {
   const [log, setLog] = useState("");
   const [loading, setLoading] = useState(false);
   const [live, setLive] = useState("");
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  function isAllSelected(): boolean {
+    if (items.length === 0) return false;
+    return items.every(it => selected.has(it.idx));
+  }
+  function toggleSelectAll() {
+    setSelected(prev => {
+      if (items.length === 0) return new Set();
+      const all = new Set<number>();
+      if (!isAllSelected()) {
+        items.forEach(it => all.add(it.idx));
+      }
+      return isAllSelected() ? new Set() : all;
+    });
+  }
+  function toggleSelect(idx: number) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      return next;
+    });
+  }
+
+  async function getAuthHeaders(): Promise<Record<string, string>> {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data?.session?.access_token;
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    } catch {
+      return {};
+    }
+  }
 
   // 加载模型列表
   useEffect(() => {
@@ -107,7 +142,7 @@ export default function ShadowingAIPage() {
     try {
       const r = await fetch("/api/admin/shadowing/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
         body: JSON.stringify({ lang, level, count, topic, provider, model, temperature })
       });
       const j = await r.json();
@@ -133,7 +168,7 @@ export default function ShadowingAIPage() {
     try {
       const r = await fetch("/api/admin/shadowing/generate/stream", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
         body: JSON.stringify({ lang, level, count, topic, provider, model, temperature })
       });
       let acc = "";
@@ -180,7 +215,7 @@ export default function ShadowingAIPage() {
     try {
       const r = await fetch("/api/admin/shadowing/synthesize", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
         body: JSON.stringify({ 
           text: it.text, 
           lang, 
@@ -193,10 +228,20 @@ export default function ShadowingAIPage() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "合成失败");
       
+      // 如果跨域签名 URL 导致 <audio> 不显示时长，尝试通过 fetch->blob->objectURL 本地播放
+      let playableUrl: string = j.audio_url;
+      try {
+        const ar = await fetch(j.audio_url, { headers: { Range: "bytes=0-" } });
+        const blob = await ar.blob();
+        if (blob && blob.size > 0) {
+          playableUrl = URL.createObjectURL(blob);
+        }
+      } catch {}
+
       // 修复：使用函数式更新，避免状态覆盖
       setItems(prevItems => {
         const next = [...prevItems];
-        next[idx] = { ...next[idx], audio_url: j.audio_url };
+        next[idx] = { ...next[idx], audio_url: j.audio_url, play_url: playableUrl };
         return next;
       });
       setLog(`第 ${idx + 1} 条音频合成成功`);
@@ -226,6 +271,44 @@ export default function ShadowingAIPage() {
     }
   };
 
+  // 批量合成（选中）
+  const synthSelected = async () => {
+    if (selected.size === 0) {
+      setLog("未选择任何条目");
+      return;
+    }
+    setLoading(true);
+    setLog("批量合成选中中…");
+    try {
+      // 顺序串行，避免并发限流问题
+      const order = items.filter(it => selected.has(it.idx));
+      for (let i = 0; i < order.length; i++) {
+        const realIndex = items.findIndex(x => x.idx === order[i].idx);
+        if (realIndex >= 0) {
+          await synthOne(realIndex);
+          setLog(`选中项合成 ${i + 1}/${order.length}`);
+        }
+      }
+      setLog("选中项合成完成。");
+    } catch (e) {
+      setLog("批量合成选中失败：" + String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 删除选中
+  const deleteSelected = () => {
+    if (selected.size === 0) {
+      setLog("未选择任何条目");
+      return;
+    }
+    const remain = items.filter(it => !selected.has(it.idx));
+    setItems(remain);
+    setSelected(new Set());
+    setLog("已删除选中条目。");
+  };
+
 
 
   // 保存到题库
@@ -245,7 +328,7 @@ export default function ShadowingAIPage() {
       
       const r = await fetch("/api/admin/shadowing/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
         body: JSON.stringify({ lang, level, items: cleanRows })
       });
       
@@ -414,6 +497,23 @@ export default function ShadowingAIPage() {
             >
               批量合成音频
             </button>
+            <label className="ml-2 text-sm inline-flex items-center gap-2">
+              <input type="checkbox" checked={isAllSelected()} onChange={toggleSelectAll} /> 全选
+            </label>
+            <button 
+              onClick={synthSelected}
+              disabled={loading || selected.size === 0}
+              className="px-3 py-1 rounded border disabled:opacity-50"
+            >
+              批量合成选中
+            </button>
+            <button 
+              onClick={deleteSelected}
+              disabled={loading || selected.size === 0}
+              className="px-3 py-1 rounded border text-red-600 disabled:opacity-50"
+            >
+              删除选中
+            </button>
             
             <button 
               onClick={saveAll} 
@@ -427,6 +527,10 @@ export default function ShadowingAIPage() {
           <ul className="space-y-3">
             {items.map((it, idx) => (
               <li key={it.idx} className="p-3 border rounded">
+                <div className="flex items-center gap-2 mb-2">
+                  <input type="checkbox" checked={selected.has(it.idx)} onChange={() => toggleSelect(it.idx)} />
+                  <span className="text-xs text-gray-500"># {it.idx}</span>
+                </div>
                 <input 
                   className="border rounded px-2 py-1 w-full font-medium" 
                   value={it.title} 
@@ -448,9 +552,9 @@ export default function ShadowingAIPage() {
                 />
                 
                 <div className="mt-2 flex items-center gap-2 text-sm">
-                  {it.audio_url ? (
+                  {it.audio_url || it.play_url ? (
                     <div className="flex items-center gap-2">
-                      <audio controls src={it.audio_url} className="h-8" />
+                      <audio controls src={it.play_url || it.audio_url} className="h-8" />
                       <span className="text-green-600 text-xs">✓ 已合成</span>
                     </div>
                   ) : (

@@ -57,32 +57,84 @@ export async function POST(req: NextRequest) {
       const audio = formData.get("audio") as File;
       const text = formData.get("text") as string;
       const lang = formData.get("lang") as "en" | "ja" | "zh";
+      const recognized = (formData.get("recognized") as string) || "";
       
       if (!audio || !text || !lang) {
         return NextResponse.json({ error: "missing params: audio/text/lang" }, { status: 400 });
       }
 
-      // 这里应该调用语音识别 API 来转录音频
-      // 暂时使用模拟评分，实际应用中需要集成 Whisper 或其他 ASR 服务
-      
-      // 模拟评分逻辑（实际应用中需要真实的语音识别和评分）
-      const mockScore = Math.random() * 0.4 + 0.6; // 0.6-1.0 之间的随机分数
-      const mockAccuracy = Math.random() * 0.3 + 0.7;
-      const mockFluency = Math.random() * 0.3 + 0.7;
-      
+      // 若提供了前端识别文本，直接基于该识别结果与原文计算准确度（字符级 CER 简化版）
+      function normalizeZh(s: string): string {
+        return s
+          .replace(/[，。,\.、；;！!？?\s]/g, "")
+          .replace(/春联/g, "对联") // 简单同义词归一
+          .replace(/龙舟/g, "龙舟")
+          .toLowerCase();
+      }
+      function normalizeJa(s: string): string {
+        return s.replace(/[、。\s]/g, "").toLowerCase();
+      }
+      function normalizeEn(s: string): string {
+        return s.replace(/[^a-z0-9]/gi, "").toLowerCase();
+      }
+      function norm(lang: string, s: string): string {
+        if (lang === "zh") return normalizeZh(s || "");
+        if (lang === "ja") return normalizeJa(s || "");
+        return normalizeEn(s || "");
+      }
+      function cer(ref: string, hyp: string): number {
+        // 计算 Levenshtein 距离 / 参考长度
+        const r = ref.split("");
+        const h = hyp.split("");
+        const dp = Array(r.length + 1).fill(0).map(() => Array(h.length + 1).fill(0));
+        for (let i = 0; i <= r.length; i++) dp[i][0] = i;
+        for (let j = 0; j <= h.length; j++) dp[0][j] = j;
+        for (let i = 1; i <= r.length; i++) {
+          for (let j = 1; j <= h.length; j++) {
+            const cost = r[i - 1] === h[j - 1] ? 0 : 1;
+            dp[i][j] = Math.min(
+              dp[i - 1][j] + 1,
+              dp[i][j - 1] + 1,
+              dp[i - 1][j - 1] + cost
+            );
+          }
+        }
+        const dist = dp[r.length][h.length];
+        return r.length ? dist / r.length : 1;
+      }
+
+      const ref = norm(lang, text || "");
+      // 如果没有传识别文本，先退化为简单高分保守返回
+      if (!recognized || !recognized.trim()) {
+        const response: AudioEvalResp = {
+          score: 0.8,
+          feedback: lang === "zh" ? "识别文本缺失，返回保守得分。" : lang === "ja" ? "認識テキストが無いため暫定スコアです。" : "No ASR text provided; returning a conservative score.",
+          accuracy: 0.8,
+          fluency: 0.8
+        };
+        return NextResponse.json(response);
+      }
+
+      const hyp = norm(lang, recognized || "");
+      const cerVal = cer(ref, hyp); // 0..1，越小越好
+      const acc = Math.max(0, Math.min(1, 1 - cerVal));
+      // 设定流利度为识别长度/参考长度的平滑函数（简化），并与准确度做温和平均
+      const lenRatio = Math.min(1, (hyp.length + 1) / (ref.length + 1));
+      const flu = Math.max(0.5, Math.min(1, (0.6 * lenRatio + 0.4 * acc)));
+      const overall = Math.round(((0.8 * acc + 0.2 * flu)) * 100) / 100;
+
       const feedbacks = {
-        ja: "発音は良好です。より自然なリズムで練習してみてください。",
-        en: "Good pronunciation. Try to practice with more natural rhythm.",
-        zh: "发音不错。尝试练习更自然的语调。"
-      };
-      
+        ja: overall > 0.85 ? "発音と流暢さは良好です。抑揚と区切りを更に意識しましょう。" : "一部の音節が不一致。ゆっくり区切って発音し、難所を重点練習しましょう。",
+        en: overall > 0.85 ? "Good accuracy and fluency. Focus on prosody and stress patterns." : "Some mismatches detected. Slow down and practice tricky segments deliberately.",
+        zh: overall > 0.85 ? "准确度与流利度良好。再加强语调与停连更自然。" : "存在若干不匹配。放慢速度，分句练习，重点突破难点词。"
+      } as const;
+
       const response: AudioEvalResp = {
-        score: mockScore,
+        score: overall,
         feedback: feedbacks[lang],
-        accuracy: mockAccuracy,
-        fluency: mockFluency
+        accuracy: acc,
+        fluency: flu
       };
-      
       return NextResponse.json(response);
     } else {
       // 文本评分请求（原有功能）

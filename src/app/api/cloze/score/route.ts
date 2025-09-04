@@ -11,8 +11,21 @@ import { normUsage } from '@/lib/ai/usage';
 
 const SYS = `You are an expert language teacher. Judge if each filled blank is contextually appropriate for the passage. Return VALID JSON only.`;
 
+function normalizeBlanks(blanksRaw: any[]): { id: number; reference: string }[] {
+  return (Array.isArray(blanksRaw) ? blanksRaw : []).map((b: any, idx: number) => {
+    let id: number | null = null;
+    if (typeof b?.id === 'number') id = b.id;
+    if (id === null && typeof b?.placeholder === 'string') {
+      const m = b.placeholder.match(/\{\{(\d+)\}\}/);
+      if (m) id = Number(m[1]);
+    }
+    if (id === null) id = idx + 1;
+    return { id, reference: String(b?.answer || '') };
+  }).sort((a, b) => a.id - b.id);
+}
+
 function buildScoringPrompt(item: any, answers: Record<string, string>) {
-  const blanks = item.blanks.map((blank: any) => ({ id: blank.id, reference: blank.answer || '' }));
+  const blanks = normalizeBlanks(item.blanks);
 
   return `LANGUAGE: ${item.lang.toUpperCase()}
 LEVEL: ${item.level}
