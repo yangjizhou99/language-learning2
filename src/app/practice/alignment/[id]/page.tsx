@@ -466,7 +466,7 @@ export default function AlignmentPracticePage() {
   const step = pack.steps[currentStep] as Step;
   const stepOrder: string[] = (pack.steps.order as string[]) || ["D1", "D2", "T3", "W4", "T5", "W6"];
 
-  function HeaderSection() {
+  function HeaderSection({ pack }: { pack: AlignmentPack }) {
     return (
       <div className="rounded-2xl border bg-card text-card-foreground p-6">
         <h1 className="text-2xl font-semibold mb-2">{pack.topic} - 对齐练习</h1>
@@ -479,7 +479,7 @@ export default function AlignmentPracticePage() {
     );
   }
 
-  function LeftInfoSection() {
+  function LeftInfoSection({ step }: { step: Step }) {
     return (
       <div className="space-y-6">
         <div className="rounded-2xl border bg-card text-card-foreground p-6">
@@ -529,7 +529,7 @@ export default function AlignmentPracticePage() {
       <div className="mx-auto px-4 sm:px-6 lg:px-8" style={{ maxWidth: 1200 }}>
       <Breadcrumbs segments={[{ href: "/", label: "首页" }, { href: "/practice/alignment", label: "对齐练习" }, { href: `/practice/alignment/${packId}`, label: pack.topic }]} />
       <div className="max-w-6xl mx-auto space-y-6">
-      <HeaderSection />
+      <HeaderSection pack={pack} />
 
       {/* 错误显示 */}
       {error && (
@@ -565,7 +565,7 @@ export default function AlignmentPracticePage() {
       {/* 当前步骤内容 */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* 左侧：任务说明和范例 */}
-        <LeftInfoSection />
+        <LeftInfoSection step={step} />
 
         {/* 右侧：练习区域 */}
         <div className="space-y-6">
