@@ -8,9 +8,9 @@ export async function POST(req: NextRequest) {
   try {
     const { text, lang, voiceName, speakingRate = 1.0, pitch = 0 } = await req.json();
     const audio = await synthesizeTTS({ text, lang, voiceName, speakingRate, pitch });
-    const body = new Uint8Array(audio as unknown as ArrayBufferLike);
+    const blob = new Blob([audio], { type: "audio/mpeg" });
 
-    return new Response(body, {
+    return new Response(blob, {
       status: 200,
       headers: {
         "Content-Type": "audio/mpeg",
