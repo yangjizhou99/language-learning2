@@ -457,7 +457,7 @@ export default function AlignmentPracticePage() {
           </div>
 
           {/* 对话步骤：角色选择和聊天界面 */}
-          {isDialogueStep ? (
+          {isDialogueStep && (
             <div className="bg-white rounded-2xl shadow p-6">
               <h3 className="font-medium mb-3">角色扮演对话</h3>
               
@@ -547,7 +547,8 @@ export default function AlignmentPracticePage() {
                 </>
               )}
             </div>
-          ) : (
+          )}
+          {!isDialogueStep && (
             <div className="rounded-2xl border bg-card text-card-foreground p-6">
               <h3 className="font-medium mb-3">你的练习</h3>
               <textarea
