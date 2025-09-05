@@ -85,6 +85,7 @@ export async function GET(req: NextRequest) {
         return {
           id,
           type: blank?.type || 'mixed',
+          answer: blank?.answer || '',
           explanation: blank?.explanation || ''
         };
       })

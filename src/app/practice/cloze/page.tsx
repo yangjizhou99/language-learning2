@@ -11,6 +11,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 interface ClozeBlank {
   id: number;
   type: string;
+  answer: string;
   explanation: string;
 }
 
@@ -49,6 +50,7 @@ export default function ClozePage() {
   const [scoring, setScoring] = useState(false);
   const [currentItem, setCurrentItem] = useState<ClozeItem | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [showAnswers, setShowAnswers] = useState(false);
   const [scoringResult, setScoringResult] = useState<ScoringResult | null>(null);
   const [error, setError] = useState<string>("");
 
@@ -57,6 +59,7 @@ export default function ClozePage() {
     setLoading(true);
     setError("");
     setScoringResult(null);
+    setShowAnswers(false);
     setAnswers({});
     
     try {
@@ -86,6 +89,13 @@ export default function ClozePage() {
   };
 
   const submitAnswers = async () => {
+    if (!currentItem) return;
+    
+    // 先显示参考答案
+    setShowAnswers(true);
+  };
+
+  const proceedToScoring = async () => {
     if (!currentItem) return;
     
     setScoring(true);
@@ -136,6 +146,8 @@ export default function ClozePage() {
       const idNum = Number(match[2]);
       const start = match.index;
       if (start > lastIndex) parts.push(<span key={`t-${lastIndex}`}>{text.slice(lastIndex, start)}</span>);
+      
+      // 显示输入框
       parts.push(
         <input
           key={`i-${idNum}-${start}`}
@@ -151,6 +163,64 @@ export default function ClozePage() {
           }}
           autoComplete="off"
         />
+      );
+      lastIndex = start + full.length;
+    }
+    if (lastIndex < text.length) parts.push(<span key={`t-tail`}>{text.slice(lastIndex)}</span>);
+    return <div className="leading-8 text-lg">{parts}</div>;
+  };
+
+  const renderUserAnswers = () => {
+    if (!currentItem) return null;
+    const parts: React.ReactNode[] = [];
+    const re = /(\{\{(\d+)\}\})/g;
+    const text = currentItem.passage;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(text)) !== null) {
+      const full = match[1];
+      const idNum = Number(match[2]);
+      const start = match.index;
+      if (start > lastIndex) parts.push(<span key={`t-${lastIndex}`}>{text.slice(lastIndex, start)}</span>);
+      
+      // 显示用户答案
+      const userAnswer = answers[String(idNum)] || '';
+      parts.push(
+        <span
+          key={`user-answer-${idNum}-${start}`}
+          className="mx-1 px-2 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded"
+        >
+          {userAnswer || '(未填写)'}
+        </span>
+      );
+      lastIndex = start + full.length;
+    }
+    if (lastIndex < text.length) parts.push(<span key={`t-tail`}>{text.slice(lastIndex)}</span>);
+    return <div className="leading-8 text-lg">{parts}</div>;
+  };
+
+  const renderCorrectAnswers = () => {
+    if (!currentItem) return null;
+    const parts: React.ReactNode[] = [];
+    const re = /(\{\{(\d+)\}\})/g;
+    const text = currentItem.passage;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(text)) !== null) {
+      const full = match[1];
+      const idNum = Number(match[2]);
+      const start = match.index;
+      if (start > lastIndex) parts.push(<span key={`t-${lastIndex}`}>{text.slice(lastIndex, start)}</span>);
+      
+      // 显示参考答案
+      const correctAnswer = currentItem.blanks.find(b => b.id === idNum)?.answer || '';
+      parts.push(
+        <span
+          key={`correct-answer-${idNum}-${start}`}
+          className="mx-1 px-2 py-1 bg-green-100 text-green-800 border border-green-300 rounded"
+        >
+          {correctAnswer}
+        </span>
       );
       lastIndex = start + full.length;
     }
@@ -283,13 +353,53 @@ export default function ClozePage() {
           </div>
 
           <div className="flex gap-4 items-center">
-            <Button onClick={submitAnswers} disabled={scoring || Object.keys(answers).length === 0}>
-              {scoring ? "评分中..." : "提交答案"}
-            </Button>
-            <Button variant="secondary" onClick={loadNextItem}>
-              下一题
-            </Button>
+            {!showAnswers ? (
+              <>
+                <Button onClick={submitAnswers} disabled={Object.keys(answers).length === 0}>
+                  提交答案
+                </Button>
+                <Button variant="secondary" onClick={loadNextItem}>
+                  下一题
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={proceedToScoring} disabled={scoring}>
+                  {scoring ? "评分中..." : "查看评分"}
+                </Button>
+                <Button variant="secondary" onClick={loadNextItem}>
+                  下一题
+                </Button>
+              </>
+            )}
           </div>
+        </div>
+      )}
+
+      {/* 参考答案显示 */}
+      {showAnswers && !scoringResult && (
+        <div className="rounded-lg border bg-card text-card-foreground p-6">
+          <h3 className="text-xl font-semibold mb-4">答案对比</h3>
+          
+          {/* 用户答案 */}
+          <div className="mb-4">
+            <h4 className="font-medium text-blue-600 mb-2">您的答案：</h4>
+            <div className="p-4 bg-blue-50 rounded border border-blue-200">
+              {renderUserAnswers()}
+            </div>
+          </div>
+          
+          {/* 参考答案 */}
+          <div className="mb-4">
+            <h4 className="font-medium text-green-600 mb-2">参考答案：</h4>
+            <div className="p-4 bg-green-50 rounded border border-green-200">
+              {renderCorrectAnswers()}
+            </div>
+          </div>
+          
+          <p className="text-sm text-muted-foreground mb-4">
+            请仔细对比您的答案和参考答案，然后点击&ldquo;查看评分&rdquo;了解您的表现。
+          </p>
         </div>
       )}
 
