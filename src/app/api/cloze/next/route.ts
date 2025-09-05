@@ -50,14 +50,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 随机获取一道题目（按时间倒序取最新一条）
+    // 随机获取一道题目
     const { data: items, error } = await supabase
       .from('cloze_items')
       .select('*')
       .eq('lang', lang)
-      .eq('level', levelNum)
-      .order('created_at', { ascending: false })
-      .limit(1);
+      .eq('level', levelNum);
 
     if (error) {
       console.error('Get cloze item error:', error);
@@ -68,7 +66,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No items available' }, { status: 404 });
     }
 
-    const item = items[0];
+    // 随机选择一道题目
+    const randomIndex = Math.floor(Math.random() * items.length);
+    const item = items[randomIndex];
+    console.log(`Randomly selected item ${randomIndex + 1} of ${items.length}: ${item.title}`);
 
     // 兼容缺失 id 的 blanks（从 placeholder 提取或按顺序补齐）
     const blanksRaw = Array.isArray(item.blanks) ? item.blanks : [];
@@ -84,6 +85,7 @@ export async function GET(req: NextRequest) {
         return {
           id,
           type: blank?.type || 'mixed',
+          answer: blank?.answer || '',
           explanation: blank?.explanation || ''
         };
       })

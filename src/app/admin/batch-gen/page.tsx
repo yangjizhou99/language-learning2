@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 type Lang = "en"|"ja"|"zh";
@@ -15,10 +15,11 @@ export default function BatchGenPage(){
   const [perCombo, setPerCombo] = useState(2);
   const [provider, setProvider] = useState<"openrouter"|"deepseek">("openrouter");
   const [model, setModel] = useState("");
-  const [orModels, setOrModels] = useState<string[]|null>(null);
+  const [orModels, setOrModels] = useState<Array<{id: string; name: string; context_length?: number; pricing?: any}>>([]);
   const [orLoading, setOrLoading] = useState(false);
   const [temperature, setTemperature] = useState(0.5);
   const [dsModels, setDsModels] = useState<string[]|null>(null);
+  const [modelSearch, setModelSearch] = useState("");
   const [register, setRegister] = useState<'casual'|'neutral'|'formal'>("neutral");
   const [genre, setGenre] = useState("monologue");
   const [sentRange, setSentRange] = useState<[number,number]>([6,10]);
@@ -32,6 +33,13 @@ export default function BatchGenPage(){
   const [log, setLog] = useState<string[]>([]);
   const [usage, setUsage] = useState<{prompt_tokens:number;completion_tokens:number;total_tokens:number}|null>(null);
   const abortRef = useRef<AbortController|null>(null);
+
+  // 页面加载时自动获取最新模型列表
+  useEffect(() => {
+    if (provider === 'openrouter' && !orModels) {
+      refreshOpenRouter();
+    }
+  }, [provider]);
 
   const params = useMemo(()=>({ kind, params: { lang, levels, topicsText, perCombo, provider, model: model || (provider==='openrouter'? 'openai/gpt-4o-mini':'deepseek-chat'), temperature, style, blanksRange, autoBlanks, weights, genre, register, sentRange } }), [kind, lang, levels, topicsText, perCombo, provider, model, temperature, style, blanksRange, autoBlanks, weights, genre, register, sentRange]);
 
@@ -91,18 +99,86 @@ export default function BatchGenPage(){
 
   const toggleLevel = (n:number)=> setLevels(arr=> arr.includes(n)? arr.filter(x=>x!==n) : [...arr, n].sort((a,b)=>a-b));
 
+  // 模型分类和搜索功能
+  const getModelCategory = (modelId: string) => {
+    if (modelId.startsWith('openai/')) return 'OpenAI';
+    if (modelId.startsWith('anthropic/')) return 'Anthropic';
+    if (modelId.startsWith('google/')) return 'Google';
+    if (modelId.startsWith('meta/')) return 'Meta';
+    if (modelId.startsWith('mistral/')) return 'Mistral';
+    if (modelId.startsWith('qwen/')) return 'Qwen';
+    if (modelId.startsWith('cohere/')) return 'Cohere';
+    if (modelId.startsWith('perplexity/')) return 'Perplexity';
+    if (modelId.startsWith('deepseek/')) return 'DeepSeek';
+    if (modelId.startsWith('microsoft/')) return 'Microsoft';
+    if (modelId.startsWith('01-ai/')) return '01-ai';
+    if (modelId.startsWith('nousresearch/')) return 'Nous Research';
+    if (modelId.startsWith('intel/')) return 'Intel';
+    if (modelId.startsWith('stabilityai/')) return 'Stability AI';
+    if (modelId.startsWith('technologyinnovationinstitute/')) return 'TII';
+    if (modelId.startsWith('allenai/')) return 'Allen Institute';
+    if (modelId.startsWith('teknium/')) return 'Teknium';
+    return '其他';
+  };
+
+  const filteredModels = useMemo(() => {
+    const models = orModels.length > 0 ? orModels : openrouterModels.map(id => ({id, name: id}));
+    if (!modelSearch) return models;
+    return models.filter(m => 
+      m.id.toLowerCase().includes(modelSearch.toLowerCase()) ||
+      m.name.toLowerCase().includes(modelSearch.toLowerCase()) ||
+      getModelCategory(m.id).toLowerCase().includes(modelSearch.toLowerCase())
+    );
+  }, [orModels, modelSearch]);
+
+  const groupedModels = useMemo(() => {
+    const groups: { [key: string]: Array<{id: string; name: string; context_length?: number; pricing?: any}> } = {};
+    filteredModels.forEach(model => {
+      const category = getModelCategory(model.id);
+      if (!groups[category]) groups[category] = [];
+      groups[category].push(model);
+    });
+    return groups;
+  }, [filteredModels]);
+
   async function refreshOpenRouter(){
     try {
       setOrLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const r = await fetch('/api/admin/models/openrouter', { cache: 'no-store' , headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+      
+      // 直接从OpenRouter API获取最新模型列表
+      const referer = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      const r = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'HTTP-Referer': referer,
+          'X-Title': 'Lang Trainer Admin'
+        }
+      });
+      
+      if (!r.ok) {
+        const text = await r.text();
+        throw new Error(`OpenRouter API error: ${text}`);
+      }
+      
       const j = await r.json();
-      if (!r.ok) throw new Error(j?.error || r.statusText);
-      const list: string[] = Array.isArray(j.models) ? j.models.map((m:any)=> m.id || m) : [];
-      if (list.length) setOrModels(list);
+      const models = Array.isArray(j?.data) ? j.data.map((m:any)=> ({
+        id: m.id || m.name,
+        name: m.name || m.id,
+        context_length: m.context_length,
+        pricing: m.pricing
+      })) : [];
+      
+      if (models.length) {
+        setOrModels(models);
+        // 自动选择第一个模型
+        if (!model) setModel(models[0]?.id || '');
+      }
     } catch (e) {
-      // 忽略错误，保留内置备选
+      console.error('Failed to fetch OpenRouter models:', e);
+      // 如果API失败，使用静态列表作为备选
+      setOrModels(openrouterModels.map(id => ({id, name: id})));
     } finally {
       setOrLoading(false);
     }
@@ -173,11 +249,33 @@ export default function BatchGenPage(){
                 <option value="deepseek">deepseek</option>
               </select>
               {provider==='openrouter' ? (
-                <div className="flex-1 flex gap-2">
-                  <select className="flex-1 border rounded px-2 py-1" value={model} onChange={e=> setModel(e.target.value)}>
-                    {(orModels || openrouterModels).map(m=>(<option key={m} value={m}>{m}</option>))}
+                <div className="flex-1 space-y-2">
+                  <div className="flex gap-2">
+                    <input 
+                      className="flex-1 border rounded px-2 py-1" 
+                      placeholder="搜索模型..." 
+                      value={modelSearch} 
+                      onChange={e=> setModelSearch(e.target.value)}
+                    />
+                    <button type="button" className="px-2 py-1 rounded border" onClick={refreshOpenRouter} disabled={orLoading}>{orLoading?"刷新中":"刷新模型"}</button>
+                  </div>
+                  {orModels.length > 0 && (
+                    <div className="text-xs text-gray-500">
+                      已加载 {orModels.length} 个模型 | 搜索到 {filteredModels.length} 个结果
+                    </div>
+                  )}
+                  <select className="w-full border rounded px-2 py-1" value={model} onChange={e=> setModel(e.target.value)}>
+                    <option value="">选择模型...</option>
+                    {Object.entries(groupedModels).map(([category, models]) => (
+                      <optgroup key={category} label={category}>
+                        {models.map(m=>(
+                          <option key={m.id} value={m.id}>
+                            {m.name} {m.context_length ? `(${Math.round(m.context_length/1000)}k)` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
-                  <button type="button" className="px-2 py-1 rounded border" onClick={refreshOpenRouter} disabled={orLoading}>{orLoading?"刷新中":"刷新模型"}</button>
                 </div>
               ) : (
                 <div className="flex-1 flex gap-2">
@@ -337,31 +435,129 @@ const defaultBusinessTopics = [
 
 // 模型列表示例（可根据需要扩展/维护）
 const openrouterModels = [
-  // OpenAI
+  // OpenAI 系列
   "openai/gpt-4o-mini",
   "openai/gpt-4o",
-  // Anthropic
+  "openai/gpt-4-turbo",
+  "openai/gpt-4",
+  "openai/gpt-3.5-turbo",
+  
+  // Anthropic Claude 系列
   "anthropic/claude-3.5-sonnet",
   "anthropic/claude-3-opus",
   "anthropic/claude-3-haiku",
-  // Google
+  "anthropic/claude-3-sonnet",
+  "anthropic/claude-2.1",
+  "anthropic/claude-2.0",
+  "anthropic/claude-instant-1.2",
+  
+  // Google Gemini 系列
   "google/gemini-1.5-pro",
   "google/gemini-1.5-flash",
-  // Meta Llama 3.1
+  "google/gemini-pro",
+  "google/gemini-pro-vision",
+  
+  // Meta Llama 系列
   "meta/llama-3.1-8b-instruct",
   "meta/llama-3.1-70b-instruct",
-  // Mistral
+  "meta/llama-3.1-405b-instruct",
+  "meta/llama-3-8b-instruct",
+  "meta/llama-3-70b-instruct",
+  "meta/llama-2-7b-chat",
+  "meta/llama-2-13b-chat",
+  "meta/llama-2-70b-chat",
+  
+  // Mistral 系列
   "mistral/mistral-large-2407",
   "mistral/mixtral-8x7b-instruct",
-  // Qwen
+  "mistral/mixtral-8x22b-instruct",
+  "mistral/mistral-7b-instruct",
+  "mistral/mistral-nemo-12b-2409",
+  
+  // Qwen 系列
   "qwen/qwen2.5-7b-instruct",
+  "qwen/qwen2.5-14b-instruct",
+  "qwen/qwen2.5-32b-instruct",
   "qwen/qwen2.5-72b-instruct",
-  // Cohere
+  "qwen/qwen-1.5-7b-chat",
+  "qwen/qwen-1.5-14b-chat",
+  "qwen/qwen-1.5-32b-chat",
+  "qwen/qwen-1.5-72b-chat",
+  
+  // Cohere 系列
   "cohere/command-r",
   "cohere/command-r-plus",
-  // Perplexity (在线检索型)
+  "cohere/command-light",
+  "cohere/command",
+  
+  // Perplexity 系列（在线检索型）
   "perplexity/llama-3-sonar-small-32k-online",
-  "perplexity/llama-3-sonar-large-32k-online"
+  "perplexity/llama-3-sonar-large-32k-online",
+  "perplexity/llama-3.1-sonar-small-128k-online",
+  "perplexity/llama-3.1-sonar-large-128k-online",
+  
+  // DeepSeek 系列
+  "deepseek/deepseek-chat",
+  "deepseek/deepseek-coder",
+  "deepseek/deepseek-reasoner",
+  
+  // Microsoft 系列
+  "microsoft/phi-3-medium-128k-instruct",
+  "microsoft/phi-3-mini-128k-instruct",
+  "microsoft/phi-3-small-8k-instruct",
+  
+  // 01-ai 系列
+  "01-ai/yi-1.5-9b-chat",
+  "01-ai/yi-1.5-34b-chat",
+  "01-ai/yi-1.5-70b-chat",
+  
+  // Nous Research 系列
+  "nousresearch/nous-hermes-2-mixtral-8x7b-dpo",
+  "nousresearch/nous-hermes-2-vision",
+  
+  // Intel 系列
+  "intel/neural-chat-7b-v3-3",
+  "intel/neural-chat-7b-v3-1",
+  
+  // Stability AI 系列
+  "stabilityai/stablelm-2-zephyr-1.6b",
+  "stabilityai/stablelm-2-zephyr-12b",
+  
+  // Technology Innovation Institute 系列
+  "technologyinnovationinstitute/aya-23-8b-instruct",
+  "technologyinnovationinstitute/aya-23-35b-instruct",
+  
+  // Allen Institute 系列
+  "allenai/olmo-7b-instruct",
+  "allenai/olmo-7b",
+  
+  // 其他优秀模型
+  "teknium/openhermes-2.5-mistral-7b",
+  "teknium/openhermes-2-mistral-7b",
+  "teknium/phi-3-mini-128k-instruct",
+  "teknium/phi-3-medium-128k-instruct",
+  
+  // 多模态模型
+  "openai/gpt-4o-mini",
+  "openai/gpt-4o",
+  "google/gemini-1.5-pro",
+  "google/gemini-1.5-flash",
+  
+  // 代码专用模型
+  "deepseek/deepseek-coder",
+  "microsoft/phi-3-mini-128k-instruct",
+  "microsoft/phi-3-medium-128k-instruct",
+  
+  // 数学推理模型
+  "deepseek/deepseek-reasoner",
+  "meta/llama-3.1-70b-instruct",
+  "meta/llama-3.1-405b-instruct",
+  
+  // 长文本模型
+  "anthropic/claude-3.5-sonnet",
+  "google/gemini-1.5-pro",
+  "meta/llama-3.1-405b-instruct",
+  "qwen/qwen2.5-72b-instruct"
 ];
 
 const deepseekModels = [
