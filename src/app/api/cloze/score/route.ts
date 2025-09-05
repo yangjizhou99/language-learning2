@@ -132,9 +132,7 @@ export async function POST(req: NextRequest) {
     }
 
     // AI 评分
-    console.log('Explanation language:', explanationLang);
     const prompt = buildScoringPrompt(item, answers, explanationLang);
-    console.log('System prompt:', getSystemPrompt(explanationLang));
     const result = await chatJSON({
       provider: provider as 'deepseek'|'openrouter'|'openai',
       model: model!,

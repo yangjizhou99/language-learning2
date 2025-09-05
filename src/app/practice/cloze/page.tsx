@@ -96,7 +96,6 @@ export default function ClozePage() {
         setScoring(false);
         return;
       }
-      console.log('Sending explanationLang:', explanationLang);
       const response = await fetch('/api/cloze/score', {
         method: 'POST',
         headers: {
