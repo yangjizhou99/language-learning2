@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
 
     // 兼容缺失 id 的 blanks（从 placeholder 提取或按顺序补齐）
     const blanksRaw = Array.isArray(item.blanks) ? item.blanks : [];
+    
     const blanks = blanksRaw
       .map((blank: any, idx: number) => {
         let id: number | null = null;
@@ -82,11 +83,16 @@ export async function GET(req: NextRequest) {
           if (m) id = Number(m[1]);
         }
         if (id === null) id = idx + 1;
+        
+        // 尝试多种可能的字段名
+        const answer = blank?.answer || blank?.correct_answer || blank?.text || blank?.value || blank?.content || blank?.reference || '';
+        const explanation = blank?.explanation || blank?.hint || blank?.reason || blank?.description || '';
+        
         return {
           id,
           type: blank?.type || 'mixed',
-          answer: blank?.answer || '',
-          explanation: blank?.explanation || ''
+          answer,
+          explanation
         };
       })
       .sort((a: any, b: any) => a.id - b.id);
