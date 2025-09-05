@@ -44,6 +44,7 @@ export default function ClozePage() {
   const [level, setLevel] = useState<number>(3);
   const [provider, setProvider] = useState<'deepseek'|'openrouter'|'openai'>("deepseek");
   const [model, setModel] = useState<string>('deepseek-chat');
+  const [explanationLang, setExplanationLang] = useState<'zh'|'en'|'ja'>('zh');
   const [loading, setLoading] = useState(false);
   const [scoring, setScoring] = useState(false);
   const [currentItem, setCurrentItem] = useState<ClozeItem | null>(null);
@@ -95,6 +96,7 @@ export default function ClozePage() {
         setScoring(false);
         return;
       }
+      console.log('Sending explanationLang:', explanationLang);
       const response = await fetch('/api/cloze/score', {
         method: 'POST',
         headers: {
@@ -105,7 +107,8 @@ export default function ClozePage() {
           itemId: currentItem.id,
           answers,
           provider,
-          model
+          model,
+          explanationLang
         })
       });
       
@@ -238,6 +241,17 @@ export default function ClozePage() {
                     <SelectItem value="gpt-4o-mini">gpt-4o-mini</SelectItem>
                   </>
                 )}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="mb-1 block">讲解语言</Label>
+            <Select value={explanationLang} onValueChange={v => setExplanationLang(v as 'zh'|'en'|'ja')}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="选择讲解语言" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="zh">简体中文</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="ja">日本語</SelectItem>
               </SelectContent>
             </Select>
           </div>
