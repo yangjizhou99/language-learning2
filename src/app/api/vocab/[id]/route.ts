@@ -14,9 +14,10 @@ const UpdateVocabEntrySchema = z.object({
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const cookieStore = await cookies();
     
     // 检查是否有 Authorization header
@@ -67,7 +68,7 @@ export async function PUT(
     const { data, error } = await supabase
       .from('vocab_entries')
       .update(updates)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .eq('user_id', user.id)
       .select()
       .single();
@@ -90,9 +91,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const cookieStore = await cookies();
     
     // 检查是否有 Authorization header
@@ -140,7 +142,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('vocab_entries')
       .delete()
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .eq('user_id', user.id);
 
     if (error) {
