@@ -205,7 +205,7 @@ ${entries.map(entry => `
     if (error instanceof z.ZodError) {
       return NextResponse.json({ 
         error: '请求格式错误', 
-        details: error.errors?.map(e => `${e.path.join('.')}: ${e.message}`).join(', ') || '未知验证错误'
+        details: error.issues?.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ') || '未知验证错误'
       }, { status: 400 });
     }
     return NextResponse.json({ 

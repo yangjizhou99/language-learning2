@@ -113,7 +113,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('批量创建生词API错误:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: '请求格式错误', details: error.errors }, { status: 400 });
+      return NextResponse.json({ 
+        error: '请求格式错误', 
+        details: error.issues?.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ') || '验证错误'
+      }, { status: 400 });
     }
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });
   }
