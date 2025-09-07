@@ -78,6 +78,7 @@ export default function TopNav() {
           <Link href="/practice/wideread" prefetch={false}>广读</Link>
           {/* 短语库已移除 */}
           <Link href="/practice/shadowing" prefetch={false}>Shadowing</Link>
+          <Link href="/vocab">生词本</Link>
           {/* 复盘已移除 */}
           {/* 术语库已移除 */}
           {/* 我的资料已移除 */}
