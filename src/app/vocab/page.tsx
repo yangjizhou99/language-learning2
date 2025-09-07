@@ -77,7 +77,7 @@ export default function VocabPage() {
     try {
       // 首先获取静态模型列表
       const staticResponse = await fetch('/api/ai/models');
-      let staticModels = {};
+      let staticModels: any = {};
       if (staticResponse.ok) {
         const staticData = await staticResponse.json();
         staticModels = staticData.providers;
