@@ -4,9 +4,11 @@ import { supabase } from "@/lib/supabase";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import TopNav from "@/components/TopNav";
+import type { User } from "@supabase/supabase-js";
 
 export default function AuthGate() {
   const [checking, setChecking] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -16,11 +18,15 @@ export default function AuthGate() {
     // 检查初始会话
     const checkSession = async () => {
       try {
-        await supabase.auth.getSession();
-        if (mounted) setChecking(false);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          setUser(session?.user || null);
+          setChecking(false);
+        }
       } catch (error) {
         console.error('Session check error:', error);
         if (mounted) {
+          setUser(null);
           setChecking(false);
         }
       }
@@ -31,6 +37,8 @@ export default function AuthGate() {
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
+      
+      setUser(session?.user || null);
       
       // 只在登录/登出时处理路由跳转
       if (event === 'SIGNED_IN' && session?.user) {
@@ -52,6 +60,16 @@ export default function AuthGate() {
 
   // 等待检查完成
   if (checking) return null;
+
+  // 定义需要认证的页面
+  const protectedPaths = ['/vocab', '/practice'];
+  const needsAuth = protectedPaths.some(path => pathname?.startsWith(path));
+  
+  // 如果页面需要认证但用户未登录，重定向到登录页
+  if (needsAuth && !user) {
+    router.replace('/auth');
+    return null;
+  }
 
   // 仅在认证页与管理员区域隐藏 TopNav（管理员区域自带导航）
   const onAuthPage = pathname?.startsWith("/auth");

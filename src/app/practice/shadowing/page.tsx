@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Container } from "@/components/Container";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import SelectablePassage from "@/components/SelectablePassage";
+import { supabase } from "@/lib/supabase";
 
 // Web Speech 类型定义，避免 any
 interface WebSpeechRecognitionEvent extends Event {
@@ -100,6 +102,11 @@ export default function ShadowingPage() {
   
   // 逐句分析状态
   // 已去除未使用的逐句分析状态
+  
+  // 生词选择相关状态
+  const [isVocabMode, setIsVocabMode] = useState(false);
+  const [selectedWords, setSelectedWords] = useState<Array<{word: string, context: string}>>([]);
+  const [isImporting, setIsImporting] = useState(false);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -494,6 +501,70 @@ export default function ShadowingPage() {
     return { level: "需改进", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
   };
 
+  // 处理生词选择
+  const handleWordSelect = (word: string, context: string) => {
+    // 检查是否已存在
+    const exists = selectedWords.some(item => item.word === word && item.context === context);
+    if (!exists) {
+      setSelectedWords(prev => [...prev, { word, context }]);
+    }
+  };
+
+  // 移除选中的生词
+  const removeSelectedWord = (index: number) => {
+    setSelectedWords(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // 导入到生词本
+  const importToVocab = async () => {
+    if (selectedWords.length === 0) return;
+    
+    setIsImporting(true);
+    try {
+      const entries = selectedWords.map(item => ({
+        term: item.word,
+        lang: lang,
+        native_lang: 'zh', // 默认中文，用户可以在生词本页面修改
+        source: 'shadowing',
+        source_id: data?.id || undefined, // 确保是有效的 UUID 或 undefined
+        context: item.context,
+        tags: []
+      }));
+
+      // 获取当前会话的 access token
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      console.log('发送的生词数据:', { entries });
+      
+      const response = await fetch('/api/vocab/bulk_create', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ entries }),
+      });
+
+      if (response.ok) {
+        setSelectedWords([]);
+        alert(`成功导入 ${entries.length} 个生词到生词本！`);
+      } else {
+        const errorData = await response.json();
+        console.error('导入失败详情:', errorData);
+        alert(`导入失败：${errorData.error}${errorData.details ? '\n详情：' + errorData.details : ''}`);
+      }
+    } catch (error) {
+      console.error('导入生词失败:', error);
+      alert('导入失败，请重试');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <main className="p-6">
       <Container>
@@ -560,9 +631,33 @@ export default function ShadowingPage() {
             <Button variant="link" className="px-0" onClick={getNextQuestion}>换一题</Button>
           </div>
           
+          {/* 生词选择模式切换 */}
+          <div className="flex items-center gap-3 p-3 bg-blue-50 rounded border border-blue-200">
+            <Button
+              variant={isVocabMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setIsVocabMode(!isVocabMode)}
+            >
+              {isVocabMode ? "退出选词模式" : "开启选词模式"}
+            </Button>
+            <span className="text-sm text-blue-700">
+              {isVocabMode ? "点击或拖拽选择生词" : "点击开启生词选择功能"}
+            </span>
+          </div>
+
           {/* 原文显示 */}
           <div className="p-3 bg-muted rounded">
-            <p className="whitespace-pre-wrap text-lg">{data.text}</p>
+            {isVocabMode ? (
+              <SelectablePassage
+                text={data.text}
+                lang={data.lang}
+                onWordSelect={handleWordSelect}
+                disabled={false}
+                className="text-lg"
+              />
+            ) : (
+              <p className="whitespace-pre-wrap text-lg">{data.text}</p>
+            )}
           </div>
           
           {/* 音频播放器 */}
@@ -659,6 +754,50 @@ export default function ShadowingPage() {
               </div>
             </div>
           )}
+        </section>
+      )}
+
+      {/* 选中的生词列表 */}
+      {selectedWords.length > 0 && (
+        <section className="mt-6 p-4 rounded-2xl border bg-card text-card-foreground">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-medium">本次选中的生词 ({selectedWords.length})</h3>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedWords([])}
+              >
+                清空
+              </Button>
+              <Button
+                size="sm"
+                onClick={importToVocab}
+                disabled={isImporting}
+              >
+                {isImporting ? "导入中..." : "导入到生词本"}
+              </Button>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            {selectedWords.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-muted rounded">
+                <div className="flex-1">
+                  <div className="font-medium text-blue-600">{item.word}</div>
+                  <div className="text-sm text-gray-600 mt-1">{item.context}</div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeSelectedWord(index)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  移除
+                </Button>
+              </div>
+            ))}
+          </div>
         </section>
       )}
       </div>
