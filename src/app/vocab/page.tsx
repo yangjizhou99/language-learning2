@@ -102,9 +102,9 @@ export default function VocabPage() {
             // 按提供商分类并添加模型
             const providers = ['anthropic', 'openai', 'google', 'meta-llama', 'deepseek', 'qwen', 'mistralai', 'cohere'];
             
-            providers.forEach(provider => {
+            providers.forEach((provider: string) => {
               if (liveData.models[provider]) {
-                liveData.models[provider].forEach(model => {
+                liveData.models[provider].forEach((model: any) => {
                   openrouterModels.push({
                     id: model.id,
                     name: model.name,
@@ -115,9 +115,9 @@ export default function VocabPage() {
             });
 
             // 添加其他提供商的模型
-            Object.entries(liveData.models).forEach(([provider, models]) => {
+            Object.entries(liveData.models).forEach(([provider, models]: [string, any]) => {
               if (!providers.includes(provider) && Array.isArray(models)) {
-                models.forEach(model => {
+                models.forEach((model: any) => {
                   openrouterModels.push({
                     id: model.id,
                     name: `${model.name} (${provider})`,
