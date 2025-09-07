@@ -131,7 +131,7 @@ JSON格式要求：
 }
 
 生词列表：
-${entries.map(entry => `
+${entries.map((entry: any) => `
 词条: ${entry.term}
 语言: ${targetLangNames[entry.lang as keyof typeof targetLangNames]}
 上下文: ${entry.context || '无'}
@@ -173,7 +173,7 @@ ${entries.map(entry => `
     }
 
     // 更新数据库
-    const updatePromises = entries.map((entry, index) => {
+    const updatePromises = entries.map((entry: any, index: number) => {
       const explanation = explanations[index] || null;
       return supabase
         .from('vocab_entries')
