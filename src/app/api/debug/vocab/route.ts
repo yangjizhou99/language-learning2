@@ -37,57 +37,30 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const url = new URL(req.url);
-    const term = url.searchParams.get('term');
-
-    if (!term) {
-      return NextResponse.json({ error: 'term parameter is required' }, { status: 400 });
-    }
-
-    console.log('Searching for term:', term, 'user_id:', user.id);
-
-    // Search for vocabulary entries - first try exact match, then fuzzy match
-    let { data: entries, error } = await supabase
+    // Get all vocabulary entries for this user
+    const { data: entries, error } = await supabase
       .from('vocab_entries')
       .select('*')
       .eq('user_id', user.id)
-      .eq('term', term)
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    // If no exact match found, try fuzzy match
-    if (!entries || entries.length === 0) {
-      const { data: fuzzyEntries, error: fuzzyError } = await supabase
-        .from('vocab_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .ilike('term', `%${term}%`)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (!fuzzyError) {
-        entries = fuzzyEntries;
-        error = null;
-      } else {
-        error = fuzzyError;
-      }
-    }
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error searching vocabulary:', error);
+      console.error('Error fetching vocabulary:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
+      user_id: user.id,
       entries: entries || []
     });
 
   } catch (error) {
-    console.error('Error in vocab search API:', error);
+    console.error('Error in debug vocab API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
+
