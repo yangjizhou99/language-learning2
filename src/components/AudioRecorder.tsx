@@ -73,7 +73,9 @@ export default function AudioRecorder({
           'zh': 'zh-CN',
           'en': 'en-US'
         };
-        recognitionRef.current.lang = langMap[language] || 'ja-JP';
+        const recognitionLang = langMap[language] || 'en-US';
+        recognitionRef.current.lang = recognitionLang;
+        console.log('设置语音识别语言:', recognitionLang, 'for language:', language);
         
         recognitionRef.current.onstart = () => {
           console.log('实时语音识别开始');
@@ -88,13 +90,13 @@ export default function AudioRecorder({
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-              finalTranscript += transcript;
+              finalTranscript += transcript + ' ';
             } else {
               interimTranscript += transcript;
             }
           }
           
-          const fullTranscript = finalTranscript + interimTranscript;
+          const fullTranscript = (finalTranscript + interimTranscript).trim();
           setRealTimeTranscription(fullTranscript);
           console.log('实时转录:', fullTranscript);
         };
@@ -135,6 +137,7 @@ export default function AudioRecorder({
       if (originalText) {
         formData.append('originalText', originalText);
       }
+      formData.append('language', language); // 传递语言参数
       
       const response = await fetch('/api/transcribe', {
         method: 'POST',
@@ -216,28 +219,27 @@ export default function AudioRecorder({
         recognitionRef.current.stop();
       }
       
-      // 使用实时转录结果
-      if (realTimeTranscription.trim()) {
-        setCurrentTranscription(realTimeTranscription);
-        onTranscriptionReady?.(realTimeTranscription);
-        console.log('使用实时转录结果:', realTimeTranscription);
-      } else {
-        // 如果没有实时转录结果，等待一小段时间让onstop事件完成，然后使用API转录
-        setTimeout(async () => {
+      // 等待一小段时间让语音识别完成，然后使用最终结果
+      setTimeout(() => {
+        if (realTimeTranscription.trim()) {
+          setCurrentTranscription(realTimeTranscription);
+          onTranscriptionReady?.(realTimeTranscription);
+          console.log('使用实时转录结果:', realTimeTranscription);
+        } else {
+          // 如果没有实时转录结果，使用API转录
           if (audioChunksRef.current.length > 0) {
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
             
             // 自动进行语音转文字
-            try {
-              const transcription = await transcribeAudio(audioBlob);
+            transcribeAudio(audioBlob).then(transcription => {
               setCurrentTranscription(transcription);
               onTranscriptionReady?.(transcription);
-            } catch (error) {
+            }).catch(error => {
               console.error('转录失败:', error);
-            }
+            });
           }
-        }, 500);
-      }
+        }
+      }, 1000); // 增加等待时间到1秒
     }
   }, [isRecording, realTimeTranscription, transcribeAudio, onTranscriptionReady]);
 
