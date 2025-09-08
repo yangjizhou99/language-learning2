@@ -117,11 +117,11 @@ export default function SelectablePassage({
   // 渲染文本，支持拖拽选择
   const renderText = () => {
     if (disabled) {
-      return <span className="select-none">{text}</span>;
+      return <span className="select-none whitespace-pre-wrap">{text}</span>;
     }
 
-    // 直接返回文本，允许拖拽选择
-    return <span>{text}</span>;
+    // 直接返回文本，允许拖拽选择，保持换行符
+    return <span className="whitespace-pre-wrap">{text}</span>;
   };
 
   return (
