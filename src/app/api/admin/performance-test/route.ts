@@ -204,9 +204,9 @@ export async function GET(req: NextRequest) {
           try {
             if (type === 'database') {
               const supabase = getServiceSupabase();
-              result = await test.query(supabase);
+              result = await (test.query as any)(supabase);
             } else {
-              result = await test.query();
+              result = await (test.query as any)();
             }
             
             results.push({

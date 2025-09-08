@@ -3,7 +3,7 @@
  * 使用React.memo和useCallback进行性能优化
  */
 
-import React, { memo, useCallback, useState, useEffect } from 'react';
+import React, { memo, useCallback, useState, useEffect, useMemo } from 'react';
 
 interface Explanation {
   gloss_native: string;

@@ -3,7 +3,7 @@
  * 使用React.memo和useCallback进行性能优化
  */
 
-import React, { memo, useCallback, useState, useRef, useEffect } from 'react';
+import React, { memo, useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 
 interface AudioPlayerProps {

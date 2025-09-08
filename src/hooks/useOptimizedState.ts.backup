@@ -34,7 +34,7 @@ export function useOptimizedState<T>(initialValue: T) {
  */
 export function useDebouncedState<T>(initialValue: T, delay: number = 300) {
   const [state, setState] = useState(initialValue);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setDebouncedState = useCallback((newValue: T | ((prev: T) => T)) => {
     if (timeoutRef.current) {
@@ -125,7 +125,7 @@ export function usePersistedState<T>(
 export function useBatchState<T extends Record<string, any>>(initialState: T) {
   const [state, setState] = useState(initialState);
   const batchRef = useRef<Partial<T>>({});
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const batchUpdate = useCallback((updates: Partial<T>, immediate = false) => {
     Object.assign(batchRef.current, updates);
