@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     // 4. AWS Transcribe
     
     // 根据原文内容生成相关的模拟转录
-    let mockTranscriptions = [];
+    let mockTranscriptions: string[] = [];
     
     if (originalText) {
       // 从原文中提取一些关键词和短语
