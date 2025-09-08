@@ -92,9 +92,9 @@ export async function GET(req: NextRequest) {
     // Filter by practice status if specified
     let filteredItems = processedItems;
     if (practiced === 'true') {
-      filteredItems = processedItems.filter(item => item.isPracticed);
+      filteredItems = processedItems.filter((item: any) => item.isPracticed);
     } else if (practiced === 'false') {
-      filteredItems = processedItems.filter(item => !item.isPracticed);
+      filteredItems = processedItems.filter((item: any) => !item.isPracticed);
     }
 
     return NextResponse.json({

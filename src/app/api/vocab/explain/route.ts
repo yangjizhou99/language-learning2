@@ -186,7 +186,7 @@ ${entries.map((entry: any) => `
     });
 
     const updateResults = await Promise.all(updatePromises);
-    const updateErrors = updateResults.filter(result => result.error);
+    const updateErrors = updateResults.filter((result: any) => result.error);
 
     if (updateErrors.length > 0) {
       console.error('更新解释失败:', updateErrors);
