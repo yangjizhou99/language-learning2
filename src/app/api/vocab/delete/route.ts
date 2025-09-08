@@ -6,19 +6,8 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
-const CreateVocabEntrySchema = z.object({
-  term: z.string().min(1).max(500), // 增加长度限制到500字符
-  lang: z.enum(['en', 'ja', 'zh']),
-  native_lang: z.enum(['zh', 'en', 'ja']),
-  source: z.string().default('shadowing'),
-  source_id: z.string().uuid().optional(),
-  context: z.string().optional(),
-  tags: z.array(z.string()).default([]),
-  explanation: z.any().optional(), // 支持AI解释
-});
-
-const BulkCreateSchema = z.object({
-  entries: z.array(CreateVocabEntrySchema),
+const DeleteVocabSchema = z.object({
+  entry_ids: z.array(z.string().uuid()),
 });
 
 export async function POST(request: NextRequest) {
@@ -33,7 +22,7 @@ export async function POST(request: NextRequest) {
     
     if (hasBearer) {
       // 使用 Authorization header
-      console.log('批量创建使用 Authorization header 认证');
+      console.log('删除生词使用 Authorization header 认证');
       supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -44,7 +33,7 @@ export async function POST(request: NextRequest) {
       );
     } else {
       // 使用 cookie 认证
-      console.log('批量创建使用 Cookie 认证');
+      console.log('删除生词使用 Cookie 认证');
       supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -71,11 +60,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log('接收到的请求体:', body);
+    console.log('接收到的删除请求:', body);
     
     try {
-      const { entries } = BulkCreateSchema.parse(body);
-      console.log('验证通过的生词条目:', entries);
+      const { entry_ids } = DeleteVocabSchema.parse(body);
+      console.log('验证通过的生词ID:', entry_ids);
     } catch (parseError) {
       console.error('数据验证失败:', parseError);
       if (parseError instanceof z.ZodError) {
@@ -87,32 +76,29 @@ export async function POST(request: NextRequest) {
       throw parseError;
     }
     
-    const { entries } = BulkCreateSchema.parse(body);
+    const { entry_ids } = DeleteVocabSchema.parse(body);
 
-    // 批量插入生词
+    // 删除生词条目
     const { data, error } = await supabase
       .from('vocab_entries')
-      .insert(
-        entries.map(entry => ({
-          ...entry,
-          user_id: user.id,
-        }))
-      )
+      .delete()
+      .in('id', entry_ids)
+      .eq('user_id', user.id) // 确保只能删除自己的生词
       .select();
 
     if (error) {
-      console.error('批量创建生词失败:', error);
-      return NextResponse.json({ error: '创建失败' }, { status: 500 });
+      console.error('删除生词失败:', error);
+      return NextResponse.json({ error: '删除失败' }, { status: 500 });
     }
 
     return NextResponse.json({ 
       success: true, 
       count: data.length,
-      entries: data 
+      deleted_entries: data 
     });
 
   } catch (error) {
-    console.error('批量创建生词API错误:', error);
+    console.error('删除生词API错误:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json({ 
         error: '请求格式错误', 

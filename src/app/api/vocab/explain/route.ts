@@ -8,11 +8,16 @@ import { z } from 'zod';
 import { chatJSON } from '@/lib/ai/client';
 
 const ExplainVocabSchema = z.object({
-  entry_ids: z.array(z.string().uuid()),
+  entry_ids: z.array(z.string().uuid()).optional(),
   native_lang: z.enum(['zh', 'en', 'ja']),
   provider: z.string().default('openrouter'),
   model: z.string().default('anthropic/claude-3.5-sonnet'),
   temperature: z.number().min(0).max(2).default(0.7),
+  word_info: z.object({
+    term: z.string(),
+    lang: z.string(),
+    context: z.string().optional()
+  }).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -61,17 +66,33 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { entry_ids, native_lang, provider, model, temperature } = ExplainVocabSchema.parse(body);
+    const { entry_ids, native_lang, provider, model, temperature, word_info } = ExplainVocabSchema.parse(body);
 
-    // 获取要解释的生词
-    const { data: entries, error: fetchError } = await supabase
-      .from('vocab_entries')
-      .select('*')
-      .in('id', entry_ids)
-      .eq('user_id', user.id);
+    let entries: any[] = [];
 
-    if (fetchError || !entries || entries.length === 0) {
-      return NextResponse.json({ error: '未找到生词' }, { status: 404 });
+    if (word_info) {
+      // 直接使用传递的单词信息
+      entries = [{
+        id: 'temp-' + Date.now(),
+        term: word_info.term,
+        lang: word_info.lang,
+        context: word_info.context || '',
+        user_id: user.id
+      }];
+    } else if (entry_ids && entry_ids.length > 0) {
+      // 从数据库获取要解释的生词
+      const { data: dbEntries, error: fetchError } = await supabase
+        .from('vocab_entries')
+        .select('*')
+        .in('id', entry_ids)
+        .eq('user_id', user.id);
+
+      if (fetchError || !dbEntries || dbEntries.length === 0) {
+        return NextResponse.json({ error: '未找到生词' }, { status: 404 });
+      }
+      entries = dbEntries;
+    } else {
+      return NextResponse.json({ error: '请提供生词ID或单词信息' }, { status: 400 });
     }
 
     // 构建AI提示词
@@ -172,25 +193,27 @@ ${entries.map((entry: any) => `
       return NextResponse.json({ error: 'AI响应格式错误' }, { status: 500 });
     }
 
-    // 更新数据库
-    const updatePromises = entries.map((entry: any, index: number) => {
-      const explanation = explanations[index] || null;
-      return supabase
-        .from('vocab_entries')
-        .update({ 
-          explanation,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', entry.id)
-        .eq('user_id', user.id);
-    });
+    // 更新数据库（只对数据库中的条目进行更新）
+    if (!word_info) {
+      const updatePromises = entries.map((entry: any, index: number) => {
+        const explanation = explanations[index] || null;
+        return supabase
+          .from('vocab_entries')
+          .update({ 
+            explanation,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', entry.id)
+          .eq('user_id', user.id);
+      });
 
-    const updateResults = await Promise.all(updatePromises);
-    const updateErrors = updateResults.filter((result: any) => result.error);
+      const updateResults = await Promise.all(updatePromises);
+      const updateErrors = updateResults.filter((result: any) => result.error);
 
-    if (updateErrors.length > 0) {
-      console.error('更新解释失败:', updateErrors);
-      return NextResponse.json({ error: '部分更新失败' }, { status: 500 });
+      if (updateErrors.length > 0) {
+        console.error('更新解释失败:', updateErrors);
+        return NextResponse.json({ error: '部分更新失败' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({

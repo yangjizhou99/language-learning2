@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     const level = url.searchParams.get('level'); 
     const practiced = url.searchParams.get('practiced'); // 'true', 'false', or null (all)
 
-    // Build query for shadowing items (simplified without sessions for now)
+    // Build query for shadowing items with session data
     let query = supabase
       .from('shadowing_items')
       .select(`
@@ -58,7 +58,15 @@ export async function GET(req: NextRequest) {
         tokens,
         cefr,
         meta,
-        created_at
+        created_at,
+        shadowing_sessions!left(
+          id,
+          user_id,
+          status,
+          recordings,
+          picked_preview,
+          created_at
+        )
       `);
 
     // Apply filters
@@ -76,18 +84,39 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-
-    // Process items (simplified without session data for now)
-    const processedItems = items?.map((item: any) => ({
-      ...item,
-      isPracticed: false, // Default to not practiced
-      stats: {
-        recordingCount: 0,
-        vocabCount: 0,
-        practiceTime: 0,
-        lastPracticed: null
+    // Process items with session data
+    const processedItems = items?.map((item: any) => {
+      // Find the user's session for this item
+      const userSession = item.shadowing_sessions?.find((session: any) => 
+        session.user_id === user.id
+      );
+      
+      const isPracticed = userSession?.status === 'completed';
+      const recordings = userSession?.recordings || [];
+      const selectedWords = userSession?.picked_preview || [];
+      
+      // Calculate practice time from recordings (duration is already in milliseconds)
+      let practiceTime = 0;
+      if (recordings && recordings.length > 0) {
+        practiceTime = recordings.reduce((total: number, recording: any) => {
+          console.log('录音时长:', recording.duration, '毫秒');
+          return total + (recording.duration || 0);
+        }, 0);
+        console.log('总练习时长:', practiceTime, '毫秒 =', Math.floor(practiceTime / 1000), '秒');
       }
-    })) || [];
+      
+      return {
+        ...item,
+        isPracticed,
+        status: userSession?.status || null,
+        stats: {
+          recordingCount: recordings.length,
+          vocabCount: selectedWords.length,
+          practiceTime: Math.floor(practiceTime / 1000), // Convert milliseconds to seconds
+          lastPracticed: userSession?.created_at || null
+        }
+      };
+    }) || [];
 
     // Filter by practice status if specified
     let filteredItems = processedItems;

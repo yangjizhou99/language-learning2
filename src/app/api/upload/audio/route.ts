@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const audioFile = formData.get('audio') as File;
     const sessionId = formData.get('sessionId') as string;
+    const duration = formData.get('duration') as string;
 
     console.log('接收到的文件信息:', {
       fileName: audioFile?.name,
@@ -98,15 +99,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: signedUrlError.message }, { status: 500 });
     }
 
-    // Calculate duration if possible (this is approximate based on file size)
-    const approximateDuration = Math.round(audioFile.size / 16000); // Very rough estimate
+    // Use provided duration or fallback to estimate
+    const recordingDuration = duration ? parseInt(duration) : Math.round(audioFile.size / 16000);
 
     const audioData = {
       url: signedUrlData.signedUrl,
       fileName: uploadData.path,
       size: audioFile.size,
       type: audioFile.type,
-      duration: approximateDuration,
+      duration: recordingDuration,
       created_at: new Date().toISOString()
     };
 
