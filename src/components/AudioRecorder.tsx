@@ -23,6 +23,7 @@ interface AudioRecorderProps {
   onTranscriptionReady?: (transcription: string) => void; // 添加转录回调
   onRecordingSelected?: (recording: AudioRecording) => void; // 添加录音选择回调
   originalText?: string; // 添加原文用于生成相关转录
+  language?: string; // 添加语言参数
   className?: string;
 }
 
@@ -34,6 +35,7 @@ export default function AudioRecorder({
   onTranscriptionReady,
   onRecordingSelected,
   originalText,
+  language = 'ja',
   className = ''
 }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
@@ -50,6 +52,7 @@ export default function AudioRecorder({
   const audioChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
+  const recordingStartTimeRef = useRef<number>(0);
 
   // 同步外部录音列表的变化
   useEffect(() => {
@@ -64,7 +67,13 @@ export default function AudioRecorder({
         recognitionRef.current = new SpeechRecognition();
         recognitionRef.current.continuous = true;
         recognitionRef.current.interimResults = true;
-        recognitionRef.current.lang = 'ja-JP'; // 设置为日语
+        // 根据语言参数设置语音识别语言
+        const langMap: { [key: string]: string } = {
+          'ja': 'ja-JP',
+          'zh': 'zh-CN',
+          'en': 'en-US'
+        };
+        recognitionRef.current.lang = langMap[language] || 'ja-JP';
         
         recognitionRef.current.onstart = () => {
           console.log('实时语音识别开始');
@@ -184,6 +193,7 @@ export default function AudioRecorder({
 
       mediaRecorder.start();
       setIsRecording(true);
+      recordingStartTimeRef.current = Date.now();
       
       // 开始实时语音识别
       if (recognitionRef.current) {
@@ -258,14 +268,20 @@ export default function AudioRecorder({
     setUploadingRecording(true);
     try {
       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+      
+      // 计算准确的录音时长
+      const recordingDuration = Date.now() - recordingStartTimeRef.current;
+      
       console.log('准备上传录音:', {
         size: audioBlob.size,
         type: audioBlob.type,
+        duration: recordingDuration,
         sessionId
       });
 
       const formData = new FormData();
       formData.append('audio', audioBlob, `recording-${Date.now()}.webm`);
+      formData.append('duration', recordingDuration.toString());
       if (sessionId) {
         formData.append('sessionId', sessionId);
       }
@@ -488,7 +504,7 @@ export default function AudioRecorder({
                   <div className="flex-1">
                     <div className="text-sm">录音 #{index + 1}</div>
                     <div className="text-xs text-gray-500">
-                      {formatDuration(recording.duration)} · {formatFileSize(recording.size)} · 
+                      {formatDuration(Math.floor(recording.duration / 1000))} · {formatFileSize(recording.size)} · 
                       {new Date(recording.created_at).toLocaleString()}
                     </div>
                   </div>

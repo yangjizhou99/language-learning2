@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
     item_id, // 使用正确的列名
-    status = 'in_progress', // 使用正确的默认值
+    status = 'draft', // 使用正确的默认值
     recordings = [],
     vocab_entry_ids = [], // 使用正确的列名
     picked_preview = [], // 使用正确的列名
