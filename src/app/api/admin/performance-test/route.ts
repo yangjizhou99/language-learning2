@@ -149,9 +149,9 @@ export async function POST(req: NextRequest) {
     try {
       if (testType === 'database') {
         const supabase = getServiceSupabase();
-        result = await testCase.query(supabase);
+        result = await (testCase.query as any)(supabase);
       } else {
-        result = await testCase.query();
+        result = await (testCase.query as any)();
       }
 
       const totalDuration = Date.now() - startTime;
