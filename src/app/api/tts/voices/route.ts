@@ -111,11 +111,11 @@ export async function GET(req: NextRequest) {
         (v.name || "").toLowerCase().includes("neural2") ? "Neural2" :
         (v.name || "").toLowerCase().includes("wavenet") ? "WaveNet" : "Standard"
     }))
-    .filter(v => {
+    .filter((v: any) => {
       const codes = v.languageCodes || [];
       const target = locale.toLowerCase();
       // 兼容 cmn-CN / zh-CN / zh-HK / zh-TW 等
-      return codes.some(c => {
+      return codes.some((c: any) => {
         const lc = (c || "").toLowerCase();
         if (target.startsWith("zh")) {
           return lc.startsWith("zh-") || lc.startsWith("cmn-");
@@ -123,7 +123,7 @@ export async function GET(req: NextRequest) {
         return lc.startsWith(target);
       });
     })
-    .filter(v => kind === "all" ? true : v.type.toLowerCase() === kind)
+    .filter((v: any) => kind === "all" ? true : v.type.toLowerCase() === kind)
     .sort((a,b) => a.name.localeCompare(b.name));
 
     return new NextResponse(JSON.stringify(voices), {

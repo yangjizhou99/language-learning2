@@ -4,6 +4,10 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 type Metrics = { 
   wer?: number; 
@@ -28,18 +32,26 @@ function calculateAccuracy(metrics: Metrics): number {
 
 export async function GET(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
+    // Bearer 优先，其次 Cookie 方式
+    const authHeader = req.headers.get('authorization') || '';
+    const hasBearer = /^Bearer\s+/.test(authHeader);
+    let supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
+    
+    if (hasBearer) {
+      supabase = createClient(supabaseUrl, supabaseAnon, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { Authorization: authHeader } }
+      });
+    } else {
+      const cookieStore = await cookies();
+      supabase = createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
           get(name: string) { return cookieStore.get(name)?.value; },
           set() {},
           remove() {},
         }
-      }
-    );
+      });
+    }
     const searchParams = new URL(req.url).searchParams;
     const lang = (searchParams.get("lang") || "en").toLowerCase();
     
@@ -68,14 +80,14 @@ export async function GET(req: NextRequest) {
     }
 
     const lastLevel = attempts[0].level;
-    const recentSameLevel = attempts.filter(a => a.level === lastLevel).slice(0, 3);
+    const recentSameLevel = attempts.filter((a: any) => a.level === lastLevel).slice(0, 3);
     const lastAttempt = attempts[0];
 
     const avg = (xs: number[]) => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
 
     // 升级条件：同级最近3次，平均准确率≥92%
     if (recentSameLevel.length === 3) {
-      const accuracies = recentSameLevel.map(r => calculateAccuracy(r.metrics as Metrics));
+      const accuracies = recentSameLevel.map((r: any) => calculateAccuracy(r.metrics as Metrics));
       const avgAccuracy = avg(accuracies);
       
       if (avgAccuracy >= 0.92) {

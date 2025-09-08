@@ -59,7 +59,9 @@ const SelectItem = React.forwardRef<
     )}
     {...props}
   >
-    <span className="absolute left-2 h-3.5 w-3.5">✓</span>
+    <SelectPrimitive.ItemIndicator className="absolute left-2 h-3.5 w-3.5">
+      ✓
+    </SelectPrimitive.ItemIndicator>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
   </SelectPrimitive.Item>
 ));
