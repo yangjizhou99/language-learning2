@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
     recordings = [],
     vocab_entry_ids = [], // 使用正确的列名
     picked_preview = [], // 使用正确的列名
+    selected_words = [], // 添加selected_words参数
     notes = {}
   } = body;
 
@@ -198,7 +199,7 @@ export async function POST(req: NextRequest) {
 
         if (!vocabError && insertedVocab) {
           // Update session with imported vocab IDs
-          const vocabIds = insertedVocab.map(v => v.id);
+          const vocabIds = insertedVocab.map((v: any) => v.id);
           await supabase
             .from('shadowing_sessions')
             .update({
