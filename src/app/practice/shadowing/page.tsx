@@ -118,7 +118,7 @@ export default function ShadowingPage() {
       example_native: string;
     }>;
   }}>>([]);
-  const [isVocabMode, setIsVocabMode] = useState(true);
+  const [isVocabMode, setIsVocabMode] = useState(false);
   const [practiceStartTime, setPracticeStartTime] = useState<Date | null>(null);
   const [currentRecordings, setCurrentRecordings] = useState<AudioRecording[]>([]);
   const [isImporting, setIsImporting] = useState(false);
@@ -132,6 +132,184 @@ export default function ShadowingPage() {
     }>;
   }>>({});
   const [isGeneratingExplanation, setIsGeneratingExplanation] = useState(false);
+  
+  // 解释缓存
+  const [explanationCache, setExplanationCache] = useState<Record<string, {gloss_native: string, senses?: Array<{example_target: string, example_native: string}>}>>({});
+  
+  
+  // 悬停/点击解释组件
+  const HoverExplanation = ({ word, explanation, children }: { 
+    word: string,
+    explanation?: {gloss_native: string, senses?: Array<{example_target: string, example_native: string}>}, 
+    children: React.ReactNode 
+  }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [latestExplanation, setLatestExplanation] = useState(explanation);
+    
+    // 当悬停时，异步获取最新解释（不阻塞显示）
+    const handleMouseEnter = async () => {
+      setShowTooltip(true);
+      
+      // 总是获取最新解释，确保与DynamicExplanation同步
+      const timer = setTimeout(async () => {
+        try {
+          const headers = await getAuthHeaders();
+          const response = await fetch(`/api/vocab/search?term=${encodeURIComponent(word)}&_t=${Date.now()}`, {
+            headers
+          });
+          const data = await response.json();
+          
+          if (data.entries && data.entries.length > 0 && data.entries[0].explanation) {
+            const fetchedExplanation = data.entries[0].explanation;
+            setLatestExplanation(fetchedExplanation);
+            // 不更新缓存，避免循环
+          }
+        } catch (error) {
+          console.error(`获取 ${word} 解释失败:`, error);
+        }
+      }, 300); // 300ms防抖延迟
+      
+      return () => clearTimeout(timer);
+    };
+    
+    const tooltipText = latestExplanation?.gloss_native || "已选择的生词";
+    
+    return (
+      <span 
+        className="bg-yellow-200 text-yellow-800 px-1 rounded font-medium cursor-help relative"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setShowTooltip(false)}
+        onClick={() => setShowTooltip(!showTooltip)} // 手机端点击切换
+      >
+        {children}
+        {showTooltip && (
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg w-32 z-50">
+            {tooltipText}
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+          </div>
+        )}
+      </span>
+    );
+  };
+  // 动态解释组件
+  const DynamicExplanation = ({ word, fallbackExplanation }: { word: string, fallbackExplanation?: {gloss_native: string, senses?: Array<{example_target: string, example_native: string}>} }) => {
+    // 优先使用缓存中的最新解释，其次使用fallback解释
+    const [latestExplanation, setLatestExplanation] = useState<{gloss_native: string, senses?: Array<{example_target: string, example_native: string}>} | undefined>(explanationCache[word] || fallbackExplanation);
+    const [loading, setLoading] = useState(false);
+    const [hasInitialized, setHasInitialized] = useState(false);
+    
+     // 刷新解释函数 - 强制从数据库获取最新数据
+     const refreshExplanation = useCallback(async () => {
+       setLoading(true);
+       try {
+         const headers = await getAuthHeaders();
+         const response = await fetch(`/api/vocab/search?term=${encodeURIComponent(word)}&_t=${Date.now()}`, { // 添加时间戳避免缓存
+           headers
+         });
+         const data = await response.json();
+         
+         if (data.entries && data.entries.length > 0 && data.entries[0].explanation) {
+           const explanation = data.entries[0].explanation;
+           setLatestExplanation(explanation);
+           // 更新缓存
+           setExplanationCache(prev => ({
+             ...prev,
+             [word]: explanation
+           }));
+         } else {
+           // 如果没有找到解释，清除缓存
+           setLatestExplanation(undefined);
+           setExplanationCache(prev => {
+             const newCache = { ...prev };
+             delete newCache[word];
+             return newCache;
+           });
+         }
+       } catch (error) {
+         console.error(`获取 ${word} 解释失败:`, error);
+       } finally {
+         setLoading(false);
+       }
+     }, [word]);
+    
+     // 初始化时获取最新解释
+     useEffect(() => {
+       if (!hasInitialized) {
+         setHasInitialized(true);
+         // 总是获取最新解释，不管缓存中是否有旧解释
+         // 直接调用API，避免依赖refreshExplanation
+         const fetchInitialExplanation = async () => {
+           setLoading(true);
+           try {
+             const headers = await getAuthHeaders();
+             const response = await fetch(`/api/vocab/search?term=${encodeURIComponent(word)}&_t=${Date.now()}`, {
+               headers
+             });
+             const data = await response.json();
+             
+             if (data.entries && data.entries.length > 0 && data.entries[0].explanation) {
+               const explanation = data.entries[0].explanation;
+               setLatestExplanation(explanation);
+               // 不更新缓存，避免循环
+             }
+           } catch (error) {
+             console.error(`获取 ${word} 解释失败:`, error);
+           } finally {
+             setLoading(false);
+           }
+         };
+         fetchInitialExplanation();
+       }
+     }, [hasInitialized, word]);
+     
+     // 当缓存更新时，同步更新显示
+     const cachedExplanation = explanationCache[word];
+     useEffect(() => {
+       if (cachedExplanation) {
+         setLatestExplanation(cachedExplanation);
+       }
+     }, [cachedExplanation, word]);
+    
+    if (!latestExplanation) {
+      return (
+        <div className="text-sm text-gray-500 flex items-center gap-2">
+          <span>暂无解释</span>
+          <button 
+            onClick={refreshExplanation}
+            className="text-xs text-blue-500 hover:text-blue-700"
+            title="刷新解释"
+          >
+            🔄
+          </button>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="text-sm text-gray-700">
+        <div className="mb-2 flex items-center gap-2">
+          <strong>解释：</strong>{latestExplanation.gloss_native}
+          <button 
+            onClick={refreshExplanation}
+            className="text-xs text-blue-500 hover:text-blue-700"
+            title="刷新解释"
+            disabled={loading}
+          >
+            🔄
+          </button>
+        </div>
+        {latestExplanation.senses && latestExplanation.senses.length > 0 && (
+          <div className="text-sm text-gray-600">
+            <strong>例句：</strong>
+            <div className="mt-1">
+              <div className="font-medium">{latestExplanation.senses[0]?.example_target}</div>
+              <div className="text-gray-500">{latestExplanation.senses[0]?.example_native}</div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
   const [generatingWord, setGeneratingWord] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -202,7 +380,8 @@ export default function ShadowingPage() {
       const response = await fetch(`/api/shadowing/catalog?${params.toString()}`, { headers });
       if (response.ok) {
         const data = await response.json();
-        setItems(data.items || []);
+        const newItems = data.items || [];
+        setItems(newItems);
       } else {
         console.error('Failed to fetch items:', response.status, await response.text());
         }
@@ -236,6 +415,15 @@ export default function ShadowingPage() {
     }
   }, [fetchItems, fetchRecommendedLevel, authLoading, user]);
 
+  // 筛选条件变化时立即刷新题库
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchItems();
+    }
+  }, [lang, level, practiced, authLoading, user, fetchItems]);
+
+
+
   // 过滤显示的题目
   const filteredItems = items.filter(item => {
     if (searchQuery) {
@@ -246,6 +434,23 @@ export default function ShadowingPage() {
       );
     }
     return true;
+  }).sort((a, b) => {
+    // 排序规则：已完成 > 草稿中 > 未开始
+    const getStatusOrder = (item: ShadowingItem) => {
+      if (item.isPracticed) return 0; // 已完成
+      if (item.status === 'draft') return 1; // 草稿中
+      return 2; // 未开始
+    };
+    
+    const orderA = getStatusOrder(a);
+    const orderB = getStatusOrder(b);
+    
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    
+    // 相同状态按标题排序
+    return a.title.localeCompare(b.title);
   });
 
   // 随机选择未练习的题目
@@ -294,23 +499,9 @@ export default function ShadowingPage() {
           // 将之前的生词设置为 previousWords
           setPreviousWords(data.session.picked_preview || []);
           
-          // 还原AI解释
-          if (data.session.picked_preview && data.session.picked_preview.length > 0) {
-            const explanations: Record<string, {
-              gloss_native: string;
-              senses?: Array<{
-                example_target: string;
-                example_native: string;
-              }>;
-            }> = {};
-            for (const word of data.session.picked_preview) {
-              if (word.explanation) {
-                explanations[word.word] = word.explanation;
-              }
-            }
-            setWordExplanations(explanations);
-            console.log('还原的AI解释:', explanations);
-          }
+             // 还原AI解释 - 从数据库获取所有单词的最新解释
+             // 注意：这里不再并行请求所有解释，而是让DynamicExplanation组件按需加载
+             // 这样可以避免一次性发起大量API请求
           
           // 重新生成录音的signed URL，因为之前的URL可能已过期
           const recordingsWithValidUrls = await Promise.all(
@@ -453,9 +644,9 @@ export default function ShadowingPage() {
     
     // 确认删除
     if (!confirm(`确定要删除生词 "${wordToRemove.word}" 吗？这将从生词表中永久删除。`)) {
-      return;
-    }
-    
+        return;
+      }
+
     const newPreviousWords = previousWords.filter((_, i) => i !== index);
     setPreviousWords(newPreviousWords);
     
@@ -506,12 +697,12 @@ export default function ShadowingPage() {
         console.log('移除之前的生词后保存到数据库:', saveData);
         
         const response = await fetch('/api/shadowing/session', {
-          method: 'POST',
+        method: 'POST',
           headers,
           body: JSON.stringify(saveData)
-        });
-        
-        if (response.ok) {
+      });
+      
+      if (response.ok) {
           console.log('之前的生词移除已保存到数据库');
         } else {
           console.error('保存之前的生词移除失败');
@@ -550,7 +741,7 @@ export default function ShadowingPage() {
       if (response.ok) {
         const result = await response.json();
           console.log('录音已自动保存到数据库:', result);
-          } else {
+      } else {
           const errorText = await response.text();
           console.error('保存录音失败:', response.status, errorText);
       }
@@ -636,6 +827,14 @@ export default function ShadowingPage() {
       if (response.ok) {
         const data = await response.json();
         setCurrentSession(data.session);
+        
+         // 更新当前items状态
+         setItems(prev => prev.map(item => 
+           item.id === currentItem.id 
+             ? { ...item, status: 'draft' }
+             : item
+         ));
+        
         alert('草稿已保存');
       }
     } catch (error) {
@@ -689,6 +888,23 @@ export default function ShadowingPage() {
             : item
         ));
         
+         // 更新当前items状态
+         setItems(prev => prev.map(item => 
+           item.id === currentItem.id 
+             ? { 
+                 ...item, 
+                 isPracticed: true,
+                 stats: {
+                   ...item.stats,
+                   recordingCount: currentRecordings.length,
+                   vocabCount: selectedWords.length,
+                   practiceTime,
+                   lastPracticed: new Date().toISOString()
+                 }
+               }
+             : item
+         ));
+        
         alert('练习完成并保存！');
       }
     } catch (error) {
@@ -716,6 +932,7 @@ export default function ShadowingPage() {
               ...prev,
               [word]: entry.explanation
             }));
+            console.log(`从单词本找到解释: ${word}`, entry.explanation);
             return true;
           }
         }
@@ -725,6 +942,26 @@ export default function ShadowingPage() {
     }
     return false;
   };
+
+  // 调试函数：查看单词本数据
+  const debugVocabData = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/debug/vocab', { headers });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('单词本数据:', data);
+        console.log('中秋节相关条目:', data.entries.filter((entry: {term: string}) => entry.term.includes('中秋')));
+        alert(`单词本中有 ${data.entries.length} 个条目`);
+      } else {
+        console.error('获取单词本数据失败:', response.status);
+      }
+    } catch (error) {
+      console.error('调试单词本数据失败:', error);
+    }
+  };
+
+
 
   // 生成AI解释
   const generateWordExplanation = async (word: string, context: string, wordLang: string) => {
@@ -1129,7 +1366,19 @@ export default function ShadowingPage() {
             <Card className="h-full flex flex-col">
               {/* 标题和折叠按钮 */}
               <div className="p-4 border-b flex items-center justify-between">
-                {!sidebarCollapsed && <h3 className="font-semibold">Shadowing 题库</h3>}
+        <div className="flex items-center gap-2">
+                  {!sidebarCollapsed && <h3 className="font-semibold">Shadowing 题库</h3>}
+                   {!sidebarCollapsed && (
+                     <button 
+                       onClick={() => fetchItems()}
+                       className="text-blue-500 hover:text-blue-700 p-1"
+                       title="刷新题库"
+                       disabled={loading}
+                     >
+                       🔄
+                     </button>
+                   )}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1251,7 +1500,7 @@ export default function ShadowingPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          草稿 {filteredItems.filter(item => item.status === 'draft' && !item.isPracticed).length}
+                          草稿中 {filteredItems.filter(item => item.status === 'draft' && !item.isPracticed).length}
                         </span>
                         <span className="flex items-center gap-1">
                           <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
@@ -1313,7 +1562,7 @@ export default function ShadowingPage() {
                                   )}
                                   {item.status === 'draft' && !item.isPracticed && (
                                     <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                      草稿
+                                      草稿中
                                     </span>
                                   )}
                                 </div>
@@ -1424,6 +1673,13 @@ export default function ShadowingPage() {
                         <CheckCircle className="w-4 h-4 mr-1" />
                         {saving ? '保存中...' : '完成并保存'}
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={debugVocabData}
+                      >
+                        调试单词本
+                      </Button>
             </div>
           </div>
           
@@ -1454,10 +1710,96 @@ export default function ShadowingPage() {
                         className="text-lg leading-relaxed"
               />
             ) : (
-                      <p className="whitespace-pre-wrap text-lg leading-relaxed">
-                        {currentItem.text}
-                      </p>
-            )}
+              <div className="text-lg leading-relaxed">
+                {(() => {
+                  // 获取所有已选择的生词（包括之前的和本次的）
+                  const allSelectedWords = [...previousWords, ...selectedWords];
+                  const selectedWordSet = new Set(allSelectedWords.map(item => item.word));
+                  
+                  // 检查是否为中文文本
+                  const isChinese = /[\u4e00-\u9fff]/.test(currentItem.text);
+                  
+                  if (isChinese) {
+                    // 中文处理：按字符分割，但需要检查连续字符是否组成已选择的生词
+                    const chars = currentItem.text.split('');
+                    const result = [];
+                    
+                    for (let i = 0; i < chars.length; i++) {
+                      let isHighlighted = false;
+                      let highlightLength = 0;
+                      
+                      // 检查从当前位置开始的多个字符是否组成已选择的生词
+                      for (const selectedWord of allSelectedWords) {
+                        if (i + selectedWord.word.length <= chars.length) {
+                          const substring = chars.slice(i, i + selectedWord.word.length).join('');
+                          if (substring === selectedWord.word) {
+                            isHighlighted = true;
+                            highlightLength = selectedWord.word.length;
+                            break;
+                          }
+                        }
+                      }
+                      
+                      if (isHighlighted && highlightLength > 0) {
+                        // 高亮显示整个生词
+                        const word = chars.slice(i, i + highlightLength).join('');
+                        const wordData = allSelectedWords.find(item => item.word === word);
+                        const explanation = wordData?.explanation;
+                        
+                        result.push(
+                          <HoverExplanation 
+                            key={i}
+                            word={word}
+                            explanation={explanation}
+                          >
+                            {word}
+                          </HoverExplanation>
+                        );
+                        i += highlightLength - 1; // 跳过已处理的字符
+                      } else {
+                        // 普通字符
+                        result.push(
+                          <span key={i}>
+                            {chars[i]}
+                          </span>
+                        );
+                      }
+                    }
+                    
+                    return result;
+                  } else {
+                    // 英文处理：按单词分割
+                    const words = currentItem.text.split(/(\s+|[。！？、，.!?,])/);
+                    
+                    return words.map((word, index) => {
+                      const cleanWord = word.replace(/[。！？、，.!?,\s]/g, '');
+                      const isSelected = cleanWord && selectedWordSet.has(cleanWord);
+                      
+                      if (isSelected) {
+                        const wordData = allSelectedWords.find(item => item.word === cleanWord);
+                        const explanation = wordData?.explanation;
+                        
+                        return (
+                          <HoverExplanation 
+                            key={index}
+                            word={word}
+                            explanation={explanation}
+                          >
+                            {word}
+                          </HoverExplanation>
+                        );
+                      } else {
+                        return (
+                          <span key={index}>
+                            {word}
+                          </span>
+                        );
+                      }
+                    });
+                  }
+                })()}
+            </div>
+          )}
           </div>
           
           {/* 音频播放器 */}
@@ -1492,11 +1834,11 @@ export default function ShadowingPage() {
                             <div className="flex-1">
                               <div className="font-medium text-gray-700">{item.word}</div>
                               <div className="text-sm text-gray-600 mt-1">{item.context}</div>
-                            </div>
+                    </div>
                             <div className="flex items-center gap-2">
                               <div className="text-xs text-gray-500">
                                 已导入
-                              </div>
+                    </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -1505,29 +1847,19 @@ export default function ShadowingPage() {
                               >
                                 删除
                               </Button>
-                            </div>
-                          </div>
+                  </div>
+              </div>
                           
                           {/* AI解释显示 */}
-                          {item.explanation && (
-                            <div className="mt-3 p-3 bg-white rounded border border-gray-100">
-                              <div className="text-sm text-gray-700 mb-2">
-                                <strong>解释：</strong>{item.explanation.gloss_native}
-                    </div>
-                              {item.explanation.senses && (item.explanation.senses as Array<{example_target: string; example_native: string}>).length > 0 && (
-                                <div className="text-sm text-gray-600">
-                                  <strong>例句：</strong>
-                                  <div className="mt-1">
-                                    <div className="font-medium">{item.explanation.senses?.[0]?.example_target}</div>
-                                    <div className="text-gray-500">{item.explanation.senses?.[0]?.example_native}</div>
-                    </div>
-                  </div>
-                              )}
-            </div>
-          )}
+                          <div className="mt-3 p-3 bg-white rounded border border-gray-100">
+                            <DynamicExplanation 
+                              word={item.word}
+                              fallbackExplanation={item.explanation}
+                            />
+                </div>
                 </div>
                       ))}
-                </div>
+              </div>
                   </Card>
       )}
 
@@ -1588,25 +1920,10 @@ export default function ShadowingPage() {
                           {/* AI解释显示 */}
                           {(item.explanation || wordExplanations[item.word]) && (
                             <div className="mt-3 p-3 bg-white rounded border border-blue-100">
-                              {(() => {
-                                const explanation = item.explanation || wordExplanations[item.word];
-                                return (
-                                  <>
-                                    <div className="text-sm text-gray-700 mb-2">
-                                      <strong>解释：</strong>{explanation.gloss_native}
-                                    </div>
-                                    {explanation.senses && (explanation.senses as Array<{example_target: string; example_native: string}>).length > 0 && (
-                                      <div className="text-sm text-gray-600">
-                                        <strong>例句：</strong>
-                                        <div className="mt-1">
-                                          <div className="font-medium">{explanation.senses?.[0]?.example_target}</div>
-                                          <div className="text-gray-500">{explanation.senses?.[0]?.example_native}</div>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </>
-                                );
-                              })()}
+                              <DynamicExplanation 
+                                word={item.word}
+                                fallbackExplanation={item.explanation || wordExplanations[item.word]}
+                              />
                             </div>
                           )}
               </div>
@@ -1725,52 +2042,106 @@ export default function ShadowingPage() {
                               <div className="text-sm text-blue-600 mb-2">详细分析</div>
                               <div className="text-sm text-gray-700">
                                 {(() => {
-                                  // 将原文和转录文本按单词分割
-                                  const originalWords = scoringResult.originalText.split(/\s+/);
-                                  const transcribedWords = scoringResult.transcription.split(/\s+/);
+                                  // 处理中文文本，按字符分割而不是按单词分割
+                                  const isChinese = /[\u4e00-\u9fff]/.test(scoringResult.originalText);
                                   
-                                  // 找出不匹配的单词索引
-                                  const mismatchedIndices = new Set<number>();
-                                  const maxLength = Math.max(originalWords.length, transcribedWords.length);
-                                  
-                                  for (let i = 0; i < maxLength; i++) {
-                                    const origWord = (originalWords[i] || '').toLowerCase().replace(/[.!?,\s]/g, '');
-                                    const transWord = (transcribedWords[i] || '').toLowerCase().replace(/[.!?,\s]/g, '');
+                                  if (isChinese) {
+                                    // 中文处理：按字符分割，但需要忽略标点符号和空格
+                                    const originalText = scoringResult.originalText.replace(/[。！？、，\s]/g, '');
+                                    const transcribedText = scoringResult.transcription.replace(/[。！？、，\s]/g, '');
                                     
-                                    if (origWord !== transWord) {
-                                      mismatchedIndices.add(i);
+                                    const originalChars = originalText.split('');
+                                    const transcribedChars = transcribedText.split('');
+                                    
+                                    // 找出不匹配的字符索引
+                                    const mismatchedIndices = new Set<number>();
+                                    const maxLength = Math.max(originalChars.length, transcribedChars.length);
+                                    
+                                    for (let i = 0; i < maxLength; i++) {
+                                      const origChar = originalChars[i] || '';
+                                      const transChar = transcribedChars[i] || '';
+                                      
+                                      if (origChar !== transChar) {
+                                        mismatchedIndices.add(i);
+                                      }
                                     }
-                                  }
-                                  
-                                  if (mismatchedIndices.size === 0) {
-                                    return <span className="text-green-600">✓ 完全匹配！</span>;
-                                  } else {
-                                    return (
-                                      <div>
-                                        <div className="text-red-600 mb-2">不匹配的单词（红色标记）：</div>
-                                        <div className="p-3 bg-white rounded border text-sm leading-relaxed">
-                                          {originalWords.map((word, index) => {
-                                            const isMismatched = mismatchedIndices.has(index);
-                                            const transcribedWord = transcribedWords[index] || '';
-                                            
-                                            return (
-                                              <span key={index}>
+                                    
+                                    if (mismatchedIndices.size === 0) {
+                                      return <span className="text-green-600">✓ 完全匹配！</span>;
+                                    } else {
+                                      return (
+                                        <div>
+                                          <div className="text-red-600 mb-2">不匹配的字符（红色标记）：</div>
+                                          <div className="p-3 bg-white rounded border text-sm leading-relaxed">
+                                            {originalChars.map((char, index) => {
+                                              const isMismatched = mismatchedIndices.has(index);
+                                              const transcribedChar = transcribedChars[index] || '';
+                                              
+                                              return (
                                                 <span 
+                                                  key={index}
                                                   className={isMismatched ? 'bg-red-200 text-red-800 px-1 rounded' : ''}
-                                                  title={isMismatched ? `你说成了: "${transcribedWord}"` : ''}
+                                                  title={isMismatched ? `你说成了: "${transcribedChar}"` : ''}
                                                 >
-                                                  {word}
+                                                  {char}
                                                 </span>
-                                                {index < originalWords.length - 1 && ' '}
-                                              </span>
-                                            );
-                                          })}
+                                              );
+                                            })}
+                                          </div>
+                                          <div className="mt-2 text-xs text-gray-600">
+                                            红色标记的字符与你的发音不匹配，鼠标悬停可查看你说的内容
+                                          </div>
                                         </div>
-                                        <div className="mt-2 text-xs text-gray-600">
-                                          红色标记的单词与你的发音不匹配，鼠标悬停可查看你说的内容
+                                      );
+                                    }
+                                  } else {
+                                    // 英文处理：按单词分割
+                                    const originalWords = scoringResult.originalText.split(/\s+/);
+                                    const transcribedWords = scoringResult.transcription.split(/\s+/);
+                                    
+                                    // 找出不匹配的单词索引
+                                    const mismatchedIndices = new Set<number>();
+                                    const maxLength = Math.max(originalWords.length, transcribedWords.length);
+                                    
+                                    for (let i = 0; i < maxLength; i++) {
+                                      const origWord = (originalWords[i] || '').toLowerCase().replace(/[.!?,\s]/g, '');
+                                      const transWord = (transcribedWords[i] || '').toLowerCase().replace(/[.!?,\s]/g, '');
+                                      
+                                      if (origWord !== transWord) {
+                                        mismatchedIndices.add(i);
+                                      }
+                                    }
+                                    
+                                    if (mismatchedIndices.size === 0) {
+                                      return <span className="text-green-600">✓ 完全匹配！</span>;
+                                    } else {
+                                      return (
+                                        <div>
+                                          <div className="text-red-600 mb-2">不匹配的单词（红色标记）：</div>
+                                          <div className="p-3 bg-white rounded border text-sm leading-relaxed">
+                                            {originalWords.map((word, index) => {
+                                              const isMismatched = mismatchedIndices.has(index);
+                                              const transcribedWord = transcribedWords[index] || '';
+                                              
+                                              return (
+                                                <span key={index}>
+                                                  <span 
+                                                    className={isMismatched ? 'bg-red-200 text-red-800 px-1 rounded' : ''}
+                                                    title={isMismatched ? `你说成了: "${transcribedWord}"` : ''}
+                                                  >
+                                                    {word}
+                                                  </span>
+                                                  {index < originalWords.length - 1 && ' '}
+                                                </span>
+                                              );
+                                            })}
+                                          </div>
+                                          <div className="mt-2 text-xs text-gray-600">
+                                            红色标记的单词与你的发音不匹配，鼠标悬停可查看你说的内容
+                                          </div>
                                         </div>
-                                      </div>
-                                    );
+                                      );
+                                    }
                                   }
                                 })()}
                               </div>
