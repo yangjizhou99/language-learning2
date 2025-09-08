@@ -40,6 +40,10 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
     title: "系统",
     items: [
       { href: "/admin/setup", label: "系统设置", icon: "⚙️" },
+      { href: "/admin/performance", label: "性能监控", icon: "📊" },
+      { href: "/admin/performance-test", label: "性能测试", icon: "🧪" },
+      { href: "/admin/performance-optimization", label: "性能优化", icon: "🚀" },
+      { href: "/admin/advanced-optimization", label: "高级优化", icon: "⚡" },
       { href: "/admin/drafts/simple", label: "草稿箱（简）", icon: "🧪", hidden: !showDebug },
       { href: "/admin/drafts/test-fix", label: "草稿诊断", icon: "🔧", hidden: !showDebug },
     ],

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabaseAdmin";
+import { CacheManager } from "@/lib/cache";
 
 export async function GET(req: NextRequest) {
 	try {
@@ -28,44 +29,61 @@ export async function GET(req: NextRequest) {
 			}, { status: 500 });
 		}
 
-		// 使用服务端密钥客户端以绕过 RLS（只读查询）
-		const supabase = getServiceSupabase();
-
-		// 查询题库
-		const { data: items, error } = await supabase
-			.from("shadowing_items")
-			.select("*")
-			.eq("lang", lang)
-			.eq("level", level)
-			.order("created_at", { ascending: false })
-			.limit(10);
-
-		if (error) {
-			return NextResponse.json({ error: "查询题库失败", code: "DB_QUERY_FAILED" }, { status: 500 });
+		// 生成缓存键
+		const cacheKey = CacheManager.generateKey("shadowing:next", { lang, level });
+		
+		// 尝试从缓存获取
+		const cached = await CacheManager.get(cacheKey);
+		if (cached) {
+			return NextResponse.json(cached);
 		}
 
-		if (!items || items.length === 0) {
-			return NextResponse.json({ error: "该等级暂无题目", code: "NO_ITEMS" }, { status: 404 });
-		}
+		// 使用请求去重防止并发请求
+		const result = await CacheManager.dedupe(cacheKey, async () => {
+			// 使用服务端密钥客户端以绕过 RLS（只读查询）
+			const supabase = getServiceSupabase();
 
-		// 随机选择一道题
-		const randomIndex = Math.floor(Math.random() * items.length);
-		const selectedItem = items[randomIndex];
+			// 查询题库
+			const { data: items, error } = await supabase
+				.from("shadowing_items")
+				.select("*")
+				.eq("lang", lang)
+				.eq("level", level)
+				.order("created_at", { ascending: false })
+				.limit(10);
 
-		return NextResponse.json({
-			item: {
-				id: selectedItem.id,
-				title: selectedItem.title,
-				text: selectedItem.text,
-				audio_url: selectedItem.audio_url,
-				level: selectedItem.level,
-				lang: selectedItem.lang,
-				duration_ms: selectedItem.duration_ms,
-				tokens: selectedItem.tokens,
-				cefr: selectedItem.cefr,
-				meta: selectedItem.meta
+			if (error) {
+				throw new Error(`查询题库失败: ${error.message}`);
 			}
+
+			if (!items || items.length === 0) {
+				throw new Error("该等级暂无题目");
+			}
+
+			// 随机选择一道题
+			const randomIndex = Math.floor(Math.random() * items.length);
+			const selectedItem = items[randomIndex];
+
+			return {
+				item: {
+					id: selectedItem.id,
+					title: selectedItem.title,
+					text: selectedItem.text,
+					audio_url: selectedItem.audio_url,
+					level: selectedItem.level,
+					lang: selectedItem.lang,
+					duration_ms: selectedItem.duration_ms,
+					tokens: selectedItem.tokens,
+					cefr: selectedItem.cefr,
+					meta: selectedItem.meta
+				}
+			};
 		});
+
+		// 缓存结果（5分钟）
+		await CacheManager.set(cacheKey, result, 300);
+
+		return NextResponse.json(result);
 
 	} catch (e) {
 		return NextResponse.json({ error: "服务器错误", code: "UNEXPECTED", detail: e instanceof Error ? e.message : String(e) }, { status: 500 });
