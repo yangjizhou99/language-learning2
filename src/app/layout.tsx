@@ -4,6 +4,7 @@ import "./globals.css";
 import AuthGate from "@/components/AuthGate";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,11 +29,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-dvh bg-background text-foreground font-sans`}>
-        <ThemeProvider>
-          <AuthGate />
-          {children}
-          <Toaster richColors position="top-center" />
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <AuthGate />
+            {children}
+            <Toaster richColors position="top-center" />
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

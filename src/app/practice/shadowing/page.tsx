@@ -7,6 +7,9 @@ import { Container } from "@/components/Container";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import SelectablePassage from "@/components/SelectablePassage";
 import { supabase } from "@/lib/supabase";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { LANG_LABEL } from "@/types/lang";
+import type { Translations } from "@/lib/i18n";
 
 // Web Speech 类型定义，避免 any
 interface WebSpeechRecognitionEvent extends Event {
@@ -48,15 +51,17 @@ type ShadowingData = {
 function LevelPicker({ 
   value, 
   onChange, 
-  recommended 
+  recommended,
+  t
 }: { 
   value: number; 
   onChange: (level: number) => void; 
-  recommended: number | null; 
+  recommended: number | null;
+  t: Translations;
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm font-medium">难度等级：</span>
+      <span className="text-sm font-medium">{t.shadowing.difficulty_level}</span>
       {[1, 2, 3, 4, 5].map(l => (
         <button
           key={l}
@@ -70,7 +75,7 @@ function LevelPicker({
           L{l}
           {recommended === l && (
             <span className="ml-1 text-xs px-1 rounded bg-amber-200 text-amber-900">
-              推荐
+              {t.shadowing.recommended}
             </span>
           )}
         </button>
@@ -80,6 +85,7 @@ function LevelPicker({
 }
 
 export default function ShadowingPage() {
+  const t = useTranslation();
   const [lang, setLang] = useState<"ja"|"en"|"zh">("ja");
   const [level, setLevel] = useState(2);
   const [recommendedLevel, setRecommendedLevel] = useState<number | null>(null);
@@ -134,7 +140,7 @@ export default function ShadowingPage() {
           }
         }
       } catch (error) {
-        console.error("获取推荐等级失败:", error);
+        console.error("Failed to get recommended level:", error);
       }
     };
 
@@ -158,14 +164,14 @@ export default function ShadowingPage() {
       const response = await fetch(`/api/shadowing/next?lang=${lang}&level=${level}`);
       if (!response.ok) {
         const errorData = await response.json();
-        setErr(errorData.error || "获取题目失败");
+        setErr(errorData.error || t.common.error);
         return;
       }
       
       const result = await response.json();
       setData(result.item);
     } catch (error) {
-      setErr(error instanceof Error ? error.message : "网络错误");
+      setErr(error instanceof Error ? error.message : t.common.error);
     } finally {
       setLoading(false);
     }
@@ -205,7 +211,7 @@ export default function ShadowingPage() {
       
     } catch (error) {
       console.error("录音失败:", error);
-      setErr("无法访问麦克风，请检查权限设置");
+      setErr("Cannot access microphone, please check permissions");
     }
   };
 
@@ -215,7 +221,7 @@ export default function ShadowingPage() {
       // 检查浏览器支持
       const SR = (window as unknown as WindowWithSpeech).SpeechRecognition || (window as unknown as WindowWithSpeech).webkitSpeechRecognition;
       if (!SR) {
-        setRecognitionError("当前浏览器不支持语音识别");
+        setRecognitionError("Speech recognition not supported in current browser");
         return;
       }
 
@@ -310,10 +316,10 @@ export default function ShadowingPage() {
         // 生成真实的逐句分析
         generateRealSentenceAnalysis(data.text, recognizedText);
       } else {
-        setErr("评分失败，请重试");
+        setErr("Scoring failed, please try again");
       }
     } catch (error) {
-      setErr("评分出错：" + String(error));
+      setErr("Scoring error: " + String(error));
     } finally {
       setIsScoring(false);
     }
@@ -494,11 +500,11 @@ export default function ShadowingPage() {
 
   // 获取评分等级
   const getScoreLevel = (score: number) => {
-    if (score >= 0.9) return { level: "优秀", color: "text-green-600", bg: "bg-green-50", border: "border-green-200" };
-    if (score >= 0.8) return { level: "良好", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" };
-    if (score >= 0.7) return { level: "中等", color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" };
-    if (score >= 0.6) return { level: "及格", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" };
-    return { level: "需改进", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
+    if (score >= 0.9) return { level: t.shadowing.score_excellent, color: "text-green-600", bg: "bg-green-50", border: "border-green-200" };
+    if (score >= 0.8) return { level: t.shadowing.score_good, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" };
+    if (score >= 0.7) return { level: t.shadowing.score_average, color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" };
+    if (score >= 0.6) return { level: t.shadowing.score_pass, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" };
+    return { level: t.shadowing.score_needs_improvement, color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
   };
 
   // 处理生词选择
@@ -551,15 +557,15 @@ export default function ShadowingPage() {
 
       if (response.ok) {
         setSelectedWords([]);
-        alert(`成功导入 ${entries.length} 个生词到生词本！`);
+        alert(t.shadowing.import_success.replace('{count}', entries.length.toString()));
       } else {
         const errorData = await response.json();
         console.error('导入失败详情:', errorData);
-        alert(`导入失败：${errorData.error}${errorData.details ? '\n详情：' + errorData.details : ''}`);
+        alert(t.shadowing.import_failed.replace('{error}', errorData.error + (errorData.details ? '\n' + errorData.details : '')));
       }
     } catch (error) {
       console.error('导入生词失败:', error);
-      alert('导入失败，请重试');
+      alert(t.shadowing.import_failed.replace('{error}', ''));
     } finally {
       setIsImporting(false);
     }
@@ -568,19 +574,19 @@ export default function ShadowingPage() {
   return (
     <main className="p-6">
       <Container>
-      <Breadcrumbs items={[{ href: "/", label: "首页" }, { label: "Shadowing 跟读练习" }]} />
+      <Breadcrumbs items={[{ href: "/", label: t.nav.home }, { label: t.shadowing.title }]} />
       <div className="max-w-4xl mx-auto space-y-5">
-      <h1 className="text-2xl font-semibold">Shadowing 跟读练习（真实语音识别）</h1>
+      <h1 className="text-2xl font-semibold">{t.shadowing.title}{t.shadowing.real_speech_recognition}</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <div className="flex items-center gap-2">
-          <Label className="w-24">语言</Label>
+          <Label className="w-24">{t.common.language}</Label>
           <Select value={lang} onValueChange={(v: "ja"|"en"|"zh")=> setLang(v)}>
-            <SelectTrigger className="w-40"><SelectValue placeholder="选择语言" /></SelectTrigger>
+            <SelectTrigger className="w-40"><SelectValue placeholder={t.common.language} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="ja">日语</SelectItem>
-              <SelectItem value="en">英语</SelectItem>
-              <SelectItem value="zh">中文</SelectItem>
+              <SelectItem value="ja">{LANG_LABEL.ja}</SelectItem>
+              <SelectItem value="en">{LANG_LABEL.en}</SelectItem>
+              <SelectItem value="zh">{LANG_LABEL.zh}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -591,32 +597,33 @@ export default function ShadowingPage() {
         <LevelPicker 
           value={level} 
           onChange={setLevel} 
-          recommended={recommendedLevel} 
+          recommended={recommendedLevel}
+          t={t}
         />
         {recommendedLevel !== null && recommendedLevel !== level && (
           <div className="mt-2 text-sm text-amber-600">
-            建议选择 L{recommendedLevel} 等级进行练习
+            {t.shadowing.recommend_level.replace('{level}', recommendedLevel.toString())}
           </div>
         )}
         
         {/* 生成题库链接 */}
         <div className="mt-4 pt-4 border-t">
           <div className="text-sm text-muted-foreground mb-2">
-            需要更多练习内容？
+            {t.shadowing.need_more_content}
           </div>
           <a href="/admin/shadowing/ai" className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm">
-            <span>🤖 AI 生成题库</span>
+            <span>{t.shadowing.ai_generate_bank}</span>
             <span className="text-xs opacity-80">→</span>
           </a>
           <div className="text-xs text-muted-foreground mt-1">
-            使用 AI 生成更多适合你当前等级的练习内容
+            {t.shadowing.ai_generate_desc}
           </div>
         </div>
       </div>
 
       <div className="flex gap-2">
         <Button onClick={getNextQuestion} disabled={loading}>
-          {loading ? "加载中..." : "获取下一题"}
+          {loading ? t.shadowing.loading : t.shadowing.get_next_question}
         </Button>
       </div>
 
@@ -628,7 +635,7 @@ export default function ShadowingPage() {
             <div className="text-sm text-muted-foreground">
               标题：{data.title} · 语言：{data.lang} · 等级：L{data.level}
             </div>
-            <Button variant="link" className="px-0" onClick={getNextQuestion}>换一题</Button>
+            <Button variant="link" className="px-0" onClick={getNextQuestion}>{t.shadowing.change_question}</Button>
           </div>
           
           {/* 生词选择模式切换 */}
@@ -638,10 +645,10 @@ export default function ShadowingPage() {
               size="sm"
               onClick={() => setIsVocabMode(!isVocabMode)}
             >
-              {isVocabMode ? "退出选词模式" : "开启选词模式"}
+              {isVocabMode ? t.shadowing.vocab_mode_on : t.shadowing.vocab_mode_off}
             </Button>
             <span className="text-sm text-blue-700">
-              {isVocabMode ? "点击或拖拽选择生词" : "点击开启生词选择功能"}
+              {isVocabMode ? t.shadowing.vocab_mode_desc_on : t.shadowing.vocab_mode_desc_off}
             </span>
           </div>
 
@@ -662,17 +669,17 @@ export default function ShadowingPage() {
           
           {/* 音频播放器 */}
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">原音频：</span>
+            <span className="text-sm font-medium">{t.shadowing.original_audio}</span>
             <audio controls src={data.audio_url} className="flex-1" />
           </div>
           
           {/* 录音控制 */}
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">跟读录音：</span>
+            <span className="text-sm font-medium">{t.shadowing.follow_recording}</span>
             {!isRecording ? (
-              <Button variant="destructive" onClick={startRecording}>开始录音</Button>
+              <Button variant="destructive" onClick={startRecording}>{t.shadowing.start_recording}</Button>
             ) : (
-              <Button variant="secondary" onClick={stopRecording}>停止录音 ({formatTime(recordingTime)})</Button>
+              <Button variant="secondary" onClick={stopRecording}>{t.shadowing.stop_recording} ({formatTime(recordingTime)})</Button>
             )}
           </div>
           
@@ -681,7 +688,7 @@ export default function ShadowingPage() {
             <div className="p-3 rounded border bg-blue-50 border-blue-200">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-                <span className="text-sm text-blue-700">正在识别语音...</span>
+                <span className="text-sm text-blue-700">{t.shadowing.recognizing_speech}</span>
               </div>
             </div>
           )}
@@ -689,7 +696,7 @@ export default function ShadowingPage() {
           {/* 识别结果显示 */}
           {recognizedText && (
             <div className="p-3 rounded border bg-green-50 border-green-200">
-              <div className="text-sm font-medium text-green-700 mb-2">🎤 语音识别结果：</div>
+              <div className="text-sm font-medium text-green-700 mb-2">{t.shadowing.recognition_result}</div>
               <div className="text-sm text-green-600 whitespace-pre-wrap">{recognizedText}</div>
             </div>
           )}
@@ -704,10 +711,10 @@ export default function ShadowingPage() {
           {/* 录音播放器 */}
           {audioUrl && (
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium">你的录音：</span>
+              <span className="text-sm font-medium">{t.shadowing.your_recording}</span>
               <audio controls src={audioUrl} className="flex-1" />
               <Button onClick={evaluateRecording} disabled={isScoring}>
-                {isScoring ? "评分中..." : "开始评分"}
+                {isScoring ? t.shadowing.scoring : t.shadowing.start_scoring}
               </Button>
             </div>
           )}
@@ -718,23 +725,23 @@ export default function ShadowingPage() {
           {/* 逐句逐字比对（去标点） */}
           {diffRows.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-lg font-medium mb-3">🔤 逐句逐字比对（识别不含标点）</h3>
+              <h3 className="text-lg font-medium mb-3">{t.shadowing.word_by_word_comparison}</h3>
               <div className="space-y-3">
                 {diffRows.map((row, i) => (
                   <div key={i} className="p-3 rounded border">
-                    <div className="text-xs text-gray-500 mb-1">原文</div>
+                    <div className="text-xs text-gray-500 mb-1">{t.shadowing.original_text}</div>
                     <div className="text-sm flex flex-wrap gap-1">
                       {row.refTokens.map((t, idx) => (
                         <span key={idx} className={row.refFlags[idx] ? "text-emerald-700" : "text-red-600"}>{t}</span>
                       ))}
                     </div>
-                    <div className="text-xs text-gray-500 mt-2 mb-1">识别</div>
+                    <div className="text-xs text-gray-500 mt-2 mb-1">{t.shadowing.recognized}</div>
                     <div className="text-sm flex flex-wrap gap-1">
                       {row.hypTokens.map((t, idx) => (
                         <span key={idx} className={row.hypFlags[idx] ? "text-emerald-700" : "text-red-600"}>{t}</span>
                       ))}
                     </div>
-                    <div className="text-xs text-gray-500 mt-2">准确度：{Math.round(row.accuracy * 100)}%</div>
+                    <div className="text-xs text-gray-500 mt-2">{t.shadowing.accuracy}{Math.round(row.accuracy * 100)}%</div>
                   </div>
                 ))}
               </div>
@@ -761,21 +768,21 @@ export default function ShadowingPage() {
       {selectedWords.length > 0 && (
         <section className="mt-6 p-4 rounded-2xl border bg-card text-card-foreground">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-medium">本次选中的生词 ({selectedWords.length})</h3>
+            <h3 className="text-lg font-medium">{t.shadowing.selected_words} ({selectedWords.length})</h3>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedWords([])}
               >
-                清空
+                {t.shadowing.clear}
               </Button>
               <Button
                 size="sm"
                 onClick={importToVocab}
                 disabled={isImporting}
               >
-                {isImporting ? "导入中..." : "导入到生词本"}
+                {isImporting ? t.shadowing.importing : t.shadowing.import_to_vocab}
               </Button>
             </div>
           </div>
@@ -793,7 +800,7 @@ export default function ShadowingPage() {
                   onClick={() => removeSelectedWord(index)}
                   className="text-red-500 hover:text-red-700"
                 >
-                  移除
+                  {t.shadowing.remove}
                 </Button>
               </div>
             ))}

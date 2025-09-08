@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import useIsAdmin from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useTranslation } from "@/contexts/LanguageContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +24,7 @@ import { toast } from "sonner";
 export default function TopNav() {
   const [email, setEmail] = useState<string|undefined>();
   const isAdmin = useIsAdmin();
+  const t = useTranslation();
 
   useEffect(() => {
     const checkSession = async () => {
@@ -58,11 +61,11 @@ export default function TopNav() {
       setEmail(undefined);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      toast.success("已登出");
+      toast.success(t.common.success);
       window.location.assign("/auth");
     } catch (error) {
       console.error('Logout error:', error);
-      toast.error("登出失败，已跳转登录页");
+      toast.error(`${t.common.error}: ${t.common.logout}`);
       window.location.assign("/auth");
     }
   };
@@ -72,22 +75,18 @@ export default function TopNav() {
       <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
         <Link href="/" className="font-semibold">Lang Trainer</Link>
         <div className="flex items-center gap-3">
-          <Link href="/practice/cloze">Cloze</Link>
-          {/* SFT 已移除 */}
-          <Link href="/practice/alignment">对齐练习</Link>
-          <Link href="/practice/wideread" prefetch={false}>广读</Link>
-          {/* 短语库已移除 */}
-          <Link href="/practice/shadowing" prefetch={false}>Shadowing</Link>
-          <Link href="/vocab">生词本</Link>
-          {/* 复盘已移除 */}
-          {/* 术语库已移除 */}
-          {/* 我的资料已移除 */}
-          {isAdmin && <Link href="/admin" className="text-orange-600">🛠️ 管理员</Link>}
+          <Link href="/practice/cloze">{t.nav.cloze}</Link>
+          <Link href="/practice/alignment">{t.nav.alignment_practice}</Link>
+          <Link href="/practice/wideread" prefetch={false}>{t.nav.wide_reading}</Link>
+          <Link href="/practice/shadowing" prefetch={false}>{t.nav.shadowing}</Link>
+          <Link href="/vocab">{t.nav.vocabulary}</Link>
+          {isAdmin && <Link href="/admin" className="text-orange-600">🛠️ {t.nav.admin}</Link>}
           <span className="mx-2 text-gray-400">|</span>
+          <LanguageToggle />
           <ThemeToggle />
           {!email ? (
             <Button asChild>
-              <Link href="/auth">登录 / 注册</Link>
+              <Link href="/auth">{t.common.login} / {t.common.register}</Link>
             </Button>
           ) : (
             <DropdownMenu>
@@ -102,31 +101,31 @@ export default function TopNav() {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium">已登录</span>
+                    <span className="text-sm font-medium">{t.common.logged_in}</span>
                     <span className="text-xs text-muted-foreground break-all">{email}</span>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {isAdmin && (
                   <DropdownMenuItem asChild>
-                    <Link href="/admin">进入后台</Link>
+                    <Link href="/admin">{t.common.enter_admin}</Link>
                   </DropdownMenuItem>
                 )}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>登出</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>{t.common.logout}</DropdownMenuItem>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>确认登出</DialogTitle>
-                      <DialogDescription>你将退出当前账号，是否继续？</DialogDescription>
+                      <DialogTitle>{t.common.confirm_logout}</DialogTitle>
+                      <DialogDescription>{t.common.confirm_logout_desc}</DialogDescription>
                     </DialogHeader>
                     <div className="mt-4 flex justify-end gap-2">
                       <DialogClose asChild>
-                        <Button variant="ghost">取消</Button>
+                        <Button variant="ghost">{t.common.cancel}</Button>
                       </DialogClose>
                       <DialogClose asChild>
-                        <Button variant="destructive" onClick={signOut}>确定登出</Button>
+                        <Button variant="destructive" onClick={signOut}>{t.common.confirm} {t.common.logout}</Button>
                       </DialogClose>
                     </div>
                   </DialogContent>
