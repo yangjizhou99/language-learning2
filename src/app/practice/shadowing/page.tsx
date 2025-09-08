@@ -87,15 +87,6 @@ interface AudioRecording {
   transcription?: string;
 }
 
-// 获取认证头部的辅助函数
-const getAuthHeaders = async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  const headers: HeadersInit = {};
-  if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`;
-  }
-  return headers;
-};
 
 export default function ShadowingPage() {
   const { t, language } = useLanguage();
@@ -629,9 +620,6 @@ export default function ShadowingPage() {
     
     setSaving(true);
     try {
-      const practiceTime = practiceStartTime ? 
-        Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000) : 0;
-
       const headers = await getAuthHeaders();
       const response = await fetch('/api/shadowing/session', {
         method: 'POST',
@@ -664,9 +652,6 @@ export default function ShadowingPage() {
     
     setSaving(true);
     try {
-      const practiceTime = practiceStartTime ? 
-        Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000) : 0;
-
       const headers = await getAuthHeaders();
       const response = await fetch('/api/shadowing/session', {
         method: 'POST',
@@ -685,6 +670,9 @@ export default function ShadowingPage() {
         setCurrentSession(data.session);
         
         // 更新题库列表中的状态
+        const practiceTime = practiceStartTime ? 
+          Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000) : 0;
+        
         setItems(prev => prev.map(item => 
           item.id === currentItem.id 
             ? { 
@@ -908,291 +896,20 @@ export default function ShadowingPage() {
     }
   };
 
-  // 智能分割文本函数
-  const smartSplitText = (text: string) => {
-    const segments = [text];
-    
-    // 按常见的日语连接词和短语分割
-    const splitPatterns = [
-      /(ねえ|はい|いいね|そう|うん|ええ|ああ)/g,  // 常见的对话开头词
-      /(はじめまして|よろしく|最近|仕事|ジョギング|週に|それは)/g,  // 常见短语
-      /(おはよう|こんにちは|こんばんは|おやすみ)/g,  // 问候语
-      /(起きた|眠かった|朝ご飯|朝ごはん|トースト|コーヒー)/g,  // 日常生活词汇
-      /(土曜日|日曜日|月曜日|火曜日|水曜日|木曜日|金曜日)/g,  // 星期
-      /(映画|本|勉強|仕事|学校|家|友達|家族)/g,  // 常见名词
-    ];
-    
-    // 尝试按模式分割
-    for (const pattern of splitPatterns) {
-      const newSegments = [];
-      for (const segment of segments) {
-        const matches = [...segment.matchAll(pattern)];
-        if (matches.length > 1) {
-          // 找到多个匹配，尝试分割
-          let lastIndex = 0;
-          for (let i = 0; i < matches.length; i++) {
-            const match = matches[i];
-            if (i > 0) {
-              const beforeMatch = segment.substring(lastIndex, match.index).trim();
-              if (beforeMatch.length > 5) {
-                newSegments.push(beforeMatch);
-              }
-            }
-            lastIndex = match.index;
-          }
-          const lastSegment = segment.substring(lastIndex).trim();
-          if (lastSegment.length > 5) {
-            newSegments.push(lastSegment);
-          }
-          if (newSegments.length > 1) {
-            segments.splice(0, segments.length, ...newSegments);
-            break;
-          }
-        }
-      }
-    }
-    
-    return segments.filter(s => s.length > 5);
-  };
 
-  // 逐句对比功能
-  const performSentenceComparison = async (originalText: string, transcribedText: string) => {
-    console.log('逐句对比 - 原文:', originalText);
-    console.log('逐句对比 - 转录:', transcribedText);
-    
-    // 改进的句子分割，考虑对话格式
-    const originalSentences = originalText
-      .split(/[。！？\n]/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
-    
-    // 对于转录文本，使用更智能的分割方法
-    let transcribedSentences = [];
-    
-    // 首先尝试按标点符号分割
-    transcribedSentences = transcribedText
-      .split(/[。！？\n]/)
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
-    
-    // 如果分割后只有一句但内容很长，尝试按关键词分割
-    if (transcribedSentences.length === 1 && transcribedSentences[0].length > 30) {
-      const longText = transcribedSentences[0];
-      console.log('长转录文本，尝试智能分割:', longText);
-      
-      // 尝试按常见的日语连接词和短语分割
-      const splitPatterns = [
-        /(ねえ|はい|いいね|そう|うん|ええ|ああ)/g,  // 常见的对话开头词
-        /(土曜日|日曜日|月曜日|火曜日|水曜日|木曜日|金曜日)/g,  // 星期
-        /(映画|本|勉強|仕事|学校|家|友達|家族)/g,  // 常见名词
-      ];
-      
-      // 特殊处理：如果文本以"ねえ"开头，先分割出第一句
-      if (longText.startsWith('ねえ')) {
-        // 尝试多种分割点
-        const splitPoints = [
-          '土曜日', 'はじめまして', '最近', '仕事', 'ジョギング', '週に', 'それは'
-        ];
-        
-        let bestSplitPoint = '';
-        let bestSplitIndex = -1;
-        
-        // 找到第一个出现的分割点
-        for (const point of splitPoints) {
-          const index = longText.indexOf(point);
-          if (index > 10 && index < longText.length - 10) { // 确保分割点不在开头或结尾
-            bestSplitPoint = point;
-            bestSplitIndex = index;
-            break;
-          }
-        }
-        
-        if (bestSplitIndex > 0) {
-          const firstSentence = longText.substring(0, bestSplitIndex).trim();
-          const remainingText = longText.substring(bestSplitIndex).trim();
-          console.log('特殊分割 - 第一句:', firstSentence);
-          console.log('特殊分割 - 剩余:', remainingText);
-          
-          // 对剩余文本进行更智能的分割
-          const remainingSegments = smartSplitText(remainingText);
-          
-          transcribedSentences = [firstSentence, ...remainingSegments.filter(s => s.length > 5)];
-          console.log('特殊分割结果:', transcribedSentences);
-        }
-      } else {
-        // 对于其他长文本，直接使用智能分割
-        console.log('非ねえ开头文本，使用智能分割');
-        const smartSegments = smartSplitText(longText);
-        if (smartSegments.length > 1) {
-          transcribedSentences = smartSegments;
-          console.log('智能分割结果:', transcribedSentences);
-        }
-      }
-      
-      let segments = [longText];
-      
-      // 尝试按模式分割
-      for (const pattern of splitPatterns) {
-        const newSegments = [];
-        for (const segment of segments) {
-          const matches = [...segment.matchAll(pattern)];
-          if (matches.length > 1) {
-            // 找到多个匹配，尝试分割
-            let lastIndex = 0;
-            for (let i = 0; i < matches.length; i++) {
-              const match = matches[i];
-              if (i > 0) {
-                const beforeMatch = segment.substring(lastIndex, match.index).trim();
-                if (beforeMatch.length > 5) {
-                  newSegments.push(beforeMatch);
-                }
-              }
-              lastIndex = match.index;
-            }
-            const lastSegment = segment.substring(lastIndex).trim();
-            if (lastSegment.length > 5) {
-              newSegments.push(lastSegment);
-            }
-            if (newSegments.length > 1) {
-              segments = newSegments;
-              break;
-            }
-          }
-        }
-      }
-      
-      // 如果智能分割成功，使用分割结果
-      if (segments.length > 1) {
-        transcribedSentences = segments.filter(s => s.length > 5);
-        console.log('智能分割结果:', transcribedSentences);
-      }
-    }
-    
-    console.log('原文句子数:', originalSentences.length);
-    console.log('转录句子数:', transcribedSentences.length);
-    console.log('原文句子:', originalSentences);
-    console.log('转录句子:', transcribedSentences);
-    
-    const comparison = [];
-    
-    // 如果转录内容很长（包含多句话），尝试分段匹配
-    if (transcribedSentences.length > 1) {
-      console.log('多句转录，开始分段匹配...');
-      
-      // 为每个转录句子找到最佳匹配的原文句子
-      const matches = [];
-      
-      for (let i = 0; i < transcribedSentences.length; i++) {
-        const transcribed = transcribedSentences[i];
-        console.log(`匹配第${i+1}句转录:`, transcribed);
-        
-        let bestMatch = { original: '', transcribed, accuracy: 0, originalIndex: -1 };
-        
-        // 在原文中寻找最佳匹配
-        for (let j = 0; j < originalSentences.length; j++) {
-          const original = originalSentences[j];
-          const accuracy = calculateSimilarity(original, transcribed);
-          console.log(`  与原文第${j+1}句对比:`, original, '准确率:', accuracy);
-          
-          if (accuracy > bestMatch.accuracy) {
-            bestMatch = { original, transcribed, accuracy, originalIndex: j };
-          }
-        }
-        
-        console.log(`第${i+1}句最佳匹配:`, bestMatch);
-        
-        // 如果找到合理匹配（准确率>5%），添加到匹配列表
-        if (bestMatch.accuracy > 0.05) {
-          matches.push({
-            original: bestMatch.original,
-            transcribed: bestMatch.transcribed,
-            accuracy: bestMatch.accuracy,
-            originalIndex: bestMatch.originalIndex,
-            transcribedIndex: i
-          });
-          console.log(`添加匹配结果:`, matches[matches.length - 1]);
-        }
-      }
-      
-      // 按原文顺序排序匹配结果
-      matches.sort((a, b) => a.originalIndex - b.originalIndex);
-      
-      // 添加到最终对比结果
-      for (const match of matches) {
-        comparison.push({
-          original: match.original,
-          transcribed: match.transcribed,
-          accuracy: match.accuracy
-        });
-      }
-      
-      console.log('按原文顺序的最终匹配结果:', comparison);
-      
-      // 如果转录内容很长但没有找到匹配，尝试整体匹配
-      if (comparison.length === 0) {
-        console.log('分段匹配失败，尝试整体匹配...');
-        const fullTranscription = transcribedSentences.join(' ');
-        let bestMatch = { original: '', transcribed: fullTranscription, accuracy: 0, originalIndex: -1 };
-        
-        for (let j = 0; j < originalSentences.length; j++) {
-          const original = originalSentences[j];
-          const accuracy = calculateSimilarity(original, fullTranscription);
-          if (accuracy > bestMatch.accuracy) {
-            bestMatch = { original, transcribed: fullTranscription, accuracy, originalIndex: j };
-          }
-        }
-        
-        if (bestMatch.accuracy > 0.05) {
-          comparison.push({
-            original: bestMatch.original,
-            transcribed: bestMatch.transcribed,
-            accuracy: bestMatch.accuracy
-          });
-        }
-      }
-    } else {
-      // 如果转录内容较短，尝试与整个原文进行匹配
-      const transcribed = transcribedSentences[0] || transcribedText;
-      let bestMatch = { original: '', transcribed, accuracy: 0, originalIndex: -1 };
-      
-      // 在原文中寻找最佳匹配
-      for (let j = 0; j < originalSentences.length; j++) {
-        const original = originalSentences[j];
-        const accuracy = calculateSimilarity(original, transcribed);
-        if (accuracy > bestMatch.accuracy) {
-          bestMatch = { original, transcribed, accuracy, originalIndex: j };
-        }
-      }
-      
-      // 如果找到合理匹配，添加到对比结果
-      if (bestMatch.accuracy > 0.05) {
-        comparison.push({
-          original: bestMatch.original,
-          transcribed: bestMatch.transcribed,
-          accuracy: bestMatch.accuracy
-        });
-      }
-    }
-    
-    // 如果没有找到任何匹配，显示转录内容与第一个原文句子的对比
-    if (comparison.length === 0 && transcribedSentences.length > 0) {
-      comparison.push({
-        original: originalSentences[0] || '无原文',
-        transcribed: transcribedSentences.join(' '),
-        accuracy: calculateSimilarity(originalSentences[0] || '', transcribedSentences.join(' '))
-      });
-    }
-    
-    console.log('对比结果:', comparison);
-    return comparison;
-  };
 
   // 计算文本相似度
   const calculateSimilarity = (text1: string, text2: string) => {
     if (!text1 || !text2) return 0;
     
-    // 预处理：去除标点符号和空格，转换为小写
-    const normalize = (text: string) => text.replace(/[。！？、，\s]/g, '').toLowerCase();
+    // 预处理：去除标点符号和空格，转换为小写，忽略大小写
+    const normalize = (text: string) => {
+      return text
+        .replace(/[。！？、，.!?,\s]/g, '') // 去除标点符号和空格
+        .toLowerCase() // 转换为小写
+        .trim();
+    };
+    
     const normalized1 = normalize(text1);
     const normalized2 = normalize(text2);
     
@@ -1206,25 +923,16 @@ export default function ShadowingPage() {
     
     const similarity = 1 - (distance / maxLength);
     
-    // 对于日语，考虑假名和汉字的相似性
-    // 如果包含相同的假名或汉字，给予额外加分
-    const hiragana1 = (normalized1.match(/[\u3040-\u309F]/g) || []) as string[];
-    const hiragana2 = (normalized2.match(/[\u3040-\u309F]/g) || []) as string[];
-    const katakana1 = (normalized1.match(/[\u30A0-\u30FF]/g) || []) as string[];
-    const katakana2 = (normalized2.match(/[\u30A0-\u30FF]/g) || []) as string[];
-    const kanji1 = (normalized1.match(/[\u4E00-\u9FAF]/g) || []) as string[];
-    const kanji2 = (normalized2.match(/[\u4E00-\u9FAF]/g) || []) as string[];
+    // 对于多语言，考虑字符相似性
+    // 如果包含相同的字符，给予额外加分
+    const chars1 = normalized1.split('');
+    const chars2 = normalized2.split('');
     
     // 计算字符重叠度
-    const hiraganaOverlap = hiragana1.filter(char => hiragana2.includes(char)).length;
-    const katakanaOverlap = katakana1.filter(char => katakana2.includes(char)).length;
-    const kanjiOverlap = kanji1.filter(char => kanji2.includes(char)).length;
+    const overlap = chars1.filter(char => chars2.includes(char)).length;
+    const totalChars = chars1.length + chars2.length;
     
-    const totalOverlap = hiraganaOverlap + katakanaOverlap + kanjiOverlap;
-    const totalChars = hiragana1.length + katakana1.length + kanji1.length + 
-                      hiragana2.length + katakana2.length + kanji2.length;
-    
-    const overlapBonus = totalChars > 0 ? (totalOverlap / totalChars) * 0.3 : 0;
+    const overlapBonus = totalChars > 0 ? (overlap / totalChars) * 0.2 : 0;
     
     return Math.min(1, similarity + overlapBonus);
   };
@@ -1998,7 +1706,7 @@ export default function ShadowingPage() {
                                 <div className="text-sm text-gray-500 mb-2">原文</div>
                                 <div className="p-3 bg-gray-50 rounded border text-sm">
                                   {scoringResult.originalText}
-                </div>
+                                </div>
                               </div>
                               <div>
                                 <div className="text-sm text-gray-500 mb-2">你的发音</div>
@@ -2011,9 +1719,65 @@ export default function ShadowingPage() {
                                 </div>
                               </div>
                             </div>
-                </div>
-              </div>
-            </div>
+                            
+                            {/* 详细对比分析 */}
+                            <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                              <div className="text-sm text-blue-600 mb-2">详细分析</div>
+                              <div className="text-sm text-gray-700">
+                                {(() => {
+                                  // 将原文和转录文本按单词分割
+                                  const originalWords = scoringResult.originalText.split(/\s+/);
+                                  const transcribedWords = scoringResult.transcription.split(/\s+/);
+                                  
+                                  // 找出不匹配的单词索引
+                                  const mismatchedIndices = new Set<number>();
+                                  const maxLength = Math.max(originalWords.length, transcribedWords.length);
+                                  
+                                  for (let i = 0; i < maxLength; i++) {
+                                    const origWord = (originalWords[i] || '').toLowerCase().replace(/[.!?,\s]/g, '');
+                                    const transWord = (transcribedWords[i] || '').toLowerCase().replace(/[.!?,\s]/g, '');
+                                    
+                                    if (origWord !== transWord) {
+                                      mismatchedIndices.add(i);
+                                    }
+                                  }
+                                  
+                                  if (mismatchedIndices.size === 0) {
+                                    return <span className="text-green-600">✓ 完全匹配！</span>;
+                                  } else {
+                                    return (
+                                      <div>
+                                        <div className="text-red-600 mb-2">不匹配的单词（红色标记）：</div>
+                                        <div className="p-3 bg-white rounded border text-sm leading-relaxed">
+                                          {originalWords.map((word, index) => {
+                                            const isMismatched = mismatchedIndices.has(index);
+                                            const transcribedWord = transcribedWords[index] || '';
+                                            
+                                            return (
+                                              <span key={index}>
+                                                <span 
+                                                  className={isMismatched ? 'bg-red-200 text-red-800 px-1 rounded' : ''}
+                                                  title={isMismatched ? `你说成了: "${transcribedWord}"` : ''}
+                                                >
+                                                  {word}
+                                                </span>
+                                                {index < originalWords.length - 1 && ' '}
+                                              </span>
+                                            );
+                                          })}
+                                        </div>
+                                        <div className="mt-2 text-xs text-gray-600">
+                                          红色标记的单词与你的发音不匹配，鼠标悬停可查看你说的内容
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )}
           
                     {!practiceComplete && (
