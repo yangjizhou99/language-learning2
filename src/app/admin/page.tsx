@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { Container } from "@/components/Container";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import PerformanceTestReminder from "@/components/PerformanceTestReminder";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -57,6 +58,9 @@ export default function AdminDashboard() {
         <h1 className="text-3xl font-semibold">管理员控制台</h1>
       </div>
 
+      {/* 性能测试提醒 */}
+      <PerformanceTestReminder />
+
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-white p-6 rounded-lg border shadow-sm">
@@ -100,6 +104,14 @@ export default function AdminDashboard() {
           <Link href="/admin/cloze/ai" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
             <h3 className="font-medium text-gray-900">🎯 Cloze 挖空练习</h3>
             <p className="text-sm text-gray-600 mt-1">AI生成、审核、发布挖空练习</p>
+          </Link>
+          <Link href="/admin/performance-test" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+            <h3 className="font-medium text-gray-900">🧪 性能测试</h3>
+            <p className="text-sm text-gray-600 mt-1">数据库、API、缓存性能测试</p>
+          </Link>
+          <Link href="/admin/performance" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+            <h3 className="font-medium text-gray-900">📊 性能监控</h3>
+            <p className="text-sm text-gray-600 mt-1">实时性能指标监控</p>
           </Link>
         </div>
       </div>

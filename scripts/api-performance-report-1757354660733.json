@@ -1,0 +1,125 @@
+{
+  "timestamp": "2025-09-08T18:04:20.731Z",
+  "config": {
+    "baseUrl": "http://localhost:3000",
+    "testRounds": 3,
+    "warmupRounds": 1,
+    "timeout": 10000
+  },
+  "results": [
+    {
+      "name": "Shadowing 下一题 API",
+      "path": "/api/shadowing/next?lang=en&level=2",
+      "avgTime": 228.53000000000011,
+      "minTime": 211.42330000000038,
+      "maxTime": 253.45710000000008,
+      "times": [
+        220.7095999999999,
+        211.42330000000038,
+        253.45710000000008
+      ],
+      "errors": [
+        "HTTP 500",
+        "HTTP 500",
+        "HTTP 500"
+      ],
+      "successRate": 100
+    },
+    {
+      "name": "Cloze 下一题 API",
+      "path": "/api/cloze/next?lang=en&level=2",
+      "avgTime": 130.4099333333332,
+      "minTime": 120.63049999999976,
+      "maxTime": 136.18759999999975,
+      "times": [
+        120.63049999999976,
+        136.18759999999975,
+        134.4117000000001
+      ],
+      "errors": [
+        "HTTP 401",
+        "HTTP 401",
+        "HTTP 401"
+      ],
+      "successRate": 100
+    },
+    {
+      "name": "Shadowing 目录 API",
+      "path": "/api/shadowing/catalog?lang=en&level=2",
+      "avgTime": 123.19669999999996,
+      "minTime": 118.24199999999973,
+      "maxTime": 125.91240000000016,
+      "times": [
+        118.24199999999973,
+        125.4357,
+        125.91240000000016
+      ],
+      "errors": [
+        "HTTP 401",
+        "HTTP 401",
+        "HTTP 401"
+      ],
+      "successRate": 100
+    },
+    {
+      "name": "词汇表 API",
+      "path": "/api/vocab/list?lang=en",
+      "avgTime": 123.07043333333331,
+      "minTime": 118.41489999999976,
+      "maxTime": 127.66820000000007,
+      "times": [
+        118.41489999999976,
+        123.1282000000001,
+        127.66820000000007
+      ],
+      "errors": [
+        "HTTP 401",
+        "HTTP 401",
+        "HTTP 401"
+      ],
+      "successRate": 100
+    }
+  ],
+  "summary": {
+    "totalTests": 4,
+    "avgOverallTime": 151.30176666666665,
+    "fastestApi": {
+      "name": "词汇表 API",
+      "path": "/api/vocab/list?lang=en",
+      "avgTime": 123.07043333333331,
+      "minTime": 118.41489999999976,
+      "maxTime": 127.66820000000007,
+      "times": [
+        118.41489999999976,
+        123.1282000000001,
+        127.66820000000007
+      ],
+      "errors": [
+        "HTTP 401",
+        "HTTP 401",
+        "HTTP 401"
+      ],
+      "successRate": 100
+    },
+    "slowestApi": {
+      "name": "Shadowing 下一题 API",
+      "path": "/api/shadowing/next?lang=en&level=2",
+      "avgTime": 228.53000000000011,
+      "minTime": 211.42330000000038,
+      "maxTime": 253.45710000000008,
+      "times": [
+        220.7095999999999,
+        211.42330000000038,
+        253.45710000000008
+      ],
+      "errors": [
+        "HTTP 500",
+        "HTTP 500",
+        "HTTP 500"
+      ],
+      "successRate": 100
+    },
+    "totalErrors": 12,
+    "avgSuccessRate": 100
+  }
+}

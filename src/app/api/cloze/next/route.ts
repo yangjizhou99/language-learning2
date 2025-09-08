@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
+import { CacheManager } from '@/lib/cache';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -50,26 +51,44 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 随机获取一道题目
-    const { data: items, error } = await supabase
-      .from('cloze_items')
-      .select('*')
-      .eq('lang', lang)
-      .eq('level', levelNum);
-
-    if (error) {
-      console.error('Get cloze item error:', error);
-      return NextResponse.json({ error: 'Failed to get item' }, { status: 500 });
+    // 生成缓存键
+    const cacheKey = CacheManager.generateKey("cloze:next", { lang, level: levelNum });
+    
+    // 尝试从缓存获取
+    const cached = await CacheManager.get(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached);
     }
 
-    if (!items || items.length === 0) {
-      return NextResponse.json({ error: 'No items available' }, { status: 404 });
-    }
+    // 使用请求去重防止并发请求
+    const result = await CacheManager.dedupe(cacheKey, async () => {
+      // 随机获取一道题目
+      const { data: items, error } = await supabase
+        .from('cloze_items')
+        .select('*')
+        .eq('lang', lang)
+        .eq('level', levelNum);
 
-    // 随机选择一道题目
-    const randomIndex = Math.floor(Math.random() * items.length);
-    const item = items[randomIndex];
-    console.log(`Randomly selected item ${randomIndex + 1} of ${items.length}: ${item.title}`);
+      if (error) {
+        throw new Error(`Failed to get item: ${error.message}`);
+      }
+
+      if (!items || items.length === 0) {
+        throw new Error('No items available');
+      }
+
+      // 随机选择一道题目
+      const randomIndex = Math.floor(Math.random() * items.length);
+      const item = items[randomIndex];
+      console.log(`Randomly selected item ${randomIndex + 1} of ${items.length}: ${item.title}`);
+
+      return item;
+    });
+
+    // 缓存结果（5分钟）
+    await CacheManager.set(cacheKey, result, 300);
+
+    const item = result;
 
     // 兼容缺失 id 的 blanks（从 placeholder 提取或按顺序补齐）
     const blanksRaw = Array.isArray(item.blanks) ? item.blanks : [];

@@ -1,0 +1,21 @@
+{
+  "name": "performance-tests",
+  "version": "1.0.0",
+  "description": "性能测试脚本集合",
+  "main": "run-all-tests.js",
+  "scripts": {
+    "test:db": "node performance-test.js",
+    "test:api": "node api-performance-test.js",
+    "test:frontend": "node frontend-performance-test.js",
+    "test:all": "node run-all-tests.js",
+    "install:puppeteer": "npm install puppeteer"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.55.0",
+    "puppeteer": "^21.0.0"
+  },
+  "devDependencies": {},
+  "keywords": ["performance", "testing", "database", "api", "frontend"],
+  "author": "Language Learning App",
+  "license": "MIT"
+}
