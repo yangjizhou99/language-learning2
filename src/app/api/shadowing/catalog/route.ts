@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
 
 
     // Process items (simplified without session data for now)
-    const processedItems = items?.map(item => ({
+    const processedItems = items?.map((item: any) => ({
       ...item,
       isPracticed: false, // Default to not practiced
       stats: {

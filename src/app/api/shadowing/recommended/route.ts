@@ -80,14 +80,14 @@ export async function GET(req: NextRequest) {
     }
 
     const lastLevel = attempts[0].level;
-    const recentSameLevel = attempts.filter(a => a.level === lastLevel).slice(0, 3);
+    const recentSameLevel = attempts.filter((a: any) => a.level === lastLevel).slice(0, 3);
     const lastAttempt = attempts[0];
 
     const avg = (xs: number[]) => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
 
     // 升级条件：同级最近3次，平均准确率≥92%
     if (recentSameLevel.length === 3) {
-      const accuracies = recentSameLevel.map(r => calculateAccuracy(r.metrics as Metrics));
+      const accuracies = recentSameLevel.map((r: any) => calculateAccuracy(r.metrics as Metrics));
       const avgAccuracy = avg(accuracies);
       
       if (avgAccuracy >= 0.92) {
