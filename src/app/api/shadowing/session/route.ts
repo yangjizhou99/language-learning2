@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
           definition: word.definition || '',
           context: word.context || '',
           source_type: 'shadowing',
-          source_id: shadowing_item_id,
+          source_id: item_id,
           frequency_rank: word.frequency_rank || null,
           created_at: new Date().toISOString()
         }));
