@@ -389,7 +389,7 @@ export default function ShadowingReviewList(){
             </div>
             <div>
               <label className="text-sm font-medium">语言</label>
-              <Select value={lang} onValueChange={setLang}>
+              <Select value={lang} onValueChange={(value) => setLang(value as "all"|"en"|"ja"|"zh")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -403,7 +403,7 @@ export default function ShadowingReviewList(){
             </div>
             <div>
               <label className="text-sm font-medium">体裁</label>
-              <Select value={genre} onValueChange={setGenre}>
+              <Select value={genre} onValueChange={(value) => setGenre(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -418,7 +418,7 @@ export default function ShadowingReviewList(){
             </div>
             <div>
               <label className="text-sm font-medium">等级</label>
-              <Select value={level} onValueChange={setLevel}>
+              <Select value={level} onValueChange={(value) => setLevel(value as "all"|"1"|"2"|"3"|"4"|"5")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -434,7 +434,7 @@ export default function ShadowingReviewList(){
             </div>
             <div>
               <label className="text-sm font-medium">状态</label>
-              <Select value={status} onValueChange={setStatus}>
+              <Select value={status} onValueChange={(value) => setStatus(value as "all"|"draft"|"approved")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
