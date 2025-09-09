@@ -28,11 +28,28 @@ export default function BatchGenPage(){
   const [autoBlanks, setAutoBlanks] = useState<boolean>(true);
   const [weights, setWeights] = useState({ connector:0.4, collocation:0.3, grammar:0.3 });
 
+  // 性能参数
+  const [concurrency, setConcurrency] = useState(4);
+  const [batchSize, setBatchSize] = useState(1);
+  const [retries, setRetries] = useState(2);
+  const [throttle, setThrottle] = useState(0);
+
   const [running, setRunning] = useState(false);
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
-  const [log, setLog] = useState<string[]>([]);
-  const [usage, setUsage] = useState<{prompt_tokens:number;completion_tokens:number;total_tokens:number}|null>(null);
+  const [progress, setProgress] = useState({ done: 0, total: 0, saved: 0, total_target: 0 });
+  const [logs, setLogs] = useState<string[]>([]);
+  const [aggUsage, setAggUsage] = useState<{prompt_tokens:number;completion_tokens:number;total_tokens:number}|null>(null);
   const abortRef = useRef<AbortController|null>(null);
+
+  // 计算总目标数量
+  const totalTarget = useMemo(() => {
+    const topics = topicsText.split('\n').filter(t => t.trim()).length || 1;
+    return topics * levels.length * perCombo * batchSize;
+  }, [topicsText, levels, perCombo, batchSize]);
+
+  const totalCombos = useMemo(() => {
+    const topics = topicsText.split('\n').filter(t => t.trim()).length || 1;
+    return topics * levels.length * perCombo;
+  }, [topicsText, levels, perCombo]);
 
   // 页面加载时自动获取最新模型列表
   useEffect(() => {
@@ -41,19 +58,32 @@ export default function BatchGenPage(){
     }
   }, [provider]);
 
-  const params = useMemo(()=>({ kind, params: { lang, levels, topicsText, perCombo, provider, model: model || (provider==='openrouter'? 'openai/gpt-4o-mini':'deepseek-chat'), temperature, style, blanksRange, autoBlanks, weights, genre, register, sentRange } }), [kind, lang, levels, topicsText, perCombo, provider, model, temperature, style, blanksRange, autoBlanks, weights, genre, register, sentRange]);
+  const params = useMemo(()=>({ 
+    kind, 
+    params: { 
+      lang, levels, topicsText, perCombo, provider, 
+      model: model || (provider==='openrouter'? 'openai/gpt-4o-mini':'deepseek-chat'), 
+      temperature, style, blanksRange, autoBlanks, weights, genre, register, sentRange,
+      concurrency, batchSize, retries, throttle_ms: throttle
+    } 
+  }), [kind, lang, levels, topicsText, perCombo, provider, model, temperature, style, blanksRange, autoBlanks, weights, genre, register, sentRange, concurrency, batchSize, retries, throttle]);
 
   async function start(){
     if (running) return;
     setRunning(true);
-    setLog([]);
-    setUsage(null);
-    setProgress({ done: 0, total: 0 });
+    setLogs([]);
+    setAggUsage(null);
+    setProgress({ done: 0, total: 0, saved: 0, total_target: totalTarget });
     const ac = new AbortController(); abortRef.current = ac;
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error("未登录或会话失效");
-      const r = await fetch("/api/admin/batch/stream", { method:"POST", headers:{"Content-Type":"application/json", Authorization: `Bearer ${session.access_token}`}, body: JSON.stringify(params), signal: ac.signal });
+      const r = await fetch("/api/admin/batch/stream", { 
+        method:"POST", 
+        headers:{"Content-Type":"application/json", Authorization: `Bearer ${session.access_token}`}, 
+        body: JSON.stringify(params), 
+        signal: ac.signal 
+      });
       if (!r.ok || !r.body) throw new Error(`请求失败: ${r.status}`);
       const reader = r.body.getReader();
       const decoder = new TextDecoder();
@@ -71,24 +101,30 @@ export default function BatchGenPage(){
           try {
             const msg: EventMsg = JSON.parse(json);
             if (msg.type === "start"){
-              setProgress({ done:0, total: msg.total||0 });
-              setLog(L=>[...L, `开始，任务数 ${msg.total}`]);
+              setProgress(p=>({ ...p, total: msg.total||0, total_target: totalTarget }));
+              setLogs(L=>[...L, `开始，任务数 ${msg.total}，目标生成 ${totalTarget} 条`]);
             } else if (msg.type === "progress"){
-              setLog(L=>[...L, `生成中 #${(msg.idx??0)+1} [L${msg.level}] ${msg.topic}`]);
+              setLogs(L=>[...L, `生成中 #${(msg.idx??0)+1} [L${msg.level}] ${msg.topic}`]);
             } else if (msg.type === "saved"){
-              setProgress(p=>({ done:(msg.done||p.done), total:(msg.total||p.total) }));
-              if (msg.usage) setUsage(msg.usage);
-              setLog(L=>[...L, `已保存 #${(msg.idx??0)+1}`]);
+              setProgress(p=>({ 
+                ...p, 
+                done: msg.done||p.done, 
+                total: msg.total||p.total,
+                saved: p.saved + (msg.saved?.count || 1)
+              }));
+              if (msg.usage) setAggUsage(msg.usage);
+              setLogs(L=>[...L, `已保存 #${(msg.idx??0)+1} → ${msg.saved?.table} (${msg.saved?.count || 1}条)`]);
             } else if (msg.type === "error"){
-              setLog(L=>[...L, `错误 #${(msg.idx??0)+1}: ${msg.message}`]);
+              setProgress(p=>({ ...p, done: p.done + 1 }));
+              setLogs(L=>[...L, `错误 #${(msg.idx??0)+1}: ${msg.message}`]);
             } else if (msg.type === "done"){
-              setLog(L=>[...L, `完成，总数 ${msg.total}`]);
+              setLogs(L=>[...L, `完成，总数 ${msg.total}`]);
             }
           } catch {}
         }
       }
     } catch (e:any) {
-      setLog(L=>[...L, `中断/失败：${e?.message||String(e)}`]);
+      setLogs(L=>[...L, `中断/失败：${e?.message||String(e)}`]);
     } finally {
       setRunning(false);
       abortRef.current = null;
@@ -372,21 +408,200 @@ export default function BatchGenPage(){
         </section>
       )}
 
+      {/* 参数说明和教程 */}
+      <section className="bg-blue-50 rounded-lg shadow p-4 space-y-3">
+        <h3 className="text-lg font-medium text-blue-800">📚 参数说明和教程</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="space-y-2">
+            <h4 className="font-medium text-blue-700">🚀 并发数 (1-8)</h4>
+            <p className="text-gray-600">同时处理的任务数量。越高速度越快，但容易触发API限制。</p>
+            <div className="bg-white p-2 rounded text-xs">
+              <strong>建议：</strong><br/>
+              • 小批量(20条内): 2-3<br/>
+              • 中批量(20-100条): 4-6<br/>
+              • 大批量(100条+): 6-8
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-medium text-blue-700">📦 批量条数 (1-10)</h4>
+            <p className="text-gray-600">每次API调用生成的内容条数。减少API调用次数，提升效率。</p>
+            <div className="bg-white p-2 rounded text-xs">
+              <strong>建议：</strong><br/>
+              • 质量优先: 1-2条<br/>
+              • 平衡模式: 3-5条<br/>
+              • 速度优先: 5-8条
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-medium text-blue-700">🔄 重试次数 (0-5)</h4>
+            <p className="text-gray-600">API调用失败时的自动重试次数。处理网络问题和临时错误。</p>
+            <div className="bg-white p-2 rounded text-xs">
+              <strong>建议：</strong><br/>
+              • 稳定网络: 1-2次<br/>
+              • 一般网络: 2-3次<br/>
+              • 不稳定网络: 3-5次
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h4 className="font-medium text-blue-700">⏱️ 节流延迟 (0-2000ms)</h4>
+            <p className="text-gray-600">任务间的等待时间。防止触发API频率限制。</p>
+            <div className="bg-white p-2 rounded text-xs">
+              <strong>建议：</strong><br/>
+              • 无限制: 0ms<br/>
+              • 保守: 100-200ms<br/>
+              • 安全: 300-500ms<br/>
+              • 极保守: 500-1000ms
+            </div>
+          </div>
+        </div>
+        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm">
+          <h4 className="font-medium text-yellow-800 mb-2">⚠️ 常见问题解决</h4>
+          <ul className="space-y-1 text-yellow-700">
+            <li>• <strong>429错误多</strong> → 降低并发数，增加节流延迟</li>
+            <li>• <strong>生成质量下降</strong> → 降低批量条数</li>
+            <li>• <strong>内存不足</strong> → 减少并发数</li>
+            <li>• <strong>速度太慢</strong> → 增加并发数和批量条数</li>
+          </ul>
+        </div>
+      </section>
+
+      {/* 性能参数 */}
+      <section className="bg-white rounded-lg shadow p-4 space-y-3">
+        <h3 className="text-lg font-medium text-gray-800">性能优化参数</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">并发数（1-8）</label>
+            <input 
+              type="number" 
+              min={1} 
+              max={8} 
+              className="w-full border rounded px-2 py-1" 
+              value={concurrency} 
+              onChange={e=> setConcurrency(Number(e.target.value)||4)} 
+            />
+            <div className="text-xs text-gray-500 mt-1">同时处理的任务数，建议4-6</div>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">批量条数（1-10）</label>
+            <input 
+              type="number" 
+              min={1} 
+              max={10} 
+              className="w-full border rounded px-2 py-1" 
+              value={batchSize} 
+              onChange={e=> setBatchSize(Number(e.target.value)||1)} 
+            />
+            <div className="text-xs text-gray-500 mt-1">每次生成的内容条数</div>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">重试次数（0-5）</label>
+            <input 
+              type="number" 
+              min={0} 
+              max={5} 
+              className="w-full border rounded px-2 py-1" 
+              value={retries} 
+              onChange={e=> setRetries(Number(e.target.value)||2)} 
+            />
+            <div className="text-xs text-gray-500 mt-1">429/503错误重试次数</div>
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">节流延迟（ms）</label>
+            <input 
+              type="number" 
+              min={0} 
+              max={2000} 
+              className="w-full border rounded px-2 py-1" 
+              value={throttle} 
+              onChange={e=> setThrottle(Number(e.target.value)||0)} 
+            />
+            <div className="text-xs text-gray-500 mt-1">每任务间延迟，防429</div>
+          </div>
+        </div>
+        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+          <strong>预计生成：</strong>{totalTarget} 条内容（{totalCombos} 个组合 × {batchSize} 批量条数）
+        </div>
+        
+        {/* 快速配置预设 */}
+        <div className="border-t pt-3">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">⚡ 快速配置预设</h4>
+          <div className="flex flex-wrap gap-2">
+            <button 
+              className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200"
+              onClick={() => {
+                setConcurrency(2);
+                setBatchSize(1);
+                setRetries(2);
+                setThrottle(100);
+              }}
+            >
+              保守模式 (2并发, 1批量)
+            </button>
+            <button 
+              className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+              onClick={() => {
+                setConcurrency(4);
+                setBatchSize(3);
+                setRetries(2);
+                setThrottle(100);
+              }}
+            >
+              平衡模式 (4并发, 3批量)
+            </button>
+            <button 
+              className="px-3 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
+              onClick={() => {
+                setConcurrency(6);
+                setBatchSize(5);
+                setRetries(3);
+                setThrottle(200);
+              }}
+            >
+              高速模式 (6并发, 5批量)
+            </button>
+            <button 
+              className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+              onClick={() => {
+                setConcurrency(8);
+                setBatchSize(8);
+                setRetries(3);
+                setThrottle(300);
+              }}
+            >
+              极速模式 (8并发, 8批量)
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 运行控制 */}
       <section className="bg-white rounded-lg shadow p-4 space-y-3">
         <div className="flex items-center gap-3">
-          <button className={`px-4 py-2 rounded ${running? 'bg-gray-300':'bg-blue-600 text-white'}`} onClick={start} disabled={running}>开始批量</button>
+          <button className={`px-4 py-2 rounded ${running? 'bg-gray-300':'bg-blue-600 text-white'}`} onClick={start} disabled={running}>开始批量生成</button>
           <button className="px-4 py-2 rounded border" onClick={stop} disabled={!running}>停止</button>
-          <div className="text-sm text-gray-600">进度：{progress.done}/{progress.total}</div>
-          {usage && (
-            <div className="text-sm text-gray-600">Tokens: {usage.total_tokens} （P:{usage.prompt_tokens} C:{usage.completion_tokens}）</div>
+          <div className="text-sm text-gray-600">进度：{progress.saved}/{progress.total_target}</div>
+          {aggUsage && (
+            <div className="text-sm text-gray-600">Tokens: {aggUsage.total_tokens} （P:{aggUsage.prompt_tokens} C:{aggUsage.completion_tokens}）</div>
           )}
         </div>
         <div className="h-2 bg-gray-100 rounded overflow-hidden">
-          <div className="h-full bg-blue-500" style={{ width: progress.total>0? `${Math.round(progress.done/progress.total*100)}%`:'0%' }} />
+          <div className="h-full bg-blue-500" style={{ width: progress.total_target>0? `${Math.round(progress.saved/progress.total_target*100)}%`:'0%' }} />
         </div>
         <div className="max-h-64 overflow-auto text-sm font-mono bg-gray-50 p-2 rounded border">
-          {log.map((l,i)=>(<div key={i}>{l}</div>))}
+          {logs.map((l,i)=>(<div key={i}>{l}</div>))}
         </div>
+        
+        {/* 性能提示 */}
+        {running && (
+          <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm">
+            <h4 className="font-medium text-blue-800 mb-2">💡 性能提示</h4>
+            <div className="text-blue-700 space-y-1">
+              <div>• 当前配置：{concurrency}并发 × {batchSize}批量 = 理论{concurrency * batchSize}倍速度</div>
+              <div>• 预计完成时间：{totalTarget > 0 ? Math.ceil(totalTarget / (concurrency * batchSize * 2)) : 0}分钟</div>
+              <div>• 如遇429错误，建议降低并发数或增加节流延迟</div>
+            </div>
+          </div>
+        )}
       </section>
 
     </div>

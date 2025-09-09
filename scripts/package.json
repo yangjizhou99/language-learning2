@@ -7,12 +7,15 @@
     "test:db": "node performance-test.js",
     "test:api": "node api-performance-test.js",
     "test:frontend": "node frontend-performance-test.js",
+    "test:batch": "node batch-generation-performance-test.js",
+    "test:batch:quick": "node quick-batch-test.js",
     "test:all": "node run-all-tests.js",
     "install:puppeteer": "npm install puppeteer"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
-    "puppeteer": "^21.0.0"
+    "puppeteer": "^21.0.0",
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {},
   "keywords": ["performance", "testing", "database", "api", "frontend"],

@@ -18,7 +18,7 @@ export async function GET(req: NextRequest){
 
   let query = supabase
     .from("shadowing_drafts")
-    .select("id, lang, level, genre, title, status, created_at, notes")
+    .select("id, lang, level, genre, title, text, status, created_at, notes")
     .eq("status", status)
     .order("created_at", { ascending: false });
   if (lang) query = query.eq("lang", lang);
