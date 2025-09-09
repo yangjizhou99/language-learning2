@@ -17,6 +17,12 @@ interface SelectedWord {
   endIndex: number;
 }
 
+interface WordCandidate {
+  word: string;
+  startIndex: number;
+  endIndex: number;
+}
+
 export default function SelectablePassage({ 
   text, 
   lang, 
@@ -25,8 +31,75 @@ export default function SelectablePassage({
   className = '' 
 }: SelectablePassageProps) {
   const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
-  const [isSelecting, setIsSelecting] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showWordMenu, setShowWordMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const textRef = useRef<HTMLDivElement>(null);
+
+  // 检测是否为手机端
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 监听选择变化（手机端和桌面端通用）
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      if (disabled) return;
+      
+      const selection = window.getSelection();
+      if (!selection || selection.toString().trim() === '') {
+        return;
+      }
+
+      const selectedText = selection.toString().trim();
+      
+      // 限制选中文本长度
+      if (selectedText.length > 50) {
+        selection.removeAllRanges();
+        alert('请选择较短的文本（不超过50个字符）');
+        return;
+      }
+
+      // 检查是否包含换行符
+      if (selectedText.includes('\n')) {
+        selection.removeAllRanges();
+        alert('请选择同一行的文本');
+        return;
+      }
+
+      // 获取选中文本在原文中的位置
+      const range = selection.getRangeAt(0);
+      const startIndex = range.startOffset;
+      const endIndex = range.endOffset;
+      
+      const context = getContext(startIndex, endIndex);
+      
+      // 设置菜单位置
+      const rect = range.getBoundingClientRect();
+      setMenuPosition({
+        x: rect.left + rect.width / 2,
+        y: rect.top
+      });
+      
+      setSelectedWord({
+        word: selectedText,
+        context,
+        startIndex,
+        endIndex
+      });
+      setShowWordMenu(true);
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, [disabled, text]);
+
+
 
   // 获取选中文本的上下文 - 返回包含选中文本的完整句子
   const getContext = (startIndex: number, endIndex: number): string => {
@@ -57,78 +130,43 @@ export default function SelectablePassage({
   };
 
 
-  // 处理拖拽选择
-  const handleMouseUp = () => {
-    if (disabled) return;
-
-    const selection = window.getSelection();
-    if (!selection || selection.toString().trim() === '') {
-      setSelectedWord(null);
-      return;
-    }
-
-    const selectedText = selection.toString().trim();
-    
-    // 限制选中文本长度 - 只允许选择单词或短语
-    if (selectedText.length > 50) {
-      selection.removeAllRanges();
-      setSelectedWord(null);
-      alert('请选择较短的文本（不超过50个字符）');
-      return;
-    }
-
-    // 检查是否包含换行符
-    if (selectedText.includes('\n')) {
-      selection.removeAllRanges();
-      setSelectedWord(null);
-      alert('请选择同一行的文本');
-      return;
-    }
-
-    // 获取选中文本在原文中的位置
-    const range = selection.getRangeAt(0);
-    const startIndex = range.startOffset;
-    const endIndex = range.endOffset;
-    
-    const context = getContext(startIndex, endIndex);
-    
-    setSelectedWord({
-      word: selectedText,
-      context,
-      startIndex,
-      endIndex
-    });
-  };
-
-  // 确认选择
-  const confirmSelection = () => {
-    if (selectedWord) {
-      onWordSelect(selectedWord.word, selectedWord.context);
-      setSelectedWord(null);
-    }
-  };
 
   // 取消选择
   const cancelSelection = () => {
     setSelectedWord(null);
+    setShowWordMenu(false);
+  };
+
+  // 处理点击外部区域取消选择
+  const handleClickOutside = (event: React.MouseEvent) => {
+    if (showWordMenu) {
+      cancelSelection();
+    }
   };
 
 
-  // 渲染文本，支持拖拽选择
+
+
+
+  // 渲染文本，支持拖拽选择或手机端点击选择
   const renderText = () => {
     if (disabled) {
       return <span className="select-none whitespace-pre-wrap">{text}</span>;
     }
 
-    // 直接返回文本，允许拖拽选择，保持换行符
+    // 手机端和桌面端都使用相同的文本渲染方式
     return <span className="whitespace-pre-wrap">{text}</span>;
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div 
+      className={`relative ${className}`}
+      onClick={handleClickOutside}
+    >
       {!disabled && (
         <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-          💡 <strong>选词提示：</strong>拖拽选择单词或短语（不超过50个字符）
+          💡 <strong>选词提示：</strong>
+          拖拽选择单词或短语（不超过50个字符）
         </div>
       )}
       <div
@@ -136,34 +174,45 @@ export default function SelectablePassage({
         className={`text-lg leading-relaxed ${
           disabled ? 'text-gray-400' : 'text-gray-800'
         }`}
-        onMouseUp={handleMouseUp}
+        onClick={(e) => e.stopPropagation()} // 阻止事件冒泡，避免点击文本时取消选择
         style={{ userSelect: disabled ? 'none' : 'text' }}
       >
         {renderText()}
       </div>
 
-      {/* 选择确认弹窗 */}
-      {selectedWord && (
-        <div className="absolute top-full left-0 mt-2 p-3 bg-white border border-gray-300 rounded-lg shadow-lg z-10 min-w-64">
+      {/* 选中单词弹窗 */}
+      {showWordMenu && selectedWord && (
+        <div 
+          className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg p-3 min-w-48"
+          style={{
+            left: `${menuPosition.x}px`,
+            top: `${menuPosition.y - 60}px`
+          }}
+        >
           <div className="text-sm">
-            <div className="font-medium text-gray-800 mb-1">选中的词：</div>
-            <div className="text-blue-600 font-semibold mb-2">{selectedWord.word}</div>
-            
-            <div className="font-medium text-gray-800 mb-1">上下文：</div>
-            <div className="text-gray-600 text-xs mb-3 bg-gray-50 p-2 rounded">
-              {selectedWord.context}
+            <div className="font-medium text-gray-800 mb-1">选中的单词：</div>
+            <div className="text-blue-600 font-semibold mb-2 text-center border-b pb-1">
+              {selectedWord.word}
             </div>
+            <div className="text-xs text-gray-600 mb-2">{selectedWord.context}</div>
             
             <div className="flex gap-2">
               <button
-                onClick={confirmSelection}
-                className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                onClick={() => {
+                  onWordSelect(selectedWord.word, selectedWord.context);
+                  setShowWordMenu(false);
+                  setSelectedWord(null);
+                }}
+                className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors flex-1"
               >
                 添加到生词本
               </button>
               <button
-                onClick={cancelSelection}
-                className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400 transition-colors"
+                onClick={() => {
+                  setShowWordMenu(false);
+                  setSelectedWord(null);
+                }}
+                className="px-3 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400 transition-colors flex-1"
               >
                 取消
               </button>
