@@ -25,7 +25,9 @@ import {
   Save,
   FileText,
   Play,
-  Pause
+  Pause,
+  Menu,
+  X
 } from "lucide-react";
 
 // 题目数据类型
@@ -581,7 +583,7 @@ export default function ShadowingPage() {
 
   // 处理生词选择
   const handleWordSelect = async (word: string, context: string) => {
-    const wordData = { word, context, lang };
+    const wordData = { word, context, lang: currentItem?.lang || lang };
     
     // 检查是否已经在本次选中的生词中
     const existsInSelected = selectedWords.some(item => 
@@ -1350,6 +1352,21 @@ export default function ShadowingPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // 手机端状态管理
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // 检测是否为手机端
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // 如果正在检查认证或用户未登录，显示相应提示
   if (authLoading) {
     return (
@@ -1385,11 +1402,752 @@ export default function ShadowingPage() {
   }
 
   return (
-    <main className="p-6">
+    <main className="p-3 sm:p-6">
       <Container>
-      <Breadcrumbs items={[{ href: "/", label: t.nav.home }, { label: t.shadowing.title }]} />
+        <Breadcrumbs items={[{ href: "/", label: t.nav.home }, { label: t.shadowing.title }]} />
         
-        <div className="flex gap-6 h-[calc(100vh-200px)]">
+        {/* 手机端布局 */}
+        {isMobile ? (
+          <div className="space-y-4">
+            {/* 手机端顶部工具栏 */}
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg font-semibold">Shadowing 练习</h1>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMobileSidebarOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Menu className="w-4 h-4" />
+                题库
+              </Button>
+            </div>
+
+            {/* 手机端侧边栏遮罩 */}
+            {mobileSidebarOpen && (
+              <div 
+                className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                onClick={() => setMobileSidebarOpen(false)}
+              />
+            )}
+
+            {/* 手机端侧边栏 */}
+            <div className={`fixed top-0 left-0 h-full w-80 bg-white z-50 transform transition-transform duration-300 ${
+              mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}>
+              <div className="h-full flex flex-col">
+                {/* 侧边栏头部 */}
+                <div className="p-4 border-b flex items-center justify-between">
+                  <h3 className="font-semibold">Shadowing 题库</h3>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => fetchItems()}
+                      className="text-blue-500 hover:text-blue-700 p-2"
+                      title="刷新题库"
+                      disabled={loading}
+                    >
+                      🔄
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setMobileSidebarOpen(false)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 侧边栏内容 */}
+                <div className="flex-1 overflow-y-auto">
+                  {/* 过滤器 */}
+                  <div className="p-4 border-b space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-4 h-4" />
+                      <span className="text-sm font-medium">筛选</span>
+                    </div>
+                    
+                    {/* 语言选择 */}
+                    <div>
+                      <Label className="text-sm">语言</Label>
+                      <Select value={lang} onValueChange={(v: "ja"|"en"|"zh") => setLang(v)}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ja">{LANG_LABEL.ja}</SelectItem>
+                          <SelectItem value="en">{LANG_LABEL.en}</SelectItem>
+                          <SelectItem value="zh">{LANG_LABEL.zh}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 等级选择 */}
+                    <div>
+                      <Label className="text-sm">等级</Label>
+                      <Select 
+                        value={level?.toString() || "all"} 
+                        onValueChange={(v) => setLevel(v === "all" ? null : parseInt(v))}
+                      >
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="全部等级" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部等级</SelectItem>
+                          <SelectItem value="1">L1</SelectItem>
+                          <SelectItem value="2">L2</SelectItem>
+                          <SelectItem value="3">L3</SelectItem>
+                          <SelectItem value="4">L4</SelectItem>
+                          <SelectItem value="5">L5</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 推荐等级显示 */}
+                    {recommendedLevel && (
+                      <div className="text-sm text-blue-600">
+                        推荐等级: L{recommendedLevel}
+                        {level !== recommendedLevel && (
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            onClick={() => setLevel(recommendedLevel)}
+                            className="ml-1 h-auto p-0 text-sm"
+                          >
+                            使用
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* 练习状态 */}
+                    <div>
+                      <Label className="text-sm">练习状态</Label>
+                      <Select value={practiced} onValueChange={(v: "all" | "practiced" | "unpracticed") => setPracticed(v)}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部</SelectItem>
+                          <SelectItem value="unpracticed">未练习</SelectItem>
+                          <SelectItem value="practiced">已练习</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 搜索 */}
+                    <div>
+                      <Label className="text-sm">搜索</Label>
+                      <Input
+                        placeholder="搜索标题、主题..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-10"
+                      />
+                    </div>
+
+                    {/* 快捷操作 */}
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={getRandomUnpracticed} className="flex-1">
+                        <Shuffle className="w-4 h-4 mr-1" />
+                        随机
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={getNextUnpracticed} className="flex-1">
+                        <ArrowRight className="w-4 h-4 mr-1" />
+                        下一题
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* 统计信息 */}
+                  <div className="px-4 py-3 border-b bg-gray-50">
+                    <div className="text-sm text-gray-600">
+                      <div className="mb-2">共 {filteredItems.length} 题</div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>已完成 {filteredItems.filter(item => item.isPracticed).length}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                          <span>草稿中 {filteredItems.filter(item => item.status === 'draft' && !item.isPracticed).length}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                          <span>未开始 {filteredItems.filter(item => !item.isPracticed && item.status !== 'draft').length}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 题目列表 */}
+                  <div className="flex-1 overflow-y-auto">
+                    {loading ? (
+                      <div className="p-4 text-center text-gray-500">加载中...</div>
+                    ) : filteredItems.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">没有找到题目</div>
+                    ) : (
+                      <div className="space-y-2 p-2">
+                        {filteredItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className={`p-3 rounded border cursor-pointer transition-colors ${
+                              currentItem?.id === item.id 
+                                ? 'bg-blue-50 border-blue-200' 
+                                : item.isPracticed
+                                ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                                : item.status === 'draft'
+                                ? 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100'
+                                : 'hover:bg-gray-50'
+                            }`}
+                            onClick={() => {
+                              loadItem(item);
+                              setMobileSidebarOpen(false);
+                            }}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  {item.isPracticed ? (
+                                    <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                  ) : item.status === 'draft' ? (
+                                    <FileText className="w-4 h-4 text-yellow-600 flex-shrink-0" />
+                                  ) : (
+                                    <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                  )}
+                                  <span className="text-sm font-medium truncate">
+                                    {item.title}
+                                    {item.isPracticed && (
+                                      <span className="ml-1 text-green-600">✓</span>
+                                    )}
+                                    {item.status === 'draft' && (
+                                      <span className="ml-1 text-yellow-600">📝</span>
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {LANG_LABEL[item.lang]} • L{item.level}
+                                  {item.cefr && ` • ${item.cefr}`}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 手机端主内容区域 */}
+            <div className="space-y-4">
+              {!currentItem ? (
+                <Card className="p-6">
+                  <div className="text-center">
+                    <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">选择题目开始练习</h3>
+                    <p className="text-gray-500">点击上方&ldquo;题库&rdquo;按钮选择题目</p>
+                  </div>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {/* 题目信息 - 手机端优化 */}
+                  <Card className="p-4">
+                    <div className="mb-4">
+                      <h2 className="text-lg font-semibold mb-2">{currentItem.title}</h2>
+                      <div className="flex items-center gap-3 text-sm text-gray-600 mb-3">
+                        <span>{LANG_LABEL[currentItem.lang]}</span>
+                        <span>等级 L{currentItem.level}</span>
+                        {currentItem.cefr && <span>{currentItem.cefr}</span>}
+                        {currentItem.tokens && <span>{currentItem.tokens} 词</span>}
+                      </div>
+                      
+                      {/* 手机端操作按钮 */}
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          onClick={playAudio}
+                          disabled={isPlaying}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 min-w-0"
+                        >
+                          {isPlaying ? <Pause className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
+                          {isPlaying ? "播放中..." : "播放音频"}
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={saveDraft}
+                          disabled={saving}
+                          className="flex-1 min-w-0"
+                        >
+                          <Save className="w-4 h-4 mr-1" />
+                          {saving ? '保存中...' : '保存草稿'}
+                        </Button>
+                        
+                        <Button
+                          size="sm"
+                          onClick={completeAndSave}
+                          disabled={saving}
+                          className="flex-1 min-w-0"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          {saving ? '保存中...' : '完成'}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {/* 生词选择模式切换 */}
+                    <div className="mb-4">
+                      <Button
+                        variant={isVocabMode ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setIsVocabMode(!isVocabMode)}
+                        className="w-full"
+                      >
+                        {isVocabMode ? '退出生词模式' : '生词选择模式'}
+                      </Button>
+                      {isVocabMode && (
+                        <p className="text-sm text-blue-600 mt-2">
+                          点击文本中的单词来选择生词
+                        </p>
+                      )}
+                    </div>
+
+                    {/* 文本内容 */}
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      {isVocabMode ? (
+                        <SelectablePassage
+                          text={currentItem.text}
+                          lang={currentItem.lang}
+                          onWordSelect={handleWordSelect}
+                          disabled={false}
+                          className="text-base leading-relaxed"
+                        />
+                      ) : (
+                        <div className="text-base leading-relaxed">
+                          {/* 文本渲染逻辑保持不变 */}
+                          {(() => {
+                            // 格式化对话文本，按说话者分行
+                            const formatDialogueText = (text: string): string => {
+                              if (!text) return '';
+                              
+                              // 处理AI返回的\n换行符
+                              const formatted = text.replace(/\\n/g, '\n');
+                              
+                              // 如果已经包含换行符，保持格式并清理
+                              if (formatted.includes('\n')) {
+                                return formatted
+                                  .split('\n')
+                                  .map(line => line.trim())
+                                  .filter(line => line.length > 0)
+                                  .join('\n');
+                              }
+                              
+                              // 尝试按说话者分割 - 匹配 A: 或 B: 等格式
+                              const speakerPattern = /([A-Z]):\s*/g;
+                              const parts = formatted.split(speakerPattern);
+                              
+                              if (parts.length > 1) {
+                                let result = '';
+                                for (let i = 1; i < parts.length; i += 2) {
+                                  if (parts[i] && parts[i + 1]) {
+                                    const speaker = parts[i].trim();
+                                    const content = parts[i + 1].trim();
+                                    if (speaker && content) {
+                                      result += `${speaker}: ${content}\n`;
+                                    }
+                                  }
+                                }
+                                if (result.trim()) {
+                                  return result.trim();
+                                }
+                              }
+                              
+                              // 默认返回原文本
+                              return formatted;
+                            };
+                            
+                            const formattedText = formatDialogueText(currentItem.text);
+                            
+                            // 获取所有已选择的生词（包括之前的和本次的）
+                            const allSelectedWords = [...previousWords, ...selectedWords];
+                            const selectedWordSet = new Set(allSelectedWords.map(item => item.word));
+                            
+                            // 检查是否为中文文本
+                            const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
+                            
+                            if (isChinese) {
+                              // 中文处理：先按行分割，再按字符分割
+                              const lines = formattedText.split('\n');
+                              
+                              return lines.map((line, lineIndex) => {
+                                const chars = line.split('');
+                                const result = [];
+                                
+                                for (let i = 0; i < chars.length; i++) {
+                                  let isHighlighted = false;
+                                  let highlightLength = 0;
+                                  
+                                  // 检查从当前位置开始的多个字符是否组成已选择的生词
+                                  for (const selectedWord of allSelectedWords) {
+                                    if (i + selectedWord.word.length <= chars.length) {
+                                      const substring = chars.slice(i, i + selectedWord.word.length).join('');
+                                      if (substring === selectedWord.word) {
+                                        isHighlighted = true;
+                                        highlightLength = selectedWord.word.length;
+                                        break;
+                                      }
+                                    }
+                                  }
+                                  
+                                  if (isHighlighted && highlightLength > 0) {
+                                    // 高亮显示整个生词
+                                    const word = chars.slice(i, i + highlightLength).join('');
+                                    const wordData = allSelectedWords.find(item => item.word === word);
+                                    const explanation = wordData?.explanation;
+                                    
+                                    result.push(
+                                      <HoverExplanation 
+                                        key={`${lineIndex}-${i}`}
+                                        word={word}
+                                        explanation={explanation}
+                                      >
+                                        {word}
+                                      </HoverExplanation>
+                                    );
+                                    i += highlightLength - 1; // 跳过已处理的字符
+                                  } else {
+                                    // 普通字符
+                                    result.push(
+                                      <span key={`${lineIndex}-${i}`}>
+                                        {chars[i]}
+                                      </span>
+                                    );
+                                  }
+                                }
+                                
+                                return (
+                                  <div key={lineIndex} className="mb-2">
+                                    {result}
+                                  </div>
+                                );
+                              });
+                            } else {
+                              // 英文处理：先按行分割，再按单词分割
+                              const lines = formattedText.split('\n');
+                              
+                              return lines.map((line, lineIndex) => (
+                                <div key={lineIndex} className="mb-2">
+                                  {line.split(/(\s+|[。！？、，.!?,])/).map((word, wordIndex) => {
+                                    const cleanWord = word.replace(/[。！？、，.!?,\s]/g, '');
+                                    const isSelected = cleanWord && selectedWordSet.has(cleanWord);
+                                    
+                                    if (isSelected) {
+                                      const wordData = allSelectedWords.find(item => item.word === cleanWord);
+                                      const explanation = wordData?.explanation;
+                                      
+                                      return (
+                                        <HoverExplanation 
+                                          key={`${lineIndex}-${wordIndex}`}
+                                          word={word}
+                                          explanation={explanation}
+                                        >
+                                          {word}
+                                        </HoverExplanation>
+                                      );
+                                    } else {
+                                      return (
+                                        <span key={`${lineIndex}-${wordIndex}`}>
+                                          {word}
+                                        </span>
+                                      );
+                                    }
+                                  })}
+                                </div>
+                              ));
+                            }
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* 音频播放器 */}
+                    {currentItem.audio_url && (
+                      <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-sm font-medium text-blue-700">原文音频</span>
+                          {currentItem.duration_ms && (
+                            <span className="text-xs text-blue-600">
+                              时长: {Math.round(currentItem.duration_ms / 1000)}秒
+                            </span>
+                          )}
+                        </div>
+                        <audio controls src={currentItem.audio_url} className="w-full" />
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* 生词区域 - 手机端优化 */}
+                  {previousWords.length > 0 && (
+                    <Card className="p-4">
+                      <h3 className="text-lg font-semibold text-gray-600 mb-3">
+                        之前的生词 ({previousWords.length})
+                      </h3>
+                      
+                      <div className="space-y-3">
+                        {previousWords.map((item, index) => (
+                          <div key={`prev-${index}`} className="p-3 bg-gray-50 rounded border border-gray-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="font-medium text-gray-700">{item.word}</div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => speakWord(item.word, currentItem?.lang || 'en')}
+                                    className="text-blue-500 hover:text-blue-700 p-1"
+                                    title="发音"
+                                  >
+                                    🔊
+                                  </Button>
+                                </div>
+                                <div className="text-sm text-gray-600 mt-1">{item.context}</div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removePreviousWord(index)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                删除
+                              </Button>
+                            </div>
+                            
+                            {/* AI解释显示 */}
+                            <div className="mt-3 p-3 bg-white rounded border border-gray-100">
+                              <DynamicExplanation 
+                                word={item.word}
+                                fallbackExplanation={item.explanation}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* 本次选中的生词 */}
+                  {selectedWords.length > 0 && (
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-blue-600">
+                          本次选中的生词 ({selectedWords.length})
+                        </h3>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedWords([])}
+                          >
+                            清空
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={importToVocab}
+                            disabled={isImporting}
+                          >
+                            {isImporting ? '导入中...' : '导入'}
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {selectedWords.map((item, index) => (
+                          <div key={index} className="p-3 bg-blue-50 rounded border border-blue-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="font-medium text-blue-700">{item.word}</div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => speakWord(item.word, item.lang)}
+                                    className="text-blue-500 hover:text-blue-700 p-1"
+                                    title="发音"
+                                  >
+                                    🔊
+                                  </Button>
+                                </div>
+                                <div className="text-sm text-blue-600 mt-1">{item.context}</div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => generateWordExplanation(item.word, item.context, item.lang)}
+                                  disabled={isGeneratingExplanation}
+                                  className="text-xs"
+                                >
+                                  {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeSelectedWord(index)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  移除
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            {/* AI解释显示 */}
+                            {(item.explanation || wordExplanations[item.word]) && (
+                              <div className="mt-3 p-3 bg-white rounded border border-blue-100">
+                                <DynamicExplanation 
+                                  word={item.word}
+                                  fallbackExplanation={item.explanation || wordExplanations[item.word]}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* 录音练习区域 */}
+                  <Card className="p-4">
+                    <AudioRecorder
+                      sessionId={currentSession?.id}
+                      existingRecordings={currentRecordings}
+                      onRecordingAdded={handleRecordingAdded}
+                      onRecordingDeleted={handleRecordingDeleted}
+                      onTranscriptionReady={handleTranscriptionReady}
+                      onRecordingSelected={handleRecordingSelected}
+                      originalText={currentItem?.text}
+                      language={currentItem?.lang || 'ja'}
+                    />
+                  </Card>
+
+                  {/* 评分区域 */}
+                  {!scoringResult && (
+                    <Card className="p-4">
+                      <h3 className="text-lg font-semibold mb-4">练习评分</h3>
+                      {currentRecordings.length > 0 ? (
+                        <div>
+                          <p className="text-gray-600 mb-4">您已完成录音，点击下方按钮进行评分</p>
+                          <Button
+                            onClick={() => performScoring()}
+                            disabled={isScoring}
+                            className="bg-blue-600 hover:bg-blue-700 w-full"
+                          >
+                            {isScoring ? "评分中..." : "开始评分"}
+                          </Button>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-gray-600 mb-4">请先完成录音，然后点击下方按钮进行评分</p>
+                          <Button
+                            onClick={() => performScoring()}
+                            disabled={isScoring}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            {isScoring ? "评分中..." : "开始评分"}
+                          </Button>
+                        </div>
+                      )}
+                    </Card>
+                  )}
+
+                  {/* 评分结果区域 */}
+                  {scoringResult && (
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">评分结果</h3>
+                        <Button
+                          onClick={() => performScoring(currentTranscription)}
+                          disabled={isScoring}
+                          variant="outline"
+                          size="sm"
+                        >
+                          {isScoring ? "重新评分中..." : "重新评分"}
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="bg-green-50 p-3 rounded-lg">
+                          <div className="text-sm text-green-600 mb-1">整体评分</div>
+                          <div className="text-xl font-bold text-green-700">
+                            {(scoringResult.score || 0).toFixed(1)}%
+                          </div>
+                        </div>
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                          <div className="text-sm text-blue-600 mb-1">发音准确性</div>
+                          <div className="text-xl font-bold text-blue-700">
+                            {(scoringResult.score || 0).toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {scoringResult.feedback && (
+                        <div className="bg-yellow-50 p-3 rounded-lg mb-4">
+                          <div className="text-sm text-yellow-600 mb-1">改进建议</div>
+                          <p className="text-yellow-800 text-sm">{scoringResult.feedback}</p>
+                        </div>
+                      )}
+                      
+                      {/* 转录文字和原文对比 - 手机端优化 */}
+                      {scoringResult.transcription && scoringResult.originalText && (
+                        <div className="mt-4">
+                          <h4 className="text-lg font-semibold mb-3">练习对比</h4>
+                          <div className="space-y-3">
+                            <div className="border rounded-lg p-3">
+                              <div className="space-y-3">
+                                <div>
+                                  <div className="text-sm text-gray-500 mb-2">原文</div>
+                                  <div className="p-3 bg-gray-50 rounded border text-sm">
+                                    {scoringResult.originalText}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-gray-500 mb-2">你的发音</div>
+                                  <div className={`p-3 rounded border text-sm ${
+                                    (scoringResult.score || 0) >= 80 ? 'bg-green-50 border-green-200' :
+                                    (scoringResult.score || 0) >= 60 ? 'bg-yellow-50 border-yellow-200' :
+                                    'bg-red-50 border-red-200'
+                                  }`}>
+                                    {scoringResult.transcription}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {!practiceComplete && (
+                        <Button
+                          onClick={recordPracticeResult}
+                          className="bg-green-600 hover:bg-green-700 w-full mt-4"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          完成练习并保存
+                        </Button>
+                      )}
+                    </Card>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* 桌面端布局 - 保持原有布局 */
+          <div className="flex gap-6 h-[calc(100vh-200px)]">
           {/* 左侧题库列表 */}
           <div className={`${sidebarCollapsed ? 'w-12' : 'w-80'} flex-shrink-0 transition-all duration-300`}>
             <Card className="h-full flex flex-col">
@@ -2100,22 +2858,22 @@ export default function ShadowingPage() {
                         <div className="text-sm text-green-600 mb-1">整体评分</div>
                         <div className="text-2xl font-bold text-green-700">
                           {(scoringResult.score || 0).toFixed(1)}%
-                    </div>
-                  </div>
+                        </div>
+                      </div>
                       <div className="bg-blue-50 p-4 rounded-lg">
                         <div className="text-sm text-blue-600 mb-1">发音准确性</div>
                         <div className="text-2xl font-bold text-blue-700">
                           {(scoringResult.score || 0).toFixed(1)}%
-              </div>
-              </div>
+                        </div>
+                      </div>
                     </div>
                     
                     {scoringResult.feedback && (
                       <div className="bg-yellow-50 p-4 rounded-lg mb-4">
                         <div className="text-sm text-yellow-600 mb-1">改进建议</div>
                         <p className="text-yellow-800">{scoringResult.feedback}</p>
-            </div>
-          )}
+                      </div>
+                    )}
           
                     {/* 转录文字和原文对比 */}
                     {scoringResult.transcription && scoringResult.originalText && (
@@ -2289,26 +3047,16 @@ export default function ShadowingPage() {
                           <p className="text-sm leading-relaxed">
                             {currentItem.text}
                           </p>
-                </div>
-          </div>
-          
-                      <div>
-                        <h4 className="font-medium mb-2 text-blue-700">练习记录</h4>
-                        <div className="bg-blue-50 p-3 rounded-lg">
-                          <p className="text-sm leading-relaxed">
-                            录音次数: {currentRecordings.length} 次<br/>
-                            练习时长: {practiceStartTime ? Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000) : 0} 秒
-                          </p>
-                </div>
-              </div>
-          </div>
+                        </div>
+                      </div>
+                    </div>
                   </Card>
-      )}
-
+                )}
               </div>
-      )}
+            )}
           </div>
-      </div>
+          </div>
+        )}
       </Container>
     </main>
   );
