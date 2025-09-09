@@ -136,6 +136,35 @@ export default function ShadowingPage() {
   // 解释缓存
   const [explanationCache, setExplanationCache] = useState<Record<string, {gloss_native: string, senses?: Array<{example_target: string, example_native: string}>}>>({});
   
+  // 发音功能
+  const speakWord = (word: string, lang: string) => {
+    if ('speechSynthesis' in window) {
+      // 停止当前播放
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(word);
+      
+      // 根据语言设置语音
+      if (lang === 'en') {
+        utterance.lang = 'en-US';
+      } else if (lang === 'ja') {
+        utterance.lang = 'ja-JP';
+      } else if (lang === 'zh') {
+        utterance.lang = 'zh-CN';
+      }
+      
+      // 设置语音参数
+      utterance.rate = 0.8; // 稍慢一点，便于学习
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      
+      // 播放
+      window.speechSynthesis.speak(utterance);
+    } else {
+      console.warn('浏览器不支持语音合成功能');
+    }
+  };
+  
   
   // 悬停/点击解释组件
   const HoverExplanation = ({ word, explanation, children }: { 
@@ -1712,90 +1741,144 @@ export default function ShadowingPage() {
             ) : (
               <div className="text-lg leading-relaxed">
                 {(() => {
+                  // 格式化对话文本，按说话者分行
+                  const formatDialogueText = (text: string): string => {
+                    if (!text) return '';
+                    
+                    // 处理AI返回的\n换行符
+                    const formatted = text.replace(/\\n/g, '\n');
+                    
+                    // 如果已经包含换行符，保持格式并清理
+                    if (formatted.includes('\n')) {
+                      return formatted
+                        .split('\n')
+                        .map(line => line.trim())
+                        .filter(line => line.length > 0)
+                        .join('\n');
+                    }
+                    
+                    // 尝试按说话者分割 - 匹配 A: 或 B: 等格式
+                    const speakerPattern = /([A-Z]):\s*/g;
+                    const parts = formatted.split(speakerPattern);
+                    
+                    if (parts.length > 1) {
+                      let result = '';
+                      for (let i = 1; i < parts.length; i += 2) {
+                        if (parts[i] && parts[i + 1]) {
+                          const speaker = parts[i].trim();
+                          const content = parts[i + 1].trim();
+                          if (speaker && content) {
+                            result += `${speaker}: ${content}\n`;
+                          }
+                        }
+                      }
+                      if (result.trim()) {
+                        return result.trim();
+                      }
+                    }
+                    
+                    // 默认返回原文本
+                    return formatted;
+                  };
+                  
+                  const formattedText = formatDialogueText(currentItem.text);
+                  
                   // 获取所有已选择的生词（包括之前的和本次的）
                   const allSelectedWords = [...previousWords, ...selectedWords];
                   const selectedWordSet = new Set(allSelectedWords.map(item => item.word));
                   
                   // 检查是否为中文文本
-                  const isChinese = /[\u4e00-\u9fff]/.test(currentItem.text);
+                  const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
                   
                   if (isChinese) {
-                    // 中文处理：按字符分割，但需要检查连续字符是否组成已选择的生词
-                    const chars = currentItem.text.split('');
-                    const result = [];
+                    // 中文处理：先按行分割，再按字符分割
+                    const lines = formattedText.split('\n');
                     
-                    for (let i = 0; i < chars.length; i++) {
-                      let isHighlighted = false;
-                      let highlightLength = 0;
+                    return lines.map((line, lineIndex) => {
+                      const chars = line.split('');
+                      const result = [];
                       
-                      // 检查从当前位置开始的多个字符是否组成已选择的生词
-                      for (const selectedWord of allSelectedWords) {
-                        if (i + selectedWord.word.length <= chars.length) {
-                          const substring = chars.slice(i, i + selectedWord.word.length).join('');
-                          if (substring === selectedWord.word) {
-                            isHighlighted = true;
-                            highlightLength = selectedWord.word.length;
-                            break;
+                      for (let i = 0; i < chars.length; i++) {
+                        let isHighlighted = false;
+                        let highlightLength = 0;
+                        
+                        // 检查从当前位置开始的多个字符是否组成已选择的生词
+                        for (const selectedWord of allSelectedWords) {
+                          if (i + selectedWord.word.length <= chars.length) {
+                            const substring = chars.slice(i, i + selectedWord.word.length).join('');
+                            if (substring === selectedWord.word) {
+                              isHighlighted = true;
+                              highlightLength = selectedWord.word.length;
+                              break;
+                            }
                           }
+                        }
+                        
+                        if (isHighlighted && highlightLength > 0) {
+                          // 高亮显示整个生词
+                          const word = chars.slice(i, i + highlightLength).join('');
+                          const wordData = allSelectedWords.find(item => item.word === word);
+                          const explanation = wordData?.explanation;
+                          
+                          result.push(
+                            <HoverExplanation 
+                              key={`${lineIndex}-${i}`}
+                              word={word}
+                              explanation={explanation}
+                            >
+                              {word}
+                            </HoverExplanation>
+                          );
+                          i += highlightLength - 1; // 跳过已处理的字符
+                        } else {
+                          // 普通字符
+                          result.push(
+                            <span key={`${lineIndex}-${i}`}>
+                              {chars[i]}
+                            </span>
+                          );
                         }
                       }
                       
-                      if (isHighlighted && highlightLength > 0) {
-                        // 高亮显示整个生词
-                        const word = chars.slice(i, i + highlightLength).join('');
-                        const wordData = allSelectedWords.find(item => item.word === word);
-                        const explanation = wordData?.explanation;
-                        
-                        result.push(
-                          <HoverExplanation 
-                            key={i}
-                            word={word}
-                            explanation={explanation}
-                          >
-                            {word}
-                          </HoverExplanation>
-                        );
-                        i += highlightLength - 1; // 跳过已处理的字符
-                      } else {
-                        // 普通字符
-                        result.push(
-                          <span key={i}>
-                            {chars[i]}
-                          </span>
-                        );
-                      }
-                    }
-                    
-                    return result;
-                  } else {
-                    // 英文处理：按单词分割
-                    const words = currentItem.text.split(/(\s+|[。！？、，.!?,])/);
-                    
-                    return words.map((word, index) => {
-                      const cleanWord = word.replace(/[。！？、，.!?,\s]/g, '');
-                      const isSelected = cleanWord && selectedWordSet.has(cleanWord);
-                      
-                      if (isSelected) {
-                        const wordData = allSelectedWords.find(item => item.word === cleanWord);
-                        const explanation = wordData?.explanation;
-                        
-                        return (
-                          <HoverExplanation 
-                            key={index}
-                            word={word}
-                            explanation={explanation}
-                          >
-                            {word}
-                          </HoverExplanation>
-                        );
-                      } else {
-                        return (
-                          <span key={index}>
-                            {word}
-                          </span>
-                        );
-                      }
+                      return (
+                        <div key={lineIndex} className="mb-2">
+                          {result}
+                        </div>
+                      );
                     });
+                  } else {
+                    // 英文处理：先按行分割，再按单词分割
+                    const lines = formattedText.split('\n');
+                    
+                    return lines.map((line, lineIndex) => (
+                      <div key={lineIndex} className="mb-2">
+                        {line.split(/(\s+|[。！？、，.!?,])/).map((word, wordIndex) => {
+                          const cleanWord = word.replace(/[。！？、，.!?,\s]/g, '');
+                          const isSelected = cleanWord && selectedWordSet.has(cleanWord);
+                          
+                          if (isSelected) {
+                            const wordData = allSelectedWords.find(item => item.word === cleanWord);
+                            const explanation = wordData?.explanation;
+                            
+                            return (
+                              <HoverExplanation 
+                                key={`${lineIndex}-${wordIndex}`}
+                                word={word}
+                                explanation={explanation}
+                              >
+                                {word}
+                              </HoverExplanation>
+                            );
+                          } else {
+                            return (
+                              <span key={`${lineIndex}-${wordIndex}`}>
+                                {word}
+                              </span>
+                            );
+                          }
+                        })}
+                      </div>
+                    ));
                   }
                 })()}
             </div>
@@ -1832,7 +1915,18 @@ export default function ShadowingPage() {
                         <div key={`prev-${index}`} className="p-3 bg-gray-50 rounded border border-gray-200">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex-1">
-                              <div className="font-medium text-gray-700">{item.word}</div>
+                              <div className="flex items-center gap-2">
+                                <div className="font-medium text-gray-700">{item.word}</div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => speakWord(item.word, currentItem?.lang || 'en')}
+                                  className="text-blue-500 hover:text-blue-700 p-1"
+                                  title="发音"
+                                >
+                                  🔊
+                                </Button>
+                              </div>
                               <div className="text-sm text-gray-600 mt-1">{item.context}</div>
                     </div>
                             <div className="flex items-center gap-2">
@@ -1893,7 +1987,18 @@ export default function ShadowingPage() {
                         <div key={index} className="p-3 bg-blue-50 rounded border border-blue-200">
                           <div className="flex items-center justify-between mb-2">
                 <div className="flex-1">
-                              <div className="font-medium text-blue-700">{item.word}</div>
+                              <div className="flex items-center gap-2">
+                                <div className="font-medium text-blue-700">{item.word}</div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => speakWord(item.word, item.lang)}
+                                  className="text-blue-500 hover:text-blue-700 p-1"
+                                  title="发音"
+                                >
+                                  🔊
+                                </Button>
+                              </div>
                               <div className="text-sm text-blue-600 mt-1">{item.context}</div>
                 </div>
                             <div className="flex gap-2">

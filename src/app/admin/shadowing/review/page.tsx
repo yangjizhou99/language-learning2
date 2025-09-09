@@ -12,7 +12,90 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 
-type Item = { id:string; lang:"en"|"ja"|"zh"; level:number; genre:string; title:string; status:string; created_at:string; notes?: any };
+type Item = { id:string; lang:"en"|"ja"|"zh"; level:number; genre:string; title:string; status:string; created_at:string; notes?: any; text?: string };
+
+// 格式化对话文本，按说话者分行
+function formatDialogueText(text: string): string {
+  if (!text) return '';
+  
+  // 处理AI返回的\n换行符
+  let formatted = text.replace(/\\n/g, '\n');
+  
+  // 如果已经包含换行符，保持格式并清理
+  if (formatted.includes('\n')) {
+    return formatted
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .join('\n');
+  }
+  
+  // 尝试按说话者分割 - 匹配 A: 或 B: 等格式
+  // 使用更简单有效的方法
+  const speakerPattern = /([A-Z]):\s*/g;
+  const parts = formatted.split(speakerPattern);
+  
+  if (parts.length > 1) {
+    let result = '';
+    for (let i = 1; i < parts.length; i += 2) {
+      if (parts[i] && parts[i + 1]) {
+        const speaker = parts[i].trim();
+        const content = parts[i + 1].trim();
+        if (speaker && content) {
+          result += `${speaker}: ${content}\n`;
+        }
+      }
+    }
+    if (result.trim()) {
+      return result.trim();
+    }
+  }
+  
+  // 尝试按引号分割对话
+  if (formatted.includes('"')) {
+    const quotedParts = formatted.match(/"([^"]+)"/g);
+    if (quotedParts && quotedParts.length > 1) {
+      return quotedParts
+        .map((part, index) => {
+          const content = part.replace(/"/g, '').trim();
+          const speaker = String.fromCharCode(65 + index); // A, B, C, D...
+          return `${speaker}: ${content}`;
+        })
+        .join('\n');
+    }
+  }
+  
+  // 尝试按句子分割并分配说话者
+  if (formatted.includes('.') || formatted.includes('!') || formatted.includes('?')) {
+    const sentences = formatted
+      .split(/(?<=[.!?])\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    
+    if (sentences.length > 1) {
+      return sentences
+        .map((sentence, index) => {
+          const speaker = String.fromCharCode(65 + (index % 2)); // 交替使用 A 和 B
+          return `${speaker}: ${sentence}`;
+        })
+        .join('\n');
+    }
+  }
+  
+  // 如果文本很短，直接分配说话者
+  if (formatted.length < 200) {
+    const words = formatted.split(' ');
+    if (words.length > 10) {
+      const midPoint = Math.ceil(words.length / 2);
+      const firstPart = words.slice(0, midPoint).join(' ');
+      const secondPart = words.slice(midPoint).join(' ');
+      return `A: ${firstPart}\nB: ${secondPart}`;
+    }
+  }
+  
+  // 默认返回原文本
+  return formatted;
+}
 
 export default function ShadowingReviewList(){
   const [items, setItems] = useState<Item[]>([]);
@@ -119,10 +202,10 @@ export default function ShadowingReviewList(){
       // 并发处理
       const processBatch = async (batchIds: string[]) => {
         const promises = batchIds.map(async (id) => {
-          const it = items.find(x => x.id === id);
-          setTtsCurrent(it?.title || "");
-          const ok = await synthOne(id);
-          setTtsDone(v => v + 1);
+        const it = items.find(x => x.id === id);
+        setTtsCurrent(it?.title || "");
+        const ok = await synthOne(id);
+        setTtsDone(v => v + 1);
           return { id, success: ok };
         });
         
@@ -204,9 +287,9 @@ export default function ShadowingReviewList(){
       }
       
       toast.success(`批量删除完成：${ids.length - fail}/${ids.length}`);
-      setSelected(new Set());
-      // 刷新
-      setQ(q => q);
+    setSelected(new Set());
+    // 刷新
+    setQ(q => q);
     } catch (e) {
       toast.error("批量删除失败，请重试");
     } finally {
@@ -237,7 +320,7 @@ export default function ShadowingReviewList(){
           const it = items.find(x => x.id === id);
           setTtsCurrent(it?.title || "");
           try {
-            await publishOne(id);
+        await publishOne(id);
             setTtsDone(v => v + 1);
             return { id, success: true };
           } catch (error) {
@@ -279,14 +362,14 @@ export default function ShadowingReviewList(){
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Shadowing 草稿审核</h1>
+      <h1 className="text-2xl font-semibold">Shadowing 草稿审核</h1>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <span>总计: {stats.total}</span>
           <span>•</span>
           <span>有音频: {stats.withAudio}</span>
           <span>•</span>
           <span>完成度: {stats.audioPercentage}%</span>
-        </div>
+      </div>
       </div>
 
       {/* 筛选条件 */}
@@ -296,7 +379,7 @@ export default function ShadowingReviewList(){
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div>
+          <div>
               <label className="text-sm font-medium">搜索标题</label>
               <Input 
                 placeholder="搜索标题" 
@@ -546,24 +629,32 @@ export default function ShadowingReviewList(){
                         )}
                       </div>
                       <div className="font-medium text-lg mb-2">{it.title}</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-gray-500 mb-2">
                         创建时间: {new Date(it.created_at).toLocaleString()}
                       </div>
-                      {it?.notes?.audio_url && (
+                      {/* 显示对话文本，按说话者分行 */}
+                      {it.text && (
+                        <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border max-h-32 overflow-y-auto">
+                          <div className="whitespace-pre-wrap font-mono text-xs leading-relaxed">
+                            {formatDialogueText(it.text)}
+          </div>
+        </div>
+      )}
+                {it?.notes?.audio_url && (
                         <div className="mt-3">
                           <audio controls src={it.notes.audio_url} className="h-8 w-full max-w-md" />
-                        </div>
-                      )}
-                    </div>
                   </div>
+                )}
+              </div>
+            </div>
                   <div className="flex items-center gap-2">
                     <Button asChild size="sm">
                       <Link href={`/admin/shadowing/review/${it.id}`}>查看详情</Link>
                     </Button>
                   </div>
-                </div>
-              ))}
-            </div>
+          </div>
+        ))}
+      </div>
           )}
         </CardContent>
       </Card>
