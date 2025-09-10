@@ -165,6 +165,12 @@ export default function ShadowingReviewList(){
     setSelected(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   }
 
+  // 检测是否为对话格式
+  function isDialogueFormat(text: string): boolean {
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    return lines.some(line => /^[A-Z]:\s/.test(line));
+  }
+
   async function synthOne(id: string){
     const it = items.find(x => x.id === id);
     if (!it) return false;
@@ -175,11 +181,37 @@ export default function ShadowingReviewList(){
       if (!detail.ok) throw new Error(`获取草稿失败(${detail.status})`);
       const dj = await detail.json();
       const draft = dj.draft;
-      const r = await fetch('/api/admin/shadowing/synthesize', { method:'POST', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ text: draft.text, lang: draft.lang, voice: draft?.notes?.voice || null, speakingRate: draft?.notes?.speakingRate || 1.0 }) });
+      
+      // 检查是否为对话格式
+      const isDialogue = isDialogueFormat(draft.text);
+      const apiEndpoint = isDialogue ? '/api/admin/shadowing/synthesize-dialogue' : '/api/admin/shadowing/synthesize';
+      
+      console.log(`使用 ${isDialogue ? '对话' : '普通'} TTS 合成: ${draft.title}`);
+      
+      const r = await fetch(apiEndpoint, { 
+        method:'POST', 
+        headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, 
+        body: JSON.stringify({ 
+          text: draft.text, 
+          lang: draft.lang, 
+          voice: draft?.notes?.voice || null, 
+          speakingRate: draft?.notes?.speakingRate || 1.0 
+        }) 
+      });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error || "TTS 失败");
+      
       // 写入 notes.audio_url 并保存
-      const next = { ...draft, notes: { ...(draft.notes||{}), audio_url: j.audio_url } };
+      const next = { 
+        ...draft, 
+        notes: { 
+          ...(draft.notes||{}), 
+          audio_url: j.audio_url,
+          is_dialogue: isDialogue,
+          dialogue_count: j.dialogue_count || null,
+          speakers: j.speakers || null
+        } 
+      };
       const save = await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
       if (!save.ok) throw new Error(`保存音频地址失败(${save.status})`);
       return true;
@@ -555,6 +587,21 @@ export default function ShadowingReviewList(){
             >
               {ttsLoading ? "合成中..." : "批量合成 TTS"}
             </Button>
+            <div className="text-xs text-gray-500">
+              💡 自动检测对话格式，为 A/B 角色分配不同音色
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => {
+                const dialogueItems = items.filter(item => isDialogueFormat(item.text || ''));
+                const regularItems = items.filter(item => !isDialogueFormat(item.text || ''));
+                toast.info(`检测结果: ${dialogueItems.length} 个对话格式, ${regularItems.length} 个普通格式`);
+              }}
+              disabled={ttsLoading || publishing}
+            >
+              检测对话格式
+            </Button>
             <Button 
               onClick={publishSelected} 
               disabled={publishing || selected.size===0}
@@ -624,8 +671,20 @@ export default function ShadowingReviewList(){
                         <Badge variant="outline">{it.lang}</Badge>
                         <Badge variant="secondary">L{it.level}</Badge>
                         <Badge variant="outline">{it.genre}</Badge>
+                        {isDialogueFormat(it.text || '') && (
+                          <Badge variant="outline" className="text-purple-600 border-purple-300">
+                            对话格式
+                          </Badge>
+                        )}
                         {it?.notes?.audio_url && (
-                          <Badge variant="default" className="bg-green-600">有音频</Badge>
+                          <Badge variant="default" className="bg-green-600">
+                            {it?.notes?.is_dialogue ? '对话音频' : '有音频'}
+                          </Badge>
+                        )}
+                        {it?.notes?.is_dialogue && it?.notes?.speakers && (
+                          <Badge variant="outline" className="text-blue-600">
+                            {it.notes.speakers.join('+')} 角色
+                          </Badge>
                         )}
                       </div>
                       <div className="font-medium text-lg mb-2">{it.title}</div>

@@ -17,6 +17,7 @@ export default function ShadowingItemsAdmin(){
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any|null>(null);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [reverting, setReverting] = useState(false); // 退回草稿状态
   
   // 筛选状态
   const [q, setQ] = useState(""); // 搜索关键词
@@ -147,12 +148,73 @@ export default function ShadowingItemsAdmin(){
     }
   };
 
+  // 批量退回草稿
+  const revertToDraft = async () => {
+    const filteredItems = getFilteredItems();
+    const selectedIds = filteredItems
+      .filter(item => selected[item.id])
+      .map(item => item.id);
+    
+    if (selectedIds.length === 0) {
+      toast.error('未选择任何项');
+      return;
+    }
+
+    setReverting(true);
+    try {
+      const r = await fetch('/api/admin/shadowing/revert-to-draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await getAuthHeaders())
+        },
+        body: JSON.stringify({ ids: selectedIds })
+      });
+
+      if (r.status === 401) {
+        toast.error('认证失败，请重新登录');
+        setTimeout(() => {
+          router.push('/auth');
+        }, 2000);
+        return;
+      }
+
+      if (r.ok) {
+        const result = await r.json();
+        toast.success(`已退回 ${result.reverted_count} 项到草稿审核`);
+        
+        // 清空选择状态
+        setSelected({});
+        setSelectAll(false);
+        load();
+      } else {
+        const errorData = await r.json();
+        toast.error(`退回草稿失败: ${errorData.error || '未知错误'}`);
+      }
+    } catch (e) {
+      toast.error('退回草稿失败，请重试');
+    } finally {
+      setReverting(false);
+    }
+  };
+
   return (
     <main className="max-w-6xl mx-auto p-6 space-y-4">
       {/* 页面标题和导航 */}
       <h1 className="text-2xl font-semibold">Shadowing 素材管理</h1>
-      <div>
+      <div className="flex items-center gap-4">
         <a href="/admin/shadowing/ai" className="px-3 py-1 rounded bg-black text-white">新增素材 → 生成页</a>
+        <a href="/admin/shadowing/review" className="px-3 py-1 rounded bg-blue-600 text-white">草稿审核 → 审核页</a>
+      </div>
+      
+      {/* 功能说明 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="font-medium text-blue-800 mb-2">📝 功能说明</h3>
+        <div className="text-sm text-blue-700 space-y-1">
+          <div>• <strong>批量退回草稿：</strong>将已发布的素材退回到草稿审核状态，可以重新编辑和审核</div>
+          <div>• <strong>批量删除：</strong>永久删除选中的素材，操作不可撤销</div>
+          <div>• 退回的素材会保留所有原始信息，包括音频、元数据等</div>
+        </div>
       </div>
       
       {/* 搜索与筛选区域 */}
@@ -227,6 +289,43 @@ export default function ShadowingItemsAdmin(){
             清空选择
           </Button>
         </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              disabled={reverting || getFilteredItems().filter(item => selected[item.id]).length === 0}
+            >
+              {reverting ? "退回中..." : "批量退回草稿"}
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>确认退回草稿</DialogTitle>
+              <DialogDescription>
+                将把当前筛选结果中选中的 {getFilteredItems().filter(item => selected[item.id]).length} 项素材退回到草稿审核状态。
+                <br />
+                <br />
+                <strong>注意：</strong>
+                <br />
+                • 素材将从已发布状态变为草稿状态
+                <br />
+                • 可以重新编辑和审核这些素材
+                <br />
+                • 原始素材将被删除，但所有信息都会保留在草稿中
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button variant="ghost">取消</Button>
+              </DialogClose>
+              <DialogClose asChild>
+                <Button variant="outline" onClick={revertToDraft}>
+                  确认退回
+                </Button>
+              </DialogClose>
+            </div>
+          </DialogContent>
+        </Dialog>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="destructive" disabled={getFilteredItems().filter(item => selected[item.id]).length === 0}>
