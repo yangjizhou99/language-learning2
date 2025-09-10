@@ -817,7 +817,6 @@ export default function ShadowingPage() {
   // 处理转录完成
   const handleTranscriptionReady = (transcription: string) => {
     setCurrentTranscription(transcription);
-    console.log('转录完成:', transcription);
     
     // 自动进行评分
     if (currentItem && transcription) {
@@ -1103,7 +1102,6 @@ export default function ShadowingPage() {
 
   // 评分功能（支持转录文字和逐句对比）
   const performScoring = async (transcription?: string) => {
-    console.log('开始评分，参数:', { transcription, currentTranscription, currentItem: !!currentItem });
     
     if (!currentItem) {
       console.error('没有当前题目，无法评分');
@@ -1113,7 +1111,6 @@ export default function ShadowingPage() {
     setIsScoring(true);
     try {
       const textToScore = transcription || currentTranscription;
-      console.log('用于评分的文字:', textToScore);
       
       if (!textToScore) {
         console.error('没有找到转录文字');
@@ -1123,37 +1120,56 @@ export default function ShadowingPage() {
 
       // 获取原文
       const originalText = currentItem.text;
-      console.log('原文:', originalText);
       
-      // 简化的整体相似度计算
-      const overallAccuracy = calculateSimilarity(originalText, textToScore);
-      console.log('整体相似度:', overallAccuracy);
+      // 使用句子分析计算整体评分
+      const simpleAnalysis = performSimpleAnalysis(originalText, textToScore);
+      const { overallScore } = simpleAnalysis;
 
       // 确保准确率在0-1之间
-      const normalizedAccuracy = Math.max(0, Math.min(1, overallAccuracy));
-      const scorePercentage = Math.round(normalizedAccuracy * 100);
+      const normalizedAccuracy = overallScore / 100;
+      const scorePercentage = overallScore;
 
-      // 生成反馈
+      // 生成更详细的反馈
       let feedback = '';
+      const suggestions = [];
+      
       if (scorePercentage >= 80) {
-        feedback = '发音准确率: ' + scorePercentage + '%，非常棒！';
+        feedback = `发音准确率: ${scorePercentage}%，非常棒！`;
+        suggestions.push('继续保持这个水平！');
       } else if (scorePercentage >= 60) {
-        feedback = '发音准确率: ' + scorePercentage + '%，很好！继续努力！';
+        feedback = `发音准确率: ${scorePercentage}%，很好！`;
+        suggestions.push('可以尝试更清晰地发音');
+        suggestions.push('注意语调和节奏');
       } else if (scorePercentage >= 40) {
-        feedback = '发音准确率: ' + scorePercentage + '%，还不错，继续练习！';
+        feedback = `发音准确率: ${scorePercentage}%，还不错`;
+        suggestions.push('建议多听几遍原文');
+        suggestions.push('注意单词的发音');
+        suggestions.push('可以尝试放慢语速');
       } else {
-        feedback = '发音准确率: ' + scorePercentage + '%，需要多练习，加油！';
+        feedback = `发音准确率: ${scorePercentage}%，需要加强练习`;
+        suggestions.push('建议先听几遍原文再练习');
+        suggestions.push('注意每个单词的发音');
+        suggestions.push('可以分段练习');
+        suggestions.push('多练习几次会更好');
       }
+
+      // 添加转录质量提示
+      if (textToScore.length < originalText.length * 0.3) {
+        suggestions.push('转录内容较少，建议重新录音');
+      } else if (textToScore.length < originalText.length * 0.6) {
+        suggestions.push('转录内容不完整，建议重新录音');
+      }
+
+      const fullFeedback = feedback + (suggestions.length > 0 ? '\n\n建议：\n• ' + suggestions.join('\n• ') : '');
 
       const scoringResult = {
         score: scorePercentage,
         accuracy: normalizedAccuracy,
-        feedback: feedback,
+        feedback: fullFeedback,
         transcription: textToScore,
         originalText: originalText
       };
 
-      console.log('评分结果:', scoringResult);
       setScoringResult(scoringResult);
       setShowSentenceComparison(false); // 不再显示逐句对比
     } catch (error) {
@@ -1166,73 +1182,150 @@ export default function ShadowingPage() {
 
 
 
-  // 计算文本相似度
-  const calculateSimilarity = (text1: string, text2: string) => {
-    if (!text1 || !text2) return 0;
+
+
+
+
+
+  // 简单直观的句子对比分析
+  const performSimpleAnalysis = (originalText: string, transcribedText: string) => {
+    // 检查是否为中文
+    const isChinese = /[\u4e00-\u9fff]/.test(originalText);
     
-    // 预处理：去除标点符号和空格，转换为小写，忽略大小写
-    const normalize = (text: string) => {
-      return text
-        .replace(/[。！？、，.!?,\s]/g, '') // 去除标点符号和空格
-        .toLowerCase() // 转换为小写
-        .trim();
-    };
+    let originalSentences: string[];
+    let cleanTranscribed: string[];
     
-    const normalized1 = normalize(text1);
-    const normalized2 = normalize(text2);
+    if (isChinese) {
+      // 中文处理：按标点符号分割句子
+      originalSentences = originalText
+        .split(/[。！？]/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+      
+      // 清理转录文本（中文）
+      cleanTranscribed = transcribedText
+        .replace(/[。！？、，\s]+/g, '')
+        .split('')
+        .filter(c => c.length > 0);
+    } else {
+      // 英文处理：按A:, B:分割
+      originalSentences = originalText
+        .split(/(?=[A-Z]:)/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+      
+      // 清理转录文本（英文）
+      cleanTranscribed = transcribedText
+        .replace(/[.!?,\s]+/g, ' ')
+        .split(' ')
+        .map(w => w.toLowerCase().trim())
+        .filter(w => w.length > 0);
+    }
     
-    if (normalized1 === normalized2) return 1;
     
-    // 使用Levenshtein距离计算相似度
-    const distance = levenshteinDistance(normalized1, normalized2);
-    const maxLength = Math.max(normalized1.length, normalized2.length);
+    const sentenceAnalysis: Array<{
+      sentence: string;
+      status: 'correct' | 'partial' | 'missing';
+      issues: string[];
+      score: number;
+    }> = [];
     
-    if (maxLength === 0) return 1;
+    // 分析每个句子
+    for (const sentence of originalSentences) {
+      let cleanSentence: string[];
+      
+      if (isChinese) {
+        // 中文处理：按字符分割
+        cleanSentence = sentence
+          .replace(/[。！？、，\s]+/g, '')
+          .split('')
+          .filter(c => c.length > 0);
+      } else {
+        // 英文处理：按单词分割
+        cleanSentence = sentence
+          .replace(/^[A-Z]:\s*/, '') // 移除角色标识符
+          .replace(/[.!?,\s]+/g, ' ')
+          .split(' ')
+          .map(w => w.toLowerCase().trim())
+          .filter(w => w.length > 0);
+      }
+      
+      // 计算句子匹配度
+      const matchedItems = cleanSentence.filter(item => 
+        cleanTranscribed.includes(item)
+      );
+      
+      const matchRatio = cleanSentence.length > 0 ? matchedItems.length / cleanSentence.length : 0;
+      
+      let status: 'correct' | 'partial' | 'missing';
+      const issues: string[] = [];
+      
+      if (matchRatio >= 0.9) {
+        status = 'correct';
+      } else if (matchRatio >= 0.5) {
+        status = 'partial';
+        // 找出遗漏的内容
+        const missingItems = cleanSentence.filter(item => !cleanTranscribed.includes(item));
+        if (missingItems.length > 0) {
+          if (isChinese) {
+            issues.push(`遗漏字符: ${missingItems.join('')}`);
+          } else {
+            issues.push(`遗漏单词: ${missingItems.join(', ')}`);
+          }
+        }
+      } else {
+        status = 'missing';
+        issues.push('大部分内容未说出');
+      }
+      
+      // 检查发音错误（仅英文）
+      if (!isChinese) {
+        const pronunciationErrors = checkPronunciationErrors(cleanSentence, cleanTranscribed);
+        if (pronunciationErrors.length > 0) {
+          issues.push(...pronunciationErrors);
+        }
+      }
+      
+      sentenceAnalysis.push({
+        sentence: isChinese ? sentence : sentence.replace(/^[A-Z]:\s*/, ''), // 中文不移除，英文移除角色标识符
+        status,
+        issues,
+        score: Math.round(matchRatio * 100)
+      });
+    }
     
-    const similarity = 1 - (distance / maxLength);
+    const overallScore = sentenceAnalysis.length > 0 
+      ? Math.round(sentenceAnalysis.reduce((sum, s) => sum + s.score, 0) / sentenceAnalysis.length)
+      : 0;
     
-    // 对于多语言，考虑字符相似性
-    // 如果包含相同的字符，给予额外加分
-    const chars1 = normalized1.split('');
-    const chars2 = normalized2.split('');
-    
-    // 计算字符重叠度
-    const overlap = chars1.filter(char => chars2.includes(char)).length;
-    const totalChars = chars1.length + chars2.length;
-    
-    const overlapBonus = totalChars > 0 ? (overlap / totalChars) * 0.2 : 0;
-    
-    return Math.min(1, similarity + overlapBonus);
+    return { sentenceAnalysis, overallScore };
   };
 
-  // 计算编辑距离
-  const levenshteinDistance = (str1: string, str2: string) => {
-    const matrix = [];
+  // 检查发音错误
+  const checkPronunciationErrors = (originalWords: string[], transcribedWords: string[]) => {
+    const errors: string[] = [];
     
-    for (let i = 0; i <= str2.length; i++) {
-      matrix[i] = [i];
-    }
+    // 常见发音错误检查
+    const commonErrors = [
+      { original: 'today', error: 'tomorrow' },
+      { original: 'tomorrow', error: 'today' },
+      { original: 'no', error: 'now' },
+      { original: 'now', error: 'no' },
+      { original: 'it', error: 'is' },
+      { original: 'is', error: 'it' }
+    ];
     
-    for (let j = 0; j <= str1.length; j++) {
-      matrix[0][j] = j;
-    }
-    
-    for (let i = 1; i <= str2.length; i++) {
-      for (let j = 1; j <= str1.length; j++) {
-        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-          matrix[i][j] = matrix[i - 1][j - 1];
-        } else {
-          matrix[i][j] = Math.min(
-            matrix[i - 1][j - 1] + 1,
-            matrix[i][j - 1] + 1,
-            matrix[i - 1][j] + 1
-          );
-        }
+    for (const error of commonErrors) {
+      if (originalWords.includes(error.original) && transcribedWords.includes(error.error)) {
+        errors.push(`"${error.original}" 说成了 "${error.error}"`);
       }
     }
     
-    return matrix[str2.length][str1.length];
+    return errors;
   };
+
+
+
 
   // 记录练习结果到数据库
   const recordPracticeResult = async () => {
@@ -1826,8 +1919,8 @@ export default function ShadowingPage() {
                                         {chars[i]}
                                       </span>
                                     );
-                                  }
                                 }
+                              }
                                 
                                 return (
                                   <div key={lineIndex} className="mb-2">
@@ -2124,6 +2217,128 @@ export default function ShadowingPage() {
                                     {scoringResult.transcription}
                                   </div>
                                 </div>
+                              </div>
+                            </div>
+                            
+                            {/* 详细分析 - 手机端 */}
+                            <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                              <div className="text-sm text-blue-600 mb-2">详细分析</div>
+                              <div className="text-sm text-gray-700">
+                                {(() => {
+                                  // 处理中文文本，按字符分割而不是按单词分割
+                                  
+                                  // 使用简单句子分析（支持中文和英文）
+                                  const simpleAnalysis = performSimpleAnalysis(scoringResult.originalText, scoringResult.transcription);
+                                  const { sentenceAnalysis, overallScore } = simpleAnalysis;
+                                  
+                                  return (
+                                    <div>
+                                      {/* 整体评分 */}
+                                      <div className="mb-4 p-3 bg-white rounded border">
+                                        <div className="text-sm font-medium mb-2">整体评分：</div>
+                                        <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
+                                      </div>
+                                      
+                                      {/* 句子分析 */}
+                                      <div className="space-y-3">
+                                        {sentenceAnalysis.map((sentence, idx) => (
+                                          <div key={idx} className={`p-3 rounded border ${
+                                            sentence.status === 'correct' ? 'bg-green-50 border-green-200' :
+                                            sentence.status === 'partial' ? 'bg-yellow-50 border-yellow-200' :
+                                            'bg-red-50 border-red-200'
+                                          }`}>
+                                            <div className="flex items-center justify-between mb-2">
+                                              <div className="text-sm font-medium">
+                                                {sentence.status === 'correct' && '✓ '}
+                                                {sentence.status === 'partial' && '⚠ '}
+                                                {sentence.status === 'missing' && '❌ '}
+                                                句子 {idx + 1}
+                                              </div>
+                                              <div className="text-sm font-bold">
+                                                {sentence.score}%
+                                              </div>
+                                            </div>
+                                            
+                                            <div className="text-sm mb-2">
+                                              <span className="font-medium">原文：</span>
+                                              <span className="text-gray-700">"{sentence.sentence}"</span>
+                                            </div>
+                                            
+                                            {sentence.issues.length > 0 && (
+                                              <div className="text-sm text-red-600">
+                                                <div className="font-medium">问题：</div>
+                                                <ul className="list-disc list-inside space-y-1">
+                                                  {sentence.issues.map((issue, issueIdx) => (
+                                                    <li key={issueIdx}>{issue}</li>
+                                                  ))}
+                                                </ul>
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                      
+                                      <div className="mt-4 text-xs text-gray-500">
+                                        💡 分析基于句子级别，更直观地显示发音问题
+                                      </div>
+                                    </div>
+                                  );
+                                    
+                                    return (
+                                      <div>
+                                        {/* 整体评分 */}
+                                        <div className="mb-4 p-3 bg-white rounded border">
+                                          <div className="text-sm font-medium mb-2">整体评分：</div>
+                                          <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
+                                        </div>
+                                        
+                                        {/* 句子分析 */}
+                                        <div className="space-y-3">
+                                          {sentenceAnalysis.map((sentence, idx) => (
+                                            <div key={idx} className={`p-3 rounded border ${
+                                              sentence.status === 'correct' ? 'bg-green-50 border-green-200' :
+                                              sentence.status === 'partial' ? 'bg-yellow-50 border-yellow-200' :
+                                              'bg-red-50 border-red-200'
+                                            }`}>
+                                              <div className="flex items-center justify-between mb-2">
+                                                <div className="text-sm font-medium">
+                                                  {sentence.status === 'correct' && '✓ '}
+                                                  {sentence.status === 'partial' && '⚠ '}
+                                                  {sentence.status === 'missing' && '❌ '}
+                                                  句子 {idx + 1}
+                                                </div>
+                                                <div className="text-sm font-bold">
+                                                  {sentence.score}%
+                                                </div>
+                                              </div>
+                                              
+                                              <div className="text-sm mb-2">
+                                                <span className="font-medium">原文：</span>
+                                                <span className="text-gray-700">"{sentence.sentence}"</span>
+                                              </div>
+                                              
+                                              {sentence.issues.length > 0 && (
+                                                <div className="text-xs">
+                                                  <span className="font-medium text-red-600">问题：</span>
+                                                  <ul className="mt-1 space-y-1">
+                                                    {sentence.issues.map((issue, issueIdx) => (
+                                                      <li key={issueIdx} className="text-red-600">
+                                                        • {issue}
+                                                      </li>
+                                                    ))}
+                                                  </ul>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                        
+                                        <div className="mt-3 text-xs text-gray-600">
+                                          💡 分析基于句子级别，更直观地显示发音问题
+                                        </div>
+                                      </div>
+                                    );
+                                })()}
                               </div>
                             </div>
                           </div>
@@ -2906,106 +3121,118 @@ export default function ShadowingPage() {
                               <div className="text-sm text-gray-700">
                                 {(() => {
                                   // 处理中文文本，按字符分割而不是按单词分割
-                                  const isChinese = /[\u4e00-\u9fff]/.test(scoringResult.originalText);
                                   
-                                  if (isChinese) {
-                                    // 中文处理：按字符分割，但需要忽略标点符号和空格
-                                    const originalText = scoringResult.originalText.replace(/[。！？、，\s]/g, '');
-                                    const transcribedText = scoringResult.transcription.replace(/[。！？、，\s]/g, '');
-                                    
-                                    const originalChars = originalText.split('');
-                                    const transcribedChars = transcribedText.split('');
-                                    
-                                    // 找出不匹配的字符索引
-                                    const mismatchedIndices = new Set<number>();
-                                    const maxLength = Math.max(originalChars.length, transcribedChars.length);
-                                    
-                                    for (let i = 0; i < maxLength; i++) {
-                                      const origChar = originalChars[i] || '';
-                                      const transChar = transcribedChars[i] || '';
+                                  // 使用简单句子分析（支持中文和英文）
+                                  const simpleAnalysis = performSimpleAnalysis(scoringResult.originalText, scoringResult.transcription);
+                                  const { sentenceAnalysis, overallScore } = simpleAnalysis;
+                                  
+                                  return (
+                                    <div>
+                                      {/* 整体评分 */}
+                                      <div className="mb-4 p-3 bg-white rounded border">
+                                        <div className="text-sm font-medium mb-2">整体评分：</div>
+                                        <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
+                                      </div>
                                       
-                                      if (origChar !== transChar) {
-                                        mismatchedIndices.add(i);
-                                      }
-                                    }
-                                    
-                                    if (mismatchedIndices.size === 0) {
-                                      return <span className="text-green-600">✓ 完全匹配！</span>;
-                                    } else {
-                                      return (
-                                        <div>
-                                          <div className="text-red-600 mb-2">不匹配的字符（红色标记）：</div>
-                                          <div className="p-3 bg-white rounded border text-sm leading-relaxed">
-                                            {originalChars.map((char, index) => {
-                                              const isMismatched = mismatchedIndices.has(index);
-                                              const transcribedChar = transcribedChars[index] || '';
-                                              
-                                              return (
-                                                <span 
-                                                  key={index}
-                                                  className={isMismatched ? 'bg-red-200 text-red-800 px-1 rounded' : ''}
-                                                  title={isMismatched ? `你说成了: "${transcribedChar}"` : ''}
-                                                >
-                                                  {char}
-                                                </span>
-                                              );
-                                            })}
+                                      {/* 句子分析 */}
+                                      <div className="space-y-3">
+                                        {sentenceAnalysis.map((sentence, idx) => (
+                                          <div key={idx} className={`p-3 rounded border ${
+                                            sentence.status === 'correct' ? 'bg-green-50 border-green-200' :
+                                            sentence.status === 'partial' ? 'bg-yellow-50 border-yellow-200' :
+                                            'bg-red-50 border-red-200'
+                                          }`}>
+                                            <div className="flex items-center justify-between mb-2">
+                                              <div className="text-sm font-medium">
+                                                {sentence.status === 'correct' && '✓ '}
+                                                {sentence.status === 'partial' && '⚠ '}
+                                                {sentence.status === 'missing' && '❌ '}
+                                                句子 {idx + 1}
+                                              </div>
+                                              <div className="text-sm font-bold">
+                                                {sentence.score}%
+                                              </div>
+                                            </div>
+                                            
+                                            <div className="text-sm mb-2">
+                                              <span className="font-medium">原文：</span>
+                                              <span className="text-gray-700">"{sentence.sentence}"</span>
+                                            </div>
+                                            
+                                            {sentence.issues.length > 0 && (
+                                              <div className="text-sm text-red-600">
+                                                <div className="font-medium">问题：</div>
+                                                <ul className="list-disc list-inside space-y-1">
+                                                  {sentence.issues.map((issue, issueIdx) => (
+                                                    <li key={issueIdx}>{issue}</li>
+                                                  ))}
+                                                </ul>
+                                              </div>
+                                            )}
                                           </div>
-                                          <div className="mt-2 text-xs text-gray-600">
-                                            红色标记的字符与你的发音不匹配，鼠标悬停可查看你说的内容
-                                          </div>
-                                        </div>
-                                      );
-                                    }
-                                  } else {
-                                    // 英文处理：按单词分割
-                                    const originalWords = scoringResult.originalText.split(/\s+/);
-                                    const transcribedWords = scoringResult.transcription.split(/\s+/);
-                                    
-                                    // 找出不匹配的单词索引
-                                    const mismatchedIndices = new Set<number>();
-                                    const maxLength = Math.max(originalWords.length, transcribedWords.length);
-                                    
-                                    for (let i = 0; i < maxLength; i++) {
-                                      const origWord = (originalWords[i] || '').toLowerCase().replace(/[.!?,\s]/g, '');
-                                      const transWord = (transcribedWords[i] || '').toLowerCase().replace(/[.!?,\s]/g, '');
+                                        ))}
+                                      </div>
                                       
-                                      if (origWord !== transWord) {
-                                        mismatchedIndices.add(i);
-                                      }
-                                    }
+                                      <div className="mt-4 text-xs text-gray-500">
+                                        💡 分析基于句子级别，更直观地显示发音问题
+                                      </div>
+                                    </div>
+                                  );
                                     
-                                    if (mismatchedIndices.size === 0) {
-                                      return <span className="text-green-600">✓ 完全匹配！</span>;
-                                    } else {
-                                      return (
-                                        <div>
-                                          <div className="text-red-600 mb-2">不匹配的单词（红色标记）：</div>
-                                          <div className="p-3 bg-white rounded border text-sm leading-relaxed">
-                                            {originalWords.map((word, index) => {
-                                              const isMismatched = mismatchedIndices.has(index);
-                                              const transcribedWord = transcribedWords[index] || '';
-                                              
-                                              return (
-                                                <span key={index}>
-                                                  <span 
-                                                    className={isMismatched ? 'bg-red-200 text-red-800 px-1 rounded' : ''}
-                                                    title={isMismatched ? `你说成了: "${transcribedWord}"` : ''}
-                                                  >
-                                                    {word}
-                                                  </span>
-                                                  {index < originalWords.length - 1 && ' '}
-                                                </span>
-                                              );
-                                            })}
-                                          </div>
-                                          <div className="mt-2 text-xs text-gray-600">
-                                            红色标记的单词与你的发音不匹配，鼠标悬停可查看你说的内容
-                                          </div>
+                                    return (
+                                      <div>
+                                        {/* 整体评分 */}
+                                        <div className="mb-4 p-3 bg-white rounded border">
+                                          <div className="text-sm font-medium mb-2">整体评分：</div>
+                                          <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
                                         </div>
-                                      );
-                                    }
-                                  }
+                                        
+                                        {/* 句子分析 */}
+                                        <div className="space-y-3">
+                                          {sentenceAnalysis.map((sentence, idx) => (
+                                            <div key={idx} className={`p-3 rounded border ${
+                                              sentence.status === 'correct' ? 'bg-green-50 border-green-200' :
+                                              sentence.status === 'partial' ? 'bg-yellow-50 border-yellow-200' :
+                                              'bg-red-50 border-red-200'
+                                            }`}>
+                                              <div className="flex items-center justify-between mb-2">
+                                                <div className="text-sm font-medium">
+                                                  {sentence.status === 'correct' && '✓ '}
+                                                  {sentence.status === 'partial' && '⚠ '}
+                                                  {sentence.status === 'missing' && '❌ '}
+                                                  句子 {idx + 1}
+                                                </div>
+                                                <div className="text-sm font-bold">
+                                                  {sentence.score}%
+                                                </div>
+                                              </div>
+                                              
+                                              <div className="text-sm mb-2">
+                                                <span className="font-medium">原文：</span>
+                                                <span className="text-gray-700">"{sentence.sentence}"</span>
+                                              </div>
+                                              
+                                              {sentence.issues.length > 0 && (
+                                                <div className="text-xs">
+                                                  <span className="font-medium text-red-600">问题：</span>
+                                                  <ul className="mt-1 space-y-1">
+                                                    {sentence.issues.map((issue, issueIdx) => (
+                                                      <li key={issueIdx} className="text-red-600">
+                                                        • {issue}
+                                                      </li>
+                                                    ))}
+                                                  </ul>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                        
+                                        <div className="mt-3 text-xs text-gray-600">
+                                          💡 分析基于句子级别，更直观地显示发音问题
+                                        </div>
+                                      </div>
+                                    );
                                 })()}
                               </div>
                             </div>

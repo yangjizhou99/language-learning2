@@ -47,6 +47,7 @@ export default function AudioRecorder({
   const [currentTranscription, setCurrentTranscription] = useState<string>('');
   const [isRealTimeTranscribing, setIsRealTimeTranscribing] = useState(false);
   const [realTimeTranscription, setRealTimeTranscription] = useState<string>('');
+  const realTimeTranscriptionRef = useRef<string>('');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -78,9 +79,9 @@ export default function AudioRecorder({
         console.log('设置语音识别语言:', recognitionLang, 'for language:', language);
         
         recognitionRef.current.onstart = () => {
-          console.log('实时语音识别开始');
           setIsRealTimeTranscribing(true);
           setRealTimeTranscription('');
+          realTimeTranscriptionRef.current = '';
         };
         
         recognitionRef.current.onresult = (event: any) => {
@@ -96,9 +97,20 @@ export default function AudioRecorder({
             }
           }
           
-          const fullTranscript = (finalTranscript + interimTranscript).trim();
-          setRealTimeTranscription(fullTranscript);
-          console.log('实时转录:', fullTranscript);
+          // 累积所有最终转录结果
+          setRealTimeTranscription(prev => {
+            const newFinal = finalTranscript.trim();
+            if (newFinal) {
+              const updated = prev + (prev ? ' ' : '') + newFinal;
+              realTimeTranscriptionRef.current = updated;
+              return updated;
+            }
+            return prev;
+          });
+          
+          // 显示当前实时转录（包含临时结果）
+          const currentDisplay = (finalTranscript + interimTranscript).trim();
+          console.log('实时转录显示:', currentDisplay);
         };
         
         recognitionRef.current.onerror = (event: any) => {
@@ -107,7 +119,6 @@ export default function AudioRecorder({
         };
         
         recognitionRef.current.onend = () => {
-          console.log('实时语音识别结束');
           setIsRealTimeTranscribing(false);
         };
       }
@@ -124,13 +135,19 @@ export default function AudioRecorder({
   const transcribeAudio = useCallback(async (audioBlob: Blob) => {
     setIsTranscribing(true);
     try {
-      console.log('开始语音转文字...');
+      // 优先使用实时转录的结果
+      const latestTranscription = realTimeTranscriptionRef.current;
+      if (latestTranscription && latestTranscription.trim().length > 0) {
+        setCurrentTranscription(latestTranscription);
+        return latestTranscription;
+      }
       
-      // 检查浏览器是否支持Web Speech API
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      // 如果没有实时转录结果，使用当前转录
+      if (currentTranscription && currentTranscription.trim().length > 0) {
+        return currentTranscription;
+      }
       
-      // 使用转录API处理录制的音频文件
-      console.log('使用转录API处理录制的音频文件');
+      // 如果都没有，则使用转录API作为备选
       
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
@@ -149,7 +166,6 @@ export default function AudioRecorder({
       }
       
       const data = await response.json();
-      console.log('转录API响应:', data);
       
       if (data.success && data.transcription) {
         setCurrentTranscription(data.transcription);
@@ -160,13 +176,13 @@ export default function AudioRecorder({
     } catch (error) {
       console.error('语音转文字失败:', error);
       // 返回模拟结果作为备选
-      const mockTranscription = 'こんにちは、はじめまして';
+      const mockTranscription = language === 'zh' ? '你好，很高兴认识你' : 'こんにちは、はじめまして';
       setCurrentTranscription(mockTranscription);
       return mockTranscription;
     } finally {
       setIsTranscribing(false);
     }
-  }, []);
+  }, [realTimeTranscription, currentTranscription, originalText, language]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -201,6 +217,7 @@ export default function AudioRecorder({
       // 开始实时语音识别
       if (recognitionRef.current) {
         setRealTimeTranscription('');
+        realTimeTranscriptionRef.current = '';
         recognitionRef.current.start();
       }
     } catch (error) {
@@ -221,10 +238,15 @@ export default function AudioRecorder({
       
       // 等待一小段时间让语音识别完成，然后使用最终结果
       setTimeout(() => {
-        if (realTimeTranscription.trim()) {
-          setCurrentTranscription(realTimeTranscription);
-          onTranscriptionReady?.(realTimeTranscription);
-          console.log('使用实时转录结果:', realTimeTranscription);
+        const latestTranscription = realTimeTranscriptionRef.current;
+        
+        if (latestTranscription.trim()) {
+          // 检查转录质量
+          const transcriptionQuality = checkTranscriptionQuality(latestTranscription, originalText);
+          
+          // 立即更新转录文字状态
+          setCurrentTranscription(latestTranscription);
+          onTranscriptionReady?.(latestTranscription);
         } else {
           // 如果没有实时转录结果，使用API转录
           if (audioChunksRef.current.length > 0) {
@@ -321,12 +343,14 @@ export default function AudioRecorder({
       }
 
       const data = await response.json();
-      console.log('上传成功响应:', data);
       
       if (data.success) {
+        // 确保使用最新的转录文字
+        const finalTranscription = realTimeTranscriptionRef.current.trim() || currentTranscription;
+        
         const newRecording = {
           ...data.audio,
-          transcription: currentTranscription // 添加转录文字
+          transcription: finalTranscription // 添加转录文字
         };
         setRecordings(prev => [...prev, newRecording]);
         onRecordingAdded?.(newRecording);
@@ -345,7 +369,7 @@ export default function AudioRecorder({
     } finally {
       setUploadingRecording(false);
     }
-  }, [currentRecordingUrl, sessionId, onRecordingAdded]);
+  }, [currentRecordingUrl, sessionId, onRecordingAdded, realTimeTranscription, currentTranscription]);
 
   const deleteRecording = useCallback((recording: AudioRecording) => {
     setRecordings(prev => prev.filter(r => r.url !== recording.url));
@@ -370,6 +394,34 @@ export default function AudioRecorder({
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // 检查转录质量
+  const checkTranscriptionQuality = (transcription: string, originalText?: string) => {
+    if (!originalText) return { quality: 'unknown', message: '无法检查转录质量' };
+    
+    const transcriptionLength = transcription.trim().length;
+    const originalLength = originalText.trim().length;
+    const lengthRatio = transcriptionLength / originalLength;
+    
+    let quality = 'good';
+    let message = '';
+    
+    if (lengthRatio < 0.3) {
+      quality = 'poor';
+      message = '转录内容过少，建议重新录音';
+    } else if (lengthRatio < 0.6) {
+      quality = 'fair';
+      message = '转录内容不完整，建议重新录音';
+    } else if (lengthRatio > 1.5) {
+      quality = 'fair';
+      message = '转录内容过多，可能包含背景噪音';
+    } else {
+      quality = 'good';
+      message = '转录质量良好';
+    }
+    
+    return { quality, message, lengthRatio };
   };
 
   return (
