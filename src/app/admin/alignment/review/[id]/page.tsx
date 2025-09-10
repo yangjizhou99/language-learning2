@@ -1,6 +1,7 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function AlignmentReviewDetail(){
   const { id } = useParams<{ id:string }>();
@@ -10,7 +11,13 @@ export default function AlignmentReviewDetail(){
   const [log, setLog] = useState("");
 
   useEffect(()=>{ (async()=>{
-    const r = await fetch(`/api/admin/alignment/drafts/${id}`);
+    // 添加认证头
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    
+    const r = await fetch(`/api/admin/alignment/drafts/${id}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
     const j = await r.json();
     setPack(j.pack);
   })(); }, [id]);
@@ -18,13 +25,36 @@ export default function AlignmentReviewDetail(){
   async function save(){
     if (!pack) return;
     setSaving(true);
-    const r = await fetch(`/api/admin/alignment/drafts/${id}`, { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ topic: pack.topic, tags: pack.tags, preferred_style: pack.preferred_style, steps: pack.steps }) });
+    
+    // 添加认证头
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    
+    const r = await fetch(`/api/admin/alignment/drafts/${id}`, { 
+      method:"PUT", 
+      headers:{
+        "Content-Type":"application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }, 
+      body: JSON.stringify({ topic: pack.topic, tags: pack.tags, preferred_style: pack.preferred_style, steps: pack.steps }) 
+    });
     setSaving(false);
     setLog(r.ok? "已保存" : `保存失败: ${r.status}`);
   }
 
   async function publish(){
-    const r = await fetch(`/api/admin/alignment/drafts/${id}`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"publish" }) });
+    // 添加认证头
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    
+    const r = await fetch(`/api/admin/alignment/drafts/${id}`, { 
+      method:"POST", 
+      headers:{
+        "Content-Type":"application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }, 
+      body: JSON.stringify({ action:"publish" }) 
+    });
     if (r.ok) router.push("/admin/alignment/review");
     else setLog(`发布失败: ${r.status}`);
   }

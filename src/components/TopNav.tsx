@@ -75,12 +75,12 @@ export default function TopNav() {
       <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
         <Link href="/" className="font-semibold">Lang Trainer</Link>
         <div className="flex items-center gap-3">
-          <Link href="/practice/cloze">{t.nav.cloze}</Link>
-          <Link href="/practice/alignment">{t.nav.alignment_practice}</Link>
-          <Link href="/practice/wideread" prefetch={false}>{t.nav.wide_reading}</Link>
-          <Link href="/practice/shadowing" prefetch={false}>{t.nav.shadowing}</Link>
-          <Link href="/vocab">{t.nav.vocabulary}</Link>
-          {isAdmin && <Link href="/admin" className="text-orange-600">🛠️ {t.nav.admin}</Link>}
+          <Link key="cloze" href="/practice/cloze">{t.nav.cloze}</Link>
+          <Link key="alignment" href="/practice/alignment">{t.nav.alignment_practice}</Link>
+          <Link key="wideread" href="/practice/wideread" prefetch={false}>{t.nav.wide_reading}</Link>
+          <Link key="shadowing" href="/practice/shadowing" prefetch={false}>{t.nav.shadowing}</Link>
+          <Link key="vocab" href="/vocab">{t.nav.vocabulary}</Link>
+          {isAdmin && <Link key="admin" href="/admin" className="text-orange-600">🛠️ {t.nav.admin}</Link>}
           <span className="mx-2 text-gray-400">|</span>
           <LanguageToggle />
           <ThemeToggle />

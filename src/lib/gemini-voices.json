@@ -1,0 +1,52 @@
+{
+  "voices": [
+    {
+      "name": "Kore",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Kore - English Female Voice"
+    },
+    {
+      "name": "Orus", 
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Orus - English Male Voice"
+    },
+    {
+      "name": "Callirrhoe",
+      "language": "en-US", 
+      "gender": "FEMALE",
+      "description": "Callirrhoe - English Female Voice"
+    },
+    {
+      "name": "Puck",
+      "language": "en-US",
+      "gender": "MALE", 
+      "description": "Puck - English Male Voice"
+    },
+    {
+      "name": "A",
+      "language": "ja-JP",
+      "gender": "FEMALE",
+      "description": "A - Japanese Female Voice"
+    },
+    {
+      "name": "B",
+      "language": "ja-JP", 
+      "gender": "MALE",
+      "description": "B - Japanese Male Voice"
+    },
+    {
+      "name": "C",
+      "language": "ja-JP",
+      "gender": "FEMALE", 
+      "description": "C - Japanese Female Voice"
+    },
+    {
+      "name": "D",
+      "language": "ja-JP",
+      "gender": "MALE",
+      "description": "D - Japanese Male Voice"
+    }
+  ]
+}

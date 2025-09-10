@@ -1,0 +1,52 @@
+# 设置默认行为，不进行换行符转换
+* -text
+
+# 明确指定文本文件类型（这些文件需要换行符转换）
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.sql text eol=lf
+
+# 二进制文件
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.mp3 binary
+*.mp4 binary
+*.wav binary
+*.pdf binary
+
+# 特定文件类型
+package.json text eol=lf
+package-lock.json text eol=lf
+pnpm-lock.yaml text eol=lf
+yarn.lock text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.env* text eol=lf
+*.config.js text eol=lf
+*.config.ts text eol=lf
+next.config.* text eol=lf
+tailwind.config.* text eol=lf
+postcss.config.* text eol=lf
+eslint.config.* text eol=lf
+
+# 确保这些文件不被转换
+*.sh text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf

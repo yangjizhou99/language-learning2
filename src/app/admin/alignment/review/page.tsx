@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 type Item = { id:string; lang:"en"|"ja"|"zh"; topic:string; status:string; created_at:string };
 
@@ -12,10 +13,18 @@ export default function AlignmentReviewList(){
 
   useEffect(()=>{ (async()=>{
     setLoading(true);
+    
+    // 添加认证头
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    
     const params = new URLSearchParams({ status:"draft" });
     if (lang !== 'all') params.set('lang', lang);
     if (q.trim()) params.set('q', q.trim());
-    const r = await fetch(`/api/admin/alignment/drafts?${params}`);
+    
+    const r = await fetch(`/api/admin/alignment/drafts?${params}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
     const j = await r.json();
     setItems(j.items||[]);
     setLoading(false);

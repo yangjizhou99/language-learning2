@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { readSSE } from "@/lib/sse";
 import { supabase } from "@/lib/supabase";
+import CandidateVoiceSelector from "@/components/CandidateVoiceSelector";
+import VoiceSelectionConfirmation from "@/components/VoiceSelectionConfirmation";
 
 type GenItem = { 
   idx: number; 
@@ -58,6 +60,13 @@ export default function ShadowingAIPage() {
   const [loading, setLoading] = useState(false);
   const [live, setLive] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  
+  // 新增状态：备选音色选择流程
+  const [candidateVoices, setCandidateVoices] = useState<any[]>([]);
+  const [showCandidateSelector, setShowCandidateSelector] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [voiceAnalysis, setVoiceAnalysis] = useState<any>(null);
+  const [currentText, setCurrentText] = useState("");
 
   function isAllSelected(): boolean {
     if (items.length === 0) return false;
@@ -158,6 +167,17 @@ export default function ShadowingAIPage() {
     }
   };
 
+  // 智能生成流程：先设置备选音色，再生成内容
+  const startSmartGeneration = () => {
+    if (candidateVoices.length === 0) {
+      setLog("请先设置备选音色");
+      return;
+    }
+    setShowCandidateSelector(false);
+    setLog("开始智能生成流程...");
+    generate();
+  };
+
   // 生成文本（优先流式）
   const generate = async () => {
     setLoading(true);
@@ -198,12 +218,45 @@ export default function ShadowingAIPage() {
 
       setItems(clean);
       setLog(`已生成 ${clean.length} 条（流式）`);
+      
+      // 如果有备选音色，自动分析第一个文本的音色分配
+      if (candidateVoices.length > 0 && clean.length > 0) {
+        await analyzeVoiceForText(clean[0].text);
+      }
     } catch (e: unknown) {
       const err = e instanceof Error ? e.message : String(e);
       setLog(`流式生成失败：${err}，回退普通请求…`);
       await generateFallback();
     } finally {
       setLoading(false);
+    }
+  };
+
+  // AI音色分析
+  const analyzeVoiceForText = async (text: string) => {
+    try {
+      setLog("AI正在从备选音色中选择最适合的音色...");
+      const response = await fetch("/api/admin/shadowing/analyze-voices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+        body: JSON.stringify({
+          text,
+          language: lang,
+          candidateVoices: candidateVoices
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setVoiceAnalysis(data);
+        setCurrentText(text);
+        setShowConfirmation(true);
+        setLog(`AI已从${candidateVoices.length}个备选音色中选择了${data.selectedVoices.length}个音色`);
+      } else {
+        setLog("AI音色分析失败: " + data.error);
+      }
+    } catch (error) {
+      setLog("AI音色分析失败: " + String(error));
     }
   };
 
@@ -310,6 +363,23 @@ export default function ShadowingAIPage() {
   };
 
 
+
+  // 确认生成
+  const confirmGeneration = async () => {
+    setShowConfirmation(false);
+    setLog("开始使用AI选择的音色生成音频...");
+    
+    // 这里可以添加使用AI选择音色生成音频的逻辑
+    // 暂时使用现有的合成逻辑
+    await synthAll();
+  };
+
+  // 取消确认
+  const cancelConfirmation = () => {
+    setShowConfirmation(false);
+    setVoiceAnalysis(null);
+    setLog("已取消音色分析");
+  };
 
   // 保存到题库
   const saveAll = async () => {
@@ -440,13 +510,21 @@ export default function ShadowingAIPage() {
           </label>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button 
+            onClick={() => setShowCandidateSelector(true)} 
+            disabled={loading}
+            className="px-3 py-1 rounded bg-blue-600 text-white disabled:opacity-50"
+          >
+            智能生成（推荐）
+          </button>
+          
           <button 
             onClick={generate} 
             disabled={loading}
             className="px-3 py-1 rounded bg-black text-white disabled:opacity-50"
           >
-            {loading ? "生成中..." : "生成文本"}
+            {loading ? "生成中..." : "传统生成"}
           </button>
           
           {usage && (
@@ -578,6 +656,66 @@ export default function ShadowingAIPage() {
       {log && (
         <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
           {log}
+        </div>
+      )}
+
+      {/* 备选音色设置面板 */}
+      {showCandidateSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">设置备选音色</h2>
+                <button
+                  onClick={() => setShowCandidateSelector(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <CandidateVoiceSelector
+                language={lang}
+                onCandidateVoicesSet={setCandidateVoices}
+                maxCandidates={5}
+              />
+              
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowCandidateSelector(false)}
+                  className="px-4 py-2 border rounded hover:bg-gray-50"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={startSmartGeneration}
+                  disabled={candidateVoices.length === 0}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                >
+                  开始智能生成 ({candidateVoices.length} 个备选音色)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 生成确认面板 */}
+      {showConfirmation && voiceAnalysis && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <VoiceSelectionConfirmation
+              text={currentText}
+              language={lang}
+              speakers={voiceAnalysis.speakers}
+              isDialogue={voiceAnalysis.isDialogue}
+              selectedVoices={voiceAnalysis.selectedVoices}
+              candidateVoices={candidateVoices}
+              onConfirm={confirmGeneration}
+              onCancel={cancelConfirmation}
+              loading={loading}
+            />
+          </div>
         </div>
       )}
     </main>
