@@ -228,7 +228,9 @@ export default function ShadowingReviewList(){
         if (throttle > 0 && i + batchSize < ids.length) {
           if (throttle > 0) {
             await new Promise<void>(resolve => {
-              const timer = setTimeout(() => resolve(), throttle);
+              (globalThis as any).setTimeout(() => {
+                resolve();
+              }, throttle);
             });
           }
         }
@@ -293,7 +295,9 @@ export default function ShadowingReviewList(){
         if (throttle > 0 && i + batchSize < ids.length) {
           if (throttle > 0) {
             await new Promise<void>(resolve => {
-              const timer = setTimeout(() => resolve(), throttle);
+              (globalThis as any).setTimeout(() => {
+                resolve();
+              }, throttle);
             });
           }
         }
@@ -341,7 +345,7 @@ export default function ShadowingReviewList(){
 
     // 计算总字符数
     const totalCharacters = draftsWithVoices.reduce((total, draft) => {
-      return total + (draft.textContent?.length || 0);
+      return total + (draft?.textContent?.length || 0);
     }, 0);
 
     // 计算预估花费（Google TTS: $4/M字符）
@@ -349,8 +353,8 @@ export default function ShadowingReviewList(){
     const estimatedCostCNY = estimatedCost * 7.2;
 
     // 统计对话和独白数量
-    const dialogueCount = draftsWithVoices.filter(d => d.isDialogue).length;
-    const monologueCount = draftsWithVoices.filter(d => !d.isDialogue).length;
+    const dialogueCount = draftsWithVoices.filter(d => d?.isDialogue).length;
+    const monologueCount = draftsWithVoices.filter(d => !d?.isDialogue).length;
 
     // 显示确认对话框
     const confirmed = window.confirm(
@@ -415,7 +419,9 @@ export default function ShadowingReviewList(){
         if (throttle > 0 && i + batchSize < ids.length) {
           if (throttle > 0) {
             await new Promise<void>(resolve => {
-              const timer = setTimeout(() => resolve(), throttle);
+              (globalThis as any).setTimeout(() => {
+                resolve();
+              }, throttle);
             });
           }
         }
@@ -516,7 +522,7 @@ export default function ShadowingReviewList(){
       
       // 创建AbortController用于超时控制
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout * 1000); // 使用配置的超时时间
+      const timeoutId = (globalThis as any).setTimeout(() => controller.abort(), timeout * 1000); // 使用配置的超时时间
       
       let j: any;
       try {
@@ -533,11 +539,11 @@ export default function ShadowingReviewList(){
           signal: controller.signal
         });
         
-        clearTimeout(timeoutId);
+        (globalThis as any).clearTimeout(timeoutId);
         j = await r.json();
         if (!r.ok) throw new Error(j?.error || "TTS 失败");
       } catch (error) {
-        clearTimeout(timeoutId);
+        (globalThis as any).clearTimeout(timeoutId);
         if (error instanceof Error && error.name === 'AbortError') {
           throw new Error(`TTS合成超时（${timeout}秒）`);
         }

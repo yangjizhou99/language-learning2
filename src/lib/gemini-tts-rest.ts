@@ -82,10 +82,10 @@ export async function synthesizeGeminiTTSRest({
     const res = await client.request({ 
       url, 
       method: 'POST', 
-      headers: { 'x-goog-user-project': process.env.GOOGLE_TTS_PROJECT_ID },
+      headers: process.env.GOOGLE_TTS_PROJECT_ID ? { 'x-goog-user-project': process.env.GOOGLE_TTS_PROJECT_ID } : undefined,
       data: body 
     });
-    const audioB64 = res.data.audioContent;
+    const audioB64 = (res.data as any).audioContent;
     
     if (!audioB64) throw new Error("no audio content in response");
     

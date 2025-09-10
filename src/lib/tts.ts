@@ -257,7 +257,7 @@ async function mergeAudioBuffers(buffers: Buffer[]): Promise<Buffer> {
       await new Promise((resolve, reject) => {
         const args = ['-y','-f','concat','-safe','0','-i', listFile, '-c','copy', outputFile];
         const proc = spawn(ffmpegPath, args, { stdio: 'inherit' });
-        proc.on('exit', code => code === 0 ? resolve(undefined) : reject(new Error(`ffmpeg concat failed (${code})`)));
+        proc.on('exit', (code: number) => code === 0 ? resolve(undefined) : reject(new Error(`ffmpeg concat failed (${code})`)));
       });
       
       // 读取合并后的音频

@@ -80,7 +80,11 @@ export function recommendVoiceForSpeaker(speaker: string, lang: string): { voice
     voiceName: lang === 'en' ? "Kore" : (lang === 'ja' ? "ja-JP-Neural2-A" : "cmn-CN-Chirp3-HD-Kore"), 
     stylePrompt: "以自然、清晰的风格朗读，注意自然停连、口语化" 
   };
-  return langVoices[lang as keyof typeof langVoices]?.[speaker as keyof typeof langVoices[typeof lang]] || defaultVoice;
+  const langConfig = langVoices[lang as keyof typeof langVoices];
+  if (langConfig && speaker in langConfig) {
+    return (langConfig as any)[speaker] || defaultVoice;
+  }
+  return defaultVoice;
 }
 
 // 分割文本为句子
@@ -192,7 +196,7 @@ export async function synthesizeGeminiTTS({
     },
     voice: {
       languageCode: langConfig.languageCode,
-      name: langConfig.voiceName || langConfig.name,
+      name: langConfig.voiceName || (langConfig as any).name,
       ...(langConfig.modelName && { modelName: langConfig.modelName })
     },
     audioConfig: {
@@ -321,7 +325,7 @@ async function mergeAudioBuffers(buffers: Buffer[]): Promise<Buffer> {
       await new Promise((resolve, reject) => {
         const args = ['-y','-f','concat','-safe','0','-i', listFile, '-c','copy', outputFile];
         const proc = spawn(ffmpegPath, args, { stdio: 'inherit' });
-        proc.on('exit', code => code === 0 ? resolve(undefined) : reject(new Error(`ffmpeg concat failed (${code})`)));
+        proc.on('exit', (code: number) => code === 0 ? resolve(undefined) : reject(new Error(`ffmpeg concat failed (${code})`)));
       });
       
       // 读取合并后的音频

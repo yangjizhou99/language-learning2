@@ -119,7 +119,7 @@ ${availableVoices.map(v => `- ${v.name} (${v.gender}, ${v.quality}): ${v.tags.jo
       ]
     });
 
-    const recommendations = JSON.parse(response.choices[0].message.content);
+    const recommendations = JSON.parse(response.choices[0].message.content || '{}');
 
     return NextResponse.json({ 
       success: true,

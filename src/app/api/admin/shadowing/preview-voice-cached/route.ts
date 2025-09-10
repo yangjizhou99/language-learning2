@@ -27,7 +27,7 @@ function makeClient() {
         private_key: serviceAccount.private_key,
       };
     } catch (error) {
-      throw new Error(`Failed to load service account file: ${error.message}`);
+      throw new Error(`Failed to load service account file: ${error instanceof Error ? error.message : String(error)}`);
     }
   } else {
     throw new Error('Google Cloud TTS credentials not found. Please set GOOGLE_CLOUD_CLIENT_EMAIL and GOOGLE_CLOUD_PRIVATE_KEY, or GOOGLE_TTS_CREDENTIALS');
@@ -213,7 +213,7 @@ export async function POST(req: NextRequest) {
         throw new Error('No audio content received');
       }
       
-      audioContent = response.audioContent;
+      audioContent = response.audioContent as Uint8Array;
     }
 
     // 上传到 Supabase Storage
@@ -230,7 +230,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 返回音频数据
-    return new NextResponse(audioContent, {
+    return new NextResponse(audioContent as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',

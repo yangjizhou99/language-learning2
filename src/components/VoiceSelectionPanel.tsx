@@ -78,7 +78,9 @@ export default function VoiceSelectionPanel({
         if (newSelected.size >= maxSelections) {
           // 如果已达到最大选择数量，移除第一个选择的音色
           const firstSelected = newSelected.values().next().value;
-          newSelected.delete(firstSelected);
+          if (firstSelected) {
+            newSelected.delete(firstSelected);
+          }
         }
         newSelected.add(voiceId);
       }

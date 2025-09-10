@@ -26,7 +26,7 @@ function makeClient() {
         private_key: serviceAccount.private_key,
       };
     } catch (error) {
-      throw new Error(`Failed to load service account file: ${error.message}`);
+      throw new Error(`Failed to load service account file: ${error instanceof Error ? error.message : String(error)}`);
     }
   } else {
     throw new Error('Google Cloud TTS credentials not found. Please set GOOGLE_CLOUD_CLIENT_EMAIL and GOOGLE_CLOUD_PRIVATE_KEY, or GOOGLE_TTS_CREDENTIALS');

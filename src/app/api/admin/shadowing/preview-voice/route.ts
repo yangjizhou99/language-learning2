@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 返回音频数据
-    return new NextResponse(response.audioContent, {
+    return new NextResponse(response.audioContent as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',
