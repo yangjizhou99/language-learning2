@@ -7,39 +7,142 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function ShadowingItemsAdmin(){
+  const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any|null>(null);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [q, setQ] = useState("");
   const [lang, setLang] = useState<string>("all");
+  const [level, setLevel] = useState<string>("all");
+  const [selectAll, setSelectAll] = useState(false);
 
-  const authHeader = async () => {
+  const getAuthHeaders = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    const h = new Headers();
-    if (session?.access_token) h.set('Authorization', `Bearer ${session.access_token}`);
-    return h;
+    const token = session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
   const load = async ()=>{
     setLoading(true);
-    const r = await fetch('/api/admin/shadowing/items', { headers: await authHeader() });
-    const j = await r.json();
-    if (Array.isArray(j)) setItems(j);
-    setLoading(false);
+    try {
+      const r = await fetch('/api/admin/shadowing/items', { headers: await getAuthHeaders() });
+      
+      if (r.status === 401) {
+        toast.error('认证失败，请重新登录');
+        setTimeout(() => {
+          router.push('/auth');
+        }, 2000);
+        return;
+      }
+      
+      const j = await r.json();
+      if (Array.isArray(j)) {
+        setItems(j);
+      } else {
+        console.error('加载数据失败:', j);
+        toast.error('加载数据失败');
+      }
+    } catch (error) {
+      console.error('加载失败:', error);
+      toast.error('加载失败，请检查网络连接');
+    } finally {
+      setLoading(false);
+    }
   };
-  useEffect(()=>{ load(); },[]);
+  useEffect(()=>{ 
+    // 检查当前用户状态
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('当前用户:', user ? `${user.email} (${user.id})` : '未登录');
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('当前会话:', session ? '存在' : '不存在');
+    };
+    
+    checkAuth();
+    load(); 
+  },[]);
+
+  // 监听选择状态变化，更新全选状态
+  useEffect(() => {
+    const filteredItems = items
+      .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
+      .filter(it => (lang==='all'? true : it.lang===lang))
+      .filter(it => (level==='all'? true : it.level===parseInt(level)));
+    
+    const selectedCount = filteredItems.filter(item => selected[item.id]).length;
+    const totalCount = filteredItems.length;
+    
+    if (totalCount === 0) {
+      setSelectAll(false);
+    } else {
+      setSelectAll(selectedCount === totalCount);
+    }
+  }, [selected, items, q, lang, level]);
 
   const save = async ()=>{
     if (!editing) return;
-    const r = await fetch('/api/admin/shadowing/items', { method:'PUT', headers:{ 'Content-Type':'application/json', ...(await authHeader()) }, body: JSON.stringify(editing) });
-    if (r.ok) { setEditing(null); toast.success('已保存'); load(); } else toast.error('保存失败');
+    try {
+      const r = await fetch('/api/admin/shadowing/items', { 
+        method:'PUT', 
+        headers:{ 
+          'Content-Type':'application/json', 
+          ...(await getAuthHeaders()) 
+        }, 
+        body: JSON.stringify(editing) 
+      });
+      
+      if (r.status === 401) {
+        toast.error('认证失败，请重新登录');
+        setTimeout(() => {
+          router.push('/auth');
+        }, 2000);
+        return;
+      }
+      
+      if (r.ok) { 
+        setEditing(null); 
+        toast.success('已保存'); 
+        load(); 
+      } else {
+        const errorData = await r.json();
+        toast.error(`保存失败: ${errorData.error || '未知错误'}`);
+      }
+    } catch (error) {
+      console.error('保存失败:', error);
+      toast.error('保存失败，请检查网络连接');
+    }
   };
   const remove = async (id:string)=>{
-    const r = await fetch(`/api/admin/shadowing/items?id=${encodeURIComponent(id)}`, { method:'DELETE', headers: await authHeader() });
-    if (r.ok) { toast.success('已删除'); load(); } else toast.error('删除失败');
+    try {
+      const r = await fetch(`/api/admin/shadowing/items?id=${encodeURIComponent(id)}`, { 
+        method:'DELETE', 
+        headers: await getAuthHeaders() 
+      });
+      
+      if (r.status === 401) {
+        toast.error('认证失败，请重新登录');
+        setTimeout(() => {
+          router.push('/auth');
+        }, 2000);
+        return;
+      }
+      
+      if (r.ok) { 
+        toast.success('已删除'); 
+        load(); 
+      } else {
+        const errorData = await r.json();
+        toast.error(`删除失败: ${errorData.error || '未知错误'}`);
+      }
+    } catch (error) {
+      console.error('删除失败:', error);
+      toast.error('删除失败，请检查网络连接');
+    }
   };
 
   return (
@@ -63,14 +166,102 @@ export default function ShadowingItemsAdmin(){
             </SelectContent>
           </Select>
         </div>
+        <div className="flex items-center gap-2">
+          <Label>等级</Label>
+          <Select value={level} onValueChange={setLevel}>
+            <SelectTrigger className="w-36"><SelectValue placeholder="所有等级" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有等级</SelectItem>
+              <SelectItem value="1">等级 1</SelectItem>
+              <SelectItem value="2">等级 2</SelectItem>
+              <SelectItem value="3">等级 3</SelectItem>
+              <SelectItem value="4">等级 4</SelectItem>
+              <SelectItem value="5">等级 5</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              const filteredItems = items
+                .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
+                .filter(it => (lang==='all'? true : it.lang===lang))
+                .filter(it => (level==='all'? true : it.level===parseInt(level)));
+              
+              if (selectAll) {
+                // 取消全选
+                const newSelected = { ...selected };
+                filteredItems.forEach(item => {
+                  delete newSelected[item.id];
+                });
+                setSelected(newSelected);
+                setSelectAll(false);
+              } else {
+                // 全选
+                const newSelected = { ...selected };
+                filteredItems.forEach(item => {
+                  newSelected[item.id] = true;
+                });
+                setSelected(newSelected);
+                setSelectAll(true);
+              }
+            }}
+          >
+            {selectAll ? '取消全选' : '全选'}
+          </Button>
+          <span className="text-sm text-gray-500">
+            已选择 {(() => {
+              const filteredItems = items
+                .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
+                .filter(it => (lang==='all'? true : it.lang===lang))
+                .filter(it => (level==='all'? true : it.level===parseInt(level)));
+              return filteredItems.filter(item => selected[item.id]).length;
+            })()} 项
+          </span>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              setSelected({});
+              setSelectAll(false);
+            }}
+            disabled={(() => {
+              const filteredItems = items
+                .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
+                .filter(it => (lang==='all'? true : it.lang===lang))
+                .filter(it => (level==='all'? true : it.level===parseInt(level)));
+              return filteredItems.filter(item => selected[item.id]).length === 0;
+            })()}
+          >
+            清空选择
+          </Button>
+        </div>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="destructive">批量删除</Button>
+            <Button variant="destructive" disabled={(() => {
+              const filteredItems = items
+                .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
+                .filter(it => (lang==='all'? true : it.lang===lang))
+                .filter(it => (level==='all'? true : it.level===parseInt(level)));
+              return filteredItems.filter(item => selected[item.id]).length === 0;
+            })()}>
+              批量删除
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>确认批量删除</DialogTitle>
-              <DialogDescription>将删除选中的素材，操作不可撤销。</DialogDescription>
+              <DialogDescription>
+                将删除当前筛选结果中选中的 {Object.keys(selected).filter(id => {
+                  const filteredItems = items
+                    .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
+                    .filter(it => (lang==='all'? true : it.lang===lang))
+                    .filter(it => (level==='all'? true : it.level===parseInt(level)));
+                  return filteredItems.some(item => item.id === id) && selected[id];
+                }).length} 项素材，操作不可撤销。
+              </DialogDescription>
             </DialogHeader>
             <div className="mt-4 flex justify-end gap-2">
               <DialogClose asChild>
@@ -78,10 +269,51 @@ export default function ShadowingItemsAdmin(){
               </DialogClose>
               <DialogClose asChild>
                 <Button variant="destructive" onClick={async()=>{
-                  const ids = Object.keys(selected).filter(k=>selected[k]);
-                  if (ids.length===0) { toast.message('未选择任何项'); return; }
-                  const r = await fetch('/api/admin/shadowing/items', { method:'DELETE', headers:{ 'Content-Type':'application/json', ...(await authHeader()) }, body: JSON.stringify({ ids }) });
-                  if (r.ok) { setSelected({}); toast.success('已删除'); load(); } else toast.error('批量删除失败');
+                  // 只获取当前筛选结果中选中的项目
+                  const filteredItems = items
+                    .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
+                    .filter(it => (lang==='all'? true : it.lang===lang))
+                    .filter(it => (level==='all'? true : it.level===parseInt(level)));
+                  
+                  const selectedIds = filteredItems
+                    .filter(item => selected[item.id])
+                    .map(item => item.id);
+                  
+                  if (selectedIds.length===0) { 
+                    toast.error('未选择任何项'); 
+                    return; 
+                  }
+                  
+                  const r = await fetch('/api/admin/shadowing/items', { 
+                    method:'DELETE', 
+                    headers:{ 
+                      'Content-Type':'application/json', 
+                      ...(await getAuthHeaders()) 
+                    }, 
+                    body: JSON.stringify({ ids: selectedIds }) 
+                  });
+                  
+                  if (r.status === 401) {
+                    toast.error('认证失败，请重新登录');
+                    setTimeout(() => {
+                      router.push('/auth');
+                    }, 2000);
+                    return;
+                  }
+                  
+                  if (r.ok) { 
+                    // 只清除被删除项目的选择状态
+                    const newSelected = { ...selected };
+                    selectedIds.forEach(id => {
+                      delete newSelected[id];
+                    });
+                    setSelected(newSelected);
+                    toast.success(`已删除 ${selectedIds.length} 项`); 
+                    load(); 
+                  } else {
+                    const errorData = await r.json();
+                    toast.error(`批量删除失败: ${errorData.error || '未知错误'}`);
+                  }
                 }}>确认删除</Button>
               </DialogClose>
             </div>
@@ -93,6 +325,7 @@ export default function ShadowingItemsAdmin(){
           {items
             .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
             .filter(it => (lang==='all'? true : it.lang===lang))
+            .filter(it => (level==='all'? true : it.level===parseInt(level)))
             .map(it => (
             <div key={it.id} className="border rounded p-3">
               <div className="flex justify-between items-center">
@@ -123,7 +356,7 @@ export default function ShadowingItemsAdmin(){
                   </Dialog>
                 </div>
               </div>
-              <div className="text-xs text-gray-500 mt-1">{it.lang}</div>
+              <div className="text-xs text-gray-500 mt-1">{it.lang} • 等级 {it.level}</div>
             </div>
           ))}
           {items.length===0 && <div className="text-sm text-gray-500">暂无素材</div>}
@@ -143,6 +376,16 @@ export default function ShadowingItemsAdmin(){
                   <SelectItem value="en">英语</SelectItem>
                   <SelectItem value="ja">日语</SelectItem>
                   <SelectItem value="zh">中文</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={String(editing.level||1)} onValueChange={(v)=>setEditing({...editing, level:parseInt(v)})}>
+                <SelectTrigger className="w-24"><SelectValue placeholder="等级" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">等级 1</SelectItem>
+                  <SelectItem value="2">等级 2</SelectItem>
+                  <SelectItem value="3">等级 3</SelectItem>
+                  <SelectItem value="4">等级 4</SelectItem>
+                  <SelectItem value="5">等级 5</SelectItem>
                 </SelectContent>
               </Select>
               <Input className="flex-1" value={editing.title||''} onChange={e=>setEditing({...editing, title:e.target.value})} />
