@@ -226,7 +226,11 @@ export default function ShadowingReviewList(){
         
         // 节流延迟
         if (throttle > 0 && i + batchSize < ids.length) {
-          await new Promise<void>(resolve => setTimeout(() => resolve(), throttle));
+          if (throttle > 0) {
+            await new Promise<void>(resolve => {
+              const timer = setTimeout(() => resolve(), throttle);
+            });
+          }
         }
       }
       
@@ -287,7 +291,11 @@ export default function ShadowingReviewList(){
         
         // 节流延迟
         if (throttle > 0 && i + batchSize < ids.length) {
-          await new Promise<void>(resolve => setTimeout(() => resolve(), throttle));
+          if (throttle > 0) {
+            await new Promise<void>(resolve => {
+              const timer = setTimeout(() => resolve(), throttle);
+            });
+          }
         }
       }
       
@@ -320,6 +328,7 @@ export default function ShadowingReviewList(){
     
     // 为每个草稿随机分配音色
     const draftsWithVoices = actualDrafts.map(draft => {
+      if (!draft) return null;
       const textContent = draft.text || draft.title || '';
       const isDialogue = /^[A-Z]:/.test(textContent);
       
@@ -328,7 +337,7 @@ export default function ShadowingReviewList(){
         textContent,
         isDialogue
       };
-    });
+    }).filter(Boolean);
 
     // 计算总字符数
     const totalCharacters = draftsWithVoices.reduce((total, draft) => {
@@ -404,7 +413,11 @@ export default function ShadowingReviewList(){
         
         // 节流延迟
         if (throttle > 0 && i + batchSize < ids.length) {
-          await new Promise<void>(resolve => setTimeout(() => resolve(), throttle));
+          if (throttle > 0) {
+            await new Promise<void>(resolve => {
+              const timer = setTimeout(() => resolve(), throttle);
+            });
+          }
         }
       }
       
@@ -454,7 +467,7 @@ export default function ShadowingReviewList(){
         }
         
         // 分别合成每个说话者的音频
-        const audioUrls = await synthDialogueWithDifferentVoices(draft.text, speakerVoices, draft.lang, draft?.notes?.speakingRate || 1.0, draft?.notes?.pitch || 0, token);
+        const audioUrls = await synthDialogueWithDifferentVoices(draft.text, speakerVoices, draft.lang, draft?.notes?.speakingRate || 1.0, draft?.notes?.pitch || 0, token || null);
         
         if (audioUrls && audioUrls.length > 0) {
           // 保存合并后的音频地址
