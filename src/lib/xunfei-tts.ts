@@ -200,15 +200,10 @@ export async function synthesizeXunfeiTTS(
       const WebSocket = (await import('ws')).default;
       const url = generateAuthUrl(config.apiKey, config.apiSecret);
       
-      console.log('科大讯飞WebSocket URL:', url);
-      console.log('科大讯飞配置:', { appId: config.appId, apiKey: config.apiKey.substring(0, 8) + '...' });
-      
       const ws = new WebSocket(url);
       const audioChunks: Buffer[] = [];
 
       ws.on('open', () => {
-        console.log('科大讯飞WebSocket连接已建立');
-        
         // 发送合成请求
         const request = {
           common: {
@@ -280,4 +275,19 @@ export async function synthesizeXunfeiTTS(
 // 获取所有科大讯飞音色
 export function getXunfeiVoices(): XunfeiVoice[] {
   return XUNFEI_VOICES;
+}
+
+// 根据语言获取科大讯飞音色
+export function getXunfeiVoicesByLanguage(language: string): XunfeiVoice[] {
+  return XUNFEI_VOICES.filter(voice => voice.language === language);
+}
+
+// 根据性别获取科大讯飞音色
+export function getXunfeiVoicesByGender(gender: 'male' | 'female'): XunfeiVoice[] {
+  return XUNFEI_VOICES.filter(voice => voice.gender === gender);
+}
+
+// 验证科大讯飞音色ID是否有效
+export function isValidXunfeiVoice(voiceId: string): boolean {
+  return XUNFEI_VOICES.some(voice => voice.voiceId === voiceId);
 }

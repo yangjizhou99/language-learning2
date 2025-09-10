@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 生成访问URL
-    const { data: urlData } = supabaseAdmin.storage
+    const { data: urlData } = await supabaseAdmin.storage
       .from('tts-audio')
       .createSignedUrl(fileName, 7 * 24 * 60 * 60); // 7天有效期
 
