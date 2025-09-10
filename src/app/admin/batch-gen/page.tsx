@@ -38,6 +38,7 @@ export default function BatchGenPage(){
   const [progress, setProgress] = useState({ done: 0, total: 0, saved: 0, total_target: 0 });
   const [logs, setLogs] = useState<string[]>([]);
   const [aggUsage, setAggUsage] = useState<{prompt_tokens:number;completion_tokens:number;total_tokens:number}|null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const abortRef = useRef<AbortController|null>(null);
 
   // 计算总目标数量
@@ -68,8 +69,16 @@ export default function BatchGenPage(){
     } 
   }), [kind, lang, levels, topicsText, perCombo, provider, model, temperature, style, blanksRange, autoBlanks, weights, genre, register, sentRange, concurrency, batchSize, retries, throttle]);
 
+  // 显示确认对话框
+  function showStartConfirm(){
+    if (running) return;
+    setShowConfirmDialog(true);
+  }
+
+  // 确认后开始生成
   async function start(){
     if (running) return;
+    setShowConfirmDialog(false);
     setRunning(true);
     setLogs([]);
     setAggUsage(null);
@@ -577,7 +586,7 @@ export default function BatchGenPage(){
       {/* 运行控制 */}
       <section className="bg-white rounded-lg shadow p-4 space-y-3">
         <div className="flex items-center gap-3">
-          <button className={`px-4 py-2 rounded ${running? 'bg-gray-300':'bg-blue-600 text-white'}`} onClick={start} disabled={running}>开始批量生成</button>
+          <button className={`px-4 py-2 rounded ${running? 'bg-gray-300':'bg-blue-600 text-white'}`} onClick={showStartConfirm} disabled={running}>开始批量生成</button>
           <button className="px-4 py-2 rounded border" onClick={stop} disabled={!running}>停止</button>
           <div className="text-sm text-gray-600">进度：{progress.saved}/{progress.total_target}</div>
           {aggUsage && (
@@ -603,6 +612,187 @@ export default function BatchGenPage(){
           </div>
         )}
       </section>
+
+      {/* 确认对话框 */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold mb-4">确认批量生成任务</h2>
+              
+              {/* 任务概览 */}
+              <div className="space-y-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-blue-800 mb-2">📋 任务概览</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">类型：</span>
+                      <span className="font-medium">{kind}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">语言：</span>
+                      <span className="font-medium">{lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : '简体中文'}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">等级：</span>
+                      <span className="font-medium">{levels.join(', ')}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">主题数量：</span>
+                      <span className="font-medium">{topicsText.split('\n').filter(t => t.trim()).length || 1}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">每组合数量：</span>
+                      <span className="font-medium">{perCombo}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">总目标数量：</span>
+                      <span className="font-medium text-blue-600">{totalTarget} 条</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 模型配置 */}
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-green-800 mb-2">🤖 模型配置</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">提供商：</span>
+                      <span className="font-medium">{provider}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">模型：</span>
+                      <span className="font-medium">{model || (provider==='openrouter'? 'openai/gpt-4o-mini':'deepseek-chat')}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">温度：</span>
+                      <span className="font-medium">{temperature}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 性能配置 */}
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-orange-800 mb-2">⚡ 性能配置</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">并发数：</span>
+                      <span className="font-medium">{concurrency}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">批量条数：</span>
+                      <span className="font-medium">{batchSize}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">重试次数：</span>
+                      <span className="font-medium">{retries}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">节流延迟：</span>
+                      <span className="font-medium">{throttle}ms</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 类型特定参数 */}
+                {kind === 'alignment' && (
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h3 className="font-medium text-purple-800 mb-2">🎯 Alignment 参数</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">正式程度：</span>
+                        <span className="font-medium">{style.formality || 'neutral'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">语调：</span>
+                        <span className="font-medium">{style.tone || 'friendly'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">长度：</span>
+                        <span className="font-medium">{style.length || 'medium'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {kind === 'cloze' && (
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h3 className="font-medium text-purple-800 mb-2">🕳️ Cloze 参数</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">空格范围：</span>
+                        <span className="font-medium">{autoBlanks ? '自动' : `${blanksRange[0]}-${blanksRange[1]}`}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">权重配置：</span>
+                        <span className="font-medium">连接词:{weights.connector} 搭配:{weights.collocation} 语法:{weights.grammar}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {kind === 'shadowing' && (
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <h3 className="font-medium text-purple-800 mb-2">🎤 Shadowing 参数</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">体裁：</span>
+                        <span className="font-medium">{genre}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">语域：</span>
+                        <span className="font-medium">{register}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">句子范围：</span>
+                        <span className="font-medium">{sentRange[0]}-{sentRange[1]} 句</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 主题列表 */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-800 mb-2">📝 主题列表</h3>
+                  <div className="text-sm">
+                    {topicsText.split('\n').filter(t => t.trim()).map((topic, index) => (
+                      <div key={index} className="inline-block bg-white px-2 py-1 rounded border mr-2 mb-2">
+                        {topic.trim()}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 预计时间和成本 */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <h3 className="font-medium text-yellow-800 mb-2">⏱️ 预计信息</h3>
+                <div className="text-sm text-yellow-700 space-y-1">
+                  <div>• 预计完成时间：{totalTarget > 0 ? Math.ceil(totalTarget / (concurrency * batchSize * 2)) : 0} 分钟</div>
+                  <div>• 理论处理速度：{concurrency * batchSize} 倍（{concurrency}并发 × {batchSize}批量）</div>
+                  <div>• 总组合数：{totalCombos} 个（主题 × 等级 × 每组合数量）</div>
+                </div>
+              </div>
+
+              {/* 操作按钮 */}
+              <div className="flex justify-end gap-3">
+                <button 
+                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+                  onClick={() => setShowConfirmDialog(false)}
+                >
+                  取消
+                </button>
+                <button 
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  onClick={start}
+                >
+                  确认开始生成
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
