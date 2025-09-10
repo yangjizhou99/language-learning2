@@ -102,10 +102,83 @@ function escapeForSsml(s: string): string {
     .replace(/'/g, "&apos;");
 }
 
+// 将PCM数据转换为WAV格式
+function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
+  const length = pcmData.length;
+  const buffer = new ArrayBuffer(44 + length);
+  const view = new DataView(buffer);
+  
+  // WAV文件头
+  const writeString = (offset: number, string: string) => {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  };
+  
+  // RIFF标识符
+  writeString(0, 'RIFF');
+  // 文件长度
+  view.setUint32(4, 36 + length, true);
+  // WAVE标识符
+  writeString(8, 'WAVE');
+  // fmt chunk
+  writeString(12, 'fmt ');
+  // fmt chunk长度
+  view.setUint32(16, 16, true);
+  // 音频格式 (PCM)
+  view.setUint16(20, 1, true);
+  // 声道数
+  view.setUint16(22, 1, true);
+  // 采样率
+  view.setUint32(24, sampleRate, true);
+  // 字节率
+  view.setUint32(28, sampleRate * 2, true);
+  // 块对齐
+  view.setUint16(32, 2, true);
+  // 位深度
+  view.setUint16(34, 16, true);
+  // data chunk
+  writeString(36, 'data');
+  // data chunk长度
+  view.setUint32(40, length, true);
+  
+  // 复制PCM数据
+  const uint8Array = new Uint8Array(buffer);
+  uint8Array.set(pcmData, 44);
+  
+  return uint8Array;
+}
+
 export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0, pitch = 0 }: SynthesizeParams): Promise<Buffer> {
   const clean = (text || "").trim().slice(0, 4000);
   if (!clean || !lang) throw new Error("missing text/lang");
 
+  // 检查是否是科大讯飞音色
+  if (voiceName && voiceName.startsWith('xunfei-')) {
+    try {
+      const { synthesizeXunfeiTTS } = await import('./xunfei-tts');
+      const xunfeiVoiceId = voiceName.replace('xunfei-', '');
+      
+      // 转换speakingRate (Google: 0.25-4.0, 科大讯飞: 0-100)
+      const xunfeiSpeed = Math.max(0, Math.min(100, (speakingRate - 0.25) / 3.75 * 100));
+      const xunfeiPitch = Math.max(0, Math.min(100, (pitch + 20) / 40 * 100));
+      
+      const pcmData = await synthesizeXunfeiTTS(clean, xunfeiVoiceId, {
+        speed: xunfeiSpeed,
+        pitch: xunfeiPitch,
+        volume: 50
+      });
+      
+      // 将PCM数据转换为WAV格式
+      const wavData = convertPCMToWAV(pcmData, 16000);
+      
+      return Buffer.from(wavData);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 使用Google TTS
   const client = makeClient();
   const selectedName = voiceName || DEFAULTS[lang as keyof typeof DEFAULTS];
   let languageCode = selectedName

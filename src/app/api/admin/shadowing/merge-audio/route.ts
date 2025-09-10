@@ -38,11 +38,26 @@ export async function POST(request: NextRequest) {
         }
         
         const audioBuffer = await response.arrayBuffer();
-        const tempFile = path.join(tempDir, `audio_${i}.mp3`);
-        await fs.writeFile(tempFile, Buffer.from(audioBuffer));
+        
+        // 检测音频格式
+        const buffer = Buffer.from(audioBuffer);
+        let fileExtension = '.mp3'; // 默认MP3
+        
+        // 检查文件头来确定格式
+        if (buffer.length >= 4) {
+          const header = buffer.toString('hex', 0, 4);
+          if (header === '52494646') { // 'RIFF'
+            fileExtension = '.wav';
+          } else if (header === 'fffb' || header === 'fff3' || header === 'fff2') {
+            fileExtension = '.mp3';
+          }
+        }
+        
+        const tempFile = path.join(tempDir, `audio_${i}${fileExtension}`);
+        await fs.writeFile(tempFile, buffer);
         tempFiles.push(tempFile);
         
-        console.log(`下载音频文件 ${i + 1}/${audioUrls.length}: ${tempFile}`);
+        console.log(`下载音频文件 ${i + 1}/${audioUrls.length}: ${tempFile} (${fileExtension})`);
       }
 
       // 创建ffmpeg输入文件列表
@@ -57,7 +72,8 @@ export async function POST(request: NextRequest) {
         '-f', 'concat',
         '-safe', '0',
         '-i', inputListFile,
-        '-c', 'copy',
+        '-c:a', 'libmp3lame',  // 使用MP3编码器重新编码
+        '-b:a', '128k',         // 设置比特率
         outputFile
       ];
 
@@ -66,7 +82,7 @@ export async function POST(request: NextRequest) {
       await new Promise((resolve, reject) => {
         // 使用相对路径执行ffmpeg命令
         const ffmpegPath = './node_modules/.pnpm/ffmpeg-static@5.2.0/node_modules/ffmpeg-static/ffmpeg.exe';
-        const command = `"${ffmpegPath}" -f concat -safe 0 -i "${inputListFile}" -c copy "${outputFile}"`;
+        const command = `"${ffmpegPath}" -f concat -safe 0 -i "${inputListFile}" -c:a libmp3lame -b:a 128k "${outputFile}"`;
         console.log('执行ffmpeg命令:', command);
         
         exec(command, { timeout: 30000 }, async (error, stdout, stderr) => {
