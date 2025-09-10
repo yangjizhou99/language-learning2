@@ -11,21 +11,35 @@ import { useRouter } from "next/navigation";
 
 export default function ShadowingItemsAdmin(){
   const router = useRouter();
+  
+  // 状态管理
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<any|null>(null);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [q, setQ] = useState("");
-  const [lang, setLang] = useState<string>("all");
-  const [level, setLevel] = useState<string>("all");
-  const [selectAll, setSelectAll] = useState(false);
+  
+  // 筛选状态
+  const [q, setQ] = useState(""); // 搜索关键词
+  const [lang, setLang] = useState<string>("all"); // 语言筛选
+  const [level, setLevel] = useState<string>("all"); // 等级筛选
+  const [selectAll, setSelectAll] = useState(false); // 全选状态
 
+  // 获取认证头信息
   const getAuthHeaders = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
+  // 获取当前筛选结果
+  const getFilteredItems = () => {
+    return items
+      .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
+      .filter(it => (lang==='all'? true : it.lang===lang))
+      .filter(it => (level==='all'? true : it.level===parseInt(level)));
+  };
+
+  // 加载素材列表
   const load = async ()=>{
     setLoading(true);
     try {
@@ -54,26 +68,12 @@ export default function ShadowingItemsAdmin(){
     }
   };
   useEffect(()=>{ 
-    // 检查当前用户状态
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('当前用户:', user ? `${user.email} (${user.id})` : '未登录');
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('当前会话:', session ? '存在' : '不存在');
-    };
-    
-    checkAuth();
     load(); 
   },[]);
 
   // 监听选择状态变化，更新全选状态
   useEffect(() => {
-    const filteredItems = items
-      .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
-      .filter(it => (lang==='all'? true : it.lang===lang))
-      .filter(it => (level==='all'? true : it.level===parseInt(level)));
-    
+    const filteredItems = getFilteredItems();
     const selectedCount = filteredItems.filter(item => selected[item.id]).length;
     const totalCount = filteredItems.length;
     
@@ -84,6 +84,7 @@ export default function ShadowingItemsAdmin(){
     }
   }, [selected, items, q, lang, level]);
 
+  // 保存编辑的素材
   const save = async ()=>{
     if (!editing) return;
     try {
@@ -117,6 +118,7 @@ export default function ShadowingItemsAdmin(){
       toast.error('保存失败，请检查网络连接');
     }
   };
+  // 删除单个素材
   const remove = async (id:string)=>{
     try {
       const r = await fetch(`/api/admin/shadowing/items?id=${encodeURIComponent(id)}`, { 
@@ -147,11 +149,13 @@ export default function ShadowingItemsAdmin(){
 
   return (
     <main className="max-w-6xl mx-auto p-6 space-y-4">
+      {/* 页面标题和导航 */}
       <h1 className="text-2xl font-semibold">Shadowing 素材管理</h1>
       <div>
         <a href="/admin/shadowing/ai" className="px-3 py-1 rounded bg-black text-white">新增素材 → 生成页</a>
       </div>
-      {/* 搜索与筛选 */}
+      
+      {/* 搜索与筛选区域 */}
       <div className="flex flex-wrap gap-2 items-center">
         <Input placeholder="搜索标题" value={q} onChange={e=>setQ(e.target.value)} className="w-64" />
         <div className="flex items-center gap-2">
@@ -185,10 +189,7 @@ export default function ShadowingItemsAdmin(){
             variant="outline" 
             size="sm"
             onClick={() => {
-              const filteredItems = items
-                .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
-                .filter(it => (lang==='all'? true : it.lang===lang))
-                .filter(it => (level==='all'? true : it.level===parseInt(level)));
+              const filteredItems = getFilteredItems();
               
               if (selectAll) {
                 // 取消全选
@@ -212,13 +213,7 @@ export default function ShadowingItemsAdmin(){
             {selectAll ? '取消全选' : '全选'}
           </Button>
           <span className="text-sm text-gray-500">
-            已选择 {(() => {
-              const filteredItems = items
-                .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
-                .filter(it => (lang==='all'? true : it.lang===lang))
-                .filter(it => (level==='all'? true : it.level===parseInt(level)));
-              return filteredItems.filter(item => selected[item.id]).length;
-            })()} 项
+            已选择 {getFilteredItems().filter(item => selected[item.id]).length} 项
           </span>
           <Button 
             variant="outline" 
@@ -227,26 +222,14 @@ export default function ShadowingItemsAdmin(){
               setSelected({});
               setSelectAll(false);
             }}
-            disabled={(() => {
-              const filteredItems = items
-                .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
-                .filter(it => (lang==='all'? true : it.lang===lang))
-                .filter(it => (level==='all'? true : it.level===parseInt(level)));
-              return filteredItems.filter(item => selected[item.id]).length === 0;
-            })()}
+            disabled={getFilteredItems().filter(item => selected[item.id]).length === 0}
           >
             清空选择
           </Button>
         </div>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="destructive" disabled={(() => {
-              const filteredItems = items
-                .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
-                .filter(it => (lang==='all'? true : it.lang===lang))
-                .filter(it => (level==='all'? true : it.level===parseInt(level)));
-              return filteredItems.filter(item => selected[item.id]).length === 0;
-            })()}>
+            <Button variant="destructive" disabled={getFilteredItems().filter(item => selected[item.id]).length === 0}>
               批量删除
             </Button>
           </DialogTrigger>
@@ -254,13 +237,7 @@ export default function ShadowingItemsAdmin(){
             <DialogHeader>
               <DialogTitle>确认批量删除</DialogTitle>
               <DialogDescription>
-                将删除当前筛选结果中选中的 {Object.keys(selected).filter(id => {
-                  const filteredItems = items
-                    .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
-                    .filter(it => (lang==='all'? true : it.lang===lang))
-                    .filter(it => (level==='all'? true : it.level===parseInt(level)));
-                  return filteredItems.some(item => item.id === id) && selected[id];
-                }).length} 项素材，操作不可撤销。
+                将删除当前筛选结果中选中的 {getFilteredItems().filter(item => selected[item.id]).length} 项素材，操作不可撤销。
               </DialogDescription>
             </DialogHeader>
             <div className="mt-4 flex justify-end gap-2">
@@ -270,11 +247,7 @@ export default function ShadowingItemsAdmin(){
               <DialogClose asChild>
                 <Button variant="destructive" onClick={async()=>{
                   // 只获取当前筛选结果中选中的项目
-                  const filteredItems = items
-                    .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
-                    .filter(it => (lang==='all'? true : it.lang===lang))
-                    .filter(it => (level==='all'? true : it.level===parseInt(level)));
-                  
+                  const filteredItems = getFilteredItems();
                   const selectedIds = filteredItems
                     .filter(item => selected[item.id])
                     .map(item => item.id);
@@ -320,13 +293,10 @@ export default function ShadowingItemsAdmin(){
           </DialogContent>
         </Dialog>
       </div>
+      {/* 素材列表区域 */}
       {loading ? <div>加载中…</div> : (
         <div className="grid gap-3">
-          {items
-            .filter(it => (q? (String(it.title||'').toLowerCase().includes(q.toLowerCase())) : true))
-            .filter(it => (lang==='all'? true : it.lang===lang))
-            .filter(it => (level==='all'? true : it.level===parseInt(level)))
-            .map(it => (
+          {getFilteredItems().map(it => (
             <div key={it.id} className="border rounded p-3">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 mr-2 min-w-0">
@@ -363,8 +333,7 @@ export default function ShadowingItemsAdmin(){
         </div>
       )}
 
-      {/* 新增改为跳转到生成页，不再内嵌表单 */}
-
+      {/* 编辑素材弹窗 */}
       {editing && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
           <div className="bg-card text-card-foreground w-full max-w-3xl p-4 rounded border space-y-3">
