@@ -155,6 +155,11 @@ export default function ShadowingReviewList(){
     const token = session?.access_token;
     const r = await fetch(`/api/admin/shadowing/drafts?${params}`, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
     const j = await r.json();
+    console.log('加载的草稿数据:', j.items?.length || 0, '个草稿');
+    // 检查第一个草稿的音频URL
+    if (j.items && j.items.length > 0) {
+      console.log('第一个草稿的音频URL:', j.items[0].notes?.audio_url);
+    }
     setItems(j.items||[]);
   })(); }, [q, lang, genre, level, status]);
 
@@ -430,7 +435,7 @@ export default function ShadowingReviewList(){
       toast.success(`随机TTS合成完成：${ids.length - fail}/${ids.length}`);
       setLog(`随机TTS合成完成：${ids.length - fail}/${ids.length} 个草稿`);
       // 触发刷新
-      setQ(q => q);
+      setQ(q => q + ' '); // 添加空格确保值变化
     } catch (e) {
       toast.error("随机批量合成失败，请重试");
       setLog("随机批量合成失败，请重试");
@@ -490,6 +495,9 @@ export default function ShadowingReviewList(){
             }
           };
           
+          console.log('准备保存的音频URL:', audioUrls[0]);
+          console.log('准备保存的notes:', next.notes);
+          
           const save = await fetch(`/api/admin/shadowing/drafts/${draft.id}`, {
             method: 'PUT',
             headers: { 
@@ -500,10 +508,27 @@ export default function ShadowingReviewList(){
           });
           
           if (!save.ok) {
-            throw new Error(`保存音频地址失败(${save.status})`);
+            const errorText = await save.text();
+            console.error('保存失败响应:', errorText);
+            throw new Error(`保存音频地址失败(${save.status}): ${errorText}`);
           }
           
+          const saveResult = await save.json();
+          console.log('保存成功响应:', saveResult);
+          
           console.log('多音色对话合成保存成功');
+          
+          // 直接更新本地状态，避免等待页面刷新
+          setItems(prevItems => 
+            prevItems.map(item => 
+              item.id === draft.id 
+                ? { ...item, notes: { ...item.notes, audio_url: audioUrls[0] } }
+                : item
+            )
+          );
+          
+          // 触发页面刷新以显示新的音频
+          setQ(q => q + ' '); // 添加空格确保值变化
           return true;
         } else {
           throw new Error('多音色对话合成失败');
@@ -565,6 +590,18 @@ export default function ShadowingReviewList(){
       };
       const save = await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
       if (!save.ok) throw new Error(`保存音频地址失败(${save.status})`);
+      
+      // 直接更新本地状态，避免等待页面刷新
+      setItems(prevItems => 
+        prevItems.map(item => 
+          item.id === id 
+            ? { ...item, notes: { ...item.notes, audio_url: j.audio_url } }
+            : item
+        )
+      );
+      
+      // 触发页面刷新以显示新的音频
+      setQ(q => q + ' '); // 添加空格确保值变化
       return true;
     } catch (e) {
       console.error(e);
@@ -720,33 +757,29 @@ export default function ShadowingReviewList(){
 
   // 获取随机男声音色
   const getRandomMaleVoice = () => {
-    const maleVoices = candidateVoices.filter(voice => 
-      voice.ssml_gender === 'MALE' || voice.ssmlGender === 'MALE'
-    );
-    console.log('getRandomMaleVoice - 男声音色:', maleVoices);
+    const maleVoices = candidateVoices.filter(voice => {
+      const gender = voice.ssml_gender || voice.ssmlGender || '';
+      return gender.toLowerCase() === 'male' || gender.toLowerCase().includes('男');
+    });
     if (maleVoices.length === 0) {
-      console.log('getRandomMaleVoice - 没有男声，使用随机选择');
       return getRandomVoice(); // 如果没有男声，随机选择
     }
     const randomIndex = Math.floor(Math.random() * maleVoices.length);
     const selectedVoice = maleVoices[randomIndex].name;
-    console.log('getRandomMaleVoice - 选择的男声音色:', selectedVoice);
     return selectedVoice;
   };
 
   // 获取随机女声音色
   const getRandomFemaleVoice = () => {
-    const femaleVoices = candidateVoices.filter(voice => 
-      voice.ssml_gender === 'FEMALE' || voice.ssmlGender === 'FEMALE'
-    );
-    console.log('getRandomFemaleVoice - 女声音色:', femaleVoices);
+    const femaleVoices = candidateVoices.filter(voice => {
+      const gender = voice.ssml_gender || voice.ssmlGender || '';
+      return gender.toLowerCase() === 'female' || gender.toLowerCase().includes('女');
+    });
     if (femaleVoices.length === 0) {
-      console.log('getRandomFemaleVoice - 没有女声，使用随机选择');
       return getRandomVoice(); // 如果没有女声，随机选择
     }
     const randomIndex = Math.floor(Math.random() * femaleVoices.length);
     const selectedVoice = femaleVoices[randomIndex].name;
-    console.log('getRandomFemaleVoice - 选择的女声音色:', selectedVoice);
     return selectedVoice;
   };
 
@@ -1109,7 +1142,27 @@ export default function ShadowingReviewList(){
       )}
                 {it?.notes?.audio_url && (
                         <div className="mt-3">
-                          <audio controls src={it.notes.audio_url} className="h-8 w-full max-w-md" />
+                          <div className="text-xs text-gray-500 mb-1">
+                            音频URL: {it.notes.audio_url.substring(0, 50)}...
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <audio 
+                              key={`${it.notes.audio_url}-${Date.now()}`} 
+                              controls 
+                              src={`${it.notes.audio_url}${it.notes.audio_url.includes('?') ? '&' : '?'}t=${Date.now()}`} 
+                              className="h-8 w-full max-w-md" 
+                            />
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                // 强制刷新页面
+                                window.location.reload();
+                              }}
+                            >
+                              刷新音频
+                            </Button>
+                          </div>
                   </div>
                 )}
               </div>

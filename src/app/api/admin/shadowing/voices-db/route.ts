@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
     // 语言筛选
     if (lang !== 'all') {
       if (lang === 'cmn-CN' || lang === 'zh') {
-        // 中文音色包含简体和繁体
-        query = query.in('language_code', ['cmn-CN', 'cmn-TW']);
+        // 中文音色包含简体、繁体和科大讯飞
+        query = query.in('language_code', ['cmn-CN', 'cmn-TW', 'zh-CN']);
       } else if (lang === 'en-US' || lang === 'en') {
         query = query.eq('language_code', 'en-US');
       } else if (lang === 'ja-JP' || lang === 'ja') {

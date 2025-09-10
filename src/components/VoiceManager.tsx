@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, RefreshCw, DollarSign, Star, Volume2, Users, Play, Pause } from "lucide-react";
+import { Loader2, RefreshCw, DollarSign, Volume2, Users, Play, Pause } from "lucide-react";
 
 /**
  * 音色接口定义
@@ -74,7 +74,6 @@ interface VoiceManagerProps {
  */
 export default function VoiceManager({ onVoiceSelect, selectedVoice, language = "zh" }: VoiceManagerProps) {
   const [voices, setVoices] = useState<Voice[]>([]);
-  const [groupedVoices, setGroupedVoices] = useState<Record<string, Voice[]>>({});
   const [categorizedVoices, setCategorizedVoices] = useState<Record<string, Voice[]>>({});
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -178,10 +177,10 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
     try {
       await newAudioElement.play();
       console.log('Audio playback started successfully');
-    } catch (playError: any) {
+    } catch (playError: unknown) {
       console.error('Audio play failed:', playError);
       // 如果是自动播放被阻止，提示用户点击播放
-      if (playError?.name === 'NotAllowedError') {
+      if (playError && typeof playError === 'object' && 'name' in playError && playError.name === 'NotAllowedError') {
         console.log('Autoplay blocked, user interaction required');
         setPlaybackError('浏览器阻止了自动播放，请点击播放按钮');
       }
@@ -206,7 +205,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
   };
 
   // 获取音色列表
-  const fetchVoices = async (lang: string = selectedLanguage, category: string = selectedCategory) => {
+  const fetchVoices = useCallback(async (lang: string = selectedLanguage, category: string = selectedCategory) => {
     try {
       setLoading(true);
       setError(null);
@@ -226,26 +225,29 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
         console.log("从数据库获取音色成功:", allVoices.length, "个音色");
         console.log("音色数据示例:", allVoices.slice(0, 3));
         console.log("语言分布:", data.groupedByLanguage);
-        console.log("分类分布:", Object.keys(data.categorizedVoices || {}).reduce((acc: any, key: any) => {
+        console.log("分类分布:", Object.keys(data.categorizedVoices || {}).reduce((acc: Record<string, number>, key: string) => {
           acc[key] = data.categorizedVoices[key].length;
           return acc;
         }, {}));
         setVoices(allVoices);
         
-        // 重新分组
-        const grouped = allVoices.reduce((acc: Record<string, Voice[]>, voice: Voice) => {
-          const langCode = voice.language_code || voice.languageCode;
-          if (langCode && !acc[langCode]) acc[langCode] = [];
-          if (langCode) acc[langCode].push(voice);
-          return acc;
-        }, {});
-        setGroupedVoices(grouped);
-        
         // 重新分类
         const categorized = allVoices.reduce((acc: Record<string, Voice[]>, voice: Voice) => {
           const name = voice.name;
+          const provider = voice.provider || '';
           let category = 'Other';
-          if (name.includes('Chirp3-HD')) {
+          
+          if (provider === 'xunfei') {
+            // 科大讯飞音色按性别分类
+            const gender = voice.ssml_gender || '';
+            if (gender.toLowerCase().includes('female') || gender.toLowerCase().includes('女')) {
+              category = 'Xunfei-Female';
+            } else if (gender.toLowerCase().includes('male') || gender.toLowerCase().includes('男')) {
+              category = 'Xunfei-Male';
+            } else {
+              category = 'Xunfei-Female'; // 默认女声
+            }
+          } else if (name.includes('Chirp3-HD')) {
             category = 'Chirp3-HD';
           } else if (name.includes('Neural2')) {
             category = 'Neural2';
@@ -268,7 +270,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedLanguage, selectedCategory]);
 
   // 设置数据库
   const setupDatabase = async () => {
@@ -379,6 +381,41 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
     }
   };
 
+  // 同步科大讯飞音色到数据库
+  const syncXunfeiVoices = async () => {
+    try {
+      setSyncing(true);
+      setError(null);
+      
+      console.log("开始同步科大讯飞音色...");
+      const response = await fetch("/api/admin/shadowing/sync-xunfei-voices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log("科大讯飞音色同步成功:", data.message);
+        console.log("同步数量:", data.count);
+        
+        // 同步成功后重新获取音色列表
+        await fetchVoices(selectedLanguage, selectedCategory);
+        
+        // 显示成功消息
+        setError(null);
+      } else {
+        console.error("科大讯飞音色同步失败:", data.error);
+        setError(`科大讯飞音色同步失败: ${data.error}`);
+      }
+    } catch (err) {
+      console.error("科大讯飞音色同步失败:", err);
+      setError("科大讯飞音色同步失败，请重试");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   // AI 推荐音色
   const recommendVoices = async () => {
     if (!recommendationText.trim()) return;
@@ -401,7 +438,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
       } else {
         setError(data.error || "AI 推荐失败");
       }
-    } catch (err) {
+    } catch {
       setError("AI 推荐失败，请重试");
     } finally {
       setRecommending(false);
@@ -410,7 +447,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
 
   useEffect(() => {
     fetchVoices(selectedLanguage, selectedCategory);
-  }, [selectedLanguage, selectedCategory]);
+  }, [fetchVoices, selectedLanguage, selectedCategory]);
 
   // 过滤音色
   const filteredVoices = voices.filter(voice => 
@@ -440,6 +477,8 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
   
   // 详细分类信息 - 按价格和性别分类
   console.log("分类详情:", {
+    'Xunfei-Female': voices.filter(v => v.category === 'Xunfei-Female').length,
+    'Xunfei-Male': voices.filter(v => v.category === 'Xunfei-Male').length,
     'Chirp3HD-Female': voices.filter(v => v.category === 'Chirp3HD-Female').length,
     'Chirp3HD-Male': voices.filter(v => v.category === 'Chirp3HD-Male').length,
     'Neural2-Female': voices.filter(v => v.category === 'Neural2-Female').length,
@@ -498,6 +537,10 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                   <SelectItem value="Gemini-Female">Gemini 女声 (AI增强)</SelectItem>
                   <SelectItem value="Gemini-Male">Gemini 男声 (AI增强)</SelectItem>
                   
+                  {/* 科大讯飞系列 - 中文专业 */}
+                  <SelectItem value="Xunfei-Female">科大讯飞 女声 (中文专业)</SelectItem>
+                  <SelectItem value="Xunfei-Male">科大讯飞 男声 (中文专业)</SelectItem>
+                  
                   {/* Chirp3-HD 系列 - 最高质量 */}
                   <SelectItem value="Chirp3HD-Female">Chirp3-HD 女声 (最高质量)</SelectItem>
                   <SelectItem value="Chirp3HD-Male">Chirp3-HD 男声 (最高质量)</SelectItem>
@@ -548,6 +591,10 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
             <Button onClick={syncVoices} disabled={syncing || loading} variant="outline">
               {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               同步音色
+            </Button>
+            <Button onClick={syncXunfeiVoices} disabled={syncing || loading} variant="outline" className="bg-blue-100 hover:bg-blue-200">
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              同步科大讯飞
             </Button>
           </div>
         </CardContent>
