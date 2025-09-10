@@ -788,5 +788,3 @@ export default function ShadowingReviewList(){
     </div>
   );
 }
-
-

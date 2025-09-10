@@ -3,18 +3,18 @@
 ## ✅ 已完成的功能
 
 ### 1. 音色管理系统
-- ✅ **pyttsx3 TTS集成** - 完全免费的开源TTS解决方案
-- ✅ **4个可用音色**：
-  - Microsoft Huihui Desktop (中文简体)
-  - Microsoft Zira Desktop (英文美国)
-  - Microsoft Haruka Desktop (日文)
-  - Microsoft David Desktop (英文美国)
+- ✅ **Google Cloud TTS集成** - 高质量付费TTS解决方案
+- ✅ **多种音色类型**：
+  - Chirp3-HD (高质量)
+  - Neural2 (神经网络)
+  - Wavenet (波形网络)
+  - Standard (标准)
 - ✅ **音色预览功能** - 支持实时试听
-- ✅ **多语言支持** - 中文、英文、日文
+- ✅ **多语言支持** - 中文、英文、日文等多种语言
 
 ### 2. API接口
-- ✅ `/api/admin/shadowing/pyttsx3-voices` - 获取音色列表
-- ✅ `/api/admin/shadowing/pyttsx3-preview` - 音频预览生成
+- ✅ `/api/admin/shadowing/voices` - 获取音色列表
+- ✅ `/api/admin/shadowing/preview-voice-cached` - 音频预览生成
 - ✅ 所有API接口测试通过
 
 ### 3. 代码质量
@@ -25,28 +25,26 @@
 ## 🔧 部署前检查
 
 ### 环境要求
-- ✅ Node.js 18+ (当前: 检测到Python 3.10.11)
-- ✅ Python 3.x (用于pyttsx3)
-- ✅ 系统TTS引擎支持
+- ✅ Node.js 18+
+- ✅ Google Cloud TTS API访问权限
+- ✅ 环境变量配置
 
 ### 依赖检查
 - ✅ Next.js 15.4.6
 - ✅ React 19.1.0
-- ✅ pyttsx3 (Python包)
+- ✅ @google-cloud/text-to-speech
 - ✅ 所有Node.js依赖已安装
 
 ### 文件清理
 - ✅ 删除临时音频文件
 - ✅ 删除测试文件
-- ✅ 清理浏览器TTS相关代码
+- ✅ 清理免费TTS相关代码
+- ✅ 删除Python依赖
 
 ## 🚀 部署步骤
 
 ### 1. 生产环境准备
 ```bash
-# 安装Python依赖
-pip install pyttsx3
-
 # 构建Next.js应用
 npm run build
 
@@ -64,34 +62,34 @@ npm start
 ### 3. 服务器要求
 - **最低配置**: 2GB RAM, 1 CPU
 - **推荐配置**: 4GB RAM, 2 CPU
-- **Python环境**: 需要安装pyttsx3
-- **系统TTS**: Windows SAPI或Linux eSpeak
+- **Google Cloud**: 需要TTS API访问权限
+- **网络**: 需要访问Google Cloud服务
 
 ## 🎯 功能验证
 
 ### 音色管理页面
 1. 访问 `/admin/shadowing/review`
 2. 点击"管理音色"
-3. 选择"免费音色"分类
-4. 验证4个pyttsx3音色显示
+3. 选择音色分类（Chirp3-HD、Neural2、Wavenet、Standard）
+4. 验证音色列表显示
 5. 测试音色预览功能
 
 ### API测试
 ```bash
 # 测试音色列表API
-curl -X GET "http://localhost:3000/api/admin/shadowing/pyttsx3-voices"
+curl -X GET "http://localhost:3000/api/admin/shadowing/voices"
 
 # 测试音频生成API
-curl -X POST "http://localhost:3000/api/admin/shadowing/pyttsx3-preview" \
+curl -X POST "http://localhost:3000/api/admin/shadowing/preview-voice-cached" \
   -H "Content-Type: application/json" \
-  -d '{"text":"测试","voiceId":"pyttsx3-0","languageCode":"zh-CN"}' \
+  -d '{"text":"测试","voiceName":"zh-CN-Wavenet-A","languageCode":"zh-CN"}' \
   --output test.wav
 ```
 
 ## 📋 部署后检查
 
 1. ✅ 音色管理页面正常加载
-2. ✅ 免费音色分类显示4个音色
+2. ✅ 音色分类显示正常
 3. ✅ 音色预览功能正常工作
 4. ✅ 音频生成质量良好
 5. ✅ 多语言支持正常
@@ -99,8 +97,8 @@ curl -X POST "http://localhost:3000/api/admin/shadowing/pyttsx3-preview" \
 ## 🔍 故障排除
 
 ### 常见问题
-1. **pyttsx3音色为空**: 检查Python环境和pyttsx3安装
-2. **音频生成失败**: 检查系统TTS引擎
+1. **音色列表为空**: 检查Google Cloud TTS API配置
+2. **音频生成失败**: 检查Google Cloud凭据和网络连接
 3. **音色预览无声音**: 检查浏览器音频权限
 
 ### 日志检查
@@ -113,7 +111,7 @@ curl -X POST "http://localhost:3000/api/admin/shadowing/pyttsx3-preview" \
 **部署就绪**: ✅ 完全准备就绪
 **最后更新**: $(date)
 **版本**: v1.0.0
-**TTS方案**: pyttsx3 (开源免费)
+**TTS方案**: Google Cloud TTS (高质量付费)
 
 ---
 

@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,31 +12,35 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, RefreshCw, DollarSign, Star, Volume2, Users, Play, Pause } from "lucide-react";
 
 interface Voice {
+  id: string;
   name: string;
-  displayName?: string;
-  languageCode: string;
-  ssmlGender: string;
-  naturalSampleRateHertz: number;
-  supportedEngines: string[];
-  supportedModels: string[];
+  display_name?: string;
+  language_code: string;
+  ssml_gender: string;
+  natural_sample_rate_hertz: number;
   pricing: {
     pricePerMillionChars: number;
-    quality: string;
-    description: string;
+    examplePrice: string;
+    examplePrice10k?: string;
   };
-  examplePrice: string;
   characteristics?: {
     voiceType: string;
     tone: string;
-    accent: string;
-    speed: string;
     pitch: string;
-    emotion: string;
-    useCase: string;
-    ageRange: string;
-    personality: string;
   };
-  browserVoice?: SpeechSynthesisVoice; // 保存原始浏览器音色信息
+  category: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // 兼容旧字段
+  languageCode?: string;
+  supportedModels?: string[];
+  ssmlGender?: string;
+  naturalSampleRateHertz?: number;
+  displayName?: string;
+  examplePrice?: string;
+  examplePrice10k?: string;
+  browserVoice?: SpeechSynthesisVoice;
 }
 
 interface VoiceRecommendation {
@@ -45,6 +48,7 @@ interface VoiceRecommendation {
   voiceName: string;
   reason: string;
   confidence: number;
+  languageCode?: string;
 }
 
 interface VoiceManagerProps {
@@ -58,6 +62,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
   const [groupedVoices, setGroupedVoices] = useState<Record<string, Voice[]>>({});
   const [categorizedVoices, setCategorizedVoices] = useState<Record<string, Voice[]>>({});
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLanguage, setSelectedLanguage] = useState(
@@ -94,16 +99,8 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
       
       console.log('Starting preview for:', voiceName, languageCode);
       
-      // 根据音色类型选择不同的处理方式
-      const isFreeVoice = voiceName.includes('pyttsx3');
-      
-      if (isFreeVoice) {
-        // pyttsx3音色
-        await previewWithPyttsx3(voiceName, languageCode);
-      } else {
-        // 付费音色使用服务器 TTS
-        await previewWithServerTTS(voiceName, languageCode);
-      }
+      // 使用服务器 TTS 试听
+      await previewWithServerTTS(voiceName, languageCode);
       
     } catch (error) {
       console.error('Preview error:', error);
@@ -114,76 +111,6 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
       });
       setPreviewingVoice(null);
       setPlaybackError(`试听失败: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  };
-
-  // 使用pyttsx3 TTS 试听
-  const previewWithPyttsx3 = async (voiceName: string, languageCode: string) => {
-    try {
-      console.log('Starting pyttsx3 TTS preview for:', voiceName, languageCode);
-      
-      // 获取预览文本
-      const previewTexts = {
-        'cmn-CN': '你好，这是一个免费的中文语音合成测试。',
-        'zh-CN': '你好，这是一个免费的中文语音合成测试。',
-        'en-US': 'Hello, this is a free English text-to-speech test.',
-        'ja-JP': 'こんにちは、これは無料の日本語音声合成テストです。',
-        'multi': 'Hello, this is a multilingual text-to-speech test.'
-      };
-      
-      const text = previewTexts[languageCode as keyof typeof previewTexts] || previewTexts['multi'];
-      
-      // 调用pyttsx3 API生成音频
-      const response = await fetch('/api/admin/shadowing/pyttsx3-preview', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: text,
-          voiceId: voiceName,
-          languageCode: languageCode
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}`);
-      }
-
-      // 获取音频数据
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      
-      // 创建音频元素并播放
-      const audio = new Audio(audioUrl);
-      setAudioElement(audio);
-      
-      audio.onloadeddata = () => {
-        console.log('pyttsx3 audio loaded, starting playback');
-        audio.play().catch(err => {
-          console.error('pyttsx3 audio play failed:', err);
-          setPlaybackError(`播放失败: ${err.message}`);
-        });
-      };
-      
-      audio.onended = () => {
-        console.log('pyttsx3 audio playback ended');
-        setPreviewingVoice(null);
-        URL.revokeObjectURL(audioUrl);
-      };
-      
-      audio.onerror = (event) => {
-        console.error('pyttsx3 audio error:', event);
-        setPlaybackError('pyttsx3音频播放失败');
-        setPreviewingVoice(null);
-        URL.revokeObjectURL(audioUrl);
-      };
-      
-    } catch (error) {
-      console.error('pyttsx3 preview error:', error);
-      setPlaybackError(`pyttsx3试听失败: ${error instanceof Error ? error.message : String(error)}`);
-      setPreviewingVoice(null);
     }
   };
 
@@ -236,10 +163,10 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
     try {
       await newAudioElement.play();
       console.log('Audio playback started successfully');
-    } catch (playError) {
+    } catch (playError: any) {
       console.error('Audio play failed:', playError);
       // 如果是自动播放被阻止，提示用户点击播放
-      if (playError.name === 'NotAllowedError') {
+      if (playError?.name === 'NotAllowedError') {
         console.log('Autoplay blocked, user interaction required');
         setPlaybackError('浏览器阻止了自动播放，请点击播放按钮');
       }
@@ -269,126 +196,97 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
       setLoading(true);
       setError(null);
       
-      let allVoices: Voice[] = [];
+      // 使用数据库API获取音色
+      const params = new URLSearchParams();
+      params.append("lang", lang);
+      if (category !== "all") params.append("category", category);
       
-      // 如果是免费音色分类，使用pyttsx3音色
-      if (category === "Free" || category === "all") {
-        try {
-          console.log("获取pyttsx3免费音色...");
-          const response = await fetch('/api/admin/shadowing/pyttsx3-voices');
-          const data = await response.json();
-          
-          if (data.success && data.voices) {
-            // 转换pyttsx3音色格式为Voice格式
-            const pyttsx3Voices: Voice[] = data.voices.map((voice: any, index: number) => {
-              const languageCode = voice.languages[0] || 'en-US';
-              const isChinese = languageCode.includes('zh') || languageCode.includes('CN');
-              
-              return {
-                name: voice.id,
-                displayName: voice.name,
-                languageCode: languageCode,
-                ssmlGender: voice.gender || 'FEMALE',
-                naturalSampleRateHertz: 22050,
-                supportedEngines: ['pyttsx3'],
-                supportedModels: ['pyttsx3-tts'],
-                pricing: {
-                  pricePerMillionChars: 0.00,
-                  quality: '免费质量',
-                  description: '完全免费，使用pyttsx3开源TTS'
-                },
-                examplePrice: '完全免费',
-                characteristics: {
-                  voiceType: 'pyttsx3 TTS',
-                  tone: voice.gender === 'FEMALE' ? '中高音' : '中低音',
-                  accent: isChinese ? '标准普通话' : '标准英语',
-                  speed: '中等',
-                  pitch: '自然',
-                  emotion: '中性',
-                  useCase: '通用',
-                  ageRange: '通用',
-                  personality: '自然',
-                  description: `pyttsx3开源音色 - ${voice.name}`
-                },
-                source: 'pyttsx3',
-                model: 'pyttsx3-tts'
-              };
-            });
-            
-            // 根据语言过滤
-            const filteredVoices = pyttsx3Voices.filter(voice => {
-              if (lang !== "all") {
-                if (lang === "cmn-CN" && voice.languageCode.includes('zh')) return true;
-                if (lang === voice.languageCode) return true;
-                return false;
-              }
-              return true;
-            });
-            
-            allVoices = filteredVoices;
-            console.log("使用pyttsx3音色:", filteredVoices.length, "个");
-            console.log("pyttsx3音色列表:", filteredVoices.map(v => `${v.displayName} (${v.languageCode})`));
-          } else {
-            console.log("未获取到pyttsx3音色，显示空列表");
-            allVoices = [];
+      console.log("fetchVoices调用参数:", { lang, category, selectedLanguage, selectedCategory });
+      
+      const response = await fetch(`/api/admin/shadowing/voices-db?${params}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        const allVoices = data.voices || [];
+        console.log("从数据库获取音色成功:", allVoices.length, "个音色");
+        console.log("音色数据示例:", allVoices.slice(0, 3));
+        console.log("语言分布:", data.groupedByLanguage);
+        console.log("分类分布:", Object.keys(data.categorizedVoices || {}).reduce((acc: any, key: any) => {
+          acc[key] = data.categorizedVoices[key].length;
+          return acc;
+        }, {}));
+        setVoices(allVoices);
+        
+        // 重新分组
+        const grouped = allVoices.reduce((acc: Record<string, Voice[]>, voice: Voice) => {
+          const langCode = voice.language_code || voice.languageCode;
+          if (langCode && !acc[langCode]) acc[langCode] = [];
+          if (langCode) acc[langCode].push(voice);
+          return acc;
+        }, {});
+        setGroupedVoices(grouped);
+        
+        // 重新分类
+        const categorized = allVoices.reduce((acc: Record<string, Voice[]>, voice: Voice) => {
+          const name = voice.name;
+          let category = 'Other';
+          if (name.includes('Chirp3-HD')) {
+            category = 'Chirp3-HD';
+          } else if (name.includes('Neural2')) {
+            category = 'Neural2';
+          } else if (name.includes('Wavenet')) {
+            category = 'Wavenet';
+          } else if (name.includes('Standard')) {
+            category = 'Standard';
           }
-        } catch (error) {
-          console.warn("获取pyttsx3音色失败:", error);
-          allVoices = [];
-        }
-      } else {
-        // 其他分类从服务器API获取
-        const params = new URLSearchParams();
-        if (lang !== "all") params.append("lang", lang);
-        if (category !== "all") params.append("category", category);
-        
-        const response = await fetch(`/api/admin/shadowing/voices?${params}`);
-        const data = await response.json();
-        
-        if (data.success) {
-          allVoices = data.voices;
-        }
+          
+          if (!acc[category]) acc[category] = [];
+          acc[category].push(voice);
+          return acc;
+        }, {});
+        setCategorizedVoices(categorized);
       }
-      
-      console.log("音色数据加载成功:", allVoices.length, "个音色");
-      setVoices(allVoices);
-      
-      // 重新分组
-      const grouped = allVoices.reduce((acc: Record<string, Voice[]>, voice) => {
-        const langCode = voice.languageCode;
-        if (!acc[langCode]) acc[langCode] = [];
-        acc[langCode].push(voice);
-        return acc;
-      }, {});
-      setGroupedVoices(grouped);
-      
-      // 重新分类
-      const categorized = allVoices.reduce((acc: Record<string, Voice[]>, voice) => {
-        const name = voice.name;
-        let category = 'Other';
-        if (name.includes('pyttsx3') || name.includes('Free') || name.includes('free')) {
-          category = 'Free';
-        } else if (name.includes('Chirp3-HD')) {
-          category = 'Chirp3-HD';
-        } else if (name.includes('Neural2')) {
-          category = 'Neural2';
-        } else if (name.includes('Wavenet')) {
-          category = 'Wavenet';
-        } else if (name.includes('Standard')) {
-          category = 'Standard';
-        }
-        
-        if (!acc[category]) acc[category] = [];
-        acc[category].push(voice);
-        return acc;
-      }, {});
-      setCategorizedVoices(categorized);
       
     } catch (err) {
       console.error("音色数据加载失败:", err);
       setError("网络错误，请重试");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 同步音色数据
+  const syncVoices = async () => {
+    try {
+      setSyncing(true);
+      setError(null);
+      
+      console.log("开始同步音色数据...");
+      const response = await fetch("/api/admin/shadowing/sync-voices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log("音色同步成功:", data.message);
+        console.log("同步统计:", data.stats);
+        
+        // 同步成功后重新获取音色列表
+        await fetchVoices(selectedLanguage, selectedCategory);
+        
+        // 显示成功消息
+        setError(null);
+      } else {
+        console.error("音色同步失败:", data.error);
+        setError(`同步失败: ${data.error}`);
+      }
+    } catch (err) {
+      console.error("音色同步失败:", err);
+      setError("同步失败，请重试");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -428,15 +326,15 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
   // 过滤音色
   const filteredVoices = voices.filter(voice => 
     voice.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    voice.languageCode.toLowerCase().includes(searchTerm.toLowerCase())
+    (voice.language_code || voice.languageCode || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // 获取当前显示的音色列表
   const displayVoices = selectedCategory === "all" ? filteredVoices : 
-    voices.filter(voice => 
-      voice.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      voice.languageCode.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    filteredVoices.filter(voice => {
+      // 使用数据库的category字段进行筛选
+      return voice.category === selectedCategory;
+    });
 
   // 调试信息
   console.log("VoiceManager 状态:", {
@@ -445,8 +343,24 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
     selectedLanguage,
     categorizedVoices: Object.keys(categorizedVoices),
     displayVoices: displayVoices.length,
+    filteredVoices: filteredVoices.length,
+    searchTerm,
     loading,
     error
+  });
+  
+  // 详细分类信息 - 按价格和性别分类
+  console.log("分类详情:", {
+    'Chirp3HD-Female': voices.filter(v => v.category === 'Chirp3HD-Female').length,
+    'Chirp3HD-Male': voices.filter(v => v.category === 'Chirp3HD-Male').length,
+    'Neural2-Female': voices.filter(v => v.category === 'Neural2-Female').length,
+    'Neural2-Male': voices.filter(v => v.category === 'Neural2-Male').length,
+    'Wavenet-Female': voices.filter(v => v.category === 'Wavenet-Female').length,
+    'Wavenet-Male': voices.filter(v => v.category === 'Wavenet-Male').length,
+    'Standard-Female': voices.filter(v => v.category === 'Standard-Female').length,
+    'Standard-Male': voices.filter(v => v.category === 'Standard-Male').length,
+    'Other-Female': voices.filter(v => v.category === 'Other-Female').length,
+    'Other-Male': voices.filter(v => v.category === 'Other-Male').length
   });
 
   return (
@@ -490,11 +404,26 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">所有分类</SelectItem>
-                  <SelectItem value="Free">🆓 免费音色 (完全免费)</SelectItem>
-                  <SelectItem value="Chirp3-HD">Chirp3-HD (最高质量)</SelectItem>
-                  <SelectItem value="Neural2">Neural2 (高质量)</SelectItem>
-                  <SelectItem value="Wavenet">Wavenet (标准质量)</SelectItem>
-                  <SelectItem value="Standard">Standard (基础质量)</SelectItem>
+                  
+                  {/* Chirp3-HD 系列 - 最高质量 */}
+                  <SelectItem value="Chirp3HD-Female">Chirp3-HD 女声 (最高质量)</SelectItem>
+                  <SelectItem value="Chirp3HD-Male">Chirp3-HD 男声 (最高质量)</SelectItem>
+                  
+                  {/* Neural2 系列 - 高质量 */}
+                  <SelectItem value="Neural2-Female">Neural2 女声 (高质量)</SelectItem>
+                  <SelectItem value="Neural2-Male">Neural2 男声 (高质量)</SelectItem>
+                  
+                  {/* Wavenet 系列 - 中高质量 */}
+                  <SelectItem value="Wavenet-Female">Wavenet 女声 (中高质量)</SelectItem>
+                  <SelectItem value="Wavenet-Male">Wavenet 男声 (中高质量)</SelectItem>
+                  
+                  {/* Standard 系列 - 基础质量 */}
+                  <SelectItem value="Standard-Female">Standard 女声 (基础质量)</SelectItem>
+                  <SelectItem value="Standard-Male">Standard 男声 (基础质量)</SelectItem>
+                  
+                  {/* 其他 */}
+                  <SelectItem value="Other-Female">其他 女声</SelectItem>
+                  <SelectItem value="Other-Male">其他 男声</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -514,6 +443,10 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
             <Button onClick={() => fetchVoices()} disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               刷新列表
+            </Button>
+            <Button onClick={syncVoices} disabled={syncing || loading} variant="outline">
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              同步音色
             </Button>
           </div>
         </CardContent>
@@ -552,7 +485,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
             <div className="space-y-2">
               <h4 className="font-medium">推荐结果：</h4>
               {recommendations.map((rec, index) => (
-                <div key={index} className="p-3 border rounded-lg bg-muted/50">
+                <div key={`recommendation-${rec.speaker}-${rec.voiceName}-${index}`} className="p-3 border rounded-lg bg-muted/50">
                   <div className="flex items-center justify-between">
                     <span className="font-medium">{rec.speaker}</span>
                     <div className="flex items-center gap-2">
@@ -629,44 +562,35 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                   <CardContent className="p-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm">{voice.displayName || voice.name}</h4>
+                        <h4 className="font-medium text-sm">{voice.display_name || voice.displayName || voice.name}</h4>
                         <div className="flex items-center gap-1">
-                          {voice.pricing.pricePerMillionChars === 0 && (
-                            <Badge variant="default" className="bg-green-600 text-white">
-                              🆓 免费
-                            </Badge>
-                          )}
-                          <Badge variant={voice.pricing.quality === '最高质量' ? 'default' : voice.pricing.quality === '免费质量' ? 'secondary' : 'secondary'}>
-                            {voice.pricing.quality}
+                          <Badge variant="secondary">
+                            {voice.category}
                           </Badge>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{voice.languageCode}</span>
+                        <span>{voice.language_code || voice.languageCode}</span>
                         <span>•</span>
-                        <span>{voice.ssmlGender}</span>
+                        <span>{voice.ssml_gender || voice.ssmlGender}</span>
                         <span>•</span>
-                        <span>{voice.naturalSampleRateHertz}Hz</span>
+                        <span>{voice.natural_sample_rate_hertz || voice.naturalSampleRateHertz}Hz</span>
                       </div>
                       
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          {voice.pricing.pricePerMillionChars === 0 ? (
-                            <div className="flex items-center gap-1 text-green-600">
-                              <span className="text-lg">🆓</span>
-                              <span className="text-xs font-medium">完全免费</span>
-                            </div>
-                          ) : (
-                            <>
-                              <DollarSign className="h-3 w-3" />
-                              <span className="text-xs">
-                                ${voice.pricing.pricePerMillionChars}/M 字符
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                (示例: ${voice.examplePrice}/1K字符)
-                              </span>
-                            </>
+                          <DollarSign className="h-3 w-3" />
+                          <span className="text-xs">
+                            ${voice.pricing.pricePerMillionChars}/M 字符
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            (示例: ${voice.examplePrice}/1K字符)
+                          </span>
+                          {voice.examplePrice10k && (
+                            <span className="text-xs text-muted-foreground">
+                              (${voice.examplePrice10k}/10K字符)
+                            </span>
                           )}
                         </div>
                         
@@ -680,7 +604,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                             if (previewingVoice === voice.name) {
                               stopPreview();
                             } else {
-                              previewVoice(voice.name, voice.languageCode);
+                              previewVoice(voice.name, voice.language_code || voice.languageCode || 'zh-CN');
                             }
                           }}
                           disabled={loading}
@@ -699,11 +623,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                         </Button>
                       </div>
                       
-                      <p className="text-xs text-muted-foreground">
-                        {voice.pricing.description}
-                      </p>
-                      
-                      {/* 音色特征信息 */}
+                      {/* 只显示基础特征，去掉自定义描述 */}
                       {voice.characteristics && (
                         <div className="mt-2 space-y-1">
                           <div className="flex flex-wrap gap-1">
@@ -713,29 +633,17 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                             <Badge key="tone" variant="outline" className="text-xs">
                               {voice.characteristics.tone}
                             </Badge>
-                            <Badge key="accent" variant="outline" className="text-xs">
-                              {voice.characteristics.accent}
-                            </Badge>
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">音调:</span> {voice.characteristics.pitch} | 
-                            <span className="font-medium"> 语速:</span> {voice.characteristics.speed} | 
-                            <span className="font-medium"> 情感:</span> {voice.characteristics.emotion}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">适用场景:</span> {voice.characteristics.useCase}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">年龄范围:</span> {voice.characteristics.ageRange} | 
-                            <span className="font-medium"> 性格:</span> {voice.characteristics.personality}
+                            <span className="font-medium">音调:</span> {voice.characteristics.pitch}
                           </div>
                         </div>
                       )}
                       
                       {voice.supportedModels && voice.supportedModels.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {voice.supportedModels.slice(0, 2).map((model, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
+                          {voice.supportedModels.slice(0, 2).map((model: string, index: number) => (
+                            <Badge key={`model-${voice.name}-${model}-${index}`} variant="outline" className="text-xs">
                               {model}
                             </Badge>
                           ))}

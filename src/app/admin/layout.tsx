@@ -118,15 +118,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <div className="py-6 flex gap-6">
           <aside className="w-64 flex-shrink-0">
             <nav className="rounded-lg border p-4 bg-card text-card-foreground">
-              {ADMIN_SECTIONS.map((section, si) => {
+              {ADMIN_SECTIONS.filter(section => section.items.some(i => !i.hidden)).map((section, si) => {
                 const items = section.items.filter(i => !i.hidden);
-                if (!items.length) return null;
                 return (
-                  <div key={`${section.title}-${si}`} className="mb-4">
+                  <div key={`admin-section-${si}-${section.title}`} className="mb-4">
                     <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground">{section.title}</div>
                     <ul className="space-y-2">
                       {items.map((item, ii) => (
-                        <li key={`${item.href}-${ii}`}>
+                        <li key={`admin-nav-item-${item.href.replace(/\//g, '-')}-${ii}`}>
                           <Link
                             href={item.href}
                             prefetch={false}

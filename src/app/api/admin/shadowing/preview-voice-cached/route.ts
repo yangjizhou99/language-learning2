@@ -5,32 +5,38 @@ import { createHash } from 'crypto';
 
 // 创建 TTS 客户端
 function makeClient() {
-  const raw = process.env.GOOGLE_TTS_CREDENTIALS;
-  if (!raw) throw new Error("GOOGLE_TTS_CREDENTIALS missing");
-
-  let credentials: any;
-  try {
-    credentials = JSON.parse(raw);
-  } catch {
+  // 尝试从环境变量或服务账户文件获取凭据
+  let credentials;
+  
+  if (process.env.GOOGLE_CLOUD_CLIENT_EMAIL && process.env.GOOGLE_CLOUD_PRIVATE_KEY) {
+    // 使用环境变量
+    credentials = {
+      client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    };
+  } else if (process.env.GOOGLE_TTS_CREDENTIALS) {
+    // 使用服务账户文件
     try {
-      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-        throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
-      }
       const fs = require('fs');
       const path = require('path');
-      const filePath = path.resolve(process.cwd(), raw);
-      const fileContent = fs.readFileSync(filePath, 'utf8');
-      credentials = JSON.parse(fileContent);
-    } catch (fileError: unknown) {
-      const errorMessage = fileError instanceof Error ? fileError.message : String(fileError);
-      throw new Error(`Failed to load credentials: ${errorMessage}`);
+      const serviceAccountPath = path.resolve(process.env.GOOGLE_TTS_CREDENTIALS);
+      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      credentials = {
+        client_email: serviceAccount.client_email,
+        private_key: serviceAccount.private_key,
+      };
+    } catch (error) {
+      throw new Error(`Failed to load service account file: ${error.message}`);
     }
+  } else {
+    throw new Error('Google Cloud TTS credentials not found. Please set GOOGLE_CLOUD_CLIENT_EMAIL and GOOGLE_CLOUD_PRIVATE_KEY, or GOOGLE_TTS_CREDENTIALS');
   }
   
-  return new TextToSpeechClient({
+  const client = new TextToSpeechClient({
     credentials,
-    projectId: process.env.GOOGLE_TTS_PROJECT_ID,
+    projectId: process.env.GOOGLE_TTS_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT_ID,
   });
+  return client;
 }
 
 // 试听文本配置
@@ -51,118 +57,26 @@ function getPreviewText(languageCode: string): string {
 
 // 获取音色配置
 function getVoiceConfig(voiceName: string, languageCode: string) {
-  // 免费音色 - 使用浏览器 TTS
-  if (voiceName.includes('Browser-')) {
-    // 这些是真正的免费音色，使用浏览器 TTS
-    // 暂时返回错误，提示使用专门的免费音色试听 API
-    throw new Error('Please use /api/admin/shadowing/preview-free-voice for free voices');
-  }
-  
-  // 标准音色 - 为不同音色分配不同的Google Cloud TTS音色
-  if (voiceName.includes('Free') || voiceName.includes('Standard') || voiceName.includes('Wavenet')) {
-    const ttsLanguageCode = languageCode === 'cmn-CN' ? 'cmn-cn' : 
-                           languageCode === 'multi' ? 'en-US' : languageCode;
-    
-    // 根据音色名称分配不同的Google Cloud TTS音色
-    let actualVoiceName;
-    if (ttsLanguageCode === 'cmn-cn') {
-      // 中文音色分配
-      if (voiceName.includes('Standard-CN-Female-1')) {
-        actualVoiceName = 'cmn-CN-Standard-A'; // 女性标准音色A
-      } else if (voiceName.includes('Standard-CN-Male-1')) {
-        actualVoiceName = 'cmn-CN-Standard-B'; // 男性标准音色B
-      } else if (voiceName.includes('Standard-CN-Female-2')) {
-        actualVoiceName = 'cmn-CN-Standard-C'; // 女性标准音色C
-      } else if (voiceName.includes('Standard-CN-Male-2')) {
-        actualVoiceName = 'cmn-CN-Standard-D'; // 男性标准音色D
-      } else if (voiceName.includes('Wavenet-CN-Female-1')) {
-        actualVoiceName = 'cmn-CN-Wavenet-A'; // 女性Wavenet音色A
-      } else if (voiceName.includes('Wavenet-CN-Male-1')) {
-        actualVoiceName = 'cmn-CN-Wavenet-B'; // 男性Wavenet音色B
-      } else if (voiceName.includes('Wavenet-CN-Female-2')) {
-        actualVoiceName = 'cmn-CN-Wavenet-C'; // 女性Wavenet音色C
-      } else if (voiceName.includes('Wavenet-CN-Male-2')) {
-        actualVoiceName = 'cmn-CN-Wavenet-D'; // 男性Wavenet音色D
-      } else if (voiceName.includes('Standard') && voiceName.includes('Female')) {
-        actualVoiceName = 'cmn-CN-Standard-A'; // 女性标准音色
-      } else if (voiceName.includes('Standard') && voiceName.includes('Male')) {
-        actualVoiceName = 'cmn-CN-Standard-B'; // 男性标准音色
-      } else if (voiceName.includes('Wavenet') && voiceName.includes('Female')) {
-        actualVoiceName = 'cmn-CN-Wavenet-A'; // 女性Wavenet音色
-      } else if (voiceName.includes('Wavenet') && voiceName.includes('Male')) {
-        actualVoiceName = 'cmn-CN-Wavenet-B'; // 男性Wavenet音色
-      } else if (voiceName.includes('Female-1')) {
-        actualVoiceName = 'cmn-CN-Standard-A'; // 女性标准音色
-      } else if (voiceName.includes('Male-1')) {
-        actualVoiceName = 'cmn-CN-Standard-B'; // 男性标准音色
-      } else if (voiceName.includes('Female-2')) {
-        actualVoiceName = 'cmn-CN-Wavenet-A'; // 女性Wavenet音色
-      } else if (voiceName.includes('Male-2')) {
-        actualVoiceName = 'cmn-CN-Wavenet-B'; // 男性Wavenet音色
-      } else {
-        actualVoiceName = 'cmn-CN-Standard-A'; // 默认
-      }
-    } else if (ttsLanguageCode === 'en-US') {
-      // 英文音色分配 - 使用实际存在的音色
-      if (voiceName.includes('Female-1')) {
-        actualVoiceName = 'en-US-Standard-A'; // 女性标准音色
-      } else if (voiceName.includes('Male-1')) {
-        actualVoiceName = 'en-US-Standard-B'; // 男性标准音色
-      } else if (voiceName.includes('Female-2')) {
-        actualVoiceName = 'en-US-Wavenet-A'; // 女性Wavenet音色
-      } else if (voiceName.includes('Male-2')) {
-        actualVoiceName = 'en-US-Wavenet-B'; // 男性Wavenet音色
-      } else {
-        actualVoiceName = 'en-US-Standard-A'; // 默认
-      }
-    } else if (ttsLanguageCode === 'ja-JP') {
-      // 日语音色分配
-      if (voiceName.includes('Female-1')) {
-        actualVoiceName = 'ja-JP-Neural2-A'; // 女性Neural2音色
-      } else if (voiceName.includes('Male-1')) {
-        actualVoiceName = 'ja-JP-Neural2-B'; // 男性Neural2音色
-      } else {
-        actualVoiceName = 'ja-JP-Neural2-A'; // 默认
-      }
-    } else {
-      // 多语言音色
-      actualVoiceName = 'en-US-Neural2-A';
-    }
-    
-    return {
-      languageCode: ttsLanguageCode,
-      name: actualVoiceName,
-      modelName: undefined
-    };
-  }
-  
-  // Gemini 音色
-  if (voiceName.includes('Gemini') || voiceName.includes('Kore') || voiceName.includes('Orus')) {
-    return {
-      languageCode: 'en-US',
-      name: voiceName,
-      modelName: 'gemini-2.5-flash-preview-tts'
-    };
-  }
-  
-  // Chirp3-HD 音色
-  if (voiceName.includes('Chirp3-HD')) {
-    const ttsLanguageCode = languageCode === 'cmn-CN' ? 'cmn-cn' : 
-                           languageCode === 'multi' ? 'en-US' : languageCode;
-    return {
-      languageCode: ttsLanguageCode,
-      name: voiceName,
-      modelName: 'chirp3-hd'
-    };
-  }
-  
-  // 其他音色
+  // 所有音色现在都是Google Cloud TTS的真实音色，直接使用音色名称
   const ttsLanguageCode = languageCode === 'cmn-CN' ? 'cmn-cn' : 
                          languageCode === 'multi' ? 'en-US' : languageCode;
+  
+  // 根据音色类型确定模型
+  let modelName = undefined;
+  if (voiceName.includes('Chirp3-HD')) {
+    modelName = 'chirp3-hd';
+  } else if (voiceName.includes('Neural2')) {
+    modelName = 'neural2';
+  } else if (voiceName.includes('Wavenet')) {
+    modelName = 'wavenet';
+  } else if (voiceName.includes('Standard')) {
+    modelName = 'standard';
+  }
+  
   return {
     languageCode: ttsLanguageCode,
     name: voiceName,
-    modelName: undefined
+    modelName: modelName
   };
 }
 
