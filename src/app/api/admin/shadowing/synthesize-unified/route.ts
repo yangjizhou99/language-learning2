@@ -47,13 +47,18 @@ export async function POST(req: NextRequest) {
     const provider = getProviderFromVoice(voice);
     
     console.log(`使用 ${provider} ${isDialogue ? '对话' : '普通'} TTS 合成: ${voice}`);
+    console.log(`文本内容: ${text.substring(0, 100)}...`);
+    
+    // 启用对话合成功能
+    const forceNormalTTS = false;
+    const actualIsDialogue = isDialogue && !forceNormalTTS;
 
     let audioBuffer: Buffer;
     let result: any = {};
 
     if (provider === 'gemini') {
       // 使用 Gemini TTS
-      if (isDialogue) {
+      if (actualIsDialogue) {
         // 对话格式使用 Gemini 对话合成
         const { synthesizeGeminiDialogue } = await import('@/lib/gemini-tts');
         const dialogueResult = await synthesizeGeminiDialogue({
@@ -80,7 +85,7 @@ export async function POST(req: NextRequest) {
       }
     } else {
       // 使用 Google TTS
-      if (isDialogue) {
+      if (actualIsDialogue) {
         // 对话格式使用 Google 对话合成
         const { synthesizeDialogue } = await import('@/lib/tts');
         const dialogueResult = await synthesizeDialogue({

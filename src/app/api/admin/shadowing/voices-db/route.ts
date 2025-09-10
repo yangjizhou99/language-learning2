@@ -27,12 +27,12 @@ export async function GET(req: NextRequest) {
     
     // 语言筛选
     if (lang !== 'all') {
-      if (lang === 'cmn-CN') {
+      if (lang === 'cmn-CN' || lang === 'zh') {
         // 中文音色包含简体和繁体
         query = query.in('language_code', ['cmn-CN', 'cmn-TW']);
-      } else if (lang === 'en-US') {
+      } else if (lang === 'en-US' || lang === 'en') {
         query = query.eq('language_code', 'en-US');
-      } else if (lang === 'ja-JP') {
+      } else if (lang === 'ja-JP' || lang === 'ja') {
         query = query.eq('language_code', 'ja-JP');
       } else {
         query = query.eq('language_code', lang);

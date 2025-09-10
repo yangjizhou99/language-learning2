@@ -12,6 +12,8 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import VoiceManager from "@/components/VoiceManager";
+import CandidateVoiceSelector from "@/components/CandidateVoiceSelector";
+import VoiceSelectionConfirmation from "@/components/VoiceSelectionConfirmation";
 
 type Item = { id:string; lang:"en"|"ja"|"zh"; level:number; genre:string; title:string; status:string; created_at:string; notes?: any; text?: string };
 
@@ -117,6 +119,15 @@ export default function ShadowingReviewList(){
   // 音色管理相关状态
   const [selectedVoice, setSelectedVoice] = useState<any>(null);
   const [showVoiceManager, setShowVoiceManager] = useState(false);
+  
+  // 备选音色智能生成相关状态
+  const [candidateVoices, setCandidateVoices] = useState<any[]>([]);
+  const [showCandidateSelector, setShowCandidateSelector] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [voiceAnalysis, setVoiceAnalysis] = useState<any>(null);
+  const [currentText, setCurrentText] = useState("");
+  const [smartGenerationLoading, setSmartGenerationLoading] = useState(false);
+  const [log, setLog] = useState("");
   
   // 性能优化参数
   const [concurrency, setConcurrency] = useState(3);
@@ -401,6 +412,627 @@ export default function ShadowingReviewList(){
     }
   }
 
+  // 智能生成流程：直接使用备选音色进行批量TTS生成
+  const startSmartGeneration = () => {
+    console.log('startSmartGeneration - candidateVoices:', candidateVoices);
+    console.log('startSmartGeneration - selected.size:', selected.size);
+    
+    if (candidateVoices.length === 0) {
+      toast.error("请先设置备选音色");
+      return;
+    }
+    if (selected.size === 0) {
+      toast.error("请先选择要处理的草稿");
+      return;
+    }
+
+    // 先随机分配音色，然后计算预估花费和参数
+    const selectedDraftsArray = Array.from(selected);
+    
+    // 检查selected是否是ID数组，需要从items中查找对应的草稿
+    let actualDrafts = [];
+    if (selectedDraftsArray.length > 0 && typeof selectedDraftsArray[0] === 'string') {
+      // selected是ID数组，需要从items中查找
+      actualDrafts = selectedDraftsArray.map(id => items.find(item => item.id === id)).filter(Boolean);
+    } else {
+      // selected直接是草稿对象数组
+      actualDrafts = selectedDraftsArray;
+    }
+    
+    // 为每个草稿随机分配音色
+    const draftsWithVoices = actualDrafts.map(draft => {
+      // 获取文本内容
+      const textContent = draft.text || draft.content || draft.title || '';
+      
+      const isDialogue = /^[A-Z]:/.test(textContent);
+      let assignedVoice = '';
+      
+      if (isDialogue) {
+        // 对话格式：为A、B说话者分配不同音色
+        const speakerVoices = getSpeakerVoices(textContent);
+        assignedVoice = Object.values(speakerVoices)[0] || candidateVoices[0]?.name || 'cmn-CN-Standard-A';
+      } else {
+        // 独白格式：随机选择一个音色
+        assignedVoice = getRandomVoice() || candidateVoices[0]?.name || 'cmn-CN-Standard-A';
+      }
+      
+      return {
+        ...draft,
+        textContent, // 保存实际使用的文本内容
+        assignedVoice,
+        isDialogue
+      };
+    });
+
+    // 计算总字符数
+    const totalCharacters = draftsWithVoices.reduce((total, draft) => {
+      return total + (draft.textContent?.length || 0);
+    }, 0);
+
+    // 计算预估花费（Google TTS: $4/M字符）
+    const estimatedCost = (totalCharacters / 1000000) * 4; // 转换为美元
+    const estimatedCostCNY = estimatedCost * 7.2; // 转换为人民币（假设汇率7.2）
+
+    // 统计对话和独白数量
+    const dialogueCount = draftsWithVoices.filter(d => d.isDialogue).length;
+    const monologueCount = draftsWithVoices.filter(d => !d.isDialogue).length;
+
+    // 显示确认对话框
+    const confirmed = window.confirm(
+      `生成参数确认：\n\n` +
+      `• 选中草稿：${selectedDraftsArray.length} 个\n` +
+      `  - 对话：${dialogueCount} 个\n` +
+      `  - 独白：${monologueCount} 个\n` +
+      `• 备选音色：${candidateVoices.length} 个\n` +
+      `• 总字符数：${totalCharacters.toLocaleString()} 字符\n` +
+      `• 预估花费：$${estimatedCost.toFixed(4)} (约¥${estimatedCostCNY.toFixed(2)})\n\n` +
+      `是否继续生成？`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setShowCandidateSelector(false);
+    setSmartGenerationLoading(true);
+    setLog("开始随机生成流程...");
+    
+    // 直接开始批量TTS生成，使用随机音色分配
+    synthSelectedWithRandomVoices();
+  };
+
+  // 使用随机音色分配进行批量TTS生成
+  const synthSelectedWithRandomVoices = async () => {
+    if (selected.size === 0) return;
+    
+    const ids = Array.from(selected);
+    setTtsLoading(true);
+    setCurrentOperation("tts");
+    setTtsTotal(ids.length);
+    setTtsDone(0);
+    let fail = 0;
+    
+    try {
+      // 并发处理
+      const processBatch = async (batchIds: string[]) => {
+        const promises = batchIds.map(async (id) => {
+          const it = items.find(x => x.id === id);
+          setTtsCurrent(it?.title || "");
+          
+          // 使用随机音色分配进行TTS生成
+          const ok = await synthOneWithRandomVoices(id);
+          setTtsDone(v => v + 1);
+          return { id, success: ok };
+        });
+        
+        const results = await Promise.all(promises);
+        return results.filter(r => !r.success).length;
+      };
+      
+      // 分批处理
+      const batchSize = Math.max(1, Math.min(concurrency, ids.length));
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        const batchFail = await processBatch(batch);
+        fail += batchFail;
+        
+        // 节流延迟
+        if (throttle > 0 && i + batchSize < ids.length) {
+          await new Promise(resolve => setTimeout(resolve, throttle));
+        }
+      }
+      
+      toast.success(`随机TTS合成完成：${ids.length - fail}/${ids.length}`);
+      setLog(`随机TTS合成完成：${ids.length - fail}/${ids.length} 个草稿`);
+      // 触发刷新
+      setQ(q => q);
+    } catch (e) {
+      toast.error("随机批量合成失败，请重试");
+      setLog("随机批量合成失败，请重试");
+    } finally {
+      setTtsCurrent("");
+      setTtsLoading(false);
+      setSmartGenerationLoading(false);
+    }
+  };
+
+  // 使用随机音色分配进行单个TTS生成
+  const synthOneWithRandomVoices = async (id: string) => {
+    const it = items.find(x => x.id === id);
+    if (!it) return false;
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const detail = await fetch(`/api/admin/shadowing/drafts/${id}`, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
+      if (!detail.ok) throw new Error(`获取草稿失败(${detail.status})`);
+      const dj = await detail.json();
+      const draft = dj.draft;
+      
+      // 检查是否为对话格式
+      const isDialogue = isDialogueFormat(draft.text);
+      
+      // 根据对话格式分配音色
+      let selectedVoice = null;
+      let processedText = draft.text;
+      
+      if (isDialogue) {
+        // 对话格式：分别合成每个说话者的音频
+        console.log('对话格式，使用多音色对话合成');
+        
+        // 为对话文本分配音色
+        const speakerVoices = getSpeakerVoices(draft.text);
+        console.log('说话者音色分配:', speakerVoices);
+        
+        // 分别合成每个说话者的音频
+        const audioUrls = await synthDialogueWithDifferentVoices(draft.text, speakerVoices, draft.lang, draft?.notes?.speakingRate || 1.0, draft?.notes?.pitch || 0, token);
+        
+        if (audioUrls && audioUrls.length > 0) {
+          // 保存合并后的音频地址
+          const next = {
+            ...draft,
+            notes: {
+              ...(draft.notes || {}),
+              audio_url: audioUrls[0], // 使用第一个音频（合并后的）
+              is_dialogue: true,
+              dialogue_count: Object.keys(speakerVoices).length,
+              speakers: Object.keys(speakerVoices),
+              tts_provider: 'Google',
+              random_voice_assignment: speakerVoices
+            }
+          };
+          
+          const save = await fetch(`/api/admin/shadowing/drafts/${draft.id}`, {
+            method: 'PUT',
+            headers: { 
+              'Content-Type': 'application/json', 
+              ...(token ? { Authorization: `Bearer ${token}` } : {}) 
+            },
+            body: JSON.stringify({ notes: next.notes })
+          });
+          
+          if (!save.ok) {
+            throw new Error(`保存音频地址失败(${save.status})`);
+          }
+          
+          console.log('多音色对话合成保存成功');
+          return true;
+        } else {
+          throw new Error('多音色对话合成失败');
+        }
+      } else {
+        // 独白格式：随机选择一个音色
+        selectedVoice = getRandomVoice();
+        processedText = draft.text;
+        console.log('独白格式，使用随机音色:', selectedVoice);
+      }
+      
+      // 使用分配的音色进行TTS合成
+      const apiEndpoint = '/api/admin/shadowing/synthesize';
+      
+      console.log(`使用随机音色分配进行TTS合成: ${draft.title}`);
+      console.log(`TTS参数:`, { 
+        text: processedText.substring(0, 100) + '...', 
+        lang: draft.lang, 
+        voice: selectedVoice,
+        speakingRate: draft?.notes?.speakingRate || 1.0,
+        pitch: draft?.notes?.pitch || 0
+      });
+      
+      // 创建AbortController用于超时控制
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒超时
+      
+      let j: any;
+      try {
+        const r = await fetch(apiEndpoint, { 
+          method:'POST', 
+          headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, 
+          body: JSON.stringify({ 
+            text: processedText, 
+            lang: draft.lang, 
+            voice: selectedVoice,
+            speakingRate: draft?.notes?.speakingRate || 1.0,
+            pitch: draft?.notes?.pitch || 0
+          }),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        console.log(`TTS API响应状态: ${r.status}`);
+        
+        j = await r.json();
+        if (!r.ok) throw new Error(j?.error || "TTS 失败");
+        
+        console.log(`TTS合成成功: ${draft.title}`);
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          throw new Error("TTS合成超时（60秒）");
+        }
+        throw error;
+      }
+      
+      // 写入 notes.audio_url 并保存
+      const next = { 
+        ...draft, 
+        notes: { 
+          ...(draft.notes||{}), 
+          audio_url: j.audio_url,
+          is_dialogue: j.is_dialogue || isDialogue,
+          dialogue_count: j.dialogue_count || null,
+          speakers: j.speakers || null,
+          tts_provider: j.provider || 'google',
+          random_voice_assignment: selectedVoice // 记录随机音色分配
+        } 
+      };
+      const save = await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
+      if (!save.ok) throw new Error(`保存音频地址失败(${save.status})`);
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
+
+  // 获取说话者音色分配
+  const getSpeakerVoices = (text: string) => {
+    // 分析说话者标识符
+    const speakerPattern = /^[A-Z]:/gm;
+    const matches = text.match(speakerPattern);
+    if (!matches) return null;
+    
+    const speakers = [...new Set(matches.map(m => m.replace(':', '')))];
+    const speakerVoices: Record<string, string> = {};
+    
+    // 按规则分配音色
+    speakers.forEach((speaker, index) => {
+      if (speaker === 'A') {
+        // A说话者：选择男声
+        const maleVoice = getRandomMaleVoice();
+        speakerVoices[speaker] = maleVoice || 'cmn-CN-Standard-B';
+      } else if (speaker === 'B') {
+        // B说话者：选择女声
+        const femaleVoice = getRandomFemaleVoice();
+        speakerVoices[speaker] = femaleVoice || 'cmn-CN-Standard-A';
+      } else {
+        // C、D等：随机选择
+        const randomVoice = getRandomVoice();
+        speakerVoices[speaker] = randomVoice || 'cmn-CN-Standard-A';
+      }
+    });
+    
+    return speakerVoices;
+  };
+
+  // 获取随机音色
+  const getRandomVoice = () => {
+    console.log('getRandomVoice - candidateVoices:', candidateVoices);
+    if (candidateVoices.length === 0) {
+      console.log('getRandomVoice - 没有备选音色');
+      return null;
+    }
+    const randomIndex = Math.floor(Math.random() * candidateVoices.length);
+    const selectedVoice = candidateVoices[randomIndex].name;
+    console.log('getRandomVoice - 选择的音色:', selectedVoice);
+    return selectedVoice;
+  };
+
+  // 合并多个音频文件
+  const mergeAudioFiles = async (audioUrls: string[], token: string | null): Promise<string> => {
+    try {
+      console.log('开始合并音频文件:', audioUrls);
+      
+      // 调用后端API合并音频
+      const response = await fetch('/api/admin/shadowing/merge-audio', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          ...(token ? { Authorization: `Bearer ${token}` } : {}) 
+        },
+        body: JSON.stringify({ 
+          audioUrls: audioUrls
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`音频合并失败: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('音频合并成功:', result.mergedAudioUrl);
+      return result.mergedAudioUrl;
+      
+    } catch (error) {
+      console.error('音频合并失败:', error);
+      // 如果合并失败，返回第一个音频作为备选
+      return audioUrls[0];
+    }
+  };
+
+  // 多音色对话合成函数
+  const synthDialogueWithDifferentVoices = async (text: string, speakerVoices: Record<string, string>, lang: string, speakingRate: number, pitch: number, token: string | null): Promise<string[]> => {
+    try {
+      console.log('开始多音色对话合成:', { text: text.substring(0, 100) + '...', speakerVoices, lang });
+      
+      // 解析对话文本，分离每个说话者的内容
+      const lines = text.split('\n').filter(line => line.trim());
+      const speakerSegments: { speaker: string; text: string; voice: string }[] = [];
+      
+      for (const line of lines) {
+        const match = line.match(/^([A-Z]):\s*(.+)$/);
+        if (match) {
+          const speaker = match[1];
+          const content = match[2].trim();
+          const voice = speakerVoices[speaker];
+          
+          if (voice && content) {
+            speakerSegments.push({ speaker, text: content, voice });
+          }
+        }
+      }
+      
+      console.log('解析的说话者片段:', speakerSegments);
+      
+      if (speakerSegments.length === 0) {
+        throw new Error('没有找到有效的对话片段');
+      }
+      
+      // 分别合成每个说话者的音频
+      const audioPromises = speakerSegments.map(async (segment, index) => {
+        console.log(`合成第${index + 1}个片段: ${segment.speaker} - ${segment.text.substring(0, 50)}...`);
+        
+        const response = await fetch('/api/admin/shadowing/synthesize', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json', 
+            ...(token ? { Authorization: `Bearer ${token}` } : {}) 
+          },
+          body: JSON.stringify({ 
+            text: segment.text, 
+            lang: lang, 
+            voice: segment.voice,
+            speakingRate: speakingRate
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`TTS合成失败: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log(`第${index + 1}个片段合成成功:`, result.audio_url);
+        return result.audio_url;
+      });
+      
+      // 等待所有音频合成完成
+      const audioUrls = await Promise.all(audioPromises);
+      console.log('所有音频合成完成:', audioUrls);
+      
+      // 合并音频：使用ffmpeg将多个音频合并成一个完整的对话音频
+      const mergedAudioUrl = await mergeAudioFiles(audioUrls, token);
+      console.log('音频合并完成:', mergedAudioUrl);
+      
+      return [mergedAudioUrl];
+      
+    } catch (error) {
+      console.error('多音色对话合成失败:', error);
+      throw error;
+    }
+  };
+
+  // 获取随机男声音色
+  const getRandomMaleVoice = () => {
+    const maleVoices = candidateVoices.filter(voice => 
+      voice.ssml_gender === 'MALE' || voice.ssmlGender === 'MALE'
+    );
+    console.log('getRandomMaleVoice - 男声音色:', maleVoices);
+    if (maleVoices.length === 0) {
+      console.log('getRandomMaleVoice - 没有男声，使用随机选择');
+      return getRandomVoice(); // 如果没有男声，随机选择
+    }
+    const randomIndex = Math.floor(Math.random() * maleVoices.length);
+    const selectedVoice = maleVoices[randomIndex].name;
+    console.log('getRandomMaleVoice - 选择的男声音色:', selectedVoice);
+    return selectedVoice;
+  };
+
+  // 获取随机女声音色
+  const getRandomFemaleVoice = () => {
+    const femaleVoices = candidateVoices.filter(voice => 
+      voice.ssml_gender === 'FEMALE' || voice.ssmlGender === 'FEMALE'
+    );
+    console.log('getRandomFemaleVoice - 女声音色:', femaleVoices);
+    if (femaleVoices.length === 0) {
+      console.log('getRandomFemaleVoice - 没有女声，使用随机选择');
+      return getRandomVoice(); // 如果没有女声，随机选择
+    }
+    const randomIndex = Math.floor(Math.random() * femaleVoices.length);
+    const selectedVoice = femaleVoices[randomIndex].name;
+    console.log('getRandomFemaleVoice - 选择的女声音色:', selectedVoice);
+    return selectedVoice;
+  };
+
+  // AI音色分析（保留但不再使用）
+  const analyzeVoiceForText = async (text: string, language: string) => {
+    try {
+      setLog("AI正在从备选音色中选择最适合的音色...");
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const response = await fetch("/api/admin/shadowing/analyze-voices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          text,
+          language,
+          candidateVoices: candidateVoices
+        })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setVoiceAnalysis(data);
+        setCurrentText(text);
+        setShowConfirmation(true);
+        setLog(`AI已从${candidateVoices.length}个备选音色中选择了${data.selectedVoices.length}个音色`);
+      } else {
+        setLog("AI音色分析失败: " + data.error);
+        toast.error("AI音色分析失败: " + data.error);
+      }
+    } catch (error) {
+      setLog("AI音色分析失败: " + String(error));
+      toast.error("AI音色分析失败: " + String(error));
+    } finally {
+      setSmartGenerationLoading(false);
+    }
+  };
+
+  // 确认智能生成
+  const confirmSmartGeneration = async () => {
+    setShowConfirmation(false);
+    setLog("开始使用AI选择的音色进行批量TTS生成...");
+    
+    // 使用AI选择的音色进行批量TTS生成
+    await synthSelectedWithAIVoices();
+  };
+
+  // 使用AI选择音色进行批量TTS生成
+  const synthSelectedWithAIVoices = async () => {
+    if (selected.size === 0 || !voiceAnalysis) return;
+    
+    const ids = Array.from(selected);
+    setTtsLoading(true);
+    setCurrentOperation("tts");
+    setTtsTotal(ids.length);
+    setTtsDone(0);
+    let fail = 0;
+    
+    try {
+      // 并发处理
+      const processBatch = async (batchIds: string[]) => {
+        const promises = batchIds.map(async (id) => {
+          const it = items.find(x => x.id === id);
+          setTtsCurrent(it?.title || "");
+          
+          // 使用AI选择的音色进行TTS生成
+          const ok = await synthOneWithAIVoices(id);
+          setTtsDone(v => v + 1);
+          return { id, success: ok };
+        });
+        
+        const results = await Promise.all(promises);
+        return results.filter(r => !r.success).length;
+      };
+      
+      // 分批处理
+      const batchSize = Math.max(1, Math.min(concurrency, ids.length));
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        const batchFail = await processBatch(batch);
+        fail += batchFail;
+        
+        // 节流延迟
+        if (throttle > 0 && i + batchSize < ids.length) {
+          await new Promise(resolve => setTimeout(resolve, throttle));
+        }
+      }
+      
+      toast.success(`智能TTS合成完成：${ids.length - fail}/${ids.length}`);
+      // 触发刷新
+      setQ(q => q);
+    } catch (e) {
+      toast.error("智能批量合成失败，请重试");
+    } finally {
+      setTtsCurrent("");
+      setTtsLoading(false);
+    }
+  };
+
+  // 使用AI选择音色进行单个TTS生成
+  const synthOneWithAIVoices = async (id: string) => {
+    const it = items.find(x => x.id === id);
+    if (!it) return false;
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const detail = await fetch(`/api/admin/shadowing/drafts/${id}`, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
+      if (!detail.ok) throw new Error(`获取草稿失败(${detail.status})`);
+      const dj = await detail.json();
+      const draft = dj.draft;
+      
+      // 检查是否为对话格式
+      const isDialogue = isDialogueFormat(draft.text);
+      
+      // 使用AI选择的音色进行TTS合成
+      const apiEndpoint = '/api/admin/shadowing/synthesize-unified';
+      
+      console.log(`使用AI选择音色进行TTS合成: ${draft.title}`);
+      
+      const r = await fetch(apiEndpoint, { 
+        method:'POST', 
+        headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, 
+        body: JSON.stringify({ 
+          text: draft.text, 
+          lang: draft.lang, 
+          voice: voiceAnalysis?.selectedVoices?.[0] || null, // 使用AI选择的第一个音色
+          speakingRate: draft?.notes?.speakingRate || 1.0,
+          pitch: draft?.notes?.pitch || 0
+        }) 
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "TTS 失败");
+      
+      // 写入 notes.audio_url 并保存
+      const next = { 
+        ...draft, 
+        notes: { 
+          ...(draft.notes||{}), 
+          audio_url: j.audio_url,
+          is_dialogue: j.is_dialogue || isDialogue,
+          dialogue_count: j.dialogue_count || null,
+          speakers: j.speakers || null,
+          tts_provider: j.provider || 'google',
+          ai_selected_voice: voiceAnalysis?.selectedVoices?.[0] || null // 记录AI选择的音色
+        } 
+      };
+      const save = await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
+      if (!save.ok) throw new Error(`保存音频地址失败(${save.status})`);
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
+
+  // 取消确认
+  const cancelConfirmation = () => {
+    setShowConfirmation(false);
+    setVoiceAnalysis(null);
+    setLog("已取消音色分析");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -633,9 +1265,18 @@ export default function ShadowingReviewList(){
             >
               {ttsLoading ? "合成中..." : `批量合成 TTS`}
             </Button>
+            <Button 
+              onClick={() => setShowCandidateSelector(true)} 
+              disabled={ttsLoading || publishing || selected.size===0}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              🎲 随机生成
+            </Button>
             <div className="text-xs text-gray-500">
               💡 自动检测对话格式，为 A/B 角色分配不同音色
               {selectedVoice?.provider === "gemini" && " (AI增强)"}
+              <br />
+              🎲 随机生成：从备选音色中随机选择，A=男声，B=女声，C+=随机
             </div>
             <Button 
               size="sm" 
@@ -698,6 +1339,20 @@ export default function ShadowingReviewList(){
               <div className="text-xs text-gray-500">
                 并发数: {concurrency} | 节流延迟: {throttle}ms
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 随机生成日志 */}
+      {log && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">🎲 随机生成日志</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+              {log}
             </div>
           </CardContent>
         </Card>
@@ -775,6 +1430,66 @@ export default function ShadowingReviewList(){
           )}
         </CardContent>
       </Card>
+
+      {/* 备选音色设置面板 */}
+      {showCandidateSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">设置备选音色</h2>
+                <button
+                  onClick={() => setShowCandidateSelector(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <CandidateVoiceSelector
+                language={lang === "all" ? "zh" : lang}
+                onCandidateVoicesSet={setCandidateVoices}
+              />
+              
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowCandidateSelector(false)}
+                  className="px-4 py-2 border rounded hover:bg-gray-50"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={startSmartGeneration}
+                  disabled={candidateVoices.length === 0 || selected.size === 0}
+                  className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                >
+                  🎲 开始随机生成 ({candidateVoices.length} 个备选音色, {selected.size} 个选中草稿)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 生成确认面板 */}
+      {showConfirmation && voiceAnalysis && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <VoiceSelectionConfirmation
+              text={currentText}
+              language={lang === "all" ? "zh" : lang}
+              speakers={voiceAnalysis.speakers}
+              isDialogue={voiceAnalysis.isDialogue}
+              selectedVoices={voiceAnalysis.selectedVoices}
+              candidateVoices={candidateVoices}
+              onConfirm={confirmSmartGeneration}
+              onCancel={cancelConfirmation}
+              loading={ttsLoading}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
+
 }

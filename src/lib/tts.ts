@@ -121,6 +121,19 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
   const name = localeMismatch ? (DEFAULTS[lang as keyof typeof DEFAULTS]) : selectedName;
   if (localeMismatch) languageCode = toLocaleCode(lang);
 
+  // 调试信息
+  console.log('synthesizeTTS 调试信息:');
+  console.log('- 输入参数:', { text: clean.substring(0, 50) + '...', lang, voiceName, speakingRate, pitch });
+  console.log('- selectedName:', selectedName);
+  console.log('- languageCode:', languageCode);
+  console.log('- uiLocale:', uiLocale);
+  console.log('- selectedLocale:', selectedLocale);
+  console.log('- isZhUi:', isZhUi);
+  console.log('- isZhVoice:', isZhVoice);
+  console.log('- localeMismatch:', localeMismatch);
+  console.log('- 最终音色名称:', name);
+  console.log('- DEFAULTS[lang]:', DEFAULTS[lang as keyof typeof DEFAULTS]);
+
   const sentences = splitTextIntoSentences(clean).flatMap(s => chunkByBytes(s, 800));
   const ssml = `<speak>${sentences.map(s => `<s>${escapeForSsml(s)}</s>`).join("")}</speak>`;
 
@@ -160,6 +173,18 @@ function parseDialogue(text: string): { speaker: string; content: string }[] {
 
 // 为不同角色分配音色
 function getVoiceForSpeaker(speaker: string, lang: string): string {
+  // 标准化语言代码
+  const normalizedLang = lang.toLowerCase();
+  let langKey = normalizedLang;
+  
+  if (normalizedLang === 'zh' || normalizedLang === 'cmn-cn' || normalizedLang === 'zh-cn') {
+    langKey = 'zh';
+  } else if (normalizedLang === 'en' || normalizedLang === 'en-us') {
+    langKey = 'en';
+  } else if (normalizedLang === 'ja' || normalizedLang === 'ja-jp') {
+    langKey = 'ja';
+  }
+  
   const voices: Record<string, Record<string, string>> = {
     en: {
       A: "en-US-Neural2-F", // 女性声音
@@ -170,12 +195,14 @@ function getVoiceForSpeaker(speaker: string, lang: string): string {
       B: "ja-JP-Neural2-D", // 男性声音
     },
     zh: {
-      A: "cmn-CN-Neural2-A", // 女性声音
-      B: "cmn-CN-Neural2-B", // 男性声音
+      A: "cmn-CN-Standard-A", // 女性声音
+      B: "cmn-CN-Standard-B", // 男性声音
     },
   };
   
-  return voices[lang]?.[speaker] || voices[lang]?.A || "en-US-Neural2-F";
+  const voice = voices[langKey]?.[speaker] || voices[langKey]?.A || "en-US-Neural2-F";
+  console.log(`getVoiceForSpeaker: speaker=${speaker}, lang=${lang}, normalized=${langKey}, voice=${voice}`);
+  return voice;
 }
 
 // 合并音频缓冲区
@@ -282,13 +309,15 @@ export async function synthesizeDialogue({
 }: { text: string; lang: string; speakingRate?: number; pitch?: number }): Promise<{ audio: Buffer; speakers: string[]; dialogueCount: number }> {
   if (!text || !lang) throw new Error("missing text/lang");
 
+  console.log(`开始对话合成: lang=${lang}, text=${text.substring(0, 100)}...`);
+
   // 解析对话文本
   const dialogue = parseDialogue(text);
   if (dialogue.length === 0) {
     throw new Error("无法解析对话内容");
   }
 
-  console.log(`解析到 ${dialogue.length} 段对话`);
+  console.log(`解析到 ${dialogue.length} 段对话:`, dialogue);
 
   // 为每个角色分别合成音频
   const audioBuffers: Buffer[] = [];
@@ -296,28 +325,40 @@ export async function synthesizeDialogue({
   
   for (const { speaker, content } of dialogue) {
     const voice = getVoiceForSpeaker(speaker, lang);
-    console.log(`为角色 ${speaker} 合成音频，使用音色: ${voice}`);
+    console.log(`为角色 ${speaker} 合成音频，使用音色: ${voice}, 内容: "${content}"`);
     
-    const audioBuffer = await synthesizeTTS({ 
-      text: content, 
-      lang, 
-      voiceName: voice, 
-      speakingRate,
-      pitch
-    });
-    
-    audioBuffers.push(audioBuffer);
+    try {
+      const audioBuffer = await synthesizeTTS({ 
+        text: content, 
+        lang, 
+        voiceName: voice, 
+        speakingRate,
+        pitch
+      });
+      
+      console.log(`角色 ${speaker} 音频合成成功，大小: ${audioBuffer.length} bytes`);
+      audioBuffers.push(audioBuffer);
+    } catch (error) {
+      console.error(`角色 ${speaker} 音频合成失败:`, error);
+      throw error;
+    }
   }
 
   // 合并音频
-  console.log(`合并 ${audioBuffers.length} 个音频片段`);
-  const mergedAudio = await mergeAudioBuffers(audioBuffers);
-
-  return {
-    audio: mergedAudio,
-    speakers: uniqueSpeakers,
-    dialogueCount: dialogue.length
-  };
+  console.log(`开始合并 ${audioBuffers.length} 个音频片段`);
+  try {
+    const mergedAudio = await mergeAudioBuffers(audioBuffers);
+    console.log(`音频合并成功，最终大小: ${mergedAudio.length} bytes`);
+    
+    return {
+      audio: mergedAudio,
+      speakers: uniqueSpeakers,
+      dialogueCount: dialogue.length
+    };
+  } catch (error) {
+    console.error('音频合并失败:', error);
+    throw error;
+  }
 }
 
 
