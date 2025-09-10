@@ -28,7 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-dvh bg-background text-foreground font-sans`}>
+      <body 
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-dvh bg-background text-foreground font-sans`}
+        suppressHydrationWarning
+      >
         <LanguageProvider>
           <ThemeProvider>
             <AuthGate />

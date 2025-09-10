@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Lang } from '@/types/lang';
 import { translations, Translations } from '@/lib/i18n';
+import ClientOnly from '@/components/ClientOnly';
 
 interface LanguageContextType {
   language: Lang;
@@ -14,9 +15,17 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Lang>('zh');
+  const [mounted, setMounted] = useState(false);
+
+  // 确保组件已挂载
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // 初始化语言设置
   useEffect(() => {
+    if (!mounted) return;
+    
     // 从本地存储或浏览器语言检测默认语言
     const savedLanguage = localStorage.getItem('preferred-language') as Lang;
     if (savedLanguage && ['zh', 'en', 'ja'].includes(savedLanguage)) {
@@ -32,14 +41,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         setLanguageState('en');
       }
     }
-  }, []);
+  }, [mounted]);
 
   const setLanguage = (lang: Lang) => {
     setLanguageState(lang);
-    localStorage.setItem('preferred-language', lang);
     
-    // 更新HTML lang属性
-    if (typeof document !== 'undefined') {
+    // 只在客户端更新localStorage和HTML属性
+    if (mounted) {
+      localStorage.setItem('preferred-language', lang);
       document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang === 'ja' ? 'ja-JP' : 'en-US';
     }
   };
@@ -51,9 +60,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <LanguageContext.Provider value={value}>
-      {children}
-    </LanguageContext.Provider>
+    <ClientOnly>
+      <LanguageContext.Provider value={value}>
+        {children}
+      </LanguageContext.Provider>
+    </ClientOnly>
   );
 }
 
