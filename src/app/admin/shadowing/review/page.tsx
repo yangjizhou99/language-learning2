@@ -226,7 +226,7 @@ export default function ShadowingReviewList(){
         
         // 节流延迟
         if (throttle > 0 && i + batchSize < ids.length) {
-          await new Promise(resolve => setTimeout(resolve, throttle));
+          await new Promise<void>(resolve => setTimeout(() => resolve(), throttle));
         }
       }
       
@@ -287,7 +287,7 @@ export default function ShadowingReviewList(){
         
         // 节流延迟
         if (throttle > 0 && i + batchSize < ids.length) {
-          await new Promise(resolve => setTimeout(resolve, throttle));
+          await new Promise<void>(resolve => setTimeout(() => resolve(), throttle));
         }
       }
       
@@ -320,7 +320,7 @@ export default function ShadowingReviewList(){
     
     // 为每个草稿随机分配音色
     const draftsWithVoices = actualDrafts.map(draft => {
-      const textContent = draft.text || draft.content || draft.title || '';
+      const textContent = draft.text || draft.title || '';
       const isDialogue = /^[A-Z]:/.test(textContent);
       
       return {
@@ -404,7 +404,7 @@ export default function ShadowingReviewList(){
         
         // 节流延迟
         if (throttle > 0 && i + batchSize < ids.length) {
-          await new Promise(resolve => setTimeout(resolve, throttle));
+          await new Promise<void>(resolve => setTimeout(() => resolve(), throttle));
         }
       }
       
@@ -418,7 +418,6 @@ export default function ShadowingReviewList(){
     } finally {
       setTtsCurrent("");
       setTtsLoading(false);
-      setSmartGenerationLoading(false);
     }
   };
 
@@ -449,6 +448,10 @@ export default function ShadowingReviewList(){
         // 为对话文本分配音色
         const speakerVoices = getSpeakerVoices(draft.text);
         console.log('说话者音色分配:', speakerVoices);
+        
+        if (!speakerVoices) {
+          throw new Error('无法分配说话者音色');
+        }
         
         // 分别合成每个说话者的音频
         const audioUrls = await synthDialogueWithDifferentVoices(draft.text, speakerVoices, draft.lang, draft?.notes?.speakingRate || 1.0, draft?.notes?.pitch || 0, token);
@@ -522,7 +525,7 @@ export default function ShadowingReviewList(){
         if (!r.ok) throw new Error(j?.error || "TTS 失败");
       } catch (error) {
         clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           throw new Error(`TTS合成超时（${timeout}秒）`);
         }
         throw error;
@@ -557,7 +560,7 @@ export default function ShadowingReviewList(){
     const matches = text.match(speakerPattern);
     if (!matches) return null;
     
-    const speakers = [...new Set(matches.map(m => m.replace(':', '')))];
+    const speakers = Array.from(new Set(matches.map(m => m.replace(':', ''))));
     const speakerVoices: Record<string, string> = {};
     
     // 按规则分配音色
