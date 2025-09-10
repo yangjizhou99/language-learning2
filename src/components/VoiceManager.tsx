@@ -11,6 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, RefreshCw, DollarSign, Star, Volume2, Users, Play, Pause } from "lucide-react";
 
+/**
+ * 音色接口定义
+ * 包含音色的所有属性和元数据
+ */
 interface Voice {
   id: string;
   name: string;
@@ -32,6 +36,8 @@ interface Voice {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  provider?: string;
+  useCase?: string; // 使用场景描述，由API动态生成
   // 兼容旧字段
   languageCode?: string;
   supportedModels?: string[];
@@ -57,6 +63,15 @@ interface VoiceManagerProps {
   language?: string;
 }
 
+/**
+ * 音色管理器组件
+ * 功能：
+ * 1. 显示和管理所有可用音色
+ * 2. 支持语言和分类筛选
+ * 3. 提供音色试听功能
+ * 4. 显示音色使用场景和特征
+ * 5. 支持AI推荐音色
+ */
 export default function VoiceManager({ onVoiceSelect, selectedVoice, language = "zh" }: VoiceManagerProps) {
   const [voices, setVoices] = useState<Voice[]>([]);
   const [groupedVoices, setGroupedVoices] = useState<Record<string, Voice[]>>({});
@@ -255,6 +270,80 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
     }
   };
 
+  // 设置数据库
+  const setupDatabase = async () => {
+    try {
+      setSyncing(true);
+      setError(null);
+      
+      console.log("开始设置数据库...");
+      const response = await fetch("/api/admin/setup-database-simple", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log("数据库设置成功:", data.message);
+        console.log("添加的Gemini音色:", data.geminiVoicesAdded);
+        console.log("提供商分布:", data.providerCounts);
+        
+        // 设置成功后重新获取音色列表
+        await fetchVoices(selectedLanguage, selectedCategory);
+        
+        // 显示成功消息
+        setError(null);
+      } else {
+        console.error("数据库设置失败:", data.error);
+        setError(`设置失败: ${data.error}`);
+      }
+    } catch (err) {
+      console.error("数据库设置失败:", err);
+      setError("设置失败，请重试");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // 恢复所有音色
+  const restoreAllVoices = async () => {
+    try {
+      setSyncing(true);
+      setError(null);
+      
+      console.log("开始恢复所有音色...");
+      const response = await fetch("/api/admin/restore-all-voices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log("音色恢复成功:", data.message);
+        console.log("Google音色:", data.googleVoices);
+        console.log("Gemini音色:", data.geminiVoices);
+        console.log("语言分布:", data.stats);
+        console.log("提供商分布:", data.providerStats);
+        
+        // 恢复成功后重新获取音色列表
+        await fetchVoices(selectedLanguage, selectedCategory);
+        
+        // 显示成功消息
+        setError(null);
+      } else {
+        console.error("音色恢复失败:", data.error);
+        setError(`恢复失败: ${data.error}`);
+      }
+    } catch (err) {
+      console.error("音色恢复失败:", err);
+      setError("恢复失败，请重试");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   // 同步音色数据
   const syncVoices = async () => {
     try {
@@ -405,6 +494,10 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                 <SelectContent>
                   <SelectItem value="all">所有分类</SelectItem>
                   
+                  {/* Gemini TTS 系列 - AI增强 */}
+                  <SelectItem value="Gemini-Female">Gemini 女声 (AI增强)</SelectItem>
+                  <SelectItem value="Gemini-Male">Gemini 男声 (AI增强)</SelectItem>
+                  
                   {/* Chirp3-HD 系列 - 最高质量 */}
                   <SelectItem value="Chirp3HD-Female">Chirp3-HD 女声 (最高质量)</SelectItem>
                   <SelectItem value="Chirp3HD-Male">Chirp3-HD 男声 (最高质量)</SelectItem>
@@ -443,6 +536,14 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
             <Button onClick={() => fetchVoices()} disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               刷新列表
+            </Button>
+            <Button onClick={restoreAllVoices} disabled={syncing || loading} variant="outline" className="bg-green-100 hover:bg-green-200">
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              恢复所有音色
+            </Button>
+            <Button onClick={setupDatabase} disabled={syncing || loading} variant="outline" className="bg-purple-100 hover:bg-purple-200">
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              设置数据库
             </Button>
             <Button onClick={syncVoices} disabled={syncing || loading} variant="outline">
               {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -562,9 +663,9 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                   <CardContent className="p-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm">{voice.display_name || voice.displayName || voice.name}</h4>
+                        <h4 className="font-medium text-sm truncate flex-1 mr-2">{voice.display_name || voice.displayName || voice.name}</h4>
                         <div className="flex items-center gap-1">
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="text-xs">
                             {voice.category}
                           </Badge>
                         </div>
@@ -576,6 +677,18 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                         <span>{voice.ssml_gender || voice.ssmlGender}</span>
                         <span>•</span>
                         <span>{voice.natural_sample_rate_hertz || voice.naturalSampleRateHertz}Hz</span>
+                        {voice.provider && (
+                          <>
+                            <span>•</span>
+                            <span className={`px-1 py-0.5 rounded text-xs ${
+                              voice.provider === 'gemini' 
+                                ? 'bg-purple-100 text-purple-700' 
+                                : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {voice.provider === 'gemini' ? 'Gemini' : 'Google'}
+                            </span>
+                          </>
+                        )}
                       </div>
                       
                       <div className="flex items-center justify-between">
@@ -622,6 +735,18 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                           )}
                         </Button>
                       </div>
+                      
+                      {/* 使用场景 */}
+                      {voice.useCase && (
+                        <div className="mt-2">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium text-blue-600">使用场景:</span>
+                            <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              {voice.useCase}
+                            </Badge>
+                          </div>
+                        </div>
+                      )}
                       
                       {/* 只显示基础特征，去掉自定义描述 */}
                       {voice.characteristics && (

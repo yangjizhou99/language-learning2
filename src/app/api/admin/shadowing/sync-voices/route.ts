@@ -45,6 +45,7 @@ const VOICE_PRICING = {
   'Neural2': { pricePerMillionChars: 8 },
   'Wavenet': { pricePerMillionChars: 4 },
   'Standard': { pricePerMillionChars: 4 },
+  'Gemini': { pricePerMillionChars: 20 },
   'Other': { pricePerMillionChars: 4 }
 };
 
@@ -54,6 +55,7 @@ function getVoicePricing(voiceName: string) {
   if (voiceName.includes('Neural2')) return VOICE_PRICING['Neural2'];
   if (voiceName.includes('Wavenet')) return VOICE_PRICING['Wavenet'];
   if (voiceName.includes('Standard')) return VOICE_PRICING['Standard'];
+  if (voiceName.includes('Gemini') || voiceName === 'Kore' || voiceName === 'Orus' || voiceName === 'Callirrhoe' || voiceName === 'Puck') return VOICE_PRICING['Gemini'];
   return VOICE_PRICING['Other'];
 }
 
@@ -69,6 +71,23 @@ function generateVoiceCharacteristics(voice: any) {
   };
 }
 
+// 生成使用场景描述
+function generateUseCase(voiceName: string) {
+  if (voiceName.includes('Chirp3-HD')) {
+    return '专业播报、高质量';
+  } else if (voiceName.includes('Neural2')) {
+    return '自然流畅、高质量';
+  } else if (voiceName.includes('Wavenet')) {
+    return '平衡性能、中高质量';
+  } else if (voiceName.includes('Standard')) {
+    return '基础应用、成本优化';
+  } else if (voiceName.includes('Gemini')) {
+    return 'AI增强、创新应用';
+  } else {
+    return '通用场景';
+  }
+}
+
 // 获取音色分类 - 只按价格和性别分类
 function getVoiceCategory(voiceName: string, gender: string): string {
   const isFemale = gender === 'FEMALE';
@@ -82,6 +101,8 @@ function getVoiceCategory(voiceName: string, gender: string): string {
     return `Wavenet-${genderPrefix}`; // 中高质量
   } else if (voiceName.includes('Standard')) {
     return `Standard-${genderPrefix}`; // 基础质量
+  } else if (voiceName.includes('Gemini') || voiceName === 'Kore' || voiceName === 'Orus' || voiceName === 'Callirrhoe' || voiceName === 'Puck') {
+    return `Gemini-${genderPrefix}`; // Gemini TTS
   } else {
     return `Other-${genderPrefix}`; // 其他
   }
@@ -125,6 +146,7 @@ export async function POST(req: NextRequest) {
       const characteristics = generateVoiceCharacteristics(voice);
       const category = getVoiceCategory(voice.name, voice.ssmlGender);
       const displayName = generateDisplayName(voice.name, voiceLang);
+      const useCase = generateUseCase(voice.name);
       
       return {
         name: voice.name,
@@ -139,45 +161,108 @@ export async function POST(req: NextRequest) {
         characteristics,
         display_name: displayName,
         category,
+        provider: 'google', // Google Cloud TTS
+        useCase: useCase,
         is_active: true
       };
     });
+
+    // 添加Gemini TTS音色数据（只保留真正的英语Gemini音色）
+    const geminiVoices = [
+      // 英语 Gemini TTS 音色（真正的AI增强音色）
+      { name: 'Gemini-Kore', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Orus', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Callirrhoe', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Puck', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 }
+    ];
+
+    const geminiVoiceData = geminiVoices.map((voice: any) => {
+      const pricing = getVoicePricing(voice.name);
+      const characteristics = generateVoiceCharacteristics(voice);
+      const category = getVoiceCategory(voice.name, voice.ssml_gender);
+      const displayName = generateDisplayName(voice.name, voice.language_code);
+      const useCase = generateUseCase(voice.name);
+      
+      return {
+        name: voice.name,
+        language_code: voice.language_code,
+        ssml_gender: voice.ssml_gender,
+        natural_sample_rate_hertz: voice.natural_sample_rate_hertz,
+        pricing: {
+          pricePerMillionChars: pricing.pricePerMillionChars,
+          examplePrice: (pricing.pricePerMillionChars / 1000).toFixed(4),
+          examplePrice10k: (pricing.pricePerMillionChars / 100).toFixed(2)
+        },
+        characteristics,
+        display_name: displayName,
+        category,
+        provider: 'gemini', // Gemini TTS
+        useCase: useCase,
+        is_active: true
+      };
+    });
+
+    // 合并所有音色数据
+    const allVoiceData = [...voiceData, ...geminiVoiceData];
     
     // 先清空现有音色数据
     console.log('清空现有音色数据...');
-    await supabase.from('voices').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    const { error: deleteError } = await supabase.from('voices').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (deleteError) {
+      console.error('清空音色数据失败:', deleteError);
+      return NextResponse.json({ 
+        success: false, 
+        error: '清空音色数据失败', 
+        details: deleteError.message 
+      }, { status: 500 });
+    }
+    console.log('音色数据清空成功');
     
-    // 批量插入新音色数据
+    // 批量插入新音色数据（使用upsert避免重复键冲突）
     console.log('插入新音色数据...');
     const { data, error } = await supabase
       .from('voices')
-      .insert(voiceData)
+      .upsert(allVoiceData, { onConflict: 'name' })
       .select();
     
     if (error) {
       console.error('插入音色数据失败:', error);
+      console.error('错误详情:', JSON.stringify(error, null, 2));
+      console.error('尝试插入的数据示例:', JSON.stringify(allVoiceData[0], null, 2));
       return NextResponse.json({ 
         success: false, 
         error: '插入音色数据失败', 
-        details: error.message 
+        details: error.message,
+        errorCode: error.code,
+        errorHint: error.hint,
+        sampleData: allVoiceData[0]
       }, { status: 500 });
     }
     
     console.log(`成功同步 ${data?.length || 0} 个音色到数据库`);
     
     // 统计各语言音色数量
-    const stats = voiceData.reduce((acc: any, voice: any) => {
+    const stats = allVoiceData.reduce((acc: any, voice: any) => {
       const lang = voice.language_code;
       if (!acc[lang]) acc[lang] = 0;
       acc[lang]++;
       return acc;
     }, {});
     
+    // 统计各提供商音色数量
+    const providerStats = allVoiceData.reduce((acc: any, voice: any) => {
+      const provider = voice.provider;
+      if (!acc[provider]) acc[provider] = 0;
+      acc[provider]++;
+      return acc;
+    }, {});
+    
     return NextResponse.json({
       success: true,
-      message: `成功同步 ${voiceData.length} 个音色`,
+      message: `成功同步 ${allVoiceData.length} 个音色`,
       stats,
-      totalVoices: voiceData.length,
+      providerStats,
+      totalVoices: allVoiceData.length,
       voices: data
     });
     

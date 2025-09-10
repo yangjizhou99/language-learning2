@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
 import { createHash } from 'crypto';
+import { synthesizeGeminiTTS } from '@/lib/gemini-tts';
 
 // 创建 TTS 客户端
 function makeClient() {
@@ -80,6 +81,23 @@ function getVoiceConfig(voiceName: string, languageCode: string) {
   };
 }
 
+// 生成Gemini TTS预览
+async function generateGeminiPreview(voiceName: string, text: string, languageCode: string): Promise<Uint8Array> {
+  // 将Gemini音色名称映射到实际的Gemini音色
+  const actualVoiceName = voiceName.replace('Gemini-', '');
+  
+  // Gemini TTS 只支持英语
+  const audioBuffer = await synthesizeGeminiTTS({
+    text,
+    lang: 'en-US',
+    voiceName: actualVoiceName,
+    speakingRate: 1.0,
+    pitch: 0.0
+  });
+
+  return new Uint8Array(audioBuffer);
+}
+
 // 生成缓存键
 function generateCacheKey(voiceName: string, languageCode: string): string {
   const voiceConfig = getVoiceConfig(voiceName, languageCode);
@@ -119,8 +137,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cacheKey = generateCacheKey(voiceName, languageCode);
     const supabaseAdmin = getServiceSupabase();
+    
+    // 从数据库获取音色信息，包括provider
+    const { data: voiceData, error: voiceError } = await supabaseAdmin
+      .from('voices')
+      .select('name, provider, language_code, ssml_gender')
+      .eq('name', voiceName)
+      .single();
+
+    if (voiceError || !voiceData) {
+      return NextResponse.json(
+        { success: false, error: 'Voice not found in database' },
+        { status: 404 }
+      );
+    }
+
+    const cacheKey = generateCacheKey(voiceName, languageCode);
     const bucket = process.env.NEXT_PUBLIC_SHADOWING_AUDIO_BUCKET || 'tts';
     const filePath = `previews/${cacheKey}.mp3`;
 
@@ -148,35 +181,45 @@ export async function POST(req: NextRequest) {
 
     // 缓存不存在，生成新的音频
     const previewText = getPreviewText(languageCode);
-    const voiceConfig = getVoiceConfig(voiceName, languageCode);
-    
-    // 创建 TTS 请求
-    const request = {
-      input: { text: previewText },
-      voice: voiceConfig,
-      audioConfig: {
-        audioEncoding: 'MP3' as const,
-        speakingRate: 1.0,
-        pitch: 0.0
+    let audioContent: Uint8Array;
+
+    if (voiceData.provider === 'gemini') {
+      // 使用真正的Gemini TTS（只支持英语）
+      audioContent = await generateGeminiPreview(voiceName, previewText, languageCode);
+    } else {
+      // 使用Google Cloud TTS
+      const voiceConfig = getVoiceConfig(voiceName, languageCode);
+      
+      // 创建 TTS 请求
+      const request = {
+        input: { text: previewText },
+        voice: voiceConfig,
+        audioConfig: {
+          audioEncoding: 'MP3' as const,
+          speakingRate: 1.0,
+          pitch: 0.0
+        }
+      };
+
+      // 添加模型名称（如果需要）
+      if (voiceConfig.modelName) {
+        (request as any).model = `models/${voiceConfig.modelName}`;
       }
-    };
 
-    // 添加模型名称（如果需要）
-    if (voiceConfig.modelName) {
-      (request as any).model = `models/${voiceConfig.modelName}`;
-    }
-
-    const client = makeClient();
-    const [response] = await client.synthesizeSpeech(request);
-    
-    if (!response.audioContent) {
-      throw new Error('No audio content received');
+      const client = makeClient();
+      const [response] = await client.synthesizeSpeech(request);
+      
+      if (!response.audioContent) {
+        throw new Error('No audio content received');
+      }
+      
+      audioContent = response.audioContent;
     }
 
     // 上传到 Supabase Storage
     const { error: uploadError } = await supabaseAdmin.storage
       .from(bucket)
-      .upload(filePath, response.audioContent, {
+      .upload(filePath, audioContent, {
         contentType: 'audio/mpeg',
         upsert: true // 允许覆盖
       });
@@ -187,11 +230,11 @@ export async function POST(req: NextRequest) {
     }
 
     // 返回音频数据
-    return new NextResponse(response.audioContent, {
+    return new NextResponse(audioContent, {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',
-        'Content-Length': response.audioContent.length.toString(),
+        'Content-Length': audioContent.length.toString(),
         'Cache-Control': 'public, max-age=31536000', // 缓存1年
         'X-Cache': 'MISS',
         'Access-Control-Allow-Origin': '*',

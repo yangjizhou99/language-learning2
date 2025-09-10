@@ -112,7 +112,7 @@ export default function ShadowingReviewList(){
   const [ttsDone, setTtsDone] = useState(0);
   const [ttsCurrent, setTtsCurrent] = useState("");
   const [currentOperation, setCurrentOperation] = useState<"tts" | "publish" | "delete">("tts");
-  const [ttsProvider, setTtsProvider] = useState<"google" | "gemini">("google");
+  // 移除ttsProvider状态，改为通过音色管理器选择
   
   // 音色管理相关状态
   const [selectedVoice, setSelectedVoice] = useState<any>(null);
@@ -191,15 +191,10 @@ export default function ShadowingReviewList(){
       // 检查是否为对话格式
       const isDialogue = isDialogueFormat(draft.text);
       
-      // 根据TTS提供商选择API端点
-      let apiEndpoint: string;
-      if (ttsProvider === "gemini") {
-        apiEndpoint = isDialogue ? '/api/admin/shadowing/synthesize-gemini-dialogue' : '/api/admin/shadowing/synthesize-gemini';
-      } else {
-        apiEndpoint = isDialogue ? '/api/admin/shadowing/synthesize-dialogue' : '/api/admin/shadowing/synthesize';
-      }
+      // 使用统一的TTS合成API，自动选择提供商
+      const apiEndpoint = '/api/admin/shadowing/synthesize-unified';
       
-      console.log(`使用 ${ttsProvider} ${isDialogue ? '对话' : '普通'} TTS 合成: ${draft.title}`);
+      console.log(`使用统一TTS合成API: ${draft.title}`);
       
       const r = await fetch(apiEndpoint, { 
         method:'POST', 
@@ -208,7 +203,8 @@ export default function ShadowingReviewList(){
           text: draft.text, 
           lang: draft.lang, 
           voice: selectedVoice?.name || draft?.notes?.voice || null, 
-          speakingRate: draft?.notes?.speakingRate || 1.0 
+          speakingRate: draft?.notes?.speakingRate || 1.0,
+          pitch: draft?.notes?.pitch || 0
         }) 
       });
       const j = await r.json();
@@ -220,10 +216,10 @@ export default function ShadowingReviewList(){
         notes: { 
           ...(draft.notes||{}), 
           audio_url: j.audio_url,
-          is_dialogue: isDialogue,
+          is_dialogue: j.is_dialogue || isDialogue,
           dialogue_count: j.dialogue_count || null,
           speakers: j.speakers || null,
-          tts_provider: ttsProvider
+          tts_provider: j.provider || 'google'
         } 
       };
       const save = await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
@@ -538,17 +534,11 @@ export default function ShadowingReviewList(){
             </div>
             <div>
               <label className="text-sm font-medium">TTS 提供商</label>
-              <Select value={ttsProvider} onValueChange={(value) => setTtsProvider(value as "google" | "gemini")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="google">Google TTS (传统)</SelectItem>
-                  <SelectItem value="gemini">Gemini TTS (AI增强)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
+                通过音色管理器选择，自动识别提供商
+              </div>
               <p className="text-xs text-gray-500">
-                {ttsProvider === "gemini" ? "使用Gemini AI模型，支持更自然的语音合成" : "使用Google传统TTS，稳定可靠"}
+                选择音色后自动使用对应的TTS提供商
               </p>
             </div>
             <div>
@@ -574,7 +564,7 @@ export default function ShadowingReviewList(){
               </div>
               {selectedVoice && (
                 <p className="text-xs text-gray-500 mt-1">
-                  已选择: {selectedVoice.name} ({selectedVoice.pricing?.quality})
+                  已选择: {selectedVoice.name} ({selectedVoice.provider === 'gemini' ? 'Gemini' : 'Google'})
                 </p>
               )}
             </div>
@@ -641,11 +631,11 @@ export default function ShadowingReviewList(){
               disabled={ttsLoading || selected.size===0}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {ttsLoading ? "合成中..." : `批量合成 ${ttsProvider === "gemini" ? "Gemini" : "Google"} TTS`}
+              {ttsLoading ? "合成中..." : `批量合成 TTS`}
             </Button>
             <div className="text-xs text-gray-500">
               💡 自动检测对话格式，为 A/B 角色分配不同音色
-              {ttsProvider === "gemini" && " (AI增强)"}
+              {selectedVoice?.provider === "gemini" && " (AI增强)"}
             </div>
             <Button 
               size="sm" 
