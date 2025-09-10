@@ -26,7 +26,7 @@ export default function ShadowingItemsAdmin(){
   const [selectAll, setSelectAll] = useState(false); // 全选状态
 
   // 获取认证头信息
-  const getAuthHeaders = async () => {
+  const getAuthHeaders = async (): Promise<Record<string, string>> => {
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
     return token ? { Authorization: `Bearer ${token}` } : {};
