@@ -8,6 +8,7 @@ interface MobileContextType {
   isDesktop: boolean;
   screenWidth: number;
   screenHeight: number;
+  userAgent: string;
   forceMobileMode: boolean;
   setForceMobileMode: (force: boolean) => void;
   actualIsMobile: boolean;
@@ -16,7 +17,7 @@ interface MobileContextType {
 const MobileContext = createContext<MobileContextType | undefined>(undefined);
 
 export function MobileProvider({ children }: { children: React.ReactNode }) {
-  const { isMobile, isTablet, isDesktop, screenWidth, screenHeight } = useMobileDetection();
+  const { isMobile, isTablet, isDesktop, screenWidth, screenHeight, userAgent } = useMobileDetection();
   const [forceMobileMode, setForceMobileMode] = useState(false);
   
   const actualIsMobile = isMobile || forceMobileMode;
@@ -41,6 +42,7 @@ export function MobileProvider({ children }: { children: React.ReactNode }) {
         isDesktop,
         screenWidth,
         screenHeight,
+        userAgent,
         forceMobileMode,
         setForceMobileMode,
         actualIsMobile,
