@@ -2095,7 +2095,7 @@ export default function ShadowingPage() {
                       
                       <div className="space-y-3">
                         {selectedWords.map((item, index) => (
-                          <div key={index} className="p-3 bg-blue-50 rounded border border-blue-200">
+                          <div key={`selected-${item.word}-${index}`} className="p-3 bg-blue-50 rounded border border-blue-200">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
@@ -2278,7 +2278,7 @@ export default function ShadowingPage() {
                                       {/* 句子分析 */}
                                       <div className="space-y-3">
                                         {sentenceAnalysis.map((sentence, idx) => (
-                                          <div key={idx} className={`p-3 rounded border ${
+                                          <div key={`sentence-${idx}-${sentence.sentence.substring(0, 20)}`} className={`p-3 rounded border ${
                                             sentence.status === 'correct' ? 'bg-green-50 border-green-200' :
                                             sentence.status === 'partial' ? 'bg-yellow-50 border-yellow-200' :
                                             'bg-red-50 border-red-200'
@@ -2305,7 +2305,7 @@ export default function ShadowingPage() {
                                                 <div className="font-medium">问题：</div>
                                                 <ul className="list-disc list-inside space-y-1">
                                                   {sentence.issues.map((issue, issueIdx) => (
-                                                    <li key={issueIdx}>{issue}</li>
+                                                    <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`}>{issue}</li>
                                                   ))}
                                                 </ul>
                                               </div>
@@ -2358,7 +2358,7 @@ export default function ShadowingPage() {
                                                   <span className="font-medium text-red-600">问题：</span>
                                                   <ul className="mt-1 space-y-1">
                                                     {sentence.issues.map((issue, issueIdx) => (
-                                                      <li key={issueIdx} className="text-red-600">
+                                                      <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`} className="text-red-600">
                                                         • {issue}
                                                       </li>
                                                     ))}
@@ -3043,7 +3043,7 @@ export default function ShadowingPage() {
           
                     <div className="grid gap-3">
             {selectedWords.map((item, index) => (
-                        <div key={index} className="p-3 bg-blue-50 rounded border border-blue-200">
+                        <div key={`selected-${item.word}-${index}`} className="p-3 bg-blue-50 rounded border border-blue-200">
                           <div className="flex items-center justify-between mb-2">
                 <div className="flex-1">
                               <div className="flex items-center gap-2">
@@ -3259,7 +3259,7 @@ export default function ShadowingPage() {
                                       {/* 句子分析 */}
                                       <div className="space-y-3">
                                         {sentenceAnalysis.map((sentence, idx) => (
-                                          <div key={idx} className={`p-3 rounded border ${
+                                          <div key={`sentence-${idx}-${sentence.sentence.substring(0, 20)}`} className={`p-3 rounded border ${
                                             sentence.status === 'correct' ? 'bg-green-50 border-green-200' :
                                             sentence.status === 'partial' ? 'bg-yellow-50 border-yellow-200' :
                                             'bg-red-50 border-red-200'
@@ -3286,7 +3286,7 @@ export default function ShadowingPage() {
                                                 <div className="font-medium">问题：</div>
                                                 <ul className="list-disc list-inside space-y-1">
                                                   {sentence.issues.map((issue, issueIdx) => (
-                                                    <li key={issueIdx}>{issue}</li>
+                                                    <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`}>{issue}</li>
                                                   ))}
                                                 </ul>
                                               </div>
@@ -3339,7 +3339,7 @@ export default function ShadowingPage() {
                                                   <span className="font-medium text-red-600">问题：</span>
                                                   <ul className="mt-1 space-y-1">
                                                     {sentence.issues.map((issue, issueIdx) => (
-                                                      <li key={issueIdx} className="text-red-600">
+                                                      <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`} className="text-red-600">
                                                         • {issue}
                                                       </li>
                                                     ))}

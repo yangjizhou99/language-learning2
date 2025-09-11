@@ -121,11 +121,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               {ADMIN_SECTIONS.filter(section => section.items.some(i => !i.hidden)).map((section, si) => {
                 const items = section.items.filter(i => !i.hidden);
                 return (
-                  <div key={`admin-section-${si}-${section.title}`} className="mb-4">
+                  <div key={`admin-section-${section.title}-${si}`} className="mb-4">
                     <div className="px-3 pb-2 text-xs font-semibold text-muted-foreground">{section.title}</div>
                     <ul className="space-y-2">
                       {items.map((item, ii) => (
-                        <li key={`admin-nav-item-${item.href.replace(/\//g, '-')}-${ii}`}>
+                        <li key={`admin-nav-item-${item.href}-${ii}`}>
                           <Link
                             href={item.href}
                             prefetch={false}

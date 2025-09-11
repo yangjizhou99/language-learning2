@@ -1251,7 +1251,7 @@ export default function ShadowingReviewList(){
           
           {transLogs.length > 0 && (
             <div className="text-xs bg-gray-50 p-2 rounded h-24 overflow-auto whitespace-pre-wrap mt-2">
-              {transLogs.map((log, i) => <div key={i}>{log}</div>)}
+              {transLogs.map((log, i) => <div key={`trans-log-${i}-${log.substring(0, 20)}`}>{log}</div>)}
             </div>
           )}
         </CardContent>
