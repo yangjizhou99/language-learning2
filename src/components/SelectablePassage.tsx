@@ -17,11 +17,6 @@ interface SelectedWord {
   endIndex: number;
 }
 
-interface WordCandidate {
-  word: string;
-  startIndex: number;
-  endIndex: number;
-}
 
 export default function SelectablePassage({ 
   text, 
@@ -35,6 +30,7 @@ export default function SelectablePassage({
   const [showWordMenu, setShowWordMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isProcessingSelection, setIsProcessingSelection] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
 
   // 检测是否为手机端
@@ -47,11 +43,14 @@ export default function SelectablePassage({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // 监听鼠标事件来检测拖拽和处理选择
+
+  // 监听鼠标和触摸事件来检测拖拽和处理选择
   useEffect(() => {
     let isMouseDown = false;
     let hasMoved = false;
+    let isTouchActive = false;
 
+    // 鼠标事件处理（电脑端）
     const handleMouseDown = () => {
       isMouseDown = true;
       hasMoved = false;
@@ -67,68 +66,129 @@ export default function SelectablePassage({
 
     const handleMouseUp = () => {
       if (isMouseDown && hasMoved) {
-        // 拖拽结束后，延迟处理选择
-        setTimeout(() => {
-          const selection = window.getSelection();
-          if (selection && selection.toString().trim() !== '') {
-            const selectedText = selection.toString().trim();
-            
-            // 限制选中文本长度
-            if (selectedText.length > 50) {
-              selection.removeAllRanges();
-              alert('请选择较短的文本（不超过50个字符）');
-              return;
-            }
-
-            // 检查是否包含换行符
-            if (selectedText.includes('\n')) {
-              selection.removeAllRanges();
-              alert('请选择同一行的文本');
-              return;
-            }
-
-            // 获取选中文本在原文中的位置
-            const range = selection.getRangeAt(0);
-            const startIndex = range.startOffset;
-            const endIndex = range.endOffset;
-            
-            const context = getContext(startIndex, endIndex);
-            
-            // 设置菜单位置
-            const rect = range.getBoundingClientRect();
-            setMenuPosition({
-              x: rect.left + rect.width / 2,
-              y: rect.top
-            });
-            
-            setSelectedWord({
-              word: selectedText,
-              context,
-              startIndex,
-              endIndex
-            });
-            setShowWordMenu(true);
-          }
-          setIsDragging(false);
-        }, 100);
+        processSelection();
       } else {
-        // 如果没有拖拽，立即重置状态
         setIsDragging(false);
       }
       isMouseDown = false;
       hasMoved = false;
     };
 
+    // 触摸事件处理（手机端）
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        isTouchActive = true;
+        hasMoved = false;
+        setIsDragging(false);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isTouchActive && e.touches.length === 1) {
+        hasMoved = true;
+        setIsDragging(true);
+        e.preventDefault(); // 阻止默认滚动行为，允许文本选择
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (isTouchActive) {
+        // 用户松开手指后200ms触发选择检测
+        setTimeout(() => {
+          processSelection();
+        }, 200);
+      }
+      isTouchActive = false;
+      hasMoved = false;
+      setIsDragging(false);
+    };
+
+    // 选择变化事件（电脑端使用，手机端等待touchend）
+    const handleSelectionChange = () => {
+      // 电脑端：立即处理选择
+      // 手机端：不处理，等待touchend事件
+    };
+
+    // 处理选择的通用函数
+    const processSelection = () => {
+      // 防止重复处理
+      if (isProcessingSelection) {
+        return;
+      }
+      
+      setIsProcessingSelection(true);
+      
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim() !== '') {
+        const selectedText = selection.toString().trim();
+        
+        // 限制选中文本长度
+        if (selectedText.length > 50) {
+          selection.removeAllRanges();
+          alert('请选择较短的文本（不超过50个字符）');
+          setIsProcessingSelection(false);
+          return;
+        }
+
+        // 检查是否包含换行符
+        if (selectedText.includes('\n')) {
+          selection.removeAllRanges();
+          alert('请选择同一行的文本');
+          setIsProcessingSelection(false);
+          return;
+        }
+
+        // 获取选中文本在原文中的位置
+        const range = selection.getRangeAt(0);
+        const startIndex = range.startOffset;
+        const endIndex = range.endOffset;
+        
+        const context = getContext(startIndex, endIndex);
+        
+        // 设置菜单位置
+        const rect = range.getBoundingClientRect();
+        setMenuPosition({
+          x: rect.left + rect.width / 2,
+          y: rect.top
+        });
+        
+        setSelectedWord({
+          word: selectedText,
+          context,
+          startIndex,
+          endIndex
+        });
+        setShowWordMenu(true);
+      }
+      setIsDragging(false);
+      setIsProcessingSelection(false);
+    };
+
+    // 添加事件监听器
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    
+    // 添加触摸事件监听器
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+    
+    // 添加选择变化监听器
+    document.addEventListener('selectionchange', handleSelectionChange);
 
     return () => {
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      
+      document.removeEventListener('selectionchange', handleSelectionChange);
     };
-  }, []);
+  }, [isMobile]);
 
 
 
@@ -198,7 +258,7 @@ export default function SelectablePassage({
       {!disabled && (
         <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
           💡 <strong>选词提示：</strong>
-          拖拽选择单词或短语（不超过50个字符）
+          {isMobile ? '长按并拖动选择单词或短语，松开手指后确认选择' : '拖拽选择单词或短语'}（不超过50个字符）
         </div>
       )}
       <div
