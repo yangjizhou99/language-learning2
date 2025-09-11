@@ -44,7 +44,7 @@ const adjustConcurrencyLimit = () => {
 
 // 音频合并队列
 const mergeQueue: Array<{
-  resolve: (value: any) => void;
+  resolve: (value: Response) => void;
   reject: (error: any) => void;
   request: NextRequest;
 }> = [];
@@ -116,9 +116,9 @@ setInterval(() => {
   }
 }, 30000); // 每30秒检查一次
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<Response> {
   // 使用队列机制处理并发请求
-  return new Promise((resolve, reject) => {
+  return new Promise<Response>((resolve, reject) => {
     mergeQueue.push({ resolve, reject, request });
     console.log(`新的音频合并请求加入队列，当前队列长度: ${mergeQueue.length}, 最大并发: ${maxConcurrentMerges}`);
     processNextInQueue();
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 }
 
 // 实际处理音频合并的函数
-async function processMergeRequest(request: NextRequest) {
+async function processMergeRequest(request: NextRequest): Promise<Response> {
   console.log(`开始音频合并任务 (${activeMergeCount + 1}/${maxConcurrentMerges})`);
 
   try {

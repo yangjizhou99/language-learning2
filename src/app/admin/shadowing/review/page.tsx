@@ -742,7 +742,7 @@ export default function ShadowingReviewList(){
           // 服务器繁忙，等待后重试
           const waitTime = Math.pow(2, retryCount) * 1000; // 指数退避
           console.log(`服务器繁忙，${waitTime}ms后重试...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
+          await new Promise<void>(resolve => (globalThis as any).setTimeout(() => resolve(), waitTime));
           retryCount++;
           continue;
         }
@@ -774,7 +774,7 @@ export default function ShadowingReviewList(){
         
         const waitTime = Math.pow(2, retryCount) * 1000; // 指数退避
         console.log(`音频合并失败，${waitTime}ms后重试... (${retryCount}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise<void>(resolve => (globalThis as any).setTimeout(() => resolve(), waitTime));
       }
     }
     
