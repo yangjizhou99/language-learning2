@@ -3,7 +3,7 @@ import { useMobile } from "@/contexts/MobileContext";
 import { Button } from "@/components/ui/button";
 
 export default function TestMobilePage() {
-  const { isMobile, isTablet, isDesktop, screenWidth, screenHeight, actualIsMobile, setForceMobileMode } = useMobile();
+  const { isMobile, isTablet, isDesktop, screenWidth, screenHeight, actualIsMobile, setForceMobileMode, forceMobileMode } = useMobile();
 
   return (
     <main className="p-6">
@@ -20,7 +20,7 @@ export default function TestMobilePage() {
               <p><strong>设备类型:</strong> {isMobile ? '手机' : isTablet ? '平板' : '桌面'}</p>
             </div>
             <div>
-              <p><strong>强制移动模式:</strong> {forceMobile ? '是' : '否'}</p>
+              <p><strong>强制移动模式:</strong> {forceMobileMode ? '是' : '否'}</p>
               <p><strong>实际移动端:</strong> {actualIsMobile ? '是' : '否'}</p>
             </div>
           </div>
