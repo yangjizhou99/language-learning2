@@ -34,6 +34,7 @@ export default function SelectablePassage({
   const [isMobile, setIsMobile] = useState(false);
   const [showWordMenu, setShowWordMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
 
   // 检测是否为手机端
@@ -46,58 +47,89 @@ export default function SelectablePassage({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // 监听选择变化（手机端和桌面端通用）
+  // 监听鼠标事件来检测拖拽和处理选择
   useEffect(() => {
-    const handleSelectionChange = () => {
-      if (disabled) return;
-      
-      const selection = window.getSelection();
-      if (!selection || selection.toString().trim() === '') {
-        return;
-      }
+    let isMouseDown = false;
+    let hasMoved = false;
 
-      const selectedText = selection.toString().trim();
-      
-      // 限制选中文本长度
-      if (selectedText.length > 50) {
-        selection.removeAllRanges();
-        alert('请选择较短的文本（不超过50个字符）');
-        return;
-      }
-
-      // 检查是否包含换行符
-      if (selectedText.includes('\n')) {
-        selection.removeAllRanges();
-        alert('请选择同一行的文本');
-        return;
-      }
-
-      // 获取选中文本在原文中的位置
-      const range = selection.getRangeAt(0);
-      const startIndex = range.startOffset;
-      const endIndex = range.endOffset;
-      
-      const context = getContext(startIndex, endIndex);
-      
-      // 设置菜单位置
-      const rect = range.getBoundingClientRect();
-      setMenuPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top
-      });
-      
-      setSelectedWord({
-        word: selectedText,
-        context,
-        startIndex,
-        endIndex
-      });
-      setShowWordMenu(true);
+    const handleMouseDown = () => {
+      isMouseDown = true;
+      hasMoved = false;
+      setIsDragging(false);
     };
 
-    document.addEventListener('selectionchange', handleSelectionChange);
-    return () => document.removeEventListener('selectionchange', handleSelectionChange);
-  }, [disabled, text]);
+    const handleMouseMove = () => {
+      if (isMouseDown) {
+        hasMoved = true;
+        setIsDragging(true);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isMouseDown && hasMoved) {
+        // 拖拽结束后，延迟处理选择
+        setTimeout(() => {
+          const selection = window.getSelection();
+          if (selection && selection.toString().trim() !== '') {
+            const selectedText = selection.toString().trim();
+            
+            // 限制选中文本长度
+            if (selectedText.length > 50) {
+              selection.removeAllRanges();
+              alert('请选择较短的文本（不超过50个字符）');
+              return;
+            }
+
+            // 检查是否包含换行符
+            if (selectedText.includes('\n')) {
+              selection.removeAllRanges();
+              alert('请选择同一行的文本');
+              return;
+            }
+
+            // 获取选中文本在原文中的位置
+            const range = selection.getRangeAt(0);
+            const startIndex = range.startOffset;
+            const endIndex = range.endOffset;
+            
+            const context = getContext(startIndex, endIndex);
+            
+            // 设置菜单位置
+            const rect = range.getBoundingClientRect();
+            setMenuPosition({
+              x: rect.left + rect.width / 2,
+              y: rect.top
+            });
+            
+            setSelectedWord({
+              word: selectedText,
+              context,
+              startIndex,
+              endIndex
+            });
+            setShowWordMenu(true);
+          }
+          setIsDragging(false);
+        }, 100);
+      } else {
+        // 如果没有拖拽，立即重置状态
+        setIsDragging(false);
+      }
+      isMouseDown = false;
+      hasMoved = false;
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
 
 
 
