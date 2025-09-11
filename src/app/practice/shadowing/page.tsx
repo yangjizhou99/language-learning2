@@ -12,6 +12,7 @@ import AudioRecorder from "@/components/AudioRecorder";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LANG_LABEL } from "@/types/lang";
+import { useMobile } from "@/contexts/MobileContext";
 // import { getAuthHeaders } from "@/lib/supabase";
 import { 
   Shuffle, 
@@ -1481,20 +1482,9 @@ export default function ShadowingPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // 手机端状态管理
-  const [isMobile, setIsMobile] = useState(false);
+  // 移动端检测
+  const { actualIsMobile } = useMobile();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
-  // 检测是否为手机端
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // 如果正在检查认证或用户未登录，显示相应提示
   if (authLoading) {
@@ -1535,9 +1525,11 @@ export default function ShadowingPage() {
       <Container>
         <Breadcrumbs items={[{ href: "/", label: t.nav.home }, { label: t.shadowing.title }]} />
         
-        {/* 手机端布局 */}
-        {isMobile ? (
+        
+        {/* 移动端布局 */}
+        {actualIsMobile ? (
           <div className="space-y-4">
+            
             {/* 手机端顶部工具栏 */}
             <div className="flex items-center justify-between">
               <h1 className="text-lg font-semibold">Shadowing 练习</h1>
