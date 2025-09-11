@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import MobileToggle from "@/components/MobileToggle";
 
 export default function TopNav() {
   const [email, setEmail] = useState<string|undefined>();
@@ -80,6 +81,7 @@ export default function TopNav() {
           <Link key="wideread" href="/practice/wideread" prefetch={false}>{t.nav.wide_reading}</Link>
           <Link key="shadowing" href="/practice/shadowing" prefetch={false}>{t.nav.shadowing}</Link>
           <Link key="vocab" href="/vocab">{t.nav.vocabulary}</Link>
+          <MobileToggle />
           {isAdmin && <Link key="admin" href="/admin" className="text-orange-600">🛠️ {t.nav.admin}</Link>}
           <span className="mx-2 text-gray-400">|</span>
           <LanguageToggle />

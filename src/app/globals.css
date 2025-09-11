@@ -69,6 +69,32 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+  
+  /* 移动端优化 */
+  @media (max-width: 767px) {
+    /* 防止移动端缩放 */
+    html {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    
+    /* 改善触摸体验 */
+    button, a, input, select, textarea {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    
+    /* 防止移动端横向滚动 */
+    body {
+      overflow-x: hidden;
+    }
+    
+    /* 改善移动端字体渲染 */
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  }
 }
 
 @theme inline {
