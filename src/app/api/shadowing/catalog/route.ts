@@ -75,6 +75,8 @@ export async function GET(req: NextRequest) {
           tokens,
           cefr,
           meta,
+          translations,
+          trans_updated_at,
           created_at,
           shadowing_sessions!left(
             id,

@@ -42,6 +42,8 @@ interface ShadowingItem {
   tokens?: number;
   cefr?: string;
   meta?: Record<string, unknown>;
+  translations?: Record<string, string>;
+  trans_updated_at?: string;
   created_at: string;
   isPracticed: boolean;
   status?: 'draft' | 'completed';
@@ -137,6 +139,39 @@ export default function ShadowingPage() {
   
   // 解释缓存
   const [explanationCache, setExplanationCache] = useState<Record<string, {gloss_native: string, senses?: Array<{example_target: string, example_native: string}>}>>({});
+  
+  // 翻译相关状态
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [translationLang, setTranslationLang] = useState<'en'|'ja'|'zh'>('en');
+
+  // 获取目标语言
+  const getTargetLanguages = (sourceLang: string): string[] => {
+    switch (sourceLang) {
+      case 'zh': return ['en', 'ja'];
+      case 'en': return ['ja', 'zh'];
+      case 'ja': return ['en', 'zh'];
+      default: return [];
+    }
+  };
+
+  // 获取语言名称
+  const getLangName = (lang: string): string => {
+    const names = {
+      'en': 'English',
+      'ja': '日本語',
+      'zh': '简体中文'
+    };
+    return names[lang as keyof typeof names] || lang;
+  };
+
+  // 当题目改变时，自动设置翻译语言
+  useEffect(() => {
+    if (!currentItem) return;
+    const targetLangs = getTargetLanguages(currentItem.lang);
+    if (targetLangs.length > 0) {
+      setTranslationLang(targetLangs[0] as 'en'|'ja'|'zh');
+    }
+  }, [currentItem?.id]);
   
   // 发音功能
   const speakWord = (word: string, lang: string) => {
@@ -3006,9 +3041,58 @@ export default function ShadowingPage() {
                           )}
               </div>
             ))}
-          </div>
-                  </Card>
-                )}
+                  </div>
+                </Card>
+              )}
+
+              {/* 翻译面板 */}
+              {currentItem && (
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">翻译</h3>
+                    <div className="flex items-center gap-2">
+                      <label className="flex items-center gap-1 text-sm">
+                        <input 
+                          type="checkbox" 
+                          checked={showTranslation} 
+                          onChange={e => setShowTranslation(e.target.checked)} 
+                        />
+                        显示翻译
+                      </label>
+                      {showTranslation && (
+                        <select 
+                          className="border rounded px-2 py-1 text-sm" 
+                          value={translationLang} 
+                          onChange={e => setTranslationLang(e.target.value as 'en'|'ja'|'zh')}
+                        >
+                          {getTargetLanguages(currentItem.lang).map(lang => (
+                            <option key={lang} value={lang}>
+                              {getLangName(lang)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="text-sm font-medium text-blue-800 mb-2">
+                        {getLangName(translationLang)}翻译：
+                      </div>
+                      <div className="text-sm leading-relaxed text-blue-900 whitespace-pre-wrap">
+                        {currentItem.translations[translationLang]}
+                      </div>
+                    </div>
+                  ) : showTranslation ? (
+                    <div className="bg-gray-50 p-4 rounded-lg text-center">
+                      <div className="text-sm text-gray-500">
+                        （暂无翻译，可能尚未生成）
+                      </div>
+                    </div>
+                  ) : null}
+                </Card>
+              )}
 
                 {/* 录音练习区域 */}
                 <Card className="p-6">

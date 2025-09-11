@@ -124,6 +124,20 @@ export default function ShadowingReviewList(){
   const [showCandidateSelector, setShowCandidateSelector] = useState(false);
   const [log, setLog] = useState("");
   
+  // 批量翻译相关状态
+  const [transRunning, setTransRunning] = useState(false);
+  const [transProgress, setTransProgress] = useState({ done: 0, total: 0 });
+  const [transLogs, setTransLogs] = useState<string[]>([]);
+  const [transProvider, setTransProvider] = useState('deepseek');
+  const [transModel, setTransModel] = useState('openai/gpt-4o-mini');
+  const [transTemperature, setTransTemperature] = useState(0.3);
+  const [transConcurrency, setTransConcurrency] = useState(4);
+  const [transRetries, setTransRetries] = useState(2);
+  const [transThrottle, setTransThrottle] = useState(200);
+  const [onlyMissing, setOnlyMissing] = useState(true);
+  const [availableModels, setAvailableModels] = useState<Record<string, string[]>>({});
+  const [modelsLoading, setModelsLoading] = useState(false);
+  
   // 性能优化参数
   const [concurrency, setConcurrency] = useState(3);
   const [retries, setRetries] = useState(2);
@@ -162,6 +176,11 @@ export default function ShadowingReviewList(){
     }
     setItems(j.items||[]);
   })(); }, [q, lang, genre, level, status]);
+
+  // 加载可用模型
+  useEffect(() => {
+    fetchAvailableModels();
+  }, []);
 
   function isAllSelected(): boolean {
     if (items.length === 0) return false;
@@ -783,6 +802,145 @@ export default function ShadowingReviewList(){
     return selectedVoice;
   };
 
+  // 开始批量翻译
+  const startBatchTranslation = async () => {
+    if (transRunning) return;
+    
+    // 检查是否有选中的项目
+    if (selected.size === 0) {
+      toast.error("请先选择要翻译的草稿");
+      return;
+    }
+    
+    try {
+      setTransRunning(true);
+      setTransProgress({ done: 0, total: 0 });
+      setTransLogs([]);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const response = await fetch('/api/admin/shadowing/translate/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          scope: 'drafts',
+          provider: transProvider,
+          model: transModel,
+          temperature: transTemperature,
+          concurrency: transConcurrency,
+          retries: transRetries,
+          throttle_ms: transThrottle,
+          onlyMissing,
+          selectedIds: Array.from(selected), // 传递选中的ID列表
+          filters: {
+            status: status === 'all' ? 'draft' : status,
+            lang: lang === 'all' ? undefined : lang,
+            level: level === 'all' ? undefined : level,
+            genre: genre === 'all' ? undefined : genre,
+            q: q.trim() || undefined
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('批量翻译请求失败');
+      }
+      
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('无法读取响应流');
+      }
+      
+      const decoder = new TextDecoder();
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === 'start') {
+                setTransProgress({ done: 0, total: data.total });
+                setTransLogs([data.message]);
+              } else if (data.type === 'progress') {
+                setTransProgress({ done: data.processed, total: data.total });
+                setTransLogs(prev => [...prev, data.message]);
+              } else if (data.type === 'complete') {
+                setTransProgress({ done: data.processed, total: data.total });
+                setTransLogs(prev => [...prev, data.message]);
+                toast.success(`批量翻译完成: ${data.success_count}成功, ${data.failed_count}失败`);
+                // 刷新列表
+                setQ(q => q + ' ');
+              } else if (data.type === 'error') {
+                setTransLogs(prev => [...prev, data.message]);
+                toast.error(data.message);
+              }
+            } catch (e) {
+              console.error('解析SSE数据失败:', e);
+            }
+          }
+        }
+      }
+      
+    } catch (error: any) {
+      setTransLogs(prev => [...prev, `错误: ${error.message}`]);
+      toast.error('批量翻译失败: ' + error.message);
+    } finally {
+      setTransRunning(false);
+    }
+  };
+
+  // 停止批量翻译
+  const stopBatchTranslation = () => {
+    setTransRunning(false);
+    setTransLogs(prev => [...prev, '用户停止翻译']);
+  };
+
+  // 获取可用模型
+  async function fetchAvailableModels() {
+    try {
+      setModelsLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      const response = await fetch('/api/admin/shadowing/translate/models', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setAvailableModels(result.models);
+        
+        // 如果当前模型不在新列表中，重置为默认模型
+        if (result.models[transProvider] && !result.models[transProvider].includes(transModel)) {
+          setTransModel(result.models[transProvider][0] || '');
+        }
+      }
+    } catch (error) {
+      console.error('获取模型列表失败:', error);
+    } finally {
+      setModelsLoading(false);
+    }
+  }
+
+  // 提供商改变时重置模型
+  const handleProviderChange = (provider: string) => {
+    setTransProvider(provider);
+    if (availableModels[provider] && availableModels[provider].length > 0) {
+      setTransModel(availableModels[provider][0]);
+    }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -974,6 +1132,128 @@ export default function ShadowingReviewList(){
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* 批量翻译面板 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">🌐 批量翻译</CardTitle>
+          <CardDescription>为选中的草稿生成翻译，支持并发处理。请先选择要翻译的草稿。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-4">
+            <div>
+              <label className="text-sm font-medium">翻译提供商</label>
+              <Select value={transProvider} onValueChange={handleProviderChange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openrouter">OpenRouter</SelectItem>
+                  <SelectItem value="deepseek">DeepSeek</SelectItem>
+                  <SelectItem value="openai">OpenAI</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">模型</label>
+              <Select 
+                value={transModel} 
+                onValueChange={setTransModel}
+                disabled={modelsLoading || !availableModels[transProvider]}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {modelsLoading ? (
+                    <SelectItem value="loading" disabled>加载中...</SelectItem>
+                  ) : availableModels[transProvider] ? (
+                    availableModels[transProvider].map(model => (
+                      <SelectItem key={model} value={model}>
+                        {model}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-models" disabled>无可用模型</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">温度 (0-1)</label>
+              <Input 
+                type="number" 
+                step="0.1" 
+                min="0" 
+                max="1" 
+                value={transTemperature} 
+                onChange={e => setTransTemperature(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">并发数</label>
+              <Input 
+                type="number" 
+                min="1" 
+                max="8" 
+                value={transConcurrency} 
+                onChange={e => setTransConcurrency(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">重试次数</label>
+              <Input 
+                type="number" 
+                min="0" 
+                max="5" 
+                value={transRetries} 
+                onChange={e => setTransRetries(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">节流延迟 (ms)</label>
+              <Input 
+                type="number" 
+                min="0" 
+                max="2000" 
+                value={transThrottle} 
+                onChange={e => setTransThrottle(Number(e.target.value))}
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-1">
+              <Checkbox 
+                checked={onlyMissing} 
+                onCheckedChange={setOnlyMissing}
+              />
+              仅缺译项
+            </label>
+            <Button 
+              className={`px-3 py-1 rounded ${transRunning ? 'bg-gray-300' : 'bg-black text-white'}`}
+              onClick={startBatchTranslation} 
+              disabled={transRunning || selected.size === 0}
+            >
+              开始批量翻译 {selected.size > 0 && `(${selected.size}个选中)`}
+            </Button>
+            <Button 
+              className="px-3 py-1 rounded border" 
+              onClick={stopBatchTranslation} 
+              disabled={!transRunning}
+            >
+              停止
+            </Button>
+            <div>进度：{transProgress.done}/{transProgress.total}</div>
+          </div>
+          
+          {transLogs.length > 0 && (
+            <div className="text-xs bg-gray-50 p-2 rounded h-24 overflow-auto whitespace-pre-wrap mt-2">
+              {transLogs.map((log, i) => <div key={i}>{log}</div>)}
+            </div>
+          )}
         </CardContent>
       </Card>
 

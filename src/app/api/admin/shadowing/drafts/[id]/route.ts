@@ -22,7 +22,7 @@ export async function PUT(req: NextRequest, { params }:{ params: Promise<{ id:st
   if (!auth.ok) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   const b = await req.json();
   const patch:any = {};
-  for (const k of ["title","topic","genre","register","text","notes"]) if (k in b) patch[k] = b[k];
+  for (const k of ["title","topic","genre","register","text","notes","translations","trans_updated_at"]) if (k in b) patch[k] = b[k];
   const { id } = await params;
   const { error } = await auth.supabase.from("shadowing_drafts").update(patch).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -44,6 +44,8 @@ export async function POST(req: NextRequest, { params }:{ params: Promise<{ id:s
       title: d.title,
       text: d.text,
       audio_url: audioUrl,
+      translations: d.translations || {},
+      trans_updated_at: d.trans_updated_at,
       meta: { from_draft: d.id, notes: d.notes, published_at: new Date().toISOString() }
     }]);
     if (e1) return NextResponse.json({ error: e1.message }, { status: 400 });

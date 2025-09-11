@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 			// 查询题库
 			const { data: items, error } = await supabase
 				.from("shadowing_items")
-				.select("*")
+				.select("id, lang, level, title, text, audio_url, duration_ms, tokens, cefr, meta, translations, trans_updated_at, created_at")
 				.eq("lang", lang)
 				.eq("level", level)
 				.order("created_at", { ascending: false })
