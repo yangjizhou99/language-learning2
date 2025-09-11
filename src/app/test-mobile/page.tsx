@@ -3,7 +3,7 @@ import { useMobile } from "@/contexts/MobileContext";
 import { Button } from "@/components/ui/button";
 
 export default function TestMobilePage() {
-  const { isMobile, isTablet, isDesktop, screenWidth, screenHeight, actualIsMobile, setForceMobileMode, forceMobileMode } = useMobile();
+  const { isMobile, isTablet, isDesktop, screenWidth, screenHeight, actualIsMobile, setForceMobileMode, forceMobileMode, userAgent } = useMobile();
 
   return (
     <main className="p-6">
