@@ -129,7 +129,7 @@ export default function ShadowingReviewDetail(){
       setLog('翻译生成完成');
       
       // 更新草稿数据
-      setDraft(prev => ({
+      setDraft((prev: any) => ({
         ...prev,
         translations: result.translations,
         trans_updated_at: result.trans_updated_at

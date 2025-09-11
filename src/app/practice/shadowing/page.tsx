@@ -171,7 +171,7 @@ export default function ShadowingPage() {
     if (targetLangs.length > 0) {
       setTranslationLang(targetLangs[0] as 'en'|'ja'|'zh');
     }
-  }, [currentItem?.id]);
+  }, [currentItem]);
   
   // 发音功能
   const speakWord = (word: string, lang: string) => {
@@ -1231,9 +1231,9 @@ export default function ShadowingPage() {
     let cleanTranscribed: string[];
     
     if (isChinese) {
-      // 中文处理：按标点符号分割句子
+      // 中文处理：按A:, B:分割对话
       originalSentences = originalText
-        .split(/[。！？]/)
+        .split(/(?=[AB]:)/)
         .map(s => s.trim())
         .filter(s => s.length > 0);
       
@@ -1270,8 +1270,9 @@ export default function ShadowingPage() {
       let cleanSentence: string[];
       
       if (isChinese) {
-        // 中文处理：按字符分割
+        // 中文处理：按字符分割，移除角色标识符
         cleanSentence = sentence
+          .replace(/^[AB]:\s*/, '') // 移除角色标识符
           .replace(/[。！？、，\s]+/g, '')
           .split('')
           .filter(c => c.length > 0);
@@ -1322,7 +1323,7 @@ export default function ShadowingPage() {
       }
       
       sentenceAnalysis.push({
-        sentence: isChinese ? sentence : sentence.replace(/^[A-Z]:\s*/, ''), // 中文不移除，英文移除角色标识符
+        sentence: sentence.replace(/^[AB]:\s*/, ''), // 移除角色标识符
         status,
         issues,
         score: Math.round(matchRatio * 100)
@@ -2296,7 +2297,7 @@ export default function ShadowingPage() {
                                             
                                             <div className="text-sm mb-2">
                                               <span className="font-medium">原文：</span>
-                                              <span className="text-gray-700">"{sentence.sentence}"</span>
+                                              <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                             </div>
                                             
                                             {sentence.issues.length > 0 && (
@@ -2349,7 +2350,7 @@ export default function ShadowingPage() {
                                               
                                               <div className="text-sm mb-2">
                                                 <span className="font-medium">原文：</span>
-                                                <span className="text-gray-700">"{sentence.sentence}"</span>
+                                                <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                               </div>
                                               
                                               {sentence.issues.length > 0 && (
@@ -2720,6 +2721,7 @@ export default function ShadowingPage() {
             </div>
           </div>
           
+
           {/* 生词选择模式切换 */}
                   <div className="mb-4">
             <Button
@@ -2893,6 +2895,7 @@ export default function ShadowingPage() {
           )}
           </div>
           
+
           {/* 音频播放器 */}
                   {currentItem.audio_url && (
                     <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
@@ -2908,6 +2911,54 @@ export default function ShadowingPage() {
             </div>
           )}
                 </Card>
+
+                {/* 翻译模块 */}
+                {currentItem && (
+                  <Card className="p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-semibold text-gray-600">🌐 翻译</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                        <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={showTranslation} 
+                            onChange={e => setShowTranslation(e.target.checked)}
+                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          显示翻译
+                        </label>
+                        {showTranslation && (
+                          <select 
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full sm:w-auto bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                            value={translationLang} 
+                            onChange={e => setTranslationLang(e.target.value as 'en'|'ja'|'zh')}
+                          >
+                            {getTargetLanguages(currentItem.lang).map(lang => (
+                              <option key={lang} value={lang}>
+                                {getLangName(lang)}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
+                      <div className="text-lg leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
+                        {currentItem.translations[translationLang]}
+                      </div>
+                    ) : showTranslation ? (
+                      <div className="text-center py-4">
+                        <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
+                          <span>📝</span>
+                          （暂无翻译，可能尚未生成）
+                        </div>
+                      </div>
+                    ) : null}
+                  </Card>
+                )}
 
                 {/* 之前的生词 */}
                 {previousWords.length > 0 && (
@@ -3045,57 +3096,15 @@ export default function ShadowingPage() {
                 </Card>
               )}
 
-              {/* 翻译面板 */}
-              {currentItem && (
-                <Card className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">翻译</h3>
-                    <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-1 text-sm">
-                        <input 
-                          type="checkbox" 
-                          checked={showTranslation} 
-                          onChange={e => setShowTranslation(e.target.checked)} 
-                        />
-                        显示翻译
-                      </label>
-                      {showTranslation && (
-                        <select 
-                          className="border rounded px-2 py-1 text-sm" 
-                          value={translationLang} 
-                          onChange={e => setTranslationLang(e.target.value as 'en'|'ja'|'zh')}
-                        >
-                          {getTargetLanguages(currentItem.lang).map(lang => (
-                            <option key={lang} value={lang}>
-                              {getLangName(lang)}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="text-sm font-medium text-blue-800 mb-2">
-                        {getLangName(translationLang)}翻译：
-                      </div>
-                      <div className="text-sm leading-relaxed text-blue-900 whitespace-pre-wrap">
-                        {currentItem.translations[translationLang]}
-                      </div>
-                    </div>
-                  ) : showTranslation ? (
-                    <div className="bg-gray-50 p-4 rounded-lg text-center">
-                      <div className="text-sm text-gray-500">
-                        （暂无翻译，可能尚未生成）
-                      </div>
-                    </div>
-                  ) : null}
-                </Card>
-              )}
 
                 {/* 录音练习区域 */}
-                <Card className="p-6">
+                <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-green-50 to-emerald-50">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                      <span className="text-green-600">🎤</span>
+                      录音练习
+                    </h3>
+                  </div>
                   <AudioRecorder
                     sessionId={currentSession?.id}
                     existingRecordings={currentRecordings}
@@ -3110,86 +3119,112 @@ export default function ShadowingPage() {
 
                 {/* 评分区域 */}
                 {!scoringResult && (
-                  <Card className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">练习评分</h3>
+                  <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-purple-50 to-pink-50">
+                    <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                      <span className="text-purple-600">📊</span>
+                      练习评分
+                    </h3>
                     {currentRecordings.length > 0 ? (
-                      <div>
+                      <div className="text-center">
                         <p className="text-gray-600 mb-4">您已完成录音，点击下方按钮进行评分</p>
                         <Button
                           onClick={() => performScoring()}
                           disabled={isScoring}
-                          className="bg-blue-600 hover:bg-blue-700"
+                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200"
                         >
                           {isScoring ? "评分中..." : "开始评分"}
                         </Button>
-            </div>
+                      </div>
                     ) : (
-                      <div>
+                      <div className="text-center">
                         <p className="text-gray-600 mb-4">请先完成录音，然后点击下方按钮进行评分</p>
                         <Button
                           onClick={() => performScoring()}
                           disabled={isScoring}
                           variant="outline"
+                          className="border-purple-300 text-purple-600 hover:bg-purple-50 px-6 py-2 rounded-lg font-medium transition-all duration-200"
                         >
                           {isScoring ? "评分中..." : "开始评分"}
-              </Button>
-            </div>
+                        </Button>
+                      </div>
                     )}
                   </Card>
                 )}
 
                 {/* 评分结果区域 */}
                 {scoringResult && (
-                  <Card className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold">评分结果</h3>
+                  <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-orange-50 to-yellow-50">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <span className="text-orange-600">🏆</span>
+                        评分结果
+                      </h3>
                       <Button
                         onClick={() => performScoring(currentTranscription)}
                         disabled={isScoring}
                         variant="outline"
                         size="sm"
+                        className="border-orange-300 text-orange-600 hover:bg-orange-50 px-4 py-2 rounded-lg font-medium transition-all duration-200"
                       >
                         {isScoring ? "重新评分中..." : "重新评分"}
-              </Button>
+                      </Button>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="bg-green-50 p-4 rounded-lg">
-                        <div className="text-sm text-green-600 mb-1">整体评分</div>
-                        <div className="text-2xl font-bold text-green-700">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div className="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
+                        <div className="text-sm text-green-600 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                          整体评分
+                        </div>
+                        <div className="text-3xl font-bold text-green-700">
                           {(scoringResult.score || 0).toFixed(1)}%
                         </div>
                       </div>
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <div className="text-sm text-blue-600 mb-1">发音准确性</div>
-                        <div className="text-2xl font-bold text-blue-700">
+                      <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
+                        <div className="text-sm text-blue-600 mb-2 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                          发音准确性
+                        </div>
+                        <div className="text-3xl font-bold text-blue-700">
                           {(scoringResult.score || 0).toFixed(1)}%
                         </div>
                       </div>
                     </div>
                     
                     {scoringResult.feedback && (
-                      <div className="bg-yellow-50 p-4 rounded-lg mb-4">
-                        <div className="text-sm text-yellow-600 mb-1">改进建议</div>
-                        <p className="text-yellow-800">{scoringResult.feedback}</p>
+                      <div className="bg-white p-4 rounded-lg border border-yellow-200 shadow-sm mb-6">
+                        <div className="text-sm text-yellow-600 mb-3 flex items-center gap-2">
+                          <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                          改进建议
+                        </div>
+                        <p className="text-gray-800 leading-relaxed">{scoringResult.feedback}</p>
                       </div>
                     )}
           
                     {/* 转录文字和原文对比 */}
                     {scoringResult.transcription && scoringResult.originalText && (
                       <div className="mt-6">
-                        <h4 className="text-lg font-semibold mb-4">练习对比</h4>
+                        <h4 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                          <span className="text-indigo-600">📝</span>
+                          练习对比
+                        </h4>
                         <div className="space-y-4">
-                          <div className="border rounded-lg p-4">
+                          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
-                                <div className="text-sm text-gray-500 mb-2">原文</div>
-                                <div className="p-3 bg-gray-50 rounded border text-sm">
+                                <div className="text-sm text-gray-600 mb-3 flex items-center gap-2">
+                                  <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
+                                  原文
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm leading-relaxed">
                                   {scoringResult.originalText}
                                 </div>
                               </div>
                               <div>
-                                <div className="text-sm text-gray-500 mb-2">你的发音</div>
-                                <div className={`p-3 rounded border text-sm ${
+                                <div className="text-sm text-gray-600 mb-3 flex items-center gap-2">
+                                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                  你的发音
+                                </div>
+                                <div className={`p-3 rounded-lg border text-sm leading-relaxed ${
                                   (scoringResult.score || 0) >= 80 ? 'bg-green-50 border-green-200' :
                                   (scoringResult.score || 0) >= 60 ? 'bg-yellow-50 border-yellow-200' :
                                   'bg-red-50 border-red-200'
@@ -3200,8 +3235,11 @@ export default function ShadowingPage() {
                             </div>
                             
                             {/* 详细对比分析 */}
-                            <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                              <div className="text-sm text-blue-600 mb-2">详细分析</div>
+                            <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200 shadow-sm">
+                              <div className="text-sm text-blue-600 mb-3 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                详细分析
+                              </div>
                               <div className="text-sm text-gray-700">
                                 {(() => {
                                   // 处理中文文本，按字符分割而不是按单词分割
@@ -3240,7 +3278,7 @@ export default function ShadowingPage() {
                                             
                                             <div className="text-sm mb-2">
                                               <span className="font-medium">原文：</span>
-                                              <span className="text-gray-700">"{sentence.sentence}"</span>
+                                              <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                             </div>
                                             
                                             {sentence.issues.length > 0 && (
@@ -3293,7 +3331,7 @@ export default function ShadowingPage() {
                                               
                                               <div className="text-sm mb-2">
                                                 <span className="font-medium">原文：</span>
-                                                <span className="text-gray-700">"{sentence.sentence}"</span>
+                                                <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                               </div>
                                               
                                               {sentence.issues.length > 0 && (

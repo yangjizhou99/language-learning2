@@ -1228,7 +1228,7 @@ export default function ShadowingReviewList(){
             <label className="flex items-center gap-1">
               <Checkbox 
                 checked={onlyMissing} 
-                onCheckedChange={setOnlyMissing}
+                onCheckedChange={(checked) => setOnlyMissing(checked === true)}
               />
               仅缺译项
             </label>
