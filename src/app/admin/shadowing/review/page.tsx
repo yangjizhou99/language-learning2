@@ -144,6 +144,24 @@ export default function ShadowingReviewList(){
   const [throttle, setThrottle] = useState(200);
   const [timeout, setTimeout] = useState(60); // TTS超时时间（秒）
   
+  // 性能监控状态
+  const [performanceStats, setPerformanceStats] = useState({
+    totalRequests: 0,
+    successRate: 0,
+    avgResponseTime: 0,
+    currentLoad: 0,
+    recommendedConcurrency: 3
+  });
+  
+  // 性能历史记录
+  const [performanceHistory, setPerformanceHistory] = useState<Array<{
+    timestamp: number;
+    concurrency: number;
+    successRate: number;
+    avgResponseTime: number;
+    totalRequests: number;
+  }>>([]);
+  
   // 统计信息
   const stats = useMemo(() => {
     const total = items.length;
@@ -227,11 +245,22 @@ export default function ShadowingReviewList(){
         const it = items.find(x => x.id === id);
         setTtsCurrent(it?.title || "");
           try {
+            const startTime = Date.now();
             await deleteOne(id);
+            const responseTime = Date.now() - startTime;
+            
+            // 更新性能统计
+            updatePerformanceStats(true, responseTime);
+            
         setTtsDone(v => v + 1);
             return { id, success: true };
           } catch (error) {
             console.error(`删除失败 ${id}:`, error);
+            const responseTime = Date.now() - Date.now();
+            
+            // 更新性能统计
+            updatePerformanceStats(false, responseTime);
+            
             setTtsDone(v => v + 1);
             return { id, success: false };
           }
@@ -294,11 +323,22 @@ export default function ShadowingReviewList(){
           const it = items.find(x => x.id === id);
           setTtsCurrent(it?.title || "");
           try {
-        await publishOne(id);
+            const startTime = Date.now();
+            await publishOne(id);
+            const responseTime = Date.now() - startTime;
+            
+            // 更新性能统计
+            updatePerformanceStats(true, responseTime);
+            
             setTtsDone(v => v + 1);
             return { id, success: true };
           } catch (error) {
             console.error(`发布失败 ${id}:`, error);
+            const responseTime = Date.now() - Date.now();
+            
+            // 更新性能统计
+            updatePerformanceStats(false, responseTime);
+            
             setTtsDone(v => v + 1);
             return { id, success: false };
           }
@@ -422,9 +462,15 @@ export default function ShadowingReviewList(){
           const it = items.find(x => x.id === id);
           setTtsCurrent(it?.title || "");
           
+          const startTime = Date.now();
           // 使用随机音色分配进行TTS生成
           const ok = await synthOneWithRandomVoices(id);
-            setTtsDone(v => v + 1);
+          const responseTime = Date.now() - startTime;
+          
+          // 更新性能统计
+          updatePerformanceStats(ok, responseTime);
+          
+          setTtsDone(v => v + 1);
           return { id, success: ok };
         });
         
@@ -673,34 +719,67 @@ export default function ShadowingReviewList(){
 
   // 合并多个音频文件
   const mergeAudioFiles = async (audioUrls: string[], token: string | null): Promise<string> => {
-    try {
-      console.log('开始合并音频文件:', audioUrls);
-      
-      // 调用后端API合并音频
-      const response = await fetch('/api/admin/shadowing/merge-audio', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          ...(token ? { Authorization: `Bearer ${token}` } : {}) 
-        },
-        body: JSON.stringify({ 
-          audioUrls: audioUrls
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`音频合并失败: ${response.status}`);
+    const maxRetries = 3;
+    let retryCount = 0;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        console.log(`开始合并音频文件 (尝试 ${retryCount + 1}/${maxRetries + 1}):`, audioUrls);
+        
+        // 调用后端API合并音频
+        const response = await fetch('/api/admin/shadowing/merge-audio', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json', 
+            ...(token ? { Authorization: `Bearer ${token}` } : {}) 
+          },
+          body: JSON.stringify({ 
+            audioUrls: audioUrls
+          })
+        });
+        
+        if (response.status === 429) {
+          // 服务器繁忙，等待后重试
+          const waitTime = Math.pow(2, retryCount) * 1000; // 指数退避
+          console.log(`服务器繁忙，${waitTime}ms后重试...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          retryCount++;
+          continue;
+        }
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('音频合并API错误:', response.status, errorText);
+          throw new Error(`音频合并失败: ${response.status} - ${errorText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (!result.success) {
+          console.error('音频合并失败:', result.error, result.details);
+          throw new Error(`音频合并失败: ${result.error} - ${result.details}`);
+        }
+        
+        console.log('音频合并成功:', result.mergedAudioUrl);
+        return result.mergedAudioUrl;
+        
+      } catch (error) {
+        retryCount++;
+        if (retryCount > maxRetries) {
+          console.error('音频合并失败，超过最大重试次数:', error);
+          // 如果合并失败，返回第一个音频作为备选
+          console.warn('使用第一个音频片段作为备选方案');
+          return audioUrls[0];
+        }
+        
+        const waitTime = Math.pow(2, retryCount) * 1000; // 指数退避
+        console.log(`音频合并失败，${waitTime}ms后重试... (${retryCount}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
-      
-      const result = await response.json();
-      console.log('音频合并成功:', result.mergedAudioUrl);
-      return result.mergedAudioUrl;
-      
-    } catch (error) {
-      console.error('音频合并失败:', error);
-      // 如果合并失败，返回第一个音频作为备选
-      return audioUrls[0];
     }
+    
+    // 理论上不会到达这里，但为了类型安全
+    return audioUrls[0];
   };
 
   // 多音色对话合成函数
@@ -941,6 +1020,89 @@ export default function ShadowingReviewList(){
     }
   };
 
+  // 性能监控和推荐功能
+  const updatePerformanceStats = (success: boolean, responseTime: number) => {
+    setPerformanceStats(prev => {
+      const newTotal = prev.totalRequests + 1;
+      const newSuccessRate = ((prev.successRate * prev.totalRequests) + (success ? 1 : 0)) / newTotal;
+      const newAvgResponseTime = ((prev.avgResponseTime * prev.totalRequests) + responseTime) / newTotal;
+      
+      // 计算推荐并发数
+      let recommendedConcurrency = prev.recommendedConcurrency;
+      if (newSuccessRate > 0.95 && newAvgResponseTime < 2000) {
+        recommendedConcurrency = Math.min(8, prev.recommendedConcurrency + 1);
+      } else if (newSuccessRate < 0.8 || newAvgResponseTime > 5000) {
+        recommendedConcurrency = Math.max(1, prev.recommendedConcurrency - 1);
+      }
+      
+      const newStats = {
+        totalRequests: newTotal,
+        successRate: newSuccessRate,
+        avgResponseTime: newAvgResponseTime,
+        currentLoad: Math.min(100, (concurrency / 8) * 100),
+        recommendedConcurrency
+      };
+      
+      // 记录性能历史
+      setPerformanceHistory(prev => [
+        ...prev.slice(-9), // 保留最近10条记录
+        {
+          timestamp: Date.now(),
+          concurrency,
+          successRate: newSuccessRate,
+          avgResponseTime: newAvgResponseTime,
+          totalRequests: newTotal
+        }
+      ]);
+      
+      return newStats;
+    });
+  };
+
+  // 智能推荐配置
+  const getRecommendedConfig = () => {
+    const { successRate, avgResponseTime, recommendedConcurrency } = performanceStats;
+    
+    if (successRate > 0.95 && avgResponseTime < 1500) {
+      return {
+        name: "高速模式",
+        concurrency: Math.min(8, recommendedConcurrency + 1),
+        retries: 2,
+        throttle: 100,
+        timeout: 45,
+        description: "系统运行良好，可以提升性能"
+      };
+    } else if (successRate > 0.9 && avgResponseTime < 3000) {
+      return {
+        name: "平衡模式",
+        concurrency: recommendedConcurrency,
+        retries: 2,
+        throttle: 200,
+        timeout: 60,
+        description: "当前配置较为合适"
+      };
+    } else {
+      return {
+        name: "保守模式",
+        concurrency: Math.max(1, recommendedConcurrency - 1),
+        retries: 3,
+        throttle: 500,
+        timeout: 90,
+        description: "建议降低并发数以提高稳定性"
+      };
+    }
+  };
+
+  // 应用推荐配置
+  const applyRecommendedConfig = () => {
+    const config = getRecommendedConfig();
+    setConcurrency(config.concurrency);
+    setRetries(config.retries);
+    setThrottle(config.throttle);
+    setTimeout(config.timeout);
+    toast.success(`已应用${config.name}配置`);
+  };
+
 
   return (
     <div className="space-y-6">
@@ -1039,6 +1201,35 @@ export default function ShadowingReviewList(){
           <CardDescription>调整批量操作的性能和稳定性，优化TTS生成效率</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* 实时性能监控 */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium">📊 实时性能监控</h3>
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${performanceStats.currentLoad > 80 ? 'bg-red-500' : performanceStats.currentLoad > 60 ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
+                <span className="text-xs text-gray-600">系统负载: {performanceStats.currentLoad.toFixed(0)}%</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <div className="text-gray-600">总请求数</div>
+                <div className="font-medium">{performanceStats.totalRequests}</div>
+              </div>
+              <div>
+                <div className="text-gray-600">成功率</div>
+                <div className="font-medium text-green-600">{(performanceStats.successRate * 100).toFixed(1)}%</div>
+              </div>
+              <div>
+                <div className="text-gray-600">平均响应时间</div>
+                <div className="font-medium">{performanceStats.avgResponseTime.toFixed(0)}ms</div>
+              </div>
+              <div>
+                <div className="text-gray-600">推荐并发数</div>
+                <div className="font-medium text-blue-600">{performanceStats.recommendedConcurrency}</div>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
               <label className="text-sm font-medium">并发数 (1-8)</label>
@@ -1048,8 +1239,12 @@ export default function ShadowingReviewList(){
                 max={8} 
                 value={concurrency} 
                 onChange={e => setConcurrency(Number(e.target.value) || 3)}
+                className={concurrency > performanceStats.recommendedConcurrency ? 'border-yellow-500' : ''}
               />
               <p className="text-xs text-gray-500">同时处理的任务数</p>
+              {concurrency > performanceStats.recommendedConcurrency && (
+                <p className="text-xs text-yellow-600">⚠️ 超过推荐值</p>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium">重试次数 (0-5)</label>
@@ -1096,9 +1291,82 @@ export default function ShadowingReviewList(){
                 <Button size="sm" variant="outline" onClick={() => { setConcurrency(6); setRetries(3); setThrottle(100); setTimeout(45); }}>
                   高速模式
                 </Button>
+                <Button 
+                  size="sm" 
+                  variant="default" 
+                  onClick={applyRecommendedConfig}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  🤖 智能推荐
+                </Button>
               </div>
             </div>
           </div>
+          
+          {/* 智能推荐提示 */}
+          {performanceStats.totalRequests > 0 && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-blue-600">💡</span>
+                <span className="text-sm font-medium text-blue-800">智能推荐</span>
+              </div>
+              <p className="text-sm text-blue-700">{getRecommendedConfig().description}</p>
+              <div className="mt-2 text-xs text-blue-600">
+                建议配置: 并发{getRecommendedConfig().concurrency} | 重试{getRecommendedConfig().retries} | 延迟{getRecommendedConfig().throttle}ms | 超时{getRecommendedConfig().timeout}s
+              </div>
+            </div>
+          )}
+          
+          {/* 性能历史图表 */}
+          {performanceHistory.length > 0 && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <h3 className="text-sm font-medium mb-3">📈 性能历史趋势</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div>
+                  <div className="text-gray-600 mb-1">成功率趋势</div>
+                  <div className="flex items-center gap-1">
+                    {performanceHistory.slice(-5).map((record, index) => (
+                      <div key={index} className="flex-1">
+                        <div 
+                          className="bg-green-500 rounded-sm" 
+                          style={{ height: `${record.successRate * 20}px` }}
+                          title={`${(record.successRate * 100).toFixed(1)}%`}
+                        ></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-600 mb-1">响应时间趋势</div>
+                  <div className="flex items-center gap-1">
+                    {performanceHistory.slice(-5).map((record, index) => (
+                      <div key={index} className="flex-1">
+                        <div 
+                          className="bg-blue-500 rounded-sm" 
+                          style={{ height: `${Math.min(20, record.avgResponseTime / 100)}px` }}
+                          title={`${record.avgResponseTime.toFixed(0)}ms`}
+                        ></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-600 mb-1">并发数趋势</div>
+                  <div className="flex items-center gap-1">
+                    {performanceHistory.slice(-5).map((record, index) => (
+                      <div key={index} className="flex-1">
+                        <div 
+                          className="bg-purple-500 rounded-sm" 
+                          style={{ height: `${record.concurrency * 2.5}px` }}
+                          title={`并发${record.concurrency}`}
+                        ></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* 音色管理区域 */}
           <div className="mt-6 pt-4 border-t">
@@ -1351,7 +1619,7 @@ export default function ShadowingReviewList(){
                 </div>
               )}
               <div className="text-xs text-gray-500">
-                并发数: {concurrency} | 节流延迟: {throttle}ms | 超时: {timeout}s
+                并发数: {concurrency} | 节流延迟: {throttle}ms | 超时: {timeout}s | 成功率: {(performanceStats.successRate * 100).toFixed(1)}% | 平均响应: {performanceStats.avgResponseTime.toFixed(0)}ms
               </div>
             </div>
           </CardContent>
