@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -127,6 +127,12 @@ export default function ShadowingPage() {
   const [practiceStartTime, setPracticeStartTime] = useState<Date | null>(null);
   const [currentRecordings, setCurrentRecordings] = useState<AudioRecording[]>([]);
   const [isImporting, setIsImporting] = useState(false);
+  
+  // 录音组件引用
+  const audioRecorderRef = useRef<{ 
+    uploadCurrentRecording: () => Promise<void>;
+    hasUnsavedRecording: () => boolean;
+  } | null>(null);
   
   // AI解释相关状态
   const [wordExplanations, setWordExplanations] = useState<Record<string, {
@@ -911,75 +917,6 @@ export default function ShadowingPage() {
     }
   };
 
-  // 完成并保存
-  const completeAndSave = async () => {
-    if (!currentItem) return;
-    
-    setSaving(true);
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/shadowing/session', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          item_id: currentItem.id,
-          status: 'completed',
-          recordings: currentRecordings,
-          picked_preview: [...previousWords, ...selectedWords],
-          notes: ''
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentSession(data.session);
-        
-        // 更新题库列表中的状态
-        const practiceTime = practiceStartTime ? 
-          Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000) : 0;
-        
-        setItems(prev => prev.map(item => 
-          item.id === currentItem.id 
-            ? { 
-                ...item, 
-                isPracticed: true,
-                stats: {
-                  ...item.stats,
-                  recordingCount: currentRecordings.length,
-                  vocabCount: selectedWords.length,
-                  practiceTime,
-                  lastPracticed: new Date().toISOString()
-                }
-              }
-            : item
-        ));
-        
-         // 更新当前items状态
-         setItems(prev => prev.map(item => 
-           item.id === currentItem.id 
-             ? { 
-                 ...item, 
-                 isPracticed: true,
-                 stats: {
-                   ...item.stats,
-                   recordingCount: currentRecordings.length,
-                   vocabCount: selectedWords.length,
-                   practiceTime,
-                   lastPracticed: new Date().toISOString()
-                 }
-               }
-             : item
-         ));
-        
-        alert('练习完成并保存！');
-      }
-    } catch (error) {
-      console.error('Failed to complete practice:', error);
-      alert('保存失败');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // 检查生词是否已有AI解释
   const checkExistingExplanation = async (word: string) => {
@@ -1364,44 +1301,212 @@ export default function ShadowingPage() {
 
 
 
-  // 记录练习结果到数据库
-  const recordPracticeResult = async () => {
-    if (!currentItem || !practiceStartTime || !scoringResult) return;
-    
-    const practiceTime = Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000);
-    
-    const metrics = {
-      accuracy: scoringResult.score || 0,
-      complete: true,
-      time_sec: practiceTime,
-      scoring_result: scoringResult
-    };
 
+  // 统一的完成并保存函数 - 整合session保存和练习结果记录
+  const unifiedCompleteAndSave = async () => {
+    if (!currentItem) return;
+    
+    setSaving(true);
+    
+    // 立即更新本地状态，确保UI即时响应
+    const practiceTime = practiceStartTime ? 
+      Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000) : 0;
+    
+    // 1. 立即更新题库列表状态
+    setItems(prev => prev.map(item => 
+      item.id === currentItem.id 
+        ? { 
+            ...item, 
+            isPracticed: true,
+            stats: {
+              ...item.stats,
+              recordingCount: currentRecordings.length,
+              vocabCount: selectedWords.length,
+              practiceTime,
+              lastPracticed: new Date().toISOString()
+            }
+          }
+        : item
+    ));
+    
+    // 2. 立即设置练习完成状态
+    setPracticeComplete(true);
+    
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch('/api/shadowing/attempts', {
+      
+      // 3. 自动检查和保存生词
+      let savedVocabCount = 0;
+      if (selectedWords.length > 0) {
+        try {
+          const entries = selectedWords.map(item => ({
+            term: item.word,
+            lang: item.lang,
+            native_lang: language, // 使用界面语言作为母语
+            source: 'shadowing',
+            source_id: currentItem.id,
+            context: item.context,
+            tags: [],
+            explanation: item.explanation || null
+          }));
+
+          const vocabResponse = await fetch('/api/vocab/bulk_create', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ entries }),
+          });
+
+          if (vocabResponse.ok) {
+            savedVocabCount = entries.length;
+            // 将本次选中的生词移动到之前的生词中
+            setPreviousWords(prev => [...prev, ...selectedWords]);
+            setSelectedWords([]);
+            console.log(`自动保存了 ${savedVocabCount} 个生词`);
+          } else {
+            console.warn('自动保存生词失败');
+          }
+        } catch (vocabError) {
+          console.warn('自动保存生词时出错:', vocabError);
+        }
+      }
+      
+      // 4. 异步保存练习session（包含所有数据）
+      const allWords = [...previousWords, ...selectedWords];
+      
+      
+      // 检查并处理录音保存
+      let finalRecordings = [...currentRecordings];
+      
+      if (audioRecorderRef.current && typeof audioRecorderRef.current.uploadCurrentRecording === 'function') {
+        // 检查是否有未保存的录音
+        const hasUnsavedRecording = audioRecorderRef.current.hasUnsavedRecording?.() || false;
+        
+        if (hasUnsavedRecording) {
+          try {
+            // 自动上传未保存的录音
+            await audioRecorderRef.current.uploadCurrentRecording();
+            
+            // 等待录音状态更新
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 重新获取最新的录音数据
+            if (currentItem) {
+              try {
+                const headers = await getAuthHeaders();
+                const sessionResponse = await fetch(`/api/shadowing/session?item_id=${currentItem.id}`, {
+                  headers
+                });
+                if (sessionResponse.ok) {
+                  const sessionData = await sessionResponse.json();
+                  if (sessionData.session?.recordings) {
+                    // 更新本地状态和使用最新的录音数据
+                    setCurrentRecordings(sessionData.session.recordings);
+                    finalRecordings = sessionData.session.recordings;
+                  }
+                }
+              } catch (error) {
+                console.warn('刷新录音状态失败:', error);
+              }
+            }
+          } catch (error) {
+            console.warn('录音保存失败:', error);
+          }
+        }
+      }
+      
+      const sessionResponse = await fetch('/api/shadowing/session', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           item_id: currentItem.id,
-          lang: currentItem.lang,
-          level: currentItem.level,
-          metrics
+          status: 'completed',
+          recordings: finalRecordings,
+          picked_preview: allWords,
+          notes: ''
         })
       });
-
-      if (response.ok) {
-        setPracticeComplete(true);
-        alert(`练习完成！准确率: ${(scoringResult.score || 0).toFixed(1)}%`);
-        // 刷新题库列表以更新练习状态
-        fetchItems();
+      
+      if (sessionResponse.ok) {
+        const sessionData = await sessionResponse.json();
+        setCurrentSession(sessionData.session);
       } else {
-        const errorData = await response.json();
-        alert(`记录练习结果失败: ${errorData.error}`);
+        const errorText = await sessionResponse.text();
+        console.error('保存练习session失败:', {
+          status: sessionResponse.status,
+          error: errorText
+        });
       }
+      
+      // 5. 如果有评分结果，记录练习结果
+      if (scoringResult && practiceStartTime) {
+        const metrics = {
+          accuracy: scoringResult.score || 0,
+          complete: true,
+          time_sec: practiceTime,
+          scoring_result: scoringResult
+        };
+
+        const attemptResponse = await fetch('/api/shadowing/attempts', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            item_id: currentItem.id,
+            lang: currentItem.lang,
+            level: currentItem.level,
+            metrics
+          })
+        });
+
+        if (!attemptResponse.ok) {
+          console.warn('记录练习结果失败，但本地状态已更新');
+        }
+      }
+      
+      // 6. 显示完成消息（包含保存的详细信息）
+      let message = '练习完成并保存！';
+      const details = [];
+      
+      if (currentRecordings.length > 0) {
+        details.push(`${currentRecordings.length} 个录音`);
+      }
+      if (savedVocabCount > 0) {
+        details.push(`${savedVocabCount} 个生词`);
+      }
+      if (scoringResult) {
+        details.push(`准确率: ${(scoringResult.score || 0).toFixed(1)}%`);
+      }
+      
+      if (details.length > 0) {
+        message += ` (已保存: ${details.join(', ')})`;
+      }
+      
+      alert(message);
+      
+      // 7. 清除相关缓存并刷新题库列表以确保数据同步
+      // 等待一小段时间确保数据库写入完成，然后清除缓存并刷新
+      setTimeout(async () => {
+        try {
+          // 清除shadowing:catalog相关的缓存
+          await fetch('/api/cache/invalidate', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              pattern: 'shadowing:catalog*'
+            })
+          });
+        } catch (cacheError) {
+          console.warn('Failed to clear cache:', cacheError);
+        }
+        // 刷新题库列表
+        fetchItems();
+      }, 500);
+      
     } catch (error) {
-      console.error('Failed to record practice result:', error);
-      alert('记录练习结果失败');
+      console.error('Failed to save practice data:', error);
+      // 即使保存失败，本地状态已经更新，用户体验不受影响
+      alert('练习已完成，但部分数据同步可能延迟');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1810,7 +1915,7 @@ export default function ShadowingPage() {
                         
                         <Button
                           size="sm"
-                          onClick={completeAndSave}
+                          onClick={unifiedCompleteAndSave}
                           disabled={saving}
                           className="flex-1 min-w-0"
                         >
@@ -2143,6 +2248,7 @@ export default function ShadowingPage() {
                   {/* 录音练习区域 */}
                   <Card className="p-4">
                     <AudioRecorder
+                      ref={audioRecorderRef}
                       sessionId={currentSession?.id}
                       existingRecordings={currentRecordings}
                       onRecordingAdded={handleRecordingAdded}
@@ -2375,11 +2481,11 @@ export default function ShadowingPage() {
                       
                       {!practiceComplete && (
                         <Button
-                          onClick={recordPracticeResult}
+                          onClick={unifiedCompleteAndSave}
                           className="bg-green-600 hover:bg-green-700 w-full mt-4"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          完成练习并保存
+                          完成并保存
                         </Button>
                       )}
                     </Card>
@@ -2697,7 +2803,7 @@ export default function ShadowingPage() {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={completeAndSave}
+                        onClick={unifiedCompleteAndSave}
                         disabled={saving}
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
@@ -3098,6 +3204,7 @@ export default function ShadowingPage() {
                     </h3>
                   </div>
                   <AudioRecorder
+                    ref={audioRecorderRef}
                     sessionId={currentSession?.id}
                     existingRecordings={currentRecordings}
                     onRecordingAdded={handleRecordingAdded}
@@ -3357,11 +3464,11 @@ export default function ShadowingPage() {
           
                     {!practiceComplete && (
               <Button
-                        onClick={recordPracticeResult}
+                        onClick={unifiedCompleteAndSave}
                         className="bg-green-600 hover:bg-green-700"
               >
                         <CheckCircle className="w-4 h-4 mr-2" />
-                        完成练习并保存
+                        完成并保存
               </Button>
                     )}
                   </Card>
