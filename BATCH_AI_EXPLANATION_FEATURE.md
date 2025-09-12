@@ -1,7 +1,9 @@
-# 批量AI解释功能
+# Shadowing练习功能完整更新
 
 ## 功能概述
-为"本次选中的生词"模块添加了一键批量生成AI解释的功能，支持并发处理多个生词，大大提高了学习效率。
+本次更新包含两个主要功能：
+1. **批量AI解释功能**：为"本次选中的生词"模块添加了一键批量生成AI解释的功能，支持并发处理多个生词
+2. **移动端翻译模块**：修复了移动端缺少翻译模块的bug，现在移动端和桌面端都有完整的翻译功能
 
 ## 功能特性
 
@@ -112,8 +114,73 @@ AI解释生成进度
 - 本地缓存，避免重复请求
 - 自动保存，确保数据不丢失
 
+## 移动端翻译模块
+
+### 📱 功能特性
+- **完整翻译功能**：移动端现在拥有与桌面端相同的翻译功能
+- **垂直布局优化**：适合手机屏幕的垂直排列设计
+- **触摸友好**：按钮和选择框大小适合触摸操作
+- **状态同步**：与桌面端使用相同的状态变量，切换时保持一致
+
+### 🔧 技术实现
+```typescript
+{/* 翻译模块 - 移动端 */}
+{currentItem && (
+  <Card className="p-4">
+    <div className="flex flex-col gap-3 mb-4">
+      <div className="flex items-center gap-2">
+        <span className="text-lg font-semibold text-gray-600">🌐 翻译</span>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input 
+            type="checkbox" 
+            checked={showTranslation} 
+            onChange={e => setShowTranslation(e.target.checked)}
+            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          显示翻译
+        </label>
+        {showTranslation && (
+          <select 
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+            value={translationLang} 
+            onChange={e => setTranslationLang(e.target.value as 'en'|'ja'|'zh')}
+          >
+            {getTargetLanguages(currentItem.lang).map(lang => (
+              <option key={lang} value={lang}>
+                {getLangName(lang)}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+    </div>
+    
+    {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
+      <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
+        {currentItem.translations[translationLang]}
+      </div>
+    ) : showTranslation ? (
+      <div className="text-center py-4">
+        <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
+          <span>📝</span>
+          （暂无翻译，可能尚未生成）
+        </div>
+      </div>
+    ) : null}
+  </Card>
+)}
+```
+
+### 📍 位置布局
+- **移动端**：在"本次选中的生词"模块之后、录音练习区域之前
+- **桌面端**：保持原有位置不变
+- **响应式设计**：根据屏幕尺寸自动切换显示
+
 ## 兼容性
 
 - 支持桌面端和移动端
 - 与现有的单个AI解释功能完全兼容
 - 不影响其他功能的正常使用
+- 移动端和桌面端功能完全一致
