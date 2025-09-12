@@ -2507,6 +2507,54 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
+                  {/* 翻译模块 - 移动端 */}
+                  {currentItem && (
+                    <Card className="p-4">
+                      <div className="flex flex-col gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold text-gray-600">🌐 翻译</span>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={showTranslation} 
+                              onChange={e => setShowTranslation(e.target.checked)}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            显示翻译
+                          </label>
+                          {showTranslation && (
+                            <select 
+                              className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              value={translationLang} 
+                              onChange={e => setTranslationLang(e.target.value as 'en'|'ja'|'zh')}
+                            >
+                              {getTargetLanguages(currentItem.lang).map(lang => (
+                                <option key={lang} value={lang}>
+                                  {getLangName(lang)}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
+                        <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
+                          {currentItem.translations[translationLang]}
+                        </div>
+                      ) : showTranslation ? (
+                        <div className="text-center py-4">
+                          <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
+                            <span>📝</span>
+                            （暂无翻译，可能尚未生成）
+                          </div>
+                        </div>
+                      ) : null}
+                    </Card>
+                  )}
+
                   {/* 录音练习区域 */}
                   <Card className="p-4">
                     <AudioRecorder
@@ -3504,7 +3552,6 @@ export default function ShadowingPage() {
                   </div>
                 </Card>
               )}
-
 
                 {/* 录音练习区域 */}
                 <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-green-50 to-emerald-50">
