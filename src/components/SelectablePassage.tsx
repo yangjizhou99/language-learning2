@@ -52,8 +52,17 @@ export default function SelectablePassage({
     const checkAndTrigger = () => {
       const selection = window.getSelection();
       if (selection && selection.toString().trim() !== '') {
-        // 有选中文字，触发弹窗并清除选中
-        processSelection();
+        // 检查选中的文本是否在当前组件内
+        const range = selection.getRangeAt(0);
+        const textElement = textRef.current;
+        
+        if (textElement && textElement.contains(range.commonAncestorContainer)) {
+          // 选中的文本在当前组件内，触发弹窗
+          processSelection();
+        } else {
+          // 选中的文本不在当前组件内，清除选择但不触发弹窗
+          selection.removeAllRanges();
+        }
       }
     };
 
@@ -79,14 +88,23 @@ export default function SelectablePassage({
       }
     };
 
+    // 检查事件是否发生在组件内
+    const isEventInComponent = (event: Event) => {
+      const target = event.target as HTMLElement;
+      const textElement = textRef.current;
+      return textElement && textElement.contains(target);
+    };
+
     // 触摸开始事件（手机端）
-    const handleTouchStart = () => {
+    const handleTouchStart = (event: TouchEvent) => {
+      if (!isEventInComponent(event)) return;
       isDragging = false;
       cancelTimer(); // 取消之前的定时器
     };
 
     // 触摸移动事件（手机端）
-    const handleTouchMove = () => {
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!isEventInComponent(event)) return;
       if (!isDragging) {
         isDragging = true;
         startTimer(); // 开始拖动，启动倒计时
@@ -94,19 +112,22 @@ export default function SelectablePassage({
     };
 
     // 触摸结束事件（手机端）
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (!isEventInComponent(event)) return;
       isDragging = false;
       // 不取消定时器，让倒计时继续
     };
 
     // 鼠标按下事件（电脑端）
-    const handleMouseDown = () => {
+    const handleMouseDown = (event: MouseEvent) => {
+      if (!isEventInComponent(event)) return;
       isDragging = false;
       cancelTimer(); // 取消之前的定时器
     };
 
     // 鼠标移动事件（电脑端）
-    const handleMouseMove = () => {
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isEventInComponent(event)) return;
       if (!isDragging) {
         isDragging = true;
         startTimer(); // 开始拖动，启动倒计时
@@ -114,7 +135,8 @@ export default function SelectablePassage({
     };
 
     // 鼠标松开事件（电脑端）
-    const handleMouseUp = () => {
+    const handleMouseUp = (event: MouseEvent) => {
+      if (!isEventInComponent(event)) return;
       isDragging = false;
       // 不取消定时器，让倒计时继续
     };
