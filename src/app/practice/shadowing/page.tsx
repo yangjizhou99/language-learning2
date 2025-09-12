@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LANG_LABEL } from "@/types/lang";
 import { useMobile } from "@/contexts/MobileContext";
+import { speakText as speakTextUtil } from '@/lib/speechUtils';
 // import { getAuthHeaders } from "@/lib/supabase";
 import { 
   Shuffle, 
@@ -182,31 +183,11 @@ export default function ShadowingPage() {
   
   // 发音功能
   const speakWord = (word: string, lang: string) => {
-    if ('speechSynthesis' in window) {
-      // 停止当前播放
-      window.speechSynthesis.cancel();
-      
-      const utterance = new SpeechSynthesisUtterance(word);
-      
-      // 根据语言设置语音
-      if (lang === 'en') {
-        utterance.lang = 'en-US';
-      } else if (lang === 'ja') {
-        utterance.lang = 'ja-JP';
-      } else if (lang === 'zh') {
-        utterance.lang = 'zh-CN';
-      }
-      
-      // 设置语音参数
-      utterance.rate = 0.8; // 稍慢一点，便于学习
-      utterance.pitch = 1;
-      utterance.volume = 1;
-      
-      // 播放
-      window.speechSynthesis.speak(utterance);
-    } else {
-      console.warn('浏览器不支持语音合成功能');
-    }
+    speakTextUtil(word, lang, {
+      rate: 0.8, // 稍慢一点，便于学习
+      pitch: 1,
+      volume: 1
+    });
   };
   
   
