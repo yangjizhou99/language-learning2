@@ -20,7 +20,15 @@ interface VocabEntry {
   context?: string;
   tags: string[];
   status: string;
-  explanation?: any;
+  explanation?: {
+    gloss_native: string;
+    pronunciation?: string;
+    pos?: string;
+    senses?: Array<{
+      example_target: string;
+      example_native: string;
+    }>;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -899,7 +907,14 @@ export default function VocabPage() {
                     
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-blue-600">{entry.term}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-blue-600">{entry.term}</h3>
+                          {entry.explanation?.pronunciation && (
+                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs text-gray-600">
+                              {entry.explanation.pronunciation}
+                            </span>
+                          )}
+                        </div>
                         <TTSButton
                           text={entry.term}
                           lang={entry.lang}
@@ -925,6 +940,14 @@ export default function VocabPage() {
                       {entry.explanation && (
                         <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
                           <div className="text-gray-600">{entry.explanation.gloss_native}</div>
+                          
+                          {/* 显示词性信息 */}
+                          {entry.explanation.pos && (
+                            <div className="mt-1 text-xs text-gray-500">
+                              <strong>词性：</strong>{entry.explanation.pos}
+                            </div>
+                          )}
+                          
                           {Array.isArray(entry.explanation.senses) && entry.explanation.senses.length > 0 && (
                             <div className="text-xs text-gray-500 mt-1">
                               例：{entry.explanation.senses[0].example_target} — {entry.explanation.senses[0].example_native}

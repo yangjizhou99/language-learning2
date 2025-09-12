@@ -138,15 +138,28 @@ export default function ShadowingPage() {
   // AI解释相关状态
   const [wordExplanations, setWordExplanations] = useState<Record<string, {
     gloss_native: string;
+    pronunciation?: string;
+    pos?: string;
     senses?: Array<{
       example_target: string;
       example_native: string;
     }>;
   }>>({});
   const [isGeneratingExplanation, setIsGeneratingExplanation] = useState(false);
+  const [isGeneratingBatchExplanation, setIsGeneratingBatchExplanation] = useState(false);
+  const [batchExplanationProgress, setBatchExplanationProgress] = useState({
+    current: 0,
+    total: 0,
+    status: ''
+  });
   
   // 解释缓存
-  const [explanationCache, setExplanationCache] = useState<Record<string, {gloss_native: string, senses?: Array<{example_target: string, example_native: string}>}>>({});
+  const [explanationCache, setExplanationCache] = useState<Record<string, {
+    gloss_native: string;
+    pronunciation?: string;
+    pos?: string;
+    senses?: Array<{example_target: string, example_native: string}>;
+  }>>({});
   
   // 翻译相关状态
   const [showTranslation, setShowTranslation] = useState(false);
@@ -245,10 +258,39 @@ export default function ShadowingPage() {
       </span>
     );
   };
+  // 带发音的生词显示组件
+  const WordWithPronunciation = ({ word, explanation }: { word: string, explanation?: {
+    gloss_native: string;
+    pronunciation?: string;
+    pos?: string;
+    senses?: Array<{example_target: string, example_native: string}>;
+  } }) => {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="font-medium text-gray-700">{word}</span>
+        {explanation?.pronunciation && (
+          <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs text-gray-600">
+            {explanation.pronunciation}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   // 动态解释组件
-  const DynamicExplanation = ({ word, fallbackExplanation }: { word: string, fallbackExplanation?: {gloss_native: string, senses?: Array<{example_target: string, example_native: string}>} }) => {
+  const DynamicExplanation = ({ word, fallbackExplanation }: { word: string, fallbackExplanation?: {
+    gloss_native: string;
+    pronunciation?: string;
+    pos?: string;
+    senses?: Array<{example_target: string, example_native: string}>;
+  } }) => {
     // 优先使用缓存中的最新解释，其次使用fallback解释
-    const [latestExplanation, setLatestExplanation] = useState<{gloss_native: string, senses?: Array<{example_target: string, example_native: string}>} | undefined>(explanationCache[word] || fallbackExplanation);
+    const [latestExplanation, setLatestExplanation] = useState<{
+      gloss_native: string;
+      pronunciation?: string;
+      pos?: string;
+      senses?: Array<{example_target: string, example_native: string}>;
+    } | undefined>(explanationCache[word] || fallbackExplanation);
     const [loading, setLoading] = useState(false);
     const [hasInitialized, setHasInitialized] = useState(false);
     
@@ -352,6 +394,14 @@ export default function ShadowingPage() {
             🔄
           </button>
         </div>
+        
+        {/* 显示词性信息 */}
+        {latestExplanation.pos && (
+          <div className="mb-2 text-sm text-gray-600">
+            <strong>词性：</strong>{latestExplanation.pos}
+          </div>
+        )}
+        
         {latestExplanation.senses && latestExplanation.senses.length > 0 && (
           <div className="text-sm text-gray-600">
             <strong>例句：</strong>
@@ -947,6 +997,175 @@ export default function ShadowingPage() {
 
 
 
+  // 批量生成AI解释
+  const generateBatchExplanations = async () => {
+    if (isGeneratingBatchExplanation || selectedWords.length === 0) return;
+    
+    // 过滤出还没有解释的生词
+    const wordsNeedingExplanation = selectedWords.filter(item => 
+      !item.explanation && !wordExplanations[item.word]
+    );
+    
+    if (wordsNeedingExplanation.length === 0) {
+      alert('所有生词都已经有解释了！');
+      return;
+    }
+    
+    setIsGeneratingBatchExplanation(true);
+    setBatchExplanationProgress({
+      current: 0,
+      total: wordsNeedingExplanation.length,
+      status: '准备生成AI解释...'
+    });
+    
+    try {
+      const headers = await getAuthHeaders();
+      
+      // 并发处理：为每个生词单独调用API
+      const explanationPromises = wordsNeedingExplanation.map(async (item, index) => {
+        try {
+          setBatchExplanationProgress(prev => ({
+            ...prev,
+            current: index,
+            status: `正在为 "${item.word}" 生成AI解释...`
+          }));
+          
+          const response = await fetch('/api/vocab/explain', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              entry_ids: [],
+              native_lang: language,
+              provider: 'deepseek',
+              model: 'deepseek-chat',
+              temperature: 0.7,
+              word_info: {
+                term: item.word,
+                lang: item.lang,
+                context: item.context
+              }
+            })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.explanations && data.explanations.length > 0) {
+              return {
+                word: item.word,
+                explanation: data.explanations[0]
+              };
+            }
+          }
+          
+          return null;
+        } catch (error) {
+          console.error(`为生词 "${item.word}" 生成AI解释时出错:`, error);
+          return null;
+        }
+      });
+      
+      // 等待所有解释生成完成
+      const results = await Promise.all(explanationPromises);
+      const successfulResults = results.filter(result => result !== null);
+      
+      if (successfulResults.length > 0) {
+        // 更新解释缓存
+        const newExplanations: Record<string, {
+          gloss_native: string;
+          pronunciation?: string;
+          pos?: string;
+          senses?: Array<{example_target: string, example_native: string}>;
+        }> = {};
+        
+        successfulResults.forEach(result => {
+          if (result) {
+            newExplanations[result.word] = result.explanation;
+          }
+        });
+        
+        setWordExplanations(prev => ({
+          ...prev,
+          ...newExplanations
+        }));
+        
+        setExplanationCache(prev => ({
+          ...prev,
+          ...newExplanations
+        }));
+        
+        // 更新selectedWords中的解释
+        setSelectedWords(prev => prev.map(item => {
+          const explanation = newExplanations[item.word];
+          return explanation ? { ...item, explanation } : item;
+        }));
+        
+        setBatchExplanationProgress(prev => ({
+          ...prev,
+          current: successfulResults.length,
+          status: `成功为 ${successfulResults.length}/${wordsNeedingExplanation.length} 个生词生成解释！`
+        }));
+        
+        // 保存到数据库
+        if (currentItem) {
+          try {
+            const updatedSelectedWords = selectedWords.map(item => {
+              const explanation = newExplanations[item.word];
+              return explanation ? { ...item, explanation } : item;
+            });
+            
+            const saveData = {
+              item_id: currentItem.id,
+              recordings: currentRecordings,
+              vocab_entry_ids: [],
+              picked_preview: [...previousWords, ...updatedSelectedWords]
+            };
+            
+            const saveResponse = await fetch('/api/shadowing/session', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(saveData)
+            });
+            
+            if (saveResponse.ok) {
+              // 批量AI解释已保存到数据库
+            }
+          } catch (error) {
+            console.error('保存批量AI解释时出错:', error);
+          }
+        }
+        
+        // 显示成功提示
+        if (successfulResults.length === wordsNeedingExplanation.length) {
+          setBatchExplanationProgress(prev => ({
+            ...prev,
+            status: `✅ 成功为所有 ${successfulResults.length} 个生词生成解释！`
+          }));
+        } else {
+          setBatchExplanationProgress(prev => ({
+            ...prev,
+            status: `⚠️ 成功为 ${successfulResults.length}/${wordsNeedingExplanation.length} 个生词生成解释`
+          }));
+        }
+        
+        setTimeout(() => {
+          setBatchExplanationProgress({
+            current: 0,
+            total: 0,
+            status: ''
+          });
+        }, 3000);
+      } else {
+        alert('没有成功生成任何AI解释，请重试');
+      }
+    } catch (error) {
+      console.error('批量生成AI解释失败:', error);
+      alert(`批量生成AI解释失败：${error instanceof Error ? error.message : '请重试'}`);
+    } finally {
+      setIsGeneratingBatchExplanation(false);
+    }
+  };
+
   // 生成AI解释
   const generateWordExplanation = async (word: string, context: string, wordLang: string) => {
     if (isGeneratingExplanation) return;
@@ -990,8 +1209,19 @@ export default function ShadowingPage() {
             [word]: explanation
           }));
           
+          // 更新解释缓存，让DynamicExplanation组件能立即显示
+          setExplanationCache(prev => ({
+            ...prev,
+            [word]: explanation
+          }));
+          
           // 将解释保存到生词数据中
           setSelectedWords(prev => prev.map(item => 
+            item.word === word ? { ...item, explanation } : item
+          ));
+          
+          // 同时更新之前的生词中的解释（如果存在）
+          setPreviousWords(prev => prev.map(item => 
             item.word === word ? { ...item, explanation } : item
           ));
           
@@ -1420,23 +1650,23 @@ export default function ShadowingPage() {
       
       // 5. 如果有评分结果，记录练习结果
       if (scoringResult && practiceStartTime) {
-        const metrics = {
-          accuracy: scoringResult.score || 0,
-          complete: true,
-          time_sec: practiceTime,
-          scoring_result: scoringResult
-        };
+    const metrics = {
+      accuracy: scoringResult.score || 0,
+      complete: true,
+      time_sec: practiceTime,
+      scoring_result: scoringResult
+    };
 
         const attemptResponse = await fetch('/api/shadowing/attempts', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            item_id: currentItem.id,
-            lang: currentItem.lang,
-            level: currentItem.level,
-            metrics
-          })
-        });
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          item_id: currentItem.id,
+          lang: currentItem.lang,
+          level: currentItem.level,
+          metrics
+        })
+      });
 
         if (!attemptResponse.ok) {
           console.warn('记录练习结果失败，但本地状态已更新');
@@ -2110,7 +2340,10 @@ export default function ShadowingPage() {
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <div className="font-medium text-gray-700">{item.word}</div>
+                                  <WordWithPronunciation 
+                                    word={item.word} 
+                                    explanation={item.explanation || wordExplanations[item.word]}
+                                  />
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -2123,6 +2356,16 @@ export default function ShadowingPage() {
                                 </div>
                                 <div className="text-sm text-gray-600 mt-1">{item.context}</div>
                               </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => generateWordExplanation(item.word, item.context, currentItem?.lang || 'en')}
+                                  disabled={isGeneratingExplanation}
+                                  className="text-xs"
+                                >
+                                  {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                                </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -2131,6 +2374,7 @@ export default function ShadowingPage() {
                               >
                                 删除
                               </Button>
+                              </div>
                             </div>
                             
                             {/* AI解释显示 */}
@@ -2157,6 +2401,15 @@ export default function ShadowingPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={generateBatchExplanations}
+                            disabled={isGeneratingBatchExplanation}
+                            className="text-green-600 hover:text-green-800 border-green-300"
+                          >
+                            {isGeneratingBatchExplanation ? '生成中...' : '一键AI解释'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => setSelectedWords([])}
                           >
                             清空
@@ -2171,13 +2424,41 @@ export default function ShadowingPage() {
                         </div>
                       </div>
                       
+                      {/* 批量AI解释进度显示 */}
+                      {isGeneratingBatchExplanation && batchExplanationProgress.total > 0 && (
+                        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="font-medium text-green-700">AI解释生成进度</span>
+                              <span className="text-green-600">
+                                {batchExplanationProgress.current} / {batchExplanationProgress.total}
+                              </span>
+                            </div>
+                            <div className="w-full bg-green-200 rounded-full h-2">
+                              <div 
+                                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                                style={{ 
+                                  width: `${(batchExplanationProgress.current / batchExplanationProgress.total) * 100}%` 
+                                }}
+                              ></div>
+                            </div>
+                            <div className="text-sm text-green-600">
+                              {batchExplanationProgress.status}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="space-y-3">
                         {selectedWords.map((item, index) => (
                           <div key={`selected-${item.word}-${index}`} className="p-3 bg-blue-50 rounded border border-blue-200">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <div className="font-medium text-blue-700">{item.word}</div>
+                                  <WordWithPronunciation 
+                                    word={item.word} 
+                                    explanation={item.explanation || wordExplanations[item.word]}
+                                  />
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -3054,7 +3335,10 @@ export default function ShadowingPage() {
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <div className="font-medium text-gray-700">{item.word}</div>
+                                <WordWithPronunciation 
+                                  word={item.word} 
+                                  explanation={item.explanation || wordExplanations[item.word]}
+                                />
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -3071,6 +3355,15 @@ export default function ShadowingPage() {
                               <div className="text-xs text-gray-500">
                                 已导入
                     </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => generateWordExplanation(item.word, item.context, currentItem?.lang || 'en')}
+                                disabled={isGeneratingExplanation}
+                                className="text-xs"
+                              >
+                                {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -3106,6 +3399,15 @@ export default function ShadowingPage() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={generateBatchExplanations}
+                disabled={isGeneratingBatchExplanation}
+                className="text-green-600 hover:text-green-800 border-green-300"
+              >
+                {isGeneratingBatchExplanation ? '生成中...' : '一键AI解释'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setSelectedWords([])}
               >
                           清空
@@ -3120,13 +3422,41 @@ export default function ShadowingPage() {
             </div>
           </div>
           
+                    {/* 批量AI解释进度显示 */}
+                    {isGeneratingBatchExplanation && batchExplanationProgress.total > 0 && (
+                      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium text-green-700">AI解释生成进度</span>
+                            <span className="text-green-600">
+                              {batchExplanationProgress.current} / {batchExplanationProgress.total}
+                            </span>
+                          </div>
+                          <div className="w-full bg-green-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                              style={{ 
+                                width: `${(batchExplanationProgress.current / batchExplanationProgress.total) * 100}%` 
+                              }}
+                            ></div>
+                          </div>
+                          <div className="text-sm text-green-600">
+                            {batchExplanationProgress.status}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+          
                     <div className="grid gap-3">
             {selectedWords.map((item, index) => (
                         <div key={`selected-${item.word}-${index}`} className="p-3 bg-blue-50 rounded border border-blue-200">
                           <div className="flex items-center justify-between mb-2">
                 <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <div className="font-medium text-blue-700">{item.word}</div>
+                                <WordWithPronunciation 
+                                  word={item.word} 
+                                  explanation={item.explanation || wordExplanations[item.word]}
+                                />
                                 <Button
                                   variant="ghost"
                                   size="sm"
