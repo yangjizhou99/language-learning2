@@ -553,7 +553,20 @@ export default function ShadowingPage() {
       return orderA - orderB;
     }
     
-    // 相同状态按标题排序
+    // 相同状态按数字顺序排序
+    const getNumberFromTitle = (title: string) => {
+      const match = title.match(/^(\d+)\./);
+      return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
+    };
+    
+    const numA = getNumberFromTitle(a.title);
+    const numB = getNumberFromTitle(b.title);
+    
+    if (numA !== numB) {
+      return numA - numB;
+    }
+    
+    // 如果数字相同，按标题排序
     return a.title.localeCompare(b.title);
   });
 

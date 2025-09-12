@@ -62,7 +62,7 @@ function promptShadow({ lang, level, topic, genre, register, sentRange, batchSiz
 }
 
 // 单个任务执行函数
-async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, params: any, supabase: any, auth: any) {
+async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, params: any, supabase: any, auth: any, globalIndex: number = 0) {
   const { lang, provider, model, temperature, batchSize } = params;
   
   let sys = "";
@@ -109,17 +109,35 @@ async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, par
   });
 
   if (kind === 'alignment') {
-    const rows = items.map((item: any) => ({
-      lang,
-      topic: task.topic,
-      steps: item.steps || item,
-      preferred_style: params.style || {},
-      ai_provider: provider,
-      ai_model: model,
-      ai_usage: u,
-      status: 'draft',
-      created_by: auth.user.id
-    }));
+    const rows = items.map((item: any, index: number) => {
+      const steps = item.steps || item;
+      
+      // 为每个步骤的标题添加序号
+      const numberedSteps = { ...steps };
+      if (numberedSteps.order && Array.isArray(numberedSteps.order)) {
+        numberedSteps.order.forEach((stepKey: string, stepIndex: number) => {
+          if (numberedSteps[stepKey] && numberedSteps[stepKey].title) {
+            const originalTitle = numberedSteps[stepKey].title;
+            numberedSteps[stepKey] = {
+              ...numberedSteps[stepKey],
+              title: `${globalIndex + 1}.${stepIndex + 1} ${originalTitle}`
+            };
+          }
+        });
+      }
+      
+      return {
+        lang,
+        topic: task.topic,
+        steps: numberedSteps,
+        preferred_style: params.style || {},
+        ai_provider: provider,
+        ai_model: model,
+        ai_usage: u,
+        status: 'draft',
+        created_by: auth.user.id
+      };
+    });
     
     if (rows.length) {
       const { error } = await supabase.from('alignment_packs').insert(rows);
@@ -128,19 +146,24 @@ async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, par
       savedCount = rows.length;
     }
   } else if (kind === 'cloze') {
-    const rows = items.map((item: any) => ({
-      lang,
-      level: task.level,
-      topic: task.topic,
-      title: String(item.title || 'Untitled').slice(0, 100),
-      passage: String(item.passage || item.text || ''),
-      blanks: item.blanks || [],
-      ai_provider: provider,
-      ai_model: model,
-      ai_usage: u,
-      status: 'draft',
-      created_by: auth.user.id
-    }));
+    const rows = items.map((item: any, index: number) => {
+      const originalTitle = String(item.title || 'Untitled').slice(0, 100);
+      const numberedTitle = `${globalIndex + 1}. ${originalTitle}`;
+      
+      return {
+        lang,
+        level: task.level,
+        topic: task.topic,
+        title: numberedTitle,
+        passage: String(item.passage || item.text || ''),
+        blanks: item.blanks || [],
+        ai_provider: provider,
+        ai_model: model,
+        ai_usage: u,
+        status: 'draft',
+        created_by: auth.user.id
+      };
+    });
     
     if (rows.length) {
       const { error } = await supabase.from('cloze_drafts').insert(rows);
@@ -149,8 +172,9 @@ async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, par
       savedCount = rows.length;
     }
   } else {
-    const rows = items.map((item: any) => {
-      const title = String(item.title || 'Untitled');
+    const rows = items.map((item: any, index: number) => {
+      const originalTitle = String(item.title || 'Untitled');
+      const numberedTitle = `${globalIndex + 1}. ${originalTitle}`;
       let passage = String(item.passage || item.text || '').trim();
       const notes = item.notes || {};
       
@@ -185,7 +209,7 @@ async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, par
       // 调试信息：检查字段内容
       console.log(`Item for topic "${task.topic}":`, {
         item: item,
-        title: title,
+        title: numberedTitle,
         passage: passage,
         passageLength: passage.length,
         availableFields: Object.keys(item)
@@ -212,7 +236,7 @@ async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, par
         topic: task.topic,
         genre: params.genre || 'monologue',
         register: params.register || 'neutral',
-        title,
+        title: numberedTitle,
         text: passage,
         notes,
         ai_provider: provider,
@@ -288,7 +312,7 @@ export async function POST(req: NextRequest) {
           try {
             controller.enqueue(encoder.encode(sse({ type: "progress", idx: i, topic: task.topic, level: task.level })));
             
-            const res: any = await withRetry(() => runOne(kind, task, { ...params, lang, provider, model, temperature, batchSize }, supabase, auth), retries);
+            const res: any = await withRetry(() => runOne(kind, task, { ...params, lang, provider, model, temperature, batchSize }, supabase, auth, i), retries);
             
             aggUsage.prompt_tokens += res.usage?.prompt_tokens || 0;
             aggUsage.completion_tokens += res.usage?.completion_tokens || 0;
