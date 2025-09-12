@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const {
-    item_id, // 使用正确的列名
+    item_id, // 前端传入的字段名
     status = 'draft', // 使用正确的默认值
     recordings = [],
     vocab_entry_ids = [], // 使用正确的列名
@@ -115,13 +115,16 @@ export async function POST(req: NextRequest) {
   if (!item_id) {
     return NextResponse.json({ error: 'item_id is required' }, { status: 400 });
   }
+  
+  // 数据库中实际使用的字段名是item_id
+  const item_id_db = item_id;
 
     // Check if session already exists
     const { data: existingSession, error: checkError } = await supabase
       .from('shadowing_sessions')
       .select('*')
       .eq('user_id', user.id)
-      .eq('item_id', item_id)
+      .eq('item_id', item_id_db)
       .single();
 
     let session, error;
@@ -132,7 +135,7 @@ export async function POST(req: NextRequest) {
         .from('shadowing_sessions')
         .insert({
           user_id: user.id,
-          item_id,
+          item_id: item_id_db,
           status,
           recordings,
           vocab_entry_ids,
@@ -160,7 +163,7 @@ export async function POST(req: NextRequest) {
           notes
         })
         .eq('user_id', user.id)
-        .eq('item_id', item_id)
+        .eq('item_id', item_id_db)
         .select()
         .single();
       

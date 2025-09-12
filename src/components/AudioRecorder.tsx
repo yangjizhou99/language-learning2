@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useImperativeHandle } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Play, Square, Mic, Upload, Trash2 } from 'lucide-react';
@@ -27,7 +27,7 @@ interface AudioRecorderProps {
   className?: string;
 }
 
-export default function AudioRecorder({
+const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(({
   sessionId,
   existingRecordings = [],
   onRecordingAdded,
@@ -37,7 +37,7 @@ export default function AudioRecorder({
   originalText,
   language = 'ja',
   className = ''
-}: AudioRecorderProps) {
+}, ref) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState<string | null>(null);
   const [recordings, setRecordings] = useState<AudioRecording[]>(existingRecordings);
@@ -76,7 +76,6 @@ export default function AudioRecorder({
         };
         const recognitionLang = langMap[language] || 'en-US';
         recognitionRef.current.lang = recognitionLang;
-        console.log('设置语音识别语言:', recognitionLang, 'for language:', language);
         
         recognitionRef.current.onstart = () => {
           setIsRealTimeTranscribing(true);
@@ -110,7 +109,6 @@ export default function AudioRecorder({
           
           // 显示当前实时转录（包含临时结果）
           const currentDisplay = (finalTranscript + interimTranscript).trim();
-          console.log('实时转录显示:', currentDisplay);
         };
         
         recognitionRef.current.onerror = (event: any) => {
@@ -296,12 +294,6 @@ export default function AudioRecorder({
       // 计算准确的录音时长
       const recordingDuration = Date.now() - recordingStartTimeRef.current;
       
-      console.log('准备上传录音:', {
-        size: audioBlob.size,
-        type: audioBlob.type,
-        duration: recordingDuration,
-        sessionId
-      });
 
       const formData = new FormData();
       formData.append('audio', audioBlob, `recording-${Date.now()}.webm`);
@@ -310,7 +302,6 @@ export default function AudioRecorder({
         formData.append('sessionId', sessionId);
       }
 
-      console.log('发送上传请求...');
       
       // 获取认证头
       const { createClient } = await import('@supabase/supabase-js');
@@ -323,9 +314,6 @@ export default function AudioRecorder({
       const headers: HeadersInit = {};
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
-        console.log('添加认证头:', headers['Authorization'].substring(0, 20) + '...');
-      } else {
-        console.log('没有找到认证token');
       }
       
       const response = await fetch('/api/upload/audio', {
@@ -334,7 +322,6 @@ export default function AudioRecorder({
         body: formData,
       });
 
-      console.log('上传响应状态:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -370,6 +357,12 @@ export default function AudioRecorder({
       setUploadingRecording(false);
     }
   }, [currentRecordingUrl, sessionId, onRecordingAdded, realTimeTranscription, currentTranscription]);
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    uploadCurrentRecording,
+    hasUnsavedRecording: () => currentRecordingUrl && audioChunksRef.current.length > 0
+  }), [uploadCurrentRecording, currentRecordingUrl]);
 
   const deleteRecording = useCallback((recording: AudioRecording) => {
     setRecordings(prev => prev.filter(r => r.url !== recording.url));
@@ -607,4 +600,6 @@ export default function AudioRecorder({
       )}
     </Card>
   );
-}
+});
+
+export default AudioRecorder;

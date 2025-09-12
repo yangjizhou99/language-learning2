@@ -18,6 +18,11 @@ const ExplainVocabSchema = z.object({
     lang: z.string(),
     context: z.string().optional()
   }).optional(),
+  word_info_batch: z.array(z.object({
+    term: z.string(),
+    lang: z.string(),
+    context: z.string().optional()
+  })).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -66,11 +71,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { entry_ids, native_lang, provider, model, temperature, word_info } = ExplainVocabSchema.parse(body);
+    const { entry_ids, native_lang, provider, model, temperature, word_info, word_info_batch } = ExplainVocabSchema.parse(body);
 
     let entries: any[] = [];
 
-    if (word_info) {
+    if (word_info_batch && word_info_batch.length > 0) {
+      // 批量处理单词信息
+      entries = word_info_batch.map((info, index) => ({
+        id: 'temp-' + Date.now() + '-' + index,
+        term: info.term,
+        lang: info.lang,
+        context: info.context || '',
+        user_id: user.id
+      }));
+    } else if (word_info) {
       // 直接使用传递的单词信息
       entries = [{
         id: 'temp-' + Date.now(),
@@ -92,7 +106,7 @@ export async function POST(request: NextRequest) {
       }
       entries = dbEntries;
     } else {
-      return NextResponse.json({ error: '请提供生词ID或单词信息' }, { status: 400 });
+      return NextResponse.json({ error: '请提供生词ID、单词信息或批量单词信息' }, { status: 400 });
     }
 
     // 构建AI提示词
@@ -194,7 +208,7 @@ ${entries.map((entry: any) => `
     }
 
     // 更新数据库（只对数据库中的条目进行更新）
-    if (!word_info) {
+    if (!word_info && !word_info_batch) {
       const updatePromises = entries.map((entry: any, index: number) => {
         const explanation = explanations[index] || null;
         return supabase

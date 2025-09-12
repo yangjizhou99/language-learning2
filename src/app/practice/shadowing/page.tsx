@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LANG_LABEL } from "@/types/lang";
 import { useMobile } from "@/contexts/MobileContext";
+import { speakText as speakTextUtil } from '@/lib/speechUtils';
 // import { getAuthHeaders } from "@/lib/supabase";
 import { 
   Shuffle, 
@@ -128,18 +129,37 @@ export default function ShadowingPage() {
   const [currentRecordings, setCurrentRecordings] = useState<AudioRecording[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   
+  // 录音组件引用
+  const audioRecorderRef = useRef<{ 
+    uploadCurrentRecording: () => Promise<void>;
+    hasUnsavedRecording: () => boolean;
+  } | null>(null);
+  
   // AI解释相关状态
   const [wordExplanations, setWordExplanations] = useState<Record<string, {
     gloss_native: string;
+    pronunciation?: string;
+    pos?: string;
     senses?: Array<{
       example_target: string;
       example_native: string;
     }>;
   }>>({});
   const [isGeneratingExplanation, setIsGeneratingExplanation] = useState(false);
+  const [isGeneratingBatchExplanation, setIsGeneratingBatchExplanation] = useState(false);
+  const [batchExplanationProgress, setBatchExplanationProgress] = useState({
+    current: 0,
+    total: 0,
+    status: ''
+  });
   
   // 解释缓存
-  const [explanationCache, setExplanationCache] = useState<Record<string, {gloss_native: string, senses?: Array<{example_target: string, example_native: string}>}>>({});
+  const [explanationCache, setExplanationCache] = useState<Record<string, {
+    gloss_native: string;
+    pronunciation?: string;
+    pos?: string;
+    senses?: Array<{example_target: string, example_native: string}>;
+  }>>({});
   
   // 翻译相关状态
   const [showTranslation, setShowTranslation] = useState(false);
@@ -176,31 +196,11 @@ export default function ShadowingPage() {
   
   // 发音功能
   const speakWord = (word: string, lang: string) => {
-    if ('speechSynthesis' in window) {
-      // 停止当前播放
-      window.speechSynthesis.cancel();
-      
-      const utterance = new SpeechSynthesisUtterance(word);
-      
-      // 根据语言设置语音
-      if (lang === 'en') {
-        utterance.lang = 'en-US';
-      } else if (lang === 'ja') {
-        utterance.lang = 'ja-JP';
-      } else if (lang === 'zh') {
-        utterance.lang = 'zh-CN';
-      }
-      
-      // 设置语音参数
-      utterance.rate = 0.8; // 稍慢一点，便于学习
-      utterance.pitch = 1;
-      utterance.volume = 1;
-      
-      // 播放
-      window.speechSynthesis.speak(utterance);
-    } else {
-      console.warn('浏览器不支持语音合成功能');
-    }
+    speakTextUtil(word, lang, {
+      rate: 0.8, // 稍慢一点，便于学习
+      pitch: 1,
+      volume: 1
+    });
   };
   
   
@@ -258,10 +258,39 @@ export default function ShadowingPage() {
       </span>
     );
   };
+  // 带发音的生词显示组件
+  const WordWithPronunciation = ({ word, explanation }: { word: string, explanation?: {
+    gloss_native: string;
+    pronunciation?: string;
+    pos?: string;
+    senses?: Array<{example_target: string, example_native: string}>;
+  } }) => {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="font-medium text-gray-700">{word}</span>
+        {explanation?.pronunciation && (
+          <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs text-gray-600">
+            {explanation.pronunciation}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   // 动态解释组件
-  const DynamicExplanation = ({ word, fallbackExplanation }: { word: string, fallbackExplanation?: {gloss_native: string, senses?: Array<{example_target: string, example_native: string}>} }) => {
+  const DynamicExplanation = ({ word, fallbackExplanation }: { word: string, fallbackExplanation?: {
+    gloss_native: string;
+    pronunciation?: string;
+    pos?: string;
+    senses?: Array<{example_target: string, example_native: string}>;
+  } }) => {
     // 优先使用缓存中的最新解释，其次使用fallback解释
-    const [latestExplanation, setLatestExplanation] = useState<{gloss_native: string, senses?: Array<{example_target: string, example_native: string}>} | undefined>(explanationCache[word] || fallbackExplanation);
+    const [latestExplanation, setLatestExplanation] = useState<{
+      gloss_native: string;
+      pronunciation?: string;
+      pos?: string;
+      senses?: Array<{example_target: string, example_native: string}>;
+    } | undefined>(explanationCache[word] || fallbackExplanation);
     const [loading, setLoading] = useState(false);
     const [hasInitialized, setHasInitialized] = useState(false);
     
@@ -365,6 +394,14 @@ export default function ShadowingPage() {
             🔄
           </button>
         </div>
+        
+        {/* 显示词性信息 */}
+        {latestExplanation.pos && (
+          <div className="mb-2 text-sm text-gray-600">
+            <strong>词性：</strong>{latestExplanation.pos}
+          </div>
+        )}
+        
         {latestExplanation.senses && latestExplanation.senses.length > 0 && (
           <div className="text-sm text-gray-600">
             <strong>例句：</strong>
@@ -911,75 +948,6 @@ export default function ShadowingPage() {
     }
   };
 
-  // 完成并保存
-  const completeAndSave = async () => {
-    if (!currentItem) return;
-    
-    setSaving(true);
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/shadowing/session', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          item_id: currentItem.id,
-          status: 'completed',
-          recordings: currentRecordings,
-          picked_preview: [...previousWords, ...selectedWords],
-          notes: ''
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentSession(data.session);
-        
-        // 更新题库列表中的状态
-        const practiceTime = practiceStartTime ? 
-          Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000) : 0;
-        
-        setItems(prev => prev.map(item => 
-          item.id === currentItem.id 
-            ? { 
-                ...item, 
-                isPracticed: true,
-                stats: {
-                  ...item.stats,
-                  recordingCount: currentRecordings.length,
-                  vocabCount: selectedWords.length,
-                  practiceTime,
-                  lastPracticed: new Date().toISOString()
-                }
-              }
-            : item
-        ));
-        
-         // 更新当前items状态
-         setItems(prev => prev.map(item => 
-           item.id === currentItem.id 
-             ? { 
-                 ...item, 
-                 isPracticed: true,
-                 stats: {
-                   ...item.stats,
-                   recordingCount: currentRecordings.length,
-                   vocabCount: selectedWords.length,
-                   practiceTime,
-                   lastPracticed: new Date().toISOString()
-                 }
-               }
-             : item
-         ));
-        
-        alert('练习完成并保存！');
-      }
-    } catch (error) {
-      console.error('Failed to complete practice:', error);
-      alert('保存失败');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // 检查生词是否已有AI解释
   const checkExistingExplanation = async (word: string) => {
@@ -1029,6 +997,175 @@ export default function ShadowingPage() {
 
 
 
+  // 批量生成AI解释
+  const generateBatchExplanations = async () => {
+    if (isGeneratingBatchExplanation || selectedWords.length === 0) return;
+    
+    // 过滤出还没有解释的生词
+    const wordsNeedingExplanation = selectedWords.filter(item => 
+      !item.explanation && !wordExplanations[item.word]
+    );
+    
+    if (wordsNeedingExplanation.length === 0) {
+      alert('所有生词都已经有解释了！');
+      return;
+    }
+    
+    setIsGeneratingBatchExplanation(true);
+    setBatchExplanationProgress({
+      current: 0,
+      total: wordsNeedingExplanation.length,
+      status: '准备生成AI解释...'
+    });
+    
+    try {
+      const headers = await getAuthHeaders();
+      
+      // 并发处理：为每个生词单独调用API
+      const explanationPromises = wordsNeedingExplanation.map(async (item, index) => {
+        try {
+          setBatchExplanationProgress(prev => ({
+            ...prev,
+            current: index,
+            status: `正在为 "${item.word}" 生成AI解释...`
+          }));
+          
+          const response = await fetch('/api/vocab/explain', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              entry_ids: [],
+              native_lang: language,
+              provider: 'deepseek',
+              model: 'deepseek-chat',
+              temperature: 0.7,
+              word_info: {
+                term: item.word,
+                lang: item.lang,
+                context: item.context
+              }
+            })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.explanations && data.explanations.length > 0) {
+              return {
+                word: item.word,
+                explanation: data.explanations[0]
+              };
+            }
+          }
+          
+          return null;
+        } catch (error) {
+          console.error(`为生词 "${item.word}" 生成AI解释时出错:`, error);
+          return null;
+        }
+      });
+      
+      // 等待所有解释生成完成
+      const results = await Promise.all(explanationPromises);
+      const successfulResults = results.filter(result => result !== null);
+      
+      if (successfulResults.length > 0) {
+        // 更新解释缓存
+        const newExplanations: Record<string, {
+          gloss_native: string;
+          pronunciation?: string;
+          pos?: string;
+          senses?: Array<{example_target: string, example_native: string}>;
+        }> = {};
+        
+        successfulResults.forEach(result => {
+          if (result) {
+            newExplanations[result.word] = result.explanation;
+          }
+        });
+        
+        setWordExplanations(prev => ({
+          ...prev,
+          ...newExplanations
+        }));
+        
+        setExplanationCache(prev => ({
+          ...prev,
+          ...newExplanations
+        }));
+        
+        // 更新selectedWords中的解释
+        setSelectedWords(prev => prev.map(item => {
+          const explanation = newExplanations[item.word];
+          return explanation ? { ...item, explanation } : item;
+        }));
+        
+        setBatchExplanationProgress(prev => ({
+          ...prev,
+          current: successfulResults.length,
+          status: `成功为 ${successfulResults.length}/${wordsNeedingExplanation.length} 个生词生成解释！`
+        }));
+        
+        // 保存到数据库
+        if (currentItem) {
+          try {
+            const updatedSelectedWords = selectedWords.map(item => {
+              const explanation = newExplanations[item.word];
+              return explanation ? { ...item, explanation } : item;
+            });
+            
+            const saveData = {
+              item_id: currentItem.id,
+              recordings: currentRecordings,
+              vocab_entry_ids: [],
+              picked_preview: [...previousWords, ...updatedSelectedWords]
+            };
+            
+            const saveResponse = await fetch('/api/shadowing/session', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(saveData)
+            });
+            
+            if (saveResponse.ok) {
+              // 批量AI解释已保存到数据库
+            }
+          } catch (error) {
+            console.error('保存批量AI解释时出错:', error);
+          }
+        }
+        
+        // 显示成功提示
+        if (successfulResults.length === wordsNeedingExplanation.length) {
+          setBatchExplanationProgress(prev => ({
+            ...prev,
+            status: `✅ 成功为所有 ${successfulResults.length} 个生词生成解释！`
+          }));
+        } else {
+          setBatchExplanationProgress(prev => ({
+            ...prev,
+            status: `⚠️ 成功为 ${successfulResults.length}/${wordsNeedingExplanation.length} 个生词生成解释`
+          }));
+        }
+        
+        setTimeout(() => {
+          setBatchExplanationProgress({
+            current: 0,
+            total: 0,
+            status: ''
+          });
+        }, 3000);
+      } else {
+        alert('没有成功生成任何AI解释，请重试');
+      }
+    } catch (error) {
+      console.error('批量生成AI解释失败:', error);
+      alert(`批量生成AI解释失败：${error instanceof Error ? error.message : '请重试'}`);
+    } finally {
+      setIsGeneratingBatchExplanation(false);
+    }
+  };
+
   // 生成AI解释
   const generateWordExplanation = async (word: string, context: string, wordLang: string) => {
     if (isGeneratingExplanation) return;
@@ -1072,8 +1209,19 @@ export default function ShadowingPage() {
             [word]: explanation
           }));
           
+          // 更新解释缓存，让DynamicExplanation组件能立即显示
+          setExplanationCache(prev => ({
+            ...prev,
+            [word]: explanation
+          }));
+          
           // 将解释保存到生词数据中
           setSelectedWords(prev => prev.map(item => 
+            item.word === word ? { ...item, explanation } : item
+          ));
+          
+          // 同时更新之前的生词中的解释（如果存在）
+          setPreviousWords(prev => prev.map(item => 
             item.word === word ? { ...item, explanation } : item
           ));
           
@@ -1364,12 +1512,144 @@ export default function ShadowingPage() {
 
 
 
-  // 记录练习结果到数据库
-  const recordPracticeResult = async () => {
-    if (!currentItem || !practiceStartTime || !scoringResult) return;
+
+  // 统一的完成并保存函数 - 整合session保存和练习结果记录
+  const unifiedCompleteAndSave = async () => {
+    if (!currentItem) return;
     
-    const practiceTime = Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000);
+    setSaving(true);
     
+    // 立即更新本地状态，确保UI即时响应
+    const practiceTime = practiceStartTime ? 
+      Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000) : 0;
+    
+    // 1. 立即更新题库列表状态
+    setItems(prev => prev.map(item => 
+      item.id === currentItem.id 
+        ? { 
+            ...item, 
+            isPracticed: true,
+            stats: {
+              ...item.stats,
+              recordingCount: currentRecordings.length,
+              vocabCount: selectedWords.length,
+              practiceTime,
+              lastPracticed: new Date().toISOString()
+            }
+          }
+        : item
+    ));
+    
+    // 2. 立即设置练习完成状态
+    setPracticeComplete(true);
+    
+    try {
+      const headers = await getAuthHeaders();
+      
+      // 3. 自动检查和保存生词
+      let savedVocabCount = 0;
+      if (selectedWords.length > 0) {
+        try {
+          const entries = selectedWords.map(item => ({
+            term: item.word,
+            lang: item.lang,
+            native_lang: language, // 使用界面语言作为母语
+            source: 'shadowing',
+            source_id: currentItem.id,
+            context: item.context,
+            tags: [],
+            explanation: item.explanation || null
+          }));
+
+          const vocabResponse = await fetch('/api/vocab/bulk_create', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ entries }),
+          });
+
+          if (vocabResponse.ok) {
+            savedVocabCount = entries.length;
+            // 将本次选中的生词移动到之前的生词中
+            setPreviousWords(prev => [...prev, ...selectedWords]);
+            setSelectedWords([]);
+            console.log(`自动保存了 ${savedVocabCount} 个生词`);
+          } else {
+            console.warn('自动保存生词失败');
+          }
+        } catch (vocabError) {
+          console.warn('自动保存生词时出错:', vocabError);
+        }
+      }
+      
+      // 4. 异步保存练习session（包含所有数据）
+      const allWords = [...previousWords, ...selectedWords];
+      
+      
+      // 检查并处理录音保存
+      let finalRecordings = [...currentRecordings];
+      
+      if (audioRecorderRef.current && typeof audioRecorderRef.current.uploadCurrentRecording === 'function') {
+        // 检查是否有未保存的录音
+        const hasUnsavedRecording = audioRecorderRef.current.hasUnsavedRecording?.() || false;
+        
+        if (hasUnsavedRecording) {
+          try {
+            // 自动上传未保存的录音
+            await audioRecorderRef.current.uploadCurrentRecording();
+            
+            // 等待录音状态更新
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 重新获取最新的录音数据
+            if (currentItem) {
+              try {
+                const headers = await getAuthHeaders();
+                const sessionResponse = await fetch(`/api/shadowing/session?item_id=${currentItem.id}`, {
+                  headers
+                });
+                if (sessionResponse.ok) {
+                  const sessionData = await sessionResponse.json();
+                  if (sessionData.session?.recordings) {
+                    // 更新本地状态和使用最新的录音数据
+                    setCurrentRecordings(sessionData.session.recordings);
+                    finalRecordings = sessionData.session.recordings;
+                  }
+                }
+              } catch (error) {
+                console.warn('刷新录音状态失败:', error);
+              }
+            }
+          } catch (error) {
+            console.warn('录音保存失败:', error);
+          }
+        }
+      }
+      
+      const sessionResponse = await fetch('/api/shadowing/session', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          item_id: currentItem.id,
+          status: 'completed',
+          recordings: finalRecordings,
+          picked_preview: allWords,
+          notes: ''
+        })
+      });
+      
+      if (sessionResponse.ok) {
+        const sessionData = await sessionResponse.json();
+        setCurrentSession(sessionData.session);
+      } else {
+        const errorText = await sessionResponse.text();
+        console.error('保存练习session失败:', {
+          status: sessionResponse.status,
+          error: errorText
+        });
+      }
+      
+      // 5. 如果有评分结果，记录练习结果
+      if (scoringResult && practiceStartTime) {
     const metrics = {
       accuracy: scoringResult.score || 0,
       complete: true,
@@ -1377,9 +1657,7 @@ export default function ShadowingPage() {
       scoring_result: scoringResult
     };
 
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/shadowing/attempts', {
+        const attemptResponse = await fetch('/api/shadowing/attempts', {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -1390,18 +1668,56 @@ export default function ShadowingPage() {
         })
       });
 
-      if (response.ok) {
-        setPracticeComplete(true);
-        alert(`练习完成！准确率: ${(scoringResult.score || 0).toFixed(1)}%`);
-        // 刷新题库列表以更新练习状态
-        fetchItems();
-      } else {
-        const errorData = await response.json();
-        alert(`记录练习结果失败: ${errorData.error}`);
+        if (!attemptResponse.ok) {
+          console.warn('记录练习结果失败，但本地状态已更新');
+        }
       }
+      
+      // 6. 显示完成消息（包含保存的详细信息）
+      let message = '练习完成并保存！';
+      const details = [];
+      
+      if (currentRecordings.length > 0) {
+        details.push(`${currentRecordings.length} 个录音`);
+      }
+      if (savedVocabCount > 0) {
+        details.push(`${savedVocabCount} 个生词`);
+      }
+      if (scoringResult) {
+        details.push(`准确率: ${(scoringResult.score || 0).toFixed(1)}%`);
+      }
+      
+      if (details.length > 0) {
+        message += ` (已保存: ${details.join(', ')})`;
+      }
+      
+      alert(message);
+      
+      // 7. 清除相关缓存并刷新题库列表以确保数据同步
+      // 等待一小段时间确保数据库写入完成，然后清除缓存并刷新
+      setTimeout(async () => {
+        try {
+          // 清除shadowing:catalog相关的缓存
+          await fetch('/api/cache/invalidate', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              pattern: 'shadowing:catalog*'
+            })
+          });
+        } catch (cacheError) {
+          console.warn('Failed to clear cache:', cacheError);
+        }
+        // 刷新题库列表
+        fetchItems();
+      }, 500);
+      
     } catch (error) {
-      console.error('Failed to record practice result:', error);
-      alert('记录练习结果失败');
+      console.error('Failed to save practice data:', error);
+      // 即使保存失败，本地状态已经更新，用户体验不受影响
+      alert('练习已完成，但部分数据同步可能延迟');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -1810,7 +2126,7 @@ export default function ShadowingPage() {
                         
                         <Button
                           size="sm"
-                          onClick={completeAndSave}
+                          onClick={unifiedCompleteAndSave}
                           disabled={saving}
                           className="flex-1 min-w-0"
                         >
@@ -2024,7 +2340,10 @@ export default function ShadowingPage() {
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <div className="font-medium text-gray-700">{item.word}</div>
+                                  <WordWithPronunciation 
+                                    word={item.word} 
+                                    explanation={item.explanation || wordExplanations[item.word]}
+                                  />
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -2037,6 +2356,16 @@ export default function ShadowingPage() {
                                 </div>
                                 <div className="text-sm text-gray-600 mt-1">{item.context}</div>
                               </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => generateWordExplanation(item.word, item.context, currentItem?.lang || 'en')}
+                                  disabled={isGeneratingExplanation}
+                                  className="text-xs"
+                                >
+                                  {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                                </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -2045,6 +2374,7 @@ export default function ShadowingPage() {
                               >
                                 删除
                               </Button>
+                              </div>
                             </div>
                             
                             {/* AI解释显示 */}
@@ -2071,6 +2401,15 @@ export default function ShadowingPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={generateBatchExplanations}
+                            disabled={isGeneratingBatchExplanation}
+                            className="text-green-600 hover:text-green-800 border-green-300"
+                          >
+                            {isGeneratingBatchExplanation ? '生成中...' : '一键AI解释'}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => setSelectedWords([])}
                           >
                             清空
@@ -2085,13 +2424,41 @@ export default function ShadowingPage() {
                         </div>
                       </div>
                       
+                      {/* 批量AI解释进度显示 */}
+                      {isGeneratingBatchExplanation && batchExplanationProgress.total > 0 && (
+                        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="font-medium text-green-700">AI解释生成进度</span>
+                              <span className="text-green-600">
+                                {batchExplanationProgress.current} / {batchExplanationProgress.total}
+                              </span>
+                            </div>
+                            <div className="w-full bg-green-200 rounded-full h-2">
+                              <div 
+                                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                                style={{ 
+                                  width: `${(batchExplanationProgress.current / batchExplanationProgress.total) * 100}%` 
+                                }}
+                              ></div>
+                            </div>
+                            <div className="text-sm text-green-600">
+                              {batchExplanationProgress.status}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="space-y-3">
                         {selectedWords.map((item, index) => (
                           <div key={`selected-${item.word}-${index}`} className="p-3 bg-blue-50 rounded border border-blue-200">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <div className="font-medium text-blue-700">{item.word}</div>
+                                  <WordWithPronunciation 
+                                    word={item.word} 
+                                    explanation={item.explanation || wordExplanations[item.word]}
+                                  />
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -2140,9 +2507,58 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
+                  {/* 翻译模块 - 移动端 */}
+                  {currentItem && (
+                    <Card className="p-4">
+                      <div className="flex flex-col gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-semibold text-gray-600">🌐 翻译</span>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                            <input 
+                              type="checkbox" 
+                              checked={showTranslation} 
+                              onChange={e => setShowTranslation(e.target.checked)}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            显示翻译
+                          </label>
+                          {showTranslation && (
+                            <select 
+                              className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              value={translationLang} 
+                              onChange={e => setTranslationLang(e.target.value as 'en'|'ja'|'zh')}
+                            >
+                              {getTargetLanguages(currentItem.lang).map(lang => (
+                                <option key={lang} value={lang}>
+                                  {getLangName(lang)}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
+                        <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
+                          {currentItem.translations[translationLang]}
+                        </div>
+                      ) : showTranslation ? (
+                        <div className="text-center py-4">
+                          <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
+                            <span>📝</span>
+                            （暂无翻译，可能尚未生成）
+                          </div>
+                        </div>
+                      ) : null}
+                    </Card>
+                  )}
+
                   {/* 录音练习区域 */}
                   <Card className="p-4">
                     <AudioRecorder
+                      ref={audioRecorderRef}
                       sessionId={currentSession?.id}
                       existingRecordings={currentRecordings}
                       onRecordingAdded={handleRecordingAdded}
@@ -2375,11 +2791,11 @@ export default function ShadowingPage() {
                       
                       {!practiceComplete && (
                         <Button
-                          onClick={recordPracticeResult}
+                          onClick={unifiedCompleteAndSave}
                           className="bg-green-600 hover:bg-green-700 w-full mt-4"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          完成练习并保存
+                          完成并保存
                         </Button>
                       )}
                     </Card>
@@ -2697,7 +3113,7 @@ export default function ShadowingPage() {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={completeAndSave}
+                        onClick={unifiedCompleteAndSave}
                         disabled={saving}
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
@@ -2967,7 +3383,10 @@ export default function ShadowingPage() {
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <div className="font-medium text-gray-700">{item.word}</div>
+                                <WordWithPronunciation 
+                                  word={item.word} 
+                                  explanation={item.explanation || wordExplanations[item.word]}
+                                />
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -2984,6 +3403,15 @@ export default function ShadowingPage() {
                               <div className="text-xs text-gray-500">
                                 已导入
                     </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => generateWordExplanation(item.word, item.context, currentItem?.lang || 'en')}
+                                disabled={isGeneratingExplanation}
+                                className="text-xs"
+                              >
+                                {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -3019,6 +3447,15 @@ export default function ShadowingPage() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={generateBatchExplanations}
+                disabled={isGeneratingBatchExplanation}
+                className="text-green-600 hover:text-green-800 border-green-300"
+              >
+                {isGeneratingBatchExplanation ? '生成中...' : '一键AI解释'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setSelectedWords([])}
               >
                           清空
@@ -3033,13 +3470,41 @@ export default function ShadowingPage() {
             </div>
           </div>
           
+                    {/* 批量AI解释进度显示 */}
+                    {isGeneratingBatchExplanation && batchExplanationProgress.total > 0 && (
+                      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium text-green-700">AI解释生成进度</span>
+                            <span className="text-green-600">
+                              {batchExplanationProgress.current} / {batchExplanationProgress.total}
+                            </span>
+                          </div>
+                          <div className="w-full bg-green-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                              style={{ 
+                                width: `${(batchExplanationProgress.current / batchExplanationProgress.total) * 100}%` 
+                              }}
+                            ></div>
+                          </div>
+                          <div className="text-sm text-green-600">
+                            {batchExplanationProgress.status}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+          
                     <div className="grid gap-3">
             {selectedWords.map((item, index) => (
                         <div key={`selected-${item.word}-${index}`} className="p-3 bg-blue-50 rounded border border-blue-200">
                           <div className="flex items-center justify-between mb-2">
                 <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <div className="font-medium text-blue-700">{item.word}</div>
+                                <WordWithPronunciation 
+                                  word={item.word} 
+                                  explanation={item.explanation || wordExplanations[item.word]}
+                                />
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -3088,7 +3553,6 @@ export default function ShadowingPage() {
                 </Card>
               )}
 
-
                 {/* 录音练习区域 */}
                 <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-green-50 to-emerald-50">
                   <div className="mb-4">
@@ -3098,6 +3562,7 @@ export default function ShadowingPage() {
                     </h3>
                   </div>
                   <AudioRecorder
+                    ref={audioRecorderRef}
                     sessionId={currentSession?.id}
                     existingRecordings={currentRecordings}
                     onRecordingAdded={handleRecordingAdded}
@@ -3357,11 +3822,11 @@ export default function ShadowingPage() {
           
                     {!practiceComplete && (
               <Button
-                        onClick={recordPracticeResult}
+                        onClick={unifiedCompleteAndSave}
                         className="bg-green-600 hover:bg-green-700"
               >
                         <CheckCircle className="w-4 h-4 mr-2" />
-                        完成练习并保存
+                        完成并保存
               </Button>
                     )}
                   </Card>

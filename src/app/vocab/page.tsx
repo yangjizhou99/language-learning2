@@ -20,7 +20,15 @@ interface VocabEntry {
   context?: string;
   tags: string[];
   status: string;
-  explanation?: any;
+  explanation?: {
+    gloss_native: string;
+    pronunciation?: string;
+    pos?: string;
+    senses?: Array<{
+      example_target: string;
+      example_native: string;
+    }>;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -501,12 +509,6 @@ export default function VocabPage() {
 
   // TTS语音播放功能
   const speakText = (text: string, lang: string, entryId: string) => {
-    // 检查浏览器是否支持Web Speech API
-    if (!('speechSynthesis' in window)) {
-      alert('您的浏览器不支持语音功能');
-      return;
-    }
-
     // 如果正在播放，先停止
     if (speakingId) {
       window.speechSynthesis.cancel();
@@ -514,10 +516,19 @@ export default function VocabPage() {
       return;
     }
 
+    // 检查浏览器是否支持Web Speech API
+    if (!('speechSynthesis' in window)) {
+      alert('您的浏览器不支持语音功能');
+      return;
+    }
+
+    // 停止当前播放
+    window.speechSynthesis.cancel();
+
     // 创建语音合成实例
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // 根据语言设置语音
+    // 根据语言设置语音代码
     const langCode = {
       'en': 'en-US',
       'ja': 'ja-JP',
@@ -526,8 +537,49 @@ export default function VocabPage() {
     
     utterance.lang = langCode;
     utterance.rate = speechRate; // 使用可调节的语速
-    utterance.pitch = 1; // 音调
-    utterance.volume = 1; // 音量
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    // 选择最合适的语音引擎
+    const selectBestVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      
+      if (lang === 'ja') {
+        // 对于日语，按优先级选择语音引擎
+        const japaneseVoices = voices.filter(voice => 
+          voice.lang.startsWith('ja') || 
+          voice.name.toLowerCase().includes('japanese') ||
+          voice.name.toLowerCase().includes('japan')
+        );
+        
+        if (japaneseVoices.length > 0) {
+          // 优先选择本地日语语音引擎，避免使用错误的引擎
+          utterance.voice = japaneseVoices[0];
+          return;
+        }
+      }
+      
+      // 如果没有找到特定语言的语音，尝试匹配语言代码
+      const matchingVoices = voices.filter(voice => 
+        voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0])
+      );
+      
+      if (matchingVoices.length > 0) {
+        utterance.voice = matchingVoices[0];
+      }
+    };
+
+    // 尝试选择最佳语音引擎
+    selectBestVoice();
+
+    // 如果语音列表还没有加载完成，等待加载
+    if (window.speechSynthesis.getVoices().length === 0) {
+      const handleVoicesChanged = () => {
+        selectBestVoice();
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+      };
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+    }
 
     // 设置事件监听器
     utterance.onstart = () => {
@@ -855,7 +907,14 @@ export default function VocabPage() {
                     
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-blue-600">{entry.term}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-blue-600">{entry.term}</h3>
+                          {entry.explanation?.pronunciation && (
+                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs text-gray-600">
+                              {entry.explanation.pronunciation}
+                            </span>
+                          )}
+                        </div>
                         <TTSButton
                           text={entry.term}
                           lang={entry.lang}
@@ -881,6 +940,14 @@ export default function VocabPage() {
                       {entry.explanation && (
                         <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
                           <div className="text-gray-600">{entry.explanation.gloss_native}</div>
+                          
+                          {/* 显示词性信息 */}
+                          {entry.explanation.pos && (
+                            <div className="mt-1 text-xs text-gray-500">
+                              <strong>词性：</strong>{entry.explanation.pos}
+                            </div>
+                          )}
+                          
                           {Array.isArray(entry.explanation.senses) && entry.explanation.senses.length > 0 && (
                             <div className="text-xs text-gray-500 mt-1">
                               例：{entry.explanation.senses[0].example_target} — {entry.explanation.senses[0].example_native}
