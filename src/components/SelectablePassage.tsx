@@ -20,7 +20,7 @@ interface SelectedWord {
 
 export default function SelectablePassage({ 
   text, 
-  lang, 
+  lang, // eslint-disable-line @typescript-eslint/no-unused-vars
   onWordSelect, 
   disabled = false,
   className = '' 
@@ -29,7 +29,6 @@ export default function SelectablePassage({
   const [isMobile, setIsMobile] = useState(false);
   const [showWordMenu, setShowWordMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
   const [isProcessingSelection, setIsProcessingSelection] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
 
@@ -44,7 +43,7 @@ export default function SelectablePassage({
   }, []);
 
 
-  // 监测到拖动事件后2秒触发
+  // 处理选择触发逻辑
   useEffect(() => {
     let triggerTimeout: NodeJS.Timeout | null = null;
     let isDragging = false; // 是否正在拖动
@@ -58,17 +57,18 @@ export default function SelectablePassage({
       }
     };
 
-    // 开始2秒倒计时
+    // 开始倒计时
     const startTimer = () => {
       // 清除之前的定时器
       if (triggerTimeout) {
         clearTimeout(triggerTimeout);
       }
       
-      // 2.5秒后触发
+      // 手机端：2秒后触发，电脑端：立即触发
+      const delay = isMobile ? 2000 : 50;
       triggerTimeout = setTimeout(() => {
         checkAndTrigger();
-      }, 2500);
+      }, delay);
     };
 
     // 取消定时器
@@ -79,21 +79,21 @@ export default function SelectablePassage({
       }
     };
 
-    // 触摸开始事件
+    // 触摸开始事件（手机端）
     const handleTouchStart = () => {
       isDragging = false;
       cancelTimer(); // 取消之前的定时器
     };
 
-    // 触摸移动事件
+    // 触摸移动事件（手机端）
     const handleTouchMove = () => {
       if (!isDragging) {
         isDragging = true;
-        startTimer(); // 开始拖动，启动2秒倒计时
+        startTimer(); // 开始拖动，启动倒计时
       }
     };
 
-    // 触摸结束事件
+    // 触摸结束事件（手机端）
     const handleTouchEnd = () => {
       isDragging = false;
       // 不取消定时器，让倒计时继续
@@ -109,7 +109,7 @@ export default function SelectablePassage({
     const handleMouseMove = () => {
       if (!isDragging) {
         isDragging = true;
-        startTimer(); // 开始拖动，启动2秒倒计时
+        startTimer(); // 开始拖动，启动倒计时
       }
     };
 
@@ -220,7 +220,6 @@ export default function SelectablePassage({
         });
         setShowWordMenu(true);
       }
-      setIsDragging(false);
       setIsProcessingSelection(false);
     };
 
@@ -269,7 +268,7 @@ export default function SelectablePassage({
   };
 
   // 处理点击外部区域取消选择
-  const handleClickOutside = (event: React.MouseEvent) => {
+  const handleClickOutside = () => {
     if (showWordMenu) {
       cancelSelection();
     }
@@ -297,7 +296,7 @@ export default function SelectablePassage({
       {!disabled && (
         <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
           💡 <strong>选词提示：</strong>
-          {isMobile ? '长按并拖动选择单词或短语，松开手指后确认选择' : '拖拽选择单词或短语'}（不超过50个字符）
+          {isMobile ? '长按并拖动选择单词或短语，松开手指后2秒弹窗' : '拖拽选择单词或短语，松开鼠标立即弹窗'}（不超过50个字符）
         </div>
       )}
       <div
