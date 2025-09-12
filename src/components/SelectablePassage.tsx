@@ -44,69 +44,126 @@ export default function SelectablePassage({
   }, []);
 
 
-  // 监听鼠标和触摸事件来检测拖拽和处理选择
+  // 监测到拖动事件后2秒触发
   useEffect(() => {
-    let isMouseDown = false;
-    let hasMoved = false;
-    let isTouchActive = false;
+    let triggerTimeout: NodeJS.Timeout | null = null;
+    let isDragging = false; // 是否正在拖动
 
-    // 鼠标事件处理（电脑端）
-    const handleMouseDown = () => {
-      isMouseDown = true;
-      hasMoved = false;
-      setIsDragging(false);
-    };
-
-    const handleMouseMove = () => {
-      if (isMouseDown) {
-        hasMoved = true;
-        setIsDragging(true);
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (isMouseDown && hasMoved) {
+    // 检查选择的函数
+    const checkAndTrigger = () => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim() !== '') {
+        // 有选中文字，触发弹窗并清除选中
         processSelection();
-      } else {
-        setIsDragging(false);
-      }
-      isMouseDown = false;
-      hasMoved = false;
-    };
-
-    // 触摸事件处理（手机端）
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        isTouchActive = true;
-        hasMoved = false;
-        setIsDragging(false);
       }
     };
 
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isTouchActive && e.touches.length === 1) {
-        hasMoved = true;
-        setIsDragging(true);
-        e.preventDefault(); // 阻止默认滚动行为，允许文本选择
+    // 开始2秒倒计时
+    const startTimer = () => {
+      // 清除之前的定时器
+      if (triggerTimeout) {
+        clearTimeout(triggerTimeout);
+      }
+      
+      // 2.5秒后触发
+      triggerTimeout = setTimeout(() => {
+        checkAndTrigger();
+      }, 2500);
+    };
+
+    // 取消定时器
+    const cancelTimer = () => {
+      if (triggerTimeout) {
+        clearTimeout(triggerTimeout);
+        triggerTimeout = null;
       }
     };
 
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (isTouchActive) {
-        // 用户松开手指后200ms触发选择检测
-        setTimeout(() => {
-          processSelection();
-        }, 200);
-      }
-      isTouchActive = false;
-      hasMoved = false;
-      setIsDragging(false);
+    // 触摸开始事件
+    const handleTouchStart = () => {
+      isDragging = false;
+      cancelTimer(); // 取消之前的定时器
     };
 
-    // 选择变化事件（电脑端使用，手机端等待touchend）
-    const handleSelectionChange = () => {
-      // 电脑端：立即处理选择
-      // 手机端：不处理，等待touchend事件
+    // 触摸移动事件
+    const handleTouchMove = () => {
+      if (!isDragging) {
+        isDragging = true;
+        startTimer(); // 开始拖动，启动2秒倒计时
+      }
+    };
+
+    // 触摸结束事件
+    const handleTouchEnd = () => {
+      isDragging = false;
+      // 不取消定时器，让倒计时继续
+    };
+
+    // 鼠标按下事件（电脑端）
+    const handleMouseDown = () => {
+      isDragging = false;
+      cancelTimer(); // 取消之前的定时器
+    };
+
+    // 鼠标移动事件（电脑端）
+    const handleMouseMove = () => {
+      if (!isDragging) {
+        isDragging = true;
+        startTimer(); // 开始拖动，启动2秒倒计时
+      }
+    };
+
+    // 鼠标松开事件（电脑端）
+    const handleMouseUp = () => {
+      isDragging = false;
+      // 不取消定时器，让倒计时继续
+    };
+
+    // 禁用系统自带的文本选择菜单
+    const handleContextMenu = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const textElement = textRef.current;
+      
+      // 只在文本区域内阻止右键菜单
+      if (textElement && textElement.contains(target)) {
+        e.preventDefault(); // 阻止右键菜单
+      }
+    };
+
+    // 禁用系统自带的文本选择菜单，但保留文本选择功能
+    const handleSelectStart = () => {
+      // 不阻止默认行为，让文本可以被选中
+      // 我们会在选择完成后禁用系统菜单
+    };
+
+    // 不再使用selectionchange事件，因为它会在选择过程中过早触发
+
+    // 获取选中文本的上下文 - 返回包含选中文本的完整句子
+    const getContext = (startIndex: number, endIndex: number): string => {
+      // 找到选中文本在原文中的位置
+      const selectedText = text.substring(startIndex, endIndex);
+      
+      // 按句子分割（支持中英文标点符号）
+      const sentences = text.split(/[.!?。！？；;]/);
+      
+      // 找到包含选中文本的句子
+      for (const sentence of sentences) {
+        if (sentence.includes(selectedText)) {
+          // 清理句子，移除多余的空白字符
+          return sentence.trim();
+        }
+      }
+      
+      // 如果没找到完整句子，则按逗号分割
+      const clauses = text.split(/[,，]/);
+      for (const clause of clauses) {
+        if (clause.includes(selectedText)) {
+          return clause.trim();
+        }
+      }
+      
+      // 如果还是没找到，返回选中文本本身
+      return selectedText;
     };
 
     // 处理选择的通用函数
@@ -152,6 +209,9 @@ export default function SelectablePassage({
           y: rect.top
         });
         
+        // 立即清除系统选择，防止系统菜单出现
+        selection.removeAllRanges();
+        
         setSelectedWord({
           word: selectedText,
           context,
@@ -165,61 +225,40 @@ export default function SelectablePassage({
     };
 
     // 添加事件监听器
+    // 触摸事件（手机端）
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    
+    // 鼠标事件（电脑端）
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     
-    // 添加触摸事件监听器
-    document.addEventListener('touchstart', handleTouchStart, { passive: false });
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
-    
-    // 添加选择变化监听器
-    document.addEventListener('selectionchange', handleSelectionChange);
+    // 禁用系统自带的文本选择菜单
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('selectstart', handleSelectStart);
 
     return () => {
-      document.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      // 清理定时器
+      cancelTimer();
       
       document.removeEventListener('touchstart', handleTouchStart);
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
       
-      document.removeEventListener('selectionchange', handleSelectionChange);
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('selectstart', handleSelectStart);
     };
-  }, [isMobile]);
+  }, [isMobile, isProcessingSelection, text]);
 
 
 
 
-  // 获取选中文本的上下文 - 返回包含选中文本的完整句子
-  const getContext = (startIndex: number, endIndex: number): string => {
-    // 找到选中文本在原文中的位置
-    const selectedText = text.substring(startIndex, endIndex);
-    
-    // 按句子分割（支持中英文标点符号）
-    const sentences = text.split(/[.!?。！？；;]/);
-    
-    // 找到包含选中文本的句子
-    for (const sentence of sentences) {
-      if (sentence.includes(selectedText)) {
-        // 清理句子，移除多余的空白字符
-        return sentence.trim();
-      }
-    }
-    
-    // 如果没找到完整句子，则按逗号分割
-    const clauses = text.split(/[,，]/);
-    for (const clause of clauses) {
-      if (clause.includes(selectedText)) {
-        return clause.trim();
-      }
-    }
-    
-    // 如果还是没找到，返回选中文本本身
-    return selectedText;
-  };
 
 
 
@@ -267,7 +306,13 @@ export default function SelectablePassage({
           disabled ? 'text-gray-400' : 'text-gray-800'
         }`}
         onClick={(e) => e.stopPropagation()} // 阻止事件冒泡，避免点击文本时取消选择
-        style={{ userSelect: disabled ? 'none' : 'text' }}
+        style={{ 
+          userSelect: disabled ? 'none' : 'text',
+          WebkitUserSelect: disabled ? 'none' : 'text',
+          MozUserSelect: disabled ? 'none' : 'text',
+          msUserSelect: disabled ? 'none' : 'text'
+        }}
+        onContextMenu={(e) => e.preventDefault()} // 阻止右键菜单
       >
         {renderText()}
       </div>
