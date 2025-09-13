@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     console.log('Auth header:', authHeader);
     console.log('Has bearer:', hasBearer);
     
-    let supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
+    let supabase: any;
     
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
