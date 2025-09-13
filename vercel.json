@@ -9,15 +9,8 @@
     }
   },
   "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-    "OPENAI_API_KEY": "@openai_api_key",
-    "DEEPSEEK_API_KEY": "@deepseek_api_key",
-    "OPENROUTER_API_KEY": "@openrouter_api_key",
-    "GOOGLE_TTS_CREDENTIALS": "@google_tts_credentials",
-    "XUNFEI_APP_ID": "@xunfei_app_id",
-    "XUNFEI_API_KEY": "@xunfei_api_key",
-    "XUNFEI_API_SECRET": "@xunfei_api_secret"
+    "NEXT_PUBLIC_SUPABASE_URL": "https://yyfyieqfuwwyqrlewswu.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5ZnlpZXFmdXd3eXFybGV3c3d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNDU5NTcsImV4cCI6MjA3MDkyMTk1N30.cBVBvo0T0sALfoOspu84go_4u16wzMou6VvivE6ZjR0",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5ZnlpZXFmdXd3eXFybGV3c3d1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTM0NTk1NywiZXhwIjoyMDcwOTIxOTU3fQ.jtXNEPvnl-faSOmDJsu27E7MkCQQ8GZvadhwHxAR8cY"
   }
 }
