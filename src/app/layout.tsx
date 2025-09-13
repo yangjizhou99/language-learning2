@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const revalidate = 0;      // 关闭 ISR
+export const dynamic = 'force-dynamic'; // 强制动态渲染
+
 export const metadata: Metadata = {
   title: "Lang Trainer - 语言学习平台",
   description: "专业的语言学习平台，支持多种练习模式",

@@ -363,7 +363,7 @@ export default function ShadowingReviewList(){
         
         // 批次间延迟
         if (i + batchSize < ids.length) {
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise<void>(resolve => setTimeout(() => resolve(), 200));
         }
       }
       
@@ -1809,7 +1809,7 @@ export default function ShadowingReviewList(){
                           if (confirm('确定要撤回此草稿吗？撤回后将从练习题库中移除。')) {
                             revertOne(it.id).then(() => {
                               toast.success('撤回成功');
-                              load();
+                              loadDrafts();
                             }).catch(() => {
                               toast.error('撤回失败');
                             });

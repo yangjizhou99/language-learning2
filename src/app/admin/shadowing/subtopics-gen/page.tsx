@@ -196,7 +196,7 @@ export default function SubtopicsGenPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const qs = new URLSearchParams({ lang, level, genre });
+      const qs = new URLSearchParams({ lang, level: level.toString(), genre });
       const r = await fetch(`/api/admin/shadowing/themes?${qs.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
@@ -835,7 +835,7 @@ export default function SubtopicsGenPage() {
             <CardContent className="space-y-4">
               <div>
                 <Label>Provider</Label>
-                <Select value={provider} onValueChange={setProvider}>
+                <Select value={provider} onValueChange={(value) => setProvider(value as "openrouter" | "deepseek" | "openai")}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

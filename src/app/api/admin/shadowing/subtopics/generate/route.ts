@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
       status: 'active'
     }));
 
-    let insertedData = [];
+    let insertedData: any[] = [];
     if (subtopicsToProcess.length > 0) {
       const { data, error } = await supabase
         .from('shadowing_subtopics')

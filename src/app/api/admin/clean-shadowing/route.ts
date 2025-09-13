@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
-import { getServiceSupabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export async function DELETE(req: NextRequest) {
   try {
     // 检查管理员权限
     await requireAdmin(req);
     
-    const supabase = getServiceSupabase();
+    // 使用导入的supabase客户端
     
     console.log('🧹 开始清理 Shadowing 数据...');
     
