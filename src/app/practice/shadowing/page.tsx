@@ -125,6 +125,11 @@ export default function ShadowingPage() {
     }>;
   }}>>([]);
   const [isVocabMode, setIsVocabMode] = useState(false);
+  const [selectedText, setSelectedText] = useState<{word: string, context: string} | null>(null);
+  const [clearSelection, setClearSelection] = useState(false);
+  const [isAddingToVocab, setIsAddingToVocab] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [practiceStartTime, setPracticeStartTime] = useState<Date | null>(null);
   const [currentRecordings, setCurrentRecordings] = useState<AudioRecording[]>([]);
   const [isImporting, setIsImporting] = useState(false);
@@ -665,6 +670,51 @@ export default function ShadowingPage() {
       console.error('Failed to load session:', error);
       setCurrentSession(null);
     }
+  };
+
+  // 处理文本选择（当用户选择文本时）
+  const handleTextSelection = (word: string, context: string) => {
+    setSelectedText({ word, context });
+  };
+
+  // 确认添加选中的文本到生词本
+  const confirmAddToVocab = async () => {
+    if (selectedText && !isAddingToVocab) {
+      setIsAddingToVocab(true);
+      try {
+        await handleWordSelect(selectedText.word, selectedText.context);
+        
+        // 显示成功提示
+        const message = `"${selectedText.word}" 已成功添加到生词本！`;
+        setSuccessMessage(message);
+        setShowSuccessToast(true);
+        
+        // 3秒后自动隐藏toast
+        setTimeout(() => {
+          setShowSuccessToast(false);
+        }, 3000);
+        
+        setSelectedText(null);
+        // 清除文本选择
+        setClearSelection(true);
+        // 重置清除选择状态
+        setTimeout(() => setClearSelection(false), 100);
+      } catch (error) {
+        console.error('添加生词失败:', error);
+        alert('添加生词失败，请重试');
+      } finally {
+        setIsAddingToVocab(false);
+      }
+    }
+  };
+
+  // 取消选择
+  const cancelSelection = () => {
+    setSelectedText(null);
+    // 清除文本选择
+    setClearSelection(true);
+    // 重置清除选择状态
+    setTimeout(() => setClearSelection(false), 100);
   };
 
   // 处理生词选择
@@ -2160,9 +2210,46 @@ export default function ShadowingPage() {
                         {isVocabMode ? '退出生词模式' : '生词选择模式'}
                       </Button>
                       {isVocabMode && (
-                        <p className="text-sm text-blue-600 mt-2">
-                          点击文本中的单词来选择生词
-                        </p>
+                        <div className="mt-2 space-y-2">
+                          <p className="text-sm text-blue-600">
+                            点击文本中的单词来选择生词
+                          </p>
+                          {selectedText && (
+                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                              <div className="text-sm">
+                                <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
+                                <div className="text-blue-600 font-semibold mb-1">{selectedText.word}</div>
+                                <div className="text-xs text-gray-600 mb-2">{selectedText.context}</div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={confirmAddToVocab}
+                                    disabled={isAddingToVocab}
+                                    className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {isAddingToVocab ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                                        添加中...
+                                      </>
+                                    ) : (
+                                      '确认添加到生词本'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={cancelSelection}
+                                    disabled={isAddingToVocab}
+                                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    取消
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -2172,7 +2259,8 @@ export default function ShadowingPage() {
                         <SelectablePassage
                           text={currentItem.text}
                           lang={currentItem.lang}
-                          onWordSelect={handleWordSelect}
+                          onSelectionChange={handleTextSelection}
+                          clearSelection={clearSelection}
                           disabled={false}
                           className="text-base leading-relaxed"
                         />
@@ -3153,9 +3241,46 @@ export default function ShadowingPage() {
                       {isVocabMode ? '退出生词模式' : '生词选择模式'}
             </Button>
                     {isVocabMode && (
-                      <p className="text-sm text-blue-600 mt-2">
-                        点击文本中的单词来选择生词
-                      </p>
+                      <div className="mt-2 space-y-2">
+                        <p className="text-sm text-blue-600">
+                          点击文本中的单词来选择生词
+                        </p>
+                        {selectedText && (
+                          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="text-sm">
+                              <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
+                              <div className="text-blue-600 font-semibold mb-1">{selectedText.word}</div>
+                              <div className="text-xs text-gray-600 mb-2">{selectedText.context}</div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={confirmAddToVocab}
+                                  disabled={isAddingToVocab}
+                                  className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {isAddingToVocab ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                                      添加中...
+                                    </>
+                                  ) : (
+                                    '确认添加到生词本'
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={cancelSelection}
+                                  disabled={isAddingToVocab}
+                                  className="disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  取消
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
           </div>
 
@@ -3165,7 +3290,8 @@ export default function ShadowingPage() {
               <SelectablePassage
                         text={currentItem.text}
                         lang={currentItem.lang}
-                onWordSelect={handleWordSelect}
+                onSelectionChange={handleTextSelection}
+                clearSelection={clearSelection}
                 disabled={false}
                         className="text-lg leading-relaxed"
               />
@@ -3877,6 +4003,20 @@ export default function ShadowingPage() {
           </div>
         )}
       </Container>
+      
+      {/* 成功提示Toast */}
+      {showSuccessToast && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-right duration-300">
+          <CheckCircle className="h-5 w-5" />
+          <span className="font-medium">{successMessage}</span>
+          <button
+            onClick={() => setShowSuccessToast(false)}
+            className="ml-2 text-white hover:text-gray-200"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </main>
   );
 }

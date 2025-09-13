@@ -5,30 +5,23 @@ import { useState, useRef, useEffect } from 'react';
 interface SelectablePassageProps {
   text: string;
   lang: 'en' | 'ja' | 'zh';
-  onWordSelect: (word: string, context: string) => void;
+  onSelectionChange?: (selectedText: string, context: string) => void;
   disabled?: boolean;
   className?: string;
+  clearSelection?: boolean; // 用于外部控制清除选择
 }
 
-interface SelectedWord {
-  word: string;
-  context: string;
-  startIndex: number;
-  endIndex: number;
-}
 
 
 export default function SelectablePassage({ 
   text, 
   lang, // eslint-disable-line @typescript-eslint/no-unused-vars
-  onWordSelect, 
+  onSelectionChange,
   disabled = false,
-  className = '' 
+  className = '',
+  clearSelection = false
 }: SelectablePassageProps) {
-  const [selectedWord, setSelectedWord] = useState<SelectedWord | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [showWordMenu, setShowWordMenu] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [isProcessingSelection, setIsProcessingSelection] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
 
@@ -42,11 +35,22 @@ export default function SelectablePassage({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // 监听clearSelection变化，清除选择
+  useEffect(() => {
+    if (clearSelection) {
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+      }
+    }
+  }, [clearSelection]);
+
 
   // 处理选择触发逻辑
   useEffect(() => {
     let triggerTimeout: NodeJS.Timeout | null = null;
     let isDragging = false; // 是否正在拖动
+    let selectionStartTime = 0; // 选择开始时间
 
     // 检查选择的函数
     const checkAndTrigger = () => {
@@ -73,10 +77,21 @@ export default function SelectablePassage({
         clearTimeout(triggerTimeout);
       }
       
-      // 手机端：2秒后触发，电脑端：立即触发
-      const delay = isMobile ? 2000 : 50;
+      // 记录选择开始时间
+      selectionStartTime = Date.now();
+      
+      // 使用较短的延迟，但添加额外的稳定性检查
+      const delay = 400; // 统一使用400ms延迟
       triggerTimeout = setTimeout(() => {
-        checkAndTrigger();
+        // 再次检查选择是否仍然存在且稳定
+        const selection = window.getSelection();
+        if (selection && selection.toString().trim() !== '') {
+          // 检查选择是否还在进行中（通过检查选择时间是否足够长）
+          const selectionDuration = Date.now() - selectionStartTime;
+          if (selectionDuration >= 200) { // 减少最小选择时间到200ms
+            checkAndTrigger();
+          }
+        }
       }, delay);
     };
 
@@ -107,7 +122,7 @@ export default function SelectablePassage({
       if (!isEventInComponent(event)) return;
       if (!isDragging) {
         isDragging = true;
-        startTimer(); // 开始拖动，启动倒计时
+        // 不立即启动定时器，等触摸结束
       }
     };
 
@@ -115,7 +130,11 @@ export default function SelectablePassage({
     const handleTouchEnd = (event: TouchEvent) => {
       if (!isEventInComponent(event)) return;
       isDragging = false;
-      // 不取消定时器，让倒计时继续
+      
+      // 延迟一点时间让选择稳定，然后启动定时器
+      setTimeout(() => {
+        startTimer();
+      }, 100);
     };
 
     // 鼠标按下事件（电脑端）
@@ -130,7 +149,7 @@ export default function SelectablePassage({
       if (!isEventInComponent(event)) return;
       if (!isDragging) {
         isDragging = true;
-        startTimer(); // 开始拖动，启动倒计时
+        // 不立即启动定时器，等鼠标松开
       }
     };
 
@@ -138,7 +157,8 @@ export default function SelectablePassage({
     const handleMouseUp = (event: MouseEvent) => {
       if (!isEventInComponent(event)) return;
       isDragging = false;
-      // 不取消定时器，让倒计时继续
+      // 鼠标松开后启动定时器
+      startTimer();
     };
 
     // 禁用系统自带的文本选择菜单
@@ -158,7 +178,29 @@ export default function SelectablePassage({
       // 我们会在选择完成后禁用系统菜单
     };
 
-    // 不再使用selectionchange事件，因为它会在选择过程中过早触发
+    // 添加selectionchange事件作为备用检测机制（特别是手机端）
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim() !== '') {
+        const range = selection.getRangeAt(0);
+        const textElement = textRef.current;
+        
+        if (textElement && textElement.contains(range.commonAncestorContainer)) {
+          // 选中的文本在当前组件内
+          if (isMobile) {
+            // 手机端使用selectionchange事件，立即启动定时器
+            cancelTimer();
+            startTimer();
+          }
+        } else {
+          // 选中的文本不在当前组件内，清除选择
+          if (isMobile) {
+            selection.removeAllRanges();
+          }
+        }
+      }
+    };
+
 
     // 获取选中文本的上下文 - 返回包含选中文本的完整句子
     const getContext = (startIndex: number, endIndex: number): string => {
@@ -224,23 +266,13 @@ export default function SelectablePassage({
         
         const context = getContext(startIndex, endIndex);
         
-        // 设置菜单位置
-        const rect = range.getBoundingClientRect();
-        setMenuPosition({
-          x: rect.left + rect.width / 2,
-          y: rect.top
-        });
+        // 不立即清除选择，保持高亮状态
+        // selection.removeAllRanges();
         
-        // 立即清除系统选择，防止系统菜单出现
-        selection.removeAllRanges();
-        
-        setSelectedWord({
-          word: selectedText,
-          context,
-          startIndex,
-          endIndex
-        });
-        setShowWordMenu(true);
+        // 调用回调函数通知父组件有新的选择
+        if (onSelectionChange) {
+          onSelectionChange(selectedText, context);
+        }
       }
       setIsProcessingSelection(false);
     };
@@ -255,6 +287,9 @@ export default function SelectablePassage({
     document.addEventListener('mousedown', handleMouseDown);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+    
+    // 选择变化事件（手机端备用检测）
+    document.addEventListener('selectionchange', handleSelectionChange);
     
     // 禁用系统自带的文本选择菜单
     document.addEventListener('contextmenu', handleContextMenu);
@@ -272,10 +307,12 @@ export default function SelectablePassage({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       
+      document.removeEventListener('selectionchange', handleSelectionChange);
+      
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('selectstart', handleSelectStart);
     };
-  }, [isMobile, isProcessingSelection, text]);
+  }, [isMobile, isProcessingSelection, text, onSelectionChange]);
 
 
 
@@ -283,18 +320,6 @@ export default function SelectablePassage({
 
 
 
-  // 取消选择
-  const cancelSelection = () => {
-    setSelectedWord(null);
-    setShowWordMenu(false);
-  };
-
-  // 处理点击外部区域取消选择
-  const handleClickOutside = () => {
-    if (showWordMenu) {
-      cancelSelection();
-    }
-  };
 
 
 
@@ -311,14 +336,11 @@ export default function SelectablePassage({
   };
 
   return (
-    <div 
-      className={`relative ${className}`}
-      onClick={handleClickOutside}
-    >
+    <div className={`relative ${className}`}>
       {!disabled && (
         <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
           💡 <strong>选词提示：</strong>
-          {isMobile ? '长按并拖动选择单词或短语，松开手指后2秒弹窗' : '拖拽选择单词或短语，松开鼠标立即弹窗'}（不超过50个字符）
+          {isMobile ? '长按并拖动选择单词或短语，松开手指后稍等' : '拖拽选择单词或短语，松开鼠标后稍等'}（不超过50个字符），选择完成后会显示确认按钮
         </div>
       )}
       <div
@@ -326,7 +348,6 @@ export default function SelectablePassage({
         className={`text-lg leading-relaxed ${
           disabled ? 'text-gray-400' : 'text-gray-800'
         }`}
-        onClick={(e) => e.stopPropagation()} // 阻止事件冒泡，避免点击文本时取消选择
         style={{ 
           userSelect: disabled ? 'none' : 'text',
           WebkitUserSelect: disabled ? 'none' : 'text',
@@ -337,47 +358,6 @@ export default function SelectablePassage({
       >
         {renderText()}
       </div>
-
-      {/* 选中单词弹窗 */}
-      {showWordMenu && selectedWord && (
-        <div 
-          className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg p-3 min-w-48"
-          style={{
-            left: `${menuPosition.x}px`,
-            top: `${menuPosition.y - 60}px`
-          }}
-        >
-          <div className="text-sm">
-            <div className="font-medium text-gray-800 mb-1">选中的单词：</div>
-            <div className="text-blue-600 font-semibold mb-2 text-center border-b pb-1">
-              {selectedWord.word}
-            </div>
-            <div className="text-xs text-gray-600 mb-2">{selectedWord.context}</div>
-            
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  onWordSelect(selectedWord.word, selectedWord.context);
-                  setShowWordMenu(false);
-                  setSelectedWord(null);
-                }}
-                className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors flex-1"
-              >
-                添加到生词本
-              </button>
-              <button
-                onClick={() => {
-                  setShowWordMenu(false);
-                  setSelectedWord(null);
-                }}
-                className="px-3 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400 transition-colors flex-1"
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
