@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Archive, Trash2, Download, Upload, Eye, Sparkles, Brain } from 'lucide-react';
+import { Plus, Edit, Archive, Trash2, Download, Upload, Eye, Sparkles, Brain, Pause, Play, X } from 'lucide-react';
 
 type Lang = 'en'|'ja'|'zh';
 type Genre = 'dialogue'|'monologue'|'news'|'lecture';
@@ -123,7 +123,6 @@ export default function ThemesPage() {
   const [fileInput, setFileInput] = useState<HTMLInputElement | null>(null);
 
   // AI 生成相关状态
-  const [aiGenerating, setAiGenerating] = useState(false);
   const [aiGenerationType, setAiGenerationType] = useState<'themes' | 'subtopics' | null>(null);
   const [aiGenerationCount, setAiGenerationCount] = useState(5);
   const [aiProvider, setAiProvider] = useState<'openrouter' | 'deepseek' | 'openai'>('openrouter');
@@ -131,6 +130,27 @@ export default function ThemesPage() {
   const [aiModel, setAiModel] = useState('');
   const [aiTemperature, setAiTemperature] = useState(0.7);
   const [selectedThemeForSubtopic, setSelectedThemeForSubtopic] = useState<any>(null);
+
+  // 任务队列相关状态
+  const [taskQueue, setTaskQueue] = useState<Array<{
+    id: string;
+    type: 'themes' | 'subtopics';
+    status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+    progress: number;
+    title: string;
+    params: any;
+    result?: any;
+    error?: string;
+    createdAt: Date;
+    startedAt?: Date;
+    pausedAt?: Date;
+    completedAt?: Date;
+    abortController?: AbortController;
+  }>>([]);
+  const [maxConcurrent, setMaxConcurrent] = useState(3);
+  const [runningTasks, setRunningTasks] = useState(0);
+  const [queuePaused, setQueuePaused] = useState(false);
+  const [autoStart, setAutoStart] = useState(false);
 
   // 获取认证头信息
   const getAuthHeaders = async (): Promise<Record<string, string>> => {
@@ -417,91 +437,327 @@ export default function ThemesPage() {
     reader.readAsText(file);
   }
 
-  // AI 生成大主题
-  async function generateThemes() {
-    if (!aiModel) {
-      alert('请选择 AI 模型');
-      return;
-    }
+  // 添加任务到队列
+  function addTaskToQueue(type: 'themes' | 'subtopics', params: any) {
+    const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const task = {
+      id: taskId,
+      type,
+      status: 'pending' as const,
+      progress: 0,
+      title: type === 'themes' 
+        ? `生成 ${params.count} 个大主题 (${LANG_OPTIONS.find(l => l.value === params.lang)?.label} L${params.level} ${GENRE_OPTIONS.find(g => g.value === params.genre)?.label})`
+        : `为主题"${params.theme_title_cn}"生成 ${params.count} 个小主题`,
+      params,
+      createdAt: new Date()
+    };
+    
+    setTaskQueue(prev => [...prev, task]);
+    return taskId;
+  }
 
-    setAiGenerating(true);
+  // 执行任务
+  async function executeTask(taskId: string) {
+    const task = taskQueue.find(t => t.id === taskId);
+    if (!task) return;
+
+    // 创建 AbortController
+    const abortController = new AbortController();
+
+    // 更新任务状态为运行中
+    setTaskQueue(prev => prev.map(t => 
+      t.id === taskId 
+        ? { 
+            ...t, 
+            status: 'running', 
+            startedAt: new Date(), 
+            progress: 10,
+            abortController
+          }
+        : t
+    ));
+    setRunningTasks(prev => prev + 1);
+
     try {
-      const response = await fetch('/api/admin/shadowing/themes/generate', {
+      const endpoint = task.type === 'themes' 
+        ? '/api/admin/shadowing/themes/generate'
+        : '/api/admin/shadowing/subtopics/generate';
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           ...(await getAuthHeaders())
         },
-        body: JSON.stringify({
-          lang,
-          level,
-          genre,
-          count: aiGenerationCount,
-          provider: aiProvider,
-          model: aiModel,
-          temperature: aiTemperature
-        })
+        body: JSON.stringify(task.params),
+        signal: abortController.signal
       });
 
       const result = await response.json();
+      
       if (!response.ok) {
         throw new Error(result.error || '生成失败');
       }
+
+      // 更新任务状态为完成
+      setTaskQueue(prev => prev.map(t => 
+        t.id === taskId 
+          ? { 
+              ...t, 
+              status: 'completed', 
+              progress: 100, 
+              result,
+              completedAt: new Date(),
+              abortController: undefined
+            }
+          : t
+      ));
 
       // 重新加载数据
       await load();
-      
-      alert(result.message);
-      
-      setAiGenerationType(null);
+
     } catch (error) {
-      alert('生成失败：' + error);
+      // 检查是否是被取消的任务
+      if (error instanceof Error && error.name === 'AbortError') {
+        setTaskQueue(prev => prev.map(t => 
+          t.id === taskId 
+            ? { 
+                ...t, 
+                status: 'cancelled', 
+                completedAt: new Date(),
+                abortController: undefined
+              }
+            : t
+        ));
+      } else {
+        // 更新任务状态为失败
+        setTaskQueue(prev => prev.map(t => 
+          t.id === taskId 
+            ? { 
+                ...t, 
+                status: 'failed', 
+                error: error instanceof Error ? error.message : String(error),
+                completedAt: new Date(),
+                abortController: undefined
+              }
+            : t
+        ));
+      }
     } finally {
-      setAiGenerating(false);
+      setRunningTasks(prev => prev - 1);
     }
   }
 
-  // AI 生成小主题
-  async function generateSubtopics(theme: any) {
+  // 处理任务队列
+  useEffect(() => {
+    const processQueue = async () => {
+      if (queuePaused || !autoStart) return; // 如果队列暂停或未开启自动开始，不处理新任务
+      
+      const pendingTasks = taskQueue.filter(t => t.status === 'pending');
+      const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
+
+      for (let i = 0; i < canStart; i++) {
+        const task = pendingTasks[i];
+        executeTask(task.id);
+      }
+    };
+
+    processQueue();
+  }, [taskQueue, maxConcurrent, runningTasks, queuePaused, autoStart]);
+
+  // 当运行中的任务数量变化时，自动处理队列
+  useEffect(() => {
+    if (autoStart && !queuePaused) {
+      const pendingTasks = taskQueue.filter(t => t.status === 'pending');
+      const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
+      
+      if (canStart > 0) {
+        // 延迟一点时间再处理，避免状态更新冲突
+        const timer = setTimeout(() => {
+          pendingTasks.slice(0, canStart).forEach(task => {
+            executeTask(task.id);
+          });
+        }, 100);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [runningTasks, autoStart, queuePaused, maxConcurrent, taskQueue]);
+
+  // 任务控制函数
+  function pauseTask(taskId: string) {
+    const task = taskQueue.find(t => t.id === taskId);
+    if (!task || task.status !== 'running') return;
+
+    // 取消正在进行的请求
+    if (task.abortController) {
+      task.abortController.abort();
+    }
+
+    // 更新任务状态为暂停
+    setTaskQueue(prev => prev.map(t => 
+      t.id === taskId 
+        ? { ...t, status: 'paused', pausedAt: new Date(), abortController: undefined }
+        : t
+    ));
+    setRunningTasks(prev => prev - 1);
+  }
+
+  function resumeTask(taskId: string) {
+    const task = taskQueue.find(t => t.id === taskId);
+    if (!task || task.status !== 'paused') return;
+
+    // 更新任务状态为等待中，让队列处理
+    setTaskQueue(prev => prev.map(t => 
+      t.id === taskId 
+        ? { ...t, status: 'pending', pausedAt: undefined }
+        : t
+    ));
+  }
+
+  function cancelTask(taskId: string) {
+    const task = taskQueue.find(t => t.id === taskId);
+    if (!task) return;
+
+    // 如果任务正在运行，取消请求
+    if (task.status === 'running' && task.abortController) {
+      task.abortController.abort();
+    }
+
+    // 更新任务状态为已取消
+    setTaskQueue(prev => prev.map(t => 
+      t.id === taskId 
+        ? { 
+            ...t, 
+            status: 'cancelled', 
+            completedAt: new Date(),
+            abortController: undefined
+          }
+        : t
+    ));
+
+    if (task.status === 'running') {
+      setRunningTasks(prev => prev - 1);
+    }
+  }
+
+  function pauseAllTasks() {
+    setQueuePaused(true);
+    // 暂停所有运行中的任务
+    taskQueue.forEach(task => {
+      if (task.status === 'running') {
+        pauseTask(task.id);
+      }
+    });
+  }
+
+  function resumeAllTasks() {
+    setQueuePaused(false);
+    // 恢复所有暂停的任务
+    taskQueue.forEach(task => {
+      if (task.status === 'paused') {
+        resumeTask(task.id);
+      }
+    });
+  }
+
+  function cancelAllTasks() {
+    // 取消所有未完成的任务
+    taskQueue.forEach(task => {
+      if (['pending', 'running', 'paused'].includes(task.status)) {
+        cancelTask(task.id);
+      }
+    });
+  }
+
+  function startAllPendingTasks() {
+    const pendingTasks = taskQueue.filter(t => t.status === 'pending');
+    const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
+
+    for (let i = 0; i < canStart; i++) {
+      const task = pendingTasks[i];
+      executeTask(task.id);
+    }
+  }
+
+  function startTask(taskId: string) {
+    const task = taskQueue.find(t => t.id === taskId);
+    if (!task || task.status !== 'pending') return;
+
+    executeTask(taskId);
+  }
+
+  // 批量添加选中的主题到队列
+  function batchAddToQueue() {
     if (!aiModel) {
       alert('请选择 AI 模型');
       return;
     }
 
-    setAiGenerating(true);
-    try {
-      const response = await fetch('/api/admin/shadowing/subtopics/generate', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...(await getAuthHeaders())
-        },
-        body: JSON.stringify({
-          theme_id: theme.id,
-          theme_title_cn: theme.title,
-          lang,
-          level,
-          genre,
-          count: aiGenerationCount,
-          provider: aiProvider,
-          model: aiModel,
-          temperature: aiTemperature
-        })
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        console.error('Subtopic generation API Error:', result);
-        throw new Error(result.error || '生成失败');
-      }
-
-      alert(result.message);
-      setAiGenerationType(null);
-    } catch (error) {
-      alert('生成失败：' + error);
-    } finally {
-      setAiGenerating(false);
+    const selectedThemes = items.filter(theme => selected[theme.id]);
+    if (selectedThemes.length === 0) {
+      alert('请先选择要生成小主题的大主题');
+      return;
     }
+
+    // 为每个选中的主题添加生成小主题的任务
+    selectedThemes.forEach(theme => {
+      addTaskToQueue('subtopics', {
+        theme_id: theme.id,
+        theme_title_cn: theme.title,
+        lang,
+        level,
+        genre,
+        count: aiGenerationCount,
+        provider: aiProvider,
+        model: aiModel,
+        temperature: aiTemperature
+      });
+    });
+
+    alert(`已为 ${selectedThemes.length} 个主题添加生成小主题任务到队列`);
+  }
+
+  // AI 生成大主题（添加到队列）
+  function generateThemes() {
+    if (!aiModel) {
+      alert('请选择 AI 模型');
+      return;
+    }
+
+    addTaskToQueue('themes', {
+      lang,
+      level,
+      genre,
+      count: aiGenerationCount,
+      provider: aiProvider,
+      model: aiModel,
+      temperature: aiTemperature
+    });
+
+    setAiGenerationType(null);
+  }
+
+  // AI 生成小主题（添加到队列）
+  function generateSubtopics(theme: any) {
+    if (!aiModel) {
+      alert('请选择 AI 模型');
+      return;
+    }
+
+    addTaskToQueue('subtopics', {
+      theme_id: theme.id,
+      theme_title_cn: theme.title,
+      lang,
+      level,
+      genre,
+      count: aiGenerationCount,
+      provider: aiProvider,
+      model: aiModel,
+      temperature: aiTemperature
+    });
+
+    setAiGenerationType(null);
   }
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
@@ -509,7 +765,52 @@ export default function ThemesPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Shadowing 主题管理</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Shadowing 主题管理</h1>
+          {taskQueue.length > 0 && (
+            <div className="mt-2 flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                任务队列: {taskQueue.filter(t => t.status === 'pending').length} 等待中, 
+                {taskQueue.filter(t => t.status === 'running').length} 执行中, 
+                {taskQueue.filter(t => t.status === 'paused').length} 暂停, 
+                {taskQueue.filter(t => t.status === 'completed').length} 已完成, 
+                {taskQueue.filter(t => t.status === 'failed').length} 失败
+              </div>
+              <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="autoStart"
+                    checked={autoStart}
+                    onChange={(e) => setAutoStart(e.target.checked)}
+                    className="rounded"
+                  />
+                  <label htmlFor="autoStart" className="text-sm text-muted-foreground">
+                    自动开始
+                  </label>
+                </div>
+                {!autoStart && taskQueue.filter(t => t.status === 'pending').length > 0 && (
+                  <Button onClick={startAllPendingTasks} size="sm" variant="default" className="bg-green-600 hover:bg-green-700 text-white">
+                    <Play className="w-4 h-4 mr-1" />
+                    开始所有 ({taskQueue.filter(t => t.status === 'pending').length})
+                  </Button>
+                )}
+                {queuePaused ? (
+                  <Button onClick={resumeAllTasks} size="sm" variant="outline">
+                    恢复队列
+                  </Button>
+                ) : (
+                  <Button onClick={pauseAllTasks} size="sm" variant="outline">
+                    暂停队列
+                  </Button>
+                )}
+                <Button onClick={cancelAllTasks} size="sm" variant="destructive">
+                  取消所有
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button onClick={exportData} variant="outline">
             <Download className="w-4 h-4 mr-2" />
@@ -626,6 +927,184 @@ export default function ThemesPage() {
         </CardContent>
       </Card>
 
+      {/* 任务队列 */}
+      {taskQueue.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>任务队列</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  任务添加到队列后不会自动开始，需要手动点击开始按钮或开启自动开始模式
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label>最大并发数:</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={maxConcurrent}
+                    onChange={(e) => setMaxConcurrent(parseInt(e.target.value) || 3)}
+                    className="w-20"
+                  />
+                </div>
+                <Button
+                  onClick={startAllPendingTasks}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  disabled={taskQueue.filter(t => t.status === 'pending').length === 0}
+                >
+                  <Play className="w-4 h-4 mr-1" />
+                  一键开始 ({taskQueue.filter(t => t.status === 'pending').length})
+                </Button>
+                <Button
+                  onClick={() => setTaskQueue([])}
+                  variant="outline"
+                  size="sm"
+                >
+                  清空队列
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {taskQueue.map((task) => (
+                <div
+                  key={task.id}
+                  className={`p-3 rounded-lg border ${
+                    task.status === 'completed' ? 'bg-green-50 border-green-200' :
+                    task.status === 'failed' ? 'bg-red-50 border-red-200' :
+                    task.status === 'cancelled' ? 'bg-gray-50 border-gray-200' :
+                    task.status === 'running' ? 'bg-blue-50 border-blue-200' :
+                    task.status === 'paused' ? 'bg-yellow-50 border-yellow-200' :
+                    'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${
+                          task.status === 'completed' ? 'bg-green-500' :
+                          task.status === 'failed' ? 'bg-red-500' :
+                          task.status === 'cancelled' ? 'bg-gray-500' :
+                          task.status === 'running' ? 'bg-blue-500' :
+                          task.status === 'paused' ? 'bg-yellow-500' :
+                          'bg-gray-400'
+                        }`} />
+                        <span className="font-medium">{task.title}</span>
+                        <Badge variant={
+                          task.status === 'completed' ? 'default' :
+                          task.status === 'failed' ? 'destructive' :
+                          task.status === 'cancelled' ? 'secondary' :
+                          task.status === 'running' ? 'secondary' :
+                          task.status === 'paused' ? 'outline' :
+                          'outline'
+                        }>
+                          {task.status === 'pending' ? '等待中' :
+                           task.status === 'running' ? '执行中' :
+                           task.status === 'paused' ? '暂停' :
+                           task.status === 'cancelled' ? '已取消' :
+                           task.status === 'completed' ? '已完成' :
+                           '失败'}
+                        </Badge>
+                      </div>
+                      {task.status === 'running' && (
+                        <div className="mt-2">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${task.progress}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {task.status === 'failed' && task.error && (
+                        <div className="mt-2 text-sm text-red-600">
+                          错误: {task.error}
+                        </div>
+                      )}
+                      {task.status === 'completed' && task.result && (
+                        <div className="mt-2 text-sm text-green-600">
+                          {task.result.message}
+                        </div>
+                      )}
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        创建时间: {task.createdAt.toLocaleTimeString()}
+                        {task.startedAt && ` | 开始时间: ${task.startedAt.toLocaleTimeString()}`}
+                        {task.pausedAt && ` | 暂停时间: ${task.pausedAt.toLocaleTimeString()}`}
+                        {task.completedAt && ` | 完成时间: ${task.completedAt.toLocaleTimeString()}`}
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      {task.status === 'pending' && (
+                        <Button
+                          onClick={() => startTask(task.id)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-green-600 hover:text-green-700"
+                          title="开始任务"
+                        >
+                          <Play className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {task.status === 'running' && (
+                        <Button
+                          onClick={() => pauseTask(task.id)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-yellow-600 hover:text-yellow-700"
+                          title="暂停任务"
+                        >
+                          <Pause className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {task.status === 'paused' && (
+                        <Button
+                          onClick={() => resumeTask(task.id)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-green-600 hover:text-green-700"
+                          title="恢复任务"
+                        >
+                          <Play className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {['pending', 'running', 'paused'].includes(task.status) && (
+                        <Button
+                          onClick={() => cancelTask(task.id)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          title="取消任务"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {['completed', 'failed', 'cancelled'].includes(task.status) && (
+                        <Button
+                          onClick={() => {
+                            setTaskQueue(prev => prev.filter(t => t.id !== task.id));
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-600 hover:text-gray-700"
+                          title="删除任务"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 批量操作 */}
       {selectedCount > 0 && (
         <Card className="mb-4">
@@ -634,6 +1113,15 @@ export default function ThemesPage() {
               <span className="text-sm text-muted-foreground">
                 已选择 {selectedCount} 个主题
               </span>
+              <Button 
+                onClick={batchAddToQueue} 
+                variant="default" 
+                size="sm"
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                批量生成小主题
+              </Button>
               <Button onClick={archiveSelected} variant="outline" size="sm">
                 <Archive className="w-4 h-4 mr-2" />
                 归档
@@ -966,16 +1454,15 @@ export default function ThemesPage() {
               <Button 
                 onClick={() => setAiGenerationType(null)} 
                 variant="outline"
-                disabled={aiGenerating}
               >
                 取消
               </Button>
               <Button 
                 onClick={aiGenerationType === 'themes' ? generateThemes : () => generateSubtopics(selectedThemeForSubtopic)}
-                disabled={aiGenerating || !aiModel}
+                disabled={!aiModel}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
               >
-                {aiGenerating ? '生成中...' : '开始生成'}
+                添加到队列
               </Button>
             </div>
           </div>
