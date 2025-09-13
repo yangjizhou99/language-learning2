@@ -1,0 +1,23 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "pnpm build",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install",
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "OPENAI_API_KEY": "@openai_api_key",
+    "DEEPSEEK_API_KEY": "@deepseek_api_key",
+    "OPENROUTER_API_KEY": "@openrouter_api_key",
+    "GOOGLE_TTS_CREDENTIALS": "@google_tts_credentials",
+    "XUNFEI_APP_ID": "@xunfei_app_id",
+    "XUNFEI_API_KEY": "@xunfei_api_key",
+    "XUNFEI_API_SECRET": "@xunfei_api_secret"
+  }
+}

@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.gitignore
+README.md
+.env.local
+.env.example
+docs
+scripts
+*.log
+.DS_Store
+Thumbs.db

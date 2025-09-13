@@ -3,10 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "pnpm dlx next dev --turbopack",
+    "build": "pnpm dlx next build",
+    "start": "pnpm dlx next start",
+    "lint": "pnpm dlx next lint",
+    "type-check": "tsc --noEmit",
+    "setup": "bash scripts/setup.sh",
+    "dev:script": "bash scripts/dev.sh",
+    "build:script": "bash scripts/build.sh",
+    "clean": "rm -rf .next node_modules/.cache",
+    "check": "node -e \"console.log('🔍 项目状态检查'); console.log('Node.js:', process.version); console.log('项目目录:', process.cwd());\"",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset",
+    "db:status": "supabase status"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.3.0",
