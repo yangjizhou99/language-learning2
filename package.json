@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "node start-dev.js",
-    "build": "npx next build",
-    "start": "npx next start",
-    "lint": "npx next lint",
+    "build": "node start-dev.js build",
+    "start": "node start-dev.js start",
+    "lint": "node start-dev.js lint",
     "type-check": "tsc --noEmit",
     "setup": "bash scripts/setup.sh",
     "dev:script": "bash scripts/dev.sh",

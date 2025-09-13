@@ -10,6 +10,23 @@ import { CacheManager } from '@/lib/cache';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+async function createSupabaseClient() {
+  const cookieStore = await cookies();
+  return createServerClient(supabaseUrl, supabaseAnon, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
+      },
+      set(name: string, value: string, options: any) {
+        cookieStore.set({ name, value, ...options });
+      },
+      remove(name: string, options: any) {
+        cookieStore.set({ name, value: '', ...options });
+      },
+    },
+  });
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -28,7 +45,7 @@ export async function GET(req: NextRequest) {
     // Bearer 优先，其次 Cookie 方式
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
+    let supabase: any;
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
