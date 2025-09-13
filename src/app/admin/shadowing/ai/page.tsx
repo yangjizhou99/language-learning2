@@ -47,7 +47,13 @@ export default function ShadowingAIPage() {
   const [level, setLevel] = useState(2);
   const [count, setCount] = useState(5);
   const [topic, setTopic] = useState("");
-  const [provider, setProvider] = useState<"openrouter" | "deepseek" | "openai">("openrouter");
+  const [provider, setProvider] = useState<"openrouter" | "deepseek" | "openai">("deepseek");
+  
+  // 主题相关状态
+  const [selectedThemeId, setSelectedThemeId] = useState<string>("");
+  const [selectedSubtopicId, setSelectedSubtopicId] = useState<string>("");
+  const [themes, setThemes] = useState<Array<{id: string, title: string, desc?: string}>>([]);
+  const [subtopics, setSubtopics] = useState<Array<{id: string, title_cn: string, one_line_cn?: string}>>([]);
   const [models, setModels] = useState<{ id: string; name: string }[]>([]);
   const [model, setModel] = useState("");
   const [temperature, setTemperature] = useState(0.6);
@@ -67,6 +73,48 @@ export default function ShadowingAIPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [voiceAnalysis, setVoiceAnalysis] = useState<any>(null);
   const [currentText, setCurrentText] = useState("");
+
+  // 获取认证头
+  const getAuthHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    return headers;
+  };
+
+  // 加载主题数据
+  const loadThemes = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/admin/shadowing/themes?lang=${lang}&level=${level || ''}`, { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setThemes(data.items || []);
+      }
+    } catch (error) {
+      console.error('Failed to load themes:', error);
+    }
+  };
+
+  // 加载子主题数据
+  const loadSubtopics = async (themeId: string) => {
+    if (themeId === "") {
+      setSubtopics([]);
+      return;
+    }
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/admin/shadowing/subtopics?theme_id=${themeId}`, { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setSubtopics(data.items || []);
+      }
+    } catch (error) {
+      console.error('Failed to load subtopics:', error);
+    }
+  };
 
   function isAllSelected(): boolean {
     if (items.length === 0) return false;
@@ -90,15 +138,6 @@ export default function ShadowingAIPage() {
     });
   }
 
-  async function getAuthHeaders(): Promise<Record<string, string>> {
-    try {
-      const { data } = await supabase.auth.getSession();
-      const token = data?.session?.access_token;
-      return token ? { Authorization: `Bearer ${token}` } : {};
-    } catch {
-      return {};
-    }
-  }
 
   // 加载模型列表
   useEffect(() => {
@@ -145,6 +184,16 @@ export default function ShadowingAIPage() {
       }
     })();
   }, [lang]);
+
+  // 加载主题数据
+  useEffect(() => {
+    loadThemes();
+  }, [lang, level]);
+
+  // 当选择大主题时，加载小主题
+  useEffect(() => {
+    loadSubtopics(selectedThemeId);
+  }, [selectedThemeId]);
 
   // 回退：非流式生成
   const generateFallback = async () => {
@@ -399,7 +448,13 @@ export default function ShadowingAIPage() {
       const r = await fetch("/api/admin/shadowing/save", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
-        body: JSON.stringify({ lang, level, items: cleanRows })
+        body: JSON.stringify({ 
+          lang, 
+          level, 
+          items: cleanRows,
+          theme_id: selectedThemeId || null,
+          subtopic_id: selectedSubtopicId || null
+        })
       });
       
       const j = await r.json();
@@ -470,6 +525,38 @@ export default function ShadowingAIPage() {
               onChange={e => setTopic(e.target.value)} 
               placeholder="e.g., campus life / tech news / travel" 
             />
+          </label>
+
+          <label className="text-sm">
+            大主题
+            <select 
+              className="border rounded px-2 py-1 w-full" 
+              value={selectedThemeId} 
+              onChange={e => {
+                setSelectedThemeId(e.target.value);
+                setSelectedSubtopicId(""); // 重置小主题选择
+              }}
+            >
+              <option value="">不关联主题</option>
+              {themes.map(theme => (
+                <option key={theme.id} value={theme.id}>{theme.title}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="text-sm">
+            小主题
+            <select 
+              className="border rounded px-2 py-1 w-full" 
+              value={selectedSubtopicId} 
+              onChange={e => setSelectedSubtopicId(e.target.value)}
+              disabled={!selectedThemeId}
+            >
+              <option value="">不关联小主题</option>
+              {subtopics.map(subtopic => (
+                <option key={subtopic.id} value={subtopic.id}>{subtopic.title_cn}</option>
+              ))}
+            </select>
           </label>
 
           <label className="text-sm">

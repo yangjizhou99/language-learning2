@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     // Bearer 优先，其次 Cookie 方式
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabaseUser: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
+    let supabaseUser: any;
     if (hasBearer) {
       supabaseUser = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },

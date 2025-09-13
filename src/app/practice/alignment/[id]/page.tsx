@@ -67,7 +67,7 @@ export default function AlignmentPracticePage() {
   const [scores, setScores] = useState<Scores | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [usage, setUsage] = useState<any>(null);
-  const [provider, setProvider] = useState<"openrouter" | "deepseek" | "openai">("openrouter");
+  const [provider, setProvider] = useState<"openrouter" | "deepseek" | "openai">("deepseek");
   const [model, setModel] = useState("");
   const [models, setModels] = useState<{id: string; name: string}[]>([]);
   const [temperature, setTemperature] = useState(0.2);

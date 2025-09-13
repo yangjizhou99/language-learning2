@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
   const supabase = auth.supabase;
 
   const b = await req.json();
-  const provider = (b.provider || "openrouter") as "openrouter"|"deepseek"|"openai";
-  const model = b.model || "openai/gpt-4o-mini"; // 例子：OpenRouter 模型 id
+  const provider = (b.provider || "deepseek") as "openrouter"|"deepseek"|"openai";
+  const model = b.model || "deepseek-chat"; // 例子：DeepSeek 模型 id
   const temperature = b.temperature ?? 0.6;
 
   // 1) AI 产草稿

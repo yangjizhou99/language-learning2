@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     // Bearer 优先，其次 Cookie 方式
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: ReturnType<typeof createServerClient> | ReturnType<typeof createClient>;
+    let supabase: any;
     
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
@@ -35,7 +35,9 @@ export async function GET(req: NextRequest) {
     
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('Auth check:', { user: user?.id, error: authError?.message, hasBearer });
     if (authError || !user) {
+      console.log('Authentication failed:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -45,47 +47,27 @@ export async function GET(req: NextRequest) {
     const level = url.searchParams.get('level'); 
     const practiced = url.searchParams.get('practiced'); // 'true', 'false', or null (all)
 
-    // 生成缓存键（包含用户ID以确保用户数据隔离）
-    const cacheKey = CacheManager.generateKey("shadowing:catalog", { 
-      userId: user.id, 
-      lang, 
-      level, 
-      practiced 
-    });
-    
-    // 尝试从缓存获取
-    const cached = await CacheManager.get(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached);
-    }
-
-    // 使用请求去重防止并发请求
-    const result = await CacheManager.dedupe(cacheKey, async () => {
-      // Build query for shadowing items with session data
+    // 直接查询，不使用缓存
+    const result = await (async () => {
+      // Build query for shadowing drafts
       let query = supabase
-        .from('shadowing_items')
+        .from('shadowing_drafts')
         .select(`
           id,
           lang,
           level,
           title,
           text,
-          audio_url,
-          duration_ms,
-          tokens,
-          cefr,
-          meta,
-          translations,
-          trans_updated_at,
+          topic,
+          genre,
+          notes,
+          ai_provider,
+          ai_model,
+          ai_usage,
+          status,
           created_at,
-          shadowing_sessions!left(
-            id,
-            user_id,
-            status,
-            recordings,
-            picked_preview,
-            created_at
-          )
+          theme_id,
+          subtopic_id
         `);
 
       // Apply filters
@@ -95,18 +77,57 @@ export async function GET(req: NextRequest) {
       if (level) {
         query = query.eq('level', level);
       }
+      // 只显示已审核的内容
+      query = query.eq('status', 'approved');
 
       const { data: items, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
+        console.error('Database query error:', error);
         throw new Error(`Error fetching shadowing catalog: ${error.message}`);
+      }
+
+      // Get theme and subtopic data separately
+      const themeIds = [...new Set(items?.map((item: any) => item.theme_id).filter(Boolean) || [])];
+      const subtopicIds = [...new Set(items?.map((item: any) => item.subtopic_id).filter(Boolean) || [])];
+      
+      let themes: any[] = [];
+      let subtopics: any[] = [];
+      
+      if (themeIds.length > 0) {
+        const { data: themesData } = await supabase
+          .from('shadowing_themes')
+          .select('id, title, desc')
+          .in('id', themeIds);
+        themes = themesData || [];
+      }
+      
+      if (subtopicIds.length > 0) {
+        const { data: subtopicsData } = await supabase
+          .from('shadowing_subtopics')
+          .select('id, title_cn, one_line_cn')
+          .in('id', subtopicIds);
+        subtopics = subtopicsData || [];
+      }
+
+      // Get session data separately
+      const itemIds = items?.map((item: any) => item.id) || [];
+      let sessions: any[] = [];
+      
+      if (itemIds.length > 0) {
+        const { data: sessionsData } = await supabase
+          .from('shadowing_sessions')
+          .select('id, user_id, item_id, status, recordings, picked_preview, created_at')
+          .eq('user_id', user.id)
+          .in('item_id', itemIds);
+        sessions = sessionsData || [];
       }
 
       // Process items with session data
       const processedItems = items?.map((item: any) => {
         // Find the user's session for this item
-        const userSession = item.shadowing_sessions?.find((session: any) => 
-          session.user_id === user.id
+        const userSession = sessions.find((session: any) => 
+          session.item_id === item.id
         );
         
         const isPracticed = userSession?.status === 'completed';
@@ -123,8 +144,14 @@ export async function GET(req: NextRequest) {
           console.log('总练习时长:', practiceTime, '毫秒 =', Math.floor(practiceTime / 1000), '秒');
         }
         
+        // Find theme and subtopic data
+        const theme = themes.find(t => t.id === item.theme_id);
+        const subtopic = subtopics.find(s => s.id === item.subtopic_id);
+        
         return {
           ...item,
+          theme,
+          subtopic,
           isPracticed,
           status: userSession?.status || null,
           stats: {
@@ -149,10 +176,7 @@ export async function GET(req: NextRequest) {
         items: filteredItems,
         total: filteredItems.length
       };
-    });
-
-    // 缓存结果（2分钟，因为包含用户数据）
-    await CacheManager.set(cacheKey, result, 120);
+    })();
 
     return NextResponse.json(result);
 

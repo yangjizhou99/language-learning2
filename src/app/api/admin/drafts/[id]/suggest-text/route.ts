@@ -87,8 +87,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (error || !d) return NextResponse.json({ error: "draft not found" }, { status:404 });
 
   const body = await req.json();
-  const provider = (body.provider || "openrouter") as "openrouter"|"deepseek"|"openai";
-  const model = body.model || "openai/gpt-4o-mini";
+  const provider = (body.provider || "deepseek") as "openrouter"|"deepseek"|"openai";
+  const model = body.model || "deepseek-chat";
   const temperature = body.temperature ?? 0.3;
 
   const lang = (d.lang as "en"|"ja"|"zh") || "en";

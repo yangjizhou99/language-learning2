@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export default function BatchPage() {
-	const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("openrouter");
+	const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("deepseek");
 	const [models, setModels] = useState<{id:string;name:string}[]>([]);
 	const [model, setModel] = useState<string>("");
 	const [name, setName] = useState<string>("批次-" + new Date().toLocaleString());

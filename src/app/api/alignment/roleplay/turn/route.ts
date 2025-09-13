@@ -46,7 +46,7 @@ function buildTurnPrompt({ lang, topic, stepKey, step, role, historyPreview, isK
 
 export async function POST(req: NextRequest) {
   const b = await req.json();
-  const { pack_id, step_key, role, messages = [], provider = "openrouter", model = "openai/gpt-4o-mini", temperature = 0.3 } = b as any;
+  const { pack_id, step_key, role, messages = [], provider = "deepseek", model = "deepseek-chat", temperature = 0.3 } = b as any;
   if (!pack_id || !step_key || !role) return NextResponse.json({ error: "missing fields" }, { status: 400 });
 
   const mockPack = {

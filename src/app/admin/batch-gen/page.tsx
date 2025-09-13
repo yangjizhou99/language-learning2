@@ -13,7 +13,7 @@ export default function BatchGenPage(){
   const [levels, setLevels] = useState<number[]>([3]);
   const [topicsText, setTopicsText] = useState("Daily life\nCampus");
   const [perCombo, setPerCombo] = useState(2);
-  const [provider, setProvider] = useState<"openrouter"|"deepseek">("openrouter");
+  const [provider, setProvider] = useState<"openrouter"|"deepseek">("deepseek");
   const [model, setModel] = useState("");
   const [orModels, setOrModels] = useState<Array<{id: string; name: string; context_length?: number; pricing?: any}>>([]);
   const [orLoading, setOrLoading] = useState(false);

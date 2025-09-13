@@ -112,7 +112,7 @@ export default function ShadowingReviewList(){
   const [ttsTotal, setTtsTotal] = useState(0);
   const [ttsDone, setTtsDone] = useState(0);
   const [ttsCurrent, setTtsCurrent] = useState("");
-  const [currentOperation, setCurrentOperation] = useState<"tts" | "publish" | "delete">("tts");
+  const [currentOperation, setCurrentOperation] = useState<"tts" | "publish" | "revert" | "delete">("tts");
   // 移除ttsProvider状态，改为通过音色管理器选择
   
   // 音色管理相关状态
@@ -129,7 +129,7 @@ export default function ShadowingReviewList(){
   const [transProgress, setTransProgress] = useState({ done: 0, total: 0 });
   const [transLogs, setTransLogs] = useState<string[]>([]);
   const [transProvider, setTransProvider] = useState('deepseek');
-  const [transModel, setTransModel] = useState('openai/gpt-4o-mini');
+  const [transModel, setTransModel] = useState('deepseek-chat');
   const [transTemperature, setTransTemperature] = useState(0.3);
   const [transConcurrency, setTransConcurrency] = useState(4);
   const [transRetries, setTransRetries] = useState(2);
@@ -305,6 +305,80 @@ export default function ShadowingReviewList(){
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
     await fetch(`/api/admin/shadowing/drafts/${id}`, { method: "POST", headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ action: "publish" }) });
+  }
+
+  async function revertOne(id: string){
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    await fetch(`/api/admin/shadowing/drafts/${id}`, { method: "POST", headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ action: "revert" }) });
+  }
+
+  async function revertSelected(){
+    if (selected.size === 0) return;
+    const ids = Array.from(selected);
+    setPublishing(true);
+    setCurrentOperation("revert");
+    setTtsTotal(ids.length);
+    setTtsDone(0);
+    let fail = 0;
+    
+    try {
+      // 并发处理撤回
+      const processBatch = async (batchIds: string[]) => {
+        const promises = batchIds.map(async (id) => {
+          const it = items.find(x => x.id === id);
+          setTtsCurrent(it?.title || "");
+          try {
+            const startTime = Date.now();
+            await revertOne(id);
+            const responseTime = Date.now() - startTime;
+            
+            // 更新性能统计
+            updatePerformanceStats(true, responseTime);
+            
+            setTtsDone(v => v + 1);
+            return { id, success: true };
+          } catch (error) {
+            console.error(`撤回失败 ${id}:`, error);
+            const responseTime = Date.now() - Date.now();
+            
+            // 更新性能统计
+            updatePerformanceStats(false, responseTime);
+            
+            setTtsDone(v => v + 1);
+            return { id, success: false };
+          }
+        });
+        
+        const results = await Promise.all(promises);
+        return results.filter(r => !r.success).length;
+      };
+      
+      // 分批处理，避免并发过高
+      const batchSize = 3;
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        const batchFail = await processBatch(batch);
+        fail += batchFail;
+        
+        // 批次间延迟
+        if (i + batchSize < ids.length) {
+          await new Promise<void>(resolve => {
+            (globalThis as any).setTimeout(() => resolve(), 200);
+          });
+        }
+      }
+      
+      toast.success(`批量撤回完成：${ids.length - fail}/${ids.length}`);
+      setSelected(new Set());
+      // 刷新
+      setQ(q => q);
+    } catch (e) {
+      toast.error("批量撤回失败，请重试");
+    } finally {
+      setTtsCurrent("");
+      setPublishing(false);
+    }
   }
 
   async function publishSelected(){
@@ -742,7 +816,7 @@ export default function ShadowingReviewList(){
           // 服务器繁忙，等待后重试
           const waitTime = Math.pow(2, retryCount) * 1000; // 指数退避
           console.log(`服务器繁忙，${waitTime}ms后重试...`);
-          await new Promise<void>(resolve => (globalThis as any).setTimeout(() => resolve(), waitTime));
+          await new Promise<void>(resolve => (globalThis as any).setTimeout(resolve, waitTime));
           retryCount++;
           continue;
         }
@@ -774,7 +848,7 @@ export default function ShadowingReviewList(){
         
         const waitTime = Math.pow(2, retryCount) * 1000; // 指数退避
         console.log(`音频合并失败，${waitTime}ms后重试... (${retryCount}/${maxRetries})`);
-        await new Promise<void>(resolve => (globalThis as any).setTimeout(() => resolve(), waitTime));
+        await new Promise<void>(resolve => (globalThis as any).setTimeout(resolve, waitTime));
       }
     }
     
@@ -1580,6 +1654,14 @@ export default function ShadowingReviewList(){
               {publishing ? "发布中..." : "批量发布选中"}
             </Button>
             <Button 
+              onClick={revertSelected} 
+              disabled={publishing || selected.size===0}
+              variant="outline"
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {publishing ? "撤回中..." : "批量撤回选中"}
+            </Button>
+            <Button 
               onClick={deleteSelected} 
               disabled={selected.size===0}
               variant="destructive"
@@ -1608,6 +1690,7 @@ export default function ShadowingReviewList(){
                 <span className="font-medium">
                   {currentOperation === "tts" && "TTS 合成进度"}
                   {currentOperation === "publish" && "批量发布进度"}
+                  {currentOperation === "revert" && "批量撤回进度"}
                   {currentOperation === "delete" && "批量删除进度"}
                 </span>
                 <span>{ttsDone}/{ttsTotal} ({Math.round((ttsDone/ttsTotal)*100)}%)</span>
@@ -1719,6 +1802,25 @@ export default function ShadowingReviewList(){
                     <Button asChild size="sm">
                       <Link href={`/admin/shadowing/review/${it.id}`}>查看详情</Link>
                     </Button>
+                    {it.status === 'approved' && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                        onClick={() => {
+                          if (confirm('确定要撤回此草稿吗？撤回后将从练习题库中移除。')) {
+                            revertOne(it.id).then(() => {
+                              toast.success('撤回成功');
+                              window.location.reload();
+                            }).catch(() => {
+                              toast.error('撤回失败');
+                            });
+                          }
+                        }}
+                      >
+                        撤回发布
+                      </Button>
+                    )}
                   </div>
           </div>
         ))}

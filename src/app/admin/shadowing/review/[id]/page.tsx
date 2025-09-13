@@ -16,7 +16,7 @@ export default function ShadowingReviewDetail(){
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [transLoading, setTransLoading] = useState(false);
   const [transProvider, setTransProvider] = useState('deepseek');
-  const [transModel, setTransModel] = useState('openai/gpt-4o-mini');
+  const [transModel, setTransModel] = useState('deepseek-chat');
   const [transTemperature, setTransTemperature] = useState(0.3);
   const [availableModels, setAvailableModels] = useState<Record<string, string[]>>({});
   const [modelsLoading, setModelsLoading] = useState(false);
