@@ -20,12 +20,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Lang Trainer - 语言学习平台",
   description: "专业的语言学习平台，支持多种练习模式",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
