@@ -363,7 +363,9 @@ export default function ShadowingReviewList(){
         
         // 批次间延迟
         if (i + batchSize < ids.length) {
-          await new Promise<void>(resolve => setTimeout(() => resolve(), 200));
+          await new Promise<void>(resolve => {
+            setTimeout(() => resolve(), 200);
+          });
         }
       }
       
