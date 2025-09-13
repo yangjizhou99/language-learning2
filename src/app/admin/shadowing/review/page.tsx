@@ -364,7 +364,7 @@ export default function ShadowingReviewList(){
         // 批次间延迟
         if (i + batchSize < ids.length) {
           await new Promise<void>(resolve => {
-            setTimeout(() => resolve(), 200);
+            (globalThis as any).setTimeout(() => resolve(), 200);
           });
         }
       }
@@ -816,7 +816,7 @@ export default function ShadowingReviewList(){
           // 服务器繁忙，等待后重试
           const waitTime = Math.pow(2, retryCount) * 1000; // 指数退避
           console.log(`服务器繁忙，${waitTime}ms后重试...`);
-          await new Promise<void>(resolve => (globalThis as any).setTimeout(() => resolve(), waitTime));
+          await new Promise<void>(resolve => (globalThis as any).setTimeout(resolve, waitTime));
           retryCount++;
           continue;
         }
@@ -848,7 +848,7 @@ export default function ShadowingReviewList(){
         
         const waitTime = Math.pow(2, retryCount) * 1000; // 指数退避
         console.log(`音频合并失败，${waitTime}ms后重试... (${retryCount}/${maxRetries})`);
-        await new Promise<void>(resolve => (globalThis as any).setTimeout(() => resolve(), waitTime));
+        await new Promise<void>(resolve => (globalThis as any).setTimeout(resolve, waitTime));
       }
     }
     
@@ -1811,7 +1811,7 @@ export default function ShadowingReviewList(){
                           if (confirm('确定要撤回此草稿吗？撤回后将从练习题库中移除。')) {
                             revertOne(it.id).then(() => {
                               toast.success('撤回成功');
-                              loadDrafts();
+                              window.location.reload();
                             }).catch(() => {
                               toast.error('撤回失败');
                             });
