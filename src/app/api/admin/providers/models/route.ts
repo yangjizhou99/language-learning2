@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const provider = (searchParams.get('provider') || 'openrouter') as Provider;
+    const provider = (searchParams.get('provider') || 'deepseek') as Provider;
 
     if (provider === 'openrouter') {
       const apiKey = process.env.OPENROUTER_API_KEY;

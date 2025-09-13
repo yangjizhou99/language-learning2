@@ -52,6 +52,22 @@ export async function POST(req: NextRequest, { params }:{ params: Promise<{ id:s
     await auth.supabase.from("shadowing_drafts").update({ status: "approved" }).eq("id", id);
     return NextResponse.json({ ok:true });
   }
+  
+  if (action === "revert"){
+    const { id } = await params;
+    // 将草稿状态从 approved 改回 draft
+    const { error: e1 } = await auth.supabase.from("shadowing_drafts").update({ status: "draft" }).eq("id", id);
+    if (e1) return NextResponse.json({ error: e1.message }, { status: 400 });
+    
+    // 从 shadowing_items 表中删除对应的项目
+    const { error: e2 } = await auth.supabase.from("shadowing_items").delete().eq("meta->>from_draft", id);
+    if (e2) {
+      console.warn("Failed to delete from shadowing_items:", e2.message);
+      // 不返回错误，因为主要操作（撤回草稿）已经成功
+    }
+    
+    return NextResponse.json({ ok:true });
+  }
   return NextResponse.json({ error: "unknown action" }, { status: 400 });
 }
 

@@ -48,3 +48,5 @@ create policy if not exists p_shadowing_subtopics_rw on public.shadowing_subtopi
 -- 为shadowing_drafts表添加source字段（如果不存在）
 alter table if not exists public.shadowing_drafts
   add column if not exists source jsonb;
+
+

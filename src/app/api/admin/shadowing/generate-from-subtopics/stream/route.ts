@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
     level, 
     genre, 
     concurrency = 4,
-    provider = 'gemini',
-    model = 'gemini-1.5-flash',
+    provider = 'deepseek',
+    model = 'deepseek-chat',
     temperature = 0.7
   } = body;
   
@@ -123,6 +123,13 @@ export async function POST(req: NextRequest) {
                 }
               }
               
+              // 获取小主题对应的大主题ID
+              const { data: themeData } = await supabase
+                .from('shadowing_subtopics')
+                .select('theme_id')
+                .eq('id', subtopic.id)
+                .single();
+
               // 保存到数据库
               const { error: saveError } = await supabase
                 .from('shadowing_drafts')
@@ -133,6 +140,8 @@ export async function POST(req: NextRequest) {
                   genre: subtopic.genre,
                   title: parsed.title || subtopic.title_cn,
                   text: parsed.passage || content,
+                  theme_id: themeData?.theme_id || null,
+                  subtopic_id: subtopic.id,
                   notes: {
                     ...parsed.notes,
                     violations: parsed.violations || [],
@@ -150,6 +159,41 @@ export async function POST(req: NextRequest) {
               
               if (saveError) {
                 throw new Error(`Save failed: ${saveError.message}`);
+              }
+
+              // 同时保存到 shadowing_items 表
+              const { error: itemsError } = await supabase
+                .from('shadowing_items')
+                .insert({
+                  lang: subtopic.lang,
+                  level: subtopic.level,
+                  title: parsed.title || subtopic.title_cn,
+                  text: parsed.passage || content,
+                  audio_url: '', // 稍后生成音频
+                  translations: {},
+                  meta: {
+                    from_draft: true,
+                    theme_id: themeData?.theme_id || null,
+                    subtopic_id: subtopic.id,
+                    genre: subtopic.genre,
+                    notes: {
+                      ...parsed.notes,
+                      violations: parsed.violations || [],
+                      source: {
+                        kind: 'subtopic',
+                        subtopic_id: subtopic.id
+                      },
+                      meta: parsed.meta || {}
+                    },
+                    ai_provider: provider,
+                    ai_model: model,
+                    ai_usage: result.usage || {},
+                    published_at: new Date().toISOString()
+                  }
+                });
+
+              if (itemsError) {
+                console.warn(`Failed to save to shadowing_items: ${itemsError.message}`);
               }
               
               saved++;

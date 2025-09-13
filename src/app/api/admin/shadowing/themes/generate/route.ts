@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
       level, 
       genre, 
       count = 5,
-      provider = 'openrouter',
-      model = 'openai/gpt-4o-mini',
+      provider = 'deepseek',
+      model = 'deepseek-chat',
       temperature = 0.7
     } = body;
 

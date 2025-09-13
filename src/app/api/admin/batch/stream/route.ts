@@ -278,8 +278,8 @@ export async function POST(req: NextRequest) {
   const levels: number[] = Array.isArray(params.levels) ? params.levels.map((n: any) => Number(n)) : [Number(params.level || 3)];
   const perCombo = Math.max(1, Math.min(50, Number(params.perCombo) || 1));
   const lang = (params.lang || 'en').toLowerCase() as Lang;
-  const provider = (params.provider || 'openrouter') as 'openrouter' | 'deepseek';
-  const model = params.model || (provider === 'openrouter' ? 'openai/gpt-4o-mini' : 'deepseek-chat');
+  const provider = (params.provider || 'deepseek') as 'openrouter' | 'deepseek';
+  const model = params.model || 'deepseek-chat';
   const temperature = params.temperature ?? 0.5;
 
   // 性能参数

@@ -24,7 +24,7 @@ export default function DraftDetail() {
   const [log, setLog] = useState("");
   const [saving, setSaving] = useState(false);
   const [genMode, setGenMode] = useState<"ai"|"rule">("ai");
-  const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("openrouter");
+  const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("deepseek");
   const [models, setModels] = useState<{id:string;name:string}[]>([]);
   const [model, setModel] = useState<string>("");
   const [temp, setTemp] = useState(0.3);

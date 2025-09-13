@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
     const lang = (body.lang || "en").toLowerCase();
     const level = Math.max(1, Math.min(5, Number(body.level) || 3));
     const count = Math.max(1, Math.min(20, Number(body.count) || 5));
-    const provider = (body.provider || "openrouter") as "openrouter" | "deepseek" | "openai";
-    const model = body.model || "openai/gpt-4o-mini";
+    const provider = (body.provider || "deepseek") as "openrouter" | "deepseek" | "openai";
+    const model = body.model || "deepseek-chat";
     const temperature = body.temperature ?? 0.6;
     const words = body.words as [number, number] | undefined;
     const topic = body.topic as string | undefined;

@@ -44,8 +44,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const body = await req.json();
   const mode = (body.mode || "ai") as "ai" | "rule";
-  const provider = (body.provider || "openrouter") as "openrouter" | "deepseek" | "openai";
-  const model = body.model || "openai/gpt-4o-mini";
+  const provider = (body.provider || "deepseek") as "openrouter" | "deepseek" | "openai";
+  const model = body.model || "deepseek-chat";
   const temperature = body.temperature ?? 0.3;
 
   const text: string = d.text;

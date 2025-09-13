@@ -10,8 +10,8 @@ import { chatJSON } from '@/lib/ai/client';
 const ExplainVocabSchema = z.object({
   entry_ids: z.array(z.string().uuid()).optional(),
   native_lang: z.enum(['zh', 'en', 'ja']),
-  provider: z.string().default('openrouter'),
-  model: z.string().default('anthropic/claude-3.5-sonnet'),
+  provider: z.string().default('deepseek'),
+  model: z.string().default('deepseek-chat'),
   temperature: z.number().min(0).max(2).default(0.7),
   word_info: z.object({
     term: z.string(),

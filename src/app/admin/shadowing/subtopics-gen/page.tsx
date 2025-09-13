@@ -166,7 +166,7 @@ export default function SubtopicsGenPage() {
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, saved: 0, errors: 0, tokens: 0 });
   const [logs, setLogs] = useState<any[]>([]);
-  const [provider, setProvider] = useState<'openrouter' | 'deepseek' | 'openai'>('openrouter');
+  const [provider, setProvider] = useState<'openrouter' | 'deepseek' | 'openai'>('deepseek');
   const [models, setModels] = useState<{id: string; name: string}[]>([]);
   const [model, setModel] = useState('');
   const [temperature, setTemperature] = useState(0.7);

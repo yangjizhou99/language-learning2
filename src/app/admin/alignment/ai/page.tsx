@@ -8,7 +8,7 @@ export default function AlignmentAIPage(){
   const [tags, setTags] = useState<string>("");
   const [style, setStyle] = useState({ formality:"neutral", tone:"friendly", length:"balanced", voice:"first", extras:["examples"] as string[] });
 
-  const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("openrouter");
+  const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("deepseek");
   const [models, setModels] = useState<{id:string;name:string}[]>([]);
   const [model, setModel] = useState("");
   const [temperature, setTemperature] = useState(0.5);

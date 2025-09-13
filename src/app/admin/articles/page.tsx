@@ -150,9 +150,9 @@ function AIForm() {
   const [difficulty, setDifficulty] = useState(3);
   const [topic, setTopic] = useState("");
   const [words, setWords] = useState(300);
-  const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("openrouter");
+  const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("deepseek");
   const [models, setModels] = useState<{id:string;name:string}[]>([]);
-  const [model, setModel] = useState("openai/gpt-4o-mini");
+  const [model, setModel] = useState("deepseek-chat");
   const [temperature, setTemperature] = useState(0.6);
   const [log, setLog] = useState("");
 

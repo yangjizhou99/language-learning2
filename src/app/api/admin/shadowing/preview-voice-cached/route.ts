@@ -7,38 +7,30 @@ import { synthesizeXunfeiTTS } from '@/lib/xunfei-tts';
 
 // 创建 TTS 客户端
 function makeClient() {
-  // 尝试从环境变量或服务账户文件获取凭据
-  let credentials;
-  
-  if (process.env.GOOGLE_CLOUD_CLIENT_EMAIL && process.env.GOOGLE_CLOUD_PRIVATE_KEY) {
-    // 使用环境变量
-    credentials = {
-      client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    };
-  } else if (process.env.GOOGLE_TTS_CREDENTIALS) {
-    // 使用服务账户文件
+  const raw = process.env.GOOGLE_TTS_CREDENTIALS;
+  if (!raw) throw new Error("GOOGLE_TTS_CREDENTIALS missing");
+
+  let credentials: any;
+  try {
+    credentials = JSON.parse(raw);
+  } catch {
     try {
+      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+        throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
+      }
       const fs = require('fs');
       const path = require('path');
-      const serviceAccountPath = path.resolve(process.env.GOOGLE_TTS_CREDENTIALS);
-      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-      credentials = {
-        client_email: serviceAccount.client_email,
-        private_key: serviceAccount.private_key,
-      };
-    } catch (error) {
-      throw new Error(`Failed to load service account file: ${error instanceof Error ? error.message : String(error)}`);
+      const filePath = path.resolve(process.cwd(), raw);
+      const fileContent = fs.readFileSync(filePath, 'utf8');
+      credentials = JSON.parse(fileContent);
+    } catch (fileError: unknown) {
+      const errorMessage = fileError instanceof Error ? fileError.message : String(fileError);
+      throw new Error(`Failed to parse GOOGLE_TTS_CREDENTIALS: ${raw}. Error: ${errorMessage}`);
     }
-  } else {
-    throw new Error('Google Cloud TTS credentials not found. Please set GOOGLE_CLOUD_CLIENT_EMAIL and GOOGLE_CLOUD_PRIVATE_KEY, or GOOGLE_TTS_CREDENTIALS');
   }
-  
-  const client = new TextToSpeechClient({
-    credentials,
-    projectId: process.env.GOOGLE_TTS_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT_ID,
-  });
-  return client;
+
+  const projectId = process.env.GOOGLE_TTS_PROJECT_ID || credentials.project_id;
+  return new TextToSpeechClient({ credentials, projectId });
 }
 
 // 试听文本配置

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { lang, level, items } = body;
+    const { lang, level, items, theme_id, subtopic_id } = body;
 
     if (!lang || !level || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "缺少必要的参数：lang, level, items" }, { status: 400 });
@@ -25,25 +25,31 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    // 使用数据库函数批量插入数据，绕过 RLS
+    // 直接插入数据到 shadowing_items 表
     const insertedIds = [];
     for (const item of items) {
-      const { data, error } = await supabase.rpc('insert_shadowing_item', {
-        p_lang: lang,
-        p_level: level,
-        p_title: item.title,
-        p_text: item.text,
-        p_audio_url: item.audio_url,
-        p_duration_ms: item.duration_ms || null,
-        p_tokens: item.tokens || null
-      });
+      const { data, error } = await supabase
+        .from('shadowing_items')
+        .insert({
+          lang,
+          level,
+          title: item.title,
+          text: item.text,
+          audio_url: item.audio_url,
+          duration_ms: item.duration_ms || null,
+          tokens: item.tokens || null,
+          theme_id: theme_id || null,
+          subtopic_id: subtopic_id || null
+        })
+        .select('id')
+        .single();
 
       if (error) {
         console.error("插入项目失败:", error);
         return NextResponse.json({ error: `插入失败: ${error.message}` }, { status: 500 });
       }
 
-      insertedIds.push(data);
+      insertedIds.push(data.id);
     }
 
     return NextResponse.json({

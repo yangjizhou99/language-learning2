@@ -56,8 +56,8 @@ export async function POST(req: NextRequest){
   const topic = String(b.topic || "Campus life");
   const tags = Array.isArray(b.tags)? b.tags : [];
   const style = b.style || {};
-  const provider = (b.provider || "openrouter") as "openrouter"|"deepseek"|"openai";
-  const model = b.model || "openai/gpt-4o-mini";
+  const provider = (b.provider || "deepseek") as "openrouter"|"deepseek"|"openai";
+  const model = b.model || "deepseek-chat";
   const temperature = b.temperature ?? 0.5;
 
   const { content, usage } = await chatJSON({

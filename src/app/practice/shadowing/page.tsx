@@ -43,12 +43,25 @@ interface ShadowingItem {
   duration_ms?: number;
   tokens?: number;
   cefr?: string;
+  genre?: string;
   meta?: Record<string, unknown>;
   translations?: Record<string, string>;
   trans_updated_at?: string;
   created_at: string;
   isPracticed: boolean;
   status?: 'draft' | 'completed';
+  theme_id?: string;
+  subtopic_id?: string;
+  theme?: {
+    id: string;
+    title: string;
+    desc?: string;
+  };
+  subtopic?: {
+    id: string;
+    title_cn: string;
+    one_line_cn?: string;
+  };
   stats: {
     recordingCount: number;
     vocabCount: number;
@@ -102,12 +115,28 @@ export default function ShadowingPage() {
   const [level, setLevel] = useState<number | null>(null);
   const [practiced, setPracticed] = useState<"all" | "practiced" | "unpracticed">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [theme, setTheme] = useState<string>("all");
+  const [selectedThemeId, setSelectedThemeId] = useState<string>("all");
+  const [selectedSubtopicId, setSelectedSubtopicId] = useState<string>("all");
+
+  // 体裁选项（基于6级难度设计）
+  const GENRE_OPTIONS = [
+    { value: "all", label: "全部体裁" },
+    { value: "dialogue", label: "对话" },
+    { value: "monologue", label: "独白" },
+    { value: "news", label: "新闻" },
+    { value: "lecture", label: "讲座" }
+  ];
 
   // 题库相关状态
   const [items, setItems] = useState<ShadowingItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentItem, setCurrentItem] = useState<ShadowingItem | null>(null);
   const [currentSession, setCurrentSession] = useState<ShadowingSession | null>(null);
+  
+  // 主题数据状态
+  const [themes, setThemes] = useState<Array<{id: string, title: string, desc?: string}>>([]);
+  const [subtopics, setSubtopics] = useState<Array<{id: string, title_cn: string, one_line_cn?: string}>>([]);
   
   // 练习相关状态
   const [selectedWords, setSelectedWords] = useState<Array<{word: string, context: string, lang: string, explanation?: {
@@ -448,14 +477,51 @@ export default function ShadowingPage() {
   // 获取认证头
   const getAuthHeaders = async () => {
     const { data: { session } } = await supabase.auth.getSession();
+    console.log('getAuthHeaders - session:', session ? 'exists' : 'null');
+    console.log('getAuthHeaders - access_token:', session?.access_token ? 'exists' : 'null');
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
     if (session?.access_token) {
       headers['Authorization'] = `Bearer ${session.access_token}`;
+      console.log('getAuthHeaders - Authorization header set');
+    } else {
+      console.log('getAuthHeaders - No access token, using cookie auth');
     }
     return headers;
   };
+
+  // 加载主题数据
+  const loadThemes = useCallback(async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/admin/shadowing/themes?lang=${lang}&level=${level || ''}`, { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setThemes(data.items || []);
+      }
+    } catch (error) {
+      console.error('Failed to load themes:', error);
+    }
+  }, [lang, level]);
+
+  // 加载子主题数据
+  const loadSubtopics = useCallback(async (themeId: string) => {
+    if (themeId === "all") {
+      setSubtopics([]);
+      return;
+    }
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/admin/shadowing/subtopics?theme_id=${themeId}`, { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setSubtopics(data.items || []);
+      }
+    } catch (error) {
+      console.error('Failed to load subtopics:', error);
+    }
+  }, []);
 
 
 
@@ -531,17 +597,99 @@ export default function ShadowingPage() {
     }
   }, [lang, level, practiced, authLoading, user, fetchItems]);
 
+  // 加载主题数据
+  useEffect(() => {
+    if (!authLoading && user) {
+      loadThemes();
+    }
+  }, [lang, level, authLoading, user, loadThemes]);
+
+  // 当选择大主题时，加载对应的子主题
+  useEffect(() => {
+    if (selectedThemeId !== "all") {
+      loadSubtopics(selectedThemeId);
+    } else {
+      setSubtopics([]);
+      setSelectedSubtopicId("all");
+    }
+  }, [selectedThemeId, loadSubtopics]);
+
 
 
   // 过滤显示的题目
   const filteredItems = items.filter(item => {
+    // 搜索筛选
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      return (
+      const matchesSearch = (
         item.title.toLowerCase().includes(query) ||
         item.text.toLowerCase().includes(query)
       );
+      if (!matchesSearch) return false;
     }
+
+    // 体裁筛选（基于 genre 字段或等级推断的体裁筛选）
+    if (theme !== "all") {
+      let itemGenre = item.genre || item.meta?.genre || item.meta?.theme || 
+                     (item.meta?.tags && Array.isArray(item.meta.tags) ? item.meta.tags[0] : null);
+      
+      // 如果没有体裁信息，根据等级和内容特征推断
+      if (!itemGenre) {
+        // 根据6级难度设计的体裁分配规则
+        const levelGenreMap: Record<number, string[]> = {
+          1: ['dialogue'],
+          2: ['dialogue', 'monologue'],
+          3: ['monologue', 'news'],
+          4: ['news', 'dialogue'],
+          5: ['lecture', 'news'],
+          6: ['lecture', 'news']
+        };
+        
+        const possibleGenres = levelGenreMap[item.level] || [];
+        // 如果等级对应的体裁包含当前筛选的体裁，则通过
+        if (possibleGenres.includes(theme)) {
+          itemGenre = theme;
+        }
+      }
+      
+      // 调试日志
+      console.log('体裁筛选:', {
+        theme,
+        itemGenre,
+        itemTitle: item.title,
+        itemLevel: item.level,
+        itemGenreField: item.genre,
+        metaGenre: item.meta?.genre,
+        metaTheme: item.meta?.theme
+      });
+      
+      if (!itemGenre || !itemGenre.toLowerCase().includes(theme.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // 大主题筛选（精确匹配）
+    if (selectedThemeId !== "all") {
+      // 调试日志
+      console.log('大主题筛选:', {
+        selectedThemeId,
+        itemThemeId: item.theme_id,
+        itemTitle: item.title,
+        match: item.theme_id === selectedThemeId
+      });
+      
+      if (!item.theme_id || item.theme_id !== selectedThemeId) {
+        return false;
+      }
+    }
+
+    // 小主题筛选（小主题和标题是一对一关系）
+    if (selectedSubtopicId !== "all") {
+      if (!item.subtopic_id || item.subtopic_id !== selectedSubtopicId) {
+        return false;
+      }
+    }
+
     return true;
   }).sort((a, b) => {
     // 排序规则：已完成 > 草稿中 > 未开始
@@ -2035,6 +2183,63 @@ export default function ShadowingPage() {
                       </Select>
                     </div>
 
+                    {/* 体裁筛选 */}
+                    <div>
+                      <Label className="text-sm">体裁</Label>
+                      <Select value={theme} onValueChange={setTheme}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GENRE_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 大主题筛选 */}
+                    <div>
+                      <Label className="text-sm">大主题</Label>
+                      <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部大主题</SelectItem>
+                          {themes.map(theme => (
+                            <SelectItem key={theme.id} value={theme.id}>
+                              {theme.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 小主题筛选 */}
+                    <div>
+                      <Label className="text-sm">小主题</Label>
+                      <Select 
+                        value={selectedSubtopicId} 
+                        onValueChange={setSelectedSubtopicId}
+                        disabled={selectedThemeId === "all"}
+                      >
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder={selectedThemeId === "all" ? "请先选择大主题" : "选择小主题"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部小主题</SelectItem>
+                          {subtopics.map(subtopic => (
+                            <SelectItem key={subtopic.id} value={subtopic.id}>
+                              {subtopic.title_cn}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     {/* 搜索 */}
                     <div>
                       <Label className="text-sm">搜索</Label>
@@ -2116,7 +2321,7 @@ export default function ShadowingPage() {
                                     <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                   )}
                                   <span className="text-sm font-medium truncate">
-                                    {item.title}
+                                    {item.subtopic ? item.subtopic.title_cn : item.title}
                                     {item.isPracticed && (
                                       <span className="ml-1 text-green-600">✓</span>
                                     )}
@@ -3010,7 +3215,64 @@ export default function ShadowingPage() {
                           <SelectItem value="practiced">已练习</SelectItem>
                         </SelectContent>
                       </Select>
-          </div>
+                    </div>
+
+                    {/* 体裁筛选 */}
+                    <div>
+                      <Label className="text-xs">体裁</Label>
+                      <Select value={theme} onValueChange={setTheme}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GENRE_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 大主题筛选 */}
+                    <div>
+                      <Label className="text-xs">大主题</Label>
+                      <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部大主题</SelectItem>
+                          {themes.map(theme => (
+                            <SelectItem key={theme.id} value={theme.id}>
+                              {theme.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 小主题筛选 */}
+                    <div>
+                      <Label className="text-xs">小主题</Label>
+                      <Select 
+                        value={selectedSubtopicId} 
+                        onValueChange={setSelectedSubtopicId}
+                        disabled={selectedThemeId === "all"}
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder={selectedThemeId === "all" ? "请先选择大主题" : "选择小主题"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部小主题</SelectItem>
+                          {subtopics.map(subtopic => (
+                            <SelectItem key={subtopic.id} value={subtopic.id}>
+                              {subtopic.title_cn}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
                     {/* 搜索 */}
                     <div>
@@ -3090,7 +3352,7 @@ export default function ShadowingPage() {
                                     <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                   )}
                                   <span className="text-sm font-medium truncate">
-                                    {item.title}
+                                    {item.subtopic ? item.subtopic.title_cn : item.title}
                                     {item.isPracticed && (
                                       <span className="ml-1 text-green-600">✓</span>
                                     )}
