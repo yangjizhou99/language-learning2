@@ -55,8 +55,9 @@ export async function GET(req: NextRequest) {
 
     if (provider === 'deepseek') {
       const models = [
-        { id: 'deepseek-chat', name: 'deepseek-chat' },
-        { id: 'deepseek-reasoner', name: 'deepseek-reasoner' }
+        { id: 'deepseek-chat', name: 'DeepSeek Chat', description: 'DeepSeek 对话模型' },
+        { id: 'deepseek-coder', name: 'DeepSeek Coder', description: 'DeepSeek 代码模型' },
+        { id: 'deepseek-reasoner', name: 'DeepSeek Reasoner', description: 'DeepSeek 推理模型' }
       ];
       return NextResponse.json({ provider, models });
     }
