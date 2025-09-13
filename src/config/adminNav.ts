@@ -32,6 +32,8 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
       { href: "/admin/cloze/drafts", label: "Cloze 草稿箱", icon: "🗂️", match: "startsWith" },
       { href: "/admin/alignment/ai", label: "对齐练习生成", icon: "🤝", match: "startsWith" },
       { href: "/admin/shadowing/ai", label: "Shadowing 生成", icon: "👂", match: "startsWith" },
+      { href: "/admin/shadowing/quick-gen", label: "Shadowing 快速生成", icon: "🚀", match: "startsWith" },
+      { href: "/admin/shadowing/themes", label: "主题管理", icon: "🎯", match: "startsWith" },
       { href: "/admin/alignment/review", label: "对齐草稿审核", icon: "🧾", match: "startsWith" },
       { href: "/admin/shadowing/review", label: "Shadowing 草稿审核", icon: "🧾", match: "startsWith" },
     ],

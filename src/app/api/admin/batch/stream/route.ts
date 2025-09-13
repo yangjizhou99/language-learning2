@@ -8,7 +8,7 @@ import { chatJSON } from "@/lib/ai/client";
 import { normUsage } from "@/lib/ai/usage";
 
 type Lang = "en"|"ja"|"zh";
-type Task = { topic: string; level: number };
+type Task = { topic: string; level: number; topic_id?: string | null };
 
 function sse(obj: any) { return `data: ${JSON.stringify(obj)}\n\n`; }
 
@@ -243,7 +243,9 @@ async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, par
         ai_model: model,
         ai_usage: u,
         status: 'draft',
-        created_by: auth.user.id
+        created_by: auth.user.id,
+        theme_id: params.theme_id || null,
+        topic_id: task.topic_id || null
       };
     });
     
@@ -289,9 +291,20 @@ export async function POST(req: NextRequest) {
   const batchSize = Math.min(10, Math.max(1, Number(params.batch_size) || 1));
 
   const tasks: Task[] = [];
-  for (const topic of (topics.length ? topics : ['General'])) {
+  const topicIds = params.topic_ids || [];
+  
+  for (let i = 0; i < topics.length; i++) {
+    const topic = topics[i];
+    const topicId = topicIds[i] || null;
+    
     for (const lv of levels) {
-      for (let i = 0; i < perCombo; i++) tasks.push({ topic, level: lv });
+      for (let j = 0; j < perCombo; j++) {
+        tasks.push({ 
+          topic, 
+          level: lv, 
+          topic_id: topicId 
+        });
+      }
     }
   }
 

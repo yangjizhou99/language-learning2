@@ -104,7 +104,7 @@ export default function ShadowingReviewList(){
   const [q, setQ] = useState("");
   const [lang, setLang] = useState<"all"|"en"|"ja"|"zh">("all");
   const [genre, setGenre] = useState("all");
-  const [level, setLevel] = useState<"all"|"1"|"2"|"3"|"4"|"5">("all");
+  const [level, setLevel] = useState<"all"|"1"|"2"|"3"|"4"|"5"|"6">("all");
   const [status, setStatus] = useState<"all"|"draft"|"approved">("draft");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [ttsLoading, setTtsLoading] = useState(false);
@@ -180,7 +180,7 @@ export default function ShadowingReviewList(){
   useEffect(()=>{ (async()=>{
     const params = new URLSearchParams({ status: status === "all" ? "draft" : status });
     if (lang !== 'all') params.set('lang', lang);
-    if (genre !== 'all') params.set('genre', genre);
+    // 不再基于数据库的genre字段筛选，改为加载所有数据后在前端筛选
     if (level !== 'all') params.set('level', level);
     if (q.trim()) params.set('q', q.trim());
     const { data: { session } } = await supabase.auth.getSession();
@@ -192,7 +192,18 @@ export default function ShadowingReviewList(){
     if (j.items && j.items.length > 0) {
       console.log('第一个草稿的音频URL:', j.items[0].notes?.audio_url);
     }
-    setItems(j.items||[]);
+    
+    // 在前端进行体裁筛选
+    let filteredItems = j.items || [];
+    if (genre !== 'all') {
+      if (genre === 'dialogue') {
+        filteredItems = filteredItems.filter(item => isDialogueFormat(item.text || ''));
+      } else if (genre === 'monologue') {
+        filteredItems = filteredItems.filter(item => !isDialogueFormat(item.text || ''));
+      }
+    }
+    
+    setItems(filteredItems);
   })(); }, [q, lang, genre, level, status]);
 
   // 加载可用模型
@@ -1163,7 +1174,7 @@ export default function ShadowingReviewList(){
             </div>
             <div>
               <label className="text-sm font-medium">等级</label>
-              <Select value={level} onValueChange={(value) => setLevel(value as "all"|"1"|"2"|"3"|"4"|"5")}>
+              <Select value={level} onValueChange={(value) => setLevel(value as "all"|"1"|"2"|"3"|"4"|"5"|"6")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -1174,6 +1185,7 @@ export default function ShadowingReviewList(){
                   <SelectItem value="3">L3</SelectItem>
                   <SelectItem value="4">L4</SelectItem>
                   <SelectItem value="5">L5</SelectItem>
+                  <SelectItem value="6">L6</SelectItem>
                 </SelectContent>
               </Select>
             </div>
