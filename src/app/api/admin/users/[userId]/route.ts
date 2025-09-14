@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const adminCheck = await requireAdmin(req);
@@ -12,7 +12,7 @@ export async function GET(
     }
 
     const { supabase } = adminCheck;
-    const { userId } = params;
+    const { userId } = await params;
 
     // 获取用户基本信息
     const { data: user, error: userError } = await supabase

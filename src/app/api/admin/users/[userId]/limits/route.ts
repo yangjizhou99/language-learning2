@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
 
-export async function GET(req: NextRequest, { params }: { params: { userId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const adminCheck = await requireAdmin(req);
     if (!adminCheck.ok) {
@@ -9,7 +9,7 @@ export async function GET(req: NextRequest, { params }: { params: { userId: stri
     }
 
     const { supabase } = adminCheck;
-    const { userId } = params;
+    const { userId } = await params;
 
     // 获取用户特定的限制设置
     const { data: userLimits, error } = await supabase
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest, { params }: { params: { userId: stri
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { userId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const adminCheck = await requireAdmin(req);
     if (!adminCheck.ok) {
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest, { params }: { params: { userId: str
     }
 
     const { supabase } = adminCheck;
-    const { userId } = params;
+    const { userId } = await params;
     const body = await req.json();
 
     const {
