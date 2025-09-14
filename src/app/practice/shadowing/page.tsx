@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Container } from "@/components/Container";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import SelectablePassage from "@/components/SelectablePassage";
+import useUserPermissions from "@/hooks/useUserPermissions";
 import AudioRecorder from "@/components/AudioRecorder";
 import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -109,6 +110,7 @@ interface AudioRecording {
 
 export default function ShadowingPage() {
   const { t, language } = useLanguage();
+  const { permissions } = useUserPermissions();
   
   // 过滤和筛选状态
   const [lang, setLang] = useState<"ja" | "en" | "zh">("ja");
@@ -2123,9 +2125,9 @@ export default function ShadowingPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ja">{LANG_LABEL.ja}</SelectItem>
-                          <SelectItem value="en">{LANG_LABEL.en}</SelectItem>
-                          <SelectItem value="zh">{LANG_LABEL.zh}</SelectItem>
+                          {permissions.allowed_languages.includes('ja') && <SelectItem value="ja">{LANG_LABEL.ja}</SelectItem>}
+                          {permissions.allowed_languages.includes('en') && <SelectItem value="en">{LANG_LABEL.en}</SelectItem>}
+                          {permissions.allowed_languages.includes('zh') && <SelectItem value="zh">{LANG_LABEL.zh}</SelectItem>}
                         </SelectContent>
                       </Select>
                     </div>
@@ -2142,11 +2144,11 @@ export default function ShadowingPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">全部等级</SelectItem>
-                          <SelectItem value="1">L1</SelectItem>
-                          <SelectItem value="2">L2</SelectItem>
-                          <SelectItem value="3">L3</SelectItem>
-                          <SelectItem value="4">L4</SelectItem>
-                          <SelectItem value="5">L5</SelectItem>
+                          {permissions.allowed_levels.includes(1) && <SelectItem value="1">L1</SelectItem>}
+                          {permissions.allowed_levels.includes(2) && <SelectItem value="2">L2</SelectItem>}
+                          {permissions.allowed_levels.includes(3) && <SelectItem value="3">L3</SelectItem>}
+                          {permissions.allowed_levels.includes(4) && <SelectItem value="4">L4</SelectItem>}
+                          {permissions.allowed_levels.includes(5) && <SelectItem value="5">L5</SelectItem>}
                         </SelectContent>
                       </Select>
                     </div>
@@ -3157,9 +3159,9 @@ export default function ShadowingPage() {
                           <SelectValue />
                         </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ja">{LANG_LABEL.ja}</SelectItem>
-              <SelectItem value="en">{LANG_LABEL.en}</SelectItem>
-              <SelectItem value="zh">{LANG_LABEL.zh}</SelectItem>
+              {permissions.allowed_languages.includes('ja') && <SelectItem value="ja">{LANG_LABEL.ja}</SelectItem>}
+              {permissions.allowed_languages.includes('en') && <SelectItem value="en">{LANG_LABEL.en}</SelectItem>}
+              {permissions.allowed_languages.includes('zh') && <SelectItem value="zh">{LANG_LABEL.zh}</SelectItem>}
             </SelectContent>
           </Select>
         </div>
@@ -3176,11 +3178,11 @@ export default function ShadowingPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">全部等级</SelectItem>
-                          <SelectItem value="1">L1</SelectItem>
-                          <SelectItem value="2">L2</SelectItem>
-                          <SelectItem value="3">L3</SelectItem>
-                          <SelectItem value="4">L4</SelectItem>
-                          <SelectItem value="5">L5</SelectItem>
+                          {permissions.allowed_levels.includes(1) && <SelectItem value="1">L1</SelectItem>}
+                          {permissions.allowed_levels.includes(2) && <SelectItem value="2">L2</SelectItem>}
+                          {permissions.allowed_levels.includes(3) && <SelectItem value="3">L3</SelectItem>}
+                          {permissions.allowed_levels.includes(4) && <SelectItem value="4">L4</SelectItem>}
+                          {permissions.allowed_levels.includes(5) && <SelectItem value="5">L5</SelectItem>}
                         </SelectContent>
                       </Select>
       </div>

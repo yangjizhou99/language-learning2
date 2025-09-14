@@ -141,7 +141,8 @@ export async function POST(req: NextRequest) {
         { role: 'user', content: prompt }
       ],
       temperature: 0.3,
-      response_json: true
+      response_json: true,
+      userId: user.id  // 传递用户ID以使用用户特定的API密钥
     });
 
     if (!result.content) {

@@ -64,12 +64,16 @@ export async function POST(req: NextRequest) {
       return new Response("invalid lang", { status: 400 });
     }
 
+    // 获取用户API密钥
+    const { getUserAPIKeys } = await import('@/lib/user-api-keys');
+    const userKeys = await getUserAPIKeys(body.userId || '');
+    
     // 选择上游并以 SSE 形式请求
     let url = "";
     let headers: Record<string,string> = {};
     if (provider === "openrouter") {
-      const key = process.env.OPENROUTER_API_KEY;
-      if (!key) return new Response("Missing OPENROUTER_API_KEY", { status: 500 });
+      const key = userKeys?.openrouter || process.env.OPENROUTER_API_KEY;
+      if (!key) return new Response("Missing OpenRouter API key", { status: 500 });
       url = "https://openrouter.ai/api/v1/chat/completions";
       headers = {
         "Authorization": `Bearer ${key}`,
@@ -77,8 +81,8 @@ export async function POST(req: NextRequest) {
         "Accept": "text/event-stream"
       };
     } else if (provider === "deepseek") {
-      const key = process.env.DEEPSEEK_API_KEY;
-      if (!key) return new Response("Missing DEEPSEEK_API_KEY", { status: 500 });
+      const key = userKeys?.deepseek || process.env.DEEPSEEK_API_KEY;
+      if (!key) return new Response("Missing DeepSeek API key", { status: 500 });
       url = "https://api.deepseek.com/v1/chat/completions";
       headers = {
         "Authorization": `Bearer ${key}`,
@@ -87,7 +91,7 @@ export async function POST(req: NextRequest) {
       };
     } else {
       const key = process.env.OPENAI_API_KEY;
-      if (!key) return new Response("Missing OPENAI_API_KEY", { status: 500 });
+      if (!key) return new Response("Missing OpenAI API key", { status: 500 });
       url = "https://api.openai.com/v1/chat/completions";
       headers = {
         "Authorization": `Bearer ${key}`,

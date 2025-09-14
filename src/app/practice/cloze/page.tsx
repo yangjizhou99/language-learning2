@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Lang } from "@/types/lang";
 import { Container } from "@/components/Container";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import useUserPermissions from "@/hooks/useUserPermissions";
+import { getFilteredAIProviders, getDefaultProvider, getDefaultModel } from "@/lib/ai-permissions";
 
 interface ClozeBlank {
   id: number;
@@ -41,10 +43,14 @@ interface ScoringResult {
 }
 
 export default function ClozePage() {
+  const { permissions } = useUserPermissions();
   const [lang, setLang] = useState<Lang>("ja");
   const [level, setLevel] = useState<number>(3);
-  const [provider, setProvider] = useState<'deepseek'|'openrouter'|'openai'>("deepseek");
-  const [model, setModel] = useState<string>('deepseek-chat');
+  
+  // 根据权限初始化provider和model
+  const defaultProvider = getDefaultProvider(permissions);
+  const [provider, setProvider] = useState<'deepseek'|'openrouter'|'openai'>(defaultProvider);
+  const [model, setModel] = useState<string>(getDefaultModel(permissions, defaultProvider));
   const [explanationLang, setExplanationLang] = useState<'zh'|'en'|'ja'>('zh');
   const [loading, setLoading] = useState(false);
   const [scoring, setScoring] = useState(false);
@@ -248,9 +254,9 @@ export default function ClozePage() {
             <Select value={lang} onValueChange={v => setLang(v as Lang)}>
               <SelectTrigger className="w-40"><SelectValue placeholder="选择语言" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="ja">日本語</SelectItem>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="zh">简体中文</SelectItem>
+                {permissions.allowed_languages.includes('ja') && <SelectItem value="ja">日本語</SelectItem>}
+                {permissions.allowed_languages.includes('en') && <SelectItem value="en">English</SelectItem>}
+                {permissions.allowed_languages.includes('zh') && <SelectItem value="zh">简体中文</SelectItem>}
               </SelectContent>
             </Select>
           </div>
@@ -259,11 +265,11 @@ export default function ClozePage() {
             <Select value={String(level)} onValueChange={v => setLevel(parseInt(v))}>
               <SelectTrigger className="w-44"><SelectValue placeholder="选择难度" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">L1 - 初级</SelectItem>
-                <SelectItem value="2">L2 - 初中级</SelectItem>
-                <SelectItem value="3">L3 - 中级</SelectItem>
-                <SelectItem value="4">L4 - 中高级</SelectItem>
-                <SelectItem value="5">L5 - 高级</SelectItem>
+                {permissions.allowed_levels.includes(1) && <SelectItem value="1">L1 - 初级</SelectItem>}
+                {permissions.allowed_levels.includes(2) && <SelectItem value="2">L2 - 初中级</SelectItem>}
+                {permissions.allowed_levels.includes(3) && <SelectItem value="3">L3 - 中级</SelectItem>}
+                {permissions.allowed_levels.includes(4) && <SelectItem value="4">L4 - 中高级</SelectItem>}
+                {permissions.allowed_levels.includes(5) && <SelectItem value="5">L5 - 高级</SelectItem>}
               </SelectContent>
             </Select>
           </div>
@@ -271,18 +277,18 @@ export default function ClozePage() {
             <Label className="mb-1 block">AI 提供商</Label>
             <Select value={provider} onValueChange={(p: 'deepseek'|'openrouter'|'openai') => {
               setProvider(p);
-              const defaults: Record<string,string> = {
-                deepseek: 'deepseek-chat',
-                openrouter: 'anthropic/claude-3.5-sonnet',
-                openai: 'gpt-4o'
-              };
-              setModel(defaults[p] || '');
+              setModel(getDefaultModel(permissions, p));
             }}>
               <SelectTrigger className="w-56"><SelectValue placeholder="选择提供商" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="deepseek">DeepSeek</SelectItem>
-                <SelectItem value="openrouter">OpenRouter</SelectItem>
-                <SelectItem value="openai">OpenAI</SelectItem>
+                {(() => {
+                  const filteredProviders = getFilteredAIProviders(permissions);
+                  return Object.entries(filteredProviders).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
+                      {config.name}
+                    </SelectItem>
+                  ));
+                })()}
               </SelectContent>
             </Select>
           </div>
@@ -291,25 +297,17 @@ export default function ClozePage() {
             <Select value={model} onValueChange={setModel}>
               <SelectTrigger className="w-64"><SelectValue placeholder="选择模型" /></SelectTrigger>
               <SelectContent>
-                {provider === 'deepseek' && (
-                  <>
-                    <SelectItem value="deepseek-chat">deepseek-chat</SelectItem>
-                    <SelectItem value="deepseek-reasoner">deepseek-reasoner</SelectItem>
-                  </>
-                )}
-                {provider === 'openrouter' && (
-                  <>
-                    <SelectItem value="anthropic/claude-3.5-sonnet">anthropic/claude-3.5-sonnet</SelectItem>
-                    <SelectItem value="openai/gpt-4o-mini">openai/gpt-4o-mini</SelectItem>
-                    <SelectItem value="meta-llama/Meta-Llama-3.1-70B-Instruct">meta-llama/Meta-Llama-3.1-70B-Instruct</SelectItem>
-                  </>
-                )}
-                {provider === 'openai' && (
-                  <>
-                    <SelectItem value="gpt-4o">gpt-4o</SelectItem>
-                    <SelectItem value="gpt-4o-mini">gpt-4o-mini</SelectItem>
-                  </>
-                )}
+                {(() => {
+                  const filteredProviders = getFilteredAIProviders(permissions);
+                  const providerConfig = filteredProviders[provider];
+                  if (!providerConfig) return null;
+                  
+                  return providerConfig.models.map(model => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.name}
+                    </SelectItem>
+                  ));
+                })()}
               </SelectContent>
             </Select>
           </div>

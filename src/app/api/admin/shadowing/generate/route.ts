@@ -85,7 +85,8 @@ export async function POST(req: NextRequest) {
       messages: [
         { role: "system", content: "你只返回有效的JSON格式。" },
         { role: "user", content: buildUserPrompt({ lang, level, count, words, topic }) }
-      ]
+      ],
+      userId: auth.user.id  // 传递用户ID以使用用户特定的API密钥
     });
 
     let parsed: { items?: Array<{ title?: unknown; text?: unknown }> };

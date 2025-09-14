@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { CacheManager } from '@/lib/cache';
+import { getUserPermissions, checkLevelPermission, checkLanguagePermission, checkAccessPermission } from '@/lib/user-permissions-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -49,6 +50,28 @@ export async function GET(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 获取用户权限
+    const permissions = await getUserPermissions(user.id);
+    console.log('User permissions:', permissions);
+
+    // 检查是否有访问Cloze的权限
+    if (!checkAccessPermission(permissions, 'can_access_cloze')) {
+      console.log('User does not have cloze access permission');
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    // 检查等级权限
+    if (!checkLevelPermission(permissions, levelNum)) {
+      console.log('User does not have permission for level:', levelNum);
+      return NextResponse.json({ error: 'Access denied for this level' }, { status: 403 });
+    }
+
+    // 检查语言权限
+    if (!checkLanguagePermission(permissions, lang)) {
+      console.log('User does not have permission for language:', lang);
+      return NextResponse.json({ error: 'Access denied for this language' }, { status: 403 });
     }
 
     // 生成缓存键

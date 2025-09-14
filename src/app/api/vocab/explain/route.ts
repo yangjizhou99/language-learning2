@@ -193,7 +193,8 @@ ${entries.map((entry: any) => `
       ],
       temperature: Math.min(temperature, 0.3), // 降低温度以提高准确性
       response_json: true,
-      timeoutMs: 30000
+      timeoutMs: 30000,
+      userId: user.id  // 传递用户ID以使用用户特定的API密钥
     });
 
     let explanations;

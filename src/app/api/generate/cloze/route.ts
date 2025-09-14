@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 type Blank = { idx: number; answer: string };
 type ClozeResp = {
@@ -21,7 +23,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "missing params: lang, topic" }, { status: 400 });
     }
 
-    const apiKey = process.env.DEEPSEEK_API_KEY;
+    // 获取用户信息
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value; },
+          set() {},
+          remove() {},
+        }
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 获取用户API密钥
+    const { getUserAPIKeys } = await import('@/lib/user-api-keys');
+    const userKeys = await getUserAPIKeys(user.id);
+    const apiKey = userKeys?.deepseek || process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
         { error: "DEEPSEEK_API_KEY is missing. Create .env.local from .env.example and restart dev server." },
@@ -41,7 +65,7 @@ export async function POST(req: NextRequest) {
         { role: "user", content: "生成题目" }
       ],
       // DeepSeek 为 OpenAI 兼容实现；若 response_format 不被支持，可去掉，已在下方做回退。
-      // @ts-ignore
+      // @ts-expect-error - DeepSeek supports response_format
       response_format: { type: "json_object" },
       temperature: 0.4,
     });
@@ -64,7 +88,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(data, { status: 200 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "unknown error" }, { status: 500 });
+  } catch (e: unknown) {
+    const errorMessage = e instanceof Error ? e.message : "unknown error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

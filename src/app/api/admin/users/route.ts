@@ -3,23 +3,16 @@ import { requireAdmin } from "@/lib/admin";
 
 export async function GET(req: NextRequest) {
   try {
-    console.log('=== 用户列表 API 开始 ===');
-    
     // 检查认证
     const auth = await requireAdmin(req);
-    console.log('管理员检查结果:', auth.ok ? '通过' : '失败', auth.reason);
     
     if (!auth.ok) {
-      console.log('认证失败，返回403错误');
       return NextResponse.json({ error: auth.reason }, { status: 403 });
     }
-    
-    console.log('认证成功，继续查询用户数据');
 
     // 使用 getServiceSupabase 来查询数据，绕过 RLS 限制
     const { getServiceSupabase } = await import('@/lib/supabaseAdmin');
     const supabase = getServiceSupabase();
-    console.log('✅ 使用 getServiceSupabase 创建客户端成功');
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -55,17 +48,8 @@ export async function GET(req: NextRequest) {
     }
 
     // 获取分页数据和总数
-    console.log('开始查询用户数据...');
-    console.log('查询参数:', { page, limit, offset, search, role });
-    
     const { data: users, error, count } = await query
       .range(offset, offset + limit - 1);
-
-    console.log('查询结果:', { 
-      usersCount: users?.length || 0, 
-      totalCount: count, 
-      error: error?.message 
-    });
 
     if (error) {
       console.error('获取用户列表失败:', error);
