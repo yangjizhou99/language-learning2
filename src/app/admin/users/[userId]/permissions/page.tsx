@@ -187,10 +187,10 @@ export default function UserPermissionsPage() {
     setPermissions({ ...permissions, [field]: value });
   };
 
-  const handleModelPermissionChange = (modelId: string, field: keyof ModelPermission, value: any) => {
+  const handleModelPermissionChange = (index: number, field: keyof ModelPermission, value: any) => {
     if (!permissions) return;
-    const updatedModelPermissions = permissions.model_permissions.map(model =>
-      model.model_id === modelId ? { ...model, [field]: value } : model
+    const updatedModelPermissions = permissions.model_permissions.map((model, i) =>
+      i === index ? { ...model, [field]: value } : model
     );
     setPermissions({ ...permissions, model_permissions: updatedModelPermissions });
   };
@@ -589,7 +589,7 @@ export default function UserPermissionsPage() {
                               <Switch
                                 checked={model.enabled}
                                 onCheckedChange={(checked) => 
-                                  handleModelPermissionChange(model.model_id, 'enabled', checked)
+                                  handleModelPermissionChange(index, 'enabled', checked)
                                 }
                               />
                               <Button
@@ -610,7 +610,7 @@ export default function UserPermissionsPage() {
                                 id={`model-id-${index}`}
                                 value={model.model_id}
                                 onChange={(e) => 
-                                  handleModelPermissionChange(model.model_id, 'model_id', e.target.value)
+                                  handleModelPermissionChange(index, 'model_id', e.target.value)
                                 }
                                 placeholder="deepseek-chat"
                               />
@@ -621,7 +621,7 @@ export default function UserPermissionsPage() {
                                 id={`model-name-${index}`}
                                 value={model.model_name}
                                 onChange={(e) => 
-                                  handleModelPermissionChange(model.model_id, 'model_name', e.target.value)
+                                  handleModelPermissionChange(index, 'model_name', e.target.value)
                                 }
                                 placeholder="DeepSeek Chat"
                               />
@@ -631,7 +631,7 @@ export default function UserPermissionsPage() {
                               <Select
                                 value={model.provider}
                                 onValueChange={(value) => 
-                                  handleModelPermissionChange(model.model_id, 'provider', value)
+                                  handleModelPermissionChange(index, 'provider', value)
                                 }
                               >
                                 <SelectTrigger>
@@ -651,7 +651,7 @@ export default function UserPermissionsPage() {
                                 min="0"
                                 value={model.daily_limit}
                                 onChange={(e) => 
-                                  handleModelPermissionChange(model.model_id, 'daily_limit', parseInt(e.target.value) || 0)
+                                  handleModelPermissionChange(index, 'daily_limit', parseInt(e.target.value) || 0)
                                 }
                               />
                             </div>
@@ -663,7 +663,7 @@ export default function UserPermissionsPage() {
                                 min="0"
                                 value={model.token_limit}
                                 onChange={(e) => 
-                                  handleModelPermissionChange(model.model_id, 'token_limit', parseInt(e.target.value) || 0)
+                                  handleModelPermissionChange(index, 'token_limit', parseInt(e.target.value) || 0)
                                 }
                                 placeholder="100000"
                               />

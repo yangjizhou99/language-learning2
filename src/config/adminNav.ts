@@ -29,6 +29,7 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
           items: [
             { href: "/admin/users", label: "用户列表", icon: "👥", match: "startsWith" },
             { href: "/admin/users/analytics", label: "用户分析", icon: "📊", match: "startsWith" },
+            { href: "/admin/api-usage", label: "API用量统计", icon: "📈" },
             { href: "/admin/debug-users", label: "调试用户数据", icon: "🐛", match: "startsWith" },
             { href: "/admin/test-user-detail", label: "测试用户详情", icon: "🧪", match: "startsWith" },
             { href: "/admin/debug-user-detail", label: "调试用户详情", icon: "🔍", match: "startsWith" },

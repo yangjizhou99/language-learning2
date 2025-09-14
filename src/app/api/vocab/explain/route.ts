@@ -192,9 +192,9 @@ ${entries.map((entry: any) => `
         { role: 'user', content: prompt }
       ],
       temperature: Math.min(temperature, 0.3), // 降低温度以提高准确性
+      userId: user.id, // 传递用户ID进行权限检查和使用用户特定的API密钥
       response_json: true,
-      timeoutMs: 30000,
-      userId: user.id  // 传递用户ID以使用用户特定的API密钥
+      timeoutMs: 30000
     });
 
     let explanations;

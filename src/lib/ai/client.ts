@@ -1,3 +1,6 @@
+import { logAPIUsage, extractTokenUsage, calculateAPICost } from '../api-usage-tracker';
+import { checkAPILimits, checkUserAIPermissions } from '../api-limits-checker';
+
 type Msg = { role:"system"|"user"|"assistant"; content:string };
 type Provider = "openrouter" | "deepseek" | "openai";
 
@@ -12,6 +15,22 @@ export type ChatJSONArgs = {
 };
 
 export async function chatJSON({ provider, model, messages, temperature=0.6, response_json=true, timeoutMs, userId }: ChatJSONArgs) {
+  // 检查用户AI权限和模型权限
+  if (userId) {
+    const permissionCheck = await checkUserAIPermissions(userId, provider, model);
+    if (!permissionCheck.allowed) {
+      throw new Error(`AI权限限制: ${permissionCheck.reason}`);
+    }
+  }
+
+  // 检查API使用限制
+  if (userId) {
+    const limitCheck = await checkAPILimits(userId, provider, model);
+    if (!limitCheck.allowed) {
+      throw new Error(`API使用限制: ${limitCheck.reason}`);
+    }
+  }
+
   const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
   const signal = controller?.signal as any;
   let timer: any = null;
@@ -47,6 +66,22 @@ export async function chatJSON({ provider, model, messages, temperature=0.6, res
     const j = await r.json();
     const content = j?.choices?.[0]?.message?.content || "";
     const usage = j?.usage || {};
+    
+    // 记录API使用情况
+    if (userId) {
+      const tokensUsed = extractTokenUsage(j);
+      const cost = calculateAPICost('openrouter', model, tokensUsed);
+      await logAPIUsage({
+        user_id: userId,
+        provider: 'openrouter',
+        model,
+        tokens_used: tokensUsed,
+        cost,
+        request_data: body,
+        response_data: j
+      });
+    }
+    
     return { content, usage };
   }
 
@@ -74,6 +109,22 @@ export async function chatJSON({ provider, model, messages, temperature=0.6, res
     const j = await r.json();
     const content = j?.choices?.[0]?.message?.content || "";
     const usage = j?.usage || {};
+    
+    // 记录API使用情况
+    if (userId) {
+      const tokensUsed = extractTokenUsage(j);
+      const cost = calculateAPICost('deepseek', model, tokensUsed);
+      await logAPIUsage({
+        user_id: userId,
+        provider: 'deepseek',
+        model,
+        tokens_used: tokensUsed,
+        cost,
+        request_data: body,
+        response_data: j
+      });
+    }
+    
     return { content, usage };
   }
 
@@ -91,5 +142,21 @@ export async function chatJSON({ provider, model, messages, temperature=0.6, res
   const j = await r.json();
   const content = j?.choices?.[0]?.message?.content || "";
   const usage = j?.usage || {};
+  
+  // 记录API使用情况
+  if (userId) {
+    const tokensUsed = extractTokenUsage(j);
+    const cost = calculateAPICost('openai', model, tokensUsed);
+    await logAPIUsage({
+      user_id: userId,
+      provider: 'openai',
+      model,
+      tokens_used: tokensUsed,
+      cost,
+      request_data: body,
+      response_data: j
+    });
+  }
+  
   return { content, usage };
 }

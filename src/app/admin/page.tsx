@@ -113,6 +113,10 @@ export default function AdminDashboard() {
             <h3 className="font-medium text-gray-900">📊 性能监控</h3>
             <p className="text-sm text-gray-600 mt-1">实时性能指标监控</p>
           </Link>
+          <Link href="/admin/api-usage" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+            <h3 className="font-medium text-gray-900">📈 API用量统计</h3>
+            <p className="text-sm text-gray-600 mt-1">监控和管理用户的API使用情况</p>
+          </Link>
         </div>
       </div>
     </div>

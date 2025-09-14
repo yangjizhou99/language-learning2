@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYS },
         { role: "user", content: buildTurnPrompt({ lang: mockPack.lang, topic: mockPack.topic, stepKey: step_key, step, role, historyPreview: lastTurns, isKickoff }) },
       ],
+      userId: user.id, // 传递用户ID进行权限检查
     });
 
     console.log("角色扮演对话:", { pack_id, step_key, role, messages: messages.length, reply: content });
