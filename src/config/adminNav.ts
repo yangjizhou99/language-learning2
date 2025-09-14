@@ -24,6 +24,17 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
       { href: "/admin/drafts", label: "草稿箱", icon: "📋", match: "startsWith" },
     ],
   },
+        {
+          title: "用户管理",
+          items: [
+            { href: "/admin/users", label: "用户列表", icon: "👥", match: "startsWith" },
+            { href: "/admin/users/analytics", label: "用户分析", icon: "📊", match: "startsWith" },
+            { href: "/admin/debug-users", label: "调试用户数据", icon: "🐛", match: "startsWith" },
+            { href: "/admin/test-user-detail", label: "测试用户详情", icon: "🧪", match: "startsWith" },
+            { href: "/admin/debug-user-detail", label: "调试用户详情", icon: "🔍", match: "startsWith" },
+            { href: "/admin/setup-database", label: "数据库设置", icon: "🗄️", match: "startsWith" },
+          ],
+        },
   {
     title: "生成 / AI",
     items: [
