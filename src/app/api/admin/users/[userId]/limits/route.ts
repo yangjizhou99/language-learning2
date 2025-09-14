@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
 
-export async function GET(req: NextRequest, { params }: any) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const adminCheck = await requireAdmin(req);
     if (!adminCheck.ok) {
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest, { params }: any) {
   }
 }
 
-export async function POST(req: NextRequest, { params }: any) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const adminCheck = await requireAdmin(req);
     if (!adminCheck.ok) {
