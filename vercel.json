@@ -12,8 +12,26 @@
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
     "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
     "OPENROUTER_API_KEY": "@openrouter_api_key",
+    "OPENROUTER_SITE_URL": "@openrouter_site_url",
+    "OPENROUTER_SITE_NAME": "@openrouter_site_name",
     "DEEPSEEK_API_KEY": "@deepseek_api_key",
+    "DEEPSEEK_BASE_URL": "@deepseek_base_url",
     "OPENAI_API_KEY": "@openai_api_key",
-    "NEXT_PUBLIC_APP_URL": "@app_url"
+    "GOOGLE_TTS_CREDENTIALS": "@google_tts_credentials",
+    "GOOGLE_TTS_PROJECT_ID": "@google_tts_project_id",
+    "GOOGLE_CLOUD_CLIENT_EMAIL": "@google_cloud_client_email",
+    "GOOGLE_CLOUD_PRIVATE_KEY": "@google_cloud_private_key",
+    "GOOGLE_CLOUD_PROJECT_ID": "@google_cloud_project_id",
+    "GEMINI_TTS_MODEL": "@gemini_tts_model",
+    "XUNFEI_APP_ID": "@xunfei_app_id",
+    "XUNFEI_API_KEY": "@xunfei_api_key",
+    "XUNFEI_API_SECRET": "@xunfei_api_secret",
+    "NEXT_PUBLIC_SITE_URL": "@site_url",
+    "NEXT_PUBLIC_SITE_NAME": "@site_name",
+    "NEXT_PUBLIC_SHADOWING_AUDIO_BUCKET": "@shadowing_audio_bucket",
+    "NEXT_PUBLIC_SHOW_DEBUG": "@show_debug",
+    "ENABLE_PERFORMANCE_MONITORING": "@enable_performance_monitoring",
+    "AI_PROVIDER": "@ai_provider",
+    "AI_DEFAULT_MODEL": "@ai_default_model"
   }
 }
