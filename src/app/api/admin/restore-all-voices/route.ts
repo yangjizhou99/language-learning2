@@ -27,31 +27,37 @@ export async function POST(req: NextRequest) {
     
     // 2. 重新获取Google Cloud TTS音色
     console.log('获取Google Cloud TTS音色...');
-    const { TextToSpeechClient } = require('@google-cloud/text-to-speech');
     
-    let credentials;
-    if (process.env.GOOGLE_CLOUD_CLIENT_EMAIL && process.env.GOOGLE_CLOUD_PRIVATE_KEY) {
-      credentials = {
-        client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      };
-    } else if (process.env.GOOGLE_TTS_CREDENTIALS) {
+    // 使用与试听API相同的认证逻辑
+    function makeClient() {
+      const raw = process.env.GOOGLE_TTS_CREDENTIALS;
+      if (!raw) throw new Error("GOOGLE_TTS_CREDENTIALS missing");
+
+      let credentials: any;
+      try {
+        credentials = JSON.parse(raw);
+      } catch {
+        try {
+          if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+            throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
+          }
       const fs = require('fs');
       const path = require('path');
-      const serviceAccountPath = path.resolve(process.env.GOOGLE_TTS_CREDENTIALS);
-      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-      credentials = {
-        client_email: serviceAccount.client_email,
-        private_key: serviceAccount.private_key,
-      };
-    } else {
-      throw new Error('Google Cloud TTS credentials not found');
+          const filePath = path.resolve(process.cwd(), raw);
+          const fileContent = fs.readFileSync(filePath, 'utf8');
+          credentials = JSON.parse(fileContent);
+        } catch (fileError: unknown) {
+          const errorMessage = fileError instanceof Error ? fileError.message : String(fileError);
+          throw new Error(`Failed to parse GOOGLE_TTS_CREDENTIALS: ${raw}. Error: ${errorMessage}`);
+        }
+      }
+
+      const projectId = process.env.GOOGLE_TTS_PROJECT_ID || credentials.project_id;
+      const { TextToSpeechClient } = require('@google-cloud/text-to-speech');
+      return new TextToSpeechClient({ credentials, projectId });
     }
     
-    const client = new TextToSpeechClient({
-      credentials,
-      projectId: process.env.GOOGLE_TTS_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT_ID,
-    });
+    const client = makeClient();
     
     const [res] = await client.listVoices({});
     const allVoices = res.voices || [];
@@ -94,13 +100,71 @@ export async function POST(req: NextRequest) {
       };
     });
     
-    // 5. 准备Gemini音色数据（只保留真正的英语Gemini音色）
+    // 5. 准备Gemini音色数据（60个音色：30个Flash + 30个Pro）
     const geminiVoices = [
-      // 英语 Gemini TTS 音色（真正的AI增强音色）
-      { name: 'Gemini-Kore', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
-      { name: 'Gemini-Orus', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
-      { name: 'Gemini-Callirrhoe', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
-      { name: 'Gemini-Puck', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 }
+      // 英语 Gemini TTS Flash音色（经济实惠、日常应用）
+      { name: 'Gemini-Flash-Achernar', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Achird', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Algenib', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Algieba', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Alnilam', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Aoede', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Autonoe', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Callirrhoe', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Charon', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Despina', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Enceladus', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Erinome', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Fenrir', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Gacrux', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Iapetus', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Kore', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Laomedeia', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Leda', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Orus', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Pulcherrima', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Puck', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Rasalgethi', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Sadachbia', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Sadaltager', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Schedar', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Sulafat', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Umbriel', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Vindemiatrix', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Zephyr', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Flash-Zubenelgenubi', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      
+      // 英语 Gemini TTS Pro音色（专业应用、高质量控制）
+      { name: 'Gemini-Pro-Achernar', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Achird', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Algenib', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Algieba', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Alnilam', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Aoede', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Autonoe', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Callirrhoe', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Charon', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Despina', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Enceladus', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Erinome', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Fenrir', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Gacrux', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Iapetus', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Kore', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Laomedeia', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Leda', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Orus', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Pulcherrima', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Puck', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Rasalgethi', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Sadachbia', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Sadaltager', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Schedar', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Sulafat', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Umbriel', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Vindemiatrix', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Zephyr', language_code: 'en-US', ssml_gender: 'FEMALE', natural_sample_rate_hertz: 24000 },
+      { name: 'Gemini-Pro-Zubenelgenubi', language_code: 'en-US', ssml_gender: 'MALE', natural_sample_rate_hertz: 24000 }
     ];
     
     const geminiVoiceData = geminiVoices.map((voice: any) => {
@@ -191,7 +255,8 @@ const VOICE_PRICING = {
   'Neural2': { pricePerMillionChars: 8 },
   'Wavenet': { pricePerMillionChars: 4 },
   'Standard': { pricePerMillionChars: 4 },
-  'Gemini': { pricePerMillionChars: 20 },
+  'Gemini-Flash': { pricePerMillionChars: 10 }, // Neural2的1.25倍: 8 * 1.25 = 10
+  'Gemini-Pro': { pricePerMillionChars: 20 }, // Neural2的2.5倍: 8 * 2.5 = 20
   'Other': { pricePerMillionChars: 4 }
 };
 
@@ -200,16 +265,20 @@ function getVoicePricing(voiceName: string) {
   if (voiceName.includes('Neural2')) return VOICE_PRICING['Neural2'];
   if (voiceName.includes('Wavenet')) return VOICE_PRICING['Wavenet'];
   if (voiceName.includes('Standard')) return VOICE_PRICING['Standard'];
-  if (voiceName.includes('Gemini') || voiceName === 'Kore' || voiceName === 'Orus' || voiceName === 'Callirrhoe' || voiceName === 'Puck') return VOICE_PRICING['Gemini'];
+  if (voiceName.includes('Gemini-Flash')) return VOICE_PRICING['Gemini-Flash'];
+  if (voiceName.includes('Gemini-Pro')) return VOICE_PRICING['Gemini-Pro'];
+  if (voiceName.includes('Gemini') || voiceName === 'Kore' || voiceName === 'Orus' || voiceName === 'Callirrhoe' || voiceName === 'Puck') return VOICE_PRICING['Gemini-Flash']; // 默认为Flash
   return VOICE_PRICING['Other'];
 }
 
 function generateVoiceCharacteristics(voice: any) {
-  const gender = voice.ssmlGender === 'MALE' ? '男性' : '女性';
+  // 兼容不同的字段名
+  const ssmlGender = voice.ssml_gender || voice.ssmlGender;
+  const gender = ssmlGender === 'MALE' ? '男性' : '女性';
   return {
     voiceType: gender,
-    tone: voice.ssmlGender === 'MALE' ? '男声' : '女声',
-    pitch: voice.ssmlGender === 'MALE' ? '中低音' : '中高音'
+    tone: ssmlGender === 'MALE' ? '男声' : '女声',
+    pitch: ssmlGender === 'MALE' ? '中低音' : '中高音'
   };
 }
 
@@ -223,6 +292,10 @@ function generateUseCase(voiceName: string) {
     return '平衡性能、中高质量';
   } else if (voiceName.includes('Standard')) {
     return '基础应用、成本优化';
+  } else if (voiceName.includes('Gemini-Pro')) {
+    return 'AI增强、专业应用、高质量控制';
+  } else if (voiceName.includes('Gemini-Flash')) {
+    return 'AI增强、经济实惠、日常应用';
   } else if (voiceName.includes('Gemini')) {
     return 'AI增强、创新应用';
   } else {
@@ -242,8 +315,12 @@ function getVoiceCategory(voiceName: string, gender: string): string {
     return `Wavenet-${genderPrefix}`;
   } else if (voiceName.includes('Standard')) {
     return `Standard-${genderPrefix}`;
+  } else if (voiceName.includes('Gemini-Pro')) {
+    return `Gemini-Pro-${genderPrefix}`;
+  } else if (voiceName.includes('Gemini-Flash')) {
+    return `Gemini-Flash-${genderPrefix}`;
   } else if (voiceName.includes('Gemini') || voiceName === 'Kore' || voiceName === 'Orus' || voiceName === 'Callirrhoe' || voiceName === 'Puck') {
-    return `Gemini-${genderPrefix}`;
+    return `Gemini-Flash-${genderPrefix}`; // 默认为Flash
   } else {
     return `Other-${genderPrefix}`;
   }

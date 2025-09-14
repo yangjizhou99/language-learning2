@@ -14,14 +14,18 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { text, lang, voice, speakingRate = 1.0 } = body;
+    const { text, lang, voice, speakingRate = 1.0, pitch = 0 } = body;
 
-    if (!text || !lang) {
+    console.log('合成API接收到的参数:', { text: text.substring(0, 50) + '...', lang, voice, speakingRate, pitch });
+
+    if (!text || !lang || !voice) {
       return NextResponse.json({ error: "缺少必要参数" }, { status: 400 });
     }
 
-    // 直接调用本地合成函数，避免受保护路由
-    const audioBuffer = await synthesizeTTS({ text, lang, voiceName: voice, speakingRate });
+    // 直接调用合成函数，借鉴成功的 /api/tts 实现
+    console.log('直接调用synthesizeTTS:', { text: text.substring(0, 50) + '...', lang, voiceName: voice, speakingRate, pitch });
+
+    const audioBuffer = await synthesizeTTS({ text, lang, voiceName: voice, speakingRate, pitch });
 
     // 上传到 Supabase Storage
     const supabaseAdmin = getServiceSupabase();

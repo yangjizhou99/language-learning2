@@ -4,7 +4,19 @@
   "framework": "nextjs",
   "functions": {
     "src/app/api/**/*.ts": {
-      "maxDuration": 30
+      "maxDuration": 60
+    },
+    "src/app/api/admin/shadowing/subtopics/generate/route.ts": {
+      "maxDuration": 120
+    },
+    "src/app/api/admin/shadowing/subtopics/generate-stream/route.ts": {
+      "maxDuration": 180
+    },
+    "src/app/api/admin/shadowing/themes/generate/route.ts": {
+      "maxDuration": 120
+    },
+    "src/app/api/admin/shadowing/generate-from-subtopics/stream/route.ts": {
+      "maxDuration": 300
     }
   }
 }

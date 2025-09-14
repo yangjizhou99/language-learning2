@@ -156,8 +156,15 @@ export async function synthesizeGeminiTTS({
   // 分割文本并处理
   const sentences = splitTextIntoSentences(clean).flatMap(s => chunkByBytes(s, 800));
   
-  // 构建 Gemini TTS 请求
-  const modelName = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
+  // 根据音色名称确定模型类型
+  let modelName = 'gemini-2.5-flash-preview-tts'; // 默认Flash模型
+  if (voiceName.includes('Gemini-Pro-')) {
+    modelName = 'gemini-2.5-pro-preview-tts';
+  } else if (voiceName.includes('Gemini-Flash-')) {
+    modelName = 'gemini-2.5-flash-preview-tts';
+  } else {
+    modelName = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
+  }
   
   // 根据语言选择合适的语言代码和音色
   const getLanguageConfig = (lang: string) => {
@@ -177,9 +184,17 @@ export async function synthesizeGeminiTTS({
         };
       case 'en':
       default:
+        // 从音色名称中提取实际的Gemini音色名称
+        let geminiVoiceName = voiceName;
+        if (voiceName.includes('Gemini-Pro-')) {
+          geminiVoiceName = voiceName.replace('Gemini-Pro-', '');
+        } else if (voiceName.includes('Gemini-Flash-')) {
+          geminiVoiceName = voiceName.replace('Gemini-Flash-', '');
+        }
+        
         return {
           languageCode: "en-US", // 英语
-          voiceName: voiceName, // Gemini TTS 音色
+          voiceName: geminiVoiceName, // Gemini TTS 音色
           modelName: modelName // Gemini TTS 模型
         };
     }
@@ -187,12 +202,15 @@ export async function synthesizeGeminiTTS({
 
   const langConfig = getLanguageConfig(lang);
   
+  // 为多音色对话优化：使用更稳定的prompt来保证音色一致性
+  const stablePrompt = "以稳定、一致的风格朗读文本，保持音色特征不变";
+  
   // Gemini TTS 需要特殊的配置方式 - 根据 Google Cloud 文档
   // 注意：modelName 字段应该放在 voice 里，而不是顶层
   const request = {
     input: { 
       text: clean,
-      prompt: stylePrompt
+      prompt: stablePrompt // 使用稳定的prompt而不是动态的stylePrompt
     },
     voice: {
       languageCode: langConfig.languageCode,

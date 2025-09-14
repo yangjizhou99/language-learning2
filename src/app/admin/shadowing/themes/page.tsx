@@ -479,9 +479,10 @@ export default function ThemesPage() {
     setRunningTasks(prev => prev + 1);
 
     try {
+      // 对于小主题生成，使用流式API
       const endpoint = task.type === 'themes' 
         ? '/api/admin/shadowing/themes/generate'
-        : '/api/admin/shadowing/subtopics/generate';
+        : '/api/admin/shadowing/subtopics/generate-stream';
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -493,25 +494,111 @@ export default function ThemesPage() {
         signal: abortController.signal
       });
 
-      const result = await response.json();
-      
       if (!response.ok) {
-        throw new Error(result.error || '生成失败');
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      // 更新任务状态为完成
-      setTaskQueue(prev => prev.map(t => 
-        t.id === taskId 
-          ? { 
-              ...t, 
-              status: 'completed', 
-              progress: 100, 
-              result,
-              completedAt: new Date(),
-              abortController: undefined
+      // 如果是流式响应
+      if (response.headers.get('content-type')?.includes('text/event-stream')) {
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) {
+          throw new Error('No response body');
+        }
+
+        let result: any = null;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                // 更新进度
+                if (data.type === 'start') {
+                  setTaskQueue(prev => prev.map(t => 
+                    t.id === taskId ? { ...t, progress: 20 } : t
+                  ));
+                } else if (data.type === 'ai_start') {
+                  setTaskQueue(prev => prev.map(t => 
+                    t.id === taskId ? { ...t, progress: 40 } : t
+                  ));
+                } else if (data.type === 'ai_complete') {
+                  setTaskQueue(prev => prev.map(t => 
+                    t.id === taskId ? { ...t, progress: 70 } : t
+                  ));
+                } else if (data.type === 'parse_complete') {
+                  setTaskQueue(prev => prev.map(t => 
+                    t.id === taskId ? { ...t, progress: 90 } : t
+                  ));
+                } else if (data.type === 'complete') {
+                  result = data.data;
+                  setTaskQueue(prev => prev.map(t => 
+                    t.id === taskId ? { ...t, progress: 100 } : t
+                  ));
+                } else if (data.type === 'error') {
+                  throw new Error(data.message || 'Generation failed');
+                }
+              } catch (parseError) {
+                console.error('Parse SSE data failed:', parseError);
+              }
             }
-          : t
-      ));
+          }
+        }
+
+        if (!result) {
+          throw new Error('No result received from stream');
+        }
+
+        // 更新任务状态为完成
+        setTaskQueue(prev => prev.map(t => 
+          t.id === taskId 
+            ? { 
+                ...t, 
+                status: 'completed', 
+                progress: 100, 
+                result,
+                completedAt: new Date(),
+                abortController: undefined
+              }
+            : t
+        ));
+
+      } else {
+        // 非流式响应处理
+        const responseText = await response.text();
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch (jsonError) {
+          throw new Error(`API返回非JSON格式响应: ${responseText}`);
+        }
+        
+        if (!response.ok) {
+          throw new Error(result.error || '生成失败');
+        }
+
+        // 更新任务状态为完成
+        setTaskQueue(prev => prev.map(t => 
+          t.id === taskId 
+            ? { 
+                ...t, 
+                status: 'completed', 
+                progress: 100, 
+                result,
+                completedAt: new Date(),
+                abortController: undefined
+              }
+            : t
+        ));
+      }
 
       // 重新加载数据
       await load();
@@ -1246,7 +1333,7 @@ export default function ThemesPage() {
 
       {/* 编辑对话框 */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby="dialog-description">
           <DialogHeader>
             <DialogTitle>
               {editing?.id ? '编辑主题' : '新建主题'}
@@ -1381,7 +1468,7 @@ export default function ThemesPage() {
 
       {/* AI 生成对话框 */}
       <Dialog open={!!aiGenerationType} onOpenChange={(open) => !open && setAiGenerationType(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby="ai-dialog-description">
           <DialogHeader>
             <DialogTitle>
               {aiGenerationType === 'themes' ? 'AI 生成大主题' : 'AI 生成小主题'}

@@ -336,14 +336,26 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
         throw new Error('合并后的音频文件大小为0');
       }
 
+      // 根据第一个音频URL推断语言路径
+      const firstAudioUrl = audioUrls[0];
+      let langPath = 'zh'; // 默认中文路径
+      
+      // 从URL中提取语言路径
+      if (firstAudioUrl) {
+        const urlMatch = firstAudioUrl.match(/\/tts\/([^\/]+)\//);
+        if (urlMatch) {
+          langPath = urlMatch[1];
+        }
+      }
+      
       // 上传合并后的音频到Supabase Storage
       const mergedAudioBuffer = await fs.readFile(outputFile);
       const fileName = `merged_${Date.now()}.mp3`;
-      console.log('准备上传音频文件，大小:', mergedAudioBuffer.length, 'bytes');
+      console.log('准备上传音频文件，大小:', mergedAudioBuffer.length, 'bytes', '语言路径:', langPath);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('tts')
-        .upload(`zh/${fileName}`, mergedAudioBuffer, {
+        .upload(`${langPath}/${fileName}`, mergedAudioBuffer, {
           contentType: 'audio/mpeg',
           upsert: false
         });
@@ -355,14 +367,14 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
       // 获取带签名的URL（7天有效期）
       const { data: urlData, error: urlError } = await supabase.storage
         .from('tts')
-        .createSignedUrl(`zh/${fileName}`, 7 * 24 * 60 * 60); // 7天有效期
+        .createSignedUrl(`${langPath}/${fileName}`, 7 * 24 * 60 * 60); // 7天有效期
 
       if (urlError) {
         console.error('生成签名URL失败:', urlError);
         // 如果签名URL失败，尝试公开URL
         const { data: publicUrlData } = supabase.storage
           .from('tts')
-          .getPublicUrl(`zh/${fileName}`);
+          .getPublicUrl(`${langPath}/${fileName}`);
         console.log('使用公开URL:', publicUrlData.publicUrl);
         return NextResponse.json({
           success: true,

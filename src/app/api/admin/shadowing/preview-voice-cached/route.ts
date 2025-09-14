@@ -49,41 +49,101 @@ function getPreviewText(languageCode: string): string {
   return PREVIEW_TEXTS['multi'];
 }
 
+// 将简化音色名称映射为完整的Google Cloud TTS音色名称
+function mapToFullVoiceName(voiceName: string, languageCode: string): string {
+  // 如果已经是完整名称，直接返回
+  if (voiceName.includes('-') && voiceName.split('-').length >= 3) {
+    return voiceName;
+  }
+  
+  // 简化名称映射到完整的Google Cloud TTS音色名称
+  const simplifiedToFull: Record<string, string> = {
+    // Chirp3-HD 音色
+    'Achernar': 'en-US-Chirp3-HD-Achernar',
+    'Achird': 'en-US-Chirp3-HD-Achird', 
+    'Algenib': 'en-US-Chirp3-HD-Algenib',
+    'Algieba': 'en-US-Chirp3-HD-Algieba',
+    'Alnilam': 'en-US-Chirp3-HD-Alnilam',
+    'Aoede': 'en-US-Chirp3-HD-Aoede',
+    'Autonoe': 'en-US-Chirp3-HD-Autonoe',
+    'Callirrhoe': 'en-US-Chirp3-HD-Callirrhoe',
+    'Charon': 'en-US-Chirp3-HD-Charon',
+    'Despina': 'en-US-Chirp3-HD-Despina',
+    'Enceladus': 'en-US-Chirp3-HD-Enceladus',
+    'Erinome': 'en-US-Chirp3-HD-Erinome',
+    'Fenrir': 'en-US-Chirp3-HD-Fenrir',
+    'Gacrux': 'en-US-Chirp3-HD-Gacrux',
+    'Iapetus': 'en-US-Chirp3-HD-Iapetus',
+    'Laomedeia': 'en-US-Chirp3-HD-Laomedeia',
+    'Leda': 'en-US-Chirp3-HD-Leda',
+    'Pulcherrima': 'en-US-Chirp3-HD-Pulcherrima',
+    'Rasalgethi': 'en-US-Chirp3-HD-Rasalgethi',
+    'Sadachbia': 'en-US-Chirp3-HD-Sadachbia',
+    'Sadaltager': 'en-US-Chirp3-HD-Sadaltager',
+    'Schedar': 'en-US-Chirp3-HD-Schedar',
+    'Sulafat': 'en-US-Chirp3-HD-Sulafat',
+    'Umbriel': 'en-US-Chirp3-HD-Umbriel',
+    'Vindemiatrix': 'en-US-Chirp3-HD-Vindemiatrix',
+    'Zephyr': 'en-US-Chirp3-HD-Zephyr',
+    'Zubenelgenubi': 'en-US-Chirp3-HD-Zubenelgenubi',
+    
+    // 其他音色
+    'Orus': 'en-US-Chirp3-HD-Orus',
+    'Puck': 'en-US-Chirp3-HD-Puck',
+    'Kore': 'en-US-Chirp3-HD-Kore',
+  };
+  
+  return simplifiedToFull[voiceName] || voiceName;
+}
+
 // 获取音色配置
 function getVoiceConfig(voiceName: string, languageCode: string) {
-  // 所有音色现在都是Google Cloud TTS的真实音色，直接使用音色名称
+  // 映射简化名称为完整名称
+  const fullVoiceName = mapToFullVoiceName(voiceName, languageCode);
+  
   const ttsLanguageCode = languageCode === 'cmn-CN' ? 'cmn-cn' : 
                          languageCode === 'multi' ? 'en-US' : languageCode;
   
   // 根据音色类型确定模型
   let modelName = undefined;
-  if (voiceName.includes('Chirp3-HD')) {
+  if (fullVoiceName.includes('Chirp3-HD')) {
     modelName = 'chirp3-hd';
-  } else if (voiceName.includes('Neural2')) {
+  } else if (fullVoiceName.includes('Neural2')) {
     modelName = 'neural2';
-  } else if (voiceName.includes('Wavenet')) {
+  } else if (fullVoiceName.includes('Wavenet')) {
     modelName = 'wavenet';
-  } else if (voiceName.includes('Standard')) {
+  } else if (fullVoiceName.includes('Standard')) {
     modelName = 'standard';
   }
   
   return {
     languageCode: ttsLanguageCode,
-    name: voiceName,
+    name: fullVoiceName,
     modelName: modelName
   };
 }
 
 // 生成Gemini TTS预览
 async function generateGeminiPreview(voiceName: string, text: string, languageCode: string): Promise<Uint8Array> {
-  // 将Gemini音色名称映射到实际的Gemini音色
-  const actualVoiceName = voiceName.replace('Gemini-', '');
+  // 正确处理Gemini音色名称，支持Flash和Pro版本
+  let actualVoiceName: string;
+  
+  if (voiceName.includes('Gemini-Pro-')) {
+    actualVoiceName = voiceName.replace('Gemini-Pro-', '');
+  } else if (voiceName.includes('Gemini-Flash-')) {
+    actualVoiceName = voiceName.replace('Gemini-Flash-', '');
+  } else {
+    // 兼容旧格式
+    actualVoiceName = voiceName.replace('Gemini-', '');
+  }
+  
+  console.log(`Generating Gemini preview: ${voiceName} -> ${actualVoiceName}`);
   
   // Gemini TTS 只支持英语
   const audioBuffer = await synthesizeGeminiTTS({
     text,
     lang: 'en-US',
-    voiceName: actualVoiceName,
+    voiceName: voiceName, // 传递完整的音色名称，让synthesizeGeminiTTS内部处理
     speakingRate: 1.0,
     pitch: 0.0
   });
@@ -158,7 +218,7 @@ function getVoiceData(voiceName: string) {
   // 根据音色名称判断TTS提供商
   if (voiceName.startsWith('xunfei-')) {
     return { provider: 'xunfei' };
-  } else if (voiceName.startsWith('gemini-')) {
+  } else if (voiceName.startsWith('Gemini-')) {
     return { provider: 'gemini' };
   } else {
     return { provider: 'google' };
@@ -167,16 +227,14 @@ function getVoiceData(voiceName: string) {
 
 // 生成缓存键
 function generateCacheKey(voiceName: string, languageCode: string): string {
-  const voiceConfig = getVoiceConfig(voiceName, languageCode);
   const previewText = getPreviewText(languageCode);
   
   // 获取音色数据以确定TTS提供商
   const voiceData = getVoiceData(voiceName);
   
   const keyData = {
-    voiceName: voiceConfig.name,
-    languageCode: voiceConfig.languageCode,
-    modelName: voiceConfig.modelName,
+    voiceName: voiceName, // 使用完整的音色名称，包括Flash/Pro标识
+    languageCode: languageCode,
     provider: voiceData?.provider || 'google', // 添加提供商信息
     text: previewText,
     speakingRate: 1.0,

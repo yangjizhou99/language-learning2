@@ -105,11 +105,12 @@ export async function POST(req: NextRequest) {
       count 
     }) + `\n\n现有小主题列表（请避免重复）：\n${existingSubtopicTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n\n请生成与上述小主题不同的新小主题。`;
 
-    // 只调用一次 AI 生成
+    // 只调用一次 AI 生成，设置90秒超时
     const result = await chatJSON({
       provider: provider as 'openrouter' | 'deepseek' | 'openai',
       model,
       temperature: Math.min(temperature + 0.1, 1.0), // 稍微增加创造性
+      timeoutMs: 90000, // 90秒超时
       messages: [
         { role: 'system', content: SUBTOPIC_SYS },
         { role: 'user', content: enhancedPrompt }
