@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Create table error:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error', details: error.message },
+      { success: false, error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

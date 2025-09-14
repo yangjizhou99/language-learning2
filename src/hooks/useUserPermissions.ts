@@ -98,6 +98,7 @@ export default function useUserPermissions() {
             max_daily_attempts: userPermissions.max_daily_attempts ?? 50,
             model_permissions: userPermissions.model_permissions ?? defaultPermissions.model_permissions,
             api_keys: userPermissions.api_keys ?? defaultPermissions.api_keys,
+            ai_enabled: userPermissions.ai_enabled ?? false,
             custom_restrictions: userPermissions.custom_restrictions ?? {}
           });
         } else {

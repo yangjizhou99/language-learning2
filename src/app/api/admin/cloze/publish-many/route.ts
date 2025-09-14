@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, published: inserted?.length || 0 });
   } catch (error) {
     console.error('Publish many drafts error:', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Internal server error' }, { status: 500 });
   }
 }
 

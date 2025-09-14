@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest, { params }:{ params: Promise<{ id:st
   for (const k of ["title","topic","genre","register","text","notes","translations","trans_updated_at"]) if (k in b) patch[k] = b[k];
   const { id } = await params;
   const { error } = await auth.supabase.from("shadowing_drafts").update(patch).eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
   return NextResponse.json({ ok:true });
 }
 

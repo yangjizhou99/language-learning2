@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     if (error) {
       return NextResponse.json({ 
         error: 'Database query failed', 
-        details: error.message,
+        details: error instanceof Error ? error.message : String(error),
         code: error.code
       }, { status: 500 });
     }
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('Table check error:', error);
     return NextResponse.json(
-      { error: 'Table check failed', details: error.message },
+      { error: 'Table check failed', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

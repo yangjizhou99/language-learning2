@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         });
       }
     } catch (e) {
-      results.push({ action: 'test_fields', error: e.message });
+      results.push({ action: 'test_fields', error: e instanceof Error ? e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) : String(e) });
     }
 
     // 方法2：尝试通过SQL函数添加字段
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
         results.push({ action: 'add_api_keys', success: true });
       }
     } catch (e) {
-      results.push({ action: 'add_api_keys', error: e.message });
+      results.push({ action: 'add_api_keys', error: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) });
     }
 
     try {
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         results.push({ action: 'add_ai_enabled', success: true });
       }
     } catch (e) {
-      results.push({ action: 'add_ai_enabled', error: e.message });
+      results.push({ action: 'add_ai_enabled', error: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) });
     }
 
     return NextResponse.json({
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Add fields error:', error);
     return NextResponse.json(
-      { error: 'Add fields failed', details: error.message },
+      { error: 'Add fields failed', details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) },
       { status: 500 }
     );
   }

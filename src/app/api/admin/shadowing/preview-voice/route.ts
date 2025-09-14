@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
       { 
         success: false, 
         error: 'Failed to generate voice preview',
-        details: error.message 
+        details: error instanceof Error ? error.message : String(error) 
       },
       { status: 500 }
     );

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch (e) {
-      results.push({ field: 'model_permissions', error: e.message });
+      results.push({ field: 'model_permissions', error: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) });
     }
 
     // 添加 api_keys 字段
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         results.push({ field: 'api_keys', success: true });
       }
     } catch (e) {
-      results.push({ field: 'api_keys', error: e.message });
+      results.push({ field: 'api_keys', error: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) });
     }
 
     // 添加 ai_enabled 字段
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
         results.push({ field: 'ai_enabled', success: true });
       }
     } catch (e) {
-      results.push({ field: 'ai_enabled', error: e.message });
+      results.push({ field: 'ai_enabled', error: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) });
     }
 
     return NextResponse.json({
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Add fields error:', error);
     return NextResponse.json(
-      { error: 'Add fields failed', details: error.message },
+      { error: 'Add fields failed', details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) },
       { status: 500 }
     );
   }

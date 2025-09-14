@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       return NextResponse.json({ 
         error: 'Save test failed', 
-        details: error.message,
+        details: error instanceof Error ? error.message : String(error),
         code: error.code
       }, { status: 500 });
     }
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Save test error:', error);
     return NextResponse.json(
-      { error: 'Save test failed', details: error.message },
+      { error: 'Save test failed', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

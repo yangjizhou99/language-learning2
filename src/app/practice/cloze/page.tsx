@@ -43,13 +43,13 @@ interface ScoringResult {
 }
 
 export default function ClozePage() {
-  const { permissions } = useUserPermissions();
+  const permissions = useUserPermissions();
   const [lang, setLang] = useState<Lang>("ja");
   const [level, setLevel] = useState<number>(3);
   
   // 根据权限初始化provider和model
   const defaultProvider = getDefaultProvider(permissions);
-  const [provider, setProvider] = useState<'deepseek'|'openrouter'|'openai'>(defaultProvider);
+  const [provider, setProvider] = useState<'deepseek'|'openrouter'>(defaultProvider);
   const [model, setModel] = useState<string>(getDefaultModel(permissions, defaultProvider));
   const [explanationLang, setExplanationLang] = useState<'zh'|'en'|'ja'>('zh');
   const [loading, setLoading] = useState(false);
@@ -254,9 +254,9 @@ export default function ClozePage() {
             <Select value={lang} onValueChange={v => setLang(v as Lang)}>
               <SelectTrigger className="w-40"><SelectValue placeholder="选择语言" /></SelectTrigger>
               <SelectContent>
-                {permissions.allowed_languages.includes('ja') && <SelectItem value="ja">日本語</SelectItem>}
-                {permissions.allowed_languages.includes('en') && <SelectItem value="en">English</SelectItem>}
-                {permissions.allowed_languages.includes('zh') && <SelectItem value="zh">简体中文</SelectItem>}
+                {permissions.permissions.allowed_languages.includes('ja') && <SelectItem value="ja">日本語</SelectItem>}
+                {permissions.permissions.allowed_languages.includes('en') && <SelectItem value="en">English</SelectItem>}
+                {permissions.permissions.allowed_languages.includes('zh') && <SelectItem value="zh">简体中文</SelectItem>}
               </SelectContent>
             </Select>
           </div>
@@ -265,17 +265,17 @@ export default function ClozePage() {
             <Select value={String(level)} onValueChange={v => setLevel(parseInt(v))}>
               <SelectTrigger className="w-44"><SelectValue placeholder="选择难度" /></SelectTrigger>
               <SelectContent>
-                {permissions.allowed_levels.includes(1) && <SelectItem value="1">L1 - 初级</SelectItem>}
-                {permissions.allowed_levels.includes(2) && <SelectItem value="2">L2 - 初中级</SelectItem>}
-                {permissions.allowed_levels.includes(3) && <SelectItem value="3">L3 - 中级</SelectItem>}
-                {permissions.allowed_levels.includes(4) && <SelectItem value="4">L4 - 中高级</SelectItem>}
-                {permissions.allowed_levels.includes(5) && <SelectItem value="5">L5 - 高级</SelectItem>}
+                {permissions.permissions.allowed_levels.includes(1) && <SelectItem value="1">L1 - 初级</SelectItem>}
+                {permissions.permissions.allowed_levels.includes(2) && <SelectItem value="2">L2 - 初中级</SelectItem>}
+                {permissions.permissions.allowed_levels.includes(3) && <SelectItem value="3">L3 - 中级</SelectItem>}
+                {permissions.permissions.allowed_levels.includes(4) && <SelectItem value="4">L4 - 中高级</SelectItem>}
+                {permissions.permissions.allowed_levels.includes(5) && <SelectItem value="5">L5 - 高级</SelectItem>}
               </SelectContent>
             </Select>
           </div>
           <div>
             <Label className="mb-1 block">AI 提供商</Label>
-            <Select value={provider} onValueChange={(p: 'deepseek'|'openrouter'|'openai') => {
+            <Select value={provider} onValueChange={(p: 'deepseek'|'openrouter') => {
               setProvider(p);
               setModel(getDefaultModel(permissions, p));
             }}>
@@ -302,7 +302,7 @@ export default function ClozePage() {
                   const providerConfig = filteredProviders[provider];
                   if (!providerConfig) return null;
                   
-                  return providerConfig.models.map(model => (
+                  return providerConfig.models.map((model: any) => (
                     <SelectItem key={model.id} value={model.id}>
                       {model.name}
                     </SelectItem>

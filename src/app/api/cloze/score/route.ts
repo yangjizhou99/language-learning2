@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Score cloze error:', error);
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Internal server error' 
+      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Internal server error' 
     }, { status: 500 });
   }
 }

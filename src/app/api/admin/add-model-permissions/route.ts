@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         });
       }
     } catch (e) {
-      results.push({ action: 'test_model_permissions', error: e.message });
+      results.push({ action: 'test_model_permissions', error: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) });
     }
 
     // 尝试添加字段（通过直接操作）
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch (e) {
-      results.push({ action: 'test_update_model_permissions', error: e.message });
+      results.push({ action: 'test_update_model_permissions', error: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) });
     }
 
     return NextResponse.json({
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Model permissions check error:', error);
     return NextResponse.json(
-      { error: 'Model permissions check failed', details: error.message },
+      { error: 'Model permissions check failed', details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) },
       { status: 500 }
     );
   }

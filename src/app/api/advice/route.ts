@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     if (!out) return NextResponse.json({ error: "empty output" }, { status: 502 });
     return new Response(out, { status: 200, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "unknown error";
+    const msg = e instanceof Error ? e instanceof Error ? e.message : String(e) : "unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

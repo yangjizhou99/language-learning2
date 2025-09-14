@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       console.error('Error fetching API limits:', error);
       return NextResponse.json({ 
         error: 'Failed to fetch API limits', 
-        details: error.message 
+        details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) 
       }, { status: 500 });
     }
 
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('API limits error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) },
       { status: 500 }
     );
   }
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       console.error('Error saving API limits:', error);
       return NextResponse.json({ 
         error: 'Failed to save API limits', 
-        details: error.message 
+        details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) 
       }, { status: 500 });
     }
 
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('API limits save error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) },
       { status: 500 }
     );
   }

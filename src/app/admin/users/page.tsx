@@ -117,11 +117,11 @@ export default function UsersPage() {
       console.log('用户查询结果:', { users, count });
 
       // 获取每个用户的练习统计
-      const userIds = users?.map(u => u.id) || [];
+      const userIds = users?.map((u: any) => u.id) || [];
       console.log('用户ID列表:', userIds);
       const practiceStats = await getPracticeStats(userIds);
 
-      const usersWithStats = users?.map(user => ({
+      const usersWithStats = users?.map((user: any) => ({
         ...user,
         practice_stats: practiceStats[user.id] || {
           total_shadowing_attempts: 0,

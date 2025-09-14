@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         .select('id, title');
       
       if (error) {
-        throw new Error(`Database error: ${error.message}`);
+        throw new Error(`Database error: ${error instanceof Error ? error.message : String(error)}`);
       }
       
       insertedData = data || [];
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Theme generation error:', error);
     return NextResponse.json({
-      error: error instanceof Error ? error.message : 'Generation failed'
+      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Generation failed'
     }, { status: 500 });
   }
 }

@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
 
       if (error) {
         console.error('Database query error:', error);
-        throw new Error(`Error fetching shadowing catalog: ${error.message}`);
+        throw new Error(`Error fetching shadowing catalog: ${error instanceof Error ? error.message : String(error)}`);
       }
 
       // Get theme and subtopic data separately

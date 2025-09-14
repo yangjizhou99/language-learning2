@@ -147,7 +147,7 @@ function ManualForm() {
 
 /* ===== AI 生成 ===== */
 function AIForm() {
-  const { permissions } = useUserPermissions();
+  const permissions = useUserPermissions();
   const [lang, setLang] = useState("en");
   const [genre, setGenre] = useState("news");
   const [difficulty, setDifficulty] = useState(3);
@@ -156,7 +156,7 @@ function AIForm() {
   
   // 根据权限初始化provider和model
   const defaultProvider = getDefaultProvider(permissions);
-  const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">(defaultProvider);
+  const [provider, setProvider] = useState<"openrouter"|"deepseek">(defaultProvider);
   const [models, setModels] = useState<{id:string;name:string}[]>([]);
   const [model, setModel] = useState(getDefaultModel(permissions, defaultProvider));
   const [temperature, setTemperature] = useState(0.6);
@@ -215,7 +215,7 @@ function AIForm() {
       <Row label="目标长度"><input type="number" className="border rounded px-2 py-1 w-28" value={words} onChange={e=>setWords(Number(e.target.value)||300)} /></Row>
       <Row label="模型来源">
         <select className="border rounded px-2 py-1" value={provider} onChange={e=>{
-          const newProvider = e.target.value as "openrouter"|"deepseek"|"openai";
+          const newProvider = e.target.value as "openrouter"|"deepseek";
           setProvider(newProvider);
           setModel(getDefaultModel(permissions, newProvider));
         }}>

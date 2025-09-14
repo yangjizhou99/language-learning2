@@ -1,4 +1,4 @@
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import useUserPermissions from '@/hooks/useUserPermissions';
 
 // AI提供商配置
 export const AI_PROVIDERS = {
@@ -26,17 +26,17 @@ export type AIProvider = keyof typeof AI_PROVIDERS;
 // 根据用户权限过滤可用的提供商和模型
 export function getFilteredAIProviders(permissions: ReturnType<typeof useUserPermissions>) {
   // 如果AI功能未启用，返回空对象
-  if (!permissions || !permissions.ai_enabled) {
+  if (!permissions || !permissions.permissions.ai_enabled) {
     return {};
   }
 
-  if (!permissions.model_permissions) {
+  if (!permissions.permissions.model_permissions) {
     // 如果没有权限数据，返回默认配置
     return AI_PROVIDERS;
   }
 
-  const enabledModels = permissions.model_permissions.filter(m => m.enabled);
-  const filteredProviders: Partial<typeof AI_PROVIDERS> = {};
+  const enabledModels = permissions.permissions.model_permissions.filter(m => m.enabled);
+  const filteredProviders: Record<string, any> = {};
 
   // 检查每个提供商是否有启用的模型
   Object.entries(AI_PROVIDERS).forEach(([providerKey, providerConfig]) => {
@@ -100,15 +100,15 @@ export function getDefaultModel(permissions: ReturnType<typeof useUserPermission
 // 检查用户是否有权限使用特定的提供商和模型
 export function hasAIPermission(permissions: ReturnType<typeof useUserPermissions>, provider: AIProvider, modelId: string): boolean {
   // 首先检查AI功能是否启用
-  if (!permissions || !permissions.ai_enabled) {
+  if (!permissions || !permissions.permissions.ai_enabled) {
     return false;
   }
 
-  if (!permissions.model_permissions) {
+  if (!permissions.permissions.model_permissions) {
     return false; // 如果没有权限数据，不允许
   }
 
-  return permissions.model_permissions.some(model => 
+  return permissions.permissions.model_permissions.some(model => 
     model.enabled && 
     (model.provider === provider || 
      (provider === 'openrouter' && (model.provider === 'anthropic' || model.provider === 'openai'))) &&

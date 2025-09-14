@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   } catch (error: unknown) {
     console.error("Chirp3-HD 音色测试失败:", error);
-    const message = error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error);
     return NextResponse.json({ 
       success: false, 
       error: message,

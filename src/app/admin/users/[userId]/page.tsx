@@ -56,7 +56,7 @@ interface PracticeStats {
     cloze: number;
     alignment: number;
   };
-  last_activity?: string;
+  last_activity?: string | null;
   weekly_progress: Array<{ date: string; count: number }>;
 }
 
@@ -100,6 +100,7 @@ export default function UserDetailPage() {
         .from('profiles')
         .select(`
           id,
+          email,
           username,
           role,
           bio,
@@ -304,7 +305,7 @@ export default function UserDetailPage() {
         activities.push({
           id: attempt.id,
           type: 'shadowing',
-          title: attempt.shadowing_items.title,
+          title: attempt.shadowing_items?.[0]?.title || '未知标题',
           lang: attempt.lang,
           level: attempt.level,
           score: attempt.metrics?.score,
@@ -331,7 +332,7 @@ export default function UserDetailPage() {
         activities.push({
           id: attempt.id,
           type: 'cloze',
-          title: attempt.cloze_items.title,
+          title: attempt.cloze_items?.[0]?.title || '未知标题',
           lang: attempt.lang,
           level: attempt.level,
           score: attempt.ai_result?.overall?.score,
@@ -356,7 +357,7 @@ export default function UserDetailPage() {
         activities.push({
           id: attempt.id,
           type: 'alignment',
-          title: attempt.alignment_packs.topic,
+          title: attempt.alignment_packs?.[0]?.topic || '未知主题',
           score: attempt.scores?.overall,
           created_at: attempt.created_at
         });

@@ -152,17 +152,17 @@ export default function UserAnalyticsPage() {
       analytics.active_users_30d = allActiveUserIds30d.size;
 
       // 练习类型分布
-      const { data: shadowingCount } = await supabase
+      const { count: shadowingCount } = await supabase
         .from('shadowing_attempts')
         .select('*', { count: 'exact', head: true });
       analytics.practice_type_distribution.shadowing = shadowingCount || 0;
 
-      const { data: clozeCount } = await supabase
+      const { count: clozeCount } = await supabase
         .from('cloze_attempts')
         .select('*', { count: 'exact', head: true });
       analytics.practice_type_distribution.cloze = clozeCount || 0;
 
-      const { data: alignmentCount } = await supabase
+      const { count: alignmentCount } = await supabase
         .from('alignment_attempts')
         .select('*', { count: 'exact', head: true });
       analytics.practice_type_distribution.alignment = alignmentCount || 0;

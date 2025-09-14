@@ -88,8 +88,8 @@ export async function checkAPILimits(
     }
 
     // 如果限制未启用，允许请求
-    if (!limits.enabled) {
-      return { allowed: true, limits };
+    if (!limits || !limits.enabled) {
+      return { allowed: true, limits: limits || undefined };
     }
 
     // 获取用户今日和本月的使用情况
@@ -366,7 +366,7 @@ export async function checkUserAIPermissions(
     // 检查模型权限（如果字段存在）
     const modelPermissions = permissions.model_permissions || [];
     if (modelPermissions.length > 0) {
-      const modelPermission = modelPermissions.find(mp => 
+      const modelPermission = modelPermissions.find((mp: any) => 
         mp.model_id === model && 
         mp.provider === provider && 
         mp.enabled
@@ -399,7 +399,7 @@ export async function checkUserAIPermissions(
 
     // 检查模型使用限制（如果有模型权限配置）
     if (modelPermissions.length > 0) {
-      const modelPermission = modelPermissions.find(mp => 
+      const modelPermission = modelPermissions.find((mp: any) => 
         mp.model_id === model && 
         mp.provider === provider && 
         mp.enabled

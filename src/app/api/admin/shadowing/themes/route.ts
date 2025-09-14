@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await query.order('created_at', { ascending: false });
   
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
   }
   
   return NextResponse.json({ 
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       .single();
     
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
     }
     
     return NextResponse.json({ item: result });

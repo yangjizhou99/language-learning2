@@ -50,12 +50,12 @@ export async function POST(req: NextRequest) {
       try {
         const { error } = await supabase.rpc('exec', { sql: statement });
         if (error) {
-          results.push({ statement: statement.substring(0, 50) + '...', error: error.message });
+          results.push({ statement: statement.substring(0, 50) + '...', error: error instanceof Error ? error.message : String(error) });
         } else {
           results.push({ statement: statement.substring(0, 50) + '...', success: true });
         }
       } catch (e) {
-        results.push({ statement: statement.substring(0, 50) + '...', error: e.message });
+        results.push({ statement: statement.substring(0, 50) + '...', error: e instanceof Error ? e.message : String(e) });
       }
     }
 
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Migration error:', error);
     return NextResponse.json(
-      { error: 'Migration failed', details: error.message },
+      { error: 'Migration failed', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

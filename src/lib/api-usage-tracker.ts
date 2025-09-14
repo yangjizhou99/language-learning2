@@ -149,7 +149,7 @@ export function withUsageTracking<T extends any[], R>(
           tokens_used: tokensUsed,
           cost,
           request_data: args[0],
-          response_data: { error: error.message }
+          response_data: { error: error instanceof Error ? error.message : String(error) }
         });
       }
       

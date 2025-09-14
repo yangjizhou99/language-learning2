@@ -68,7 +68,7 @@ export async function GET() {
     console.error('获取OpenRouter模型列表失败:', error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : '获取模型列表失败'
+      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : '获取模型列表失败'
     }, { status: 500 });
   }
 }

@@ -112,7 +112,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
       .select('user_id, created_at, metrics')
       .in('user_id', userIds);
 
-    shadowingStats?.forEach(attempt => {
+    shadowingStats?.forEach((attempt: any) => {
       const userId = attempt.user_id;
       if (stats[userId]) {
         stats[userId].total_shadowing_attempts++;
@@ -135,7 +135,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
       .select('user_id, created_at, ai_result')
       .in('user_id', userIds);
 
-    clozeStats?.forEach(attempt => {
+    clozeStats?.forEach((attempt: any) => {
       const userId = attempt.user_id;
       if (stats[userId]) {
         stats[userId].total_cloze_attempts++;
@@ -158,7 +158,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
       .select('user_id, created_at, scores')
       .in('user_id', userIds);
 
-    alignmentStats?.forEach(attempt => {
+    alignmentStats?.forEach((attempt: any) => {
       const userId = attempt.user_id;
       if (stats[userId]) {
         stats[userId].total_alignment_attempts++;
@@ -181,7 +181,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
       .select('user_id, created_at')
       .in('user_id', userIds);
 
-    vocabStats?.forEach(entry => {
+    vocabStats?.forEach((entry: any) => {
       const userId = entry.user_id;
       if (stats[userId]) {
         stats[userId].total_vocab_entries++;

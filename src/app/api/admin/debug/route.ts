@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
         .limit(1);
       
       if (error) {
-        dbTestStatus = `db_error: ${error.message}`;
+        dbTestStatus = `db_error: ${error instanceof Error ? error.message : String(error)}`;
       } else {
         dbTestStatus = "db_connection_ok";
       }

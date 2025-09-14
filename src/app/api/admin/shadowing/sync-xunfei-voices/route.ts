@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         { 
           success: false, 
           error: '插入科大讯飞音色失败', 
-          details: error.message 
+          details: error instanceof Error ? error.message : String(error) 
         },
         { status: 500 }
       );
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       { 
         success: false, 
         error: '同步科大讯飞音色失败', 
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
       },
       { status: 500 }
     );

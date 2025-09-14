@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
                 type: 'error', 
                 id: subtopic.id,
                 title: subtopic.title_cn,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
                 done: completed + 1,
                 total: subtopics.length,
                 saved,
@@ -248,7 +248,7 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         send({ 
           type: 'error', 
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
       } finally {
         controller.close();

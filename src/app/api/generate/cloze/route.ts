@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
         { role: "user", content: "生成题目" }
       ],
       // DeepSeek 为 OpenAI 兼容实现；若 response_format 不被支持，可去掉，已在下方做回退。
-      // @ts-expect-error - DeepSeek supports response_format
+      // DeepSeek supports response_format
       response_format: { type: "json_object" },
       temperature: 0.4,
     });
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data, { status: 200 });
   } catch (e: unknown) {
-    const errorMessage = e instanceof Error ? e.message : "unknown error";
+    const errorMessage = e instanceof Error ? e instanceof Error ? e.message : String(e) : "unknown error";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

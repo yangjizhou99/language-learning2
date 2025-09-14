@@ -83,7 +83,7 @@ async function getUserAnalytics(supabase: any, period: string) {
           .gte('created_at', sevenDaysAgo.toISOString())
       );
 
-    const uniqueActiveUsers7d = new Set(activeUsers7d?.map(u => u.user_id) || []);
+    const uniqueActiveUsers7d = new Set(activeUsers7d?.map((u: any) => u.user_id) || []);
     analytics.active_users_7d = uniqueActiveUsers7d.size;
 
     const { data: activeUsers30d } = await supabase
@@ -103,7 +103,7 @@ async function getUserAnalytics(supabase: any, period: string) {
           .gte('created_at', thirtyDaysAgo.toISOString())
       );
 
-    const uniqueActiveUsers30d = new Set(activeUsers30d?.map(u => u.user_id) || []);
+    const uniqueActiveUsers30d = new Set(activeUsers30d?.map((u: any) => u.user_id) || []);
     analytics.active_users_30d = uniqueActiveUsers30d.size;
 
     // 练习类型分布
@@ -188,7 +188,7 @@ async function getUserAnalytics(supabase: any, period: string) {
             .lt('created_at', nextDate.toISOString())
         );
 
-      const uniqueDailyUsers = new Set(dailyUsers?.map(u => u.user_id) || []);
+      const uniqueDailyUsers = new Set(dailyUsers?.map((u: any) => u.user_id) || []);
       analytics.daily_active_users.push({
         date: dateStr,
         count: uniqueDailyUsers.size

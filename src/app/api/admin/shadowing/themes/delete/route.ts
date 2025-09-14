@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Theme deletion error:', error);
     return NextResponse.json({
-      error: error instanceof Error ? error.message : 'Deletion failed'
+      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Deletion failed'
     }, { status: 500 });
   }
 }

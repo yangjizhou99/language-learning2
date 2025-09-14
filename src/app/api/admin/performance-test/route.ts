@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
         testName,
         testType,
         duration: totalDuration,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
         timestamp: new Date().toISOString()
       });
     }
@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     return NextResponse.json({ 
       error: 'Internal server error', 
-      detail: error instanceof Error ? error.message : String(error) 
+      detail: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) 
     }, { status: 500 });
   }
 }
@@ -223,7 +223,7 @@ export async function GET(req: NextRequest) {
               testName: test.name,
               success: false,
               duration: Date.now() - startTime,
-              error: error instanceof Error ? error.message : 'Unknown error',
+              error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
               timestamp: new Date().toISOString()
             });
           }
@@ -264,7 +264,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     return NextResponse.json({ 
       error: 'Internal server error', 
-      detail: error instanceof Error ? error.message : String(error) 
+      detail: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) 
     }, { status: 500 });
   }
 }

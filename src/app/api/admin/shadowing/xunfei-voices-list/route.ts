@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       { 
         success: false, 
         error: '获取科大讯飞音色失败', 
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
       },
       { status: 500 }
     );

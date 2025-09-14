@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
 				.limit(10);
 
 			if (error) {
-				throw new Error(`查询题库失败: ${error.message}`);
+				throw new Error(`查询题库失败: ${error instanceof Error ? error.message : String(error)}`);
 			}
 
 			if (!items || items.length === 0) {
@@ -86,6 +86,6 @@ export async function GET(req: NextRequest) {
 		return NextResponse.json(result);
 
 	} catch (e) {
-		return NextResponse.json({ error: "服务器错误", code: "UNEXPECTED", detail: e instanceof Error ? e.message : String(e) }, { status: 500 });
+		return NextResponse.json({ error: "服务器错误", code: "UNEXPECTED", detail: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) }, { status: 500 });
 	}
 }

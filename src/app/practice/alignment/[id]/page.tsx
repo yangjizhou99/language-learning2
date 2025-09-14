@@ -61,7 +61,7 @@ interface Message {
 export default function AlignmentPracticePage() {
   const params = useParams();
   const packId = params.id as string;
-  const { permissions } = useUserPermissions();
+  const permissions = useUserPermissions();
   
   const [pack, setPack] = useState<AlignmentPack | null>(null);
   const [currentStep, setCurrentStep] = useState<string>("D1");
@@ -73,7 +73,7 @@ export default function AlignmentPracticePage() {
   
   // 根据权限初始化provider和model
   const defaultProvider = getDefaultProvider(permissions);
-  const [provider, setProvider] = useState<"openrouter" | "deepseek" | "openai">(defaultProvider);
+  const [provider, setProvider] = useState<"openrouter" | "deepseek">(defaultProvider);
   const [model, setModel] = useState(getDefaultModel(permissions, defaultProvider));
   const [models, setModels] = useState<{id: string; name: string}[]>([]);
   const [temperature, setTemperature] = useState(0.2);
@@ -123,7 +123,7 @@ export default function AlignmentPracticePage() {
     const providerConfig = filteredProviders[provider];
     
     if (providerConfig) {
-      setModels(providerConfig.models);
+      setModels([...providerConfig.models]);
       setModel(providerConfig.models[0]?.id || "");
     } else {
       // 如果没有权限，使用默认配置

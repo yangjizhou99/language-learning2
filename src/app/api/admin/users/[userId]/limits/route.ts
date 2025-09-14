@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
       console.error('Error fetching user limits:', error);
       return NextResponse.json({ 
         error: 'Failed to fetch user limits', 
-        details: error.message 
+        details: error instanceof Error ? error.message : String(error) 
       }, { status: 500 });
     }
 
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   } catch (error) {
     console.error('User limits error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
       console.error('Error saving user limits:', error);
       return NextResponse.json({ 
         error: 'Failed to save user limits', 
-        details: error.message 
+        details: error instanceof Error ? error.message : String(error) 
       }, { status: 500 });
     }
 
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
   } catch (error) {
     console.error('User limits save error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

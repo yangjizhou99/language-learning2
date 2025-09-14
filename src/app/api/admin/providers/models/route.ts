@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unsupported provider' }, { status: 400 });
   } catch (error) {
     console.error('Get provider models error:', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Internal server error' }, { status: 500 });
   }
 }
 

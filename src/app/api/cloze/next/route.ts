@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
         .eq('level', levelNum);
 
       if (error) {
-        throw new Error(`Failed to get item: ${error.message}`);
+        throw new Error(`Failed to get item: ${error instanceof Error ? error.message : String(error)}`);
       }
 
       if (!items || items.length === 0) {
@@ -155,7 +155,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('Get cloze item error:', error);
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Internal server error' 
+      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Internal server error' 
     }, { status: 500 });
   }
 }

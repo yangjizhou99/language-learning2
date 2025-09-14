@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       }
     });
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
+    const message = e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e);
     return new Response(message || "google tts failed", { status: 500 });
   }
 }

@@ -233,7 +233,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('翻译失败:', error);
     return NextResponse.json({
-      error: error instanceof Error ? error.message : "翻译失败"
+      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : "翻译失败"
     }, { status: 500 });
   }
 }

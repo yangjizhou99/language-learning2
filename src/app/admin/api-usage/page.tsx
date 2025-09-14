@@ -91,7 +91,7 @@ export default function APIUsageStatsPage() {
         alert('表创建失败：' + data.error);
       }
     } catch (error) {
-      alert('创建表时出错：' + error.message);
+      alert('创建表时出错：' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setCreatingTable(false);
     }

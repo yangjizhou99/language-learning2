@@ -81,7 +81,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    shadowingAttempts?.forEach(attempt => {
+    shadowingAttempts?.forEach((attempt: any) => {
       stats.total_shadowing_attempts++;
       stats.shadowing_by_lang[attempt.lang] = (stats.shadowing_by_lang[attempt.lang] || 0) + 1;
       stats.shadowing_by_level[attempt.level] = (stats.shadowing_by_level[attempt.level] || 0) + 1;
@@ -105,7 +105,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    clozeAttempts?.forEach(attempt => {
+    clozeAttempts?.forEach((attempt: any) => {
       stats.total_cloze_attempts++;
       stats.cloze_by_lang[attempt.lang] = (stats.cloze_by_lang[attempt.lang] || 0) + 1;
       stats.cloze_by_level[attempt.level] = (stats.cloze_by_level[attempt.level] || 0) + 1;
@@ -129,7 +129,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    alignmentAttempts?.forEach(attempt => {
+    alignmentAttempts?.forEach((attempt: any) => {
       stats.total_alignment_attempts++;
       
       if (!stats.last_activity || attempt.created_at > stats.last_activity) {
@@ -151,7 +151,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    vocabEntries?.forEach(entry => {
+    vocabEntries?.forEach((entry: any) => {
       stats.total_vocab_entries++;
       if (!stats.last_activity || entry.created_at > stats.last_activity) {
         stats.last_activity = entry.created_at;
@@ -212,7 +212,7 @@ async function getRecentActivity(supabase: any, userId: string, limit = 20) {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    shadowingActivity?.forEach(attempt => {
+    shadowingActivity?.forEach((attempt: any) => {
       activities.push({
         id: attempt.id,
         type: 'shadowing',
@@ -239,7 +239,7 @@ async function getRecentActivity(supabase: any, userId: string, limit = 20) {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    clozeActivity?.forEach(attempt => {
+    clozeActivity?.forEach((attempt: any) => {
       activities.push({
         id: attempt.id,
         type: 'cloze',
@@ -264,7 +264,7 @@ async function getRecentActivity(supabase: any, userId: string, limit = 20) {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    alignmentActivity?.forEach(attempt => {
+    alignmentActivity?.forEach((attempt: any) => {
       activities.push({
         id: attempt.id,
         type: 'alignment',

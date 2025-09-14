@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
   try {
     out = await callLLM(b, auth.user.id);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
+    const msg = e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e);
     return NextResponse.json({ error: "LLM 生成失败: " + msg }, { status: 500 });
   }
 
