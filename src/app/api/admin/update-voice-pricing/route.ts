@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       .select('name, pricing, category')
       .order('name');
 
-    const categoryStats: Record<string, { count: number, avgPrice: number }> = {};
+    const categoryStats: Record<string, { count: number, avgPrice: number, totalPrice: number }> = {};
     stats?.forEach(voice => {
       const category = voice.category || 'Unknown';
       const price = voice.pricing?.pricePerMillionChars || 0;

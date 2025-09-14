@@ -607,7 +607,7 @@ export default function SubtopicsGenPage() {
         }
       }
     } catch (error) {
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         setLogs(prev => [...prev, {
           type: 'error',
           message: '生成被用户取消或超时'
@@ -615,7 +615,7 @@ export default function SubtopicsGenPage() {
       } else {
         setLogs(prev => [...prev, {
           type: 'error',
-          message: `生成失败：${error}`
+          message: `生成失败：${error instanceof Error ? error.message : String(error)}`
         }]);
       }
     } finally {
