@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
       }
     });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "list voices failed";
+    const msg = e instanceof Error ? e instanceof Error ? e.message : String(e) : "list voices failed";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

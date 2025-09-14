@@ -130,7 +130,7 @@ ${availableVoices.map(v => `- ${v.name} (${v.gender}, ${v.quality}): ${v.tags.jo
 
   } catch (error: unknown) {
     console.error("AI 音色推荐失败:", error);
-    const message = error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error);
     return NextResponse.json({ 
       success: false, 
       error: message

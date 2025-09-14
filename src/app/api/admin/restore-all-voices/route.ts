@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       success: false, 
       error: '恢复音色失败', 
-      details: error instanceof Error ? error.message : String(error)
+      details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
     }, { status: 500 });
   }
 }

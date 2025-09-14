@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import useIsAdmin from "@/hooks/useIsAdmin";
+import useUserPermissions from "@/hooks/useUserPermissions";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -25,6 +26,7 @@ import MobileToggle from "@/components/MobileToggle";
 export default function TopNav() {
   const [email, setEmail] = useState<string|undefined>();
   const isAdmin = useIsAdmin();
+  const { permissions } = useUserPermissions();
   const t = useTranslation();
 
   useEffect(() => {
@@ -76,11 +78,12 @@ export default function TopNav() {
       <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
         <Link href="/" className="font-semibold">Lang Trainer</Link>
         <div className="flex items-center gap-3">
-          <Link key="cloze" href="/practice/cloze">{t.nav.cloze}</Link>
-          <Link key="alignment" href="/practice/alignment">{t.nav.alignment_practice}</Link>
-          <Link key="wideread" href="/practice/wideread" prefetch={false}>{t.nav.wide_reading}</Link>
-          <Link key="shadowing" href="/practice/shadowing" prefetch={false}>{t.nav.shadowing}</Link>
+          {permissions.can_access_cloze && <Link key="cloze" href="/practice/cloze">{t.nav.cloze}</Link>}
+          {permissions.can_access_alignment && <Link key="alignment" href="/practice/alignment">{t.nav.alignment_practice}</Link>}
+          {permissions.can_access_articles && <Link key="wideread" href="/practice/wideread" prefetch={false}>{t.nav.wide_reading}</Link>}
+          {permissions.can_access_shadowing && <Link key="shadowing" href="/practice/shadowing" prefetch={false}>{t.nav.shadowing}</Link>}
           <Link key="vocab" href="/vocab">{t.nav.vocabulary}</Link>
+          {email && <Link key="profile" href="/profile" className="text-blue-600 hover:text-blue-700">👤 个人资料</Link>}
           <MobileToggle />
           {isAdmin && <Link key="admin" href="/admin" className="text-orange-600">🛠️ {t.nav.admin}</Link>}
           <span className="mx-2 text-gray-400">|</span>
@@ -108,6 +111,9 @@ export default function TopNav() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">个人资料</Link>
+                </DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link href="/admin">{t.common.enter_admin}</Link>

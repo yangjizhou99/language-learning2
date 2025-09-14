@@ -35,21 +35,26 @@ export async function POST(req: NextRequest) {
     ]
   };
 
+  // 获取用户API密钥
+  const { getUserAPIKeys } = await import('@/lib/user-api-keys');
+  const userKeys = await getUserAPIKeys(adminResult.user.id);
+
   if (provider === 'openrouter') {
     url = 'https://openrouter.ai/api/v1/chat/completions';
-    const key = process.env.OPENROUTER_API_KEY!;
+    const key = userKeys?.openrouter || process.env.OPENROUTER_API_KEY!;
     headers = {
       ...headers,
       'Authorization': `Bearer ${key}`,
-      'HTTP-Referer': process.env.OPENROUTER_SITE_URL || '',
-      'X-Title': process.env.OPENROUTER_SITE_NAME || 'Lang Trainer Admin'
+      'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || '',
+      'X-Title': process.env.NEXT_PUBLIC_SITE_NAME || 'Lang Trainer Admin'
     };
   } else if (provider === 'openai') {
     url = 'https://api.openai.com/v1/chat/completions';
     headers = { ...headers, 'Authorization': `Bearer ${process.env.OPENAI_API_KEY!}` };
   } else {
     url = 'https://api.deepseek.com/chat/completions';
-    headers = { ...headers, 'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY!}` };
+    const key = userKeys?.deepseek || process.env.DEEPSEEK_API_KEY!;
+    headers = { ...headers, 'Authorization': `Bearer ${key}` };
   }
 
   const upstream = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });

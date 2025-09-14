@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { chatJSON } from "@/lib/ai/client";
 import { normUsage } from "@/lib/ai/usage";
+import { supabase } from "@/lib/supabase";
 
 const SYS = `You are the counterpart in a roleplay dialogue for language learners.
 Speak ONLY as the assigned role (not both), in the target language.
@@ -49,6 +50,12 @@ export async function POST(req: NextRequest) {
   const { pack_id, step_key, role, messages = [], provider = "deepseek", model = "deepseek-chat", temperature = 0.3 } = b as any;
   if (!pack_id || !step_key || !role) return NextResponse.json({ error: "missing fields" }, { status: 400 });
 
+  // 获取用户信息
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const mockPack = {
     lang: "zh" as const,
     topic: "订餐",
@@ -80,6 +87,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYS },
         { role: "user", content: buildTurnPrompt({ lang: mockPack.lang, topic: mockPack.topic, stepKey: step_key, step, role, historyPreview: lastTurns, isKickoff }) },
       ],
+      userId: user.id, // 传递用户ID进行权限检查
     });
 
     console.log("角色扮演对话:", { pack_id, step_key, role, messages: messages.length, reply: content });
@@ -88,6 +96,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, reply: content, usage: u });
   } catch (error) {
     console.error("角色扮演对话错误:", error);
-    return NextResponse.json({ error: "AI 对话失败: " + (error instanceof Error ? error.message : String(error)) }, { status: 500 });
+    return NextResponse.json({ error: "AI 对话失败: " + (error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)) }, { status: 500 });
   }
 }

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       .upsert(rows, { onConflict: 'id' });
     
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
     }
     
     return NextResponse.json({ ok: true, count: rows.length });
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       .in('id', ids);
     
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
     }
     
     return NextResponse.json({ ok: true, count: ids.length });
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       .in('id', ids);
     
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
     }
     
     return NextResponse.json({ ok: true, count: ids.length });

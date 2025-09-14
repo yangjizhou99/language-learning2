@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 
     if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
       console.error('Error fetching session:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('Error saving session:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
     }
 
     // If status is 'completed' and there are selected words to import

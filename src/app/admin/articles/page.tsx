@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import useUserPermissions from "@/hooks/useUserPermissions";
+import { getFilteredAIProviders, getDefaultProvider, getDefaultModel } from "@/lib/ai-permissions";
 
 export default function AdminArticles() {
   const [tab, setTab] = useState<"fetch"|"manual"|"ai">("fetch");
@@ -145,36 +147,49 @@ function ManualForm() {
 
 /* ===== AI 生成 ===== */
 function AIForm() {
+  const permissions = useUserPermissions();
   const [lang, setLang] = useState("en");
   const [genre, setGenre] = useState("news");
   const [difficulty, setDifficulty] = useState(3);
   const [topic, setTopic] = useState("");
   const [words, setWords] = useState(300);
-  const [provider, setProvider] = useState<"openrouter"|"deepseek"|"openai">("deepseek");
+  
+  // 根据权限初始化provider和model
+  const defaultProvider = getDefaultProvider(permissions);
+  const [provider, setProvider] = useState<"openrouter"|"deepseek">(defaultProvider);
   const [models, setModels] = useState<{id:string;name:string}[]>([]);
-  const [model, setModel] = useState("deepseek-chat");
+  const [model, setModel] = useState(getDefaultModel(permissions, defaultProvider));
   const [temperature, setTemperature] = useState(0.6);
   const [log, setLog] = useState("");
 
   // 加载模型列表
   useEffect(()=>{ 
     (async()=>{
-      if (provider==="openrouter") {
-        const r = await fetch(`/api/ai/models?provider=${provider}`); 
-        const j = await r.json(); 
-        setModels(j||[]);
-        if (j && j.length > 0) setModel(j[0].id);
-      } else if (provider==="deepseek") {
-        const staticModels = [{id:"deepseek-chat", name:"deepseek-chat"},{id:"deepseek-reasoner",name:"deepseek-reasoner"}];
-        setModels(staticModels);
-        setModel("deepseek-chat");
+      const filteredProviders = getFilteredAIProviders(permissions);
+      const providerConfig = filteredProviders[provider];
+      
+      if (providerConfig) {
+        setModels([...providerConfig.models]);
+        setModel(providerConfig.models[0]?.id || "");
       } else {
-        const staticModels = [{id:"gpt-4o-mini", name:"gpt-4o-mini"}];
-        setModels(staticModels);
-        setModel("gpt-4o-mini");
+        // 如果没有权限，使用默认配置
+        if (provider==="openrouter") {
+          const r = await fetch(`/api/ai/models?provider=${provider}`); 
+          const j = await r.json(); 
+          setModels(j||[]);
+          if (j && j.length > 0) setModel(j[0].id);
+        } else if (provider==="deepseek") {
+          const staticModels = [{id:"deepseek-chat", name:"deepseek-chat"},{id:"deepseek-reasoner",name:"deepseek-reasoner"}];
+          setModels(staticModels);
+          setModel("deepseek-chat");
+        } else {
+          const staticModels = [{id:"gpt-4o-mini", name:"gpt-4o-mini"}];
+          setModels(staticModels);
+          setModel("gpt-4o-mini");
+        }
       }
     })(); 
-  }, [provider]);
+  }, [provider, permissions]);
 
   const submit = async () => {
     setLog("生成草稿中…");
@@ -199,10 +214,19 @@ function AIForm() {
       <Row label="主题"><input className="border rounded px-2 py-1 w-full" placeholder="可选：主题/场景/话题" value={topic} onChange={e=>setTopic(e.target.value)} /></Row>
       <Row label="目标长度"><input type="number" className="border rounded px-2 py-1 w-28" value={words} onChange={e=>setWords(Number(e.target.value)||300)} /></Row>
       <Row label="模型来源">
-        <select className="border rounded px-2 py-1" value={provider} onChange={e=>setProvider(e.target.value as "openrouter"|"deepseek"|"openai")}>
-          <option value="openrouter">OpenRouter（推荐）</option>
-          <option value="deepseek">DeepSeek 直连</option>
-          <option value="openai">OpenAI 直连</option>
+        <select className="border rounded px-2 py-1" value={provider} onChange={e=>{
+          const newProvider = e.target.value as "openrouter"|"deepseek";
+          setProvider(newProvider);
+          setModel(getDefaultModel(permissions, newProvider));
+        }}>
+          {(() => {
+            const filteredProviders = getFilteredAIProviders(permissions);
+            return Object.entries(filteredProviders).map(([key, config]) => (
+              <option key={key} value={key}>
+                {config.name}
+              </option>
+            ));
+          })()}
         </select>
         <select className="border rounded px-2 py-1 ml-2" value={model} onChange={e=>setModel(e.target.value)}>
           {models.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}

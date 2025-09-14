@@ -141,7 +141,7 @@ async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, par
     
     if (rows.length) {
       const { error } = await supabase.from('alignment_packs').insert(rows);
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(error instanceof Error ? error.message : String(error));
       savedTable = 'alignment_packs';
       savedCount = rows.length;
     }
@@ -167,7 +167,7 @@ async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, par
     
     if (rows.length) {
       const { error } = await supabase.from('cloze_drafts').insert(rows);
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(error instanceof Error ? error.message : String(error));
       savedTable = 'cloze_drafts';
       savedCount = rows.length;
     }
@@ -249,7 +249,7 @@ async function runOne(kind: 'alignment' | 'cloze' | 'shadowing', task: Task, par
     
     if (rows.length) {
       const { error } = await supabase.from('shadowing_drafts').insert(rows);
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(error instanceof Error ? error.message : String(error));
       savedTable = 'shadowing_drafts';
       savedCount = rows.length;
     }

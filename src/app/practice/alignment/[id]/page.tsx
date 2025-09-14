@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 // import { Container } from "@/components/Container";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import useUserPermissions from "@/hooks/useUserPermissions";
+import { getFilteredAIProviders, getDefaultProvider, getDefaultModel } from "@/lib/ai-permissions";
 
 interface AlignmentPack {
   id: string;
@@ -59,6 +61,7 @@ interface Message {
 export default function AlignmentPracticePage() {
   const params = useParams();
   const packId = params.id as string;
+  const permissions = useUserPermissions();
   
   const [pack, setPack] = useState<AlignmentPack | null>(null);
   const [currentStep, setCurrentStep] = useState<string>("D1");
@@ -67,8 +70,11 @@ export default function AlignmentPracticePage() {
   const [scores, setScores] = useState<Scores | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [usage, setUsage] = useState<any>(null);
-  const [provider, setProvider] = useState<"openrouter" | "deepseek" | "openai">("deepseek");
-  const [model, setModel] = useState("");
+  
+  // 根据权限初始化provider和model
+  const defaultProvider = getDefaultProvider(permissions);
+  const [provider, setProvider] = useState<"openrouter" | "deepseek">(defaultProvider);
+  const [model, setModel] = useState(getDefaultModel(permissions, defaultProvider));
   const [models, setModels] = useState<{id: string; name: string}[]>([]);
   const [temperature, setTemperature] = useState(0.2);
   const [error, setError] = useState("");
@@ -113,23 +119,32 @@ export default function AlignmentPracticePage() {
 
   // 获取 AI 模型列表
   useEffect(() => {
-    if (provider === "openrouter") {
-      fetch(`/api/ai/models?provider=${provider}`)
-        .then(r => r.json())
-        .then(data => {
-          setModels(data || []);
-          setModel(data?.[0]?.id || "");
-        });
-    } else if (provider === "deepseek") {
-      const j = [{id: "deepseek-chat", name: "deepseek-chat"}, {id: "deepseek-reasoner", name: "deepseek-reasoner"}];
-      setModels(j);
-      setModel(j[0].id);
+    const filteredProviders = getFilteredAIProviders(permissions);
+    const providerConfig = filteredProviders[provider];
+    
+    if (providerConfig) {
+      setModels([...providerConfig.models]);
+      setModel(providerConfig.models[0]?.id || "");
     } else {
-      const j = [{id: "gpt-4o-mini", name: "gpt-4o-mini"}];
-      setModels(j);
-      setModel(j[0].id);
+      // 如果没有权限，使用默认配置
+      if (provider === "openrouter") {
+        fetch(`/api/ai/models?provider=${provider}`)
+          .then(r => r.json())
+          .then(data => {
+            setModels(data || []);
+            setModel(data?.[0]?.id || "");
+          });
+      } else if (provider === "deepseek") {
+        const j = [{id: "deepseek-chat", name: "deepseek-chat"}, {id: "deepseek-reasoner", name: "deepseek-reasoner"}];
+        setModels(j);
+        setModel(j[0].id);
+      } else {
+        const j = [{id: "gpt-4o-mini", name: "gpt-4o-mini"}];
+        setModels(j);
+        setModel(j[0].id);
+      }
     }
-  }, [provider]);
+  }, [provider, permissions]);
 
   // 提交评分
   const submitForScoring = async () => {
@@ -575,12 +590,21 @@ export default function AlignmentPracticePage() {
             <div className="grid grid-cols-3 gap-3">
               <select
                 value={provider}
-                onChange={(e) => setProvider(e.target.value as any)}
+                onChange={(e) => {
+                  const newProvider = e.target.value as any;
+                  setProvider(newProvider);
+                  setModel(getDefaultModel(permissions, newProvider));
+                }}
                 className="border rounded px-2 py-1 text-sm"
               >
-                <option value="openrouter">OpenRouter</option>
-                <option value="deepseek">DeepSeek</option>
-                <option value="openai">OpenAI</option>
+                {(() => {
+                  const filteredProviders = getFilteredAIProviders(permissions);
+                  return Object.entries(filteredProviders).map(([key, config]) => (
+                    <option key={key} value={key}>
+                      {config.name}
+                    </option>
+                  ));
+                })()}
               </select>
               
               <select

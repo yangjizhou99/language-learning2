@@ -14,14 +14,28 @@ import { Separator } from "@/components/ui/separator";
 import VoiceManager from "@/components/VoiceManager";
 import CandidateVoiceSelector from "@/components/CandidateVoiceSelector";
 
-type Item = { id:string; lang:"en"|"ja"|"zh"; level:number; genre:string; title:string; status:string; created_at:string; notes?: any; text?: string };
+type Item = { 
+  id: string; 
+  lang: "en"|"ja"|"zh"; 
+  level: number; 
+  genre: string; 
+  title: string; 
+  status: string; 
+  created_at: string; 
+  notes?: any; 
+  text?: string;
+  translations?: {
+    en?: string;
+    ja?: string;
+  };
+};
 
 // 格式化对话文本，按说话者分行
 function formatDialogueText(text: string): string {
   if (!text) return '';
   
   // 处理AI返回的\n换行符
-  let formatted = text.replace(/\\n/g, '\n');
+  const formatted = text.replace(/\\n/g, '\n');
   
   // 如果已经包含换行符，保持格式并清理
   if (formatted.includes('\n')) {
@@ -1768,14 +1782,40 @@ export default function ShadowingReviewList(){
                         <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border max-h-32 overflow-y-auto">
                           <div className="whitespace-pre-wrap font-mono text-xs leading-relaxed">
                             {formatDialogueText(it.text)}
-          </div>
-        </div>
-      )}
-                {it?.notes?.audio_url && (
-                        <div className="mt-3">
-                          <div className="text-xs text-gray-500 mb-1">
-                            音频URL: {it.notes.audio_url.substring(0, 50)}...
                           </div>
+                        </div>
+                      )}
+                      
+                      {/* 显示翻译内容 */}
+                      {it.translations && (
+                        <div className="mt-3">
+                          <div className="text-xs text-gray-500 mb-2">翻译内容:</div>
+                          {it.translations.en && (
+                            <div className="mb-2">
+                              <div className="text-xs text-blue-600 font-medium mb-1">🇺🇸 英文:</div>
+                              <div className="text-sm text-gray-700 bg-blue-50 p-2 rounded border max-h-24 overflow-y-auto">
+                                <div className="whitespace-pre-wrap text-xs leading-relaxed">
+                                  {formatDialogueText(it.translations.en)}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {it.translations.ja && (
+                            <div className="mb-2">
+                              <div className="text-xs text-red-600 font-medium mb-1">🇯🇵 日文:</div>
+                              <div className="text-sm text-gray-700 bg-red-50 p-2 rounded border max-h-24 overflow-y-auto">
+                                <div className="whitespace-pre-wrap text-xs leading-relaxed">
+                                  {formatDialogueText(it.translations.ja)}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {/* 显示音频播放器 */}
+                      {it?.notes?.audio_url && (
+                        <div className="mt-3">
+                          <div className="text-xs text-gray-500 mb-2">🎵 音频播放:</div>
                           <div className="flex items-center gap-2">
                             <audio 
                               key={`${it.notes.audio_url}-${Date.now()}`} 
@@ -1794,8 +1834,8 @@ export default function ShadowingReviewList(){
                               刷新音频
                             </Button>
                           </div>
-                  </div>
-                )}
+                        </div>
+                      )}
               </div>
             </div>
                   <div className="flex items-center gap-2">

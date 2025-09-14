@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
       if (error) {
         console.error("插入项目失败:", error);
-        return NextResponse.json({ error: `插入失败: ${error.message}` }, { status: 500 });
+        return NextResponse.json({ error: `插入失败: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
       }
 
       insertedIds.push(data.id);

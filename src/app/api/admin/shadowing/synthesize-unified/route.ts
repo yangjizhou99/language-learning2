@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
 
   } catch (error: unknown) {
     console.error("统一TTS合成失败:", error);
-    const message = error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error);
     return NextResponse.json({ error: message || "服务器错误" }, { status: 500 });
   }
 }

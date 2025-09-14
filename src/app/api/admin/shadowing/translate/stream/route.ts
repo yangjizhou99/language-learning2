@@ -344,7 +344,7 @@ export async function POST(req: NextRequest) {
               } catch (error) {
                 processed++;
                 failedCount++;
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                const errorMessage = error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error);
                 
                 failedItems.push({
                   id: item.id,
@@ -394,8 +394,8 @@ export async function POST(req: NextRequest) {
         } catch (error) {
           sendProgress({
             type: 'error',
-            message: `批量翻译失败: ${error instanceof Error ? error.message : String(error)}`,
-            error: error instanceof Error ? error.message : String(error)
+            message: `批量翻译失败: ${error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)}`,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
           });
         } finally {
           controller.close();
@@ -414,7 +414,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('批量翻译失败:', error);
     return NextResponse.json({
-      error: error instanceof Error ? error.message : "批量翻译失败"
+      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : "批量翻译失败"
     }, { status: 500 });
   }
 }

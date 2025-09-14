@@ -47,15 +47,24 @@ ${topicLine}长度要求：约 ${len} ${b.lang==="en"?"words":"字"}（允许±2
 仅输出 JSON。`;
 }
 
-async function callLLM(body: Body) {
+async function callLLM(body: Body, userId?: string) {
   const model = body.model || DEFAULT_MODEL;
   const prompt = buildPrompt(body);
+  
+  // 获取用户API密钥
+  let userKeys: { deepseek?: string; openrouter?: string } | null = null;
+  if (userId) {
+    const { getUserAPIKeys } = await import('@/lib/user-api-keys');
+    userKeys = await getUserAPIKeys(userId);
+  }
+  
   if (PROVIDER === "deepseek") {
-    if (!DEEPSEEK_API_KEY) throw new Error("DEEPSEEK_API_KEY missing");
+    const key = userKeys?.deepseek || DEEPSEEK_API_KEY;
+    if (!key) throw new Error("DEEPSEEK_API_KEY missing");
     const r = await fetch("https://api.deepseek.com/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${DEEPSEEK_API_KEY}`,
+        "Authorization": `Bearer ${key}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -73,11 +82,12 @@ async function callLLM(body: Body) {
     const txt = j?.choices?.[0]?.message?.content || "";
     return JSON.parse(txt);
   } else {
-    if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY missing");
+    const key = userKeys?.openrouter || OPENAI_API_KEY;
+    if (!key) throw new Error("API key missing");
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${key}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -112,9 +122,9 @@ export async function POST(req: NextRequest) {
   // 调 LLM 生成
   let out: { title: string; text: string };
   try {
-    out = await callLLM(b);
+    out = await callLLM(b, auth.user.id);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
+    const msg = e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e);
     return NextResponse.json({ error: "LLM 生成失败: " + msg }, { status: 500 });
   }
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 type ReqBody = {
   lang: "en" | "ja" | "zh";
@@ -26,7 +28,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "missing params: lang/ref/hyp" }, { status: 400 });
     }
 
-    const apiKey = process.env.DEEPSEEK_API_KEY;
+    // 获取用户信息
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) { return cookieStore.get(name)?.value; },
+          set() {},
+          remove() {},
+        }
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 获取用户API密钥
+    const { getUserAPIKeys } = await import('@/lib/user-api-keys');
+    const userKeys = await getUserAPIKeys(user.id);
+    const apiKey = userKeys?.deepseek || process.env.DEEPSEEK_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "DEEPSEEK_API_KEY is missing" }, { status: 500 });
 
     const client = new OpenAI({ apiKey, baseURL: "https://api.deepseek.com" });
@@ -46,7 +70,7 @@ export async function POST(req: NextRequest) {
     if (!out) return NextResponse.json({ error: "empty output" }, { status: 502 });
     return new Response(out, { status: 200, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "unknown error";
+    const msg = e instanceof Error ? e instanceof Error ? e.message : String(e) : "unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-09-14T09:52:10.780Z",
+  "adminProfiles": [
+    {
+      "id": "82f4e416-ab28-4ba5-bbef-74938c2bfec3",
+      "username": null,
+      "native_lang": null,
+      "target_langs": [],
+      "created_at": "2025-08-16T18:03:23.637221+00:00",
+      "bio": null,
+      "goals": null,
+      "preferred_tone": null,
+      "domains": [],
+      "role": "admin"
+    },
+    {
+      "id": "02c3f65f-5b06-433a-a8e0-ad7e245a3748",
+      "username": null,
+      "native_lang": null,
+      "target_langs": [],
+      "created_at": "2025-08-17T06:31:22.448643+00:00",
+      "bio": null,
+      "goals": null,
+      "preferred_tone": null,
+      "domains": [],
+      "role": "admin"
+    }
+  ],
+  "adminAuthUsers": [
+    {
+      "id": "02c3f65f-5b06-433a-a8e0-ad7e245a3748",
+      "email": "yangjizhou100@gmail.com",
+      "created_at": "2025-08-16T19:43:37.94764Z",
+      "last_sign_in_at": "2025-09-13T00:24:11.678287Z"
+    },
+    {
+      "id": "82f4e416-ab28-4ba5-bbef-74938c2bfec3",
+      "email": "yangjizhou99@gmail.com",
+      "created_at": "2025-08-16T18:03:23.552707Z",
+      "last_sign_in_at": "2025-08-16T19:38:07.956254Z"
+    }
+  ]
+}

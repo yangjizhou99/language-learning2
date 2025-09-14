@@ -27,7 +27,7 @@ export async function GET(req: NextRequest){
 
   const from = (page-1)*pageSize; const to = from + pageSize - 1;
   const { data, error, count } = await query.range(from, to);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
   return NextResponse.json({ ok:true, items: data || [], total: count || 0, page, page_size: pageSize });
 }
 

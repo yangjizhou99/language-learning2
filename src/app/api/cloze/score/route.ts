@@ -141,7 +141,8 @@ export async function POST(req: NextRequest) {
         { role: 'user', content: prompt }
       ],
       temperature: 0.3,
-      response_json: true
+      response_json: true,
+      userId: user.id  // 传递用户ID以使用用户特定的API密钥
     });
 
     if (!result.content) {
@@ -186,7 +187,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Score cloze error:', error);
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Internal server error' 
+      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Internal server error' 
     }, { status: 500 });
   }
 }

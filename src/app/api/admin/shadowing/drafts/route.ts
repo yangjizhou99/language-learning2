@@ -27,7 +27,7 @@ export async function GET(req: NextRequest){
   if (q) query = query.ilike("title", `%${q}%`);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
   return NextResponse.json({ ok:true, items: data||[] });
 }
 

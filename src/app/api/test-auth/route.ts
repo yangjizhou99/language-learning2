@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('Error in test auth API:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error', details: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error' },
       { status: 500 }
     );
   }

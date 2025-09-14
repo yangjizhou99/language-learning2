@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ 
         success: false, 
         error: '获取音色数据失败', 
-        details: error.message 
+        details: error instanceof Error ? error.message : String(error) 
       }, { status: 500 });
     }
     
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ 
       success: false, 
       error: '获取音色数据失败', 
-      details: error instanceof Error ? error.message : '未知错误'
+      details: error instanceof Error ? error instanceof Error ? error.message : String(error) : '未知错误'
     }, { status: 500 });
   }
 }

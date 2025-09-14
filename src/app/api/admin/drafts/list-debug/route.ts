@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     if (error) {
       console.error("数据库查询错误:", error);
       return NextResponse.json({ 
-        error: error.message, 
+        error: error instanceof Error ? error.message : String(error), 
         step: "db_query",
         status_filter: status
       }, { status: 400 });

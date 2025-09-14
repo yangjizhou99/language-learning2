@@ -15,6 +15,6 @@ export async function GET(req: NextRequest) {
     .eq("status", status)
     .order("created_at", { ascending:false })
     .limit(100);
-  if (error) return NextResponse.json({ error: error.message }, { status:400 });
+  if (error) return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status:400 });
   return NextResponse.json(data || []);
 }

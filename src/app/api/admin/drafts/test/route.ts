@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       console.error("Database error:", error);
       return NextResponse.json({
         error: "数据库查询失败",
-        db_error: error.message,
+        db_error: error instanceof Error ? error.message : String(error),
         step: "db_query"
       }, { status: 500 });
     }

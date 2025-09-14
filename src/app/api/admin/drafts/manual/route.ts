@@ -35,6 +35,6 @@ export async function POST(req: NextRequest) {
     status:"pending", created_by: auth.user.id
   }]).select("id").single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status:400 });
+  if (error) return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status:400 });
   return NextResponse.json({ ok:true, draft_id: data.id });
 }

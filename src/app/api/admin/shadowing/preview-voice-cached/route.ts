@@ -264,7 +264,7 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         // 如果科大讯飞TTS失败，返回一个详细的错误消息
         console.error('科大讯飞TTS试听失败:', error);
-        throw new Error(`科大讯飞TTS试听失败: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(`科大讯飞TTS试听失败: ${error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)}`);
       }
     } else {
       // 使用Google Cloud TTS
@@ -337,7 +337,7 @@ export async function POST(req: NextRequest) {
       { 
         success: false, 
         error: 'Failed to generate voice preview',
-        details: error.message 
+        details: error instanceof Error ? error.message : String(error) 
       },
       { status: 500 }
     );

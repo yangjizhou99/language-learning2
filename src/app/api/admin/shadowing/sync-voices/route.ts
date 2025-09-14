@@ -26,7 +26,7 @@ function makeClient() {
         private_key: serviceAccount.private_key,
       };
     } catch (error) {
-      throw new Error(`Failed to load service account file: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Failed to load service account file: ${error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)}`);
     }
   } else {
     throw new Error('Google Cloud TTS credentials not found. Please set GOOGLE_CLOUD_CLIENT_EMAIL and GOOGLE_CLOUD_PRIVATE_KEY, or GOOGLE_TTS_CREDENTIALS');
@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ 
         success: false, 
         error: '插入音色数据失败', 
-        details: error.message,
+        details: error instanceof Error ? error.message : String(error),
         errorCode: error.code,
         errorHint: error.hint,
         sampleData: allVoiceData[0]
@@ -271,7 +271,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       success: false, 
       error: '同步音色失败', 
-      details: error instanceof Error ? error.message : '未知错误'
+      details: error instanceof Error ? error instanceof Error ? error.message : String(error) : '未知错误'
     }, { status: 500 });
   }
 }

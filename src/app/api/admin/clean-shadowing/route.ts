@@ -31,8 +31,8 @@ export async function DELETE(req: NextRequest) {
           .neq('id', '00000000-0000-0000-0000-000000000000'); // 删除所有记录
         
         if (error) {
-          console.error(`清理 ${table} 失败:`, error.message);
-          results.push({ table, success: false, error: error.message });
+          console.error(`清理 ${table} 失败:`, error instanceof Error ? error.message : String(error));
+          results.push({ table, success: false, error: error instanceof Error ? error.message : String(error) });
         } else {
           console.log(`✅ ${table} 清理完成`);
           results.push({ table, success: true });
@@ -55,7 +55,7 @@ export async function DELETE(req: NextRequest) {
   } catch (error) {
     console.error('清理 Shadowing 数据时发生错误:', error);
     return NextResponse.json(
-      { error: '清理失败', details: error instanceof Error ? error.message : String(error) },
+      { error: '清理失败', details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) },
       { status: 500 }
     );
   }

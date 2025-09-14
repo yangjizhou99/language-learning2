@@ -285,7 +285,7 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
               // 记录错误时间
               lastErrorTime = Date.now();
               
-              reject(new Error(`ffmpeg合并失败: ${error.message}\nstderr: ${stderr}\nstdout: ${stdout}`));
+              reject(new Error(`ffmpeg合并失败: ${error instanceof Error ? error.message : String(error)}\nstderr: ${stderr}\nstdout: ${stdout}`));
             } else {
               console.log('ffmpeg合并成功');
               console.log('stdout:', stdout);
@@ -406,7 +406,7 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
       { 
         success: false, 
         error: '音频合并失败', 
-        details: error instanceof Error ? error.message : '未知错误' 
+        details: error instanceof Error ? error instanceof Error ? error.message : String(error) : '未知错误' 
       }, 
       { status: 500 }
     );

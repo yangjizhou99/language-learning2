@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { CacheManager } from '@/lib/cache';
+import { getUserPermissions, checkLevelPermission, checkLanguagePermission, checkAccessPermission } from '@/lib/user-permissions-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -41,6 +42,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // 获取用户权限
+    const permissions = await getUserPermissions(user.id);
+    console.log('User permissions:', permissions);
+
+    // 检查是否有访问Shadowing的权限
+    if (!checkAccessPermission(permissions, 'can_access_shadowing')) {
+      console.log('User does not have shadowing access permission');
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
     // Parse query parameters
     const url = new URL(req.url);
     const lang = url.searchParams.get('lang');
@@ -61,6 +72,8 @@ export async function GET(req: NextRequest) {
           topic,
           genre,
           notes,
+          translations,
+          trans_updated_at,
           ai_provider,
           ai_model,
           ai_usage,
@@ -72,10 +85,29 @@ export async function GET(req: NextRequest) {
 
       // Apply filters
       if (lang) {
+        // 检查语言权限
+        if (!checkLanguagePermission(permissions, lang)) {
+          console.log('User does not have permission for language:', lang);
+          return {
+            success: true,
+            items: [],
+            total: 0
+          };
+        }
         query = query.eq('lang', lang);
       }
       if (level) {
-        query = query.eq('level', level);
+        const levelNum = parseInt(level);
+        // 检查等级权限
+        if (!checkLevelPermission(permissions, levelNum)) {
+          console.log('User does not have permission for level:', levelNum);
+          return {
+            success: true,
+            items: [],
+            total: 0
+          };
+        }
+        query = query.eq('level', levelNum);
       }
       // 只显示已审核的内容
       query = query.eq('status', 'approved');
@@ -84,7 +116,7 @@ export async function GET(req: NextRequest) {
 
       if (error) {
         console.error('Database query error:', error);
-        throw new Error(`Error fetching shadowing catalog: ${error.message}`);
+        throw new Error(`Error fetching shadowing catalog: ${error instanceof Error ? error.message : String(error)}`);
       }
 
       // Get theme and subtopic data separately
@@ -150,6 +182,7 @@ export async function GET(req: NextRequest) {
         
         return {
           ...item,
+          audio_url: item.notes?.audio_url || null, // 提取音频URL到顶层
           theme,
           subtopic,
           isPracticed,
@@ -169,6 +202,20 @@ export async function GET(req: NextRequest) {
         filteredItems = processedItems.filter((item: any) => item.isPracticed);
       } else if (practiced === 'false') {
         filteredItems = processedItems.filter((item: any) => !item.isPracticed);
+      }
+
+      // 如果没有指定等级，过滤掉用户没有权限的等级
+      if (!level) {
+        filteredItems = filteredItems.filter((item: any) => 
+          checkLevelPermission(permissions, item.level)
+        );
+      }
+
+      // 如果没有指定语言，过滤掉用户没有权限的语言
+      if (!lang) {
+        filteredItems = filteredItems.filter((item: any) => 
+          checkLanguagePermission(permissions, item.lang)
+        );
       }
 
       return {

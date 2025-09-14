@@ -6,6 +6,7 @@ import type { NextRequest } from "next/server";
 export async function requireAdmin(req?: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
   // 优先使用前端传来的 Authorization 头（Bearer token）
   const authHeader = req?.headers.get("authorization") || "";
@@ -13,7 +14,8 @@ export async function requireAdmin(req?: NextRequest) {
 
   const cookieStore = await cookies();
 
-  const supabase = hasBearer
+  // 用于认证的客户端（使用 anon key）
+  const authSupabase = hasBearer
     ? createClient(supabaseUrl, supabaseAnon, {
         auth: { 
           persistSession: false,
@@ -33,26 +35,26 @@ export async function requireAdmin(req?: NextRequest) {
         }
       });
 
-  // 调试日志
-  console.log('Admin check - hasBearer:', hasBearer);
-  console.log('Admin check - authHeader:', authHeader ? 'present' : 'missing');
+  // 用于数据查询的客户端（使用 service role key）
+  if (!supabaseServiceRole) {
+    console.error('SUPABASE_SERVICE_ROLE_KEY 环境变量未设置');
+    return { ok: false as const, reason: "server_error" };
+  }
+  
+  const dataSupabase = createClient(supabaseUrl, supabaseServiceRole);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  console.log('Admin check - user:', user ? `${user.email} (${user.id})` : 'null');
+  const { data: { user } } = await authSupabase.auth.getUser();
   if (!user) return { ok: false as const, reason: "unauthorized" };
   
-  const { data, error } = await supabase
+  // 直接查询用户角色，不依赖is_admin函数
+  const { data, error } = await dataSupabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
   
-  console.log('Admin check - profile query result:', { data, error });
   if (error || !data || data.role !== "admin") {
-    console.log('Admin check - access denied:', { error: error?.message, role: data?.role });
     return { ok: false as const, reason: "forbidden" };
   }
-  
-  console.log('Admin check - access granted');
-  return { ok: true as const, supabase, user };
+  return { ok: true as const, supabase: dataSupabase, user };
 }

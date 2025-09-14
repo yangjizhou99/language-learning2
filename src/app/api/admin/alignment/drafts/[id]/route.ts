@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest, { params }:{ params: Promise<{ id:st
   for (const k of ["topic","tags","preferred_style","steps"]) if (k in body) patch[k] = body[k];
   const { id } = await params;
   const { error } = await auth.supabase.from("alignment_packs").update(patch).eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
   return NextResponse.json({ ok:true });
 }
 
@@ -36,12 +36,12 @@ export async function POST(req: NextRequest, { params }:{ params: Promise<{ id:s
   const { id } = await params;
   if (action === "publish"){
     const { error } = await auth.supabase.from("alignment_packs").update({ status: "published" }).eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
     return NextResponse.json({ ok:true });
   }
   if (action === "archive"){
     const { error } = await auth.supabase.from("alignment_packs").update({ status: "archived" }).eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error) return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
     return NextResponse.json({ ok:true });
   }
   return NextResponse.json({ error: "unknown action" }, { status: 400 });
