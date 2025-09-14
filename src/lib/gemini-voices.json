@@ -1,52 +1,214 @@
 {
   "voices": [
     {
-      "name": "Kore",
+      "name": "Achernar",
       "language": "en-US",
       "gender": "FEMALE",
-      "description": "Kore - English Female Voice"
+      "description": "Achernar - English Female Voice",
+      "models": ["flash", "pro"]
     },
     {
-      "name": "Orus", 
+      "name": "Achird",
       "language": "en-US",
       "gender": "MALE",
-      "description": "Orus - English Male Voice"
+      "description": "Achird - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Algenib",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Algenib - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Algieba",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Algieba - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Alnilam",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Alnilam - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Aoede",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Aoede - English Female Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Autonoe",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Autonoe - English Female Voice",
+      "models": ["flash", "pro"]
     },
     {
       "name": "Callirrhoe",
-      "language": "en-US", 
+      "language": "en-US",
       "gender": "FEMALE",
-      "description": "Callirrhoe - English Female Voice"
+      "description": "Callirrhoe - English Female Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Charon",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Charon - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Despina",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Despina - English Female Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Enceladus",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Enceladus - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Erinome",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Erinome - English Female Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Fenrir",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Fenrir - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Gacrux",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Gacrux - English Female Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Iapetus",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Iapetus - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Kore",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Kore - English Female Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Laomedeia",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Laomedeia - English Female Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Leda",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Leda - English Female Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Orus",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Orus - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Pulcherrima",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Pulcherrima - English Female Voice",
+      "models": ["flash", "pro"]
     },
     {
       "name": "Puck",
       "language": "en-US",
-      "gender": "MALE", 
-      "description": "Puck - English Male Voice"
+      "gender": "MALE",
+      "description": "Puck - English Male Voice",
+      "models": ["flash", "pro"]
     },
     {
-      "name": "A",
-      "language": "ja-JP",
+      "name": "Rasalgethi",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Rasalgethi - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Sadachbia",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Sadachbia - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Sadaltager",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Sadaltager - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Schedar",
+      "language": "en-US",
+      "gender": "MALE",
+      "description": "Schedar - English Male Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Sulafat",
+      "language": "en-US",
       "gender": "FEMALE",
-      "description": "A - Japanese Female Voice"
+      "description": "Sulafat - English Female Voice",
+      "models": ["flash", "pro"]
     },
     {
-      "name": "B",
-      "language": "ja-JP", 
+      "name": "Umbriel",
+      "language": "en-US",
       "gender": "MALE",
-      "description": "B - Japanese Male Voice"
+      "description": "Umbriel - English Male Voice",
+      "models": ["flash", "pro"]
     },
     {
-      "name": "C",
-      "language": "ja-JP",
-      "gender": "FEMALE", 
-      "description": "C - Japanese Female Voice"
+      "name": "Vindemiatrix",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Vindemiatrix - English Female Voice",
+      "models": ["flash", "pro"]
     },
     {
-      "name": "D",
-      "language": "ja-JP",
+      "name": "Zephyr",
+      "language": "en-US",
+      "gender": "FEMALE",
+      "description": "Zephyr - English Female Voice",
+      "models": ["flash", "pro"]
+    },
+    {
+      "name": "Zubenelgenubi",
+      "language": "en-US",
       "gender": "MALE",
-      "description": "D - Japanese Male Voice"
+      "description": "Zubenelgenubi - English Male Voice",
+      "models": ["flash", "pro"]
     }
   ]
 }

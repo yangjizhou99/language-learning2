@@ -151,7 +151,7 @@ export default function SubtopicsGenPage() {
   const [lang, setLang] = useState<Lang>('ja');
   const [level, setLevel] = useState<1|2|3|4|5|6>(3);
   const [genre, setGenre] = useState<Genre>('monologue');
-  const [themeId, setThemeId] = useState<string>('');
+  const [themeId, setThemeId] = useState<string>('all');
   const [q, setQ] = useState('');
   
   const [themes, setThemes] = useState<any[]>([]);
@@ -173,12 +173,15 @@ export default function SubtopicsGenPage() {
   const [concurrency, setConcurrency] = useState(4);
   
   const eventSourceRef = useRef<EventSource | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 从URL参数初始化
   useEffect(() => {
     const urlThemeId = searchParams.get('theme_id');
     if (urlThemeId) {
       setThemeId(urlThemeId);
+    } else {
+      setThemeId('all'); // 默认为全部大主题
     }
   }, [searchParams]);
 
@@ -200,9 +203,16 @@ export default function SubtopicsGenPage() {
       const r = await fetch(`/api/admin/shadowing/themes?${qs.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      const j = await r.json();
+      const responseText = await r.text();
       if (r.ok) {
-        setThemes(j.items || []);
+        try {
+          const j = JSON.parse(responseText);
+          setThemes(j.items || []);
+        } catch (jsonError) {
+          console.error('Parse themes response failed:', responseText);
+        }
+      } else {
+        console.error('Load themes failed:', responseText);
       }
     } catch (error) {
       console.error('Load themes failed:', error);
@@ -221,16 +231,23 @@ export default function SubtopicsGenPage() {
         genre,
         limit: '100'
       });
-      if (themeId) qs.set('theme_id', themeId);
+      if (themeId && themeId !== 'all') qs.set('theme_id', themeId);
       if (q) qs.set('q', q);
       
       const r = await fetch(`/api/admin/shadowing/subtopics?${qs.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
-      const j = await r.json();
+      const responseText = await r.text();
       if (r.ok) {
-        setItems(j.items || []);
-        setSelected({});
+        try {
+          const j = JSON.parse(responseText);
+          setItems(j.items || []);
+          setSelected({});
+        } catch (jsonError) {
+          console.error('Parse subtopics response failed:', responseText);
+        }
+      } else {
+        console.error('Load subtopics failed:', responseText);
       }
     } catch (error) {
       console.error('Load failed:', error);
@@ -305,8 +322,8 @@ export default function SubtopicsGenPage() {
   }
 
   function openNew() {
-    if (!themeId) {
-      alert('请先选择大主题');
+    if (!themeId || themeId === 'all') {
+      alert('请先选择具体的大主题（不能选择"全部大主题"）');
       return;
     }
     const theme = themes.find(t => t.id === themeId);
@@ -352,11 +369,17 @@ export default function SubtopicsGenPage() {
         },
         body: JSON.stringify({ action: 'upsert', item: editing })
       });
-      const j = await r.json();
+      const responseText = await r.text();
       if (!r.ok) {
-        alert('保存失败：' + j.error);
+        try {
+          const j = JSON.parse(responseText);
+          alert('保存失败：' + j.error);
+        } catch (jsonError) {
+          alert('保存失败：' + responseText);
+        }
         return;
       }
+      const j = JSON.parse(responseText);
       closeModal();
       loadSubtopics();
     } catch (error) {
@@ -382,11 +405,17 @@ export default function SubtopicsGenPage() {
         },
         body: JSON.stringify({ action: 'upsert', items: dirtyItems })
       });
-      const j = await r.json();
+      const responseText = await r.text();
       if (!r.ok) {
-        alert('保存失败：' + j.error);
+        try {
+          const j = JSON.parse(responseText);
+          alert('保存失败：' + j.error);
+        } catch (jsonError) {
+          alert('保存失败：' + responseText);
+        }
         return;
       }
+      const j = JSON.parse(responseText);
       loadSubtopics();
     } catch (error) {
       alert('保存失败：' + error);
@@ -412,11 +441,17 @@ export default function SubtopicsGenPage() {
         },
         body: JSON.stringify({ action: 'archive', items: ids.map(id => ({ id })) })
       });
-      const j = await r.json();
+      const responseText = await r.text();
       if (!r.ok) {
-        alert('操作失败：' + j.error);
+        try {
+          const j = JSON.parse(responseText);
+          alert('操作失败：' + j.error);
+        } catch (jsonError) {
+          alert('操作失败：' + responseText);
+        }
         return;
       }
+      const j = JSON.parse(responseText);
       loadSubtopics();
     } catch (error) {
       alert('操作失败：' + error);
@@ -442,11 +477,17 @@ export default function SubtopicsGenPage() {
         },
         body: JSON.stringify({ action: 'delete', items: ids.map(id => ({ id })) })
       });
-      const j = await r.json();
+      const responseText = await r.text();
       if (!r.ok) {
-        alert('删除失败：' + j.error);
+        try {
+          const j = JSON.parse(responseText);
+          alert('删除失败：' + j.error);
+        } catch (jsonError) {
+          alert('删除失败：' + responseText);
+        }
         return;
       }
+      const j = JSON.parse(responseText);
       loadSubtopics();
     } catch (error) {
       alert('删除失败：' + error);
@@ -470,6 +511,18 @@ export default function SubtopicsGenPage() {
     setProgress({ done: 0, total: selectedIds.length, saved: 0, errors: 0, tokens: 0 });
     setLogs([]);
 
+    // 创建超时控制器
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    const timeoutId = setTimeout(() => {
+      abortController.abort();
+      setLogs(prev => [...prev, {
+        type: 'error',
+        message: '请求超时，请检查网络连接或重试'
+      }]);
+      setGenerating(false);
+    }, 300000); // 5分钟超时
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
@@ -488,7 +541,8 @@ export default function SubtopicsGenPage() {
           provider,
           model,
           temperature
-        })
+        }),
+        signal: abortController.signal
       });
 
       if (!response.ok) {
@@ -553,11 +607,20 @@ export default function SubtopicsGenPage() {
         }
       }
     } catch (error) {
-      setLogs(prev => [...prev, {
-        type: 'error',
-        message: `生成失败：${error}`
-      }]);
+      if (error.name === 'AbortError') {
+        setLogs(prev => [...prev, {
+          type: 'error',
+          message: '生成被用户取消或超时'
+        }]);
+      } else {
+        setLogs(prev => [...prev, {
+          type: 'error',
+          message: `生成失败：${error}`
+        }]);
+      }
     } finally {
+      clearTimeout(timeoutId);
+      abortControllerRef.current = null;
       setGenerating(false);
     }
   }
@@ -568,6 +631,14 @@ export default function SubtopicsGenPage() {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLogs(prev => [...prev, {
+      type: 'error',
+      message: '生成已被用户停止'
+    }]);
   }
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
@@ -581,7 +652,7 @@ export default function SubtopicsGenPage() {
           <Button onClick={loadSubtopics} variant="outline">
             刷新
           </Button>
-          <Button onClick={openNew} disabled={!themeId}>
+          <Button onClick={openNew} disabled={!themeId || themeId === 'all'}>
             <Plus className="w-4 h-4 mr-2" />
             新建小主题
           </Button>
@@ -681,6 +752,7 @@ export default function SubtopicsGenPage() {
                   <SelectValue placeholder="选择大主题" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">全部大主题</SelectItem>
                   {themes.map(theme => (
                     <SelectItem key={theme.id} value={theme.id}>
                       {theme.title}
@@ -963,7 +1035,7 @@ export default function SubtopicsGenPage() {
 
       {/* 编辑对话框 */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby="subtopic-dialog-description">
           <DialogHeader>
             <DialogTitle>
               {editing?.id ? '编辑小主题' : '新建小主题'}

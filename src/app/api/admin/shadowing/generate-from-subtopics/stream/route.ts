@@ -67,7 +67,11 @@ export async function POST(req: NextRequest) {
         // 并发处理
         const processBatch = async (batch: any[]) => {
           const promises = batch.map(async (subtopic) => {
-            try {
+            let retryCount = 0;
+            const maxRetries = 2;
+            
+            while (retryCount <= maxRetries) {
+              try {
               // 检查是否已存在
               const { data: existing } = await supabase
                 .from('shadowing_drafts')
@@ -101,6 +105,7 @@ export async function POST(req: NextRequest) {
                 provider: provider as 'openrouter' | 'deepseek' | 'openai',
                 model,
                 temperature,
+                timeoutMs: 120000, // 2分钟超时
                 messages: [
                   { role: 'system', content: 'You are a helpful writing assistant.' },
                   { role: 'user', content: prompt }
@@ -210,22 +215,34 @@ export async function POST(req: NextRequest) {
                 tokens: totalTokens
               });
               
-            } catch (error) {
-              errors++;
-              send({ 
-                type: 'error', 
-                id: subtopic.id,
-                title: subtopic.title_cn,
-                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
-                done: completed + 1,
-                total: subtopics.length,
-                saved,
-                errors,
-                tokens: totalTokens
-              });
+              } catch (error) {
+                retryCount++;
+                if (retryCount > maxRetries) {
+                  errors++;
+                  send({ 
+                    type: 'error', 
+                    id: subtopic.id,
+                    title: subtopic.title_cn,
+                    error: `${error instanceof Error ? error.message : String(error)} (重试${maxRetries}次后失败)`,
+                    done: completed + 1,
+                    total: subtopics.length,
+                    saved,
+                    errors,
+                    tokens: totalTokens
+                  });
+                  completed++;
+                  return;
+                } else {
+                  // 重试前等待一段时间
+                  await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+                  continue;
+                }
+              }
+              
+              // 成功完成，跳出重试循环
+              completed++;
+              return;
             }
-            
-            completed++;
           });
           
           await Promise.all(promises);
@@ -248,7 +265,7 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         send({ 
           type: 'error', 
-          error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
+          error: error instanceof Error ? error.message : String(error)
         });
       } finally {
         controller.close();

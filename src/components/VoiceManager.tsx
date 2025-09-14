@@ -86,6 +86,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
     "all"
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPriceRange, setSelectedPriceRange] = useState("all");
   
   // AI 推荐相关状态
   const [recommendationText, setRecommendationText] = useState("");
@@ -416,6 +417,40 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
     }
   };
 
+  // 更新Google Cloud TTS音色
+  const updateGoogleCloudTTSVoices = async () => {
+    try {
+      setSyncing(true);
+      setError(null);
+      
+      console.log("开始更新Google Cloud TTS音色...");
+      const response = await fetch("/api/admin/restore-all-voices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log("Google Cloud TTS音色更新成功:", data.message);
+        
+        // 更新成功后重新获取音色列表
+        await fetchVoices(selectedLanguage, selectedCategory);
+        
+        // 显示成功消息
+        setError(null);
+      } else {
+        console.error("Google Cloud TTS音色更新失败:", data.error);
+        setError(`Google Cloud TTS音色更新失败: ${data.error}`);
+      }
+    } catch (err) {
+      console.error("Google Cloud TTS音色更新失败:", err);
+      setError("Google Cloud TTS音色更新失败，请重试");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   // AI 推荐音色
   const recommendVoices = async () => {
     if (!recommendationText.trim()) return;
@@ -449,27 +484,54 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
     fetchVoices(selectedLanguage, selectedCategory);
   }, [fetchVoices, selectedLanguage, selectedCategory]);
 
-  // 过滤音色
-  const filteredVoices = voices.filter(voice => 
-    voice.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (voice.language_code || voice.languageCode || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // 获取当前显示的音色列表
-  const displayVoices = selectedCategory === "all" ? filteredVoices : 
-    filteredVoices.filter(voice => {
-      // 使用数据库的category字段进行筛选
-      return voice.category === selectedCategory;
-    });
+  // 获取当前显示的音色列表 - 综合所有筛选条件
+  const displayVoices = voices.filter(voice => {
+    // 语言筛选
+    if (selectedLanguage !== "all" && voice.language_code !== selectedLanguage) {
+      return false;
+    }
+    
+    // 分类筛选
+    if (selectedCategory !== "all" && voice.category !== selectedCategory) {
+      return false;
+    }
+    
+    // 价格筛选
+    if (selectedPriceRange !== "all") {
+      const price = voice.pricing?.pricePerMillionChars || 0;
+      switch (selectedPriceRange) {
+        case "free":
+          return price === 0;
+        case "low":
+          return price > 0 && price <= 5;
+        case "medium":
+          return price > 5 && price <= 10;
+        case "high":
+          return price > 10 && price <= 20;
+        case "premium":
+          return price > 20;
+        default:
+          return true;
+      }
+    }
+    
+    // 搜索筛选
+    if (searchTerm && !voice.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !(voice.language_code || '').toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+    
+    return true;
+  });
 
   // 调试信息
   console.log("VoiceManager 状态:", {
     voices: voices.length,
     selectedCategory,
     selectedLanguage,
+    selectedPriceRange,
     categorizedVoices: Object.keys(categorizedVoices),
     displayVoices: displayVoices.length,
-    filteredVoices: filteredVoices.length,
     searchTerm,
     loading,
     error
@@ -502,7 +564,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="language">语言</Label>
               <Select value={selectedLanguage} onValueChange={(value) => {
@@ -565,6 +627,23 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
             </div>
             
             <div>
+              <Label htmlFor="priceRange">价格范围</Label>
+              <Select value={selectedPriceRange} onValueChange={setSelectedPriceRange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">所有价格</SelectItem>
+                  <SelectItem value="free">免费 (0)</SelectItem>
+                  <SelectItem value="low">经济型 (1-5$/M字符)</SelectItem>
+                  <SelectItem value="medium">标准型 (6-10$/M字符)</SelectItem>
+                  <SelectItem value="high">高质量 (11-20$/M字符)</SelectItem>
+                  <SelectItem value="premium">专业级 (20+$/M字符)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
               <Label htmlFor="search">搜索音色</Label>
               <Input
                 id="search"
@@ -595,6 +674,10 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
             <Button onClick={syncXunfeiVoices} disabled={syncing || loading} variant="outline" className="bg-blue-100 hover:bg-blue-200">
               {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               同步科大讯飞
+            </Button>
+            <Button onClick={updateGoogleCloudTTSVoices} disabled={syncing || loading} variant="outline" className="bg-orange-100 hover:bg-orange-200">
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              更新Google Cloud TTS
             </Button>
           </div>
         </CardContent>
@@ -678,9 +761,20 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>可用音色 ({displayVoices.length})</span>
-            {selectedCategory !== "all" && (
-              <Badge variant="outline">{selectedCategory}</Badge>
-            )}
+            <div className="flex gap-2">
+              {selectedCategory !== "all" && (
+                <Badge variant="outline">{selectedCategory}</Badge>
+              )}
+              {selectedPriceRange !== "all" && (
+                <Badge variant="secondary">
+                  {selectedPriceRange === "free" && "免费"}
+                  {selectedPriceRange === "low" && "经济型"}
+                  {selectedPriceRange === "medium" && "标准型"}
+                  {selectedPriceRange === "high" && "高质量"}
+                  {selectedPriceRange === "premium" && "专业级"}
+                </Badge>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>

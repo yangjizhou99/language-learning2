@@ -771,24 +771,45 @@ export default function ShadowingReviewList(){
     
     const speakers = Array.from(new Set(matches.map(m => m.replace(':', ''))));
     const speakerVoices: Record<string, string> = {};
+    const usedVoices = new Set<string>();
     
-    // 按规则分配音色
-    speakers.forEach((speaker, index) => {
+    // 按规则分配音色，确保每个说话者使用不同的音色
+    for (const speaker of speakers) {
+      let selectedVoice = '';
+      
       if (speaker === 'A') {
         // A说话者：选择男声
         const maleVoice = getRandomMaleVoice();
-        speakerVoices[speaker] = maleVoice || 'cmn-CN-Standard-B';
+        if (!maleVoice) {
+          throw new Error('无法分配A说话者的男声音色');
+        }
+        selectedVoice = maleVoice;
       } else if (speaker === 'B') {
         // B说话者：选择女声
         const femaleVoice = getRandomFemaleVoice();
-        speakerVoices[speaker] = femaleVoice || 'cmn-CN-Standard-A';
+        if (!femaleVoice) {
+          throw new Error('无法分配B说话者的女声音色');
+        }
+        selectedVoice = femaleVoice;
       } else {
         // C、D等：随机选择
         const randomVoice = getRandomVoice();
-        speakerVoices[speaker] = randomVoice || 'cmn-CN-Standard-A';
+        if (!randomVoice) {
+          throw new Error(`无法分配${speaker}说话者的音色`);
+        }
+        selectedVoice = randomVoice;
       }
-    });
+      
+      // 检查是否重复使用音色
+      if (usedVoices.has(selectedVoice)) {
+        throw new Error(`音色 ${selectedVoice} 已被其他说话者使用`);
+      }
+      
+      speakerVoices[speaker] = selectedVoice;
+      usedVoices.add(selectedVoice);
+    }
     
+    console.log('getSpeakerVoices - 最终音色分配:', speakerVoices);
     return speakerVoices;
   };
 
@@ -796,12 +817,22 @@ export default function ShadowingReviewList(){
   const getRandomVoice = () => {
     console.log('getRandomVoice - candidateVoices:', candidateVoices);
     if (candidateVoices.length === 0) {
-      console.log('getRandomVoice - 没有备选音色');
+      console.log('getRandomVoice - 没有备选音色，返回失败');
       return null;
     }
-    const randomIndex = Math.floor(Math.random() * candidateVoices.length);
-    const selectedVoice = candidateVoices[randomIndex].name;
+    
+    // 优先选择完整名称的音色（包含语言代码的音色）
+    const fullNameVoices = candidateVoices.filter(voice => 
+      voice.name.includes('-') && voice.name.split('-').length >= 3
+    );
+    
+    // 优先使用完整名称音色，如果没有则使用所有音色
+    const voicesToChooseFrom = fullNameVoices.length > 0 ? fullNameVoices : candidateVoices;
+    const randomIndex = Math.floor(Math.random() * voicesToChooseFrom.length);
+    const selectedVoice = voicesToChooseFrom[randomIndex].name;
+    
     console.log('getRandomVoice - 选择的音色:', selectedVoice);
+    console.log('getRandomVoice - 从', fullNameVoices.length > 0 ? '完整名称音色' : '所有音色', '中选择');
     return selectedVoice;
   };
 
@@ -912,7 +943,8 @@ export default function ShadowingReviewList(){
             text: segment.text, 
             lang: lang, 
             voice: segment.voice,
-            speakingRate: speakingRate
+            speakingRate: speakingRate,
+            pitch: pitch
           })
         });
         
@@ -945,28 +977,78 @@ export default function ShadowingReviewList(){
   const getRandomMaleVoice = () => {
     const maleVoices = candidateVoices.filter(voice => {
       const gender = voice.ssml_gender || voice.ssmlGender || '';
+      // 优先使用 ssml_gender 字段，这是更可靠的性别标识
       return gender.toLowerCase() === 'male' || gender.toLowerCase().includes('男');
     });
+    
     if (maleVoices.length === 0) {
-      return getRandomVoice(); // 如果没有男声，随机选择
+      console.error('getRandomMaleVoice - 没有找到男声音色');
+      return null; // 严格模式：没有男声就返回失败
     }
-    const randomIndex = Math.floor(Math.random() * maleVoices.length);
-    const selectedVoice = maleVoices[randomIndex].name;
-    return selectedVoice;
+    
+    // 优先选择有完整名称的音色
+    const validMaleVoices = maleVoices.filter(voice => {
+      // 优先选择有完整名称的音色
+      return voice.name.includes('-') && voice.name.split('-').length >= 3;
+    });
+    
+    // 如果没有有效的完整名称音色，则使用所有男声音色
+    const voicesToChooseFrom = validMaleVoices.length > 0 ? validMaleVoices : maleVoices;
+    
+    if (voicesToChooseFrom.length === 0) {
+      console.error('getRandomMaleVoice - 没有找到有效的男声音色');
+      return null; // 严格模式：没有有效音色就返回失败
+    }
+    
+    const randomIndex = Math.floor(Math.random() * voicesToChooseFrom.length);
+    const selectedVoice = voicesToChooseFrom[randomIndex];
+    
+    if (!selectedVoice || !selectedVoice.name) {
+      console.error('getRandomMaleVoice - 选择的音色无效:', selectedVoice);
+      return null;
+    }
+    
+    console.log('getRandomMaleVoice - 选择的男声音色:', selectedVoice.name, 'ssml_gender:', selectedVoice.ssml_gender);
+    return selectedVoice.name;
   };
 
   // 获取随机女声音色
   const getRandomFemaleVoice = () => {
     const femaleVoices = candidateVoices.filter(voice => {
       const gender = voice.ssml_gender || voice.ssmlGender || '';
+      // 优先使用 ssml_gender 字段，这是更可靠的性别标识
       return gender.toLowerCase() === 'female' || gender.toLowerCase().includes('女');
     });
+    
     if (femaleVoices.length === 0) {
-      return getRandomVoice(); // 如果没有女声，随机选择
+      console.error('getRandomFemaleVoice - 没有找到女声音色');
+      return null; // 严格模式：没有女声就返回失败
     }
-    const randomIndex = Math.floor(Math.random() * femaleVoices.length);
-    const selectedVoice = femaleVoices[randomIndex].name;
-    return selectedVoice;
+    
+    // 优先选择有完整名称的音色
+    const validFemaleVoices = femaleVoices.filter(voice => {
+      // 优先选择有完整名称的音色
+      return voice.name.includes('-') && voice.name.split('-').length >= 3;
+    });
+    
+    // 如果没有有效的完整名称音色，则使用所有女声音色
+    const voicesToChooseFrom = validFemaleVoices.length > 0 ? validFemaleVoices : femaleVoices;
+    
+    if (voicesToChooseFrom.length === 0) {
+      console.error('getRandomFemaleVoice - 没有找到有效的女声音色');
+      return null; // 严格模式：没有有效音色就返回失败
+    }
+    
+    const randomIndex = Math.floor(Math.random() * voicesToChooseFrom.length);
+    const selectedVoice = voicesToChooseFrom[randomIndex];
+    
+    if (!selectedVoice || !selectedVoice.name) {
+      console.error('getRandomFemaleVoice - 选择的音色无效:', selectedVoice);
+      return null;
+    }
+    
+    console.log('getRandomFemaleVoice - 选择的女声音色:', selectedVoice.name, 'ssml_gender:', selectedVoice.ssml_gender);
+    return selectedVoice.name;
   };
 
   // 开始批量翻译
@@ -1887,6 +1969,7 @@ export default function ShadowingReviewList(){
               <CandidateVoiceSelector
                 language={lang === "all" ? "zh" : lang}
                 onCandidateVoicesSet={setCandidateVoices}
+                showLanguageSelector={lang === "all"}
               />
               
               <div className="flex justify-end gap-3 mt-6">

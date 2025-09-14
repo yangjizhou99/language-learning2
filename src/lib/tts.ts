@@ -178,6 +178,36 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
     }
   }
 
+  // 检查是否是Gemini音色
+  if (voiceName && voiceName.startsWith('Gemini-')) {
+    try {
+      const { synthesizeGeminiTTS } = await import('./gemini-tts');
+      
+      console.log('Gemini TTS 合成参数:', {
+        originalVoiceName: voiceName,
+        text: clean.substring(0, 50) + '...',
+        lang: 'en-US',
+        speakingRate: speakingRate,
+        pitch: pitch
+      });
+      
+      // Gemini TTS 只支持英语，传递完整的音色名称让synthesizeGeminiTTS内部处理
+      const audioBuffer = await synthesizeGeminiTTS({
+        text: clean,
+        lang: 'en-US',
+        voiceName: voiceName, // 传递完整的音色名称，包括Flash/Pro标识
+        speakingRate: speakingRate,
+        pitch: pitch
+      });
+
+      console.log('Gemini TTS 合成成功，音频大小:', audioBuffer.length);
+      return Buffer.from(audioBuffer);
+    } catch (error) {
+      console.error('Gemini TTS 合成失败:', error);
+      throw error;
+    }
+  }
+
   // 使用Google TTS
   const client = makeClient();
   const selectedName = voiceName || DEFAULTS[lang as keyof typeof DEFAULTS];
@@ -207,11 +237,24 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
   console.log('- 最终音色名称:', name);
   console.log('- DEFAULTS[lang]:', DEFAULTS[lang as keyof typeof DEFAULTS]);
 
-  const sentences = splitTextIntoSentences(clean).flatMap(s => chunkByBytes(s, 800));
-  const ssml = `<speak>${sentences.map(s => `<s>${escapeForSsml(s)}</s>`).join("")}</speak>`;
+  // 检查音色是否支持SSML
+  const supportsSSML = name && !name.includes('Chirp-HD-') && !name.includes('Chirp3-HD-') && !name.includes('News-') && !name.includes('Studio-') && !name.includes('Casual-') && !name.includes('Polyglot-');
+  
+  let input: any;
+  if (supportsSSML) {
+    const sentences = splitTextIntoSentences(clean).flatMap(s => chunkByBytes(s, 800));
+    const ssml = `<speak>${sentences.map(s => `<s>${escapeForSsml(s)}</s>`).join("")}</speak>`;
+    input = { ssml };
+  } else {
+    // 对于不支持SSML的音色，使用纯文本
+    input = { text: clean };
+  }
+
+  console.log('Google TTS 输入类型:', supportsSSML ? 'SSML' : 'Text');
+  console.log('Google TTS 输入内容:', supportsSSML ? 'SSML格式' : clean.substring(0, 100) + '...');
 
   const [resp] = await client.synthesizeSpeech({
-    input: { ssml },
+    input,
     voice: { languageCode, name },
     audioConfig: {
       audioEncoding: "MP3",
