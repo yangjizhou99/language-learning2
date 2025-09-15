@@ -70,6 +70,124 @@
     @apply bg-background text-foreground font-sans;
   }
   
+  /* 多语言字体优化 */
+  html[lang="zh-CN"], html[lang="zh"] {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  html[lang="ja-JP"], html[lang="ja"] {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Noto Sans JP", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "palt" 1; /* 日文字符间距优化 */
+  }
+  
+  html[lang="en-US"], html[lang="en"] {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* 统一字体粗细 */
+  .font-medium {
+    font-weight: 500 !important;
+  }
+  
+  .font-semibold {
+    font-weight: 600 !important;
+  }
+  
+  .font-bold {
+    font-weight: 700 !important;
+  }
+  
+  /* 日文字体特殊优化 */
+  html[lang="ja-JP"] *, html[lang="ja"] * {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: inherit !important;
+  }
+  
+  /* 确保所有文本元素使用一致的字体渲染 */
+  p, span, div, button, input, select, textarea, label {
+    font-weight: inherit;
+  }
+  
+  /* 修复日文字体粗细不一致问题 */
+  html[lang="ja-JP"] .font-medium, html[lang="ja"] .font-medium {
+    font-weight: 500 !important;
+    font-family: inherit;
+  }
+  
+  html[lang="ja-JP"] .font-semibold, html[lang="ja"] .font-semibold {
+    font-weight: 600 !important;
+    font-family: inherit;
+  }
+  
+  html[lang="ja-JP"] .font-bold, html[lang="ja"] .font-bold {
+    font-weight: 700 !important;
+    font-family: inherit;
+  }
+  
+  /* Shadowing页面特定字体优化 */
+  html[lang="ja-JP"] .text-sm, html[lang="ja"] .text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: inherit;
+  }
+  
+  /* 确保 text-sm + font-medium 组合的一致性 */
+  html[lang="ja-JP"] .text-sm.font-medium, html[lang="ja"] .text-sm.font-medium {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500 !important;
+  }
+  
+  /* 确保所有 text-sm 元素的字体粗细一致性 */
+  html[lang="ja-JP"] .text-sm, html[lang="ja"] .text-sm {
+    font-weight: inherit;
+  }
+  
+  /* 特别处理蓝色文本的粗细 */
+  html[lang="ja-JP"] .text-sm.text-blue-700, html[lang="ja"] .text-sm.text-blue-700 {
+    font-weight: 500 !important;
+  }
+  
+  /* 确保音频播放器区域的字体粗细一致 */
+  html[lang="ja-JP"] .bg-blue-50 .text-sm, html[lang="ja"] .bg-blue-50 .text-sm {
+    font-weight: 500 !important;
+  }
+  
+  /* 确保所有音频相关文本的粗细一致 */
+  html[lang="ja-JP"] .bg-blue-50 span, html[lang="ja"] .bg-blue-50 span {
+    font-weight: 500 !important;
+  }
+  
+  /* 确保音频播放器区域内的所有文本粗细一致 */
+  html[lang="ja-JP"] .bg-blue-50 .text-xs, html[lang="ja"] .bg-blue-50 .text-xs {
+    font-weight: 500 !important;
+  }
+  
+  html[lang="ja-JP"] .text-xs, html[lang="ja"] .text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 400;
+  }
+  
+  /* 确保按钮和标签字体一致性 */
+  html[lang="ja-JP"] button, html[lang="ja"] button,
+  html[lang="ja-JP"] label, html[lang="ja"] label,
+  html[lang="ja-JP"] span, html[lang="ja"] span {
+    font-weight: inherit;
+    font-family: inherit;
+  }
+  
   /* 移动端优化 */
   @media (max-width: 767px) {
     /* 防止移动端缩放 */

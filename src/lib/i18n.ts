@@ -23,6 +23,8 @@ export interface Translations {
     logged_in: string;
     enter_admin: string;
     language: string;
+    checking_login: string;
+    login_required: string;
   };
   
   // 导航
@@ -110,6 +112,7 @@ export interface Translations {
     vocab_mode_off: string;
     vocab_mode_desc_on: string;
     vocab_mode_desc_off: string;
+    click_words_to_select: string;
     original_audio: string;
     follow_recording: string;
     start_recording: string;
@@ -135,6 +138,73 @@ export interface Translations {
     remove: string;
     import_success: string;
     import_failed: string;
+    // 新增的翻译内容
+    filter: string;
+    language: string;
+    level: string;
+    all_levels: string;
+    practice_status: string;
+    all_status: string;
+    practiced: string;
+    unpracticed: string;
+    genre: string;
+    all_genres: string;
+    dialogue: string;
+    monologue: string;
+    news: string;
+    lecture: string;
+    major_theme: string;
+    all_major_themes: string;
+    minor_theme: string;
+    all_minor_themes: string;
+    select_major_theme_first: string;
+    search: string;
+    search_placeholder: string;
+    random: string;
+    next_question: string;
+    total_questions: string;
+    completed: string;
+    draft: string;
+    not_started: string;
+    play_audio: string;
+    save_draft: string;
+    complete_and_save: string;
+    debug_vocab: string;
+    vocab_selection_mode: string;
+    original_audio_text: string;
+    translation: string;
+    show_translation: string;
+    recording_practice: string;
+    recordings_count: string;
+    no_recordings: string;
+    start_recording_text: string;
+    practice_scoring: string;
+    complete_recording_first: string;
+    // 新增的按钮和界面文本翻译
+    refresh_vocabulary: string;
+    select_question_to_start: string;
+    click_vocabulary_button: string;
+    select_from_left_vocabulary: string;
+    shadowing_practice: string;
+    shadowing_vocabulary: string;
+    no_questions_found: string;
+    // 生词解释相关
+    no_explanation: string;
+    explanation: string;
+    part_of_speech: string;
+    example_sentence: string;
+    // 登录相关
+    login_required_message: string;
+    // 题目信息相关
+    words: string;
+    // 评分相关
+    recording_completed_message: string;
+    scoring_result: string;
+    overall_score: string;
+    pronunciation_accuracy: string;
+    improvement_suggestions: string;
+    practice_comparison: string;
+    your_pronunciation: string;
     levels: {
       l1: string;
       l2: string;
@@ -167,6 +237,8 @@ const zh: Translations = {
     logged_in: '已登录',
     enter_admin: '进入后台',
     language: '语言',
+    checking_login: '检查登录状态...',
+    login_required: '需要登录',
   },
   nav: {
     home: '首页',
@@ -240,8 +312,9 @@ const zh: Translations = {
     change_question: '换一题',
     vocab_mode_on: '退出选词模式',
     vocab_mode_off: '开启选词模式',
-    vocab_mode_desc_on: '点击或拖拽选择生词',
+    vocab_mode_desc_on: '拖拽选择生词或短语',
     vocab_mode_desc_off: '点击开启生词选择功能',
+    click_words_to_select: '拖拽选择文本中的单词或短语',
     original_audio: '原音频：',
     follow_recording: '跟读录音：',
     start_recording: '开始录音',
@@ -267,6 +340,73 @@ const zh: Translations = {
     remove: '移除',
     import_success: '成功导入 {count} 个生词到生词本！',
     import_failed: '导入失败：{error}',
+    // 新增的翻译内容
+    filter: '筛选',
+    language: '语言',
+    level: '等级',
+    all_levels: '全部等级',
+    practice_status: '练习状态',
+    all_status: '全部状态',
+    practiced: '已完成',
+    unpracticed: '未开始',
+    genre: '体裁',
+    all_genres: '全部体裁',
+    dialogue: '对话',
+    monologue: '独白',
+    news: '新闻',
+    lecture: '讲座',
+    major_theme: '大主题',
+    all_major_themes: '全部大主题',
+    minor_theme: '小主题',
+    all_minor_themes: '全部小主题',
+    select_major_theme_first: '请先选择大主题',
+    search: '搜索',
+    search_placeholder: '搜索标题、主题...',
+    random: '随机',
+    next_question: '下一题',
+    total_questions: '共 {count} 题',
+    completed: '已完成',
+    draft: '草稿中',
+    not_started: '未开始',
+    play_audio: '播放音频',
+    save_draft: '保存草稿',
+    complete_and_save: '完成并保存',
+    debug_vocab: '调试单词本',
+    vocab_selection_mode: '生词选择模式',
+    original_audio_text: '原文音频',
+    translation: '翻译',
+    show_translation: '显示翻译',
+    recording_practice: '录音练习',
+    recordings_count: '{count} 个录音',
+    no_recordings: '还没有录音，点击"开始录音"开始练习',
+    start_recording_text: '开始录音',
+    practice_scoring: '练习评分',
+    complete_recording_first: '请先完成录音，然后点击下方按钮进行评分',
+    // 新增的按钮和界面文本翻译
+    refresh_vocabulary: '刷新题库',
+    select_question_to_start: '选择题目开始练习',
+    click_vocabulary_button: '点击上方"题库"按钮选择题目',
+    select_from_left_vocabulary: '从左侧题库中选择一个题目开始 Shadowing 练习',
+    shadowing_practice: 'Shadowing 练习',
+    shadowing_vocabulary: 'Shadowing 题库',
+    no_questions_found: '没有找到题目',
+    // 生词解释相关
+    no_explanation: '暂无解释',
+    explanation: '解释',
+    part_of_speech: '词性',
+    example_sentence: '例句',
+    // 登录相关
+    login_required_message: '请先登录以访问Shadowing练习功能',
+    // 题目信息相关
+    words: '词',
+    // 评分相关
+    recording_completed_message: '您已完成录音，点击下方按钮进行评分',
+    scoring_result: '评分结果',
+    overall_score: '整体评分',
+    pronunciation_accuracy: '发音准确性',
+    improvement_suggestions: '改进建议',
+    practice_comparison: '练习对比',
+    your_pronunciation: '你的发音',
     levels: {
       l1: 'L1 - 初级',
       l2: 'L2 - 初中级',
@@ -299,6 +439,8 @@ const en: Translations = {
     logged_in: 'Logged In',
     enter_admin: 'Enter Admin',
     language: 'Language',
+    checking_login: 'Checking login status...',
+    login_required: 'Login Required',
   },
   nav: {
     home: 'Home',
@@ -372,8 +514,9 @@ const en: Translations = {
     change_question: 'Change Question',
     vocab_mode_on: 'Exit Word Selection Mode',
     vocab_mode_off: 'Enable Word Selection Mode',
-    vocab_mode_desc_on: 'Click or drag to select vocabulary',
+    vocab_mode_desc_on: 'Drag to select words or phrases',
     vocab_mode_desc_off: 'Click to enable vocabulary selection feature',
+    click_words_to_select: 'Drag to select words or phrases in the text',
     original_audio: 'Original Audio:',
     follow_recording: 'Follow Recording:',
     start_recording: 'Start Recording',
@@ -399,6 +542,73 @@ const en: Translations = {
     remove: 'Remove',
     import_success: 'Successfully imported {count} words to vocabulary!',
     import_failed: 'Import failed: {error}',
+    // 新增的翻译内容
+    filter: 'Filter',
+    language: 'Language',
+    level: 'Level',
+    all_levels: 'All Levels',
+    practice_status: 'Practice Status',
+    all_status: 'All Status',
+    practiced: 'Completed',
+    unpracticed: 'Not Started',
+    genre: 'Genre',
+    all_genres: 'All Genres',
+    dialogue: 'Dialogue',
+    monologue: 'Monologue',
+    news: 'News',
+    lecture: 'Lecture',
+    major_theme: 'Major Theme',
+    all_major_themes: 'All Major Themes',
+    minor_theme: 'Minor Theme',
+    all_minor_themes: 'All Minor Themes',
+    select_major_theme_first: 'Please select a major theme first',
+    search: 'Search',
+    search_placeholder: 'Search titles, themes...',
+    random: 'Random',
+    next_question: 'Next Question',
+    total_questions: '{count} questions total',
+    completed: 'Completed',
+    draft: 'Draft',
+    not_started: 'Not Started',
+    play_audio: 'Play Audio',
+    save_draft: 'Save Draft',
+    complete_and_save: 'Complete and Save',
+    debug_vocab: 'Debug Vocabulary',
+    vocab_selection_mode: 'Vocabulary Selection Mode',
+    original_audio_text: 'Original Audio',
+    translation: 'Translation',
+    show_translation: 'Show Translation',
+    recording_practice: 'Recording Practice',
+    recordings_count: '{count} recordings',
+    no_recordings: 'No recordings yet, click "Start Recording" to begin practice',
+    start_recording_text: 'Start Recording',
+    practice_scoring: 'Practice Scoring',
+    complete_recording_first: 'Please complete recording first, then click the button below for scoring',
+    // 新增的按钮和界面文本翻译
+    refresh_vocabulary: 'Refresh Vocabulary',
+    select_question_to_start: 'Select a question to start practice',
+    click_vocabulary_button: 'Click the "Vocabulary" button above to select a question',
+    select_from_left_vocabulary: 'Select a question from the left vocabulary to start Shadowing practice',
+    shadowing_practice: 'Shadowing Practice',
+    shadowing_vocabulary: 'Shadowing Vocabulary',
+    no_questions_found: 'No questions found',
+    // 生词解释相关
+    no_explanation: 'No explanation available',
+    explanation: 'Explanation',
+    part_of_speech: 'Part of Speech',
+    example_sentence: 'Example Sentence',
+    // 登录相关
+    login_required_message: 'Please login to access Shadowing practice features',
+    // 题目信息相关
+    words: 'words',
+    // 评分相关
+    recording_completed_message: 'You have completed recording, click the button below to score',
+    scoring_result: 'Scoring Result',
+    overall_score: 'Overall Score',
+    pronunciation_accuracy: 'Pronunciation Accuracy',
+    improvement_suggestions: 'Improvement Suggestions',
+    practice_comparison: 'Practice Comparison',
+    your_pronunciation: 'Your Pronunciation',
     levels: {
       l1: 'L1 - Beginner',
       l2: 'L2 - Elementary',
@@ -431,6 +641,8 @@ const ja: Translations = {
     logged_in: 'ログイン済み',
     enter_admin: '管理画面へ',
     language: '言語',
+    checking_login: 'ログイン状態を確認中...',
+    login_required: 'ログインが必要です',
   },
   nav: {
     home: 'ホーム',
@@ -504,8 +716,9 @@ const ja: Translations = {
     change_question: '問題を変更',
     vocab_mode_on: '単語選択モードを終了',
     vocab_mode_off: '単語選択モードを有効化',
-    vocab_mode_desc_on: 'クリックまたはドラッグして単語を選択',
+    vocab_mode_desc_on: '単語やフレーズをドラッグして選択',
     vocab_mode_desc_off: 'クリックして単語選択機能を有効化',
+    click_words_to_select: 'テキスト内の単語やフレーズをドラッグして選択',
     original_audio: '元の音声：',
     follow_recording: 'フォロー録音：',
     start_recording: '録音開始',
@@ -531,6 +744,73 @@ const ja: Translations = {
     remove: '削除',
     import_success: '{count}個の単語を単語帳にインポートしました！',
     import_failed: 'インポート失敗：{error}',
+    // 新增的翻译内容
+    filter: 'フィルター',
+    language: '言語',
+    level: 'レベル',
+    all_levels: 'すべてのレベル',
+    practice_status: '練習状況',
+    all_status: 'すべての状況',
+    practiced: '完了',
+    unpracticed: '未開始',
+    genre: 'ジャンル',
+    all_genres: 'すべてのジャンル',
+    dialogue: '対話',
+    monologue: 'モノローグ',
+    news: 'ニュース',
+    lecture: '講義',
+    major_theme: '大テーマ',
+    all_major_themes: 'すべての大テーマ',
+    minor_theme: '小テーマ',
+    all_minor_themes: 'すべての小テーマ',
+    select_major_theme_first: 'まず大テーマを選択してください',
+    search: '検索',
+    search_placeholder: 'タイトル、テーマを検索...',
+    random: 'ランダム',
+    next_question: '次の問題',
+    total_questions: '合計 {count} 問',
+    completed: '完了',
+    draft: '下書き中',
+    not_started: '未開始',
+    play_audio: '音声再生',
+    save_draft: '下書き保存',
+    complete_and_save: '完了して保存',
+    debug_vocab: '単語デバッグ',
+    vocab_selection_mode: '単語選択モード',
+    original_audio_text: '原文音声',
+    translation: '翻訳',
+    show_translation: '翻訳表示',
+    recording_practice: '録音練習',
+    recordings_count: '{count} 個の録音',
+    no_recordings: 'まだ録音がありません。「録音開始」をクリックして練習を開始してください',
+    start_recording_text: '録音開始',
+    practice_scoring: '練習スコア',
+    complete_recording_first: 'まず録音を完了してから、下のボタンをクリックしてスコアを取得してください',
+    // 新增的按钮和界面文本翻译
+    refresh_vocabulary: '単語集を更新',
+    select_question_to_start: '問題を選択して練習を開始',
+    click_vocabulary_button: '上の「単語集」ボタンをクリックして問題を選択',
+    select_from_left_vocabulary: '左側の単語集から問題を選択してシャドーイング練習を開始',
+    shadowing_practice: 'シャドーイング練習',
+    shadowing_vocabulary: 'シャドーイング単語集',
+    no_questions_found: '問題が見つかりません',
+    // 生词解释相关
+    no_explanation: '説明がありません',
+    explanation: '説明',
+    part_of_speech: '品詞',
+    example_sentence: '例文',
+    // 登录相关
+    login_required_message: 'シャドーイング練習機能にアクセスするにはログインしてください',
+    // 题目信息相关
+    words: '語',
+    // 评分相关
+    recording_completed_message: '録音が完了しました。下のボタンをクリックして採点してください',
+    scoring_result: '採点結果',
+    overall_score: '総合スコア',
+    pronunciation_accuracy: '発音の正確性',
+    improvement_suggestions: '改善提案',
+    practice_comparison: '練習比較',
+    your_pronunciation: 'あなたの発音',
     levels: {
       l1: 'L1 - 初級',
       l2: 'L2 - 初中級',
