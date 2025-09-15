@@ -39,7 +39,7 @@ async function handleRequest(supabase: any, req: NextRequest) {
   }
   
   return NextResponse.json({ 
-    items: data?.map(item => ({
+    items: data?.map((item: any) => ({
       ...item,
       subtopic_count: item.subtopics?.[0]?.count || 0
     })) || []
