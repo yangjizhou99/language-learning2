@@ -608,6 +608,31 @@ export default function VocabPage() {
     }
   };
 
+  // 一键选择未解释的生词
+  const selectUnexplainedEntries = () => {
+    const unexplainedEntries = entries.filter(entry => !entry.explanation || !entry.explanation.gloss_native);
+    const unexplainedIds = unexplainedEntries.map(entry => entry.id);
+    
+    setSelectedEntries(unexplainedIds);
+    
+    // 显示选择结果
+    if (unexplainedIds.length === 0) {
+      alert('当前页面没有未解释的生词');
+    } else {
+      // 按语言分组显示统计信息
+      const langStats = unexplainedEntries.reduce((acc, entry) => {
+        acc[entry.lang] = (acc[entry.lang] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const langText = Object.entries(langStats)
+        .map(([lang, count]) => `${lang === 'en' ? '英语' : lang === 'ja' ? '日语' : '中文'}: ${count}个`)
+        .join(', ');
+      
+      alert(`已选择 ${unexplainedIds.length} 个未解释的生词\n${langText}`);
+    }
+  };
+
   return (
     <main className="p-6">
       <Container>
@@ -876,8 +901,20 @@ export default function VocabPage() {
                 >
                   {selectedEntries.length === entries.length ? '取消全选' : '全选'}
                 </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectUnexplainedEntries}
+                  className="bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100"
+                >
+                  🎯 选择未解释
+                </Button>
                 <span className="text-sm text-gray-600">
                   已选择 {selectedEntries.length} 个生词
+                  {(() => {
+                    const unexplainedCount = entries.filter(entry => !entry.explanation || !entry.explanation.gloss_native).length;
+                    return unexplainedCount > 0 ? ` (其中 ${unexplainedCount} 个未解释)` : '';
+                  })()}
                 </span>
                 
                 {selectedEntries.length > 0 && (
