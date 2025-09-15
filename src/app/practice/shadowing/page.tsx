@@ -2288,7 +2288,7 @@ export default function ShadowingPage() {
                   </div>
 
                   {/* 题目列表 */}
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1">
                     {loading ? (
                       <div className="p-4 text-center text-gray-500">加载中...</div>
                     ) : filteredItems.length === 0 ? (
@@ -3113,25 +3113,25 @@ export default function ShadowingPage() {
             </div>
           </div>
         ) : (
-          /* 桌面端布局 - 保持原有布局 */
-          <div className="flex gap-6 h-[calc(100vh-200px)]">
+          /* 桌面端布局 - 优化滚动体验 */
+          <div className="flex gap-6 min-h-[600px]">
           {/* 左侧题库列表 */}
-          <div className={`${sidebarCollapsed ? 'w-12' : 'w-80'} flex-shrink-0 transition-all duration-300`}>
-            <Card className="h-full flex flex-col">
+          <div className={`${sidebarCollapsed ? 'w-12' : 'w-80'} flex-shrink-0 transition-all duration-300 max-h-[80vh] overflow-y-auto`}>
+            <Card className="min-h-full flex flex-col">
               {/* 标题和折叠按钮 */}
               <div className="p-4 border-b flex items-center justify-between">
-        <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   {!sidebarCollapsed && <h3 className="font-semibold">Shadowing 题库</h3>}
-                   {!sidebarCollapsed && (
-                     <button 
-                       onClick={() => fetchItems()}
-                       className="text-blue-500 hover:text-blue-700 p-1"
-                       title="刷新题库"
-                       disabled={loading}
-                     >
-                       🔄
-                     </button>
-                   )}
+                  {!sidebarCollapsed && (
+                    <button 
+                      onClick={() => fetchItems()}
+                      className="text-blue-500 hover:text-blue-700 p-1"
+                      title="刷新题库"
+                      disabled={loading}
+                    >
+                      🔄
+                    </button>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
@@ -3322,7 +3322,7 @@ export default function ShadowingPage() {
                   </div>
 
                   {/* 题目列表 */}
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1">
                     {loading ? (
                       <div className="p-4 text-center text-gray-500">加载中...</div>
                     ) : filteredItems.length === 0 ? (
