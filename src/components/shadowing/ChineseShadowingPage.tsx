@@ -508,19 +508,41 @@ export default function ShadowingPage() {
   
   // 获取认证头
   const getAuthHeaders = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('getAuthHeaders - session:', session ? 'exists' : 'null');
-    console.log('getAuthHeaders - access_token:', session?.access_token ? 'exists' : 'null');
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
-    if (session?.access_token) {
-      headers['Authorization'] = `Bearer ${session.access_token}`;
-      console.log('getAuthHeaders - Authorization header set');
-    } else {
-      console.log('getAuthHeaders - No access token, using cookie auth');
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      console.log('getAuthHeaders - session:', session ? 'exists' : 'null');
+      console.log('getAuthHeaders - access_token:', session?.access_token ? 'exists' : 'null');
+      console.log('getAuthHeaders - error:', error);
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+        console.log('getAuthHeaders - Authorization header set');
+      } else {
+        console.log('getAuthHeaders - No access token, using cookie auth');
+        // 尝试刷新session
+        if (session?.refresh_token) {
+          console.log('getAuthHeaders - Attempting to refresh session...');
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshedSession?.access_token) {
+            headers['Authorization'] = `Bearer ${refreshedSession.access_token}`;
+            console.log('getAuthHeaders - Session refreshed, Authorization header set');
+          } else {
+            console.log('getAuthHeaders - Session refresh failed:', refreshError);
+          }
+        }
+      }
+      
+      return headers;
+    } catch (error) {
+      console.error('getAuthHeaders error:', error);
+      return {
+        'Content-Type': 'application/json',
+      };
     }
-    return headers;
   };
 
   // 加载主题数据
@@ -616,7 +638,24 @@ export default function ShadowingPage() {
         setAuthLoading(false);
       }
     };
+    
+    // 初始检查
     checkAuth();
+    
+    // 监听认证状态变化
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed in shadowing:', event, session?.user?.email);
+      setUser(session?.user || null);
+      
+      // 如果用户登录了，获取用户个人资料
+      if (session?.user) {
+        await fetchUserProfile();
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [fetchUserProfile]);
 
   // 初始加载题库（仅在用户已登录时）
@@ -688,17 +727,6 @@ export default function ShadowingPage() {
           itemGenre = theme;
         }
       }
-      
-      // 调试日志
-      console.log('体裁筛选:', {
-        theme,
-        itemGenre,
-        itemTitle: item.title,
-        itemLevel: item.level,
-        itemGenreField: item.genre,
-        metaGenre: item.meta?.genre,
-        metaTheme: item.meta?.theme
-      });
       
       if (!itemGenre || !itemGenre.toLowerCase().includes(theme.toLowerCase())) {
         return false;

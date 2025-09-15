@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 
     // 检查是否有访问Shadowing的权限
     if (!checkAccessPermission(permissions, 'can_access_shadowing')) {
-      console.log('User does not have shadowing access permission');
+      console.log('User does not have shadowing access permission, permissions:', permissions);
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
       if (lang) {
         // 检查语言权限
         if (!checkLanguagePermission(permissions, lang)) {
-          console.log('User does not have permission for language:', lang);
+          console.log('User does not have permission for language:', lang, 'allowed languages:', permissions.allowed_languages);
           return {
             success: true,
             items: [],
@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
         const levelNum = parseInt(level);
         // 检查等级权限
         if (!checkLevelPermission(permissions, levelNum)) {
-          console.log('User does not have permission for level:', levelNum);
+          console.log('User does not have permission for level:', levelNum, 'allowed levels:', permissions.allowed_levels);
           return {
             success: true,
             items: [],
@@ -113,6 +113,12 @@ export async function GET(req: NextRequest) {
       query = query.eq('status', 'approved');
 
       const { data: items, error } = await query.order('created_at', { ascending: false });
+
+      console.log('Database query result:', { 
+        itemsCount: items?.length || 0, 
+        error: error?.message,
+        queryParams: { lang, level, status: 'approved' }
+      });
 
       if (error) {
         console.error('Database query error:', error);
@@ -146,7 +152,7 @@ export async function GET(req: NextRequest) {
       const itemIds = items?.map((item: any) => item.id) || [];
       let sessions: any[] = [];
       
-      if (itemIds.length > 0) {
+      if (itemIds.length > 0 && user) {
         const { data: sessionsData } = await supabase
           .from('shadowing_sessions')
           .select('id, user_id, item_id, status, recordings, picked_preview, created_at')
@@ -206,23 +212,45 @@ export async function GET(req: NextRequest) {
 
       // 如果没有指定等级，过滤掉用户没有权限的等级
       if (!level) {
-        filteredItems = filteredItems.filter((item: any) => 
-          checkLevelPermission(permissions, item.level)
-        );
+        console.log('Filtering by level permissions, allowed levels:', permissions.allowed_levels);
+        filteredItems = filteredItems.filter((item: any) => {
+          const hasPermission = checkLevelPermission(permissions, item.level);
+          if (!hasPermission) {
+            console.log('Filtering out item with level:', item.level);
+          }
+          return hasPermission;
+        });
       }
 
       // 如果没有指定语言，过滤掉用户没有权限的语言
       if (!lang) {
-        filteredItems = filteredItems.filter((item: any) => 
-          checkLanguagePermission(permissions, item.lang)
-        );
+        console.log('Filtering by language permissions, allowed languages:', permissions.allowed_languages);
+        filteredItems = filteredItems.filter((item: any) => {
+          const hasPermission = checkLanguagePermission(permissions, item.lang);
+          if (!hasPermission) {
+            console.log('Filtering out item with language:', item.lang);
+          }
+          return hasPermission;
+        });
       }
 
-      return {
+      const result = {
         success: true,
         items: filteredItems,
         total: filteredItems.length
       };
+      
+      console.log('Final result:', {
+        originalItemsCount: items?.length || 0,
+        filteredItemsCount: filteredItems.length,
+        permissions: {
+          can_access_shadowing: permissions.can_access_shadowing,
+          allowed_languages: permissions.allowed_languages,
+          allowed_levels: permissions.allowed_levels
+        }
+      });
+      
+      return result;
     })();
 
     return NextResponse.json(result);

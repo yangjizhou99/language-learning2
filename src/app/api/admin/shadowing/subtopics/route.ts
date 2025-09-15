@@ -7,10 +7,14 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (!auth.ok) {
-    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   
   const supabase = auth.supabase;
+  return await handleRequest(supabase, req);
+}
+
+async function handleRequest(supabase: any, req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const lang = searchParams.get('lang');
   const level = searchParams.get('level');
