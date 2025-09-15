@@ -15,7 +15,7 @@ interface SelectablePassageProps {
 
 export default function SelectablePassage({ 
   text, 
-  lang, // eslint-disable-line @typescript-eslint/no-unused-vars
+  lang,
   onSelectionChange,
   disabled = false,
   className = '',
@@ -246,7 +246,18 @@ export default function SelectablePassage({
         // 限制选中文本长度
         if (selectedText.length > 50) {
           selection.removeAllRanges();
-          alert('请选择较短的文本（不超过50个字符）');
+          const getAlertMessage = () => {
+            switch (lang) {
+              case 'zh':
+                return '请选择较短的文本（不超过50个字符）';
+              case 'ja':
+                return 'より短いテキストを選択してください（50文字以内）';
+              case 'en':
+              default:
+                return 'Please select shorter text (no more than 50 characters)';
+            }
+          };
+          alert(getAlertMessage());
           setIsProcessingSelection(false);
           return;
         }
@@ -254,7 +265,18 @@ export default function SelectablePassage({
         // 检查是否包含换行符
         if (selectedText.includes('\n')) {
           selection.removeAllRanges();
-          alert('请选择同一行的文本');
+          const getAlertMessage = () => {
+            switch (lang) {
+              case 'zh':
+                return '请选择同一行的文本';
+              case 'ja':
+                return '同じ行のテキストを選択してください';
+              case 'en':
+              default:
+                return 'Please select text from the same line';
+            }
+          };
+          alert(getAlertMessage());
           setIsProcessingSelection(false);
           return;
         }
@@ -312,7 +334,7 @@ export default function SelectablePassage({
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('selectstart', handleSelectStart);
     };
-  }, [isMobile, isProcessingSelection, text, onSelectionChange]);
+  }, [isMobile, isProcessingSelection, text, onSelectionChange, lang]);
 
 
 
@@ -337,12 +359,6 @@ export default function SelectablePassage({
 
   return (
     <div className={`relative ${className}`}>
-      {!disabled && (
-        <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-          💡 <strong>选词提示：</strong>
-          {isMobile ? '长按并拖动选择单词或短语，松开手指后稍等' : '拖拽选择单词或短语，松开鼠标后稍等'}（不超过50个字符），选择完成后会显示确认按钮
-        </div>
-      )}
       <div
         ref={textRef}
         className={`text-lg leading-relaxed ${

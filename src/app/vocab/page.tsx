@@ -10,6 +10,7 @@ import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import TTSButton from '@/components/TTSButton';
 import { supabase } from '@/lib/supabase';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface VocabEntry {
   id: string;
@@ -41,6 +42,7 @@ interface Pagination {
 }
 
 export default function VocabPage() {
+  const { setLanguageFromUserProfile } = useLanguage();
   const [entries, setEntries] = useState<VocabEntry[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -105,6 +107,8 @@ export default function VocabPage() {
           ...prev,
           native_lang: profile.native_lang
         }));
+        // 根据用户母语设置界面语言
+        setLanguageFromUserProfile(profile.native_lang);
       }
     } catch (error) {
       console.error('获取用户资料失败:', error);
