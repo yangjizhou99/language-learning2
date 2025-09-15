@@ -197,6 +197,9 @@ export default function ShadowingPage() {
     senses?: Array<{example_target: string, example_native: string}>;
   }>>({});
   
+  // 用户个人资料状态
+  const [userProfile, setUserProfile] = useState<{native_lang?: string} | null>(null);
+  
   // 翻译相关状态
   const [showTranslation, setShowTranslation] = useState(false);
   const [translationLang, setTranslationLang] = useState<'en'|'ja'|'zh'>('en');
@@ -219,6 +222,31 @@ export default function ShadowingPage() {
       'zh': '简体中文'
     };
     return names[lang as keyof typeof names] || lang;
+  };
+
+  // 获取用户个人资料
+  const fetchUserProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('native_lang')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.warn('获取用户资料失败:', error);
+        return;
+      }
+
+      if (profile?.native_lang) {
+        setUserProfile(profile);
+      }
+    } catch (error) {
+      console.error('获取用户资料失败:', error);
+    }
   };
 
   // 当题目改变时，自动设置翻译语言
@@ -576,6 +604,11 @@ export default function ShadowingPage() {
         const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user || null);
         setAuthLoading(false);
+        
+        // 如果用户已登录，获取用户个人资料
+        if (session?.user) {
+          await fetchUserProfile();
+        }
       } catch (error) {
         console.error('Auth check failed:', error);
         setAuthLoading(false);
@@ -1248,7 +1281,7 @@ export default function ShadowingPage() {
             headers,
             body: JSON.stringify({
               entry_ids: [],
-              native_lang: language,
+              native_lang: userProfile?.native_lang || language, // 优先使用用户母语，否则使用界面语言
               provider: 'deepseek',
               model: 'deepseek-chat',
               temperature: 0.7,
@@ -1400,7 +1433,7 @@ export default function ShadowingPage() {
         headers,
         body: JSON.stringify({
           entry_ids: [], // 空数组，因为我们直接传递单词信息
-          native_lang: language, // 使用界面语言作为母语
+          native_lang: userProfile?.native_lang || language, // 优先使用用户母语，否则使用界面语言
           provider: 'deepseek',
           model: 'deepseek-chat',
           temperature: 0.7,
@@ -1766,7 +1799,7 @@ export default function ShadowingPage() {
           const entries = selectedWords.map(item => ({
             term: item.word,
             lang: item.lang,
-            native_lang: language, // 使用界面语言作为母语
+            native_lang: userProfile?.native_lang || language, // 优先使用用户母语，否则使用界面语言
             source: 'shadowing',
             source_id: currentItem.id,
             context: item.context,

@@ -74,11 +74,42 @@ export default function VocabPage() {
   const [speechRate, setSpeechRate] = useState(0.6); // 语音播放速度
   const [availableModels, setAvailableModels] = useState<any>({});
   const [generationSettings, setGenerationSettings] = useState({
-    native_lang: 'zh',
+    native_lang: 'zh', // 默认值，将在加载用户资料后更新
     provider: 'deepseek',
     model: 'deepseek-chat',
     temperature: 0.7,
   });
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  // 获取用户个人资料
+  const fetchUserProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('native_lang')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.warn('获取用户资料失败:', error);
+        return;
+      }
+
+      if (profile?.native_lang) {
+        setUserProfile(profile);
+        // 更新生成设置中的母语
+        setGenerationSettings(prev => ({
+          ...prev,
+          native_lang: profile.native_lang
+        }));
+      }
+    } catch (error) {
+      console.error('获取用户资料失败:', error);
+    }
+  };
 
   // 获取可用模型列表
   const fetchAvailableModels = async () => {
@@ -197,6 +228,7 @@ export default function VocabPage() {
 
   // 初始加载
   useEffect(() => {
+    fetchUserProfile();
     fetchEntries();
     fetchAvailableModels();
   }, [filters]);
@@ -767,6 +799,11 @@ export default function VocabPage() {
                       <SelectItem value="ja">日本語</SelectItem>
                     </SelectContent>
                   </Select>
+                  {userProfile?.native_lang && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      💡 已根据您的个人资料自动选择
+                    </p>
+                  )}
                 </div>
 
                 <div>
