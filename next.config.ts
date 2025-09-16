@@ -4,9 +4,6 @@ const nextConfig: NextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
   trailingSlash: false,
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
   
   // 支持多域名CORS
   async headers() {
