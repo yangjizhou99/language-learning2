@@ -52,7 +52,7 @@ interface UserProfile {
 
 export default function UserPermissionsPage() {
   const params = useParams();
-  const userId = params.userId as string;
+  const userId = params?.userId as string;
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);

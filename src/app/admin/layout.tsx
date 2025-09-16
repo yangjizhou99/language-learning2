@@ -38,6 +38,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const isSetupPage = pathname === "/admin/setup";
 
   const isActive = (item: AdminNavItem) => {
+    if (!pathname) return false;
     if (item.match === "exact") return pathname === item.href;
     return pathname.startsWith(item.href);
   };
@@ -48,6 +49,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   );
 
   const breadcrumb = useMemo(() => {
+    if (!pathname) return [];
     const segments = pathname.split("/").filter(Boolean);
     const nodes: { href: string; label: string }[] = [];
     let acc = "";

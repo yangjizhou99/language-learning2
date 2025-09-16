@@ -80,7 +80,7 @@ export async function DELETE(req: NextRequest, { params }:{ params: Promise<{ id
     // 1. 先获取草稿信息，包括音频URL
     const { data: draft, error: fetchError } = await auth.supabase
       .from("shadowing_drafts")
-      .select("id, title, audio_url")
+      .select("id, title, audio_url, lang")
       .eq("id", id)
       .single();
     

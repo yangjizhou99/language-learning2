@@ -97,7 +97,6 @@ export async function POST(req: NextRequest) {
         const dialogueResult = await synthesizeDialogue({
           text,
           lang,
-          voiceName: voice,
           speakingRate,
           pitch
         });

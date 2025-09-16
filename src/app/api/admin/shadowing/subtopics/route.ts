@@ -53,8 +53,8 @@ async function handleRequest(supabase: any, req: NextRequest) {
       .not('subtopic_id', 'is', null);
     
     const hasArticleIds = new Set([
-      ...(draftsData?.map(d => d.subtopic_id) || []),
-      ...(itemsData?.map(i => i.subtopic_id) || [])
+      ...(draftsData?.map((d: any) => d.subtopic_id) || []),
+      ...(itemsData?.map((i: any) => i.subtopic_id) || [])
     ]);
     
     if (hasArticleIds.size > 0) {
@@ -76,8 +76,8 @@ async function handleRequest(supabase: any, req: NextRequest) {
       .not('subtopic_id', 'is', null);
     
     const hasArticleIds = new Set([
-      ...(draftsData?.map(d => d.subtopic_id) || []),
-      ...(itemsData?.map(i => i.subtopic_id) || [])
+      ...(draftsData?.map((d: any) => d.subtopic_id) || []),
+      ...(itemsData?.map((i: any) => i.subtopic_id) || [])
     ]);
     
     if (hasArticleIds.size > 0) {
@@ -117,8 +117,8 @@ async function handleRequest(supabase: any, req: NextRequest) {
       .not('subtopic_id', 'is', null);
     
     const hasArticleIds = new Set([
-      ...(draftsData?.map(d => d.subtopic_id) || []),
-      ...(itemsData?.map(i => i.subtopic_id) || [])
+      ...(draftsData?.map((d: any) => d.subtopic_id) || []),
+      ...(itemsData?.map((i: any) => i.subtopic_id) || [])
     ]);
     
     if (has_article === 'yes') {

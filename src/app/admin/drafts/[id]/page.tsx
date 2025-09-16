@@ -19,7 +19,8 @@ type KeyP3 = { s:Span; v:Span; o:Span };
 type Cloze = { start:number; end:number; answer:string; hint:string; type:string };
 
 export default function DraftDetail() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const [d, setD] = useState<any>(null);
   const [log, setLog] = useState("");
   const [saving, setSaving] = useState(false);

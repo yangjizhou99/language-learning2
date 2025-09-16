@@ -245,7 +245,7 @@ async function callTranslationAPI(
       // 修复未终止的字符串 - 更智能的修复
       // 查找所有未闭合的字符串并尝试修复
       const lines = cleanedText.split('\n');
-      const fixedLines = lines.map(line => {
+      const fixedLines = lines.map((line: string) => {
         // 如果行以未闭合的引号结尾，尝试修复
         if (line.match(/"[^"]*$/)) {
           // 检查是否在JSON对象内部
@@ -360,7 +360,7 @@ async function callTranslationAPI(
       console.log('手动提取成功，翻译结果:', Object.keys(manualTranslations));
       return manualTranslations;
     }
-  } catch (error) {
+  } catch (error: any) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
       throw new Error('翻译请求超时（60秒）');

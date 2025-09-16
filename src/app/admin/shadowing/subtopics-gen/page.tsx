@@ -140,6 +140,7 @@ export default function SubtopicsPage() {
 
   // 从URL参数初始化
   useEffect(() => {
+    if (!searchParams) return;
     const urlThemeId = searchParams.get('theme_id');
     if (urlThemeId) {
       setThemeId(urlThemeId);
@@ -487,6 +488,8 @@ export default function SubtopicsPage() {
       setGenerating(false);
     }, 300000); // 5分钟超时
 
+    let progressInterval: NodeJS.Timeout | null = null;
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
@@ -507,7 +510,7 @@ export default function SubtopicsPage() {
       });
 
       // 模拟进度更新
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev.done < prev.total) {
             return { ...prev, done: Math.min(prev.done + 1, prev.total) };
@@ -541,7 +544,9 @@ export default function SubtopicsPage() {
       }
 
       // 清理进度定时器
-      clearInterval(progressInterval);
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
 
       // 显示处理中进度
       setProgress(prev => ({ ...prev, done: selectedIds.length }));
@@ -570,7 +575,9 @@ export default function SubtopicsPage() {
 
     } catch (error: any) {
       console.error('Batch generation error:', error);
-      clearInterval(progressInterval);
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
       setLogs([{
         type: 'error',
         message: `批量生成失败：${error.message}`
