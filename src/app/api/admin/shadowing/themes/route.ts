@@ -34,6 +34,23 @@ async function handleRequest(supabase: any, req: NextRequest) {
   
   const { data, error } = await query.order('created_at', { ascending: false });
   
+  // 如果选择了全部等级，需要重新计算每个主题的小主题数量
+  if (!level && data) {
+    for (const theme of data) {
+      const subtopicQuery = supabase
+        .from('shadowing_subtopics')
+        .select('*', { count: 'exact', head: true })
+        .eq('theme_id', theme.id)
+        .eq('status', 'active');
+      
+      if (lang) subtopicQuery.eq('lang', lang);
+      if (genre) subtopicQuery.eq('genre', genre);
+      
+      const { count } = await subtopicQuery;
+      theme.subtopics = [{ count: count || 0 }];
+    }
+  }
+  
   if (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
   }

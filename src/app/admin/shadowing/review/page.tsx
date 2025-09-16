@@ -31,11 +31,16 @@ type Item = {
 };
 
 // 格式化对话文本，按说话者分行
-function formatDialogueText(text: string): string {
+function formatDialogueText(text: string, genre?: string): string {
   if (!text) return '';
   
   // 处理AI返回的\n换行符
   const formatted = text.replace(/\\n/g, '\n');
+  
+  // 如果不是对话体裁，直接返回原文本
+  if (genre !== 'dialogue') {
+    return formatted;
+  }
   
   // 如果已经包含换行符，保持格式并清理
   if (formatted.includes('\n')) {
@@ -120,6 +125,7 @@ export default function ShadowingReviewList(){
   const [genre, setGenre] = useState("all");
   const [level, setLevel] = useState<"all"|"1"|"2"|"3"|"4"|"5">("all");
   const [status, setStatus] = useState<"all"|"draft"|"approved">("draft");
+  const [audioStatus, setAudioStatus] = useState<"all"|"no_audio"|"has_audio">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [ttsLoading, setTtsLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -145,18 +151,26 @@ export default function ShadowingReviewList(){
   const [transProvider, setTransProvider] = useState('deepseek');
   const [transModel, setTransModel] = useState('deepseek-chat');
   const [transTemperature, setTransTemperature] = useState(0.3);
-  const [transConcurrency, setTransConcurrency] = useState(4);
+  const [transConcurrency, setTransConcurrency] = useState(18); // 后端并发，可以设置更高
   const [transRetries, setTransRetries] = useState(2);
   const [transThrottle, setTransThrottle] = useState(200);
   const [onlyMissing, setOnlyMissing] = useState(true);
   const [availableModels, setAvailableModels] = useState<Record<string, string[]>>({});
   const [modelsLoading, setModelsLoading] = useState(false);
   
+  // 后端并发处理 - 使用批量API接口
+
+  // 分页相关状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // 默认每页10条
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   // 性能优化参数
-  const [concurrency, setConcurrency] = useState(3);
+  const [concurrency, setConcurrency] = useState(6); // 后端并发处理，默认使用推荐值
   const [retries, setRetries] = useState(2);
   const [throttle, setThrottle] = useState(200);
-  const [timeout, setTimeout] = useState(60); // TTS超时时间（秒）
+  const [timeout, setTimeout] = useState(120); // TTS超时时间（秒），默认120秒
   
   // 性能监控状态
   const [performanceStats, setPerformanceStats] = useState({
@@ -164,7 +178,7 @@ export default function ShadowingReviewList(){
     successRate: 0,
     avgResponseTime: 0,
     currentLoad: 0,
-    recommendedConcurrency: 3
+    recommendedConcurrency: 18
   });
   
   // 性能历史记录
@@ -192,27 +206,87 @@ export default function ShadowingReviewList(){
   }, [items, selected]);
 
   useEffect(()=>{ (async()=>{
-    const params = new URLSearchParams({ status: status === "all" ? "draft" : status });
+    // 处理音频状态筛选 - 需要获取所有数据然后在客户端筛选
+    const isAudioStatusFilter = audioStatus === "no_audio" || audioStatus === "has_audio";
+    
+    const params = new URLSearchParams({ 
+      status: status === "all" ? "draft" : status,
+      page: isAudioStatusFilter ? "1" : currentPage.toString(), // 音频筛选时获取所有数据
+      pageSize: isAudioStatusFilter ? "1000" : pageSize.toString() // 音频筛选时获取更多数据
+    });
     if (lang !== 'all') params.set('lang', lang);
     if (genre !== 'all') params.set('genre', genre);
     if (level !== 'all') params.set('level', level);
     if (q.trim()) params.set('q', q.trim());
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
-    const r = await fetch(`/api/admin/shadowing/drafts?${params}`, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
+    const draftsUrl = `/api/admin/shadowing/drafts?${params}`;
+    const r = await fetch(draftsUrl, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
     const j = await r.json();
-    console.log('加载的草稿数据:', j.items?.length || 0, '个草稿');
+    console.log('加载的草稿数据:', j.items?.length || 0, '个草稿，第', currentPage, '页');
     // 检查第一个草稿的音频URL
     if (j.items && j.items.length > 0) {
       console.log('第一个草稿的音频URL:', j.items[0].notes?.audio_url);
     }
-    setItems(j.items||[]);
-  })(); }, [q, lang, genre, level, status]);
+    
+    let filteredItems = j.items || [];
+    
+    // 客户端音频状态筛选
+    if (audioStatus === "no_audio") {
+      filteredItems = filteredItems.filter((item: Item) => !item.notes?.audio_url);
+    } else if (audioStatus === "has_audio") {
+      filteredItems = filteredItems.filter((item: Item) => item.notes?.audio_url);
+    }
+    
+    // 如果是音频状态筛选，需要重新计算分页
+    if (isAudioStatusFilter) {
+      const totalFiltered = filteredItems.length;
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      filteredItems = filteredItems.slice(startIndex, endIndex);
+      setTotalItems(totalFiltered);
+      setTotalPages(Math.ceil(totalFiltered / pageSize));
+    } else {
+      setTotalItems(j.total || 0);
+      setTotalPages(j.totalPages || 0);
+    }
+    
+    setItems(filteredItems);
+  })(); }, [q, lang, genre, level, status, audioStatus, currentPage, pageSize]);
 
   // 加载可用模型
   useEffect(() => {
     fetchAvailableModels();
   }, []);
+
+  // 当筛选条件改变时，重置到第一页
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, lang, genre, level, status]);
+
+  // 分页控制函数
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // 重置到第一页
+  };
 
   function isAllSelected(): boolean {
     if (items.length === 0) return false;
@@ -240,7 +314,8 @@ export default function ShadowingReviewList(){
   async function deleteOne(id: string){
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-    await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'DELETE', headers: token? { Authorization: `Bearer ${token}` } : undefined });
+      const deleteUrl = `/api/admin/shadowing/drafts/${id}`;
+      await fetch(deleteUrl, { method:'DELETE', headers: token? { Authorization: `Bearer ${token}` } : undefined });
   }
 
   async function deleteSelected(){
@@ -255,12 +330,16 @@ export default function ShadowingReviewList(){
     try {
       // 并发处理删除
       const processBatch = async (batchIds: string[]) => {
-        const promises = batchIds.map(async (id) => {
+        const promises = batchIds.map(async (id, index) => {
         const it = items.find(x => x.id === id);
         setTtsCurrent(it?.title || "");
           try {
             const startTime = Date.now();
-            await deleteOne(id);
+            // 使用多域名轮换
+            const apiUrl = `/api/admin/shadowing/drafts/${id}`;
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            await fetch(apiUrl, { method:'DELETE', headers: token? { Authorization: `Bearer ${token}` } : undefined });
             const responseTime = Date.now() - startTime;
             
             // 更新性能统计
@@ -318,7 +397,8 @@ export default function ShadowingReviewList(){
   async function publishOne(id: string){
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
-    await fetch(`/api/admin/shadowing/drafts/${id}`, { method: "POST", headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ action: "publish" }) });
+    const publishUrl = `/api/admin/shadowing/drafts/${id}`;
+    await fetch(publishUrl, { method: "POST", headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ action: "publish" }) });
   }
 
   async function revertOne(id: string){
@@ -339,12 +419,16 @@ export default function ShadowingReviewList(){
     try {
       // 并发处理撤回
       const processBatch = async (batchIds: string[]) => {
-        const promises = batchIds.map(async (id) => {
+        const promises = batchIds.map(async (id, index) => {
           const it = items.find(x => x.id === id);
           setTtsCurrent(it?.title || "");
           try {
             const startTime = Date.now();
-            await revertOne(id);
+            // 使用多域名轮换
+            const apiUrl = `/api/admin/shadowing/drafts/${id}`;
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            await fetch(apiUrl, { method: "POST", headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ action: "revert" }) });
             const responseTime = Date.now() - startTime;
             
             // 更新性能统计
@@ -368,18 +452,22 @@ export default function ShadowingReviewList(){
         return results.filter(r => !r.success).length;
       };
       
-      // 分批处理，避免并发过高
-      const batchSize = 3;
+      // 分批处理
+      const batchSize = Math.max(1, Math.min(concurrency, ids.length));
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
         const batchFail = await processBatch(batch);
         fail += batchFail;
         
-        // 批次间延迟
-        if (i + batchSize < ids.length) {
-          await new Promise<void>(resolve => {
-            (globalThis as any).setTimeout(() => resolve(), 200);
-          });
+        // 节流延迟
+        if (throttle > 0 && i + batchSize < ids.length) {
+          if (throttle > 0) {
+            await new Promise<void>(resolve => {
+              (globalThis as any).setTimeout(() => {
+                resolve();
+              }, throttle);
+            });
+          }
         }
       }
       
@@ -407,12 +495,16 @@ export default function ShadowingReviewList(){
     try {
       // 并发处理发布
       const processBatch = async (batchIds: string[]) => {
-        const promises = batchIds.map(async (id) => {
+        const promises = batchIds.map(async (id, index) => {
           const it = items.find(x => x.id === id);
           setTtsCurrent(it?.title || "");
           try {
             const startTime = Date.now();
-            await publishOne(id);
+            // 使用多域名轮换
+            const apiUrl = `/api/admin/shadowing/drafts/${id}`;
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            await fetch(apiUrl, { method: "POST", headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ action: "publish" }) });
             const responseTime = Date.now() - startTime;
             
             // 更新性能统计
@@ -546,13 +638,13 @@ export default function ShadowingReviewList(){
     try {
       // 并发处理
       const processBatch = async (batchIds: string[]) => {
-        const promises = batchIds.map(async (id) => {
+        const promises = batchIds.map(async (id, index) => {
           const it = items.find(x => x.id === id);
           setTtsCurrent(it?.title || "");
           
           const startTime = Date.now();
-          // 使用随机音色分配进行TTS生成
-          const ok = await synthOneWithRandomVoices(id);
+          // 使用随机音色分配进行TTS生成，传递索引用于域名轮换
+          const ok = await synthOneWithRandomVoices(id, index);
           const responseTime = Date.now() - startTime;
           
           // 更新性能统计
@@ -599,14 +691,15 @@ export default function ShadowingReviewList(){
   };
 
   // 使用随机音色分配进行单个TTS生成
-  const synthOneWithRandomVoices = async (id: string) => {
+  const synthOneWithRandomVoices = async (id: string, taskIndex: number = 0) => {
     const it = items.find(x => x.id === id);
     if (!it) return false;
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const detail = await fetch(`/api/admin/shadowing/drafts/${id}`, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
+      const detailUrl = `/api/admin/shadowing/drafts/${id}`;
+      const detail = await fetch(detailUrl, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
       if (!detail.ok) throw new Error(`获取草稿失败(${detail.status})`);
       const dj = await detail.json();
       const draft = dj.draft;
@@ -651,7 +744,8 @@ export default function ShadowingReviewList(){
           console.log('准备保存的音频URL:', audioUrls[0]);
           console.log('准备保存的notes:', next.notes);
           
-          const save = await fetch(`/api/admin/shadowing/drafts/${draft.id}`, {
+          const saveUrl = `/api/admin/shadowing/drafts/${draft.id}`;
+          const save = await fetch(saveUrl, {
             method: 'PUT',
             headers: { 
               'Content-Type': 'application/json', 
@@ -741,7 +835,8 @@ export default function ShadowingReviewList(){
           random_voice_assignment: selectedVoice // 记录随机音色分配
         } 
       };
-      const save = await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
+      const saveUrl = `/api/admin/shadowing/drafts/${id}`;
+      const save = await fetch(saveUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
       if (!save.ok) throw new Error(`保存音频地址失败(${save.status})`);
       
       // 直接更新本地状态，避免等待页面刷新
@@ -1200,16 +1295,16 @@ export default function ShadowingReviewList(){
       // 计算推荐并发数
       let recommendedConcurrency = prev.recommendedConcurrency;
       if (newSuccessRate > 0.95 && newAvgResponseTime < 2000) {
-        recommendedConcurrency = Math.min(8, prev.recommendedConcurrency + 1);
+        recommendedConcurrency = Math.min(100, prev.recommendedConcurrency + 5);
       } else if (newSuccessRate < 0.8 || newAvgResponseTime > 5000) {
-        recommendedConcurrency = Math.max(1, prev.recommendedConcurrency - 1);
+        recommendedConcurrency = Math.max(6, prev.recommendedConcurrency - 3);
       }
       
       const newStats = {
         totalRequests: newTotal,
         successRate: newSuccessRate,
         avgResponseTime: newAvgResponseTime,
-        currentLoad: Math.min(100, (concurrency / 8) * 100),
+        currentLoad: Math.min(100, (concurrency / 100) * 100),
         recommendedConcurrency
       };
       
@@ -1236,28 +1331,28 @@ export default function ShadowingReviewList(){
     if (successRate > 0.95 && avgResponseTime < 1500) {
       return {
         name: "高速模式",
-        concurrency: Math.min(8, recommendedConcurrency + 1),
+        concurrency: Math.min(100, recommendedConcurrency + 10),
         retries: 2,
         throttle: 100,
-        timeout: 45,
+        timeout: 90,
         description: "系统运行良好，可以提升性能"
       };
     } else if (successRate > 0.9 && avgResponseTime < 3000) {
       return {
         name: "平衡模式",
-        concurrency: recommendedConcurrency,
+        concurrency: Math.min(50, recommendedConcurrency + 5),
         retries: 2,
         throttle: 200,
-        timeout: 60,
+        timeout: 120,
         description: "当前配置较为合适"
       };
     } else {
       return {
         name: "保守模式",
-        concurrency: Math.max(1, recommendedConcurrency - 1),
+        concurrency: Math.max(6, recommendedConcurrency - 3),
         retries: 3,
         throttle: 500,
-        timeout: 90,
+        timeout: 180,
         description: "建议降低并发数以提高稳定性"
       };
     }
@@ -1354,9 +1449,22 @@ export default function ShadowingReviewList(){
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="all">全部</SelectItem>
                   <SelectItem value="draft">草稿</SelectItem>
                   <SelectItem value="approved">已审核</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">音频状态</label>
+              <Select value={audioStatus} onValueChange={(value) => setAudioStatus(value as "all"|"no_audio"|"has_audio")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部</SelectItem>
+                  <SelectItem value="no_audio">未生成音频</SelectItem>
+                  <SelectItem value="has_audio">已生成音频</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1364,11 +1472,16 @@ export default function ShadowingReviewList(){
         </CardContent>
       </Card>
 
+
       {/* 性能优化参数 */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">⚡ 性能优化参数</CardTitle>
           <CardDescription>调整批量操作的性能和稳定性，优化TTS生成效率</CardDescription>
+          <div className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
+            <strong>后端并发处理：</strong>
+            使用后端批量API处理并发，避免浏览器连接限制。支持最多100个并发连接，更稳定可靠。
+          </div>
         </CardHeader>
         <CardContent>
           {/* 实时性能监控 */}
@@ -1402,16 +1515,16 @@ export default function ShadowingReviewList(){
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
-              <label className="text-sm font-medium">并发数 (1-8)</label>
+              <label className="text-sm font-medium">并发数 (1-100)</label>
               <Input 
                 type="number" 
                 min={1} 
-                max={8} 
+                max={100} 
                 value={concurrency} 
-                onChange={e => setConcurrency(Number(e.target.value) || 3)}
+                onChange={e => setConcurrency(Number(e.target.value) || 6)}
                 className={concurrency > performanceStats.recommendedConcurrency ? 'border-yellow-500' : ''}
               />
-              <p className="text-xs text-gray-500">同时处理的任务数</p>
+              <p className="text-xs text-gray-500">同时处理的任务数 (后端并发处理)</p>
               {concurrency > performanceStats.recommendedConcurrency && (
                 <p className="text-xs text-yellow-600">⚠️ 超过推荐值</p>
               )}
@@ -1445,20 +1558,20 @@ export default function ShadowingReviewList(){
                 min={10} 
                 max={300} 
                 value={timeout} 
-                onChange={e => setTimeout(Number(e.target.value) || 60)}
+                onChange={e => setTimeout(Number(e.target.value) || 120)}
               />
               <p className="text-xs text-gray-500">单个TTS请求超时时间</p>
             </div>
             <div>
               <label className="text-sm font-medium">快速配置</label>
               <div className="flex flex-col gap-1">
-                <Button size="sm" variant="outline" onClick={() => { setConcurrency(2); setRetries(1); setThrottle(500); setTimeout(90); }}>
+                <Button size="sm" variant="outline" onClick={() => { setConcurrency(6); setRetries(1); setThrottle(500); setTimeout(90); }}>
                   保守模式
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => { setConcurrency(4); setRetries(2); setThrottle(200); setTimeout(60); }}>
+                <Button size="sm" variant="outline" onClick={() => { setConcurrency(18); setRetries(2); setThrottle(200); setTimeout(60); }}>
                   平衡模式
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => { setConcurrency(6); setRetries(3); setThrottle(100); setTimeout(45); }}>
+                <Button size="sm" variant="outline" onClick={() => { setConcurrency(30); setRetries(3); setThrottle(100); setTimeout(45); }}>
                   高速模式
                 </Button>
                 <Button 
@@ -1635,7 +1748,7 @@ export default function ShadowingReviewList(){
               <Input 
                 type="number" 
                 min="1" 
-                max="8" 
+                max="100" 
                 value={transConcurrency} 
                 onChange={e => setTransConcurrency(Number(e.target.value))}
               />
@@ -1822,8 +1935,30 @@ export default function ShadowingReviewList(){
       {/* 草稿列表 */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">草稿列表</CardTitle>
-          <CardDescription>共 {items.length} 项草稿</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">草稿列表</CardTitle>
+              <CardDescription>共 {totalItems} 项草稿，第 {currentPage} / {totalPages} 页</CardDescription>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">每页显示:</label>
+                <Select value={pageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="500">500</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
@@ -1863,7 +1998,7 @@ export default function ShadowingReviewList(){
                       {it.text && (
                         <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border max-h-32 overflow-y-auto">
                           <div className="whitespace-pre-wrap font-mono text-xs leading-relaxed">
-                            {formatDialogueText(it.text)}
+                            {formatDialogueText(it.text, it.genre)}
                           </div>
                         </div>
                       )}
@@ -1877,7 +2012,7 @@ export default function ShadowingReviewList(){
                               <div className="text-xs text-blue-600 font-medium mb-1">🇺🇸 英文:</div>
                               <div className="text-sm text-gray-700 bg-blue-50 p-2 rounded border max-h-24 overflow-y-auto">
                                 <div className="whitespace-pre-wrap text-xs leading-relaxed">
-                                  {formatDialogueText(it.translations.en)}
+                                  {formatDialogueText(it.translations.en, it.genre)}
                                 </div>
                               </div>
                             </div>
@@ -1887,7 +2022,7 @@ export default function ShadowingReviewList(){
                               <div className="text-xs text-red-600 font-medium mb-1">🇯🇵 日文:</div>
                               <div className="text-sm text-gray-700 bg-red-50 p-2 rounded border max-h-24 overflow-y-auto">
                                 <div className="whitespace-pre-wrap text-xs leading-relaxed">
-                                  {formatDialogueText(it.translations.ja)}
+                                  {formatDialogueText(it.translations.ja, it.genre)}
                                 </div>
                               </div>
                             </div>
@@ -1950,6 +2085,63 @@ export default function ShadowingReviewList(){
           )}
         </CardContent>
       </Card>
+
+      {/* 分页导航 */}
+      {totalPages > 1 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPrevPage}
+                  disabled={currentPage === 1}
+                >
+                  上一页
+                </Button>
+                
+                {/* 页码显示 */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => goToPage(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  下一页
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 备选音色设置面板 */}
       {showCandidateSelector && (

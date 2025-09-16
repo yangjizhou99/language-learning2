@@ -9,11 +9,11 @@ type SynthesizeParams = {
   pitch?: number;
 };
 
-function makeClient() {
+async function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
   if (!raw) throw new Error("GOOGLE_TTS_CREDENTIALS missing");
 
-  let credentials: any;
+  let credentials: Record<string, unknown>;
   try {
     credentials = JSON.parse(raw);
   } catch {
@@ -21,8 +21,8 @@ function makeClient() {
       if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
         throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
       }
-      const fs = require('fs');
-      const path = require('path');
+      const fs = await import('fs');
+      const path = await import('path');
       const filePath = path.resolve(process.cwd(), raw);
       const fileContent = fs.readFileSync(filePath, 'utf8');
       credentials = JSON.parse(fileContent);
@@ -32,7 +32,7 @@ function makeClient() {
     }
   }
 
-  const projectId = process.env.GOOGLE_TTS_PROJECT_ID || credentials.project_id;
+  const projectId = process.env.GOOGLE_TTS_PROJECT_ID || (credentials.project_id as string);
   return new textToSpeech.TextToSpeechClient({ credentials, projectId });
 }
 
@@ -105,6 +105,14 @@ function escapeForSsml(s: string): string {
 // 将PCM数据转换为WAV格式
 function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
   const length = pcmData.length;
+  console.log(`PCM数据长度: ${length}, 采样率: ${sampleRate}`);
+  
+  // 检查PCM数据是否为空
+  if (length === 0) {
+    console.error('PCM数据为空');
+    throw new Error('PCM数据为空');
+  }
+  
   const buffer = new ArrayBuffer(44 + length);
   const view = new DataView(buffer);
   
@@ -142,10 +150,35 @@ function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
   // data chunk长度
   view.setUint32(40, length, true);
   
-  // 复制PCM数据
+  // 处理PCM数据
   const uint8Array = new Uint8Array(buffer);
-  uint8Array.set(pcmData, 44);
   
+  // 如果PCM数据长度是奇数，说明可能不是16位PCM
+  if (length % 2 !== 0) {
+    console.log('警告: PCM数据长度不是偶数，可能格式不正确');
+    // 直接复制数据，不进行字节序转换
+    uint8Array.set(pcmData, 44);
+  } else {
+    // 尝试不同的字节序转换方法
+    try {
+      const pcmView = new DataView(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength);
+      const wavPcmView = new DataView(uint8Array.buffer, 44);
+      
+      // 方法1: 尝试大端序到小端序转换
+      for (let i = 0; i < length; i += 2) {
+        const sample = pcmView.getInt16(i, false); // 大端序读取
+        wavPcmView.setInt16(i, sample, true); // 小端序写入
+      }
+      
+      console.log('使用大端序到小端序转换');
+    } catch (error) {
+      console.log('字节序转换失败，直接复制数据:', error);
+      // 如果转换失败，直接复制原始数据
+      uint8Array.set(pcmData, 44);
+    }
+  }
+  
+  console.log(`WAV文件总长度: ${uint8Array.length}`);
   return uint8Array;
 }
 
@@ -156,23 +189,36 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
   // 检查是否是科大讯飞音色
   if (voiceName && voiceName.startsWith('xunfei-')) {
     try {
-      const { synthesizeXunfeiTTS } = await import('./xunfei-tts');
+      const { synthesizeXunfeiTTS, synthesizeXunfeiLongTextTTS } = await import('./xunfei-tts');
       const xunfeiVoiceId = voiceName.replace('xunfei-', '');
       
       // 转换speakingRate (Google: 0.25-4.0, 科大讯飞: 0-100)
-      const xunfeiSpeed = Math.max(0, Math.min(100, (speakingRate - 0.25) / 3.75 * 100));
+      // 修复：Google默认1.0对应科大讯飞默认50
+      const xunfeiSpeed = Math.max(0, Math.min(100, speakingRate * 50));
       const xunfeiPitch = Math.max(0, Math.min(100, (pitch + 20) / 40 * 100));
       
-      const pcmData = await synthesizeXunfeiTTS(clean, xunfeiVoiceId, {
-        speed: xunfeiSpeed,
-        pitch: xunfeiPitch,
-        volume: 50
-      });
+      // 检查是否是新闻播报音色，使用长文本TTS
+      const isNewsVoice = xunfeiVoiceId.includes('profnews') || 
+                          xunfeiVoiceId.includes('xiaoguo');
       
-      // 将PCM数据转换为WAV格式
-      const wavData = convertPCMToWAV(pcmData, 16000);
-      
-      return Buffer.from(wavData);
+      if (isNewsVoice) {
+        const audioBuffer = await synthesizeXunfeiLongTextTTS(clean, xunfeiVoiceId, {
+          speed: xunfeiSpeed,
+          pitch: xunfeiPitch,
+          volume: 50,
+          language: 'zh'
+        });
+        return audioBuffer;
+      } else {
+        const audioData = await synthesizeXunfeiTTS(clean, xunfeiVoiceId, {
+          speed: xunfeiSpeed,
+          pitch: xunfeiPitch,
+          volume: 50
+        });
+        
+        // 直接返回MP3数据，不需要转换
+        return audioData;
+      }
     } catch (error) {
       throw error;
     }
@@ -209,7 +255,7 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
   }
 
   // 使用Google TTS
-  const client = makeClient();
+  const client = await makeClient();
   const selectedName = voiceName || DEFAULTS[lang as keyof typeof DEFAULTS];
   let languageCode = selectedName
     ? (extractLanguageCodeFromVoiceName(selectedName) || toLocaleCode(lang))
@@ -240,7 +286,7 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
   // 检查音色是否支持SSML
   const supportsSSML = name && !name.includes('Chirp-HD-') && !name.includes('Chirp3-HD-') && !name.includes('News-') && !name.includes('Studio-') && !name.includes('Casual-') && !name.includes('Polyglot-');
   
-  let input: any;
+  let input: { text: string } | { ssml: string };
   if (supportsSSML) {
     const sentences = splitTextIntoSentences(clean).flatMap(s => chunkByBytes(s, 800));
     const ssml = `<speak>${sentences.map(s => `<s>${escapeForSsml(s)}</s>`).join("")}</speak>`;
@@ -328,16 +374,16 @@ async function mergeAudioBuffers(buffers: Buffer[]): Promise<Buffer> {
   
   try {
     // 尝试使用 ffmpeg 进行音频合并
-    const fs = require('fs');
-    const path = require('path');
-    const os = require('os');
-    const { spawn } = require('child_process');
+    const fs = await import('fs');
+    const path = await import('path');
+    const os = await import('os');
+    const { spawn } = await import('child_process');
     
     // 尝试使用 ffmpeg-static 提供的路径
     let ffmpegPath: string;
     try {
-      const ffmpegStatic = require('ffmpeg-static');
-      ffmpegPath = ffmpegStatic.replace(/^"+|"+$/g, ''); // 去掉意外的引号
+      const ffmpegStatic = await import('ffmpeg-static');
+      ffmpegPath = String(ffmpegStatic.default || ffmpegStatic).replace(/^"+|"+$/g, ''); // 去掉意外的引号
       
       // 校验文件是否存在
       if (!fs.existsSync(ffmpegPath)) {

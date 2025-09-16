@@ -14,192 +14,150 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Edit, Archive, Trash2, Download, Upload, Play, Pause, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Archive, Trash2, Download, Upload, Play, Pause, CheckCircle, XCircle, AlertCircle, X } from 'lucide-react';
 
-type Lang = 'en'|'ja'|'zh';
-type Genre = 'dialogue'|'monologue'|'news'|'lecture';
+type Lang = 'en'|'ja'|'zh'|'all';
+type Genre = 'dialogue'|'monologue'|'news'|'lecture'|'all';
 
 const LANG_OPTIONS = [
+  { value: 'all', label: '全部语言' },
   { value: 'ja', label: '日语' },
   { value: 'en', label: '英语' },
   { value: 'zh', label: '中文' }
 ];
 
-const LEVEL_OPTIONS = [1, 2, 3, 4, 5, 6];
+const LEVEL_OPTIONS = [
+  { value: 'all', label: '全部等级' },
+  { value: '1', label: 'L1' },
+  { value: '2', label: 'L2' },
+  { value: '3', label: 'L3' },
+  { value: '4', label: 'L4' },
+  { value: '5', label: 'L5' },
+  { value: '6', label: 'L6' }
+];
 
 const GENRE_OPTIONS = [
+  { value: 'all', label: '全部体裁' },
   { value: 'dialogue', label: '对话' },
   { value: 'monologue', label: '独白' },
   { value: 'news', label: '新闻' },
   { value: 'lecture', label: '讲座' }
 ];
 
-// 等级与体裁的对应关系（基于6级难度设计）
-const LEVEL_GENRE_RESTRICTIONS: Record<number, Genre[]> = {
-  1: ['dialogue'], // L1: 对话优先
-  2: ['dialogue', 'monologue'], // L2: 对话/独白
-  3: ['monologue', 'news'], // L3: 独白/新闻-lite
-  4: ['news', 'dialogue'], // L4: 新闻/对话（正式）
-  5: ['lecture', 'news'], // L5: 讲座/新闻（信息密度↑）
-  6: ['lecture', 'news']  // L6: 讲座/社论
-};
+const HAS_ARTICLE_OPTIONS = [
+  { value: 'all', label: '全部' },
+  { value: 'yes', label: '已有文章' },
+  { value: 'no', label: '暂无文章' }
+];
 
-// 根据等级获取可用的体裁选项
-const getAvailableGenres = (level: number): Genre[] => {
-  return LEVEL_GENRE_RESTRICTIONS[level] || [];
-};
+const PROVIDER_OPTIONS = [
+  { value: 'openrouter', label: 'OpenRouter' },
+  { value: 'deepseek', label: 'DeepSeek' }
+];
 
-// 等级详细配置（基于6级难度设计）
-const LEVEL_CONFIG: Record<number, {
-  genrePriority: string;
-  themeBandwidth: string;
-  lengthTarget: {
-    en: { min: number; max: number };
-    ja: { min: number; max: number };
-    zh: { min: number; max: number };
-  };
-  sentenceRange: { min: number; max: number };
-  maxSentenceLength: {
-    en: number;
-    ja: number;
-    zh: number;
-  };
-}> = {
-  1: {
-    genrePriority: 'dialogue（对话）',
-    themeBandwidth: '高熟悉：问路、点餐、打招呼、校园办事',
-    lengthTarget: { en: { min: 60, max: 90 }, ja: { min: 180, max: 260 }, zh: { min: 160, max: 240 } },
-    sentenceRange: { min: 6, max: 8 },
-    maxSentenceLength: { en: 12, ja: 35, zh: 35 }
-  },
-  2: {
+const QUICK_CONFIGS = [
+  {
+    name: 'L1对话',
+    lang: 'ja',
+    level: 1,
+    genre: 'dialogue',
+    provider: 'openrouter',
+    model: 'gpt-4o-mini',
+    temperature: 0.7,
     genrePriority: 'dialogue/monologue',
     themeBandwidth: '日常任务：购物、预约、住户问题、课程安排',
     lengthTarget: { en: { min: 90, max: 120 }, ja: { min: 260, max: 360 }, zh: { min: 240, max: 320 } },
     sentenceRange: { min: 7, max: 9 },
     maxSentenceLength: { en: 16, ja: 45, zh: 45 }
   },
-  3: {
+  {
+    name: 'L3独白',
+    lang: 'ja',
+    level: 3,
+    genre: 'monologue',
+    provider: 'openrouter',
+    model: 'gpt-4o-mini',
+    temperature: 0.7,
     genrePriority: 'monologue/news-lite',
     themeBandwidth: '泛新闻/校园新闻、社交媒体短评',
     lengthTarget: { en: { min: 120, max: 160 }, ja: { min: 360, max: 480 }, zh: { min: 320, max: 420 } },
     sentenceRange: { min: 8, max: 10 },
     maxSentenceLength: { en: 20, ja: 55, zh: 55 }
-  },
-  4: {
-    genrePriority: 'news/dialogue（formal）',
-    themeBandwidth: '主题扩展：科技、教育、健康政策入门',
-    lengthTarget: { en: { min: 160, max: 200 }, ja: { min: 480, max: 620 }, zh: { min: 420, max: 560 } },
-    sentenceRange: { min: 9, max: 11 },
-    maxSentenceLength: { en: 24, ja: 65, zh: 65 }
-  },
-  5: {
-    genrePriority: 'lecture/news（信息密度↑）',
-    themeBandwidth: '专题：经济/科技/文化比较、数据引用',
-    lengthTarget: { en: { min: 200, max: 260 }, ja: { min: 620, max: 780 }, zh: { min: 560, max: 720 } },
-    sentenceRange: { min: 10, max: 12 },
-    maxSentenceLength: { en: 28, ja: 75, zh: 75 }
-  },
-  6: {
-    genrePriority: 'lecture/editorial',
-    themeBandwidth: '深度议题：国际关系、AI伦理、产业趋势',
-    lengthTarget: { en: { min: 260, max: 320 }, ja: { min: 780, max: 980 }, zh: { min: 720, max: 900 } },
-    sentenceRange: { min: 11, max: 13 },
-    maxSentenceLength: { en: 32, ja: 90, zh: 90 }
   }
-};
-
-// 根据等级和语言获取长度目标
-const getLengthTarget = (level: number, lang: Lang) => {
-  const config = LEVEL_CONFIG[level];
-  if (!config) return { min: 0, max: 0 };
-  
-  switch (lang) {
-    case 'en': return config.lengthTarget.en;
-    case 'ja': return config.lengthTarget.ja;
-    case 'zh': return config.lengthTarget.zh;
-    default: return { min: 0, max: 0 };
-  }
-};
-
-// 根据等级获取句子数范围
-const getSentenceRange = (level: number) => {
-  return LEVEL_CONFIG[level]?.sentenceRange || { min: 6, max: 8 };
-};
-
-// 根据等级和语言获取句长上限
-const getMaxSentenceLength = (level: number, lang: Lang) => {
-  const config = LEVEL_CONFIG[level];
-  if (!config) return 0;
-  
-  switch (lang) {
-    case 'en': return config.maxSentenceLength.en;
-    case 'ja': 
-    case 'zh': return config.maxSentenceLength.ja; // 日文和中文使用相同的字符数限制
-    default: return 0;
-  }
-};
-
-const PROVIDER_OPTIONS = [
-  { value: 'openrouter', label: 'OpenRouter' },
-  { value: 'deepseek', label: 'DeepSeek' },
-  { value: 'openai', label: 'OpenAI' }
 ];
 
-export default function SubtopicsGenPage() {
+export default function SubtopicsPage() {
   const searchParams = useSearchParams();
-  const [lang, setLang] = useState<Lang>('ja');
-  const [level, setLevel] = useState<1|2|3|4|5|6>(3);
-  const [genre, setGenre] = useState<Genre>('monologue');
-  const [themeId, setThemeId] = useState<string>('all');
-  const [q, setQ] = useState('');
   
+  // 基础状态
+  const [loading, setLoading] = useState(false);
   const [themes, setThemes] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(false);
-  
-  const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   
-  // 生成相关状态
+  // 筛选状态
+  const [lang, setLang] = useState<Lang>('all');
+  const [level, setLevel] = useState<string>('all');
+  const [genre, setGenre] = useState<Genre>('all');
+  const [themeId, setThemeId] = useState<string>('all');
+  const [hasArticle, setHasArticle] = useState<string>('all');
+  const [q, setQ] = useState('');
+  
+  // 分页状态
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0
+  });
+  
+  // 生成状态
   const [generating, setGenerating] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, saved: 0, errors: 0, tokens: 0 });
-  const [logs, setLogs] = useState<any[]>([]);
-  const [provider, setProvider] = useState<'openrouter' | 'deepseek' | 'openai'>('deepseek');
+  const [logs, setLogs] = useState<Array<{type: 'info'|'success'|'error', message: string}>>([]);
+  
+  // AI配置
+  const [provider, setProvider] = useState('deepseek');
   const [models, setModels] = useState<{id: string; name: string}[]>([]);
-  const [model, setModel] = useState('');
+  const [model, setModel] = useState('deepseek-chat');
   const [temperature, setTemperature] = useState(0.7);
-  const [concurrency, setConcurrency] = useState(4);
+  const [concurrency, setConcurrency] = useState(6);
+  
+  // 并发控制
+  const [maxConcurrent, setMaxConcurrent] = useState(6); // 后端并发处理，默认使用推荐值
   
   const eventSourceRef = useRef<EventSource | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // 获取认证头信息
+  const getAuthHeaders = async (): Promise<Record<string, string>> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   // 从URL参数初始化
   useEffect(() => {
+    if (!searchParams) return;
     const urlThemeId = searchParams.get('theme_id');
     if (urlThemeId) {
       setThemeId(urlThemeId);
-    } else {
-      setThemeId('all'); // 默认为全部大主题
     }
   }, [searchParams]);
 
-  // 检查体裁与等级的匹配
-  useEffect(() => {
-    const availableGenres = getAvailableGenres(level);
-    if (!availableGenres.includes(genre)) {
-      // 如果当前体裁不可用，自动选择第一个可用的体裁
-      setGenre(availableGenres[0]);
-    }
-  }, [level, genre]);
-
-  // 加载主题列表
+  // 加载大主题列表
   async function loadThemes() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const qs = new URLSearchParams({ lang, level: level.toString(), genre });
+      const qs = new URLSearchParams();
+      if (lang !== 'all') qs.set('lang', lang);
+      if (level !== 'all') qs.set('level', level);
+      if (genre !== 'all') qs.set('genre', genre);
+      if (hasArticle !== 'all') qs.set('has_article', hasArticle);
+      
       const r = await fetch(`/api/admin/shadowing/themes?${qs.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
@@ -207,7 +165,7 @@ export default function SubtopicsGenPage() {
       if (r.ok) {
         try {
           const j = JSON.parse(responseText);
-          setThemes(j.items || []);
+          setThemes(j.themes || []);
         } catch (jsonError) {
           console.error('Parse themes response failed:', responseText);
         }
@@ -226,12 +184,14 @@ export default function SubtopicsGenPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const qs = new URLSearchParams({ 
-        lang, 
-        level: String(level), 
-        genre,
-        limit: '100'
+        limit: pagination.limit.toString(),
+        page: pagination.page.toString()
       });
+      if (lang !== 'all') qs.set('lang', lang);
+      if (level !== 'all') qs.set('level', String(level));
+      if (genre !== 'all') qs.set('genre', genre);
       if (themeId && themeId !== 'all') qs.set('theme_id', themeId);
+      if (hasArticle !== 'all') qs.set('has_article', hasArticle);
       if (q) qs.set('q', q);
       
       const r = await fetch(`/api/admin/shadowing/subtopics?${qs.toString()}`, {
@@ -243,6 +203,11 @@ export default function SubtopicsGenPage() {
           const j = JSON.parse(responseText);
           setItems(j.items || []);
           setSelected({});
+          setPagination(prev => ({
+            ...prev,
+            total: j.total || 0,
+            totalPages: j.totalPages || 0
+          }));
         } catch (jsonError) {
           console.error('Parse subtopics response failed:', responseText);
         }
@@ -258,11 +223,11 @@ export default function SubtopicsGenPage() {
 
   useEffect(() => {
     loadThemes();
-  }, [lang, level, genre]);
+  }, [lang, level, genre, hasArticle]);
 
   useEffect(() => {
     loadSubtopics();
-  }, [lang, level, genre, themeId, q]);
+  }, [lang, level, genre, themeId, hasArticle, q, pagination.page, pagination.limit]);
 
   // 加载模型列表
   useEffect(() => {
@@ -275,27 +240,30 @@ export default function SubtopicsGenPage() {
           const r = await fetch(`/api/admin/providers/models?provider=${provider}`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           });
-          const j = await r.json();
-          if (r.ok && Array.isArray(j.models)) {
-            const sortedModels = [...j.models].sort((a: any, b: any) => 
-              String(a.name || a.id).localeCompare(String(b.name || b.id))
-            );
-            setModels(sortedModels);
-            setModel(sortedModels[0]?.id || '');
-          } else {
-            setModels([]);
-            setModel('');
+          if (r.ok) {
+            const j = await r.json();
+            setModels(j.models || []);
+            // 如果当前没有选择模型，才设置默认值
+            if (!model && j.models && j.models.length > 0) {
+              // 优先选择DeepSeek模型
+              const deepseekModel = j.models.find((m: any) => m.id === 'deepseek/deepseek-chat');
+              if (deepseekModel) {
+                setModel('deepseek/deepseek-chat');
+              } else {
+                setModel(j.models[0].id);
+              }
+            }
           }
         } else if (provider === 'deepseek') {
           const staticModels = [
             { id: 'deepseek-chat', name: 'deepseek-chat' },
+            { id: 'deepseek-coder', name: 'deepseek-coder' },
             { id: 'deepseek-reasoner', name: 'deepseek-reasoner' }
           ];
           setModels(staticModels);
           setModel(staticModels[0].id);
-        } else if (provider === 'openai') {
+        } else {
           const staticModels = [
-            { id: 'gpt-4o', name: 'gpt-4o' },
             { id: 'gpt-4o-mini', name: 'gpt-4o-mini' }
           ];
           setModels(staticModels);
@@ -330,9 +298,9 @@ export default function SubtopicsGenPage() {
     setEditing({ 
       id: undefined, 
       theme_id: themeId,
-      lang, 
-      level, 
-      genre, 
+      lang: lang === 'all' ? 'ja' : lang, 
+      level: level === 'all' ? 3 : level, 
+      genre: genre === 'all' ? 'monologue' : genre, 
       title_cn: '', 
       seed_en: '',
       one_line_cn: '',
@@ -352,22 +320,19 @@ export default function SubtopicsGenPage() {
     setEditing(null);
   }
 
-  async function saveOne() {
-    if (!editing?.title_cn?.trim()) {
-      alert('请填写小主题标题');
-      return;
-    }
+  async function saveItem() {
+    if (!editing) return;
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const r = await fetch('/api/admin/shadowing/subtopics', {
-        method: 'POST',
+        method: editing.id ? 'PUT' : 'POST',
         headers: { 
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ action: 'upsert', item: editing })
+        body: JSON.stringify(editing)
       });
       const responseText = await r.text();
       if (!r.ok) {
@@ -523,10 +488,38 @@ export default function SubtopicsGenPage() {
       setGenerating(false);
     }, 300000); // 5分钟超时
 
+    let progressInterval: NodeJS.Timeout | null = null;
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const response = await fetch('/api/admin/shadowing/generate-from-subtopics/stream', {
+
+      // 显示开始进度
+      setProgress(prev => ({ ...prev, done: 0, total: selectedIds.length }));
+      setLogs([{
+        type: 'info',
+        message: `开始批量生成 ${selectedIds.length} 个小主题...`
+      }]);
+
+      // 调试信息
+      console.log('Generation parameters:', {
+        selectedIds,
+        lang: lang === 'all' ? 'all' : lang,
+        level: level === 'all' ? 'all' : level,
+        genre: genre === 'all' ? 'all' : genre
+      });
+
+      // 模拟进度更新
+      progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev.done < prev.total) {
+            return { ...prev, done: Math.min(prev.done + 1, prev.total) };
+          }
+          return prev;
+        });
+      }, 1000);
+
+      const response = await fetch('/api/admin/shadowing/generate-batch', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -534,127 +527,103 @@ export default function SubtopicsGenPage() {
         },
         body: JSON.stringify({
           subtopic_ids: selectedIds,
-          lang,
-          level,
-          genre,
-          concurrency,
+          lang: lang === 'all' ? 'all' : lang,
+          level: level === 'all' ? 'all' : level,
+          genre: genre === 'all' ? 'all' : genre,
           provider,
           model,
-          temperature
+          temperature,
+          concurrency: maxConcurrent
         }),
         signal: abortController.signal
       });
 
       if (!response.ok) {
-        throw new Error('Generation failed');
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader!.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              
-              if (data.type === 'start') {
-                setProgress(prev => ({ ...prev, total: data.total }));
-              } else if (data.type === 'progress') {
-                setProgress(prev => ({
-                  done: data.done,
-                  total: data.total,
-                  saved: data.saved,
-                  errors: data.errors,
-                  tokens: data.tokens
-                }));
-                setLogs(prev => [...prev, {
-                  id: data.id,
-                  title: data.title,
-                  type: 'success',
-                  message: `已生成并保存`
-                }]);
-              } else if (data.type === 'skip') {
-                setLogs(prev => [...prev, {
-                  id: data.id,
-                  title: data.title,
-                  type: 'skip',
-                  message: data.reason
-                }]);
-              } else if (data.type === 'error') {
-                setLogs(prev => [...prev, {
-                  id: data.id,
-                  title: data.title,
-                  type: 'error',
-                  message: data.error
-                }]);
-              } else if (data.type === 'complete') {
-                setLogs(prev => [...prev, {
-                  type: 'complete',
-                  message: `生成完成！共生成 ${data.saved} 个，错误 ${data.errors} 个，消耗 ${data.tokens} tokens`
-                }]);
-              }
-            } catch (e) {
-              console.error('Parse SSE data failed:', e);
-            }
-          }
-        }
+      // 清理进度定时器
+      if (progressInterval) {
+        clearInterval(progressInterval);
       }
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        setLogs(prev => [...prev, {
-          type: 'error',
-          message: '生成被用户取消或超时'
-        }]);
-      } else {
-        setLogs(prev => [...prev, {
-          type: 'error',
-          message: `生成失败：${error instanceof Error ? error.message : String(error)}`
-        }]);
+
+      // 显示处理中进度
+      setProgress(prev => ({ ...prev, done: selectedIds.length }));
+      setLogs(prev => [...prev, {
+        type: 'info',
+        message: '正在处理生成结果...'
+      }]);
+
+      const result = await response.json();
+      
+      setProgress({
+        done: result.total,
+        total: result.total,
+        saved: result.success_count,
+        errors: result.error_count,
+        tokens: 0
+      });
+
+      setLogs(prev => [...prev, {
+        type: 'success',
+        message: `批量生成完成：成功 ${result.success_count}，跳过 ${result.skipped_count}，失败 ${result.error_count}`
+      }]);
+
+      // 重新加载数据
+      loadSubtopics();
+
+    } catch (error: any) {
+      console.error('Batch generation error:', error);
+      if (progressInterval) {
+        clearInterval(progressInterval);
       }
+      setLogs([{
+        type: 'error',
+        message: `批量生成失败：${error.message}`
+      }]);
     } finally {
-      clearTimeout(timeoutId);
-      abortControllerRef.current = null;
       setGenerating(false);
+      clearTimeout(timeoutId);
     }
   }
 
   function stopGeneration() {
-    setGenerating(false);
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      abortControllerRef.current = null;
     }
-    setLogs(prev => [...prev, {
-      type: 'error',
-      message: '生成已被用户停止'
-    }]);
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+    setGenerating(false);
+  }
+
+  function applyQuickConfig(config: any) {
+    setLang(config.lang);
+    setLevel(String(config.level));
+    setGenre(config.genre);
+    setProvider(config.provider);
+    setModel(config.model);
+    setTemperature(config.temperature);
   }
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
   const dirtyCount = items.filter(item => item._dirty).length;
-
+  
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Shadowing 小主题批量生成</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Shadowing 小主题批量生成</h1>
+        </div>
         <div className="flex gap-2">
-          <Button onClick={loadSubtopics} variant="outline">
-            刷新
+          <Button onClick={openNew} size="sm">
+            <Plus className="w-4 h-4 mr-1" />
+            新建
           </Button>
-          <Button onClick={openNew} disabled={!themeId || themeId === 'all'}>
-            <Plus className="w-4 h-4 mr-2" />
-            新建小主题
+          <Button onClick={saveAll} disabled={dirtyCount === 0} size="sm">
+            <Download className="w-4 h-4 mr-1" />
+            保存全部 ({dirtyCount})
           </Button>
         </div>
       </div>
@@ -665,7 +634,7 @@ export default function SubtopicsGenPage() {
           <CardTitle>筛选条件</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             <div>
               <Label>语言</Label>
               <Select value={lang} onValueChange={(v: Lang) => setLang(v)}>
@@ -674,40 +643,24 @@ export default function SubtopicsGenPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {LANG_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
             <div>
               <Label>等级</Label>
-              <Select value={String(level)} onValueChange={(v) => {
-                const newLevel = parseInt(v) as 1|2|3|4|5|6;
-                setLevel(newLevel);
-                
-                // 检查当前体裁是否在新等级中可用
-                const availableGenres = getAvailableGenres(newLevel);
-                if (!availableGenres.includes(genre)) {
-                  // 如果当前体裁不可用，自动选择第一个可用的体裁
-                  setGenre(availableGenres[0]);
-                }
-              }}>
+              <Select value={level} onValueChange={setLevel}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {LEVEL_OPTIONS.map(opt => (
-                    <SelectItem key={opt} value={String(opt)}>
-                      L{opt}
-                    </SelectItem>
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
             <div>
               <Label>体裁</Label>
               <Select value={genre} onValueChange={(v: Genre) => setGenre(v)}>
@@ -715,58 +668,46 @@ export default function SubtopicsGenPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {GENRE_OPTIONS
-                    .filter(opt => getAvailableGenres(level).includes(opt.value as Genre))
-                    .map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                  {GENRE_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                <p>
-                  <strong>等级 L{level}</strong> 可用体裁: {getAvailableGenres(level).map(g => 
-                    GENRE_OPTIONS.find(opt => opt.value === g)?.label
-                  ).join('、')}
-                </p>
-                <p>
-                  体裁优先: {LEVEL_CONFIG[level]?.genrePriority}
-                </p>
-                <p>
-                  主题带宽: {LEVEL_CONFIG[level]?.themeBandwidth}
-                </p>
-                <p>
-                  长度目标: {lang === 'en' ? 'EN' : lang === 'ja' ? 'JA' : 'ZH'} {getLengthTarget(level, lang).min}-{getLengthTarget(level, lang).max} {lang === 'en' ? '词' : '字'}
-                </p>
-                <p>
-                  句子数: {getSentenceRange(level).min}-{getSentenceRange(level).max} | 句长上限: {getMaxSentenceLength(level, lang)} {lang === 'en' ? '词' : '字'}
-                </p>
-              </div>
             </div>
-            
             <div>
               <Label>大主题</Label>
               <Select value={themeId} onValueChange={setThemeId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择大主题" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部大主题</SelectItem>
                   {themes.map(theme => (
                     <SelectItem key={theme.id} value={theme.id}>
-                      {theme.title}
+                      {theme.title_cn} ({theme.subtopic_count})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+            <div>
+              <Label>文章状态</Label>
+              <Select value={hasArticle} onValueChange={setHasArticle}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {HAS_ARTICLE_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>搜索</Label>
-              <Input
-                placeholder="搜索小主题..."
-                value={q}
+              <Input 
+                placeholder="搜索小主题..." 
+                value={q} 
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
@@ -774,311 +715,354 @@ export default function SubtopicsGenPage() {
         </CardContent>
       </Card>
 
-      {/* 批量操作 */}
-      {(selectedCount > 0 || dirtyCount > 0) && (
-        <Card className="mb-4">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-4">
-              {selectedCount > 0 && (
-                <span className="text-sm text-muted-foreground">
-                  已选择 {selectedCount} 个小主题
-                </span>
-              )}
-              {dirtyCount > 0 && (
-                <span className="text-sm text-orange-600">
-                  有 {dirtyCount} 个修改待保存
-                </span>
-              )}
-              {dirtyCount > 0 && (
-                <Button onClick={saveAll} variant="outline" size="sm">
-                  保存修改
+      {/* 快速配置 */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>快速配置</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2 flex-wrap">
+            {QUICK_CONFIGS.map((config, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={() => applyQuickConfig(config)}
+              >
+                {config.name}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 生成进度 */}
+      {generating && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>生成进度</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  进度: {progress.done}/{progress.total} (完成: {progress.saved}, 失败: {progress.errors})
+                </div>
+                <Button onClick={stopGeneration} size="sm" variant="destructive">
+                  停止
                 </Button>
-              )}
-              {selectedCount > 0 && (
-                <>
-                  <Button onClick={archiveSelected} variant="outline" size="sm">
-                    <Archive className="w-4 h-4 mr-2" />
-                    归档
-                  </Button>
-                  <Button onClick={deleteSelected} variant="destructive" size="sm">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    删除
-                  </Button>
-                </>
-              )}
+              </div>
+              <Progress value={(progress.done / progress.total) * 100} />
+              <ScrollArea className="h-32">
+                <div className="space-y-1">
+                  {logs.map((log, index) => (
+                    <div key={index} className={`text-sm ${
+                      log.type === 'error' ? 'text-red-600' : 
+                      log.type === 'success' ? 'text-green-600' : 
+                      'text-gray-600'
+                    }`}>
+                      {log.message}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 小主题列表 */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>小主题列表 ({items.length})</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="border-b">
-                    <tr>
-                      <th className="p-4 text-left">
-                        <Checkbox
-                          checked={items.length > 0 && items.every(item => selected[item.id])}
-                          onCheckedChange={toggleAll}
-                        />
-                      </th>
-                      <th className="p-4 text-left">小主题</th>
-                      <th className="p-4 text-left">关键词</th>
-                      <th className="p-4 text-left">说明</th>
-                      <th className="p-4 text-left">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                          加载中...
-                        </td>
-                      </tr>
-                    ) : items.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                          暂无数据
-                        </td>
-                      </tr>
-                    ) : (
-                      items.map(item => (
-                        <tr key={item.id} className="border-b hover:bg-muted/50">
-                          <td className="p-4">
-                            <Checkbox
-                              checked={selected[item.id] || false}
-                              onCheckedChange={() => toggleOne(item.id)}
-                            />
-                          </td>
-                          <td className="p-4">
-                            <div className="font-medium">{item.title_cn}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {item.theme?.title || '未知主题'}
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <Input
-                              value={item.seed_en || ''}
-                              onChange={(e) => updateItem(item.id, 'seed_en', e.target.value)}
-                              placeholder="英文关键词"
-                              className="w-32"
-                            />
-                          </td>
-                          <td className="p-4">
-                            <Input
-                              value={item.one_line_cn || ''}
-                              onChange={(e) => updateItem(item.id, 'one_line_cn', e.target.value)}
-                              placeholder="一句话说明"
-                              className="w-48"
-                            />
-                          </td>
-                          <td className="p-4">
-                            <Button
-                              onClick={() => openEdit(item)}
-                              variant="ghost"
-                              size="sm"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* 批量操作 */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>批量操作</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Checkbox 
+                checked={selectedCount === items.length && items.length > 0}
+                onCheckedChange={(checked) => toggleAll(checked as boolean)}
+              />
+              <span className="text-sm">
+                全选 ({selectedCount}/{items.length})
+              </span>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Button 
+                onClick={startGeneration} 
+                disabled={generating || selectedCount === 0}
+                size="sm"
+              >
+                <Play className="w-4 h-4 mr-1" />
+                批量生成 ({selectedCount})
+              </Button>
+              <Button 
+                onClick={archiveSelected} 
+                disabled={selectedCount === 0}
+                size="sm"
+                variant="outline"
+              >
+                <Archive className="w-4 h-4 mr-1" />
+                归档选中
+              </Button>
+              <Button 
+                onClick={deleteSelected} 
+                disabled={selectedCount === 0}
+                size="sm"
+                variant="destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                删除选中
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* 生成面板 */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>批量生成</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+      {/* 生成配置 */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>生成配置</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <Label>AI提供商</Label>
+              <Select value={provider} onValueChange={setProvider}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROVIDER_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>模型</Label>
+              <Select value={model} onValueChange={setModel}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map(m => (
+                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>温度</Label>
+              <Input 
+                type="number" 
+                min="0" 
+                max="2" 
+                step="0.1" 
+                value={temperature} 
+                onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              />
+            </div>
+            <div>
+              <Label>并发数</Label>
+              <Input 
+                type="number" 
+                min="1" 
+                max="100" 
+                value={maxConcurrent} 
+                onChange={(e) => setMaxConcurrent(parseInt(e.target.value) || 10)}
+              />
+            </div>
+          </div>
+          <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
+            <strong>后端并发处理：</strong>
+            使用后端批量API处理并发，避免浏览器连接限制。支持最多100个并发连接，更稳定可靠。
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 小主题列表 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>小主题列表</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8">加载中...</div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">暂无数据</div>
+          ) : (
+            <div className="space-y-2">
+              {items.map(item => (
+                <div key={item.id} className="flex items-center gap-2 p-2 border rounded">
+                  <Checkbox 
+                    checked={selected[item.id] || false}
+                    onCheckedChange={() => toggleOne(item.id)}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{item.title_cn}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {item.seed_en} • {item.one_line_cn}
+                    </div>
+                    <div className="flex gap-1 mt-1">
+                      <Badge variant="outline">{item.lang}</Badge>
+                      <Badge variant="outline">L{item.level}</Badge>
+                      <Badge variant="outline">{item.genre}</Badge>
+                      {item.tags?.map((tag: string, index: number) => (
+                        <Badge key={index} variant="secondary" className="text-xs">{tag}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline" onClick={() => openEdit(item)}>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* 分页 */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                共 {pagination.total} 条记录，第 {pagination.page} / {pagination.totalPages} 页
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">每页显示:</span>
+                <Select
+                  value={pagination.limit.toString()}
+                  onValueChange={(value) => {
+                    setPagination(prev => ({
+                      ...prev,
+                      limit: parseInt(value),
+                      page: 1 // 重置到第一页
+                    }));
+                  }}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="200">200</SelectItem>
+                    <SelectItem value="500">500</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {pagination.totalPages > 1 && (
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  disabled={pagination.page <= 1}
+                  onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                >
+                  上一页
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  disabled={pagination.page >= pagination.totalPages}
+                  onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                >
+                  下一页
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 编辑对话框 */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing?.id ? '编辑小主题' : '新建小主题'}</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>语言</Label>
+                  <Select value={editing.lang} onValueChange={(v) => setEditing({...editing, lang: v})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ja">日语</SelectItem>
+                      <SelectItem value="en">英语</SelectItem>
+                      <SelectItem value="zh">中文</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>等级</Label>
+                  <Select value={String(editing.level)} onValueChange={(v) => setEditing({...editing, level: parseInt(v)})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1,2,3,4,5,6].map(level => (
+                        <SelectItem key={level} value={String(level)}>L{level}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <div>
-                <Label>Provider</Label>
-                <Select value={provider} onValueChange={(value) => setProvider(value as "openrouter" | "deepseek" | "openai")}>
+                <Label>体裁</Label>
+                <Select value={editing.genre} onValueChange={(v) => setEditing({...editing, genre: v})}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {PROVIDER_OPTIONS.map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="dialogue">对话</SelectItem>
+                    <SelectItem value="monologue">独白</SelectItem>
+                    <SelectItem value="news">新闻</SelectItem>
+                    <SelectItem value="lecture">讲座</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              
               <div>
-                <Label>Model</Label>
-                <Select value={model} onValueChange={setModel}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择模型..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models.map(opt => (
-                      <SelectItem key={opt.id} value={opt.id}>
-                        {opt.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label>温度: {temperature}</Label>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={temperature}
-                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                  className="w-full"
+                <Label>中文标题</Label>
+                <Input 
+                  value={editing.title_cn} 
+                  onChange={(e) => setEditing({...editing, title_cn: e.target.value})}
                 />
               </div>
-              
               <div>
-                <Label>并发数: {concurrency}</Label>
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={concurrency}
-                  onChange={(e) => setConcurrency(parseInt(e.target.value))}
-                  className="w-full"
+                <Label>英文种子</Label>
+                <Input 
+                  value={editing.seed_en} 
+                  onChange={(e) => setEditing({...editing, seed_en: e.target.value})}
                 />
               </div>
-              
-              <div className="pt-4">
-                <div className="text-sm text-muted-foreground mb-2">
-                  已选择 {selectedCount} 个小主题
-                </div>
-                
-                {generating ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Button onClick={stopGeneration} variant="destructive" size="sm">
-                        <Pause className="w-4 h-4 mr-2" />
-                        停止
-                      </Button>
-                      <span className="text-sm">生成中...</span>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>进度</span>
-                        <span>{progress.done}/{progress.total}</span>
-                      </div>
-                      <Progress value={(progress.done / progress.total) * 100} />
-                    </div>
-                    
-                    <div className="text-sm space-y-1">
-                      <div>已保存: {progress.saved}</div>
-                      <div>错误: {progress.errors}</div>
-                      <div>Tokens: {progress.tokens}</div>
-                    </div>
-                  </div>
-                ) : (
-                  <Button 
-                    onClick={startGeneration} 
-                    disabled={selectedCount === 0}
-                    className="w-full"
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    开始生成
-                  </Button>
-                )}
+              <div>
+                <Label>一句话描述</Label>
+                <Textarea 
+                  value={editing.one_line_cn} 
+                  onChange={(e) => setEditing({...editing, one_line_cn: e.target.value})}
+                />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* 生成日志 */}
-          {logs.length > 0 && (
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle>生成日志</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-64">
-                  <div className="space-y-2">
-                    {logs.map((log, index) => (
-                      <div key={index} className="flex items-start gap-2 text-sm">
-                        {log.type === 'success' && <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />}
-                        {log.type === 'error' && <XCircle className="w-4 h-4 text-red-500 mt-0.5" />}
-                        {log.type === 'skip' && <AlertCircle className="w-4 h-4 text-yellow-500 mt-0.5" />}
-                        <div>
-                          {log.title && <div className="font-medium">{log.title}</div>}
-                          <div className="text-muted-foreground">{log.message}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+              <div>
+                <Label>标签 (用逗号分隔)</Label>
+                <Input 
+                  value={editing.tags?.join(', ') || ''} 
+                  onChange={(e) => setEditing({...editing, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)})}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={closeModal}>取消</Button>
+                <Button onClick={saveItem}>保存</Button>
+              </div>
+            </div>
           )}
-        </div>
-      </div>
-
-      {/* 编辑对话框 */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent aria-describedby="subtopic-dialog-description">
-          <DialogHeader>
-            <DialogTitle>
-              {editing?.id ? '编辑小主题' : '新建小主题'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>小主题标题 *</Label>
-              <Input
-                value={editing?.title_cn || ''}
-                onChange={(e) => setEditing({...editing, title_cn: e.target.value})}
-                placeholder="请输入小主题标题"
-              />
-            </div>
-            
-            <div>
-              <Label>英文关键词</Label>
-              <Input
-                value={editing?.seed_en || ''}
-                onChange={(e) => setEditing({...editing, seed_en: e.target.value})}
-                placeholder="用于生成锚点的英文关键词"
-              />
-            </div>
-            
-            <div>
-              <Label>一句话说明</Label>
-              <Textarea
-                value={editing?.one_line_cn || ''}
-                onChange={(e) => setEditing({...editing, one_line_cn: e.target.value})}
-                placeholder="一句话描述这个小主题的意图"
-                rows={2}
-              />
-            </div>
-            
-            <div className="flex justify-end gap-2">
-              <Button onClick={closeModal} variant="outline">
-                取消
-              </Button>
-              <Button onClick={saveOne}>
-                保存
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

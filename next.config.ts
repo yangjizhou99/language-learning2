@@ -2,7 +2,31 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: false }, // 你现在没有 TS 报错，可以保持严格
+  typescript: { ignoreBuildErrors: false },
+  trailingSlash: false,
+  
+  // 支持多域名CORS
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*', // 允许所有域名访问
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

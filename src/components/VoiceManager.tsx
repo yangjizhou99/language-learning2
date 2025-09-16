@@ -38,6 +38,7 @@ interface Voice {
   updated_at: string;
   provider?: string;
   useCase?: string; // 使用场景描述，由API动态生成
+  is_news_voice?: boolean; // 是否为新闻播报音色
   // 兼容旧字段
   languageCode?: string;
   supportedModels?: string[];
@@ -232,36 +233,41 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
         }, {}));
         setVoices(allVoices);
         
-        // 重新分类
+        // 使用数据库中的分类，如果没有则重新计算
         const categorized = allVoices.reduce((acc: Record<string, Voice[]>, voice: Voice) => {
-          const name = voice.name;
-          const provider = voice.provider || '';
-          let category = 'Other';
+          let category = voice.category || 'Other';
           
-          if (provider === 'xunfei') {
-            // 科大讯飞音色按性别分类
-            const gender = voice.ssml_gender || '';
-            if (gender.toLowerCase().includes('female') || gender.toLowerCase().includes('女')) {
-              category = 'Xunfei-Female';
-            } else if (gender.toLowerCase().includes('male') || gender.toLowerCase().includes('男')) {
-              category = 'Xunfei-Male';
-            } else {
-              category = 'Xunfei-Female'; // 默认女声
+          // 如果数据库中没有分类，则重新计算
+          if (!voice.category) {
+            const name = voice.name;
+            const provider = voice.provider || '';
+            
+            if (provider === 'xunfei') {
+              // 科大讯飞音色按性别分类
+              const gender = voice.ssml_gender || '';
+              if (gender.toLowerCase().includes('female') || gender.toLowerCase().includes('女')) {
+                category = 'Xunfei-Female';
+              } else if (gender.toLowerCase().includes('male') || gender.toLowerCase().includes('男')) {
+                category = 'Xunfei-Male';
+              } else {
+                category = 'Xunfei-Female'; // 默认女声
+              }
+            } else if (name.includes('Chirp3-HD')) {
+              category = 'Chirp3-HD';
+            } else if (name.includes('Neural2')) {
+              category = 'Neural2';
+            } else if (name.includes('Wavenet')) {
+              category = 'Wavenet';
+            } else if (name.includes('Standard')) {
+              category = 'Standard';
             }
-          } else if (name.includes('Chirp3-HD')) {
-            category = 'Chirp3-HD';
-          } else if (name.includes('Neural2')) {
-            category = 'Neural2';
-          } else if (name.includes('Wavenet')) {
-            category = 'Wavenet';
-          } else if (name.includes('Standard')) {
-            category = 'Standard';
           }
           
           if (!acc[category]) acc[category] = [];
           acc[category].push(voice);
           return acc;
         }, {});
+        console.log("更新categorizedVoices:", categorized);
         setCategorizedVoices(categorized);
       }
       
@@ -486,13 +492,38 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
 
   // 获取当前显示的音色列表 - 综合所有筛选条件
   const displayVoices = voices.filter(voice => {
-    // 语言筛选
-    if (selectedLanguage !== "all" && voice.language_code !== selectedLanguage) {
-      return false;
+    console.log("筛选音色:", {
+      name: voice.name,
+      category: voice.category,
+      selectedCategory,
+      language: voice.language_code,
+      selectedLanguage
+    });
+    
+    // 语言筛选 - 处理语言代码映射
+    if (selectedLanguage !== "all") {
+      const voiceLang = voice.language_code || '';
+      const selectedLang = selectedLanguage;
+      
+      // 语言代码映射
+      const langMapping: Record<string, string[]> = {
+        'cmn-CN': ['zh-CN', 'cmn-CN', 'zh'],
+        'en-US': ['en-US', 'en'],
+        'ja-JP': ['ja-JP', 'ja']
+      };
+      
+      const mappedLangs = langMapping[selectedLang] || [selectedLang];
+      const isLangMatch = mappedLangs.includes(voiceLang);
+      
+      if (!isLangMatch) {
+        console.log("语言筛选失败:", voiceLang, "不在映射中:", mappedLangs);
+        return false;
+      }
     }
     
     // 分类筛选
     if (selectedCategory !== "all" && voice.category !== selectedCategory) {
+      console.log("分类筛选失败:", voice.category, "!=", selectedCategory);
       return false;
     }
     
@@ -521,6 +552,7 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
       return false;
     }
     
+    console.log("音色通过筛选:", voice.name);
     return true;
   });
 
@@ -534,7 +566,8 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
     displayVoices: displayVoices.length,
     searchTerm,
     loading,
-    error
+    error,
+    voicesData: voices.map(v => ({ name: v.name, category: v.category, display_name: v.display_name }))
   });
   
   // 详细分类信息 - 按价格和性别分类
@@ -602,6 +635,10 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                   {/* 科大讯飞系列 - 中文专业 */}
                   <SelectItem value="Xunfei-Female">科大讯飞 女声 (中文专业)</SelectItem>
                   <SelectItem value="Xunfei-Male">科大讯飞 男声 (中文专业)</SelectItem>
+                  
+                  {/* 科大讯飞新闻播报系列 */}
+                  <SelectItem value="Xunfei-News-Female">📰 科大讯飞 女声 (新闻播报)</SelectItem>
+                  <SelectItem value="Xunfei-News-Male">📰 科大讯飞 男声 (新闻播报)</SelectItem>
                   
                   {/* Chirp3-HD 系列 - 最高质量 */}
                   <SelectItem value="Chirp3HD-Female">Chirp3-HD 女声 (最高质量)</SelectItem>
@@ -804,7 +841,14 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                   <CardContent className="p-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm truncate flex-1 mr-2">{voice.display_name || voice.displayName || voice.name}</h4>
+                        <h4 className="font-medium text-sm truncate flex-1 mr-2">
+                          {voice.display_name || voice.displayName || voice.name}
+                          {(voice.display_name || voice.displayName || voice.name).includes('新闻播报') && (
+                            <span className="ml-2 px-1.5 py-0.5 bg-red-100 text-red-700 text-xs rounded-full">
+                              📰 新闻播报
+                            </span>
+                          )}
+                        </h4>
                         <div className="flex items-center gap-1">
                           <Badge variant="secondary" className="text-xs">
                             {voice.category}
@@ -824,9 +868,12 @@ export default function VoiceManager({ onVoiceSelect, selectedVoice, language = 
                             <span className={`px-1 py-0.5 rounded text-xs ${
                               voice.provider === 'gemini' 
                                 ? 'bg-purple-100 text-purple-700' 
+                                : voice.provider === 'xunfei'
+                                ? 'bg-orange-100 text-orange-700'
                                 : 'bg-blue-100 text-blue-700'
                             }`}>
-                              {voice.provider === 'gemini' ? 'Gemini' : 'Google'}
+                              {voice.provider === 'gemini' ? 'Gemini' : 
+                               voice.provider === 'xunfei' ? '科大讯飞' : 'Google'}
                             </span>
                           </>
                         )}

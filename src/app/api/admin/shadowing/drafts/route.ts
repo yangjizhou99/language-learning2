@@ -15,20 +15,41 @@ export async function GET(req: NextRequest){
   const level = sp.get("level");
   const genre = sp.get("genre");
   const q = sp.get("q")?.trim() || "";
+  
+  // 分页参数
+  const page = parseInt(sp.get("page") || "1");
+  const pageSize = parseInt(sp.get("pageSize") || "10");
+  const offset = (page - 1) * pageSize;
 
+  // 构建基础查询
   let query = supabase
     .from("shadowing_drafts")
-    .select("id, lang, level, genre, title, text, status, created_at, notes, translations, trans_updated_at")
+    .select("id, lang, level, genre, title, text, status, created_at, notes, translations, trans_updated_at", { count: 'exact' })
     .eq("status", status)
     .order("created_at", { ascending: false });
+  
   if (lang) query = query.eq("lang", lang);
   if (level) query = query.eq("level", Number(level));
   if (genre) query = query.eq("genre", genre);
   if (q) query = query.ilike("title", `%${q}%`);
 
-  const { data, error } = await query;
+  // 应用分页
+  query = query.range(offset, offset + pageSize - 1);
+
+  const { data, error, count } = await query;
   if (error) return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
-  return NextResponse.json({ ok:true, items: data||[] });
+  
+  const total = count || 0;
+  const totalPages = Math.ceil(total / pageSize);
+  
+  return NextResponse.json({ 
+    ok: true, 
+    items: data || [],
+    total,
+    totalPages,
+    currentPage: page,
+    pageSize
+  });
 }
 
 

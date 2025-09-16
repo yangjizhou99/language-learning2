@@ -18,11 +18,11 @@ function buildUserPrompt({
 }) {
   const L = lang === "en" ? "English" : lang === "ja" ? "日本語" : "简体中文";
   const perLevel: any = {
-    1: { desc: "超短句·高频词；口语化；避免复杂从句", words: words ?? [40, 80] },
-    2: { desc: "短句；基础连接词；简单从句", words: words ?? [60, 120] },
-    3: { desc: "中等篇幅；常见并列/从句", words: words ?? [100, 180] },
-    4: { desc: "较长；抽象词；结构更复杂", words: words ?? [150, 260] },
-    5: { desc: "较长；信息密度高；专业/抽象词汇", words: words ?? [200, 320] },
+    1: { desc: "超短句", words: words ?? [40, 80] },
+    2: { desc: "短句", words: words ?? [80, 160] },
+    3: { desc: "中等篇幅", words: words ?? [160, 320] },
+    4: { desc: "较长", words: words ?? [320, 640] },
+    5: { desc: "长句", words: words ?? [640, 1280] },
   };
   const conf = perLevel[level] || perLevel[3];
   const minW = conf.words[0];
@@ -42,7 +42,7 @@ ${topic ? `主题：${topic}\n` : ""}
 - 标题：简短描述性（最多12个词/12字）
 - 文本长度：${minW}~${maxW} ${lang === "en" ? "words" : "字"}
 - 风格：自然、可朗读、2-4个短段落或句子；不要项目符号列表；不要URL
-- 内容：适合口语练习，避免过于书面化的表达
+- 内容：适合口语练习
 
 只返回JSON格式：{ "items": [ { "title":"...", "text":"..." }, ... ] }，必须包含 exactly ${count} 个项目。
 `.trim();

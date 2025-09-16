@@ -60,7 +60,7 @@ interface Message {
 
 export default function AlignmentPracticePage() {
   const params = useParams();
-  const packId = params.id as string;
+  const packId = params?.id as string;
   const permissions = useUserPermissions();
   
   const [pack, setPack] = useState<AlignmentPack | null>(null);

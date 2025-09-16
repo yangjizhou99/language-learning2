@@ -497,9 +497,12 @@ export default function CandidateVoiceSelector({
                               <span className={`px-1 py-0.5 rounded text-xs ${
                                 voice.provider === 'gemini' 
                                   ? 'bg-purple-100 text-purple-700' 
+                                  : voice.provider === 'xunfei'
+                                  ? 'bg-orange-100 text-orange-700'
                                   : 'bg-blue-100 text-blue-700'
                               }`}>
-                                {voice.provider === 'gemini' ? 'Gemini' : 'Google'}
+                                {voice.provider === 'gemini' ? 'Gemini' : 
+                                 voice.provider === 'xunfei' ? '科大讯飞' : 'Google'}
                               </span>
                             </>
                           )}
@@ -512,14 +515,83 @@ export default function CandidateVoiceSelector({
                     )}
                   </div>
                   
-                  {/* 使用场景 */}
-                  {voice.useCase && (
-                    <div className="mb-2">
+                  {/* 使用场景标签 */}
+                  <div className="mb-2 flex flex-wrap gap-1">
+                    {/* 新闻播报标签 */}
+                    {(voice.name.includes('profnews') || 
+                      voice.name.includes('xiaoguo') || 
+                      voice.name.includes('pengfei') ||
+                      voice.display_name?.includes('新闻播报')) && (
+                      <Badge variant="secondary" className="text-xs bg-red-100 text-red-700 border-red-200">
+                        📰 新闻播报
+                      </Badge>
+                    )}
+                    
+                    {/* 对话标签 */}
+                    {(voice.name.includes('talk') || 
+                      voice.display_name?.includes('对话')) && (
+                      <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border-purple-200">
+                        💬 对话
+                      </Badge>
+                    )}
+                    
+                    {/* 情感标签 */}
+                    {(voice.name.includes('em') || 
+                      voice.name.includes('emo') ||
+                      voice.display_name?.includes('情感')) && (
+                      <Badge variant="secondary" className="text-xs bg-pink-100 text-pink-700 border-pink-200">
+                        😊 情感
+                      </Badge>
+                    )}
+                    
+                    {/* 闲聊标签 */}
+                    {(voice.name.includes('chat') || 
+                      voice.display_name?.includes('闲聊')) && (
+                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                        💭 闲聊
+                      </Badge>
+                    )}
+                    
+                    {/* 角色标签 */}
+                    {(voice.name.includes('boy') || 
+                      voice.display_name?.includes('小男孩') ||
+                      voice.display_name?.includes('老人')) && (
+                      <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-700 border-yellow-200">
+                        🎭 角色
+                      </Badge>
+                    )}
+                    
+                    {/* 高质量标签 */}
+                    {(voice.name.includes('Chirp3-HD') || 
+                      voice.display_name?.includes('Chirp3-HD')) && (
+                      <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                        ⭐ 高质量
+                      </Badge>
+                    )}
+                    
+                    {/* 基础标签 */}
+                    {(voice.name.includes('Standard') || 
+                      voice.display_name?.includes('Standard')) && (
+                      <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-700 border-gray-200">
+                        💰 经济型
+                      </Badge>
+                    )}
+                    
+                    {/* 通用useCase标签 */}
+                    {voice.useCase && !voice.name.includes('profnews') && 
+                     !voice.name.includes('xiaoguo') && 
+                     !voice.name.includes('pengfei') &&
+                     !voice.name.includes('talk') &&
+                     !voice.name.includes('em') &&
+                     !voice.name.includes('chat') &&
+                     !voice.name.includes('boy') &&
+                     !voice.name.includes('Chirp3-HD') &&
+                     !voice.name.includes('Standard') && (
                       <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                         {voice.useCase}
                       </Badge>
-                    </div>
-                  )}
+                    )}
+                  </div>
                   
                   {/* 价格信息 */}
                   <div className="flex items-center justify-between text-xs text-gray-600 mb-2">

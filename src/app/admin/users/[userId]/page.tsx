@@ -72,7 +72,7 @@ interface UserActivity {
 
 export default function UserDetailPage() {
   const params = useParams();
-  const userId = params.userId as string;
+  const userId = params?.userId as string;
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [practiceStats, setPracticeStats] = useState<PracticeStats | null>(null);
