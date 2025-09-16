@@ -207,7 +207,11 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
       console.log('原始ffmpeg路径:', ffmpegPath);
       console.log('当前工作目录:', process.cwd());
       
-      // 直接使用ffmpeg-static提供的路径，它应该已经是正确的
+      // 标准化路径处理
+      ffmpegPath = path.resolve(ffmpegPath);
+      console.log('标准化后的ffmpeg路径:', ffmpegPath);
+      
+      // 验证ffmpeg文件是否存在
       try {
         await fs.access(ffmpegPath);
         console.log('ffmpeg文件存在:', ffmpegPath);
@@ -218,34 +222,25 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
         // 尝试其他可能的路径格式
         const possiblePaths = [
           ffmpegPath,
-          path.resolve(ffmpegPath),
           path.normalize(ffmpegPath),
           ffmpegPath.replace(/\\/g, '/'),
-          ffmpegPath.replace(/\//g, '\\')
+          ffmpegPath.replace(/\//g, '\\'),
+          // 尝试相对路径
+          path.join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg.exe'),
+          // 尝试pnpm路径
+          path.join(process.cwd(), 'node_modules', '.pnpm', 'ffmpeg-static@5.2.0', 'node_modules', 'ffmpeg-static', 'ffmpeg.exe')
         ];
         
         let validPath = null;
         for (const testPath of possiblePaths) {
           try {
-            await fs.access(testPath);
-            validPath = testPath;
-            console.log('找到有效的ffmpeg路径:', testPath);
+            const normalizedPath = path.resolve(testPath);
+            await fs.access(normalizedPath);
+            validPath = normalizedPath;
+            console.log('找到有效的ffmpeg路径:', normalizedPath);
             break;
           } catch (e) {
             console.log('路径无效:', testPath);
-          }
-        }
-        
-        if (!validPath) {
-          // 最后尝试：检查是否在项目根目录下
-          const projectRoot = process.cwd();
-          const relativePath = path.join(projectRoot, 'node_modules', '.pnpm', 'ffmpeg-static@5.2.0', 'node_modules', 'ffmpeg-static', 'ffmpeg.exe');
-          try {
-            await fs.access(relativePath);
-            validPath = relativePath;
-            console.log('找到项目相对路径的ffmpeg:', relativePath);
-          } catch (e) {
-            console.log('项目相对路径也无效:', relativePath);
           }
         }
         
@@ -263,29 +258,53 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
       
       const executeFfmpeg = async (): Promise<void> => {
         return new Promise((resolve, reject) => {
-          const command = `"${ffmpegPath}" -f concat -safe 0 -i "${inputListFile}" -c:a libmp3lame -b:a 128k "${outputFile}"`;
-          console.log(`执行ffmpeg命令 (尝试 ${retryCount + 1}/${maxRetries + 1}):`, command);
+          // 使用spawn而不是exec来避免路径问题
+          const args = [
+            '-f', 'concat',
+            '-safe', '0',
+            '-i', inputListFile,
+            '-c:a', 'libmp3lame',
+            '-b:a', '128k',
+            outputFile
+          ];
+          
+          console.log(`执行ffmpeg命令 (尝试 ${retryCount + 1}/${maxRetries + 1}):`, ffmpegPath, args);
           console.log('ffmpeg路径:', ffmpegPath);
           
           // 增加ffmpeg进程计数
           ffmpegProcessCount++;
           console.log(`启动ffmpeg进程，当前进程数: ${ffmpegProcessCount}`);
           
-          exec(command, { timeout: 60000 }, async (error, stdout, stderr) => {
+          const child = spawn(ffmpegPath, args, { 
+            timeout: 60000,
+            stdio: ['ignore', 'pipe', 'pipe']
+          });
+          
+          let stdout = '';
+          let stderr = '';
+          
+          child.stdout?.on('data', (data) => {
+            stdout += data.toString();
+          });
+          
+          child.stderr?.on('data', (data) => {
+            stderr += data.toString();
+          });
+          
+          child.on('close', async (code) => {
             // 减少ffmpeg进程计数
             ffmpegProcessCount = Math.max(0, ffmpegProcessCount - 1);
             console.log(`ffmpeg进程结束，当前进程数: ${ffmpegProcessCount}`);
             
-            if (error) {
-              console.error('ffmpeg执行错误:', error);
+            if (code !== 0) {
+              console.error('ffmpeg执行错误，退出码:', code);
               console.error('stderr:', stderr);
               console.error('stdout:', stdout);
-              console.error('命令:', command);
               
               // 记录错误时间
               lastErrorTime = Date.now();
               
-              reject(new Error(`ffmpeg合并失败: ${error instanceof Error ? error.message : String(error)}\nstderr: ${stderr}\nstdout: ${stdout}`));
+              reject(new Error(`ffmpeg合并失败，退出码: ${code}\nstderr: ${stderr}\nstdout: ${stdout}`));
             } else {
               console.log('ffmpeg合并成功');
               console.log('stdout:', stdout);
@@ -309,6 +328,15 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
               
               resolve(undefined);
             }
+          });
+          
+          child.on('error', (error) => {
+            // 减少ffmpeg进程计数
+            ffmpegProcessCount = Math.max(0, ffmpegProcessCount - 1);
+            console.log(`ffmpeg进程错误，当前进程数: ${ffmpegProcessCount}`);
+            
+            console.error('ffmpeg进程启动错误:', error);
+            reject(new Error(`ffmpeg进程启动失败: ${error.message}`));
           });
         });
       };

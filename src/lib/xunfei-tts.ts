@@ -229,13 +229,6 @@ export const XUNFEI_VOICES: XunfeiVoice[] = [
     description: '普通话女声，闲聊场景'
   },
   {
-    voiceId: 'x4_lingxiaoyu_emo',
-    displayName: '聆小瑜-情感',
-    language: 'zh-CN',
-    gender: 'female',
-    description: '普通话女声，情感表达'
-  },
-  {
     voiceId: 'x4_lingxiaoyun_talk_emo',
     displayName: '聆小芸-多情感',
     language: 'zh-CN',
@@ -340,7 +333,7 @@ export async function synthesizeXunfeiTTS(
             app_id: config.appId
           },
           business: {
-            aue: 'raw',
+            aue: 'lame',
             vcn: voiceId,
             speed: speed,
             volume: volume,

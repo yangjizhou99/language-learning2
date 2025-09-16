@@ -168,13 +168,21 @@ async function generateXunfeiPreview(voiceName: string, text: string, languageCo
     pitch: 50
   });
   
-  // 将PCM数据转换为WAV格式
-  return convertPCMToWAV(audioBuffer, 16000);
+  // 科大讯飞TTS现在直接返回MP3格式，不需要转换
+  return new Uint8Array(audioBuffer);
 }
 
 // 将PCM数据转换为WAV格式
 function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
   const length = pcmData.length;
+  console.log(`PCM数据长度: ${length}, 采样率: ${sampleRate}`);
+  
+  // 检查PCM数据是否为空
+  if (length === 0) {
+    console.error('PCM数据为空');
+    throw new Error('PCM数据为空');
+  }
+  
   const buffer = new ArrayBuffer(44 + length);
   const view = new DataView(buffer);
   
@@ -212,25 +220,35 @@ function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
   // data chunk长度
   view.setUint32(40, length, true);
   
-  // 处理PCM数据 - 尝试字节序转换
+  // 处理PCM数据
   const uint8Array = new Uint8Array(buffer);
   
   // 如果PCM数据长度是奇数，说明可能不是16位PCM
   if (length % 2 !== 0) {
     console.log('警告: PCM数据长度不是偶数，可能格式不正确');
+    // 直接复制数据，不进行字节序转换
     uint8Array.set(pcmData, 44);
   } else {
-    // 尝试字节序转换 - 科大讯飞可能返回大端序数据
-    const pcmView = new DataView(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength);
-    const wavPcmView = new DataView(uint8Array.buffer, 44);
-    
-    for (let i = 0; i < length; i += 2) {
-      // 读取大端序16位整数，转换为小端序
-      const sample = pcmView.getInt16(i, false); // 大端序读取
-      wavPcmView.setInt16(i, sample, true); // 小端序写入
+    // 尝试不同的字节序转换方法
+    try {
+      const pcmView = new DataView(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength);
+      const wavPcmView = new DataView(uint8Array.buffer, 44);
+      
+      // 方法1: 尝试大端序到小端序转换
+      for (let i = 0; i < length; i += 2) {
+        const sample = pcmView.getInt16(i, false); // 大端序读取
+        wavPcmView.setInt16(i, sample, true); // 小端序写入
+      }
+      
+      console.log('使用大端序到小端序转换');
+    } catch (error) {
+      console.log('字节序转换失败，直接复制数据:', error);
+      // 如果转换失败，直接复制原始数据
+      uint8Array.set(pcmData, 44);
     }
   }
   
+  console.log(`WAV文件总长度: ${uint8Array.length}`);
   return uint8Array;
 }
 
@@ -290,14 +308,12 @@ export async function POST(req: NextRequest) {
     const supabaseAdmin = getServiceSupabase();
     
     // 从数据库获取音色信息，包括provider
-    // 处理语言代码映射：cmn-CN -> zh-CN
-    const mappedLanguageCode = languageCode === 'cmn-CN' ? 'zh-CN' : languageCode;
-    
+    // 不进行语言代码映射，直接使用原始语言代码
     const { data: voiceData, error: voiceError } = await supabaseAdmin
       .from('voices')
       .select('name, provider, language_code, ssml_gender')
       .eq('name', voiceName)
-      .eq('language_code', mappedLanguageCode)
+      .eq('language_code', languageCode)
       .single();
 
     if (voiceError || !voiceData) {
@@ -417,7 +433,7 @@ export async function POST(req: NextRequest) {
     // 根据TTS提供商确定Content-Type
     let contentType = 'audio/mpeg'; // 默认MP3
     if (voiceData.provider === 'xunfei') {
-      contentType = 'audio/wav'; // 科大讯飞返回WAV
+      contentType = 'audio/mpeg'; // 科大讯飞现在也返回MP3
     } else if (voiceData.provider === 'gemini') {
       contentType = 'audio/mpeg';
     }

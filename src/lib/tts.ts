@@ -105,6 +105,14 @@ function escapeForSsml(s: string): string {
 // 将PCM数据转换为WAV格式
 function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
   const length = pcmData.length;
+  console.log(`PCM数据长度: ${length}, 采样率: ${sampleRate}`);
+  
+  // 检查PCM数据是否为空
+  if (length === 0) {
+    console.error('PCM数据为空');
+    throw new Error('PCM数据为空');
+  }
+  
   const buffer = new ArrayBuffer(44 + length);
   const view = new DataView(buffer);
   
@@ -142,25 +150,35 @@ function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
   // data chunk长度
   view.setUint32(40, length, true);
   
-  // 处理PCM数据 - 尝试字节序转换
+  // 处理PCM数据
   const uint8Array = new Uint8Array(buffer);
   
   // 如果PCM数据长度是奇数，说明可能不是16位PCM
   if (length % 2 !== 0) {
     console.log('警告: PCM数据长度不是偶数，可能格式不正确');
+    // 直接复制数据，不进行字节序转换
     uint8Array.set(pcmData, 44);
   } else {
-    // 尝试字节序转换 - 科大讯飞可能返回大端序数据
-    const pcmView = new DataView(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength);
-    const wavPcmView = new DataView(uint8Array.buffer, 44);
-    
-    for (let i = 0; i < length; i += 2) {
-      // 读取大端序16位整数，转换为小端序
-      const sample = pcmView.getInt16(i, false); // 大端序读取
-      wavPcmView.setInt16(i, sample, true); // 小端序写入
+    // 尝试不同的字节序转换方法
+    try {
+      const pcmView = new DataView(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength);
+      const wavPcmView = new DataView(uint8Array.buffer, 44);
+      
+      // 方法1: 尝试大端序到小端序转换
+      for (let i = 0; i < length; i += 2) {
+        const sample = pcmView.getInt16(i, false); // 大端序读取
+        wavPcmView.setInt16(i, sample, true); // 小端序写入
+      }
+      
+      console.log('使用大端序到小端序转换');
+    } catch (error) {
+      console.log('字节序转换失败，直接复制数据:', error);
+      // 如果转换失败，直接复制原始数据
+      uint8Array.set(pcmData, 44);
     }
   }
   
+  console.log(`WAV文件总长度: ${uint8Array.length}`);
   return uint8Array;
 }
 
@@ -175,7 +193,8 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
       const xunfeiVoiceId = voiceName.replace('xunfei-', '');
       
       // 转换speakingRate (Google: 0.25-4.0, 科大讯飞: 0-100)
-      const xunfeiSpeed = Math.max(0, Math.min(100, (speakingRate - 0.25) / 3.75 * 100));
+      // 修复：Google默认1.0对应科大讯飞默认50
+      const xunfeiSpeed = Math.max(0, Math.min(100, speakingRate * 50));
       const xunfeiPitch = Math.max(0, Math.min(100, (pitch + 20) / 40 * 100));
       
       // 检查是否是新闻播报音色，使用长文本TTS
@@ -191,16 +210,14 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
         });
         return audioBuffer;
       } else {
-        const pcmData = await synthesizeXunfeiTTS(clean, xunfeiVoiceId, {
+        const audioData = await synthesizeXunfeiTTS(clean, xunfeiVoiceId, {
           speed: xunfeiSpeed,
           pitch: xunfeiPitch,
           volume: 50
         });
         
-        // 将PCM数据转换为WAV格式
-        const wavData = convertPCMToWAV(pcmData, 16000);
-        
-        return Buffer.from(wavData);
+        // 直接返回MP3数据，不需要转换
+        return audioData;
       }
     } catch (error) {
       throw error;

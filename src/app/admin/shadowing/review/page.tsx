@@ -31,11 +31,16 @@ type Item = {
 };
 
 // 格式化对话文本，按说话者分行
-function formatDialogueText(text: string): string {
+function formatDialogueText(text: string, genre?: string): string {
   if (!text) return '';
   
   // 处理AI返回的\n换行符
   const formatted = text.replace(/\\n/g, '\n');
+  
+  // 如果不是对话体裁，直接返回原文本
+  if (genre !== 'dialogue') {
+    return formatted;
+  }
   
   // 如果已经包含换行符，保持格式并清理
   if (formatted.includes('\n')) {
@@ -162,10 +167,10 @@ export default function ShadowingReviewList(){
   const [totalPages, setTotalPages] = useState(0);
 
   // 性能优化参数
-  const [concurrency, setConcurrency] = useState(10); // 后端并发处理
+  const [concurrency, setConcurrency] = useState(6); // 后端并发处理，默认使用推荐值
   const [retries, setRetries] = useState(2);
   const [throttle, setThrottle] = useState(200);
-  const [timeout, setTimeout] = useState(60); // TTS超时时间（秒）
+  const [timeout, setTimeout] = useState(120); // TTS超时时间（秒），默认120秒
   
   // 性能监控状态
   const [performanceStats, setPerformanceStats] = useState({
@@ -1290,7 +1295,7 @@ export default function ShadowingReviewList(){
       // 计算推荐并发数
       let recommendedConcurrency = prev.recommendedConcurrency;
       if (newSuccessRate > 0.95 && newAvgResponseTime < 2000) {
-        recommendedConcurrency = Math.min(36, prev.recommendedConcurrency + 3);
+        recommendedConcurrency = Math.min(100, prev.recommendedConcurrency + 5);
       } else if (newSuccessRate < 0.8 || newAvgResponseTime > 5000) {
         recommendedConcurrency = Math.max(6, prev.recommendedConcurrency - 3);
       }
@@ -1299,7 +1304,7 @@ export default function ShadowingReviewList(){
         totalRequests: newTotal,
         successRate: newSuccessRate,
         avgResponseTime: newAvgResponseTime,
-        currentLoad: Math.min(100, (concurrency / 36) * 100),
+        currentLoad: Math.min(100, (concurrency / 100) * 100),
         recommendedConcurrency
       };
       
@@ -1326,19 +1331,19 @@ export default function ShadowingReviewList(){
     if (successRate > 0.95 && avgResponseTime < 1500) {
       return {
         name: "高速模式",
-        concurrency: Math.min(36, recommendedConcurrency + 6),
+        concurrency: Math.min(100, recommendedConcurrency + 10),
         retries: 2,
         throttle: 100,
-        timeout: 45,
+        timeout: 90,
         description: "系统运行良好，可以提升性能"
       };
     } else if (successRate > 0.9 && avgResponseTime < 3000) {
       return {
         name: "平衡模式",
-        concurrency: Math.min(30, recommendedConcurrency + 3),
+        concurrency: Math.min(50, recommendedConcurrency + 5),
         retries: 2,
         throttle: 200,
-        timeout: 60,
+        timeout: 120,
         description: "当前配置较为合适"
       };
     } else {
@@ -1347,7 +1352,7 @@ export default function ShadowingReviewList(){
         concurrency: Math.max(6, recommendedConcurrency - 3),
         retries: 3,
         throttle: 500,
-        timeout: 90,
+        timeout: 180,
         description: "建议降低并发数以提高稳定性"
       };
     }
@@ -1510,13 +1515,13 @@ export default function ShadowingReviewList(){
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
-              <label className="text-sm font-medium">并发数 (1-36)</label>
+              <label className="text-sm font-medium">并发数 (1-100)</label>
               <Input 
                 type="number" 
                 min={1} 
                 max={100} 
                 value={concurrency} 
-                onChange={e => setConcurrency(Number(e.target.value) || 10)}
+                onChange={e => setConcurrency(Number(e.target.value) || 6)}
                 className={concurrency > performanceStats.recommendedConcurrency ? 'border-yellow-500' : ''}
               />
               <p className="text-xs text-gray-500">同时处理的任务数 (后端并发处理)</p>
@@ -1551,9 +1556,9 @@ export default function ShadowingReviewList(){
               <Input 
                 type="number" 
                 min={10} 
-                max={100} 
+                max={300} 
                 value={timeout} 
-                onChange={e => setTimeout(Number(e.target.value) || 60)}
+                onChange={e => setTimeout(Number(e.target.value) || 120)}
               />
               <p className="text-xs text-gray-500">单个TTS请求超时时间</p>
             </div>
@@ -1993,7 +1998,7 @@ export default function ShadowingReviewList(){
                       {it.text && (
                         <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border max-h-32 overflow-y-auto">
                           <div className="whitespace-pre-wrap font-mono text-xs leading-relaxed">
-                            {formatDialogueText(it.text)}
+                            {formatDialogueText(it.text, it.genre)}
                           </div>
                         </div>
                       )}
@@ -2007,7 +2012,7 @@ export default function ShadowingReviewList(){
                               <div className="text-xs text-blue-600 font-medium mb-1">🇺🇸 英文:</div>
                               <div className="text-sm text-gray-700 bg-blue-50 p-2 rounded border max-h-24 overflow-y-auto">
                                 <div className="whitespace-pre-wrap text-xs leading-relaxed">
-                                  {formatDialogueText(it.translations.en)}
+                                  {formatDialogueText(it.translations.en, it.genre)}
                                 </div>
                               </div>
                             </div>
@@ -2017,7 +2022,7 @@ export default function ShadowingReviewList(){
                               <div className="text-xs text-red-600 font-medium mb-1">🇯🇵 日文:</div>
                               <div className="text-sm text-gray-700 bg-red-50 p-2 rounded border max-h-24 overflow-y-auto">
                                 <div className="whitespace-pre-wrap text-xs leading-relaxed">
-                                  {formatDialogueText(it.translations.ja)}
+                                  {formatDialogueText(it.translations.ja, it.genre)}
                                 </div>
                               </div>
                             </div>

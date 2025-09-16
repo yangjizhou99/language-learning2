@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { chatJSON } from '@/lib/ai';
+import { chatJSON } from '@/lib/ai/client';
+
+export const maxDuration = 600; // 10分钟超时，支持大批量生成
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -76,8 +78,36 @@ export async function POST(request: NextRequest) {
           };
         }
 
+        // 根据级别设置字数要求（L1从50字开始，每级别两倍）
+        const getWordCountRange = (level: string, lang: string) => {
+          const levelNum = parseInt(level);
+          const baseRanges = {
+            'en': [25, 50, 100, 200, 400, 800],
+            'ja': [50, 100, 200, 400, 800, 1600],
+            'zh': [50, 100, 200, 400, 800, 1600]
+          };
+          const ranges = baseRanges[lang as keyof typeof baseRanges] || baseRanges.zh;
+          const min = ranges[levelNum - 1] || ranges[0];
+          const max = ranges[levelNum] || ranges[1];
+          return `${min}-${max}`;
+        };
+
+        // 如果level为'all'，使用小主题本身的level
+        const actualLevel = level === 'all' ? subtopic.level.toString() : level;
+        // 如果genre为'all'，使用小主题本身的体裁
+        const actualGenre = genre === 'all' ? subtopic.genre : genre;
+        // 如果lang为'all'，使用小主题本身的语言
+        const actualLang = lang === 'all' ? subtopic.lang : lang;
+        console.log(`Processing subtopic ${subtopic.id}: level=${level}, subtopic.level=${subtopic.level}, actualLevel=${actualLevel}, genre=${genre}, subtopic.genre=${subtopic.genre}, actualGenre=${actualGenre}, lang=${lang}, subtopic.lang=${subtopic.lang}, actualLang=${actualLang}`);
+        const wordCountRange = getWordCountRange(actualLevel, actualLang);
+        const sentenceCount = Math.min(7 + parseInt(actualLevel), 15); // 级别越高，句子越多
+
         // 构建AI提示
-        const prompt = `请为以下小主题生成一篇${lang}语言、${level}级、${genre}类型的影子跟读文章：
+        const formatInstruction = actualGenre === 'dialogue' 
+          ? '必须使用A: B: 对话格式，每行以A: 或B: 开头' 
+          : '使用完整句子，不要使用A/B对话格式';
+          
+        const prompt = `请为以下小主题生成一篇${actualLang}语言、${actualLevel}级、${actualGenre}类型的影子跟读文章：
 
 小主题：${subtopic.title_cn}
 英文种子：${subtopic.seed_en}
@@ -85,28 +115,78 @@ export async function POST(request: NextRequest) {
 标签：${subtopic.tags?.join(', ') || ''}
 
 要求：
-1. 文章长度：${lang === 'en' ? '90-120' : lang === 'ja' ? '260-360' : '240-320'}个字符
-2. 句子数量：7-9句
-3. 每句长度：${lang === 'en' ? '最多16' : '最多45'}个字符
-4. 内容要符合${level}级难度，适合${genre}类型
-5. 语言自然流畅，适合影子跟读练习
+1. 文章长度必须达到${wordCountRange}个字符（这是硬性要求，绝对不能少于最小值，必须严格达到）
+2. ${formatInstruction}
+3. 请确保内容长度严格符合要求，生成后请检查字数
+4. 如果内容不够长，请增加更多细节和描述
+5. 字数要求是最高优先级，必须严格遵守
 
 请返回JSON格式：
 {
   "title": "文章标题",
-  "content": "文章内容",
-  "difficulty_notes": "难度说明",
-  "learning_points": ["学习要点1", "学习要点2"]
+  "content": "文章内容"
 }`;
 
         // 调用AI生成
-        const aiResponse = await chatJSON(prompt, {
-          provider,
-          model,
-          temperature: temperature || 0.7
-        });
+        let rawContent, usage;
+        
+        // 根据provider决定使用哪个API
+        let actualProvider = provider;
+        let actualModel = model;
+        
+        if (provider === 'deepseek') {
+          // 如果选择的是DeepSeek，使用OpenRouter的DeepSeek模型
+          actualProvider = 'openrouter';
+          actualModel = 'deepseek/deepseek-chat';
+        }
+        
+        try {
+          const result = await chatJSON({
+            provider: actualProvider,
+            model: actualModel,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: temperature || 0.7
+          });
+          rawContent = result.content;
+          usage = result.usage;
+        } catch (error: any) {
+          // 如果失败，尝试回退到DeepSeek
+          if (actualProvider !== 'openrouter' || actualModel !== 'deepseek/deepseek-chat') {
+            console.log('Primary model failed, falling back to DeepSeek');
+            try {
+              const result = await chatJSON({
+                provider: 'openrouter',
+                model: 'deepseek/deepseek-chat',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: temperature || 0.7
+              });
+              rawContent = result.content;
+              usage = result.usage;
+            } catch (fallbackError: any) {
+              throw fallbackError;
+            }
+          } else {
+            throw error;
+          }
+        }
+
+        // 解析AI返回的JSON内容
+        let aiResponse;
+        try {
+          aiResponse = JSON.parse(rawContent);
+        } catch (parseError) {
+          console.error('Failed to parse AI response:', rawContent);
+          throw new Error('AI response is not valid JSON');
+        }
+
+        console.log('Parsed AI response:', JSON.stringify(aiResponse, null, 2));
 
         if (!aiResponse || !aiResponse.title || !aiResponse.content) {
+          console.error('AI response missing required fields:', {
+            hasTitle: !!aiResponse?.title,
+            hasContent: !!aiResponse?.content,
+            response: aiResponse
+          });
           throw new Error('AI response is invalid');
         }
 
@@ -116,12 +196,11 @@ export async function POST(request: NextRequest) {
           .insert({
             subtopic_id: subtopic.id,
             title: aiResponse.title,
-            content: aiResponse.content,
-            difficulty_notes: aiResponse.difficulty_notes || '',
-            learning_points: aiResponse.learning_points || [],
-            lang,
-            level,
-            genre,
+            text: aiResponse.content,
+            notes: {},
+            lang: actualLang,
+            level: parseInt(actualLevel),
+            genre: actualGenre,
             status: 'draft',
             created_at: new Date().toISOString()
           })
@@ -132,23 +211,9 @@ export async function POST(request: NextRequest) {
           throw new Error(`Failed to save draft: ${draftError.message}`);
         }
 
-        // 保存到items表
-        const { error: itemError } = await supabase
-          .from('shadowing_items')
-          .insert({
-            subtopic_id: subtopic.id,
-            draft_id: draft.id,
-            title: aiResponse.title,
-            content: aiResponse.content,
-            lang,
-            level,
-            genre,
-            status: 'draft'
-          });
-
-        if (itemError) {
-          console.warn(`Failed to save item for subtopic ${subtopic.id}:`, itemError);
-        }
+        // 注意：不直接保存到shadowing_items表
+        // shadowing_items表应该只包含已发布的内容
+        // 草稿内容应该通过审核流程从shadowing_drafts表发布到shadowing_items表
 
         return {
           subtopic_id: subtopic.id,

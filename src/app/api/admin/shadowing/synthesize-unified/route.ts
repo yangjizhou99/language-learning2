@@ -1,5 +1,6 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5分钟超时，支持长文本TTS合成
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
@@ -14,7 +15,12 @@ function isDialogueFormat(text: string): boolean {
 }
 
 // 根据音色名称确定提供商
-function getProviderFromVoice(voiceName: string): 'google' | 'gemini' {
+function getProviderFromVoice(voiceName: string): 'google' | 'gemini' | 'xunfei' {
+  // 科大讯飞 TTS 音色
+  if (voiceName.startsWith('xunfei-')) {
+    return 'xunfei';
+  }
+  
   // Gemini TTS 音色
   const geminiVoices = [
     'Kore', 'Orus', 'Callirrhoe', 'Puck',
@@ -83,6 +89,34 @@ export async function POST(req: NextRequest) {
           pitch
         });
       }
+    } else if (provider === 'xunfei') {
+      // 使用科大讯飞 TTS
+      if (actualIsDialogue) {
+        // 对话格式使用科大讯飞对话合成
+        const { synthesizeDialogue } = await import('@/lib/tts');
+        const dialogueResult = await synthesizeDialogue({
+          text,
+          lang,
+          voiceName: voice,
+          speakingRate,
+          pitch
+        });
+        audioBuffer = dialogueResult.audio;
+        result = {
+          dialogue_count: dialogueResult.dialogueCount,
+          speakers: dialogueResult.speakers,
+          is_dialogue: true
+        };
+      } else {
+        // 普通格式使用科大讯飞单句合成
+        audioBuffer = await synthesizeTTS({
+          text,
+          lang,
+          voiceName: voice,
+          speakingRate,
+          pitch
+        });
+      }
     } else {
       // 使用 Google TTS
       if (actualIsDialogue) {
@@ -116,11 +150,15 @@ export async function POST(req: NextRequest) {
     const bucket = process.env.NEXT_PUBLIC_SHADOWING_AUDIO_BUCKET || 'tts';
     const timestamp = Date.now();
     const safeLang = String(lang).toLowerCase();
-    const filePath = `${safeLang}/${provider}-${timestamp}-${Math.random().toString(36).slice(2)}.mp3`;
+    
+    // 所有提供商都使用MP3格式
+    const fileExtension = 'mp3';
+    const contentType = 'audio/mpeg';
+    const filePath = `${safeLang}/${provider}-${timestamp}-${Math.random().toString(36).slice(2)}.${fileExtension}`;
 
     const { error: upErr } = await supabaseAdmin.storage
       .from(bucket)
-      .upload(filePath, audioBuffer, { contentType: 'audio/mpeg', upsert: false });
+      .upload(filePath, audioBuffer, { contentType, upsert: false });
     if (upErr) return NextResponse.json({ error: `上传失败: ${upErr.message}` }, { status: 500 });
 
     // 生成签名 URL

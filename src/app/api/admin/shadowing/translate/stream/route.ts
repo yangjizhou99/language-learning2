@@ -1,9 +1,87 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 600; // 10分钟超时，支持更多并发处理
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { getServiceSupabase } from "@/lib/supabaseAdmin";
+
+// 修复JSON结构问题的函数
+function fixJSONStructure(jsonText: string): string {
+  let fixed = jsonText;
+  
+  // 修复缺少逗号的问题
+  // 查找 "value" "key" 模式并添加逗号
+  fixed = fixed.replace(/"\s*\n\s*"/g, '",\n"');
+  
+  // 修复 "value" } 模式，在value后添加逗号
+  fixed = fixed.replace(/"\s*\n\s*}/g, '"\n}');
+  
+  // 修复属性值后缺少逗号的情况
+  fixed = fixed.replace(/"\s*\n\s*"([^"]+)"\s*:/g, '",\n"$1":');
+  
+  // 确保最后一个属性后没有多余的逗号
+  fixed = fixed.replace(/,(\s*})/g, '$1');
+  
+  // 确保JSON结构完整
+  if (!fixed.endsWith('}')) {
+    fixed += '}';
+  }
+  
+  return fixed;
+}
+
+// 重新构造翻译结果的函数
+function reconstructTranslations(text: string, targetLangs: string[]): Record<string, string> | null {
+  try {
+    const translations: Record<string, string> = {};
+    
+    // 尝试从文本中提取所有可能的翻译内容
+    for (const lang of targetLangs) {
+      // 查找该语言的所有可能翻译
+      const patterns = [
+        new RegExp(`${lang}[\\s:]*["']([^"']*?)["']`, 'gi'),
+        new RegExp(`"${lang}"[\\s:]*["']([^"']*?)["']`, 'gi'),
+        new RegExp(`${lang}[\\s:]*([^\\n\\r]+)`, 'gi')
+      ];
+      
+      let found = false;
+      for (const pattern of patterns) {
+        const matches = [...text.matchAll(pattern)];
+        if (matches.length > 0) {
+          // 选择最长的匹配作为翻译
+          const longestMatch = matches.reduce((longest, match) => 
+            match[1] && match[1].length > (longest[1]?.length || 0) ? match : longest
+          );
+          
+          if (longestMatch[1]) {
+            translations[lang] = longestMatch[1]
+              .replace(/\\n/g, '\n')
+              .replace(/\\"/g, '"')
+              .replace(/\\\\/g, '\\')
+              .trim();
+            found = true;
+            break;
+          }
+        }
+      }
+      
+      if (!found) {
+        console.warn(`无法为${lang}找到翻译内容`);
+      }
+    }
+    
+    // 检查是否找到了所有语言的翻译
+    if (Object.keys(translations).length === targetLangs.length) {
+      return translations;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('重新构造翻译失败:', error);
+    return null;
+  }
+}
 
 // 翻译配置
 const TRANSLATION_CONFIG = {
@@ -45,24 +123,26 @@ function buildTranslationPrompt(sourceText: string, sourceLang: string, targetLa
   let genreSpecificInstructions = '';
   const isDialogueGenre = itemData?.genre === 'dialogue';
   
-  if (isNewsGenre) {
-    genreSpecificInstructions = `
+    if (isNewsGenre) {
+      genreSpecificInstructions = `
 4. 这是新闻报道体裁，翻译时请：
    - 保持新闻的客观性和时效性
-   - 使用完整的句子，绝对不要使用A/B对话格式
    - 确保语言正式、准确、流畅
-   - 保持新闻的结构和逻辑性`;
-  } else if (isDialogueGenre) {
-    genreSpecificInstructions = `
+   - 保持新闻的结构和逻辑性
+   - 重要：新闻翻译必须使用完整句子，绝对不要使用A: B: 对话格式`;
+    } else if (isDialogueGenre) {
+      genreSpecificInstructions = `
 4. 这是对话体裁，翻译时请：
    - 保持说话者的身份和语调
-   - 可以使用A/B对话格式来区分不同说话者`;
-  } else {
-    genreSpecificInstructions = `
+   - 保持对话的自然流畅性
+   - 保持A: B: 对话格式`;
+    } else {
+      genreSpecificInstructions = `
 4. 对于非对话体裁，翻译时请：
-   - 使用完整的句子，不要使用A/B对话格式
-   - 保持原文的文体特征和语言风格`;
-  }
+   - 保持原文的文体特征和语言风格
+   - 确保翻译准确自然
+   - 不要使用A: B: 对话格式`;
+    }
 
   return `请将以下${sourceLangName}文本翻译成${targetLangNames}。
 
@@ -71,10 +151,12 @@ function buildTranslationPrompt(sourceText: string, sourceLang: string, targetLa
 2. 确保翻译准确、自然、流畅
 3. 严格按照JSON格式返回，不要添加任何其他内容${genreSpecificInstructions}
 
+重要：返回的JSON必须完整且格式正确，所有字符串必须正确闭合，不能有未终止的引号。
+
 原文：
 ${sourceText}
 
-请返回JSON格式：
+请返回完整的JSON格式（确保所有引号都正确闭合）：
 {
   "${targetLangs[0]}": "翻译文本1",
   "${targetLangs[1]}": "翻译文本2"
@@ -103,51 +185,187 @@ async function callTranslationAPI(
 
   const prompt = buildTranslationPrompt(text, sourceLang, targetLangs, itemData);
 
-  const response = await fetch(config.url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-      ...(provider === 'openrouter' && { 'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000' })
-    },
-    body: JSON.stringify({
-      model: model || config.defaultModel,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature,
-      max_tokens: 2000
-    })
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`翻译API调用失败: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  const translatedText = data.choices?.[0]?.message?.content?.trim();
-  
-  if (!translatedText) {
-    throw new Error('翻译API返回空内容');
-  }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒超时，增加稳定性
 
   try {
-    const translations = JSON.parse(translatedText);
-    
-    // 验证返回的翻译格式
-    for (const targetLang of targetLangs) {
-      if (!translations[targetLang] || typeof translations[targetLang] !== 'string') {
-        throw new Error(`翻译结果缺少${targetLang}语言的内容`);
-      }
+    const response = await fetch(config.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        ...(provider === 'openrouter' && { 'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000' })
+      },
+      body: JSON.stringify({
+        model: model || config.defaultModel,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature,
+        max_tokens: 2000
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`翻译API调用失败: ${response.status} ${errorText}`);
     }
+
+    const data = await response.json();
+    const translatedText = data.choices?.[0]?.message?.content?.trim();
     
-    return translations;
-  } catch (parseError) {
-    throw new Error(`翻译结果解析失败: ${parseError}`);
+    if (!translatedText) {
+      throw new Error('翻译API返回空内容');
+    }
+
+    // 添加调试日志
+    console.log('原始翻译结果长度:', translatedText.length);
+    console.log('原始翻译结果前500字符:', translatedText.substring(0, 500));
+    console.log('原始翻译结果后500字符:', translatedText.substring(Math.max(0, translatedText.length - 500)));
+
+    try {
+      // 尝试修复常见的JSON格式问题
+      let cleanedText = translatedText;
+      
+      // 首先尝试提取JSON部分
+      const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedText = jsonMatch[0];
+      }
+      
+      // 尝试修复JSON结构问题
+      cleanedText = fixJSONStructure(cleanedText);
+      
+      // 修复未终止的字符串 - 更智能的修复
+      // 查找所有未闭合的字符串并尝试修复
+      const lines = cleanedText.split('\n');
+      const fixedLines = lines.map(line => {
+        // 如果行以未闭合的引号结尾，尝试修复
+        if (line.match(/"[^"]*$/)) {
+          // 检查是否在JSON对象内部
+          const openBraces = (line.match(/\{/g) || []).length;
+          const closeBraces = (line.match(/\}/g) || []).length;
+          if (openBraces > closeBraces) {
+            // 在JSON对象内部，添加闭合引号
+            return line + '"';
+          }
+        }
+        return line;
+      });
+      cleanedText = fixedLines.join('\n');
+      
+      // 尝试修复常见的JSON问题
+      cleanedText = cleanedText
+        .replace(/,\s*}/g, '}')  // 移除多余的逗号
+        .replace(/,\s*]/g, ']')  // 移除多余的逗号
+        .replace(/([^\\])\\([^"\\\/bfnrt])/g, '$1\\\\$2') // 修复转义字符
+        .replace(/\n\s*\n/g, '\n') // 移除多余的空行
+        .replace(/"\s*\n\s*"/g, '",\n"') // 修复缺少逗号的情况
+        .replace(/"\s*\n\s*}/g, '"\n}') // 修复最后一个属性后缺少逗号的情况
+        .replace(/"\s*}\s*$/g, '"\n}') // 确保最后一个属性后有换行
+        .trim();
+      
+      // 尝试修复缺少逗号的问题
+      // 查找 "value" "key" 模式并添加逗号
+      cleanedText = cleanedText.replace(/"\s*\n\s*"/g, '",\n"');
+      
+      // 确保JSON结构完整
+      if (!cleanedText.endsWith('}')) {
+        cleanedText += '}';
+      }
+      
+      console.log('修复后的JSON长度:', cleanedText.length);
+      console.log('修复后的JSON前500字符:', cleanedText.substring(0, 500));
+      
+      const translations = JSON.parse(cleanedText);
+      
+      // 验证返回的翻译格式
+      for (const targetLang of targetLangs) {
+        if (!translations[targetLang] || typeof translations[targetLang] !== 'string') {
+          throw new Error(`翻译结果缺少${targetLang}语言的内容`);
+        }
+      }
+      
+      return translations;
+    } catch (parseError) {
+      // 如果JSON解析失败，尝试手动提取翻译内容
+      console.warn('JSON解析失败，尝试手动提取:', parseError);
+      console.log('尝试手动提取的原始文本:', translatedText.substring(0, 1000));
+      
+      const manualTranslations: Record<string, string> = {};
+      
+      for (const targetLang of targetLangs) {
+        // 尝试多种模式提取翻译内容
+        const patterns = [
+          // 标准JSON格式
+          new RegExp(`"${targetLang}"\\s*:\\s*"([^"]*(?:\\\\.[^"]*)*)"`, 'g'),
+          // 可能包含换行的格式
+          new RegExp(`"${targetLang}"\\s*:\\s*"([^"]*(?:\\\\.[^"]*)*)"`, 'gs'),
+          // 更宽松的格式
+          new RegExp(`${targetLang}\\s*:\\s*"([^"]*)"`, 'g'),
+          // 包含未闭合引号的情况
+          new RegExp(`"${targetLang}"\\s*:\\s*"([^"]*?)(?:"|$|\\n)`, 'g'),
+          // 处理缺少逗号的情况
+          new RegExp(`"${targetLang}"\\s*:\\s*"([^"]*?)"\\s*"`, 'g'),
+          // 处理换行分隔的情况
+          new RegExp(`"${targetLang}"\\s*:\\s*"([^"]*?)\\n`, 'g'),
+          // 最宽松的匹配
+          new RegExp(`${targetLang}[\\s:]*["']([^"']*?)["']`, 'g')
+        ];
+        
+        let extracted = false;
+        for (const pattern of patterns) {
+          const match = pattern.exec(translatedText);
+          if (match && match[1]) {
+            manualTranslations[targetLang] = match[1]
+              .replace(/\\n/g, '\n')
+              .replace(/\\"/g, '"')
+              .replace(/\\\\/g, '\\')
+              .replace(/\n\s*\n/g, '\n') // 清理多余换行
+              .trim();
+            extracted = true;
+            console.log(`成功提取${targetLang}翻译，长度:`, manualTranslations[targetLang].length);
+            break;
+          }
+        }
+        
+        if (!extracted) {
+          console.warn(`无法提取${targetLang}的翻译内容`);
+        }
+      }
+      
+      // 检查是否成功提取了所有语言的翻译
+      const missingLangs = targetLangs.filter(lang => !manualTranslations[lang]);
+      if (missingLangs.length > 0) {
+        console.error('缺失的翻译语言:', missingLangs);
+        console.error('原始翻译文本:', translatedText);
+        
+        // 尝试最后的备用方案：重新构造JSON
+        console.log('尝试重新构造JSON...');
+        const reconstructedTranslations = reconstructTranslations(translatedText, targetLangs);
+        if (reconstructedTranslations && Object.keys(reconstructedTranslations).length === targetLangs.length) {
+          console.log('重新构造成功，翻译结果:', Object.keys(reconstructedTranslations));
+          return reconstructedTranslations;
+        }
+        
+        throw new Error(`翻译结果解析失败: ${parseError}。无法提取语言: ${missingLangs.join(', ')}`);
+      }
+      
+      console.log('手动提取成功，翻译结果:', Object.keys(manualTranslations));
+      return manualTranslations;
+    }
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('翻译请求超时（60秒）');
+    }
+    throw error;
   }
 }
 

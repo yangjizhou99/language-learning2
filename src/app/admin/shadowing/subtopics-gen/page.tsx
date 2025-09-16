@@ -119,14 +119,14 @@ export default function SubtopicsPage() {
   const [logs, setLogs] = useState<Array<{type: 'info'|'success'|'error', message: string}>>([]);
   
   // AI配置
-  const [provider, setProvider] = useState('openrouter');
+  const [provider, setProvider] = useState('deepseek');
   const [models, setModels] = useState<{id: string; name: string}[]>([]);
-  const [model, setModel] = useState('');
+  const [model, setModel] = useState('deepseek-chat');
   const [temperature, setTemperature] = useState(0.7);
-  const [concurrency, setConcurrency] = useState(4);
+  const [concurrency, setConcurrency] = useState(6);
   
   // 并发控制
-  const [maxConcurrent, setMaxConcurrent] = useState(10); // 后端并发处理
+  const [maxConcurrent, setMaxConcurrent] = useState(6); // 后端并发处理，默认使用推荐值
   
   const eventSourceRef = useRef<EventSource | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -242,14 +242,22 @@ export default function SubtopicsPage() {
           if (r.ok) {
             const j = await r.json();
             setModels(j.models || []);
-            if (j.models && j.models.length > 0) {
-              setModel(j.models[0].id);
+            // 如果当前没有选择模型，才设置默认值
+            if (!model && j.models && j.models.length > 0) {
+              // 优先选择DeepSeek模型
+              const deepseekModel = j.models.find((m: any) => m.id === 'deepseek/deepseek-chat');
+              if (deepseekModel) {
+                setModel('deepseek/deepseek-chat');
+              } else {
+                setModel(j.models[0].id);
+              }
             }
           }
         } else if (provider === 'deepseek') {
           const staticModels = [
             { id: 'deepseek-chat', name: 'deepseek-chat' },
-            { id: 'deepseek-coder', name: 'deepseek-coder' }
+            { id: 'deepseek-coder', name: 'deepseek-coder' },
+            { id: 'deepseek-reasoner', name: 'deepseek-reasoner' }
           ];
           setModels(staticModels);
           setModel(staticModels[0].id);
@@ -483,6 +491,31 @@ export default function SubtopicsPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
+      // 显示开始进度
+      setProgress(prev => ({ ...prev, done: 0, total: selectedIds.length }));
+      setLogs([{
+        type: 'info',
+        message: `开始批量生成 ${selectedIds.length} 个小主题...`
+      }]);
+
+      // 调试信息
+      console.log('Generation parameters:', {
+        selectedIds,
+        lang: lang === 'all' ? 'all' : lang,
+        level: level === 'all' ? 'all' : level,
+        genre: genre === 'all' ? 'all' : genre
+      });
+
+      // 模拟进度更新
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev.done < prev.total) {
+            return { ...prev, done: Math.min(prev.done + 1, prev.total) };
+          }
+          return prev;
+        });
+      }, 1000);
+
       const response = await fetch('/api/admin/shadowing/generate-batch', {
         method: 'POST',
         headers: { 
@@ -491,9 +524,9 @@ export default function SubtopicsPage() {
         },
         body: JSON.stringify({
           subtopic_ids: selectedIds,
-          lang: lang === 'all' ? 'ja' : lang,
-          level: level === 'all' ? 3 : level,
-          genre: genre === 'all' ? 'monologue' : genre,
+          lang: lang === 'all' ? 'all' : lang,
+          level: level === 'all' ? 'all' : level,
+          genre: genre === 'all' ? 'all' : genre,
           provider,
           model,
           temperature,
@@ -507,6 +540,16 @@ export default function SubtopicsPage() {
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
+      // 清理进度定时器
+      clearInterval(progressInterval);
+
+      // 显示处理中进度
+      setProgress(prev => ({ ...prev, done: selectedIds.length }));
+      setLogs(prev => [...prev, {
+        type: 'info',
+        message: '正在处理生成结果...'
+      }]);
+
       const result = await response.json();
       
       setProgress({
@@ -517,7 +560,7 @@ export default function SubtopicsPage() {
         tokens: 0
       });
 
-      setLogs([{
+      setLogs(prev => [...prev, {
         type: 'success',
         message: `批量生成完成：成功 ${result.success_count}，跳过 ${result.skipped_count}，失败 ${result.error_count}`
       }]);
@@ -527,6 +570,7 @@ export default function SubtopicsPage() {
 
     } catch (error: any) {
       console.error('Batch generation error:', error);
+      clearInterval(progressInterval);
       setLogs([{
         type: 'error',
         message: `批量生成失败：${error.message}`
@@ -873,11 +917,38 @@ export default function SubtopicsPage() {
           )}
           
           {/* 分页 */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center gap-4">
               <div className="text-sm text-muted-foreground">
                 共 {pagination.total} 条记录，第 {pagination.page} / {pagination.totalPages} 页
               </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">每页显示:</span>
+                <Select
+                  value={pagination.limit.toString()}
+                  onValueChange={(value) => {
+                    setPagination(prev => ({
+                      ...prev,
+                      limit: parseInt(value),
+                      page: 1 // 重置到第一页
+                    }));
+                  }}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="200">200</SelectItem>
+                    <SelectItem value="500">500</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {pagination.totalPages > 1 && (
               <div className="flex gap-2">
                 <Button 
                   size="sm" 
@@ -896,8 +967,8 @@ export default function SubtopicsPage() {
                   下一页
                 </Button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
 

@@ -75,13 +75,61 @@ export async function DELETE(req: NextRequest, { params }:{ params: Promise<{ id
   const auth = await requireAdmin(req);
   if (!auth.ok) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   const { id } = await params;
-  // 优先硬删除；若受 RLS 限制失败，可回退为归档
-  const { error } = await auth.supabase.from("shadowing_drafts").delete().eq("id", id);
-  if (error) {
-    const { error: e2 } = await auth.supabase.from("shadowing_drafts").update({ status: "archived" }).eq("id", id);
-    if (e2) return NextResponse.json({ error: e2.message }, { status: 400 });
+  
+  try {
+    // 1. 先获取草稿信息，包括音频URL
+    const { data: draft, error: fetchError } = await auth.supabase
+      .from("shadowing_drafts")
+      .select("id, title, audio_url")
+      .eq("id", id)
+      .single();
+    
+    if (fetchError) {
+      console.error("获取草稿信息失败:", fetchError);
+    }
+    
+    // 2. 删除草稿记录
+    const { error } = await auth.supabase.from("shadowing_drafts").delete().eq("id", id);
+    if (error) {
+      // 如果硬删除失败，尝试归档
+      const { error: e2 } = await auth.supabase.from("shadowing_drafts").update({ status: "archived" }).eq("id", id);
+      if (e2) return NextResponse.json({ error: e2.message }, { status: 400 });
+    }
+    
+    // 3. 删除关联的音频文件
+    if (draft && draft.audio_url) {
+      try {
+        // 从URL中提取文件路径
+        const url = new URL(draft.audio_url);
+        const pathParts = url.pathname.split('/');
+        const bucketName = pathParts[pathParts.length - 2]; // 倒数第二个部分是bucket名
+        const fileName = pathParts[pathParts.length - 1]; // 最后一个是文件名
+        
+        // 构建完整的文件路径
+        const filePath = `${draft.lang || 'zh'}/${fileName}`;
+        
+        console.log(`尝试删除音频文件: ${filePath}`);
+        
+        // 删除Supabase Storage中的文件
+        const { error: deleteError } = await auth.supabase.storage
+          .from(bucketName)
+          .remove([filePath]);
+        
+        if (deleteError) {
+          console.warn(`删除音频文件失败: ${filePath} - ${deleteError.message}`);
+        } else {
+          console.log(`成功删除音频文件: ${filePath}`);
+        }
+      } catch (urlError) {
+        console.warn(`解析音频URL失败: ${draft.audio_url} - ${urlError}`);
+      }
+    }
+    
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("删除草稿时发生错误:", error);
+    return NextResponse.json({ error: "删除失败" }, { status: 500 });
   }
-  return NextResponse.json({ ok: true });
 }
 
 
