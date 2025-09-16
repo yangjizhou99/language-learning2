@@ -154,7 +154,13 @@ async function generateGeminiPreview(voiceName: string, text: string, languageCo
 // 生成科大讯飞TTS预览
 async function generateXunfeiPreview(voiceName: string, text: string, languageCode: string): Promise<Uint8Array> {
   // 将科大讯飞音色名称映射到实际的科大讯飞音色ID
-  const actualVoiceId = voiceName.replace('xunfei-', '');
+  let actualVoiceId = voiceName.replace('xunfei-', '');
+  
+  // 特殊映射：x4_yezi -> x4_yezi (已经是正确的)
+  if (actualVoiceId === 'x4_yezi') {
+    actualVoiceId = 'x4_yezi';
+  }
+  
   
   const audioBuffer = await synthesizeXunfeiTTS(text, actualVoiceId, {
     speed: 50,
@@ -206,9 +212,24 @@ function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
   // data chunk长度
   view.setUint32(40, length, true);
   
-  // 复制PCM数据
+  // 处理PCM数据 - 尝试字节序转换
   const uint8Array = new Uint8Array(buffer);
-  uint8Array.set(pcmData, 44);
+  
+  // 如果PCM数据长度是奇数，说明可能不是16位PCM
+  if (length % 2 !== 0) {
+    console.log('警告: PCM数据长度不是偶数，可能格式不正确');
+    uint8Array.set(pcmData, 44);
+  } else {
+    // 尝试字节序转换 - 科大讯飞可能返回大端序数据
+    const pcmView = new DataView(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength);
+    const wavPcmView = new DataView(uint8Array.buffer, 44);
+    
+    for (let i = 0; i < length; i += 2) {
+      // 读取大端序16位整数，转换为小端序
+      const sample = pcmView.getInt16(i, false); // 大端序读取
+      wavPcmView.setInt16(i, sample, true); // 小端序写入
+    }
+  }
   
   return uint8Array;
 }
@@ -396,7 +417,7 @@ export async function POST(req: NextRequest) {
     // 根据TTS提供商确定Content-Type
     let contentType = 'audio/mpeg'; // 默认MP3
     if (voiceData.provider === 'xunfei') {
-      contentType = 'audio/wav';
+      contentType = 'audio/wav'; // 科大讯飞返回WAV
     } else if (voiceData.provider === 'gemini') {
       contentType = 'audio/mpeg';
     }

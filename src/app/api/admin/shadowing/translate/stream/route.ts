@@ -24,7 +24,7 @@ const TRANSLATION_CONFIG = {
 };
 
 // 构建翻译提示词
-function buildTranslationPrompt(sourceText: string, sourceLang: string, targetLangs: string[]): string {
+function buildTranslationPrompt(sourceText: string, sourceLang: string, targetLangs: string[], itemData?: any): string {
   const langNames = {
     'en': 'English',
     'ja': '日本語',
@@ -34,13 +34,42 @@ function buildTranslationPrompt(sourceText: string, sourceLang: string, targetLa
   const sourceLangName = langNames[sourceLang as keyof typeof langNames];
   const targetLangNames = targetLangs.map(lang => langNames[lang as keyof typeof langNames]).join('、');
 
+  // 检测文本类型和难度级别
+  const isNewsGenre = itemData?.genre === 'news';
+  const level = itemData?.level || 3;
+  const isHighLevel = level >= 3;
+  
+  // 翻译时不需要调整字数，保持原文长度
+
+  // 根据体裁调整翻译要求
+  let genreSpecificInstructions = '';
+  const isDialogueGenre = itemData?.genre === 'dialogue';
+  
+  if (isNewsGenre) {
+    genreSpecificInstructions = `
+4. 这是新闻报道体裁，翻译时请：
+   - 保持新闻的客观性和时效性
+   - 使用完整的句子，绝对不要使用A/B对话格式
+   - 确保语言正式、准确、流畅
+   - 保持新闻的结构和逻辑性`;
+  } else if (isDialogueGenre) {
+    genreSpecificInstructions = `
+4. 这是对话体裁，翻译时请：
+   - 保持说话者的身份和语调
+   - 可以使用A/B对话格式来区分不同说话者`;
+  } else {
+    genreSpecificInstructions = `
+4. 对于非对话体裁，翻译时请：
+   - 使用完整的句子，不要使用A/B对话格式
+   - 保持原文的文体特征和语言风格`;
+  }
+
   return `请将以下${sourceLangName}文本翻译成${targetLangNames}。
 
 要求：
 1. 保持原文的语气、风格和语境
 2. 确保翻译准确、自然、流畅
-3. 对于对话文本，保持说话者的身份和语调
-4. 严格按照JSON格式返回，不要添加任何其他内容
+3. 严格按照JSON格式返回，不要添加任何其他内容${genreSpecificInstructions}
 
 原文：
 ${sourceText}
@@ -59,7 +88,8 @@ async function callTranslationAPI(
   targetLangs: string[], 
   provider: string, 
   model: string, 
-  temperature: number = 0.3
+  temperature: number = 0.3,
+  itemData?: any
 ): Promise<Record<string, string>> {
   const config = TRANSLATION_CONFIG.providers[provider as keyof typeof TRANSLATION_CONFIG.providers];
   if (!config) {
@@ -71,7 +101,7 @@ async function callTranslationAPI(
     throw new Error(`未配置${provider}的API密钥`);
   }
 
-  const prompt = buildTranslationPrompt(text, sourceLang, targetLangs);
+  const prompt = buildTranslationPrompt(text, sourceLang, targetLangs, itemData);
 
   const response = await fetch(config.url, {
     method: 'POST',
@@ -198,7 +228,7 @@ export async function POST(req: NextRequest) {
     // 构建查询条件
     let query = supabase
       .from(tableName)
-      .select('id, lang, text, translations, trans_updated_at, title')
+      .select('id, lang, text, translations, trans_updated_at, title, genre, level')
       .order('created_at', { ascending: false });
 
     // 如果有选中的ID，只查询这些ID
@@ -305,7 +335,8 @@ export async function POST(req: NextRequest) {
                     targetLangs,
                     provider,
                     model,
-                    temperature
+                    temperature,
+                    item
                   ),
                   retries
                 );

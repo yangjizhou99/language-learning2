@@ -9,11 +9,11 @@ type SynthesizeParams = {
   pitch?: number;
 };
 
-function makeClient() {
+async function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
   if (!raw) throw new Error("GOOGLE_TTS_CREDENTIALS missing");
 
-  let credentials: any;
+  let credentials: Record<string, unknown>;
   try {
     credentials = JSON.parse(raw);
   } catch {
@@ -21,8 +21,8 @@ function makeClient() {
       if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
         throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
       }
-      const fs = require('fs');
-      const path = require('path');
+      const fs = await import('fs');
+      const path = await import('path');
       const filePath = path.resolve(process.cwd(), raw);
       const fileContent = fs.readFileSync(filePath, 'utf8');
       credentials = JSON.parse(fileContent);
@@ -32,7 +32,7 @@ function makeClient() {
     }
   }
 
-  const projectId = process.env.GOOGLE_TTS_PROJECT_ID || credentials.project_id;
+  const projectId = process.env.GOOGLE_TTS_PROJECT_ID || (credentials.project_id as string);
   return new textToSpeech.TextToSpeechClient({ credentials, projectId });
 }
 
@@ -142,9 +142,24 @@ function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
   // data chunk长度
   view.setUint32(40, length, true);
   
-  // 复制PCM数据
+  // 处理PCM数据 - 尝试字节序转换
   const uint8Array = new Uint8Array(buffer);
-  uint8Array.set(pcmData, 44);
+  
+  // 如果PCM数据长度是奇数，说明可能不是16位PCM
+  if (length % 2 !== 0) {
+    console.log('警告: PCM数据长度不是偶数，可能格式不正确');
+    uint8Array.set(pcmData, 44);
+  } else {
+    // 尝试字节序转换 - 科大讯飞可能返回大端序数据
+    const pcmView = new DataView(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength);
+    const wavPcmView = new DataView(uint8Array.buffer, 44);
+    
+    for (let i = 0; i < length; i += 2) {
+      // 读取大端序16位整数，转换为小端序
+      const sample = pcmView.getInt16(i, false); // 大端序读取
+      wavPcmView.setInt16(i, sample, true); // 小端序写入
+    }
+  }
   
   return uint8Array;
 }
@@ -223,7 +238,7 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
   }
 
   // 使用Google TTS
-  const client = makeClient();
+  const client = await makeClient();
   const selectedName = voiceName || DEFAULTS[lang as keyof typeof DEFAULTS];
   let languageCode = selectedName
     ? (extractLanguageCodeFromVoiceName(selectedName) || toLocaleCode(lang))
@@ -254,7 +269,7 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
   // 检查音色是否支持SSML
   const supportsSSML = name && !name.includes('Chirp-HD-') && !name.includes('Chirp3-HD-') && !name.includes('News-') && !name.includes('Studio-') && !name.includes('Casual-') && !name.includes('Polyglot-');
   
-  let input: any;
+  let input: { text: string } | { ssml: string };
   if (supportsSSML) {
     const sentences = splitTextIntoSentences(clean).flatMap(s => chunkByBytes(s, 800));
     const ssml = `<speak>${sentences.map(s => `<s>${escapeForSsml(s)}</s>`).join("")}</speak>`;
@@ -342,16 +357,16 @@ async function mergeAudioBuffers(buffers: Buffer[]): Promise<Buffer> {
   
   try {
     // 尝试使用 ffmpeg 进行音频合并
-    const fs = require('fs');
-    const path = require('path');
-    const os = require('os');
-    const { spawn } = require('child_process');
+    const fs = await import('fs');
+    const path = await import('path');
+    const os = await import('os');
+    const { spawn } = await import('child_process');
     
     // 尝试使用 ffmpeg-static 提供的路径
     let ffmpegPath: string;
     try {
-      const ffmpegStatic = require('ffmpeg-static');
-      ffmpegPath = ffmpegStatic.replace(/^"+|"+$/g, ''); // 去掉意外的引号
+      const ffmpegStatic = await import('ffmpeg-static');
+      ffmpegPath = String(ffmpegStatic.default || ffmpegStatic).replace(/^"+|"+$/g, ''); // 去掉意外的引号
       
       // 校验文件是否存在
       if (!fs.existsSync(ffmpegPath)) {

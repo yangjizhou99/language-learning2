@@ -120,6 +120,7 @@ export default function ShadowingReviewList(){
   const [genre, setGenre] = useState("all");
   const [level, setLevel] = useState<"all"|"1"|"2"|"3"|"4"|"5">("all");
   const [status, setStatus] = useState<"all"|"draft"|"approved">("draft");
+  const [audioStatus, setAudioStatus] = useState<"all"|"no_audio"|"has_audio">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [ttsLoading, setTtsLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -200,10 +201,13 @@ export default function ShadowingReviewList(){
   }, [items, selected]);
 
   useEffect(()=>{ (async()=>{
+    // 处理音频状态筛选 - 需要获取所有数据然后在客户端筛选
+    const isAudioStatusFilter = audioStatus === "no_audio" || audioStatus === "has_audio";
+    
     const params = new URLSearchParams({ 
       status: status === "all" ? "draft" : status,
-      page: currentPage.toString(),
-      pageSize: pageSize.toString()
+      page: isAudioStatusFilter ? "1" : currentPage.toString(), // 音频筛选时获取所有数据
+      pageSize: isAudioStatusFilter ? "1000" : pageSize.toString() // 音频筛选时获取更多数据
     });
     if (lang !== 'all') params.set('lang', lang);
     if (genre !== 'all') params.set('genre', genre);
@@ -219,10 +223,31 @@ export default function ShadowingReviewList(){
     if (j.items && j.items.length > 0) {
       console.log('第一个草稿的音频URL:', j.items[0].notes?.audio_url);
     }
-    setItems(j.items||[]);
-    setTotalItems(j.total || 0);
-    setTotalPages(j.totalPages || 0);
-  })(); }, [q, lang, genre, level, status, currentPage, pageSize]);
+    
+    let filteredItems = j.items || [];
+    
+    // 客户端音频状态筛选
+    if (audioStatus === "no_audio") {
+      filteredItems = filteredItems.filter((item: Item) => !item.notes?.audio_url);
+    } else if (audioStatus === "has_audio") {
+      filteredItems = filteredItems.filter((item: Item) => item.notes?.audio_url);
+    }
+    
+    // 如果是音频状态筛选，需要重新计算分页
+    if (isAudioStatusFilter) {
+      const totalFiltered = filteredItems.length;
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      filteredItems = filteredItems.slice(startIndex, endIndex);
+      setTotalItems(totalFiltered);
+      setTotalPages(Math.ceil(totalFiltered / pageSize));
+    } else {
+      setTotalItems(j.total || 0);
+      setTotalPages(j.totalPages || 0);
+    }
+    
+    setItems(filteredItems);
+  })(); }, [q, lang, genre, level, status, audioStatus, currentPage, pageSize]);
 
   // 加载可用模型
   useEffect(() => {
@@ -1419,9 +1444,22 @@ export default function ShadowingReviewList(){
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="all">全部</SelectItem>
                   <SelectItem value="draft">草稿</SelectItem>
                   <SelectItem value="approved">已审核</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">音频状态</label>
+              <Select value={audioStatus} onValueChange={(value) => setAudioStatus(value as "all"|"no_audio"|"has_audio")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部</SelectItem>
+                  <SelectItem value="no_audio">未生成音频</SelectItem>
+                  <SelectItem value="has_audio">已生成音频</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1910,6 +1948,7 @@ export default function ShadowingReviewList(){
                     <SelectItem value="20">20</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                     <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="500">500</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

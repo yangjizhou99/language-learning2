@@ -164,6 +164,121 @@ export const XUNFEI_VOICES: XunfeiVoice[] = [
     gender: 'female',
     description: '普通话女声，专业新闻播报，已开通'
   },
+  {
+    voiceId: 'x4_chaoge',
+    displayName: '超哥-新闻播报',
+    language: 'zh-CN',
+    gender: 'male',
+    description: '普通话男声，专业新闻播报，已开通'
+  },
+  {
+    voiceId: 'x4_xiaozhong',
+    displayName: '小忠-新闻播报',
+    language: 'zh-CN',
+    gender: 'male',
+    description: '普通话男声，专业新闻播报，已开通'
+  },
+  // 新增的发音人
+  {
+    voiceId: 'x4_lingfeihao_upbeatads',
+    displayName: '聆飞皓-广告',
+    language: 'zh-CN',
+    gender: 'male',
+    description: '普通话男声，广告配音'
+  },
+  {
+    voiceId: 'x4_lingxiaoyao_em',
+    displayName: '聆小瑶-情感',
+    language: 'zh-CN',
+    gender: 'female',
+    description: '普通话女声，情感表达'
+  },
+  {
+    voiceId: 'x4_lingxiaoyun_talk',
+    displayName: '聆小芸-对话',
+    language: 'zh-CN',
+    gender: 'female',
+    description: '普通话女声，对话场景'
+  },
+  {
+    voiceId: 'x4_gaolengnanshen_talk',
+    displayName: '萧文-对话',
+    language: 'zh-CN',
+    gender: 'male',
+    description: '普通话男声，对话场景'
+  },
+  {
+    voiceId: 'x4_lingxiaowan_boytalk',
+    displayName: '聆万万-对话',
+    language: 'zh-CN',
+    gender: 'male',
+    description: '普通话男声，对话场景'
+  },
+  {
+    voiceId: 'x4_lingxiaowan_boy',
+    displayName: '聆小琬-小男孩',
+    language: 'zh-CN',
+    gender: 'female',
+    description: '普通话女声，小男孩音色'
+  },
+  {
+    voiceId: 'x4_lingxiaoxuan_chat',
+    displayName: '聆小璇-闲聊',
+    language: 'zh-CN',
+    gender: 'female',
+    description: '普通话女声，闲聊场景'
+  },
+  {
+    voiceId: 'x4_lingxiaoyu_emo',
+    displayName: '聆小瑜-情感',
+    language: 'zh-CN',
+    gender: 'female',
+    description: '普通话女声，情感表达'
+  },
+  {
+    voiceId: 'x4_lingxiaoyun_talk_emo',
+    displayName: '聆小芸-多情感',
+    language: 'zh-CN',
+    gender: 'female',
+    description: '普通话女声，多情感表达'
+  },
+  {
+    voiceId: 'x4_lingbosong_bad_talk',
+    displayName: '聆伯松-反派老人',
+    language: 'zh-CN',
+    gender: 'male',
+    description: '普通话男声，反派老人'
+  },
+  {
+    voiceId: 'x4_lingbosong',
+    displayName: '聆伯松',
+    language: 'zh-CN',
+    gender: 'male',
+    description: '普通话男声，沉稳专业'
+  },
+  // 英语发音人
+  {
+    voiceId: 'x4_enus_luna_assist',
+    displayName: 'Luna',
+    language: 'en-US',
+    gender: 'female',
+    description: '英语女声，自然流畅'
+  },
+  {
+    voiceId: 'x4_enus_ryan_assist',
+    displayName: 'Ryan',
+    language: 'en-US',
+    gender: 'male',
+    description: '英语男声，专业清晰'
+  },
+  // 日语发音人
+  {
+    voiceId: 'x4_jajp_zhongcun_assist',
+    displayName: '中村樱',
+    language: 'ja-JP',
+    gender: 'female',
+    description: '日语女声，温柔甜美'
+  },
 ];
 
 // 获取科大讯飞配置
@@ -226,13 +341,11 @@ export async function synthesizeXunfeiTTS(
           },
           business: {
             aue: 'raw',
-            auf: 'audio/L16;rate=16000',
             vcn: voiceId,
             speed: speed,
             volume: volume,
             pitch: pitch,
-            bgs: 0,
-            tte: 'UTF8'  // 添加文本编码
+            tte: 'UTF8'
           },
           data: {
             status: 2,
@@ -345,7 +458,6 @@ export async function synthesizeXunfeiLongTextTTS(
   // 创建任务
   const createTaskUrl = 'https://api-dx.xf-yun.com/v1/private/dts_create';
   const requestLine = 'POST /v1/private/dts_create HTTP/1.1';
-  const authHeaders = generateAuthHeaders(config.apiKey, config.apiSecret, requestLine);
 
   const createTaskBody = {
     header: {
@@ -407,7 +519,6 @@ export async function synthesizeXunfeiLongTextTTS(
     // 轮询查询任务状态
     const queryTaskUrl = 'https://api-dx.xf-yun.com/v1/private/dts_query';
     const queryRequestLine = 'POST /v1/private/dts_query HTTP/1.1';
-    const queryAuthHeaders = generateAuthHeaders(config.apiKey, config.apiSecret, queryRequestLine);
 
     let attempts = 0;
     const maxAttempts = 30; // 最多查询30次，每次间隔2秒
@@ -459,7 +570,7 @@ export async function synthesizeXunfeiLongTextTTS(
             } else {
               throw new Error(`解码后的URL不是有效的HTTP URL: ${decodedUrl}`);
             }
-          } catch (e) {
+          } catch {
             throw new Error(`科大讯飞返回的不是有效的音频URL: ${audioUrl}`);
           }
         } else {
