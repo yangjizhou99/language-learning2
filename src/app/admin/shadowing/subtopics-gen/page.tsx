@@ -14,24 +14,40 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Edit, Archive, Trash2, Download, Upload, Play, Pause, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Archive, Trash2, Download, Upload, Play, Pause, CheckCircle, XCircle, AlertCircle, X } from 'lucide-react';
 
-type Lang = 'en'|'ja'|'zh';
-type Genre = 'dialogue'|'monologue'|'news'|'lecture';
+type Lang = 'en'|'ja'|'zh'|'all';
+type Genre = 'dialogue'|'monologue'|'news'|'lecture'|'all';
 
 const LANG_OPTIONS = [
+  { value: 'all', label: '全部语言' },
   { value: 'ja', label: '日语' },
   { value: 'en', label: '英语' },
   { value: 'zh', label: '中文' }
 ];
 
-const LEVEL_OPTIONS = [1, 2, 3, 4, 5, 6];
+const LEVEL_OPTIONS = [
+  { value: 'all', label: '全部等级' },
+  { value: '1', label: 'L1' },
+  { value: '2', label: 'L2' },
+  { value: '3', label: 'L3' },
+  { value: '4', label: 'L4' },
+  { value: '5', label: 'L5' },
+  { value: '6', label: 'L6' }
+];
 
 const GENRE_OPTIONS = [
+  { value: 'all', label: '全部体裁' },
   { value: 'dialogue', label: '对话' },
   { value: 'monologue', label: '独白' },
   { value: 'news', label: '新闻' },
   { value: 'lecture', label: '讲座' }
+];
+
+const HAS_ARTICLE_OPTIONS = [
+  { value: 'all', label: '全部' },
+  { value: 'yes', label: '已有文章' },
+  { value: 'no', label: '暂无文章' }
 ];
 
 // 等级与体裁的对应关系（基于6级难度设计）
@@ -45,8 +61,11 @@ const LEVEL_GENRE_RESTRICTIONS: Record<number, Genre[]> = {
 };
 
 // 根据等级获取可用的体裁选项
-const getAvailableGenres = (level: number): Genre[] => {
-  return LEVEL_GENRE_RESTRICTIONS[level] || [];
+const getAvailableGenres = (level: number | 'all'): Genre[] => {
+  if (level === 'all') {
+    return ['all', 'dialogue', 'monologue', 'news', 'lecture'];
+  }
+  return ['all', ...(LEVEL_GENRE_RESTRICTIONS[level] || [])];
 };
 
 // 等级详细配置（基于6级难度设计）
@@ -148,16 +167,23 @@ const PROVIDER_OPTIONS = [
 
 export default function SubtopicsGenPage() {
   const searchParams = useSearchParams();
-  const [lang, setLang] = useState<Lang>('ja');
-  const [level, setLevel] = useState<1|2|3|4|5|6>(3);
-  const [genre, setGenre] = useState<Genre>('monologue');
+  const [lang, setLang] = useState<Lang>('all');
+  const [level, setLevel] = useState<1|2|3|4|5|6|'all'>('all');
+  const [genre, setGenre] = useState<Genre>('all');
   const [themeId, setThemeId] = useState<string>('all');
+  const [hasArticle, setHasArticle] = useState<string>('all'); // 是否有对应文章
   const [q, setQ] = useState('');
   
   const [themes, setThemes] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 100,
+    total: 0,
+    totalPages: 0
+  });
   
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -172,8 +198,85 @@ export default function SubtopicsGenPage() {
   const [temperature, setTemperature] = useState(0.7);
   const [concurrency, setConcurrency] = useState(4);
   
+  // 任务队列相关状态
+  const [useTaskQueue, setUseTaskQueue] = useState(true);
+  const [taskQueue, setTaskQueue] = useState<Array<{
+    id: string;
+    type: 'shadowing_generation';
+    status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+    progress: number;
+    title: string;
+    params: any;
+    result?: any;
+    error?: string;
+    createdAt: Date;
+    startedAt?: Date;
+    pausedAt?: Date;
+    completedAt?: Date;
+    abortController?: AbortController;
+  }>>([]);
+  // 根据环境设置默认并发数
+  const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const [maxConcurrent, setMaxConcurrent] = useState(30); // 现在本地和生产都支持30个并发
+  const [runningTasks, setRunningTasks] = useState(0);
+  const [queuePaused, setQueuePaused] = useState(false);
+  const [autoStart, setAutoStart] = useState(false);
+  
+  // 任务队列分页
+  const [taskPage, setTaskPage] = useState(1);
+  const [taskPageSize, setTaskPageSize] = useState(10);
+  const [taskStatusFilter, setTaskStatusFilter] = useState<string>('all');
+  
+  // 防重复启动的任务ID集合
+  const [startingTasks, setStartingTasks] = useState<Set<string>>(new Set());
+  
+  // 执行进度
+  const [executionProgress, setExecutionProgress] = useState({
+    current: 0,
+    total: 0,
+    completed: 0,
+    failed: 0
+  });
+  
   const eventSourceRef = useRef<EventSource | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // 获取认证头信息
+  const getAuthHeaders = async (): Promise<Record<string, string>> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  // 多域名支持 - 轮询使用不同域名突破浏览器并发限制
+  const API_DOMAINS = [
+    '', // 当前域名
+    'api1', // 子域名1
+    'api2', // 子域名2
+    'api3', // 子域名3
+    'api4', // 子域名4
+    'api5', // 子域名5
+  ];
+
+  function getApiUrl(path: string, taskIndex: number = 0) {
+    // 本地开发环境：使用子域名（需要配置hosts文件）
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      const domain = API_DOMAINS[taskIndex % API_DOMAINS.length];
+      if (domain) {
+        return `http://${domain}.localhost:${window.location.port || 3000}${path}`;
+      } else {
+        return path;
+      }
+    }
+    
+    // 生产环境：使用多域名
+    const domain = API_DOMAINS[taskIndex % API_DOMAINS.length];
+    if (domain) {
+      return `https://${domain}.${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}${path}`;
+    } else {
+      return path;
+    }
+  }
 
   // 从URL参数初始化
   useEffect(() => {
@@ -187,10 +290,12 @@ export default function SubtopicsGenPage() {
 
   // 检查体裁与等级的匹配
   useEffect(() => {
-    const availableGenres = getAvailableGenres(level);
-    if (!availableGenres.includes(genre)) {
-      // 如果当前体裁不可用，自动选择第一个可用的体裁
-      setGenre(availableGenres[0]);
+    if (level !== 'all') {
+      const availableGenres = getAvailableGenres(level);
+      if (!availableGenres.includes(genre)) {
+        // 如果当前体裁不可用，自动选择第一个可用的体裁
+        setGenre(availableGenres[0]);
+      }
     }
   }, [level, genre]);
 
@@ -199,7 +304,10 @@ export default function SubtopicsGenPage() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const qs = new URLSearchParams({ lang, level: level.toString(), genre });
+      const qs = new URLSearchParams();
+      if (lang !== 'all') qs.set('lang', lang);
+      if (level !== 'all') qs.set('level', level.toString());
+      if (genre !== 'all') qs.set('genre', genre);
       const r = await fetch(`/api/admin/shadowing/themes?${qs.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
@@ -226,12 +334,14 @@ export default function SubtopicsGenPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const qs = new URLSearchParams({ 
-        lang, 
-        level: String(level), 
-        genre,
-        limit: '100'
+        limit: pagination.limit.toString(),
+        page: pagination.page.toString()
       });
+      if (lang !== 'all') qs.set('lang', lang);
+      if (level !== 'all') qs.set('level', String(level));
+      if (genre !== 'all') qs.set('genre', genre);
       if (themeId && themeId !== 'all') qs.set('theme_id', themeId);
+      if (hasArticle !== 'all') qs.set('has_article', hasArticle);
       if (q) qs.set('q', q);
       
       const r = await fetch(`/api/admin/shadowing/subtopics?${qs.toString()}`, {
@@ -243,6 +353,11 @@ export default function SubtopicsGenPage() {
           const j = JSON.parse(responseText);
           setItems(j.items || []);
           setSelected({});
+          setPagination(prev => ({
+            ...prev,
+            total: j.total || 0,
+            totalPages: j.totalPages || 0
+          }));
         } catch (jsonError) {
           console.error('Parse subtopics response failed:', responseText);
         }
@@ -258,11 +373,38 @@ export default function SubtopicsGenPage() {
 
   useEffect(() => {
     loadThemes();
-  }, [lang, level, genre]);
+  }, [lang, level, genre, hasArticle]);
 
   useEffect(() => {
     loadSubtopics();
-  }, [lang, level, genre, themeId, q]);
+  }, [lang, level, genre, themeId, hasArticle, q, pagination.page, pagination.limit]);
+
+  // 处理任务队列 - 手动控制启动
+  useEffect(() => {
+    const processQueue = async () => {
+      if (queuePaused || !autoStart) return; // 如果队列暂停或未开启自动启动，不处理新任务
+      
+      const pendingTasks = taskQueue.filter(t => t.status === 'pending' && !startingTasks.has(t.id));
+      const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
+
+      console.log(`[AutoQueue] Processing: ${canStart} tasks can start (${pendingTasks.length} pending, ${runningTasks} running, ${startingTasks.size} starting, max: ${maxConcurrent})`);
+
+      if (canStart > 0) {
+        // 延迟一点时间再处理，避免状态更新冲突
+        const timer = setTimeout(() => {
+          for (let i = 0; i < canStart; i++) {
+            const task = pendingTasks[i];
+            console.log(`[AutoQueue] Starting task: ${task.id}`);
+            executeTask(task.id);
+          }
+        }, 100);
+        
+        return () => clearTimeout(timer);
+      }
+    };
+
+    processQueue();
+  }, [runningTasks, queuePaused, autoStart, maxConcurrent, startingTasks]); // 移除taskQueue依赖
 
   // 加载模型列表
   useEffect(() => {
@@ -330,9 +472,9 @@ export default function SubtopicsGenPage() {
     setEditing({ 
       id: undefined, 
       theme_id: themeId,
-      lang, 
-      level, 
-      genre, 
+      lang: lang === 'all' ? 'ja' : lang, 
+      level: level === 'all' ? 3 : level, 
+      genre: genre === 'all' ? 'monologue' : genre, 
       title_cn: '', 
       seed_en: '',
       one_line_cn: '',
@@ -534,9 +676,9 @@ export default function SubtopicsGenPage() {
         },
         body: JSON.stringify({
           subtopic_ids: selectedIds,
-          lang,
-          level,
-          genre,
+          lang: lang === 'all' ? 'ja' : lang,
+          level: level === 'all' ? 3 : level,
+          genre: genre === 'all' ? 'monologue' : genre,
           concurrency,
           provider,
           model,
@@ -641,13 +783,433 @@ export default function SubtopicsGenPage() {
     }]);
   }
 
+  // 添加任务到队列 - 每个小主题作为独立任务
+  function addTasksToQueue(subtopicIds: string[], params: any) {
+    // 过滤掉已经在队列中的小主题
+    const existingSubtopicIds = new Set(
+      taskQueue.map(t => t.params.subtopic_id).filter(Boolean)
+    );
+    
+    const newSubtopicIds = subtopicIds.filter(id => !existingSubtopicIds.has(id));
+    
+    if (newSubtopicIds.length === 0) {
+      console.log('[AddTasks] All subtopics already in queue, skipping');
+      return [];
+    }
+    
+    console.log(`[AddTasks] Adding ${newSubtopicIds.length} new tasks (${subtopicIds.length - newSubtopicIds.length} already in queue)`);
+    
+    const tasks = newSubtopicIds.map(subtopicId => {
+      const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // 从当前items中找到对应的小主题标题
+      const subtopic = items.find(item => item.id === subtopicId);
+      const title = subtopic ? subtopic.title_cn : `小主题 ${subtopicId}`;
+      
+      return {
+        id: taskId,
+        type: 'shadowing_generation' as const,
+        status: 'pending' as const,
+        progress: 0,
+        title: `生成: ${title}`,
+        params: {
+          ...params,
+          subtopic_id: subtopicId
+        },
+        createdAt: new Date()
+      };
+    });
+    
+    setTaskQueue(prev => [...prev, ...tasks]);
+    return tasks.map(t => t.id);
+  }
+
+  // 执行任务 - 处理单个小主题
+  async function executeTask(taskId: string) {
+    const task = taskQueue.find(t => t.id === taskId);
+    if (!task) return;
+
+    // 检查任务是否已经在启动中或运行中
+    if (task.status !== 'pending' || startingTasks.has(taskId)) {
+      console.log(`[ExecuteTask] Task ${taskId} is not pending or already starting, skipping`);
+      return;
+    }
+
+    // 检查是否有相同subtopic_id的任务正在执行
+    const sameSubtopicRunning = taskQueue.some(t => 
+      t.params.subtopic_id === task.params.subtopic_id && 
+      (t.status === 'running' || startingTasks.has(t.id))
+    );
+    
+    if (sameSubtopicRunning) {
+      console.log(`[ExecuteTask] Task ${taskId} for subtopic ${task.params.subtopic_id} is already running, skipping`);
+      return;
+    }
+
+    // 标记任务为启动中
+    setStartingTasks(prev => new Set(prev).add(taskId));
+
+    // 创建 AbortController
+    const abortController = new AbortController();
+
+    // 更新任务状态为运行中
+    setTaskQueue(prev => prev.map(t => 
+      t.id === taskId 
+        ? { 
+            ...t, 
+            status: 'running', 
+            startedAt: new Date(), 
+            progress: 10,
+            abortController
+          }
+        : t
+    ));
+    setRunningTasks(prev => prev + 1);
+
+    try {
+      // 获取任务在队列中的索引，用于选择域名
+      const taskIndex = taskQueue.findIndex(t => t.id === taskId);
+      const apiUrl = getApiUrl('/api/admin/shadowing/generate-single', taskIndex);
+      
+      console.log(`[ExecuteTask] Using API URL: ${apiUrl} for task ${taskId}`);
+      
+      // 调用单个小主题生成API
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(await getAuthHeaders())
+        },
+        body: JSON.stringify({
+          subtopic_id: task.params.subtopic_id,
+          lang: task.params.lang,
+          level: task.params.level,
+          genre: task.params.genre,
+          provider: task.params.provider,
+          model: task.params.model,
+          temperature: task.params.temperature
+        }),
+        signal: abortController.signal
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+      
+      // 更新进度
+      setTaskQueue(prev => prev.map(t => 
+        t.id === taskId ? { ...t, progress: 50 } : t
+      ));
+
+      // 更新任务状态为完成
+      setTaskQueue(prev => prev.map(t => 
+        t.id === taskId 
+          ? { 
+              ...t, 
+              status: 'completed', 
+              progress: 100, 
+              result,
+              completedAt: new Date(),
+              abortController: undefined
+            }
+          : t
+      ));
+
+      // 更新执行进度
+      setExecutionProgress(prev => ({
+        ...prev,
+        current: prev.current + 1,
+        completed: prev.completed + 1
+      }));
+
+      // 重新加载数据
+      await loadSubtopics();
+
+    } catch (error) {
+      // 检查是否是被取消的任务
+      if (error instanceof Error && error.name === 'AbortError') {
+        setTaskQueue(prev => prev.map(t => 
+          t.id === taskId 
+            ? { 
+                ...t, 
+                status: 'cancelled', 
+                completedAt: new Date(),
+                abortController: undefined
+              }
+            : t
+        ));
+
+        // 更新执行进度
+        setExecutionProgress(prev => ({
+          ...prev,
+          current: prev.current + 1
+        }));
+      } else {
+        // 更新任务状态为失败
+        setTaskQueue(prev => prev.map(t => 
+          t.id === taskId 
+            ? { 
+                ...t, 
+                status: 'failed', 
+                error: error instanceof Error ? error.message : String(error),
+                completedAt: new Date(),
+                abortController: undefined
+              }
+            : t
+        ));
+
+        // 更新执行进度
+        setExecutionProgress(prev => ({
+          ...prev,
+          current: prev.current + 1,
+          failed: prev.failed + 1
+        }));
+      }
+    } finally {
+      setRunningTasks(prev => prev - 1);
+      // 清理启动中标记
+      setStartingTasks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(taskId);
+        return newSet;
+      });
+    }
+  }
+
+  // 任务控制函数
+  function pauseTask(taskId: string) {
+    const task = taskQueue.find(t => t.id === taskId);
+    if (!task || task.status !== 'running') return;
+
+    // 取消正在进行的请求
+    if (task.abortController) {
+      task.abortController.abort();
+    }
+
+    // 更新任务状态为暂停
+    setTaskQueue(prev => prev.map(t => 
+      t.id === taskId 
+        ? { ...t, status: 'paused', pausedAt: new Date(), abortController: undefined }
+        : t
+    ));
+    setRunningTasks(prev => prev - 1);
+  }
+
+  function resumeTask(taskId: string) {
+    const task = taskQueue.find(t => t.id === taskId);
+    if (!task || task.status !== 'paused') return;
+
+    // 更新任务状态为等待中，让队列处理
+    setTaskQueue(prev => prev.map(t => 
+      t.id === taskId 
+        ? { ...t, status: 'pending', pausedAt: undefined }
+        : t
+    ));
+  }
+
+  function cancelTask(taskId: string) {
+    const task = taskQueue.find(t => t.id === taskId);
+    if (!task) return;
+
+    // 如果任务正在运行，取消请求
+    if (task.status === 'running' && task.abortController) {
+      task.abortController.abort();
+    }
+
+    // 更新任务状态为已取消
+    setTaskQueue(prev => prev.map(t => 
+      t.id === taskId 
+        ? { 
+            ...t, 
+            status: 'cancelled', 
+            completedAt: new Date(),
+            abortController: undefined
+          }
+        : t
+    ));
+
+    if (task.status === 'running') {
+      setRunningTasks(prev => prev - 1);
+    }
+  }
+
+  function pauseAllTasks() {
+    setQueuePaused(true);
+    // 暂停所有运行中的任务
+    taskQueue.forEach(task => {
+      if (task.status === 'running') {
+        pauseTask(task.id);
+      }
+    });
+  }
+
+  function resumeAllTasks() {
+    setQueuePaused(false);
+    // 恢复所有暂停的任务
+    taskQueue.forEach(task => {
+      if (task.status === 'paused') {
+        resumeTask(task.id);
+      }
+    });
+  }
+
+  function cancelAllTasks() {
+    // 取消所有未完成的任务
+    taskQueue.forEach(task => {
+      if (['pending', 'running', 'paused'].includes(task.status)) {
+        cancelTask(task.id);
+      }
+    });
+  }
+
+  function startAllPendingTasks() {
+    const pendingTasks = taskQueue.filter(t => t.status === 'pending' && !startingTasks.has(t.id));
+    const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
+
+    console.log(`[StartAll] Pending tasks: ${pendingTasks.length}, Running: ${runningTasks}, Starting: ${startingTasks.size}, Max concurrent: ${maxConcurrent}, Can start: ${canStart}`);
+
+    for (let i = 0; i < canStart; i++) {
+      const task = pendingTasks[i];
+      console.log(`[StartAll] Starting task: ${task.id}`);
+      executeTask(task.id);
+    }
+  }
+
+  function startTask(taskId: string) {
+    const task = taskQueue.find(t => t.id === taskId);
+    if (!task || task.status !== 'pending') return;
+
+    executeTask(taskId);
+  }
+
+  // 清理重复任务
+  function cleanupDuplicateTasks() {
+    const seenSubtopicIds = new Set<string>();
+    const uniqueTasks: any[] = [];
+    const duplicates: string[] = [];
+    
+    taskQueue.forEach(task => {
+      const subtopicId = task.params.subtopic_id;
+      if (seenSubtopicIds.has(subtopicId)) {
+        duplicates.push(task.id);
+      } else {
+        seenSubtopicIds.add(subtopicId);
+        uniqueTasks.push(task);
+      }
+    });
+    
+    if (duplicates.length > 0) {
+      console.log(`[Cleanup] Removing ${duplicates.length} duplicate tasks`);
+      setTaskQueue(uniqueTasks);
+    }
+    
+    return duplicates.length;
+  }
+
+  // 创建生成任务 - 为每个小主题创建独立任务
+  function createTask() {
+    const selectedIds = Object.keys(selected).filter(id => selected[id]);
+    if (!selectedIds.length) {
+      alert('请先选择要生成的小主题');
+      return;
+    }
+
+    // 先清理重复任务
+    const removedDuplicates = cleanupDuplicateTasks();
+    if (removedDuplicates > 0) {
+      console.log(`[CreateTask] Cleaned up ${removedDuplicates} duplicate tasks`);
+    }
+
+    const taskIds = addTasksToQueue(selectedIds, {
+      lang: lang === 'all' ? 'ja' : lang,
+      level: level === 'all' ? 3 : level,
+      genre: genre === 'all' ? 'monologue' : genre,
+      provider,
+      model,
+      temperature
+    });
+
+    // 重新计算执行进度
+    const totalTasks = taskQueue.length + taskIds.length;
+    const completedTasks = taskQueue.filter(t => t.status === 'completed').length;
+    const failedTasks = taskQueue.filter(t => t.status === 'failed').length;
+    
+    setExecutionProgress({
+      current: completedTasks + failedTasks,
+      total: totalTasks,
+      completed: completedTasks,
+      failed: failedTasks
+    });
+
+    if (taskIds.length > 0) {
+      alert(`已为 ${taskIds.length} 个小主题创建独立任务${removedDuplicates > 0 ? `，并清理了 ${removedDuplicates} 个重复任务` : ''}`);
+    } else {
+      alert('所有选中的小主题都已在队列中');
+    }
+  }
+
   const selectedCount = Object.values(selected).filter(Boolean).length;
   const dirtyCount = items.filter(item => item._dirty).length;
+  
+  // 任务分页计算
+  const filteredTasks = taskStatusFilter === 'all' 
+    ? taskQueue 
+    : taskQueue.filter(task => task.status === taskStatusFilter);
+  const totalTasks = filteredTasks.length;
+  const totalTaskPages = Math.ceil(totalTasks / taskPageSize);
+  const startTaskIndex = (taskPage - 1) * taskPageSize;
+  const endTaskIndex = startTaskIndex + taskPageSize;
+  const currentTasks = filteredTasks.slice(startTaskIndex, endTaskIndex);
+  
+  // 自动翻页：当前页的任务都完成后自动翻到下一页
+  useEffect(() => {
+    if (totalTaskPages > 1 && currentTasks.length > 0) {
+      const allCurrentTasksCompleted = currentTasks.every(task => 
+        ['completed', 'failed', 'cancelled'].includes(task.status)
+      );
+      
+      if (allCurrentTasksCompleted && taskPage < totalTaskPages) {
+        console.log(`[AutoPage] All tasks on page ${taskPage} completed, moving to page ${taskPage + 1}`);
+        setTaskPage(prev => prev + 1);
+      }
+    }
+  }, [currentTasks, taskPage, totalTaskPages]);
+  
+  // 任务状态统计
+  const taskStats = {
+    pending: taskQueue.filter(t => t.status === 'pending').length,
+    running: taskQueue.filter(t => t.status === 'running').length,
+    paused: taskQueue.filter(t => t.status === 'paused').length,
+    completed: taskQueue.filter(t => t.status === 'completed').length,
+    failed: taskQueue.filter(t => t.status === 'failed').length,
+    cancelled: taskQueue.filter(t => t.status === 'cancelled').length
+  };
 
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Shadowing 小主题批量生成</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Shadowing 小主题批量生成</h1>
+          {taskQueue.length > 0 && (
+            <div className="mt-2 flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                执行进度: {executionProgress.current}/{executionProgress.total} 
+                (完成: {executionProgress.completed}, 失败: {executionProgress.failed})
+                {executionProgress.current < executionProgress.total && runningTasks > 0 && (
+                  <span className="text-blue-600 ml-2">⏳ 执行中...</span>
+                )}
+                {executionProgress.current < executionProgress.total && runningTasks === 0 && (
+                  <span className="text-orange-600 ml-2">⏸️ 等待开始</span>
+                )}
+                {executionProgress.current === executionProgress.total && (
+                  <span className="text-green-600 ml-2">✅ 全部完成</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button onClick={loadSubtopics} variant="outline">
             刷新
@@ -665,7 +1227,7 @@ export default function SubtopicsGenPage() {
           <CardTitle>筛选条件</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div>
               <Label>语言</Label>
               <Select value={lang} onValueChange={(v: Lang) => setLang(v)}>
@@ -685,14 +1247,18 @@ export default function SubtopicsGenPage() {
             <div>
               <Label>等级</Label>
               <Select value={String(level)} onValueChange={(v) => {
-                const newLevel = parseInt(v) as 1|2|3|4|5|6;
-                setLevel(newLevel);
-                
-                // 检查当前体裁是否在新等级中可用
-                const availableGenres = getAvailableGenres(newLevel);
-                if (!availableGenres.includes(genre)) {
-                  // 如果当前体裁不可用，自动选择第一个可用的体裁
-                  setGenre(availableGenres[0]);
+                if (v === 'all') {
+                  setLevel('all');
+                } else {
+                  const newLevel = parseInt(v) as 1|2|3|4|5|6;
+                  setLevel(newLevel);
+                  
+                  // 检查当前体裁是否在新等级中可用
+                  const availableGenres = getAvailableGenres(newLevel);
+                  if (!availableGenres.includes(genre)) {
+                    // 如果当前体裁不可用，自动选择第一个可用的体裁
+                    setGenre(availableGenres[0]);
+                  }
                 }
               }}>
                 <SelectTrigger>
@@ -700,8 +1266,8 @@ export default function SubtopicsGenPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {LEVEL_OPTIONS.map(opt => (
-                    <SelectItem key={opt} value={String(opt)}>
-                      L{opt}
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -725,24 +1291,46 @@ export default function SubtopicsGenPage() {
                 </SelectContent>
               </Select>
               <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                <p>
-                  <strong>等级 L{level}</strong> 可用体裁: {getAvailableGenres(level).map(g => 
-                    GENRE_OPTIONS.find(opt => opt.value === g)?.label
-                  ).join('、')}
-                </p>
-                <p>
-                  体裁优先: {LEVEL_CONFIG[level]?.genrePriority}
-                </p>
-                <p>
-                  主题带宽: {LEVEL_CONFIG[level]?.themeBandwidth}
-                </p>
-                <p>
-                  长度目标: {lang === 'en' ? 'EN' : lang === 'ja' ? 'JA' : 'ZH'} {getLengthTarget(level, lang).min}-{getLengthTarget(level, lang).max} {lang === 'en' ? '词' : '字'}
-                </p>
-                <p>
-                  句子数: {getSentenceRange(level).min}-{getSentenceRange(level).max} | 句长上限: {getMaxSentenceLength(level, lang)} {lang === 'en' ? '词' : '字'}
-                </p>
+                {level !== 'all' ? (
+                  <>
+                    <p>
+                      <strong>等级 L{level}</strong> 可用体裁: {getAvailableGenres(level).filter(g => g !== 'all').map(g => 
+                        GENRE_OPTIONS.find(opt => opt.value === g)?.label
+                      ).join('、')}
+                    </p>
+                    <p>
+                      体裁优先: {LEVEL_CONFIG[level]?.genrePriority}
+                    </p>
+                    <p>
+                      主题带宽: {LEVEL_CONFIG[level]?.themeBandwidth}
+                    </p>
+                    <p>
+                      长度目标: {lang === 'en' ? 'EN' : lang === 'ja' ? 'JA' : 'ZH'} {getLengthTarget(level, lang).min}-{getLengthTarget(level, lang).max} {lang === 'en' ? '词' : '字'}
+                    </p>
+                    <p>
+                      句子数: {getSentenceRange(level).min}-{getSentenceRange(level).max} | 句长上限: {getMaxSentenceLength(level, lang)} {lang === 'en' ? '词' : '字'}
+                    </p>
+                  </>
+                ) : (
+                  <p>选择"全部等级"时，所有体裁都可用</p>
+                )}
               </div>
+            </div>
+            
+            <div>
+              <Label>文章状态</Label>
+              <Select value={hasArticle} onValueChange={(v) => setHasArticle(v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {HAS_ARTICLE_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             <div>
@@ -770,9 +1358,142 @@ export default function SubtopicsGenPage() {
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
+            
+            <div>
+              <Label>每页显示</Label>
+              <Select 
+                value={pagination.limit.toString()} 
+                onValueChange={(value) => setPagination(prev => ({ ...prev, limit: parseInt(value), page: 1 }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="50">50 个</SelectItem>
+                  <SelectItem value="100">100 个</SelectItem>
+                  <SelectItem value="200">200 个</SelectItem>
+                  <SelectItem value="500">500 个</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* 执行进度 */}
+      {executionProgress.total > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>执行进度</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              任务已添加到队列，需要手动开始执行。可以随时暂停或继续。
+            </p>
+            <div className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
+              <strong>多域名并发优化：</strong>
+              使用多域名方案突破浏览器并发限制。当前配置支持最多36个并发连接（6个域名 × 6个连接/域名）。
+              {isLocalDev ? (
+                ' 本地开发需要配置hosts文件：127.0.0.1 api1.localhost 到 api5.localhost'
+              ) : (
+                ' 生产环境需要配置子域名：api1.yourdomain.com 到 api5.yourdomain.com'
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  进度: {executionProgress.current}/{executionProgress.total} 
+                  (完成: {executionProgress.completed}, 失败: {executionProgress.failed})
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label>最大并发数:</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="36"
+                    value={maxConcurrent}
+                    onChange={(e) => setMaxConcurrent(parseInt(e.target.value) || 30)}
+                    className="w-20"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    (6个域名 × 6个连接 = 36个并发)
+                  </span>
+                </div>
+              </div>
+              
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${(executionProgress.current / executionProgress.total) * 100}%` }}
+                />
+              </div>
+              
+              <div className="flex items-center justify-center gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="autoStartControl"
+                    checked={autoStart}
+                    onChange={(e) => setAutoStart(e.target.checked)}
+                  />
+                  <Label htmlFor="autoStartControl" className="text-sm">
+                    自动开始 (开启后任务会自动执行)
+                  </Label>
+                </div>
+                
+                <Button
+                  onClick={cleanupDuplicateTasks}
+                  size="sm"
+                  variant="outline"
+                  className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  清理重复任务
+                </Button>
+                
+                {!autoStart && executionProgress.current < executionProgress.total && (
+                  <Button
+                    onClick={startAllPendingTasks}
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled={taskStats.pending === 0}
+                  >
+                    <Play className="w-4 h-4 mr-1" />
+                    开始执行 ({taskStats.pending} 个等待中)
+                  </Button>
+                )}
+                
+                {runningTasks > 0 && (
+                  <Button
+                    onClick={() => setQueuePaused(!queuePaused)}
+                    size="sm"
+                    variant="outline"
+                    className={queuePaused ? "bg-green-600 text-white" : "bg-yellow-600 text-white"}
+                  >
+                    {queuePaused ? (
+                      <>
+                        <Play className="w-4 h-4 mr-1" />
+                        继续执行
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="w-4 h-4 mr-1" />
+                        暂停执行
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+              
+              {executionProgress.current === executionProgress.total && (
+                <div className="text-center text-green-600 font-medium">
+                  ✅ 所有任务已完成！
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 批量操作 */}
       {(selectedCount > 0 || dirtyCount > 0) && (
@@ -816,7 +1537,7 @@ export default function SubtopicsGenPage() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>小主题列表 ({items.length})</CardTitle>
+              <CardTitle>小主题列表 ({pagination.total} 个，当前页 {items.length} 个)</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -895,6 +1616,38 @@ export default function SubtopicsGenPage() {
                 </table>
               </div>
             </CardContent>
+            
+            {/* 分页控制 */}
+            {pagination.totalPages > 1 && (
+              <div className="p-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    第 {pagination.page} 页，共 {pagination.totalPages} 页
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                      disabled={pagination.page <= 1}
+                    >
+                      上一页
+                    </Button>
+                    <span className="text-sm">
+                      {pagination.page} / {pagination.totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
+                      disabled={pagination.page >= pagination.totalPages}
+                    >
+                      下一页
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </Card>
         </div>
 
@@ -967,7 +1720,30 @@ export default function SubtopicsGenPage() {
                   已选择 {selectedCount} 个小主题
                 </div>
                 
-                {generating ? (
+                <div className="mb-4">
+                  <Label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={useTaskQueue}
+                      onChange={(e) => setUseTaskQueue(e.target.checked)}
+                    />
+                    使用任务队列（推荐）
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    任务队列可以处理大量任务，支持并发控制，不会阻塞页面
+                  </p>
+                </div>
+                
+                {useTaskQueue ? (
+                  <Button 
+                    onClick={createTask} 
+                    disabled={selectedCount === 0}
+                    className="w-full"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    创建生成任务
+                  </Button>
+                ) : generating ? (
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
                       <Button onClick={stopGeneration} variant="destructive" size="sm">
@@ -1032,6 +1808,7 @@ export default function SubtopicsGenPage() {
           )}
         </div>
       </div>
+
 
       {/* 编辑对话框 */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
