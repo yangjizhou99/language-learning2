@@ -1,6 +1,6 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 600; // 10分钟超时，支持更多并发处理
+export const maxDuration = 300; // 5分钟超时，符合Vercel Hobby计划限制
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";

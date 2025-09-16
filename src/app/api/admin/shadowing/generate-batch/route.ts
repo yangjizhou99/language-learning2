@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { chatJSON } from '@/lib/ai/client';
 
-export const maxDuration = 600; // 10分钟超时，支持大批量生成
+export const maxDuration = 300; // 5分钟超时，符合Vercel Hobby计划限制
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
