@@ -154,6 +154,12 @@ export default function ShadowingReviewList(){
   
   // 后端并发处理 - 使用批量API接口
 
+  // 分页相关状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10); // 默认每页10条
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   // 性能优化参数
   const [concurrency, setConcurrency] = useState(10); // 后端并发处理
   const [retries, setRetries] = useState(2);
@@ -194,7 +200,11 @@ export default function ShadowingReviewList(){
   }, [items, selected]);
 
   useEffect(()=>{ (async()=>{
-    const params = new URLSearchParams({ status: status === "all" ? "draft" : status });
+    const params = new URLSearchParams({ 
+      status: status === "all" ? "draft" : status,
+      page: currentPage.toString(),
+      pageSize: pageSize.toString()
+    });
     if (lang !== 'all') params.set('lang', lang);
     if (genre !== 'all') params.set('genre', genre);
     if (level !== 'all') params.set('level', level);
@@ -204,18 +214,49 @@ export default function ShadowingReviewList(){
     const draftsUrl = `/api/admin/shadowing/drafts?${params}`;
     const r = await fetch(draftsUrl, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
     const j = await r.json();
-    console.log('加载的草稿数据:', j.items?.length || 0, '个草稿');
+    console.log('加载的草稿数据:', j.items?.length || 0, '个草稿，第', currentPage, '页');
     // 检查第一个草稿的音频URL
     if (j.items && j.items.length > 0) {
       console.log('第一个草稿的音频URL:', j.items[0].notes?.audio_url);
     }
     setItems(j.items||[]);
-  })(); }, [q, lang, genre, level, status]);
+    setTotalItems(j.total || 0);
+    setTotalPages(j.totalPages || 0);
+  })(); }, [q, lang, genre, level, status, currentPage, pageSize]);
 
   // 加载可用模型
   useEffect(() => {
     fetchAvailableModels();
   }, []);
+
+  // 当筛选条件改变时，重置到第一页
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [q, lang, genre, level, status]);
+
+  // 分页控制函数
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // 重置到第一页
+  };
 
   function isAllSelected(): boolean {
     if (items.length === 0) return false;
@@ -1388,6 +1429,7 @@ export default function ShadowingReviewList(){
         </CardContent>
       </Card>
 
+
       {/* 性能优化参数 */}
       <Card>
         <CardHeader>
@@ -1850,8 +1892,29 @@ export default function ShadowingReviewList(){
       {/* 草稿列表 */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">草稿列表</CardTitle>
-          <CardDescription>共 {items.length} 项草稿</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">草稿列表</CardTitle>
+              <CardDescription>共 {totalItems} 项草稿，第 {currentPage} / {totalPages} 页</CardDescription>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">每页显示:</label>
+                <Select value={pageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
@@ -1978,6 +2041,63 @@ export default function ShadowingReviewList(){
           )}
         </CardContent>
       </Card>
+
+      {/* 分页导航 */}
+      {totalPages > 1 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToPrevPage}
+                  disabled={currentPage === 1}
+                >
+                  上一页
+                </Button>
+                
+                {/* 页码显示 */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => goToPage(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  下一页
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 备选音色设置面板 */}
       {showCandidateSelector && (

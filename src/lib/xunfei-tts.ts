@@ -148,7 +148,22 @@ export const XUNFEI_VOICES: XunfeiVoice[] = [
     language: 'zh-CN',
     gender: 'male',
     description: '普通话男声，反派老人角色'
-  }
+  },
+  // 新闻播报音色
+  {
+    voiceId: 'x4_lingxiaoshan_profnews',
+    displayName: '聆小珊-新闻播报',
+    language: 'zh-CN',
+    gender: 'female',
+    description: '普通话女声，专业新闻播报，已开通'
+  },
+  {
+    voiceId: 'x4_xiaoguo',
+    displayName: '小果-新闻播报',
+    language: 'zh-CN',
+    gender: 'female',
+    description: '普通话女声，专业新闻播报，已开通'
+  },
 ];
 
 // 获取科大讯飞配置
@@ -290,4 +305,204 @@ export function getXunfeiVoicesByGender(gender: 'male' | 'female'): XunfeiVoice[
 // 验证科大讯飞音色ID是否有效
 export function isValidXunfeiVoice(voiceId: string): boolean {
   return XUNFEI_VOICES.some(voice => voice.voiceId === voiceId);
+}
+
+// 生成科大讯飞长文本语音合成API的认证信息
+function generateAuthUrlParams(apiKey: string, apiSecret: string, requestLine: string): { date: string; authorization: string } {
+  const date = new Date().toUTCString();
+  const algorithm = 'hmac-sha256';
+  const headers = 'host date request-line';
+  
+  // 构建签名原始字符串 - 按照科大讯飞文档格式
+  const signatureOrigin = `host: api-dx.xf-yun.com\ndate: ${date}\n${requestLine}`;
+  
+  // 使用HMAC-SHA256计算签名
+  const signature = createHmac('sha256', apiSecret)
+    .update(signatureOrigin)
+    .digest('base64');
+  
+  // 构建authorization字符串 - 按照科大讯飞文档格式
+  const authorizationOrigin = `api_key="${apiKey}", algorithm="${algorithm}", headers="${headers}", signature="${signature}"`;
+  const authorization = Buffer.from(authorizationOrigin).toString('base64');
+  
+  return { date, authorization };
+}
+
+// 科大讯飞长文本语音合成 - 基于官方文档实现
+export async function synthesizeXunfeiLongTextTTS(
+  text: string,
+  voiceId: string,
+  options: {
+    speed?: number;
+    volume?: number;
+    pitch?: number;
+    language?: string;
+  } = {}
+): Promise<Buffer> {
+  const config = getXunfeiConfig();
+  const { speed = 50, volume = 50, pitch = 50, language = 'zh' } = options;
+
+  // 创建任务
+  const createTaskUrl = 'https://api-dx.xf-yun.com/v1/private/dts_create';
+  const requestLine = 'POST /v1/private/dts_create HTTP/1.1';
+  const authHeaders = generateAuthHeaders(config.apiKey, config.apiSecret, requestLine);
+
+  const createTaskBody = {
+    header: {
+      app_id: config.appId
+    },
+    parameter: {
+      dts: {
+        vcn: voiceId,
+        language: language,
+        speed: speed,
+        volume: volume,
+        pitch: pitch,
+        rhy: 1,
+        audio: {
+          encoding: 'lame',
+          sample_rate: 16000
+        },
+        pybuf: {
+          encoding: 'utf8',
+          compress: 'raw',
+          format: 'plain'
+        }
+      }
+    },
+    payload: {
+      text: {
+        encoding: 'utf8',
+        compress: 'raw',
+        format: 'plain',
+        text: Buffer.from(text, 'utf8').toString('base64')
+      }
+    }
+  };
+
+  try {
+    // 构建URL参数认证 - 按照科大讯飞官方文档格式
+    const authParams = generateAuthUrlParams(config.apiKey, config.apiSecret, requestLine);
+    const createTaskUrlWithAuth = `${createTaskUrl}?host=api-dx.xf-yun.com&date=${encodeURIComponent(authParams.date)}&authorization=${authParams.authorization}`;
+    
+    
+    // 发送创建任务请求
+    const createResponse = await fetch(createTaskUrlWithAuth, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(createTaskBody)
+    });
+
+    const createResult = await createResponse.json();
+    
+    if (!createResult.header || createResult.header.code !== 0) {
+      const errorMsg = createResult.header?.message || createResult.message || '未知错误';
+      throw new Error(`创建任务失败: ${errorMsg}`);
+    }
+
+    const taskId = createResult.header.task_id;
+
+    // 轮询查询任务状态
+    const queryTaskUrl = 'https://api-dx.xf-yun.com/v1/private/dts_query';
+    const queryRequestLine = 'POST /v1/private/dts_query HTTP/1.1';
+    const queryAuthHeaders = generateAuthHeaders(config.apiKey, config.apiSecret, queryRequestLine);
+
+    let attempts = 0;
+    const maxAttempts = 30; // 最多查询30次，每次间隔2秒
+
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 等待2秒
+
+      const queryBody = {
+        header: {
+          app_id: config.appId,
+          task_id: taskId
+        }
+      };
+
+      // 构建查询任务的URL参数认证 - 按照科大讯飞官方文档格式
+      const queryAuthParams = generateAuthUrlParams(config.apiKey, config.apiSecret, queryRequestLine);
+      const queryTaskUrlWithAuth = `${queryTaskUrl}?host=api-dx.xf-yun.com&date=${encodeURIComponent(queryAuthParams.date)}&authorization=${queryAuthParams.authorization}`;
+      
+      
+      const queryResponse = await fetch(queryTaskUrlWithAuth, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(queryBody)
+      });
+
+      const queryResult = await queryResponse.json();
+      
+      if (!queryResult.header || queryResult.header.code !== 0) {
+        const errorMsg = queryResult.header?.message || queryResult.message || '未知错误';
+        throw new Error(`查询任务失败: ${errorMsg}`);
+      }
+
+      const taskStatus = queryResult.header.task_status;
+
+      if (taskStatus === '5') {
+        // 任务处理成功
+        const audioUrl = queryResult.payload.audio.audio;
+        
+        // 检查科大讯飞返回的是否是base64编码的URL
+        let actualAudioUrl = audioUrl;
+        if (!audioUrl.startsWith('http')) {
+          try {
+            // 尝试解码base64
+            const decodedUrl = Buffer.from(audioUrl, 'base64').toString('utf8');
+            if (decodedUrl.startsWith('http')) {
+              actualAudioUrl = decodedUrl;
+            } else {
+              throw new Error(`解码后的URL不是有效的HTTP URL: ${decodedUrl}`);
+            }
+          } catch (e) {
+            throw new Error(`科大讯飞返回的不是有效的音频URL: ${audioUrl}`);
+          }
+        } else {
+        }
+        
+        // 立即在服务器端下载音频文件（科大讯飞URL有有效期限制）
+        try {
+          const audioResponse = await fetch(actualAudioUrl, {
+            method: 'GET',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          });
+          
+          if (!audioResponse.ok) {
+            throw new Error(`下载音频失败: ${audioResponse.status} ${audioResponse.statusText}`);
+          }
+          
+          const audioBuffer = await audioResponse.arrayBuffer();
+          
+          // 检查下载的内容是否是有效的音频文件
+          if (audioBuffer.byteLength < 1000) {
+            throw new Error(`下载的音频文件太小，可能不是有效的音频内容: ${audioBuffer.byteLength} 字节`);
+          }
+          
+          return Buffer.from(audioBuffer);
+        } catch (downloadError) {
+          console.error('音频下载失败:', downloadError);
+          console.error('尝试下载的URL:', audioUrl);
+          throw new Error(`音频下载失败: ${downloadError instanceof Error ? downloadError.message : String(downloadError)}`);
+        }
+      } else if (taskStatus === '2' || taskStatus === '4') {
+        // 任务失败
+        throw new Error(`任务处理失败，状态: ${taskStatus}`);
+      }
+
+      attempts++;
+    }
+
+    throw new Error('任务处理超时');
+
+    } catch (error) {
+      console.error('科大讯飞长文本TTS错误:', error);
+      throw new Error(`科大讯飞长文本TTS失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }

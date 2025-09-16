@@ -3,7 +3,7 @@ import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
 import { createHash } from 'crypto';
 import { synthesizeGeminiTTS } from '@/lib/gemini-tts';
-import { synthesizeXunfeiTTS } from '@/lib/xunfei-tts';
+import { synthesizeXunfeiTTS, synthesizeXunfeiLongTextTTS } from '@/lib/xunfei-tts';
 
 // 创建 TTS 客户端
 function makeClient() {
@@ -269,10 +269,14 @@ export async function POST(req: NextRequest) {
     const supabaseAdmin = getServiceSupabase();
     
     // 从数据库获取音色信息，包括provider
+    // 处理语言代码映射：cmn-CN -> zh-CN
+    const mappedLanguageCode = languageCode === 'cmn-CN' ? 'zh-CN' : languageCode;
+    
     const { data: voiceData, error: voiceError } = await supabaseAdmin
       .from('voices')
       .select('name, provider, language_code, ssml_gender')
       .eq('name', voiceName)
+      .eq('language_code', mappedLanguageCode)
       .single();
 
     if (voiceError || !voiceData) {
@@ -316,13 +320,35 @@ export async function POST(req: NextRequest) {
       // 使用真正的Gemini TTS（只支持英语）
       audioContent = await generateGeminiPreview(voiceName, previewText, languageCode);
     } else if (voiceData.provider === 'xunfei') {
-      // 使用科大讯飞TTS
+      // 使用科大讯飞TTS API
       try {
-        audioContent = await generateXunfeiPreview(voiceName, previewText, languageCode);
+        // 检查是否为新闻播报音色，使用长文本API
+        const isNewsVoice = voiceName.includes('profnews') || 
+                           voiceName.includes('xiaoguo') || 
+                           voiceName.includes('pengfei');
+        
+        if (isNewsVoice) {
+          const actualVoiceId = voiceName.replace('xunfei-', '');
+          try {
+            const audioBuffer = await synthesizeXunfeiLongTextTTS(previewText, actualVoiceId, {
+              speed: 50,
+              volume: 50,
+              pitch: 50,
+              language: 'zh'
+            });
+            // 将Buffer转换为Uint8Array
+            audioContent = new Uint8Array(audioBuffer);
+          } catch (longTextError) {
+            // 如果长文本TTS失败，回退到普通TTS
+            audioContent = await generateXunfeiPreview(voiceName, previewText, languageCode);
+          }
+        } else {
+          audioContent = await generateXunfeiPreview(voiceName, previewText, languageCode);
+        }
       } catch (error) {
         // 如果科大讯飞TTS失败，返回一个详细的错误消息
         console.error('科大讯飞TTS试听失败:', error);
-        throw new Error(`科大讯飞TTS试听失败: ${error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)}`);
+        throw new Error(`科大讯飞TTS试听失败: ${error instanceof Error ? error.message : String(error)}`);
       }
     } else {
       // 使用Google Cloud TTS

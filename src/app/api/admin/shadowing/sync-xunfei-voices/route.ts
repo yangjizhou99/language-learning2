@@ -15,25 +15,32 @@ export async function POST(request: NextRequest) {
     console.log(`找到 ${voices.length} 个科大讯飞音色`);
 
     // 准备音色数据
-    const voiceData = voices.map(voice => ({
-      name: `xunfei-${voice.voiceId}`, // 使用name作为唯一标识
-      display_name: voice.displayName,
-      language_code: voice.language,
-      ssml_gender: voice.gender,
-      natural_sample_rate_hertz: 16000, // 科大讯飞默认采样率
-      pricing: {
-        pricePerMillionChars: 0, // 科大讯飞按服务量计费，这里设为0
-        examplePrice: "按服务量计费"
-      },
-      characteristics: {
-        voiceType: voice.gender === 'male' ? '男声' : '女声',
-        tone: voice.description,
-        pitch: '标准'
-      },
-      category: `Xunfei-${voice.gender === 'male' ? 'Male' : 'Female'}`,
-      provider: 'xunfei',
-      is_active: true
-    }));
+    const voiceData = voices.map(voice => {
+      // 检查是否为新闻播报音色
+      const isNewsVoice = voice.description.includes('新闻播报');
+      
+      return {
+        name: `xunfei-${voice.voiceId}`, // 使用name作为唯一标识
+        display_name: voice.displayName,
+        language_code: voice.language,
+        ssml_gender: voice.gender,
+        natural_sample_rate_hertz: 16000, // 科大讯飞默认采样率
+        pricing: {
+          pricePerMillionChars: 0, // 科大讯飞按服务量计费，这里设为0
+          examplePrice: "按服务量计费"
+        },
+        characteristics: {
+          voiceType: voice.gender === 'male' ? '男声' : '女声',
+          tone: voice.description,
+          pitch: '标准'
+        },
+        category: isNewsVoice 
+          ? `Xunfei-News-${voice.gender === 'male' ? 'Male' : 'Female'}`
+          : `Xunfei-${voice.gender === 'male' ? 'Male' : 'Female'}`,
+        provider: 'xunfei',
+        is_active: true
+      };
+    });
 
     // 批量插入到数据库
     const { data, error } = await supabaseAdmin

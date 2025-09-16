@@ -156,23 +156,37 @@ export async function synthesizeTTS({ text, lang, voiceName, speakingRate = 1.0,
   // 检查是否是科大讯飞音色
   if (voiceName && voiceName.startsWith('xunfei-')) {
     try {
-      const { synthesizeXunfeiTTS } = await import('./xunfei-tts');
+      const { synthesizeXunfeiTTS, synthesizeXunfeiLongTextTTS } = await import('./xunfei-tts');
       const xunfeiVoiceId = voiceName.replace('xunfei-', '');
       
       // 转换speakingRate (Google: 0.25-4.0, 科大讯飞: 0-100)
       const xunfeiSpeed = Math.max(0, Math.min(100, (speakingRate - 0.25) / 3.75 * 100));
       const xunfeiPitch = Math.max(0, Math.min(100, (pitch + 20) / 40 * 100));
       
-      const pcmData = await synthesizeXunfeiTTS(clean, xunfeiVoiceId, {
-        speed: xunfeiSpeed,
-        pitch: xunfeiPitch,
-        volume: 50
-      });
+      // 检查是否是新闻播报音色，使用长文本TTS
+      const isNewsVoice = xunfeiVoiceId.includes('profnews') || 
+                          xunfeiVoiceId.includes('xiaoguo');
       
-      // 将PCM数据转换为WAV格式
-      const wavData = convertPCMToWAV(pcmData, 16000);
-      
-      return Buffer.from(wavData);
+      if (isNewsVoice) {
+        const audioBuffer = await synthesizeXunfeiLongTextTTS(clean, xunfeiVoiceId, {
+          speed: xunfeiSpeed,
+          pitch: xunfeiPitch,
+          volume: 50,
+          language: 'zh'
+        });
+        return audioBuffer;
+      } else {
+        const pcmData = await synthesizeXunfeiTTS(clean, xunfeiVoiceId, {
+          speed: xunfeiSpeed,
+          pitch: xunfeiPitch,
+          volume: 50
+        });
+        
+        // 将PCM数据转换为WAV格式
+        const wavData = convertPCMToWAV(pcmData, 16000);
+        
+        return Buffer.from(wavData);
+      }
     } catch (error) {
       throw error;
     }
