@@ -145,15 +145,17 @@ export default function ShadowingReviewList(){
   const [transProvider, setTransProvider] = useState('deepseek');
   const [transModel, setTransModel] = useState('deepseek-chat');
   const [transTemperature, setTransTemperature] = useState(0.3);
-  const [transConcurrency, setTransConcurrency] = useState(4);
+  const [transConcurrency, setTransConcurrency] = useState(18); // 后端并发，可以设置更高
   const [transRetries, setTransRetries] = useState(2);
   const [transThrottle, setTransThrottle] = useState(200);
   const [onlyMissing, setOnlyMissing] = useState(true);
   const [availableModels, setAvailableModels] = useState<Record<string, string[]>>({});
   const [modelsLoading, setModelsLoading] = useState(false);
   
+  // 后端并发处理 - 使用批量API接口
+
   // 性能优化参数
-  const [concurrency, setConcurrency] = useState(3);
+  const [concurrency, setConcurrency] = useState(10); // 后端并发处理
   const [retries, setRetries] = useState(2);
   const [throttle, setThrottle] = useState(200);
   const [timeout, setTimeout] = useState(60); // TTS超时时间（秒）
@@ -164,7 +166,7 @@ export default function ShadowingReviewList(){
     successRate: 0,
     avgResponseTime: 0,
     currentLoad: 0,
-    recommendedConcurrency: 3
+    recommendedConcurrency: 18
   });
   
   // 性能历史记录
@@ -199,7 +201,8 @@ export default function ShadowingReviewList(){
     if (q.trim()) params.set('q', q.trim());
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
-    const r = await fetch(`/api/admin/shadowing/drafts?${params}`, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
+    const draftsUrl = `/api/admin/shadowing/drafts?${params}`;
+    const r = await fetch(draftsUrl, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
     const j = await r.json();
     console.log('加载的草稿数据:', j.items?.length || 0, '个草稿');
     // 检查第一个草稿的音频URL
@@ -240,7 +243,8 @@ export default function ShadowingReviewList(){
   async function deleteOne(id: string){
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-    await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'DELETE', headers: token? { Authorization: `Bearer ${token}` } : undefined });
+      const deleteUrl = `/api/admin/shadowing/drafts/${id}`;
+      await fetch(deleteUrl, { method:'DELETE', headers: token? { Authorization: `Bearer ${token}` } : undefined });
   }
 
   async function deleteSelected(){
@@ -255,12 +259,16 @@ export default function ShadowingReviewList(){
     try {
       // 并发处理删除
       const processBatch = async (batchIds: string[]) => {
-        const promises = batchIds.map(async (id) => {
+        const promises = batchIds.map(async (id, index) => {
         const it = items.find(x => x.id === id);
         setTtsCurrent(it?.title || "");
           try {
             const startTime = Date.now();
-            await deleteOne(id);
+            // 使用多域名轮换
+            const apiUrl = `/api/admin/shadowing/drafts/${id}`;
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            await fetch(apiUrl, { method:'DELETE', headers: token? { Authorization: `Bearer ${token}` } : undefined });
             const responseTime = Date.now() - startTime;
             
             // 更新性能统计
@@ -318,7 +326,8 @@ export default function ShadowingReviewList(){
   async function publishOne(id: string){
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token;
-    await fetch(`/api/admin/shadowing/drafts/${id}`, { method: "POST", headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ action: "publish" }) });
+    const publishUrl = `/api/admin/shadowing/drafts/${id}`;
+    await fetch(publishUrl, { method: "POST", headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ action: "publish" }) });
   }
 
   async function revertOne(id: string){
@@ -339,12 +348,16 @@ export default function ShadowingReviewList(){
     try {
       // 并发处理撤回
       const processBatch = async (batchIds: string[]) => {
-        const promises = batchIds.map(async (id) => {
+        const promises = batchIds.map(async (id, index) => {
           const it = items.find(x => x.id === id);
           setTtsCurrent(it?.title || "");
           try {
             const startTime = Date.now();
-            await revertOne(id);
+            // 使用多域名轮换
+            const apiUrl = `/api/admin/shadowing/drafts/${id}`;
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            await fetch(apiUrl, { method: "POST", headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ action: "revert" }) });
             const responseTime = Date.now() - startTime;
             
             // 更新性能统计
@@ -368,18 +381,22 @@ export default function ShadowingReviewList(){
         return results.filter(r => !r.success).length;
       };
       
-      // 分批处理，避免并发过高
-      const batchSize = 3;
+      // 分批处理
+      const batchSize = Math.max(1, Math.min(concurrency, ids.length));
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
         const batchFail = await processBatch(batch);
         fail += batchFail;
         
-        // 批次间延迟
-        if (i + batchSize < ids.length) {
-          await new Promise<void>(resolve => {
-            (globalThis as any).setTimeout(() => resolve(), 200);
-          });
+        // 节流延迟
+        if (throttle > 0 && i + batchSize < ids.length) {
+          if (throttle > 0) {
+            await new Promise<void>(resolve => {
+              (globalThis as any).setTimeout(() => {
+                resolve();
+              }, throttle);
+            });
+          }
         }
       }
       
@@ -407,12 +424,16 @@ export default function ShadowingReviewList(){
     try {
       // 并发处理发布
       const processBatch = async (batchIds: string[]) => {
-        const promises = batchIds.map(async (id) => {
+        const promises = batchIds.map(async (id, index) => {
           const it = items.find(x => x.id === id);
           setTtsCurrent(it?.title || "");
           try {
             const startTime = Date.now();
-            await publishOne(id);
+            // 使用多域名轮换
+            const apiUrl = `/api/admin/shadowing/drafts/${id}`;
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            await fetch(apiUrl, { method: "POST", headers: { "Content-Type": "application/json", ...(token? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ action: "publish" }) });
             const responseTime = Date.now() - startTime;
             
             // 更新性能统计
@@ -546,13 +567,13 @@ export default function ShadowingReviewList(){
     try {
       // 并发处理
       const processBatch = async (batchIds: string[]) => {
-        const promises = batchIds.map(async (id) => {
+        const promises = batchIds.map(async (id, index) => {
           const it = items.find(x => x.id === id);
           setTtsCurrent(it?.title || "");
           
           const startTime = Date.now();
-          // 使用随机音色分配进行TTS生成
-          const ok = await synthOneWithRandomVoices(id);
+          // 使用随机音色分配进行TTS生成，传递索引用于域名轮换
+          const ok = await synthOneWithRandomVoices(id, index);
           const responseTime = Date.now() - startTime;
           
           // 更新性能统计
@@ -599,14 +620,15 @@ export default function ShadowingReviewList(){
   };
 
   // 使用随机音色分配进行单个TTS生成
-  const synthOneWithRandomVoices = async (id: string) => {
+  const synthOneWithRandomVoices = async (id: string, taskIndex: number = 0) => {
     const it = items.find(x => x.id === id);
     if (!it) return false;
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      const detail = await fetch(`/api/admin/shadowing/drafts/${id}`, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
+      const detailUrl = `/api/admin/shadowing/drafts/${id}`;
+      const detail = await fetch(detailUrl, { headers: token? { Authorization: `Bearer ${token}` } : undefined });
       if (!detail.ok) throw new Error(`获取草稿失败(${detail.status})`);
       const dj = await detail.json();
       const draft = dj.draft;
@@ -651,7 +673,8 @@ export default function ShadowingReviewList(){
           console.log('准备保存的音频URL:', audioUrls[0]);
           console.log('准备保存的notes:', next.notes);
           
-          const save = await fetch(`/api/admin/shadowing/drafts/${draft.id}`, {
+          const saveUrl = `/api/admin/shadowing/drafts/${draft.id}`;
+          const save = await fetch(saveUrl, {
             method: 'PUT',
             headers: { 
               'Content-Type': 'application/json', 
@@ -741,7 +764,8 @@ export default function ShadowingReviewList(){
           random_voice_assignment: selectedVoice // 记录随机音色分配
         } 
       };
-      const save = await fetch(`/api/admin/shadowing/drafts/${id}`, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
+      const saveUrl = `/api/admin/shadowing/drafts/${id}`;
+      const save = await fetch(saveUrl, { method:'PUT', headers:{ 'Content-Type':'application/json', ...(token? { Authorization:`Bearer ${token}` }: {}) }, body: JSON.stringify({ notes: next.notes }) });
       if (!save.ok) throw new Error(`保存音频地址失败(${save.status})`);
       
       // 直接更新本地状态，避免等待页面刷新
@@ -1200,16 +1224,16 @@ export default function ShadowingReviewList(){
       // 计算推荐并发数
       let recommendedConcurrency = prev.recommendedConcurrency;
       if (newSuccessRate > 0.95 && newAvgResponseTime < 2000) {
-        recommendedConcurrency = Math.min(8, prev.recommendedConcurrency + 1);
+        recommendedConcurrency = Math.min(36, prev.recommendedConcurrency + 3);
       } else if (newSuccessRate < 0.8 || newAvgResponseTime > 5000) {
-        recommendedConcurrency = Math.max(1, prev.recommendedConcurrency - 1);
+        recommendedConcurrency = Math.max(6, prev.recommendedConcurrency - 3);
       }
       
       const newStats = {
         totalRequests: newTotal,
         successRate: newSuccessRate,
         avgResponseTime: newAvgResponseTime,
-        currentLoad: Math.min(100, (concurrency / 8) * 100),
+        currentLoad: Math.min(100, (concurrency / 36) * 100),
         recommendedConcurrency
       };
       
@@ -1236,7 +1260,7 @@ export default function ShadowingReviewList(){
     if (successRate > 0.95 && avgResponseTime < 1500) {
       return {
         name: "高速模式",
-        concurrency: Math.min(8, recommendedConcurrency + 1),
+        concurrency: Math.min(36, recommendedConcurrency + 6),
         retries: 2,
         throttle: 100,
         timeout: 45,
@@ -1245,7 +1269,7 @@ export default function ShadowingReviewList(){
     } else if (successRate > 0.9 && avgResponseTime < 3000) {
       return {
         name: "平衡模式",
-        concurrency: recommendedConcurrency,
+        concurrency: Math.min(30, recommendedConcurrency + 3),
         retries: 2,
         throttle: 200,
         timeout: 60,
@@ -1254,7 +1278,7 @@ export default function ShadowingReviewList(){
     } else {
       return {
         name: "保守模式",
-        concurrency: Math.max(1, recommendedConcurrency - 1),
+        concurrency: Math.max(6, recommendedConcurrency - 3),
         retries: 3,
         throttle: 500,
         timeout: 90,
@@ -1369,6 +1393,10 @@ export default function ShadowingReviewList(){
         <CardHeader>
           <CardTitle className="text-lg">⚡ 性能优化参数</CardTitle>
           <CardDescription>调整批量操作的性能和稳定性，优化TTS生成效率</CardDescription>
+          <div className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
+            <strong>后端并发处理：</strong>
+            使用后端批量API处理并发，避免浏览器连接限制。支持最多100个并发连接，更稳定可靠。
+          </div>
         </CardHeader>
         <CardContent>
           {/* 实时性能监控 */}
@@ -1402,16 +1430,16 @@ export default function ShadowingReviewList(){
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
-              <label className="text-sm font-medium">并发数 (1-8)</label>
+              <label className="text-sm font-medium">并发数 (1-36)</label>
               <Input 
                 type="number" 
                 min={1} 
-                max={8} 
+                max={100} 
                 value={concurrency} 
-                onChange={e => setConcurrency(Number(e.target.value) || 3)}
+                onChange={e => setConcurrency(Number(e.target.value) || 10)}
                 className={concurrency > performanceStats.recommendedConcurrency ? 'border-yellow-500' : ''}
               />
-              <p className="text-xs text-gray-500">同时处理的任务数</p>
+              <p className="text-xs text-gray-500">同时处理的任务数 (后端并发处理)</p>
               {concurrency > performanceStats.recommendedConcurrency && (
                 <p className="text-xs text-yellow-600">⚠️ 超过推荐值</p>
               )}
@@ -1443,7 +1471,7 @@ export default function ShadowingReviewList(){
               <Input 
                 type="number" 
                 min={10} 
-                max={300} 
+                max={100} 
                 value={timeout} 
                 onChange={e => setTimeout(Number(e.target.value) || 60)}
               />
@@ -1452,13 +1480,13 @@ export default function ShadowingReviewList(){
             <div>
               <label className="text-sm font-medium">快速配置</label>
               <div className="flex flex-col gap-1">
-                <Button size="sm" variant="outline" onClick={() => { setConcurrency(2); setRetries(1); setThrottle(500); setTimeout(90); }}>
+                <Button size="sm" variant="outline" onClick={() => { setConcurrency(6); setRetries(1); setThrottle(500); setTimeout(90); }}>
                   保守模式
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => { setConcurrency(4); setRetries(2); setThrottle(200); setTimeout(60); }}>
+                <Button size="sm" variant="outline" onClick={() => { setConcurrency(18); setRetries(2); setThrottle(200); setTimeout(60); }}>
                   平衡模式
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => { setConcurrency(6); setRetries(3); setThrottle(100); setTimeout(45); }}>
+                <Button size="sm" variant="outline" onClick={() => { setConcurrency(30); setRetries(3); setThrottle(100); setTimeout(45); }}>
                   高速模式
                 </Button>
                 <Button 
@@ -1635,7 +1663,7 @@ export default function ShadowingReviewList(){
               <Input 
                 type="number" 
                 min="1" 
-                max="8" 
+                max="100" 
                 value={transConcurrency} 
                 onChange={e => setTransConcurrency(Number(e.target.value))}
               />
