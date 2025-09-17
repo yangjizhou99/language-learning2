@@ -60,17 +60,19 @@ export async function GET(req: NextRequest) {
 
     // 直接查询，不使用缓存
     const result = await (async () => {
-      // Build query for shadowing drafts
+      // Build query for shadowing items
       let query = supabase
-        .from('shadowing_drafts')
+        .from('shadowing_items')
         .select(`
           id,
           lang,
           level,
           title,
           text,
+          audio_url,
           topic,
           genre,
+          register,
           notes,
           translations,
           trans_updated_at,
@@ -78,9 +80,9 @@ export async function GET(req: NextRequest) {
           ai_model,
           ai_usage,
           status,
-          created_at,
           theme_id,
-          subtopic_id
+          subtopic_id,
+          created_at
         `);
 
       // Apply filters
@@ -109,7 +111,7 @@ export async function GET(req: NextRequest) {
         }
         query = query.eq('level', levelNum);
       }
-      // 只显示已审核的内容
+      // 只显示已审核的内容（shadowing_items 表中 status='approved' 的记录）
       query = query.eq('status', 'approved');
 
       const { data: items, error } = await query.order('created_at', { ascending: false });
@@ -188,7 +190,7 @@ export async function GET(req: NextRequest) {
         
         return {
           ...item,
-          audio_url: item.notes?.audio_url || null, // 提取音频URL到顶层
+          audio_url: item.audio_url || item.notes?.audio_url || null, // 优先使用直接字段，回退到notes
           theme,
           subtopic,
           isPracticed,

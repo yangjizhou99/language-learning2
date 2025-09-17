@@ -161,6 +161,7 @@ export default function ShadowingPage() {
   const [isAddingToVocab, setIsAddingToVocab] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showSavingModal, setShowSavingModal] = useState(false);
   const [practiceStartTime, setPracticeStartTime] = useState<Date | null>(null);
   const [currentRecordings, setCurrentRecordings] = useState<AudioRecording[]>([]);
   const [isImporting, setIsImporting] = useState(false);
@@ -484,7 +485,7 @@ export default function ShadowingPage() {
   const [saving, setSaving] = useState(false);
 
   // UI状態
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [user, setUser] = useState<{id: string, email?: string} | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
@@ -791,6 +792,8 @@ export default function ShadowingPage() {
     setPracticeComplete(false);
     setScoringResult(null);
     setShowSentenceComparison(false);
+    // 选择题目后自动收起侧边栏
+    setSidebarCollapsed(true);
     
     // 以前のセッションデータを読み込み試行（練習済みマークに関係なく）
     try {
@@ -1156,14 +1159,72 @@ export default function ShadowingPage() {
     }
   };
 
-  // 下書き保存
+  // 下書き保存 - 与保存按钮相同效果，只是状态为draft
   const saveDraft = async () => {
     if (!currentItem) return;
     
     setSaving(true);
+    setShowSavingModal(true);
+    
+    // 立即更新本地状态，确保UI即时响应
+    const practiceTime = practiceStartTime ? 
+      Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000) : 0;
+    
+    // 1. 立即更新問库列表状态
+    setItems(prev => prev.map(item => 
+      item.id === currentItem.id 
+        ? { 
+            ...item, 
+            isPracticed: true,
+            stats: {
+              ...item.stats,
+              recordingCount: currentRecordings.length,
+              vocabCount: selectedWords.length,
+              practiceTime,
+              lastPracticed: new Date().toISOString()
+            }
+          }
+        : item
+    ));
+    
+    // 2. 立即设置练习完成状态
+    setPracticeComplete(true);
+    
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch('/api/shadowing/session', {
+      
+      // 3. 自动检查和保存生語
+      let savedVocabCount = 0;
+      if (selectedWords.length > 0) {
+        try {
+          const entries = selectedWords.map(item => ({
+            term: item.word,
+            lang: item.lang,
+            native_lang: userProfile?.native_lang || language, // 优先使用用户母语，否则使用界面言語
+            source: 'shadowing',
+            source_id: currentItem.id,
+            context: item.context,
+            tags: [],
+            explanation: item.explanation || null
+          }));
+
+          const vocabResponse = await fetch('/api/vocab/bulk_create', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ entries })
+          });
+
+          if (vocabResponse.ok) {
+            const vocabResult = await vocabResponse.json();
+            savedVocabCount = vocabResult.success_count || selectedWords.length;
+          }
+        } catch (vocabError) {
+          console.warn('生語保存失败:', vocabError);
+        }
+      }
+
+      // 4. 保存练习session（状态为draft）
+      const sessionResponse = await fetch('/api/shadowing/session', {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -1175,24 +1236,23 @@ export default function ShadowingPage() {
         })
       });
       
-      if (response.ok) {
-        const data = await response.json();
+      if (sessionResponse.ok) {
+        const data = await sessionResponse.json();
         setCurrentSession(data.session);
         
-         // 更新当前items状态
-         setItems(prev => prev.map(item => 
-           item.id === currentItem.id 
-             ? { ...item, status: 'draft' }
-             : item
-         ));
-        
-        alert('草稿已保存');
+        // 显示成功提示
+        const message = savedVocabCount > 0 
+          ? `草稿已保存！已导入 ${savedVocabCount} 个生词到生词本`
+          : '草稿已保存！';
+        setSuccessMessage(message);
+        setShowSuccessToast(true);
       }
     } catch (error) {
       console.error('Failed to save draft:', error);
       alert('保存失败');
     } finally {
       setSaving(false);
+      setShowSavingModal(false);
     }
   };
 
@@ -1766,6 +1826,7 @@ export default function ShadowingPage() {
     if (!currentItem) return;
     
     setSaving(true);
+    setShowSavingModal(true);
     
     // 立即更新本地状态，确保UI即时响应
     const practiceTime = practiceStartTime ? 
@@ -1966,6 +2027,7 @@ export default function ShadowingPage() {
       alert('练习完了，但部分数据同步可能延迟');
     } finally {
       setSaving(false);
+      setShowSavingModal(false);
     }
   };
 
@@ -2123,7 +2185,7 @@ export default function ShadowingPage() {
               <div className="h-full flex flex-col">
                 {/* 侧边栏头部 */}
                 <div className="p-4 border-b flex items-center justify-between">
-                  <h3 className="font-semibold">{t.shadowing.shadowing_vocabulary || "シャドーイング単語集"}</h3>
+                  <h3 className="font-semibold">{t.shadowing.shadowing_vocabulary || "シャドーイング试题库"}</h3>
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => fetchItems()}
@@ -2330,7 +2392,7 @@ export default function ShadowingPage() {
                       <div className="p-4 text-center text-gray-500">{t.shadowing.no_questions_found || "没有找到問目"}</div>
                     ) : (
                       <div className="space-y-2 p-2">
-                        {filteredItems.map((item) => (
+                        {filteredItems.map((item, index) => (
                           <div
                             key={item.id}
                             className={`p-3 rounded border cursor-pointer transition-colors ${
@@ -2357,6 +2419,9 @@ export default function ShadowingPage() {
                                   ) : (
                                     <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                   )}
+                                  <span className="text-sm text-gray-500 font-medium min-w-[1.5rem]">
+                                    {index + 1}.
+                                  </span>
                                   <span className="text-sm font-medium truncate">
                                     {item.subtopic ? item.subtopic.title_cn : item.title}
                                     {item.isPracticed && (
@@ -2367,7 +2432,7 @@ export default function ShadowingPage() {
                                     )}
                                   </span>
                                 </div>
-                                <div className="text-xs text-gray-500 mt-1">
+                                <div className="text-xs text-gray-500 mt-1 ml-8">
                                   {LANG_LABEL[item.lang]} • L{item.level}
                                   {item.cefr && ` • ${item.cefr}`}
                                 </div>
@@ -2385,11 +2450,24 @@ export default function ShadowingPage() {
             {/* 手机端主内容区域 */}
             <div className="space-y-4">
               {!currentItem ? (
-                <Card className="p-6">
+                <Card 
+                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setMobileSidebarOpen(true)}
+                >
                   <div className="text-center">
                     <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">{t.shadowing.select_question_to_start || "选择問目开始练习"}</h3>
-                    <p className="text-gray-500">{t.shadowing.click_vocabulary_button || "点击上方\"問库\"按钮选择問目"}</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">{t.shadowing.select_question_to_start || "問題を選択して練習を開始"}</h3>
+                    <p className="text-gray-500 mb-4">{t.shadowing.click_vocabulary_button || "上の「単語帳」ボタンをクリックして問題を選択"}</p>
+                    
+                    {/* 功能说明 */}
+                    <div className="bg-gray-50 rounded-lg p-4 mb-4 text-left">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">功能说明 / Functionality Guide</h4>
+                      <div className="text-xs text-gray-600 whitespace-pre-line leading-relaxed">
+                        {t.shadowing.functionality_guide}
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-blue-600">このカードをクリックして単語帳を開く</p>
                   </div>
                 </Card>
               ) : (
@@ -2422,7 +2500,6 @@ export default function ShadowingPage() {
                           variant="outline"
                           size="sm"
                           onClick={saveDraft}
-                          disabled={saving}
                           className="flex-1 min-w-0"
                         >
                           <Save className="w-4 h-4 mr-1" />
@@ -2432,7 +2509,6 @@ export default function ShadowingPage() {
                         <Button
                           size="sm"
                           onClick={unifiedCompleteAndSave}
-                          disabled={saving}
                           className="flex-1 min-w-0"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -2479,7 +2555,7 @@ export default function ShadowingPage() {
                                         添加中...
                                       </>
                                     ) : (
-                                      '単語集に追加を確認'
+                                      'シャドーイング试题库に追加を確認'
                                     )}
                                   </Button>
                                   <Button
@@ -3160,7 +3236,7 @@ export default function ShadowingPage() {
               {/* 标問和折叠按钮 */}
               <div className="p-4 border-b flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {!sidebarCollapsed && <h3 className="font-semibold">{t.shadowing.shadowing_vocabulary || "シャドーイング単語集"}</h3>}
+                  {!sidebarCollapsed && <h3 className="font-semibold">{t.shadowing.shadowing_vocabulary || "シャドーイング试题库"}</h3>}
                   {!sidebarCollapsed && (
                     <button 
                       onClick={() => fetchItems()}
@@ -3368,7 +3444,7 @@ export default function ShadowingPage() {
                       <div className="p-4 text-center text-gray-500">{t.shadowing.no_questions_found || "没有找到問目"}</div>
                     ) : (
                       <div className="space-y-2 p-2">
-                        {filteredItems.map((item) => (
+                        {filteredItems.map((item, index) => (
                           <div
                             key={item.id}
                             className={`p-3 rounded border cursor-pointer transition-colors ${
@@ -3392,6 +3468,9 @@ export default function ShadowingPage() {
                                   ) : (
                                     <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                   )}
+                                  <span className="text-sm text-gray-500 font-medium min-w-[1.5rem]">
+                                    {index + 1}.
+                                  </span>
                                   <span className="text-sm font-medium truncate">
                                     {item.subtopic ? item.subtopic.title_cn : item.title}
                                     {item.isPracticed && (
@@ -3401,8 +3480,8 @@ export default function ShadowingPage() {
                                       <span className="ml-1 text-yellow-600">📝</span>
                                     )}
                                   </span>
-            </div>
-                                <div className="text-xs text-gray-500 mt-1">
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1 ml-8">
                                   {LANG_LABEL[item.lang]} • L{item.level}
                                   {item.cefr && ` • ${item.cefr}`}
                                   {item.isPracticed && (
@@ -3464,11 +3543,24 @@ export default function ShadowingPage() {
           {/* 右侧练习区域 */}
           <div className="flex-1 overflow-y-auto">
             {!currentItem ? (
-              <Card className="h-full flex items-center justify-center">
+              <Card 
+                className="h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => setSidebarCollapsed(false)}
+              >
                 <div className="text-center">
                   <BookOpen className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">{t.shadowing.select_question_to_start || "选择問目开始练习"}</h3>
-                  <p className="text-gray-500">{t.shadowing.select_from_left_vocabulary || "从左侧問库中选择一个問目开始 シャドーイング練習"}</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">{t.shadowing.select_question_to_start || "問題を選択して練習を開始"}</h3>
+                  <p className="text-gray-500 mb-4">{t.shadowing.select_from_left_vocabulary || "左側の単語帳から問題を選択してシャドーイング練習を開始"}</p>
+                  
+                  {/* 功能说明 */}
+                  <div className="bg-gray-50 rounded-lg p-6 mb-4 text-left max-w-md mx-auto">
+                    <h4 className="text-sm font-medium text-gray-700 mb-3">功能说明 / Functionality Guide</h4>
+                    <div className="text-sm text-gray-600 whitespace-pre-line leading-relaxed">
+                      {t.shadowing.functionality_guide}
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-blue-600 mt-2">このカードをクリックして単語帳を開く</p>
             </div>
               </Card>
             ) : (
@@ -3510,7 +3602,6 @@ export default function ShadowingPage() {
                         variant="outline"
                         size="sm"
                         onClick={saveDraft}
-                        disabled={saving}
                       >
                         <Save className="w-4 h-4 mr-1" />
                         {saving ? '保存中...' : '下書き保存'}
@@ -3518,7 +3609,6 @@ export default function ShadowingPage() {
                       <Button
                         size="sm"
                         onClick={unifiedCompleteAndSave}
-                        disabled={saving}
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
                         {saving ? t.common.loading : t.shadowing.complete_and_save}
@@ -3567,7 +3657,7 @@ export default function ShadowingPage() {
                                       添加中...
                                     </>
                                   ) : (
-                                    '単語集に追加を確認'
+                                    'シャドーイング试题库に追加を確認'
                                   )}
                                 </Button>
                                 <Button
@@ -4307,6 +4397,17 @@ export default function ShadowingPage() {
         )}
       </Container>
       
+      {/* 保存中弹窗 */}
+      {showSavingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-8 max-w-sm w-full mx-4 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t.shadowing.saving_modal_title}</h3>
+            <p className="text-gray-600">{t.shadowing.saving_modal_description}</p>
+          </div>
+        </div>
+      )}
+
       {/* 成功提示Toast */}
       {showSuccessToast && (
         <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-right duration-300">

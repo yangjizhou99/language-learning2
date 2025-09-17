@@ -212,6 +212,11 @@ export interface Translations {
       l4: string;
       l5: string;
     };
+    // 保存弹窗
+    saving_modal_title: string;
+    saving_modal_description: string;
+    // 功能说明
+    functionality_guide: string;
   };
 }
 
@@ -414,6 +419,11 @@ const zh: Translations = {
       l4: 'L4 - 中高级',
       l5: 'L5 - 高级',
     },
+    // 保存弹窗
+    saving_modal_title: '保存中...',
+    saving_modal_description: '正在保存练习数据，请稍候',
+    // 功能说明
+    functionality_guide: '📚 题目选择：支持日英中三语，L1-L5难度等级，智能筛选\n🎤 录音练习：音频播放、实时录音、发音对比\n🎯 智能评分：语音识别、5级评分体系\n📖 生词管理：拖拽选择生词，自动保存到生词本\n💾 进度跟踪：练习状态管理，支持草稿保存',
   },
 };
 
@@ -616,6 +626,11 @@ const en: Translations = {
       l4: 'L4 - Upper-Intermediate',
       l5: 'L5 - Advanced',
     },
+    // 保存弹窗
+    saving_modal_title: 'Saving...',
+    saving_modal_description: 'Saving practice data, please wait',
+    // 功能说明
+    functionality_guide: '📚 Question Selection: Japanese/English/Chinese, L1-L5 levels, smart filtering\n🎤 Recording Practice: Audio playback, real-time recording, pronunciation comparison\n🎯 Smart Scoring: Speech recognition, 5-level scoring system\n📖 Vocabulary Management: Drag to select words, auto-save to vocabulary\n💾 Progress Tracking: Practice status management, draft saving support',
   },
 };
 
@@ -787,12 +802,12 @@ const ja: Translations = {
     practice_scoring: '練習スコア',
     complete_recording_first: 'まず録音を完了してから、下のボタンをクリックしてスコアを取得してください',
     // 新增的按钮和界面文本翻译
-    refresh_vocabulary: '単語集を更新',
+    refresh_vocabulary: 'シャドーイング试题库更新',
     select_question_to_start: '問題を選択して練習を開始',
-    click_vocabulary_button: '上の「単語集」ボタンをクリックして問題を選択',
-    select_from_left_vocabulary: '左側の単語集から問題を選択してシャドーイング練習を開始',
+    click_vocabulary_button: '上の「シャドーイング试题库」ボタンをクリックして問題を選択',
+    select_from_left_vocabulary: '左側のシャドーイング试题库から問題を選択してシャドーイング練習を開始',
     shadowing_practice: 'シャドーイング練習',
-    shadowing_vocabulary: 'シャドーイング単語集',
+    shadowing_vocabulary: 'シャドーイング试题库',
     no_questions_found: '問題が見つかりません',
     // 生词解释相关
     no_explanation: '説明がありません',
@@ -818,6 +833,11 @@ const ja: Translations = {
       l4: 'L4 - 中上級',
       l5: 'L5 - 上級',
     },
+    // 保存弹窗
+    saving_modal_title: '保存中...',
+    saving_modal_description: '練習データを保存中です。お待ちください',
+    // 功能说明
+    functionality_guide: '📚 問題選択：日英中三言語、L1-L5レベル、スマートフィルタリング\n🎤 録音練習：音声再生、リアルタイム録音、発音比較\n🎯 スマート採点：音声認識、5段階採点システム\n📖 単語管理：ドラッグで単語選択、自動保存\n💾 進捗追跡：練習状況管理、下書き保存対応',
   },
 };
 

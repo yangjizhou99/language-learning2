@@ -328,6 +328,160 @@ export default function ShadowingItemsAdmin(){
         </Dialog>
         <Dialog>
           <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              disabled={getFilteredItems().filter(item => selected[item.id]).length === 0}
+            >
+              给标题添加编号
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>给标题添加编号</DialogTitle>
+              <DialogDescription>
+                将给当前筛选结果中选中的 {getFilteredItems().filter(item => selected[item.id]).length} 项素材的标题添加编号。
+                <br />
+                <br />
+                <strong>操作说明：</strong>
+                <br />
+                • 编号将添加到标题开头，格式为 "1. 原标题"
+                <br />
+                • 如果标题已经有编号，将替换现有编号
+                <br />
+                • 编号按筛选结果的顺序排列
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button variant="ghost">取消</Button>
+              </DialogClose>
+              <DialogClose asChild>
+                <Button variant="outline" onClick={async() => {
+                  const filteredItems = getFilteredItems();
+                  const selectedItems = filteredItems.filter(item => selected[item.id]);
+                  
+                  if (selectedItems.length === 0) {
+                    toast.error('未选择任何项');
+                    return;
+                  }
+                  
+                  try {
+                    const updates = selectedItems.map((item, index) => {
+                      // 移除标题中可能存在的编号（数字开头后跟点号）
+                      const cleanTitle = item.title.replace(/^\d+\.\s*/, '');
+                      return {
+                        id: item.id,
+                        title: `${index + 1}. ${cleanTitle}`
+                      };
+                    });
+                    
+                    const r = await fetch('/api/admin/shadowing/items', {
+                      method: 'PATCH',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(await getAuthHeaders())
+                      },
+                      body: JSON.stringify({ updates })
+                    });
+                    
+                    if (r.ok) {
+                      toast.success(`已给 ${updates.length} 项标题添加编号`);
+                      setSelected({});
+                      setSelectAll(false);
+                      load();
+                    } else {
+                      const errorData = await r.json();
+                      toast.error(`添加编号失败: ${errorData.error || '未知错误'}`);
+                    }
+                  } catch (error) {
+                    toast.error('添加编号失败，请重试');
+                  }
+                }}>
+                  确认添加编号
+                </Button>
+              </DialogClose>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              disabled={getFilteredItems().filter(item => selected[item.id]).length === 0}
+            >
+              去掉标题编号
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>去掉标题编号</DialogTitle>
+              <DialogDescription>
+                将去掉当前筛选结果中选中的 {getFilteredItems().filter(item => selected[item.id]).length} 项素材标题中的编号。
+                <br />
+                <br />
+                <strong>操作说明：</strong>
+                <br />
+                • 将移除标题开头的编号（如 "1. "、"2. " 等）
+                <br />
+                • 只移除数字后跟点号和空格的格式
+                <br />
+                • 如果标题没有编号，则保持不变
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button variant="ghost">取消</Button>
+              </DialogClose>
+              <DialogClose asChild>
+                <Button variant="outline" onClick={async() => {
+                  const filteredItems = getFilteredItems();
+                  const selectedItems = filteredItems.filter(item => selected[item.id]);
+                  
+                  if (selectedItems.length === 0) {
+                    toast.error('未选择任何项');
+                    return;
+                  }
+                  
+                  try {
+                    const updates = selectedItems.map(item => {
+                      // 移除标题开头的编号
+                      const cleanTitle = item.title.replace(/^\d+\.\s*/, '');
+                      return {
+                        id: item.id,
+                        title: cleanTitle
+                      };
+                    });
+                    
+                    const r = await fetch('/api/admin/shadowing/items', {
+                      method: 'PATCH',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(await getAuthHeaders())
+                      },
+                      body: JSON.stringify({ updates })
+                    });
+                    
+                    if (r.ok) {
+                      toast.success(`已去掉 ${updates.length} 项标题的编号`);
+                      setSelected({});
+                      setSelectAll(false);
+                      load();
+                    } else {
+                      const errorData = await r.json();
+                      toast.error(`去掉编号失败: ${errorData.error || '未知错误'}`);
+                    }
+                  } catch (error) {
+                    toast.error('去掉编号失败，请重试');
+                  }
+                }}>
+                  确认去掉编号
+                </Button>
+              </DialogClose>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <Dialog>
+          <DialogTrigger asChild>
             <Button variant="destructive" disabled={getFilteredItems().filter(item => selected[item.id]).length === 0}>
               批量删除
             </Button>
@@ -395,11 +549,14 @@ export default function ShadowingItemsAdmin(){
       {/* 素材列表区域 */}
       {loading ? <div>加载中…</div> : (
         <div className="grid gap-3">
-          {getFilteredItems().map(it => (
+          {getFilteredItems().map((it, index) => (
             <div key={it.id} className="border rounded p-3">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 mr-2 min-w-0">
                   <input type="checkbox" checked={!!selected[it.id]} onChange={e=>setSelected(s=>({ ...s, [it.id]: e.target.checked }))} />
+                 <span className="text-sm text-gray-500 font-medium min-w-[2rem]">
+                   {index + 1}.
+                 </span>
                   <div className="font-medium truncate">{it.title}</div>
                 </div>
                 <div className="flex gap-2">

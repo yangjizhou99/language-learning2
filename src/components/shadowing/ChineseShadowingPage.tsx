@@ -2358,7 +2358,7 @@ export default function ShadowingPage() {
                       <div className="p-4 text-center text-gray-500">{t.shadowing.no_questions_found || "没有找到题目"}</div>
                     ) : (
                       <div className="space-y-2 p-2">
-                        {filteredItems.map((item) => (
+                        {filteredItems.map((item, index) => (
                           <div
                             key={item.id}
                             className={`p-3 rounded border cursor-pointer transition-colors ${
@@ -2385,6 +2385,9 @@ export default function ShadowingPage() {
                                   ) : (
                                     <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                   )}
+                                  <span className="text-sm text-gray-500 font-medium min-w-[1.5rem]">
+                                    {index + 1}.
+                                  </span>
                                   <span className="text-sm font-medium truncate">
                                     {item.subtopic ? item.subtopic.title_cn : item.title}
                                     {item.isPracticed && (
@@ -2395,7 +2398,7 @@ export default function ShadowingPage() {
                                     )}
                                   </span>
                                 </div>
-                                <div className="text-xs text-gray-500 mt-1">
+                                <div className="text-xs text-gray-500 mt-1 ml-8">
                                   {LANG_LABEL[item.lang]} • L{item.level}
                                   {item.cefr && ` • ${item.cefr}`}
                                 </div>
@@ -3396,7 +3399,7 @@ export default function ShadowingPage() {
                       <div className="p-4 text-center text-gray-500">{t.shadowing.no_questions_found || "没有找到题目"}</div>
                     ) : (
                       <div className="space-y-2 p-2">
-                        {filteredItems.map((item) => (
+                        {filteredItems.map((item, index) => (
                           <div
                             key={item.id}
                             className={`p-3 rounded border cursor-pointer transition-colors ${
@@ -3420,6 +3423,9 @@ export default function ShadowingPage() {
                                   ) : (
                                     <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                   )}
+                                  <span className="text-sm text-gray-500 font-medium min-w-[1.5rem]">
+                                    {index + 1}.
+                                  </span>
                                   <span className="text-sm font-medium truncate">
                                     {item.subtopic ? item.subtopic.title_cn : item.title}
                                     {item.isPracticed && (
