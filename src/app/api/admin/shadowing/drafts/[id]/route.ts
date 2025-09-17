@@ -37,19 +37,108 @@ export async function POST(req: NextRequest, { params }:{ params: Promise<{ id:s
     const { id } = await params;
     const { data: d, error: e0 } = await auth.supabase.from("shadowing_drafts").select("*").eq("id", id).single();
     if (e0 || !d) return NextResponse.json({ error: "not found" }, { status: 404 });
-    const audioUrl = typeof d?.notes?.audio_url === "string" ? d.notes.audio_url : "";
-    const { error: e1 } = await auth.supabase.from("shadowing_items").insert([{
+    
+    // 获取音频URL，如果为空则使用空字符串
+    const audioUrl = typeof d?.notes?.audio_url === "string" && d.notes.audio_url.trim() 
+      ? d.notes.audio_url 
+      : ""; // 允许空字符串
+    
+    // 准备插入数据
+    const insertData = {
       lang: d.lang,
       level: d.level,
       title: d.title,
       text: d.text,
       audio_url: audioUrl,
+      topic: d.topic || '',
+      genre: d.genre || 'monologue',
+      register: d.register || 'neutral',
+      notes: d.notes || {},
+      ai_provider: d.ai_provider || null,
+      ai_model: d.ai_model || null,
+      ai_usage: d.ai_usage || {},
+      status: 'approved',
+      created_by: d.created_by || null,
+      theme_id: d.theme_id || null,
+      subtopic_id: d.subtopic_id || null,
       translations: d.translations || {},
       trans_updated_at: d.trans_updated_at,
       meta: { from_draft: d.id, notes: d.notes, published_at: new Date().toISOString() }
-    }]);
-    if (e1) return NextResponse.json({ error: e1.message }, { status: 400 });
-    await auth.supabase.from("shadowing_drafts").update({ status: "approved" }).eq("id", id);
+    };
+    
+    console.log("准备插入的数据:", JSON.stringify(insertData, null, 2));
+    
+    // 检查数据长度和有效性
+    if (insertData.title && insertData.title.length > 5000) {
+      console.warn("标题过长，截断到5000字符:", insertData.title.length);
+      insertData.title = insertData.title.substring(0, 5000);
+    }
+    
+    if (insertData.text && insertData.text.length > 50000) {
+      console.warn("文本过长，截断到50000字符:", insertData.text.length);
+      insertData.text = insertData.text.substring(0, 50000);
+    }
+    
+    if (insertData.audio_url && insertData.audio_url.length > 5000) {
+      console.warn("音频URL过长，截断到5000字符:", insertData.audio_url.length);
+      insertData.audio_url = insertData.audio_url.substring(0, 5000);
+    }
+    
+    // 检查外键约束
+    if (insertData.theme_id) {
+      const { data: themeExists } = await auth.supabase
+        .from("shadowing_themes")
+        .select("id")
+        .eq("id", insertData.theme_id)
+        .single();
+      if (!themeExists) {
+        console.warn("主题ID不存在，设置为null:", insertData.theme_id);
+        insertData.theme_id = null;
+      }
+    }
+    
+    if (insertData.subtopic_id) {
+      const { data: subtopicExists } = await auth.supabase
+        .from("shadowing_subtopics")
+        .select("id")
+        .eq("id", insertData.subtopic_id)
+        .single();
+      if (!subtopicExists) {
+        console.warn("子主题ID不存在，设置为null:", insertData.subtopic_id);
+        insertData.subtopic_id = null;
+      }
+    }
+    
+    console.log("最终插入的数据:", JSON.stringify(insertData, null, 2));
+    
+    const { data: insertResult, error: e1 } = await auth.supabase.from("shadowing_items").insert([insertData]).select();
+    if (e1) {
+      console.error("插入 shadowing_items 失败:", e1);
+      console.error("错误详情:", JSON.stringify(e1, null, 2));
+      console.error("尝试插入的数据:", JSON.stringify(insertData, null, 2));
+      return NextResponse.json({ 
+        error: `发布失败: ${e1.message}`, 
+        details: e1.details,
+        hint: e1.hint,
+        code: e1.code
+      }, { status: 400 });
+    }
+    console.log("插入成功，返回数据:", insertResult);
+    
+    console.log("开始更新草稿状态，ID:", id);
+    const { data: updateData, error: e2 } = await auth.supabase.from("shadowing_drafts").update({ status: "approved" }).eq("id", id).select();
+    if (e2) {
+      console.error("更新草稿状态失败:", e2);
+      console.error("错误详情:", JSON.stringify(e2, null, 2));
+      return NextResponse.json({ 
+        error: `更新草稿状态失败: ${e2.message}`, 
+        details: e2.details,
+        hint: e2.hint,
+        code: e2.code
+      }, { status: 400 });
+    }
+    console.log("草稿状态更新成功:", updateData);
+    
     return NextResponse.json({ ok:true });
   }
   
