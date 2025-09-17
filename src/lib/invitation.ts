@@ -246,11 +246,14 @@ export async function deleteInvitationCode(id: string): Promise<{ success: boole
  */
 export async function useInvitationCode(
   codeId: string,
-  userId: string
+  userId: string,
+  supabaseClient?: any
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const client = supabaseClient || supabase;
+    
     // 检查是否已经使用过
-    const { data: existingUse } = await supabase
+    const { data: existingUse } = await client
       .from('invitation_uses')
       .select('id')
       .eq('code_id', codeId)
@@ -262,7 +265,7 @@ export async function useInvitationCode(
     }
 
     // 创建使用记录
-    const { error: useError } = await supabase
+    const { error: useError } = await client
       .from('invitation_uses')
       .insert({
         code_id: codeId,
@@ -275,7 +278,7 @@ export async function useInvitationCode(
     }
 
     // 更新使用计数 - 先获取当前值，然后更新
-    const { data: currentCode, error: fetchError } = await supabase
+    const { data: currentCode, error: fetchError } = await client
       .from('invitation_codes')
       .select('used_count')
       .eq('id', codeId)
@@ -286,7 +289,7 @@ export async function useInvitationCode(
       return { success: false, error: '获取邀请码信息失败' };
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await client
       .from('invitation_codes')
       .update({ used_count: (currentCode.used_count || 0) + 1 })
       .eq('id', codeId);
@@ -336,11 +339,15 @@ export async function getInvitationUses(
  */
 export async function applyInvitationPermissions(
   userId: string,
-  permissions: InvitationPermissions
+  permissions: InvitationPermissions,
+  supabaseClient?: any
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const client = supabaseClient || supabase;
+    
+    
     // 检查用户是否已有权限记录
-    const { data: existingPermissions } = await supabase
+    const { data: existingPermissions } = await client
       .from('user_permissions')
       .select('id')
       .eq('user_id', userId)
@@ -348,7 +355,7 @@ export async function applyInvitationPermissions(
 
     if (existingPermissions) {
       // 更新现有权限（邀请码注册总是覆盖现有权限）
-      const { error } = await supabase
+      const { error } = await client
         .from('user_permissions')
         .update({
           can_access_shadowing: permissions.can_access_shadowing,
@@ -358,12 +365,10 @@ export async function applyInvitationPermissions(
           allowed_languages: permissions.allowed_languages,
           allowed_levels: permissions.allowed_levels,
           max_daily_attempts: permissions.max_daily_attempts,
-          custom_restrictions: {
-            ...permissions.custom_restrictions,
-            ai_enabled: permissions.ai_enabled,
-            api_keys: permissions.api_keys || { deepseek: '', openrouter: '' },
-            model_permissions: permissions.model_permissions || []
-          }
+          ai_enabled: permissions.ai_enabled ?? false,
+          api_keys: permissions.api_keys || { deepseek: '', openrouter: '' },
+          model_permissions: permissions.model_permissions || [],
+          custom_restrictions: permissions.custom_restrictions || {}
         })
         .eq('user_id', userId);
 
@@ -373,7 +378,7 @@ export async function applyInvitationPermissions(
       }
     } else {
       // 创建新权限记录
-      const { error } = await supabase
+      const { error } = await client
         .from('user_permissions')
         .insert({
           user_id: userId,
@@ -384,12 +389,10 @@ export async function applyInvitationPermissions(
           allowed_languages: permissions.allowed_languages || ['en', 'ja', 'zh'],
           allowed_levels: permissions.allowed_levels || [1, 2, 3, 4, 5],
           max_daily_attempts: permissions.max_daily_attempts || 50,
-          custom_restrictions: {
-            ...permissions.custom_restrictions,
-            ai_enabled: permissions.ai_enabled ?? false,
-            api_keys: permissions.api_keys || { deepseek: '', openrouter: '' },
-            model_permissions: permissions.model_permissions || []
-          }
+          ai_enabled: permissions.ai_enabled ?? false,
+          api_keys: permissions.api_keys || { deepseek: '', openrouter: '' },
+          model_permissions: permissions.model_permissions || [],
+          custom_restrictions: permissions.custom_restrictions || {}
         });
 
       if (error) {

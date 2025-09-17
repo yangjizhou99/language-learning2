@@ -126,10 +126,13 @@ export async function POST(req: NextRequest) {
       }
 
       // 记录邀请码使用
-      const useResult = await useInvitationCode(validationResult.code_id!, userId);
+      const useResult = await useInvitationCode(validationResult.code_id!, userId, supabase);
       if (!useResult.success) {
         console.error('记录邀请码使用失败:', useResult.error);
-        // 不阻止注册流程，只记录错误
+        return NextResponse.json({
+          success: false,
+          error: `记录邀请码使用失败: ${useResult.error}`
+        }, { status: 500 });
       }
 
       // 应用邀请码权限（直接使用邀请码权限，不检测冲突）
@@ -137,7 +140,7 @@ export async function POST(req: NextRequest) {
         console.log(`应用邀请码权限，用户: ${userId}, 邀请码: ${invitation_code}`);
         
         // 应用邀请码权限
-        const permissionResult = await applyInvitationPermissions(userId, validationResult.permissions);
+        const permissionResult = await applyInvitationPermissions(userId, validationResult.permissions, supabase);
         if (!permissionResult.success) {
           console.error('应用邀请码权限失败:', permissionResult.error);
           return NextResponse.json({

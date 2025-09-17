@@ -116,12 +116,19 @@ export default function AuthPage() {
       const data = await response.json();
 
       if (data.success) {
-        setMsg("注册成功！正在跳转...");
+        setMsg("注册成功！正在自动登录...");
+        
+        // 等待一小段时间让权限应用完成
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // 自动登录
         const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
         if (error) {
           setMsg(`注册成功，但自动登录失败：${error.message}`);
         } else {
+          setMsg("登录成功！正在跳转...");
+          // 等待一下让权限状态更新
+          await new Promise(resolve => setTimeout(resolve, 500));
           router.replace("/");
         }
       } else {
