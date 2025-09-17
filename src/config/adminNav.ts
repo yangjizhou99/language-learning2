@@ -29,11 +29,9 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
           items: [
             { href: "/admin/users", label: "用户列表", icon: "👥", match: "startsWith" },
             { href: "/admin/users/analytics", label: "用户分析", icon: "📊", match: "startsWith" },
+            { href: "/admin/invitations", label: "邀请码管理", icon: "🎫", match: "startsWith" },
+            { href: "/admin/registration-config", label: "注册配置", icon: "⚙️", match: "startsWith" },
             { href: "/admin/api-usage", label: "API用量统计", icon: "📈" },
-            { href: "/admin/debug-users", label: "调试用户数据", icon: "🐛", match: "startsWith" },
-            { href: "/admin/test-user-detail", label: "测试用户详情", icon: "🧪", match: "startsWith" },
-            { href: "/admin/debug-user-detail", label: "调试用户详情", icon: "🔍", match: "startsWith" },
-            { href: "/admin/setup-database", label: "数据库设置", icon: "🗄️", match: "startsWith" },
           ],
         },
   {
@@ -43,7 +41,6 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
       { href: "/admin/cloze/ai", label: "Cloze 生成/审核", icon: "🎯", match: "startsWith" },
       { href: "/admin/cloze/drafts", label: "Cloze 草稿箱", icon: "🗂️", match: "startsWith" },
       { href: "/admin/alignment/ai", label: "对齐练习生成", icon: "🤝", match: "startsWith" },
-      { href: "/admin/shadowing/ai", label: "Shadowing 生成", icon: "👂", match: "startsWith" },
       { href: "/admin/shadowing/themes", label: "Shadowing 主题管理", icon: "📋", match: "startsWith" },
       { href: "/admin/shadowing/subtopics-gen", label: "Shadowing 批量生成", icon: "🚀", match: "startsWith" },
       { href: "/admin/alignment/review", label: "对齐草稿审核", icon: "🧾", match: "startsWith" },

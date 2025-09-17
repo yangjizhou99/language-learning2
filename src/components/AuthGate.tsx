@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { applyDefaultPermissionsToUser } from "@/lib/defaultPermissions";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import TopNav from "@/components/TopNav";
@@ -35,7 +36,7 @@ export default function AuthGate() {
     checkSession();
 
     // 监听认证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       
       setUser(session?.user || null);
@@ -44,6 +45,14 @@ export default function AuthGate() {
       if (event === 'SIGNED_IN' && session?.user) {
         // 用户登录后，确保profile存在
         supabase.from("profiles").upsert({ id: session.user.id }, { onConflict: "id" });
+        
+        // 为新用户应用默认权限
+        try {
+          await applyDefaultPermissionsToUser(session.user.id);
+        } catch (error) {
+          console.error('应用默认权限失败:', error);
+          // 不阻止登录流程，只记录错误
+        }
         
         // 如果当前在登录页，跳转到首页
         if (pathname === '/auth') {

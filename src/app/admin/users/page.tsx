@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
-import { Search, User, Calendar, Activity, TrendingUp, Filter, Eye, Settings } from "lucide-react";
+import { Search, User, Calendar, Activity, TrendingUp, Filter, Eye, Settings, Users, Copy, CheckSquare } from "lucide-react";
 
 interface User {
   id: string;
@@ -54,6 +55,9 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   const fetchUsers = async (page = 1, searchTerm = "", role = "all") => {
     setLoading(true);
@@ -287,6 +291,80 @@ export default function UsersPage() {
     fetchUsers(newPage, search, roleFilter);
   };
 
+  const handleUserSelect = (userId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedUsers([...selectedUsers, userId]);
+    } else {
+      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(users.map(user => user.id));
+    } else {
+      setSelectedUsers([]);
+    }
+  };
+
+  const handleBulkApplyPermissions = async () => {
+    if (selectedUsers.length === 0) return;
+
+    setBulkActionLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('未登录');
+      }
+
+      // 获取默认权限设置
+      const response = await fetch('/api/admin/users/default-permissions', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('获取默认权限设置失败');
+      }
+
+      const { permissions } = await response.json();
+
+      // 批量应用权限
+      const bulkResponse = await fetch('/api/admin/users/bulk-apply-permissions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_ids: selectedUsers,
+          permissions: permissions
+        })
+      });
+
+      if (!bulkResponse.ok) {
+        const errorData = await bulkResponse.json();
+        throw new Error(errorData.error || '批量应用权限失败');
+      }
+
+      const result = await bulkResponse.json();
+      alert(`成功为 ${result.updated_count} 个用户应用了权限设置`);
+      
+      // 清空选择
+      setSelectedUsers([]);
+      setShowBulkActions(false);
+      
+      // 刷新用户列表
+      fetchUsers(pagination.page, search, roleFilter);
+    } catch (error) {
+      console.error('批量应用权限失败:', error);
+      alert('批量应用权限失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return '未知';
     try {
@@ -362,6 +440,14 @@ export default function UsersPage() {
             <h1 className="text-3xl font-bold">用户管理</h1>
             <p className="text-muted-foreground">管理用户账户、权限和练习数据</p>
           </div>
+          <div className="flex items-center gap-2">
+            <Link href="/admin/users/default-permissions">
+              <Button variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                默认权限设置
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <Breadcrumbs items={[
@@ -405,10 +491,58 @@ export default function UsersPage() {
           </CardContent>
         </Card>
 
+        {/* 批量操作栏 */}
+        {selectedUsers.length > 0 && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <CheckSquare className="h-5 w-5 text-blue-600" />
+                  <span className="text-blue-800 font-medium">
+                    已选择 {selectedUsers.length} 个用户
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleBulkApplyPermissions}
+                    disabled={bulkActionLoading}
+                    size="sm"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    {bulkActionLoading ? '应用中...' : '应用默认权限'}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setSelectedUsers([]);
+                      setShowBulkActions(false);
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    取消选择
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* 用户列表 */}
         <Card>
           <CardHeader>
-            <CardTitle>用户列表 ({pagination.total} 个用户)</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>用户列表 ({pagination.total} 个用户)</CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setShowBulkActions(!showBulkActions)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  {showBulkActions ? '隐藏批量操作' : '批量操作'}
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -420,6 +554,14 @@ export default function UsersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {showBulkActions && (
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedUsers.length === users.length && users.length > 0}
+                            onCheckedChange={handleSelectAll}
+                          />
+                        </TableHead>
+                      )}
                       <TableHead>用户</TableHead>
                       <TableHead>角色</TableHead>
                       <TableHead>注册时间</TableHead>
@@ -432,6 +574,14 @@ export default function UsersPage() {
                   <TableBody>
                     {users.map((user) => (
                       <TableRow key={user.id}>
+                        {showBulkActions && (
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedUsers.includes(user.id)}
+                              onCheckedChange={(checked) => handleUserSelect(user.id, checked as boolean)}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
