@@ -16,10 +16,23 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    const { data: items, error } = await supabaseAdmin
+    // 构建查询
+    let query = supabaseAdmin
       .from('cloze_items')
-      .select('id,lang,level,topic,title,created_at,updated_at')
-      .order('created_at', { ascending: false })
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // 添加筛选条件
+    const lang = searchParams.get('lang');
+    const level = searchParams.get('level');
+    if (lang && lang !== 'all') {
+      query = query.eq('lang', lang);
+    }
+    if (level && level !== 'all') {
+      query = query.eq('level', parseInt(level));
+    }
+
+    const { data: items, error } = await query
       .range(offset, offset + limit - 1);
 
     if (error) {
@@ -28,17 +41,26 @@ export async function GET(req: NextRequest) {
     }
 
     // 获取总数用于分页信息
-    const { count } = await supabaseAdmin
+    let countQuery = supabaseAdmin
       .from('cloze_items')
       .select('*', { count: 'exact', head: true });
 
+    if (lang && lang !== 'all') {
+      countQuery = countQuery.eq('lang', lang);
+    }
+    if (level && level !== 'all') {
+      countQuery = countQuery.eq('level', parseInt(level));
+    }
+
+    const { count } = await countQuery;
+
     return NextResponse.json({
-      data: items || [],
+      items: items || [],
       pagination: {
         page,
         limit,
         total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit)
+        pages: Math.ceil((count || 0) / limit)
       }
     });
   } catch (error) {

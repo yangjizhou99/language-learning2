@@ -4,113 +4,75 @@ import { requireAdmin } from '@/lib/admin';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAdmin(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
-    const db = getServiceSupabase();
-    const { data, error } = await db
+    const adminResult = await requireAdmin(req);
+    if (!adminResult.ok) {
+      return NextResponse.json({ error: adminResult.reason }, { status: adminResult.reason === 'unauthorized' ? 401 : 403 });
+    }
+
+    const supabaseAdmin = getServiceSupabase();
+    
+    // 获取分页参数
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '1000'); // 默认获取更多数据用于导出
+    const offset = (page - 1) * limit;
+    const lang = searchParams.get('lang');
+    const level = searchParams.get('level');
+
+    // 构建查询
+    let query = supabaseAdmin
       .from('shadowing_items')
-      .select(`
-        *,
-        shadowing_themes(title),
-        shadowing_subtopics(title_cn)
-      `)
-      .order('shadowing_themes(title)', { ascending: true, nullsFirst: false })
-      .order('shadowing_subtopics(title_cn)', { ascending: true, nullsFirst: false })
-      .order('title', { ascending: true });
-    if (error) return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
-    return NextResponse.json(data||[]);
-  } catch (e) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
+      .select('*')
+      .order('created_at', { ascending: false });
 
-export async function POST(req: NextRequest) {
-  try {
-    const auth = await requireAdmin(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
-    const { lang, title, text, audio_url } = await req.json();
-    if (!lang || !title || !text || !audio_url) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
-    const db = getServiceSupabase();
-    const { data, error } = await db.from('shadowing_items').insert({ lang, title, text, audio_url, level:3 }).select().single();
-    if (error) return NextResponse.json({ error: 'Failed to create' }, { status: 500 });
-    return NextResponse.json({ success:true, data });
-  } catch (e) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
+    // 添加筛选条件
+    if (lang && lang !== 'all') {
+      query = query.eq('lang', lang);
+    }
+    if (level && level !== 'all') {
+      query = query.eq('level', parseInt(level));
+    }
 
-export async function PUT(req: NextRequest) {
-  try {
-    const auth = await requireAdmin(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
-    const { id, ...rest } = await req.json();
-    if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-    const db = getServiceSupabase();
-    const { error } = await db.from('shadowing_items').update(rest).eq('id', id);
-    if (error) return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
-    return NextResponse.json({ success:true });
-  } catch (e) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
+    const { data: items, error } = await query
+      .range(offset, offset + limit - 1);
 
-export async function PATCH(req: NextRequest) {
-  try {
-    const auth = await requireAdmin(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
-    const { updates } = await req.json();
-    if (!Array.isArray(updates) || updates.length === 0) return NextResponse.json({ error: 'Missing updates array' }, { status: 400 });
-    
-    const db = getServiceSupabase();
-    let successCount = 0;
-    
-    // 批量更新每个项目
-    for (const update of updates) {
-      if (!update.id || !update.title) continue;
-      
-      const { error } = await db
-        .from('shadowing_items')
-        .update({ title: update.title })
-        .eq('id', update.id);
-      
-      if (!error) {
-        successCount++;
+    if (error) {
+      console.error('Error fetching shadowing items:', error);
+      return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 });
+    }
+
+    // 添加状态字段（shadowing_items没有status字段，我们添加一个默认值）
+    const itemsWithStatus = (items || []).map(item => ({
+      ...item,
+      status: 'approved' // shadowing_items默认为已审核状态
+    }));
+
+    // 获取总数用于分页信息
+    let countQuery = supabaseAdmin
+      .from('shadowing_items')
+      .select('*', { count: 'exact', head: true });
+
+    if (lang && lang !== 'all') {
+      countQuery = countQuery.eq('lang', lang);
+    }
+    if (level && level !== 'all') {
+      countQuery = countQuery.eq('level', parseInt(level));
+    }
+
+    const { count } = await countQuery;
+
+    return NextResponse.json({
+      items: itemsWithStatus,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
       }
-    }
-    
-    return NextResponse.json({ 
-      success: true, 
-      updated_count: successCount,
-      total_requested: updates.length 
     });
-  } catch (e) {
+
+  } catch (error) {
+    console.error('Error in shadowing items API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const auth = await requireAdmin(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
-    const db = getServiceSupabase();
-    let error = null as any;
-    if (id) {
-      const res = await db.from('shadowing_items').delete().eq('id', id);
-      error = res.error;
-    } else {
-      let ids: string[] | undefined = undefined;
-      try { const body = await req.json(); ids = Array.isArray(body?.ids) ? body.ids : undefined; } catch {}
-      if (!ids || ids.length===0) return NextResponse.json({ error:'Missing id(s)' }, { status:400 });
-      const res = await db.from('shadowing_items').delete().in('id', ids);
-      error = res.error;
-    }
-    if (error) return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
-    return NextResponse.json({ success:true });
-  } catch (e) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-

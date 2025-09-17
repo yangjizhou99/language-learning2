@@ -78,12 +78,18 @@ export async function GET(req: NextRequest) {
     // 读取 Range 头并透传到上游
     const range = req.headers.get('range') || undefined;
 
+    // 如果路径包含bucket名称，需要提取实际的文件路径
+    let actualPath = path;
+    if (path.startsWith(`${bucket}/`)) {
+      actualPath = path.substring(bucket.length + 1); // 移除 "bucket/" 前缀
+    }
+
     // 生成短期签名URL（同时兼容公开桶）
     const { data: signed } = await supabaseAdmin.storage
       .from(bucket)
-      .createSignedUrl(path, 60);
+      .createSignedUrl(actualPath, 60);
 
-    const upstreamUrl = signed?.signedUrl || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+    const upstreamUrl = signed?.signedUrl || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${actualPath}`;
 
     const upstream = await fetch(upstreamUrl, {
       headers: range ? { Range: range } : undefined,
@@ -103,12 +109,12 @@ export async function GET(req: NextRequest) {
 
     // 如上游未提供 content-type，依据扩展名补充
     if (!headers.get('content-type')) {
-      const extension = path.split('.').pop()?.toLowerCase();
+      const extension = actualPath.split('.').pop()?.toLowerCase();
       const contentType = CONTENT_TYPE_MAP[extension || ''] || 'application/octet-stream';
       headers.set('content-type', contentType);
     }
 
-    headers.set('Cache-Control', getCacheStrategy(path));
+    headers.set('Cache-Control', getCacheStrategy(actualPath));
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Cache-Control, If-None-Match');
