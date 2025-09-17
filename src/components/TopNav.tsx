@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { applyDefaultPermissionsToUser } from "@/lib/defaultPermissions";
 import useIsAdmin from "@/hooks/useIsAdmin";
 import useUserPermissions from "@/hooks/useUserPermissions";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,14 @@ export default function TopNav() {
       // Ensure profiles exists
       if (session?.user?.id) {
         await supabase.from("profiles").upsert({ id: session.user.id }, { onConflict: "id" });
+        
+        // 为新用户应用默认权限
+        try {
+          await applyDefaultPermissionsToUser(session.user.id);
+        } catch (error) {
+          console.error('应用默认权限失败:', error);
+          // 不阻止登录流程，只记录错误
+        }
       }
     });
 

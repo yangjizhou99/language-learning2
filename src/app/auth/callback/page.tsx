@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { applyDefaultPermissionsToUser } from "@/lib/defaultPermissions";
 import Link from "next/link";
 
 export default function AuthCallbackPage() {
@@ -12,7 +13,17 @@ export default function AuthCallbackPage() {
       else {
         // 确保 profiles 行
         const { data: u } = await supabase.auth.getUser();
-        if (u?.user?.id) await supabase.from("profiles").upsert({ id: u.user.id }, { onConflict: "id" });
+        if (u?.user?.id) {
+          await supabase.from("profiles").upsert({ id: u.user.id }, { onConflict: "id" });
+          
+          // 为新用户应用默认权限
+          try {
+            await applyDefaultPermissionsToUser(u.user.id);
+          } catch (error) {
+            console.error('应用默认权限失败:', error);
+            // 不阻止登录流程，只记录错误
+          }
+        }
         setMsg("登录成功！");
       }
     })();
