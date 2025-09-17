@@ -502,7 +502,7 @@ export default function WideReadPage() {
             </label>
             <button onClick={synth} className="px-3 py-1 rounded bg-black text-white">▶ 合成 TTS</button>
           </div>
-          {ttsUrl && <audio controls className="w-full" src={ttsUrl}></audio>}
+          {ttsUrl && <audio controls className="w-full" preload="metadata" src={ttsUrl}></audio>}
 
           <div ref={containerRef} className="p-3 bg-gray-50 rounded text-[15px] leading-7">
             {/* 字符粒度渲染，便于选择与高亮 */}

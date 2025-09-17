@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
-import { getServiceSupabase } from "@/lib/supabaseAdmin";
 import { synthesizeTTS } from "@/lib/tts";
 import { uploadAudioFile } from "@/lib/storage-upload";
 
@@ -190,7 +189,6 @@ export async function POST(req: NextRequest) {
     const mergedAudio = await mergeAudioBuffers(audioBuffers);
 
     // 上传到 Supabase Storage
-    const supabaseAdmin = getServiceSupabase();
     const bucket = process.env.NEXT_PUBLIC_SHADOWING_AUDIO_BUCKET || 'tts';
     const timestamp = Date.now();
     const safeLang = String(lang).toLowerCase();
@@ -201,21 +199,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `上传失败: ${uploadResult.error}` }, { status: 500 });
     }
 
-    // 生成签名 URL
-    const { data: signed } = await supabaseAdmin.storage
-      .from(bucket)
-      .createSignedUrl(filePath, 60 * 60 * 24 * 30); // 30 天
-
-    const { data: pub } = supabaseAdmin.storage.from(bucket).getPublicUrl(filePath);
-    const publicUrl = pub?.publicUrl;
-    const audioUrl = signed?.signedUrl || publicUrl;
+    // 优先返回代理URL（带CDN缓存）
+    const audioUrl = uploadResult.proxyUrl || uploadResult.url;
     if (!audioUrl) return NextResponse.json({ error: '获取音频地址失败' }, { status: 500 });
 
-    return NextResponse.json({ 
-      ok: true, 
-      audio_url: audioUrl, 
-      bytes: mergedAudio.length, 
-      signed: Boolean(signed?.signedUrl),
+    return NextResponse.json({
+      ok: true,
+      audio_url: audioUrl,
+      bytes: mergedAudio.length,
+      proxy_url: uploadResult.proxyUrl,
+      direct_url: uploadResult.url,
       dialogue_count: dialogue.length,
       speakers: [...new Set(dialogue.map(d => d.speaker))]
     });

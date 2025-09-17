@@ -74,48 +74,48 @@ export async function GET(req: NextRequest) {
     }
 
     const supabaseAdmin = getServiceSupabase();
-    
-    // 尝试获取文件
-    const { data, error } = await supabaseAdmin.storage
-      .from(bucket)
-      .download(path);
 
-    if (error || !data) {
-      console.error('File download error:', error);
+    // 读取 Range 头并透传到上游
+    const range = req.headers.get('range') || undefined;
+
+    // 生成短期签名URL（同时兼容公开桶）
+    const { data: signed } = await supabaseAdmin.storage
+      .from(bucket)
+      .createSignedUrl(path, 60);
+
+    const upstreamUrl = signed?.signedUrl || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+
+    const upstream = await fetch(upstreamUrl, {
+      headers: range ? { Range: range } : undefined,
+      cache: 'no-store'
+    });
+
+    if (upstream.status === 404) {
       return new NextResponse('File not found', { status: 404 });
     }
 
-    // 转换为 ArrayBuffer
-    const arrayBuffer = await data.arrayBuffer();
-    
-    // 根据文件扩展名设置 Content-Type
-    const extension = path.split('.').pop()?.toLowerCase();
-    const contentType = CONTENT_TYPE_MAP[extension || ''] || 'application/octet-stream';
-    
-    // 生成 ETag
-    const etag = `"${path}-${arrayBuffer.byteLength}-${Date.now()}"`;
-    
-    // 检查客户端缓存
-    const ifNoneMatch = req.headers.get('if-none-match');
-    if (ifNoneMatch === etag) {
-      return new NextResponse(null, { status: 304 });
+    // 复制上游关键响应头并叠加我们的缓存头
+    const headers = new Headers();
+    const passThroughHeaders = ['content-type', 'content-length', 'content-range', 'accept-ranges', 'etag', 'last-modified'];
+    for (const [k, v] of upstream.headers) {
+      if (passThroughHeaders.includes(k.toLowerCase())) headers.set(k, v);
     }
 
-    // 设置响应头
-    const headers = new Headers({
-      'Content-Type': contentType,
-      'Cache-Control': getCacheStrategy(path),
-      'ETag': etag,
-      'Last-Modified': new Date().toUTCString(),
-      'Content-Length': arrayBuffer.byteLength.toString(),
-      // 添加 CORS 头
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Cache-Control, If-None-Match',
-    });
+    // 如上游未提供 content-type，依据扩展名补充
+    if (!headers.get('content-type')) {
+      const extension = path.split('.').pop()?.toLowerCase();
+      const contentType = CONTENT_TYPE_MAP[extension || ''] || 'application/octet-stream';
+      headers.set('content-type', contentType);
+    }
 
-    return new NextResponse(arrayBuffer, {
-      status: 200,
+    headers.set('Cache-Control', getCacheStrategy(path));
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    headers.set('Access-Control-Allow-Headers', 'Content-Type, Cache-Control, If-None-Match');
+
+    // 上游返回 200 或 206，我们保持一致并透传主体
+    return new NextResponse(upstream.body, {
+      status: upstream.status,
       headers,
     });
   } catch (error) {

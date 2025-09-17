@@ -337,7 +337,7 @@ export default function ShadowingReviewDetail(){
           <div className="text-sm text-gray-500">{log}</div>
         </div>
         {audioUrl && (
-          <audio controls src={audioUrl} className="w-full" />
+          <audio controls src={audioUrl} preload="metadata" className="w-full" />
         )}
       </div>
     </div>

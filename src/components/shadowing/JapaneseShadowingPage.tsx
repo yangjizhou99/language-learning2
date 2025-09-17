@@ -2832,7 +2832,7 @@ export default function JapaneseShadowingPage() {
                             </span>
                           )}
                         </div>
-                        <audio controls src={currentItem.audio_url} className="w-full" />
+                        <audio controls src={currentItem.audio_url} preload="metadata" className="w-full" />
                       </div>
                     )}
                   </Card>
@@ -4042,7 +4042,7 @@ export default function JapaneseShadowingPage() {
                           </span>
             )}
           </div>
-                      <audio controls src={currentItem.audio_url} className="w-full" />
+                      <audio controls src={currentItem.audio_url} preload="metadata" className="w-full" />
             </div>
           )}
                 </Card>
