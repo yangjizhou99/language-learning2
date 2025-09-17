@@ -10,7 +10,7 @@ import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import TTSButton from '@/components/TTSButton';
 import { supabase } from '@/lib/supabase';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface VocabEntry {
   id: string;
@@ -42,7 +42,8 @@ interface Pagination {
 }
 
 export default function VocabPage() {
-  const { setLanguageFromUserProfile } = useLanguage();
+  const { setLanguageFromUserProfile } = useTranslation();
+  const t = useTranslation();
   const [entries, setEntries] = useState<VocabEntry[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -270,17 +271,17 @@ export default function VocabPage() {
         ));
       } else {
         const errorData = await response.json();
-        alert(`更新失败：${errorData.error}`);
+        alert(`${t.vocabulary.messages.update_failed}：${errorData.error}`);
       }
     } catch (error) {
       console.error('更新生词状态失败:', error);
-      alert('更新失败，请重试');
+      alert(t.vocabulary.messages.update_failed);
     }
   };
 
   // 删除单个生词
   const deleteEntry = async (id: string) => {
-    if (!confirm('确定要删除这个生词吗？')) return;
+    if (!confirm(t.vocabulary.messages.confirm_delete)) return;
 
     try {
       // 获取当前会话的 access token
@@ -303,22 +304,22 @@ export default function VocabPage() {
         setSelectedEntries(prev => prev.filter(entryId => entryId !== id));
       } else {
         const errorData = await response.json();
-        alert(`删除失败：${errorData.error}`);
+        alert(`${t.vocabulary.messages.delete_failed.replace('{error}', errorData.error)}`);
       }
     } catch (error) {
       console.error('删除生词失败:', error);
-      alert('删除失败，请重试');
+      alert(t.vocabulary.messages.delete_failed.replace('{error}', '未知错误'));
     }
   };
 
   // 批量删除生词
   const deleteSelectedEntries = async () => {
     if (selectedEntries.length === 0) {
-      alert('请先选择要删除的生词');
+      alert(t.vocabulary.messages.confirm_delete);
       return;
     }
 
-    if (!confirm(`确定要删除选中的 ${selectedEntries.length} 个生词吗？此操作不可恢复！`)) {
+    if (!confirm(t.vocabulary.messages.confirm_batch_delete.replace('{count}', selectedEntries.length.toString()))) {
       return;
     }
 
@@ -362,10 +363,10 @@ export default function VocabPage() {
 
         if (failedIds.length === 0) {
           setSelectedEntries([]);
-          alert(`成功删除 ${completed} 个生词！`);
+          alert(t.vocabulary.messages.delete_success.replace('{count}', completed.toString()));
         } else {
           setSelectedEntries(failedIds);
-          alert(`删除完成！成功删除 ${completed} 个，失败 ${failedIds.length} 个`);
+          alert(`${t.vocabulary.messages.delete_success.replace('{count}', completed.toString())}，失败 ${failedIds.length} 个`);
         }
       } else {
         // 批量删除
@@ -385,17 +386,17 @@ export default function VocabPage() {
           // 全部删除成功
           setEntries(prev => prev.filter(entry => !selectedEntries.includes(entry.id)));
           setSelectedEntries([]);
-          alert(`成功删除 ${selectedEntries.length} 个生词！`);
+          alert(t.vocabulary.messages.delete_success.replace('{count}', selectedEntries.length.toString()));
         } else {
           // 部分删除失败
-          alert(`删除完成，但有 ${failedCount} 个生词删除失败，请重试`);
+          alert(`${t.vocabulary.messages.delete_success.replace('{count}', (selectedEntries.length - failedCount).toString())}，但有 ${failedCount} 个生词删除失败，请重试`);
           // 重新获取列表以更新状态
           fetchEntries(pagination.page);
         }
       }
     } catch (error) {
       console.error('批量删除生词失败:', error);
-      alert('批量删除失败，请重试');
+      alert(t.vocabulary.messages.delete_failed.replace('{error}', '未知错误'));
     } finally {
       setIsDeleting(false);
     }
@@ -404,7 +405,7 @@ export default function VocabPage() {
   // 生成AI解释
   const generateExplanations = async () => {
     if (selectedEntries.length === 0) {
-      alert('请先选择要生成解释的生词');
+      alert(t.vocabulary.messages.confirm_delete);
       return;
     }
 
@@ -502,7 +503,7 @@ export default function VocabPage() {
           setSelectedEntries([]);
           // 重新获取列表以显示新生成的解释
           fetchEntries(pagination.page);
-          alert(`成功生成 ${result.count} 个生词的解释！`);
+          alert(t.vocabulary.messages.generation_success.replace('{count}', result.count.toString()));
         }, 1000);
       } else {
         const errorData = await response.json();
@@ -511,7 +512,7 @@ export default function VocabPage() {
           ...prev,
           status: `生成失败：${errorData.error}`,
         }));
-        alert(`生成失败：${errorData.error}${errorData.details ? '\n详情：' + errorData.details : ''}`);
+        alert(t.vocabulary.messages.generation_failed.replace('{error}', errorData.error + (errorData.details ? '\n详情：' + errorData.details : '')));
       }
     } catch (error) {
       console.error('生成解释失败:', error);
@@ -519,7 +520,7 @@ export default function VocabPage() {
         ...prev,
         status: `生成失败：${error instanceof Error ? error.message : '未知错误'}`,
       }));
-      alert(`生成失败：${error instanceof Error ? error.message : '未知错误'}`);
+      alert(t.vocabulary.messages.generation_failed.replace('{error}', error instanceof Error ? error.message : '未知错误'));
     } finally {
       setTimeout(() => {
         setIsGenerating(false);
@@ -554,7 +555,7 @@ export default function VocabPage() {
 
     // 检查浏览器是否支持Web Speech API
     if (!('speechSynthesis' in window)) {
-      alert('您的浏览器不支持语音功能');
+      alert(t.vocabulary.messages.speech_not_supported);
       return;
     }
 
@@ -628,7 +629,7 @@ export default function VocabPage() {
 
     utterance.onerror = () => {
       setSpeakingId(null);
-      alert('语音播放失败，请重试');
+      alert(t.vocabulary.messages.speech_failed);
     };
 
     // 开始播放
@@ -653,7 +654,7 @@ export default function VocabPage() {
     
     // 显示选择结果
     if (unexplainedIds.length === 0) {
-      alert('当前页面没有未解释的生词');
+      alert(t.vocabulary.messages.no_unexplained);
     } else {
       // 按语言分组显示统计信息
       const langStats = unexplainedEntries.reduce((acc, entry) => {
@@ -662,10 +663,10 @@ export default function VocabPage() {
       }, {} as Record<string, number>);
       
       const langText = Object.entries(langStats)
-        .map(([lang, count]) => `${lang === 'en' ? '英语' : lang === 'ja' ? '日语' : '中文'}: ${count}个`)
+        .map(([lang, count]) => `${t.vocabulary.language_labels[lang as keyof typeof t.vocabulary.language_labels]}: ${count}个`)
         .join(', ');
       
-      alert(`已选择 ${unexplainedIds.length} 个未解释的生词\n${langText}`);
+      alert(t.vocabulary.messages.select_unexplained_result.replace('{count}', unexplainedIds.length.toString()).replace('{langText}', langText));
     }
   };
 
@@ -673,70 +674,70 @@ export default function VocabPage() {
     <main className="p-6">
       <Container>
         <Breadcrumbs items={[
-          { href: "/", label: "首页" }, 
-          { label: "生词本" }
+          { href: "/", label: t.nav.home }, 
+          { label: t.vocabulary.title }
         ]} />
         
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">生词本</h1>
+            <h1 className="text-2xl font-semibold">{t.vocabulary.title}</h1>
             <div className="text-sm text-gray-600">
-              共 {pagination.total} 个生词
+              {t.vocabulary.total_vocab.replace('{count}', pagination.total.toString())}
             </div>
           </div>
 
           {/* 过滤器 */}
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 bg-muted rounded-lg">
             <div>
-              <Label htmlFor="lang-filter">语言</Label>
+              <Label htmlFor="lang-filter">{t.vocabulary.filters.language}</Label>
               <Select value={filters.lang} onValueChange={(value) => setFilters(prev => ({ ...prev, lang: value }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="全部语言" />
+                  <SelectValue placeholder={t.vocabulary.filters.all_languages} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部语言</SelectItem>
-                  <SelectItem value="en">英语</SelectItem>
-                  <SelectItem value="ja">日语</SelectItem>
-                  <SelectItem value="zh">中文</SelectItem>
+                  <SelectItem value="all">{t.vocabulary.filters.all_languages}</SelectItem>
+                  <SelectItem value="en">{t.vocabulary.filters.english}</SelectItem>
+                  <SelectItem value="ja">{t.vocabulary.filters.japanese}</SelectItem>
+                  <SelectItem value="zh">{t.vocabulary.filters.chinese}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="status-filter">状态</Label>
+              <Label htmlFor="status-filter">{t.vocabulary.filters.status}</Label>
               <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="全部状态" />
+                  <SelectValue placeholder={t.vocabulary.filters.all_status} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
-                  <SelectItem value="new">新词</SelectItem>
-                  <SelectItem value="starred">已标星</SelectItem>
-                  <SelectItem value="archived">已归档</SelectItem>
+                  <SelectItem value="all">{t.vocabulary.filters.all_status}</SelectItem>
+                  <SelectItem value="new">{t.vocabulary.filters.new_word}</SelectItem>
+                  <SelectItem value="starred">{t.vocabulary.filters.starred}</SelectItem>
+                  <SelectItem value="archived">{t.vocabulary.filters.archived}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="explanation-filter">解释状态</Label>
+              <Label htmlFor="explanation-filter">{t.vocabulary.filters.explanation_status}</Label>
               <Select value={filters.explanation} onValueChange={(value) => setFilters(prev => ({ ...prev, explanation: value }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="全部解释" />
+                  <SelectValue placeholder={t.vocabulary.filters.all_explanations} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">全部解释</SelectItem>
-                  <SelectItem value="has">已生成解释</SelectItem>
-                  <SelectItem value="missing">未生成解释</SelectItem>
+                  <SelectItem value="all">{t.vocabulary.filters.all_explanations}</SelectItem>
+                  <SelectItem value="has">{t.vocabulary.filters.has_explanation}</SelectItem>
+                  <SelectItem value="missing">{t.vocabulary.filters.missing_explanation}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="search">搜索</Label>
+              <Label htmlFor="search">{t.vocabulary.filters.search}</Label>
               <div className="flex gap-2">
                 <Input
                   id="search"
-                  placeholder="搜索生词或上下文..."
+                  placeholder={t.vocabulary.filters.search_placeholder}
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                 />
@@ -750,13 +751,13 @@ export default function VocabPage() {
                     search: '',
                   })}
                 >
-                  重置
+                  {t.vocabulary.filters.reset}
                 </Button>
               </div>
             </div>
 
             <div>
-              <Label htmlFor="speech-rate">🔊 语音速度</Label>
+              <Label htmlFor="speech-rate">{t.vocabulary.filters.speech_rate}</Label>
               <div className="space-y-2">
                 <input
                   id="speech-rate"
@@ -786,10 +787,10 @@ export default function VocabPage() {
           {/* AI生成设置 */}
           {selectedEntries.length > 0 && (
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h3 className="text-lg font-medium mb-3">AI 解释生成设置</h3>
+              <h3 className="text-lg font-medium mb-3">{t.vocabulary.ai_generation.title}</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <Label htmlFor="native-lang">母语</Label>
+                  <Label htmlFor="native-lang">{t.vocabulary.ai_generation.native_language}</Label>
                   <Select 
                     value={generationSettings.native_lang} 
                     onValueChange={(value) => setGenerationSettings(prev => ({ ...prev, native_lang: value }))}
@@ -798,20 +799,20 @@ export default function VocabPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="zh">中文</SelectItem>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="ja">日本語</SelectItem>
+                      <SelectItem value="zh">{t.vocabulary.language_labels.zh}</SelectItem>
+                      <SelectItem value="en">{t.vocabulary.language_labels.en}</SelectItem>
+                      <SelectItem value="ja">{t.vocabulary.language_labels.ja}</SelectItem>
                     </SelectContent>
                   </Select>
                   {userProfile?.native_lang && (
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 已根据您的个人资料自动选择
+                      {t.vocabulary.ai_generation.auto_selected}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="provider">AI 提供商</Label>
+                  <Label htmlFor="provider">{t.vocabulary.ai_generation.ai_provider}</Label>
                   <div className="flex gap-2">
                     <Select 
                       value={generationSettings.provider} 
@@ -840,15 +841,15 @@ export default function VocabPage() {
                       variant="outline"
                       size="sm"
                       onClick={fetchAvailableModels}
-                      title="刷新模型列表"
+                      title={t.vocabulary.ai_generation.refresh_models}
                     >
-                      🔄
+                      {t.vocabulary.ai_generation.refresh_models}
                     </Button>
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="model">模型</Label>
+                  <Label htmlFor="model">{t.vocabulary.ai_generation.model}</Label>
                   <Select 
                     value={generationSettings.model} 
                     onValueChange={(value) => setGenerationSettings(prev => ({ ...prev, model: value }))}
@@ -875,7 +876,7 @@ export default function VocabPage() {
                     disabled={isGenerating}
                     className="w-full"
                   >
-                    {isGenerating ? '生成中...' : `生成解释 (${selectedEntries.length})`}
+                    {isGenerating ? t.vocabulary.ai_generation.generating : `${t.vocabulary.ai_generation.generate_explanations} (${selectedEntries.length})`}
                   </Button>
                 </div>
               </div>
@@ -885,7 +886,7 @@ export default function VocabPage() {
                 <div className="mt-4 p-4 bg-white rounded border border-blue-200">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">生成进度</span>
+                      <span className="font-medium">{t.vocabulary.ai_generation.progress}</span>
                       <span className="text-gray-600">
                         {generationProgress.current} / {generationProgress.total}
                       </span>
@@ -902,13 +903,13 @@ export default function VocabPage() {
                     
                     {generationProgress.estimatedTime > 0 && (
                       <div className="text-xs text-gray-500">
-                        预计剩余时间: {Math.round(generationProgress.estimatedTime)}秒
+                        {t.vocabulary.ai_generation.estimated_time}: {Math.round(generationProgress.estimatedTime)}秒
                       </div>
                     )}
                     
                     {generationProgress.startTime && (
                       <div className="text-xs text-gray-500">
-                        已用时间: {Math.round((new Date().getTime() - generationProgress.startTime.getTime()) / 1000)}秒
+                        {t.vocabulary.ai_generation.elapsed_time}: {Math.round((new Date().getTime() - generationProgress.startTime.getTime()) / 1000)}秒
                       </div>
                     )}
                   </div>
@@ -926,10 +927,10 @@ export default function VocabPage() {
 
           {/* 生词列表 */}
           {loading ? (
-            <div className="text-center py-8">加载中...</div>
+            <div className="text-center py-8">{t.vocabulary.messages.loading}</div>
           ) : entries.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              暂无生词，去 <a href="/practice/shadowing" className="text-blue-600 hover:underline">Shadowing 练习</a> 中添加一些生词吧！
+              {t.vocabulary.messages.no_vocab}，去 <a href="/practice/shadowing" className="text-blue-600 hover:underline">{t.nav.shadowing}</a> 中添加一些生词吧！
             </div>
           ) : (
             <div className="space-y-4">
@@ -940,7 +941,7 @@ export default function VocabPage() {
                   size="sm"
                   onClick={toggleSelectAll}
                 >
-                  {selectedEntries.length === entries.length ? '取消全选' : '全选'}
+                  {selectedEntries.length === entries.length ? t.vocabulary.batch_operations.deselect_all : t.vocabulary.batch_operations.select_all}
                 </Button>
                 <Button
                   variant="outline"
@@ -948,13 +949,13 @@ export default function VocabPage() {
                   onClick={selectUnexplainedEntries}
                   className="bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100"
                 >
-                  🎯 选择未解释
+                  {t.vocabulary.batch_operations.select_unexplained}
                 </Button>
                 <span className="text-sm text-gray-600">
-                  已选择 {selectedEntries.length} 个生词
+                  {t.vocabulary.batch_operations.selected_count.replace('{count}', selectedEntries.length.toString())}
                   {(() => {
                     const unexplainedCount = entries.filter(entry => !entry.explanation || !entry.explanation.gloss_native).length;
-                    return unexplainedCount > 0 ? ` (其中 ${unexplainedCount} 个未解释)` : '';
+                    return unexplainedCount > 0 ? ` (${t.vocabulary.batch_operations.selected_unexplained.replace('{count}', unexplainedCount.toString())})` : '';
                   })()}
                 </span>
                 
@@ -966,7 +967,7 @@ export default function VocabPage() {
                       onClick={deleteSelectedEntries}
                       disabled={isDeleting}
                     >
-                      {isDeleting ? '删除中...' : `删除选中 (${selectedEntries.length})`}
+                      {isDeleting ? t.vocabulary.batch_operations.deleting : `${t.vocabulary.batch_operations.delete_selected} (${selectedEntries.length})`}
                     </Button>
                   </div>
                 )}
@@ -1002,7 +1003,7 @@ export default function VocabPage() {
                           disabled={speakingId !== null && speakingId !== entry.id}
                         />
                         <span className="px-2 py-1 text-xs bg-gray-100 rounded">
-                          {entry.lang === 'en' ? '英语' : entry.lang === 'ja' ? '日语' : '中文'}
+                          {t.vocabulary.language_labels[entry.lang as keyof typeof t.vocabulary.language_labels]}
                         </span>
                         <span className="px-2 py-1 text-xs bg-blue-100 rounded">
                           {entry.source}
@@ -1022,13 +1023,13 @@ export default function VocabPage() {
                           {/* 显示词性信息 */}
                           {entry.explanation.pos && (
                             <div className="mt-1 text-xs text-gray-500">
-                              <strong>词性：</strong>{entry.explanation.pos}
+                              <strong>{t.vocabulary.vocab_card.part_of_speech}：</strong>{entry.explanation.pos}
                             </div>
                           )}
                           
                           {Array.isArray(entry.explanation.senses) && entry.explanation.senses.length > 0 && (
                             <div className="text-xs text-gray-500 mt-1">
-                              例：{entry.explanation.senses[0].example_target} — {entry.explanation.senses[0].example_native}
+                              {t.vocabulary.vocab_card.example}：{entry.explanation.senses[0].example_target} — {entry.explanation.senses[0].example_native}
                             </div>
                           )}
                         </div>
@@ -1039,13 +1040,13 @@ export default function VocabPage() {
                           className="px-2 py-1 rounded border" 
                           onClick={() => updateEntryStatus(entry.id, entry.status === 'starred' ? 'new' : 'starred')}
                         >
-                          {entry.status === 'starred' ? '取消标星' : '标星'}
+                          {entry.status === 'starred' ? t.vocabulary.vocab_card.unstar : t.vocabulary.vocab_card.star}
                         </button>
                         <button 
                           className="px-2 py-1 rounded border text-red-600 hover:bg-red-50" 
                           onClick={() => deleteEntry(entry.id)}
                         >
-                          删除
+                          {t.vocabulary.vocab_card.delete}
                         </button>
                       </div>
                     </div>
@@ -1062,10 +1063,10 @@ export default function VocabPage() {
                     onClick={() => fetchEntries(pagination.page - 1)}
                     disabled={pagination.page <= 1}
                   >
-                    上一页
+                    {t.vocabulary.pagination.previous}
                   </Button>
                   <span className="text-sm text-gray-600">
-                    第 {pagination.page} 页，共 {pagination.totalPages} 页
+                    {t.vocabulary.pagination.page_info.replace('{page}', pagination.page.toString()).replace('{totalPages}', pagination.totalPages.toString())}
                   </span>
                   <Button
                     variant="outline"
@@ -1073,7 +1074,7 @@ export default function VocabPage() {
                     onClick={() => fetchEntries(pagination.page + 1)}
                     disabled={pagination.page >= pagination.totalPages}
                   >
-                    下一页
+                    {t.vocabulary.pagination.next}
                   </Button>
                 </div>
               )}

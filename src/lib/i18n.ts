@@ -218,6 +218,96 @@ export interface Translations {
     // 功能说明
     functionality_guide: string;
   };
+  
+  // 词汇页面
+  vocabulary: {
+    title: string;
+    total_vocab: string;
+    filters: {
+      language: string;
+      all_languages: string;
+      english: string;
+      japanese: string;
+      chinese: string;
+      status: string;
+      all_status: string;
+      new_word: string;
+      starred: string;
+      archived: string;
+      explanation_status: string;
+      all_explanations: string;
+      has_explanation: string;
+      missing_explanation: string;
+      search: string;
+      search_placeholder: string;
+      reset: string;
+      speech_rate: string;
+    };
+    ai_generation: {
+      title: string;
+      native_language: string;
+      ai_provider: string;
+      model: string;
+      generate_explanations: string;
+      generating: string;
+      progress: string;
+      estimated_time: string;
+      elapsed_time: string;
+      auto_selected: string;
+      refresh_models: string;
+    };
+    batch_operations: {
+      select_all: string;
+      deselect_all: string;
+      select_unexplained: string;
+      selected_count: string;
+      selected_unexplained: string;
+      delete_selected: string;
+      deleting: string;
+    };
+    vocab_card: {
+      pronunciation: string;
+      context: string;
+      part_of_speech: string;
+      example: string;
+      star: string;
+      unstar: string;
+      delete: string;
+      no_explanation: string;
+    };
+    pagination: {
+      previous: string;
+      next: string;
+      page_info: string;
+    };
+    messages: {
+      loading: string;
+      no_vocab: string;
+      no_vocab_desc: string;
+      error: string;
+      confirm_delete: string;
+      confirm_batch_delete: string;
+      delete_success: string;
+      delete_failed: string;
+      update_failed: string;
+      generation_success: string;
+      generation_failed: string;
+      no_unexplained: string;
+      select_unexplained_result: string;
+      speech_not_supported: string;
+      speech_failed: string;
+    };
+    status_labels: {
+      new: string;
+      starred: string;
+      archived: string;
+    };
+    language_labels: {
+      en: string;
+      ja: string;
+      zh: string;
+    };
+  };
 }
 
 // 中文翻译
@@ -424,6 +514,94 @@ const zh: Translations = {
     saving_modal_description: '正在保存练习数据，请稍候',
     // 功能说明
     functionality_guide: '📚 题目选择：支持日英中三语，L1-L5难度等级，智能筛选\n🎤 录音练习：音频播放、实时录音、发音对比\n🎯 智能评分：语音识别、5级评分体系\n📖 生词管理：拖拽选择生词，自动保存到生词本\n💾 进度跟踪：练习状态管理，支持草稿保存',
+  },
+  vocabulary: {
+    title: '生词本',
+    total_vocab: '共 {count} 个生词',
+    filters: {
+      language: '语言',
+      all_languages: '全部语言',
+      english: '英语',
+      japanese: '日语',
+      chinese: '中文',
+      status: '状态',
+      all_status: '全部状态',
+      new_word: '新词',
+      starred: '已标星',
+      archived: '已归档',
+      explanation_status: '解释状态',
+      all_explanations: '全部解释',
+      has_explanation: '已生成解释',
+      missing_explanation: '未生成解释',
+      search: '搜索',
+      search_placeholder: '搜索生词或上下文...',
+      reset: '重置',
+      speech_rate: '🔊 语音速度',
+    },
+    ai_generation: {
+      title: 'AI 解释生成设置',
+      native_language: '母语',
+      ai_provider: 'AI 提供商',
+      model: '模型',
+      generate_explanations: '生成解释',
+      generating: '生成中...',
+      progress: '生成进度',
+      estimated_time: '预计剩余时间',
+      elapsed_time: '已用时间',
+      auto_selected: '💡 已根据您的个人资料自动选择',
+      refresh_models: '🔄',
+    },
+    batch_operations: {
+      select_all: '全选',
+      deselect_all: '取消全选',
+      select_unexplained: '🎯 选择未解释',
+      selected_count: '已选择 {count} 个生词',
+      selected_unexplained: '其中 {count} 个未解释',
+      delete_selected: '删除选中',
+      deleting: '删除中...',
+    },
+    vocab_card: {
+      pronunciation: '发音',
+      context: '上下文',
+      part_of_speech: '词性',
+      example: '例',
+      star: '标星',
+      unstar: '取消标星',
+      delete: '删除',
+      no_explanation: '暂无解释',
+    },
+    pagination: {
+      previous: '上一页',
+      next: '下一页',
+      page_info: '第 {page} 页，共 {totalPages} 页',
+    },
+    messages: {
+      loading: '加载中...',
+      no_vocab: '暂无生词',
+      no_vocab_desc: '去 Shadowing 练习中添加一些生词吧！',
+      error: '错误',
+      confirm_delete: '确定要删除这个生词吗？',
+      confirm_batch_delete: '确定要删除选中的 {count} 个生词吗？此操作不可恢复！',
+      delete_success: '成功删除 {count} 个生词！',
+      delete_failed: '删除失败：{error}',
+      update_failed: '更新失败，请重试',
+      generation_success: '成功生成 {count} 个生词的解释！',
+      generation_failed: '生成失败：{error}',
+      no_unexplained: '当前页面没有未解释的生词',
+      select_unexplained_result: '已选择 {count} 个未解释的生词\n{langText}',
+      speech_not_supported: '您的浏览器不支持语音功能',
+      speech_failed: '语音播放失败，请重试',
+    },
+    status_labels: {
+      new: '新词',
+      starred: '已标星',
+      archived: '已归档',
+    },
+    language_labels: {
+      en: '英语',
+      ja: '日语',
+      zh: '中文',
+    },
   },
 };
 
@@ -632,6 +810,94 @@ const en: Translations = {
     // 功能说明
     functionality_guide: '📚 Question Selection: Japanese/English/Chinese, L1-L5 levels, smart filtering\n🎤 Recording Practice: Audio playback, real-time recording, pronunciation comparison\n🎯 Smart Scoring: Speech recognition, 5-level scoring system\n📖 Vocabulary Management: Drag to select words, auto-save to vocabulary\n💾 Progress Tracking: Practice status management, draft saving support',
   },
+  vocabulary: {
+    title: 'Vocabulary',
+    total_vocab: '{count} vocabulary words total',
+    filters: {
+      language: 'Language',
+      all_languages: 'All Languages',
+      english: 'English',
+      japanese: 'Japanese',
+      chinese: 'Chinese',
+      status: 'Status',
+      all_status: 'All Status',
+      new_word: 'New',
+      starred: 'Starred',
+      archived: 'Archived',
+      explanation_status: 'Explanation Status',
+      all_explanations: 'All Explanations',
+      has_explanation: 'Has Explanation',
+      missing_explanation: 'Missing Explanation',
+      search: 'Search',
+      search_placeholder: 'Search words or context...',
+      reset: 'Reset',
+      speech_rate: '🔊 Speech Rate',
+    },
+    ai_generation: {
+      title: 'AI Explanation Generation Settings',
+      native_language: 'Native Language',
+      ai_provider: 'AI Provider',
+      model: 'Model',
+      generate_explanations: 'Generate Explanations',
+      generating: 'Generating...',
+      progress: 'Generation Progress',
+      estimated_time: 'Estimated Time Remaining',
+      elapsed_time: 'Elapsed Time',
+      auto_selected: '💡 Auto-selected based on your profile',
+      refresh_models: '🔄',
+    },
+    batch_operations: {
+      select_all: 'Select All',
+      deselect_all: 'Deselect All',
+      select_unexplained: '🎯 Select Unexplained',
+      selected_count: '{count} words selected',
+      selected_unexplained: '({count} unexplained)',
+      delete_selected: 'Delete Selected',
+      deleting: 'Deleting...',
+    },
+    vocab_card: {
+      pronunciation: 'Pronunciation',
+      context: 'Context',
+      part_of_speech: 'Part of Speech',
+      example: 'Example',
+      star: 'Star',
+      unstar: 'Unstar',
+      delete: 'Delete',
+      no_explanation: 'No explanation available',
+    },
+    pagination: {
+      previous: 'Previous',
+      next: 'Next',
+      page_info: 'Page {page} of {totalPages}',
+    },
+    messages: {
+      loading: 'Loading...',
+      no_vocab: 'No vocabulary words',
+      no_vocab_desc: 'Go to Shadowing practice to add some words!',
+      error: 'Error',
+      confirm_delete: 'Are you sure you want to delete this word?',
+      confirm_batch_delete: 'Are you sure you want to delete {count} selected words? This action cannot be undone!',
+      delete_success: 'Successfully deleted {count} words!',
+      delete_failed: 'Delete failed: {error}',
+      update_failed: 'Update failed, please try again',
+      generation_success: 'Successfully generated explanations for {count} words!',
+      generation_failed: 'Generation failed: {error}',
+      no_unexplained: 'No unexplained words on current page',
+      select_unexplained_result: 'Selected {count} unexplained words\n{langText}',
+      speech_not_supported: 'Your browser does not support speech functionality',
+      speech_failed: 'Speech playback failed, please try again',
+    },
+    status_labels: {
+      new: 'New',
+      starred: 'Starred',
+      archived: 'Archived',
+    },
+    language_labels: {
+      en: 'English',
+      ja: 'Japanese',
+      zh: 'Chinese',
+    },
+  },
 };
 
 // 日文翻译
@@ -838,6 +1104,94 @@ const ja: Translations = {
     saving_modal_description: '練習データを保存中です。お待ちください',
     // 功能说明
     functionality_guide: '📚 問題選択：日英中三言語、L1-L5レベル、スマートフィルタリング\n🎤 録音練習：音声再生、リアルタイム録音、発音比較\n🎯 スマート採点：音声認識、5段階採点システム\n📖 単語管理：ドラッグで単語選択、自動保存\n💾 進捗追跡：練習状況管理、下書き保存対応',
+  },
+  vocabulary: {
+    title: '単語帳',
+    total_vocab: '合計 {count} 語',
+    filters: {
+      language: '言語',
+      all_languages: 'すべての言語',
+      english: '英語',
+      japanese: '日本語',
+      chinese: '中国語',
+      status: 'ステータス',
+      all_status: 'すべてのステータス',
+      new_word: '新規',
+      starred: 'スター付き',
+      archived: 'アーカイブ',
+      explanation_status: '説明ステータス',
+      all_explanations: 'すべての説明',
+      has_explanation: '説明あり',
+      missing_explanation: '説明なし',
+      search: '検索',
+      search_placeholder: '単語や文脈を検索...',
+      reset: 'リセット',
+      speech_rate: '🔊 音声速度',
+    },
+    ai_generation: {
+      title: 'AI説明生成設定',
+      native_language: '母語',
+      ai_provider: 'AIプロバイダー',
+      model: 'モデル',
+      generate_explanations: '説明を生成',
+      generating: '生成中...',
+      progress: '生成進捗',
+      estimated_time: '推定残り時間',
+      elapsed_time: '経過時間',
+      auto_selected: '💡 プロフィールに基づいて自動選択',
+      refresh_models: '🔄',
+    },
+    batch_operations: {
+      select_all: 'すべて選択',
+      deselect_all: '選択解除',
+      select_unexplained: '🎯 説明なしを選択',
+      selected_count: '{count} 語選択中',
+      selected_unexplained: '（{count} 語説明なし）',
+      delete_selected: '選択したものを削除',
+      deleting: '削除中...',
+    },
+    vocab_card: {
+      pronunciation: '発音',
+      context: '文脈',
+      part_of_speech: '品詞',
+      example: '例',
+      star: 'スター',
+      unstar: 'スター解除',
+      delete: '削除',
+      no_explanation: '説明がありません',
+    },
+    pagination: {
+      previous: '前へ',
+      next: '次へ',
+      page_info: '{page} / {totalPages} ページ',
+    },
+    messages: {
+      loading: '読み込み中...',
+      no_vocab: '単語がありません',
+      no_vocab_desc: 'シャドーイング練習で単語を追加しましょう！',
+      error: 'エラー',
+      confirm_delete: 'この単語を削除してもよろしいですか？',
+      confirm_batch_delete: '選択した {count} 語を削除してもよろしいですか？この操作は元に戻せません！',
+      delete_success: '{count} 語を正常に削除しました！',
+      delete_failed: '削除失敗：{error}',
+      update_failed: '更新失敗、再試行してください',
+      generation_success: '{count} 語の説明を正常に生成しました！',
+      generation_failed: '生成失敗：{error}',
+      no_unexplained: '現在のページに説明なしの単語はありません',
+      select_unexplained_result: '{count} 語の説明なし単語を選択しました\n{langText}',
+      speech_not_supported: 'お使いのブラウザは音声機能をサポートしていません',
+      speech_failed: '音声再生に失敗しました、再試行してください',
+    },
+    status_labels: {
+      new: '新規',
+      starred: 'スター付き',
+      archived: 'アーカイブ',
+    },
+    language_labels: {
+      en: '英語',
+      ja: '日本語',
+      zh: '中国語',
+    },
   },
 };
 
