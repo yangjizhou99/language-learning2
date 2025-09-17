@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import TTSButton from '@/components/TTSButton';
+import Pagination from '@/components/Pagination';
 import { supabase } from '@/lib/supabase';
 import { useTranslation } from '@/contexts/LanguageContext';
 
@@ -47,10 +48,11 @@ export default function VocabPage() {
   const [entries, setEntries] = useState<VocabEntry[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
-    limit: 20,
+    limit: 10,
     total: 0,
     totalPages: 0,
   });
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -191,14 +193,14 @@ export default function VocabPage() {
   };
 
   // 获取生词列表
-  const fetchEntries = async (page = 1) => {
+  const fetchEntries = async (page = 1, limit = itemsPerPage) => {
     setLoading(true);
     setError('');
     
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: pagination.limit.toString(),
+        limit: limit.toString(),
         ...(filters.lang && filters.lang !== 'all' && { lang: filters.lang }),
         ...(filters.status && filters.status !== 'all' && { status: filters.status }),
         ...(filters.explanation && filters.explanation !== 'all' && { explanation: filters.explanation }),
@@ -229,6 +231,19 @@ export default function VocabPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 处理每页显示条数变化
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setPagination(prev => ({ ...prev, page: 1 })); // 重置到第一页
+    fetchEntries(1, newItemsPerPage);
+  };
+
+  // 处理页码变化
+  const handlePageChange = (page: number) => {
+    setPagination(prev => ({ ...prev, page }));
+    fetchEntries(page, itemsPerPage);
   };
 
   // 初始加载
@@ -934,6 +949,19 @@ export default function VocabPage() {
             </div>
           ) : (
             <div className="space-y-4">
+              {/* 顶部分页 */}
+              <Pagination
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.total}
+                itemsPerPage={itemsPerPage}
+                onPageChange={handlePageChange}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                showItemsPerPage={true}
+                showPageInput={true}
+                maxVisiblePages={5}
+                className="mb-4"
+              />
               {/* 批量操作 */}
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
                 <Button
@@ -1054,30 +1082,21 @@ export default function VocabPage() {
                 </div>
               ))}
 
-              {/* 分页 */}
-              {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fetchEntries(pagination.page - 1)}
-                    disabled={pagination.page <= 1}
-                  >
-                    {t.vocabulary.pagination.previous}
-                  </Button>
-                  <span className="text-sm text-gray-600">
-                    {t.vocabulary.pagination.page_info.replace('{page}', pagination.page.toString()).replace('{totalPages}', pagination.totalPages.toString())}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fetchEntries(pagination.page + 1)}
-                    disabled={pagination.page >= pagination.totalPages}
-                  >
-                    {t.vocabulary.pagination.next}
-                  </Button>
-                </div>
-              )}
+              {/* 底部分页 */}
+              <div className="border-t pt-4">
+                <Pagination
+                  currentPage={pagination.page}
+                  totalPages={pagination.totalPages}
+                  totalItems={pagination.total}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                  showItemsPerPage={true}
+                  showPageInput={true}
+                  maxVisiblePages={5}
+                  className="mt-4"
+                />
+              </div>
             </div>
           )}
         </div>

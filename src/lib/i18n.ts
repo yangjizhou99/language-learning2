@@ -279,6 +279,15 @@ export interface Translations {
       previous: string;
       next: string;
       page_info: string;
+      first_page: string;
+      last_page: string;
+      showing_items: string;
+      of_total: string;
+      no_data: string;
+      per_page: string;
+      items: string;
+      go_to: string;
+      page: string;
     };
     messages: {
       loading: string;
@@ -574,6 +583,15 @@ const zh: Translations = {
       previous: '上一页',
       next: '下一页',
       page_info: '第 {page} 页，共 {totalPages} 页',
+      first_page: '首页',
+      last_page: '末页',
+      showing_items: '显示第 {start} - {end} 条，共 {total} 条',
+      of_total: '共 {total} 条',
+      no_data: '暂无数据',
+      per_page: '每页',
+      items: '条',
+      go_to: '跳转到',
+      page: '页',
     },
     messages: {
       loading: '加载中...',
@@ -869,6 +887,15 @@ const en: Translations = {
       previous: 'Previous',
       next: 'Next',
       page_info: 'Page {page} of {totalPages}',
+      first_page: 'First',
+      last_page: 'Last',
+      showing_items: 'Showing {start} - {end} of {total} items',
+      of_total: 'of {total} items',
+      no_data: 'No data',
+      per_page: 'Per page',
+      items: 'items',
+      go_to: 'Go to',
+      page: 'page',
     },
     messages: {
       loading: 'Loading...',
@@ -1164,6 +1191,15 @@ const ja: Translations = {
       previous: '前へ',
       next: '次へ',
       page_info: '{page} / {totalPages} ページ',
+      first_page: '最初',
+      last_page: '最後',
+      showing_items: '{start} - {end} 件目を表示（全 {total} 件）',
+      of_total: '全 {total} 件',
+      no_data: 'データなし',
+      per_page: '1ページあたり',
+      items: '件',
+      go_to: '移動',
+      page: 'ページ',
     },
     messages: {
       loading: '読み込み中...',
