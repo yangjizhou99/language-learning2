@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
     const lang = url.searchParams.get('lang');
     const level = url.searchParams.get('level'); 
     const practiced = url.searchParams.get('practiced'); // 'true', 'false', or null (all)
+    const since = url.searchParams.get('since');
 
     // 直接查询，不使用缓存
     const result = await (async () => {
@@ -82,7 +83,8 @@ export async function GET(req: NextRequest) {
           status,
           theme_id,
           subtopic_id,
-          created_at
+          created_at,
+          updated_at
         `);
 
       // Apply filters
@@ -114,7 +116,13 @@ export async function GET(req: NextRequest) {
       // 只显示已审核的内容（shadowing_items 表中 status='approved' 的记录）
       query = query.eq('status', 'approved');
 
-      const { data: items, error } = await query.order('created_at', { ascending: false });
+      if (since) {
+        query = query.gt('updated_at', since).order('updated_at', { ascending: true }).limit(500);
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const { data: items, error } = await query;
 
       console.log('Database query result:', { 
         itemsCount: items?.length || 0, 

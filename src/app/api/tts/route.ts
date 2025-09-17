@@ -7,6 +7,22 @@ import { synthesizeTTS } from "@/lib/tts";
 export async function POST(req: NextRequest) {
   try {
     const { text, lang, voiceName, speakingRate = 1.0, pitch = 0 } = await req.json();
+    
+    // 生成 ETag
+    const etag = `"${text}-${lang}-${voiceName}-${speakingRate}-${pitch}"`;
+    
+    // 检查条件请求
+    const clientETag = req.headers.get('if-none-match');
+    if (clientETag && clientETag === etag) {
+      return new Response(null, {
+        status: 304,
+        headers: {
+          "ETag": etag,
+          "Cache-Control": "public, s-maxage=86400, max-age=3600",
+        }
+      });
+    }
+    
     const audio = await synthesizeTTS({ text, lang, voiceName, speakingRate, pitch });
     const uint8Array = new Uint8Array(audio);
     const blob = new Blob([uint8Array], { type: "audio/mpeg" });
@@ -16,7 +32,7 @@ export async function POST(req: NextRequest) {
       headers: {
         "Content-Type": "audio/mpeg",
         "Cache-Control": "public, s-maxage=86400, max-age=3600", // CDN 1天，浏览器1小时
-        "ETag": `"${text}-${lang}-${voiceName}-${speakingRate}-${pitch}"`,
+        "ETag": etag,
       }
     });
   } catch (e: unknown) {

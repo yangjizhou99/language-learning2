@@ -2,6 +2,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import * as crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
@@ -80,9 +81,24 @@ export async function GET(req: NextRequest) {
     // 尝试从缓存获取
     const cached = await CacheManager.get(cacheKey);
     if (cached) {
-      return NextResponse.json(cached, {
+      const body = JSON.stringify(cached);
+      const etag = '"' + crypto.createHash('sha1').update(body).digest('hex') + '"';
+      const inm = req.headers.get('if-none-match');
+      if (inm && inm === etag) {
+        return new Response(null, {
+          status: 304,
+          headers: {
+            'ETag': etag,
+            'Cache-Control': 'public, s-maxage=300, max-age=60'
+          }
+        });
+      }
+      return new NextResponse(body, {
+        status: 200,
         headers: {
-          'Cache-Control': 'public, s-maxage=300, max-age=60', // CDN 5分钟，浏览器1分钟
+          'Content-Type': 'application/json',
+          'ETag': etag,
+          'Cache-Control': 'public, s-maxage=300, max-age=60'
         }
       });
     }
@@ -92,7 +108,7 @@ export async function GET(req: NextRequest) {
       // 随机获取一道题目
       const { data: items, error } = await supabase
         .from('cloze_items')
-        .select('*')
+        .select('id,lang,level,topic,title,passage,blanks')
         .eq('lang', lang)
         .eq('level', levelNum);
 
@@ -143,7 +159,7 @@ export async function GET(req: NextRequest) {
       })
       .sort((a: any, b: any) => a.id - b.id);
 
-    return NextResponse.json({
+    const responseBody = JSON.stringify({
       success: true,
       item: {
         id: item.id,
@@ -154,9 +170,26 @@ export async function GET(req: NextRequest) {
         passage: item.passage,
         blanks
       }
-    }, {
+    });
+
+    const etag2 = '"' + crypto.createHash('sha1').update(responseBody).digest('hex') + '"';
+    const inm2 = req.headers.get('if-none-match');
+    if (inm2 && inm2 === etag2) {
+      return new Response(null, {
+        status: 304,
+        headers: {
+          'ETag': etag2,
+          'Cache-Control': 'public, s-maxage=300, max-age=60'
+        }
+      });
+    }
+
+    return new NextResponse(responseBody, {
+      status: 200,
       headers: {
-        'Cache-Control': 'public, s-maxage=300, max-age=60', // CDN 5分钟，浏览器1分钟
+        'Content-Type': 'application/json',
+        'ETag': etag2,
+        'Cache-Control': 'public, s-maxage=300, max-age=60'
       }
     });
 

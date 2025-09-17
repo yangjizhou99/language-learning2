@@ -23,7 +23,11 @@ export default function SimpleDraftsPage() {
         console.log("Token:", token ? "存在" : "不存在");
 
         // 调用API
-        const response = await fetch("/api/admin/drafts/list?status=pending", {
+        const key = `drafts:lastSync:pending`;
+        const since = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+        const qs = new URLSearchParams({ status: 'pending' });
+        if (since) qs.set('since', since);
+        const response = await fetch(`/api/admin/drafts/list?${qs.toString()}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
 
@@ -36,8 +40,25 @@ export default function SimpleDraftsPage() {
         }
 
         if (Array.isArray(data)) {
-          setDrafts(data);
-          console.log("成功设置草稿列表，数量:", data.length);
+          // 合并增量
+          const byId: Record<string, any> = {} as any;
+          for (const d of [...drafts, ...data]) byId[d.id] = d;
+          const merged = Object.values(byId).sort((a:any,b:any)=>
+            new Date(b.updated_at||b.created_at).getTime() - new Date(a.updated_at||a.created_at).getTime()
+          );
+          setDrafts(merged);
+          const maxUpdated = data.reduce((m:any, d:any)=>{
+            const t = new Date(d.updated_at||d.created_at).toISOString();
+            return m && m>t ? m : t;
+          }, since || null);
+          if (maxUpdated && typeof window !== 'undefined') localStorage.setItem(key, maxUpdated);
+        } else if (data && data.data) {
+          setDrafts(data.data);
+          const maxUpdated = (data.data as any[]).reduce((m:any, d:any)=>{
+            const t = new Date(d.updated_at||d.created_at).toISOString();
+            return m && m>t ? m : t;
+          }, null);
+          if (maxUpdated && typeof window !== 'undefined') localStorage.setItem(key, maxUpdated);
         } else {
           throw new Error("返回的数据不是数组");
         }

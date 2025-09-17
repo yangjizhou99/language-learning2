@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import * as crypto from "crypto";
 import { getServiceSupabase } from "@/lib/supabaseAdmin";
 import { CacheManager } from "@/lib/cache";
 
@@ -33,14 +34,29 @@ export async function GET(req: NextRequest) {
 		const cacheKey = CacheManager.generateKey("shadowing:next", { lang, level });
 		
 		// 尝试从缓存获取
-		const cached = await CacheManager.get(cacheKey);
-		if (cached) {
-			return NextResponse.json(cached, {
-				headers: {
-					'Cache-Control': 'public, s-maxage=300, max-age=60', // CDN 5分钟，浏览器1分钟
-				}
-			});
-		}
+        const cached = await CacheManager.get(cacheKey);
+        if (cached) {
+            const body = JSON.stringify(cached);
+            const etag = '"' + crypto.createHash('sha1').update(body).digest('hex') + '"';
+            const inm = req.headers.get('if-none-match');
+            if (inm && inm === etag) {
+                return new Response(null, {
+                    status: 304,
+                    headers: {
+                        'ETag': etag,
+                        'Cache-Control': 'public, s-maxage=300, max-age=60'
+                    }
+                });
+            }
+            return new NextResponse(body, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ETag': etag,
+                    'Cache-Control': 'public, s-maxage=300, max-age=60'
+                }
+            });
+        }
 
 		// 使用请求去重防止并发请求
 		const result = await CacheManager.dedupe(cacheKey, async () => {
@@ -84,14 +100,30 @@ export async function GET(req: NextRequest) {
 			};
 		});
 
-		// 缓存结果（5分钟）
-		await CacheManager.set(cacheKey, result, 300);
+        // 缓存结果（5分钟）
+        await CacheManager.set(cacheKey, result, 300);
 
-		return NextResponse.json(result, {
-			headers: {
-				'Cache-Control': 'public, s-maxage=300, max-age=60', // CDN 5分钟，浏览器1分钟
-			}
-		});
+        const body = JSON.stringify(result);
+        const etag = '"' + crypto.createHash('sha1').update(body).digest('hex') + '"';
+        const inm = req.headers.get('if-none-match');
+        if (inm && inm === etag) {
+            return new Response(null, {
+                status: 304,
+                headers: {
+                    'ETag': etag,
+                    'Cache-Control': 'public, s-maxage=300, max-age=60'
+                }
+            });
+        }
+
+        return new NextResponse(body, {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'ETag': etag,
+                'Cache-Control': 'public, s-maxage=300, max-age=60'
+            }
+        });
 
 	} catch (e) {
 		return NextResponse.json({ error: "服务器错误", code: "UNEXPECTED", detail: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) }, { status: 500 });

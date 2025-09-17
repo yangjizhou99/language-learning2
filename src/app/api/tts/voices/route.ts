@@ -2,10 +2,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import * as crypto from "crypto";
+import * as fs from "fs";
+import * as path from "path";
+import { CacheManager } from "@/lib/cache";
 import textToSpeech from "@google-cloud/text-to-speech";
 import { toLocaleCode } from "@/types/lang";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 
 function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
@@ -22,9 +24,6 @@ function makeClient() {
       if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
         throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
       }
-      
-      const fs = require('fs');
-      const path = require('path');
       const filePath = path.resolve(process.cwd(), raw);
       const fileContent = fs.readFileSync(filePath, 'utf8');
       credentials = JSON.parse(fileContent);
@@ -38,37 +37,14 @@ function makeClient() {
   return new textToSpeech.TextToSpeechClient({ credentials, projectId });
 }
 
-async function requireUser() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set() {
-          // no-op for Route Handler; we don't mutate cookies here
-        },
-        remove() {
-          // no-op for Route Handler; we don't mutate cookies here
-        },
-      }
-    }
-  );
-  const { data } = await supabase.auth.getUser();
-  return data.user ?? null;
-}
+// 注：此前的认证与限流逻辑暂不使用，已移除以避免未使用警告
 
-// 简易进程内限流（按用户+语言 5s 冷却）
-const bucket = new Map<string, number>();
-function hit(key: string, windowMs = 5000) {
-  const now = Date.now();
-  const last = bucket.get(key) || 0;
-  if (now - last < windowMs) return false;
-  bucket.set(key, now);
-  return true;
+interface VoiceInfo {
+  name: string;
+  languageCodes: string[];
+  ssmlGender: string;
+  naturalSampleRateHertz: number;
+  type: "Neural2" | "WaveNet" | "Standard";
 }
 
 export async function GET(req: NextRequest) {
@@ -93,6 +69,31 @@ export async function GET(req: NextRequest) {
     //   });
     // }
 
+    const cacheKey = `tts:voices:${lang}:${kind}`;
+    const cached = await CacheManager.get(cacheKey);
+    if (cached) {
+      const body = JSON.stringify(cached);
+      const etag = '"' + crypto.createHash('sha1').update(body).digest('hex') + '"';
+      const inm = req.headers.get('if-none-match');
+      if (inm && inm === etag) {
+        return new Response(null, {
+          status: 304,
+          headers: {
+            "ETag": etag,
+            "Cache-Control": "public, s-maxage=3600, max-age=1800"
+          }
+        });
+      }
+      return new NextResponse(body, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "ETag": etag,
+          "Cache-Control": "public, s-maxage=3600, max-age=1800"
+        }
+      });
+    }
+
     const client = makeClient();
 
     // 按语言过滤（Google 也支持不带 languageCode 的全量，但我们先缩小）
@@ -102,20 +103,20 @@ export async function GET(req: NextRequest) {
     const [res] = locale.toLowerCase().startsWith("zh")
       ? await client.listVoices({})
       : await client.listVoices({ languageCode: locale });
-    const voices = (res.voices || []).map(v => ({
-      name: v.name || "",
-      languageCodes: v.languageCodes || [],
-      ssmlGender: v.ssmlGender || "SSML_VOICE_GENDER_UNSPECIFIED",
-      naturalSampleRateHertz: v.naturalSampleRateHertz || 0,
+    const voices: VoiceInfo[] = (res.voices || []).map((v): VoiceInfo => ({
+      name: v.name ?? "",
+      languageCodes: (v.languageCodes as string[] | undefined) ?? [],
+      ssmlGender: (v.ssmlGender as string | undefined) ?? "SSML_VOICE_GENDER_UNSPECIFIED",
+      naturalSampleRateHertz: (v.naturalSampleRateHertz as number | undefined) ?? 0,
       type:
         (v.name || "").toLowerCase().includes("neural2") ? "Neural2" :
         (v.name || "").toLowerCase().includes("wavenet") ? "WaveNet" : "Standard"
     }))
-    .filter((v: any) => {
+    .filter((v: VoiceInfo) => {
       const codes = v.languageCodes || [];
       const target = locale.toLowerCase();
       // 兼容 cmn-CN / zh-CN / zh-HK / zh-TW 等
-      return codes.some((c: any) => {
+      return codes.some((c: string) => {
         const lc = (c || "").toLowerCase();
         if (target.startsWith("zh")) {
           return lc.startsWith("zh-") || lc.startsWith("cmn-");
@@ -123,14 +124,30 @@ export async function GET(req: NextRequest) {
         return lc.startsWith(target);
       });
     })
-    .filter((v: any) => kind === "all" ? true : v.type.toLowerCase() === kind)
-    .sort((a,b) => a.name.localeCompare(b.name));
+    .filter((v: VoiceInfo) => kind === "all" ? true : v.type.toLowerCase() === kind)
+    .sort((a: VoiceInfo, b: VoiceInfo) => a.name.localeCompare(b.name));
 
-    return new NextResponse(JSON.stringify(voices), {
+    await CacheManager.set(cacheKey, voices, 3600);
+
+    const body = JSON.stringify(voices);
+    const etag = '"' + crypto.createHash('sha1').update(body).digest('hex') + '"';
+    const inm = req.headers.get('if-none-match');
+    if (inm && inm === etag) {
+      return new Response(null, {
+        status: 304,
+        headers: {
+          "ETag": etag,
+          "Cache-Control": "public, s-maxage=3600, max-age=1800"
+        }
+      });
+    }
+
+    return new NextResponse(body, {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, s-maxage=3600, max-age=1800" // CDN 1小时，浏览器30分钟
+        "ETag": etag,
+        "Cache-Control": "public, s-maxage=3600, max-age=1800"
       }
     });
   } catch (e: unknown) {
