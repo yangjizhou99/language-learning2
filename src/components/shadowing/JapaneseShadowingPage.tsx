@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LANG_LABEL } from "@/types/lang";
 import { useMobile } from "@/contexts/MobileContext";
+import FilterLanguageSelector from "./FilterLanguageSelector";
 import { speakText as speakTextUtil } from '@/lib/speechUtils';
 // import { getAuthHeaders } from "@/lib/supabase";
 import { 
@@ -108,10 +109,10 @@ interface AudioRecording {
 }
 
 
-export default function ShadowingPage() {
+export default function JapaneseShadowingPage() {
   const { t, language, setLanguageFromUserProfile } = useLanguage();
   const { permissions } = useUserPermissions();
-  
+    
   // 过滤和筛选状态
   const [lang, setLang] = useState<"ja" | "en" | "zh">("ja");
   const [level, setLevel] = useState<number | null>(null);
@@ -171,7 +172,7 @@ export default function ShadowingPage() {
     hasUnsavedRecording: () => boolean;
   } | null>(null);
   
-  // AI解释相关状态
+  // AI翻訳相关状态
   const [wordExplanations, setWordExplanations] = useState<Record<string, {
     gloss_native: string;
     pronunciation?: string;
@@ -189,7 +190,7 @@ export default function ShadowingPage() {
     status: ''
   });
   
-  // 解释缓存
+  // 翻訳缓存
   const [explanationCache, setExplanationCache] = useState<Record<string, {
     gloss_native: string;
     pronunciation?: string;
@@ -270,7 +271,7 @@ export default function ShadowingPage() {
   };
   
   
-  // 悬停/点击解释组件
+  // 悬停/点击翻訳组件
   const HoverExplanation = ({ word, explanation, children }: { 
     word: string,
     explanation?: {gloss_native: string, senses?: Array<{example_target: string, example_native: string}>}, 
@@ -279,11 +280,11 @@ export default function ShadowingPage() {
     const [showTooltip, setShowTooltip] = useState(false);
     const [latestExplanation, setLatestExplanation] = useState(explanation);
     
-    // 当悬停时，异步获取最新解释（不阻塞显示）
+    // 当悬停时，异步获取最新翻訳（不阻塞显示）
     const handleMouseEnter = async () => {
       setShowTooltip(true);
       
-      // 总是获取最新解释，确保与DynamicExplanation同步
+      // 总是获取最新翻訳，确保与DynamicExplanation同步
       const timer = setTimeout(async () => {
         try {
           const headers = await getAuthHeaders();
@@ -298,14 +299,14 @@ export default function ShadowingPage() {
             // 不更新缓存，避免循环
           }
         } catch (error) {
-          console.error(`获取 ${word} 解释失败:`, error);
+          console.error(`获取 ${word} 翻訳失败:`, error);
         }
       }, 300); // 300ms防抖延迟
       
       return () => clearTimeout(timer);
     };
     
-    const tooltipText = latestExplanation?.gloss_native || "已选择的生词";
+    const tooltipText = latestExplanation?.gloss_native || "選択された単語";
     
     return (
       <span 
@@ -343,14 +344,14 @@ export default function ShadowingPage() {
     );
   };
 
-  // 动态解释组件
+  // 动态翻訳组件
   const DynamicExplanation = ({ word, fallbackExplanation }: { word: string, fallbackExplanation?: {
     gloss_native: string;
     pronunciation?: string;
     pos?: string;
     senses?: Array<{example_target: string, example_native: string}>;
   } }) => {
-    // 优先使用缓存中的最新解释，其次使用fallback解释
+    // 优先使用缓存中的最新翻訳，其次使用fallback翻訳
     const [latestExplanation, setLatestExplanation] = useState<{
       gloss_native: string;
       pronunciation?: string;
@@ -360,7 +361,7 @@ export default function ShadowingPage() {
     const [loading, setLoading] = useState(false);
     const [hasInitialized, setHasInitialized] = useState(false);
     
-     // 刷新解释函数 - 强制从数据库获取最新数据
+     // 翻訳を更新函数 - 强制从数据库获取最新数据
      const refreshExplanation = useCallback(async () => {
        setLoading(true);
        try {
@@ -379,7 +380,7 @@ export default function ShadowingPage() {
              [word]: explanation
            }));
          } else {
-           // 如果没有找到解释，清除缓存
+           // 如果没有找到翻訳，清除缓存
            setLatestExplanation(undefined);
            setExplanationCache(prev => {
              const newCache = { ...prev };
@@ -388,17 +389,17 @@ export default function ShadowingPage() {
            });
          }
        } catch (error) {
-         console.error(`获取 ${word} 解释失败:`, error);
+         console.error(`获取 ${word} 翻訳失败:`, error);
        } finally {
          setLoading(false);
        }
      }, [word]);
     
-     // 初始化时获取最新解释
+     // 初始化时获取最新翻訳
      useEffect(() => {
        if (!hasInitialized) {
          setHasInitialized(true);
-         // 总是获取最新解释，不管缓存中是否有旧解释
+         // 总是获取最新翻訳，不管缓存中是否有旧翻訳
          // 直接调用API，避免依赖refreshExplanation
          const fetchInitialExplanation = async () => {
            setLoading(true);
@@ -415,7 +416,7 @@ export default function ShadowingPage() {
                // 不更新缓存，避免循环
              }
            } catch (error) {
-             console.error(`获取 ${word} 解释失败:`, error);
+             console.error(`获取 ${word} 翻訳失败:`, error);
            } finally {
              setLoading(false);
            }
@@ -435,11 +436,11 @@ export default function ShadowingPage() {
     if (!latestExplanation) {
       return (
         <div className="text-sm text-gray-500 flex items-center gap-2">
-          <span>{t.shadowing.no_explanation || "暂无解释"}</span>
+          <span>{t.shadowing.no_explanation || "翻訳なし"}</span>
           <button 
             onClick={refreshExplanation}
             className="text-xs text-blue-500 hover:text-blue-700"
-            title="刷新解释"
+            title="翻訳を更新"
           >
             🔄
           </button>
@@ -450,27 +451,27 @@ export default function ShadowingPage() {
     return (
       <div className="text-sm text-gray-700">
         <div className="mb-2 flex items-center gap-2">
-          <strong>{t.shadowing.explanation || "解释"}：</strong>{latestExplanation.gloss_native}
+          <strong>{t.shadowing.explanation || "翻訳"}：</strong>{latestExplanation.gloss_native}
           <button 
             onClick={refreshExplanation}
             className="text-xs text-blue-500 hover:text-blue-700"
-            title="刷新解释"
+            title="翻訳を更新"
             disabled={loading}
           >
             🔄
           </button>
         </div>
         
-        {/* 显示词性信息 */}
+        {/* 显示品詞信息 */}
         {latestExplanation.pos && (
           <div className="mb-2 text-sm text-gray-600">
-            <strong>{t.shadowing.part_of_speech || "词性"}：</strong>{latestExplanation.pos}
+            <strong>{t.shadowing.part_of_speech || "品詞"}：</strong>{latestExplanation.pos}
           </div>
         )}
         
         {latestExplanation.senses && latestExplanation.senses.length > 0 && (
           <div className="text-sm text-gray-600">
-            <strong>{t.shadowing.example_sentence || "例句"}：</strong>
+            <strong>{t.shadowing.example_sentence || "例文"}：</strong>
             <div className="mt-1">
               <div className="font-medium">{latestExplanation.senses[0]?.example_target}</div>
               <div className="text-gray-500">{latestExplanation.senses[0]?.example_native}</div>
@@ -489,6 +490,7 @@ export default function ShadowingPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
   const [practiceComplete, setPracticeComplete] = useState(false);
   const [showSentenceComparison, setShowSentenceComparison] = useState(false);
   const [scoringResult, setScoringResult] = useState<{
@@ -792,7 +794,7 @@ export default function ShadowingPage() {
   const getRandomUnpracticed = () => {
     const unpracticed = items.filter(item => !item.isPracticed);
     if (unpracticed.length === 0) {
-      alert("所有题目都已练习过！");
+      alert("すべての問題を練習済みです！");
         return;
       }
     const randomItem = unpracticed[Math.floor(Math.random() * unpracticed.length)];
@@ -803,7 +805,7 @@ export default function ShadowingPage() {
   const getNextUnpracticed = () => {
     const unpracticed = items.filter(item => !item.isPracticed);
     if (unpracticed.length === 0) {
-      alert("所有题目都已练习过！");
+      alert("すべての問題を練習済みです！");
         return;
       }
     loadItem(unpracticed[0]);
@@ -834,8 +836,8 @@ export default function ShadowingPage() {
           // 将之前的生词设置为 previousWords
           setPreviousWords(data.session.picked_preview || []);
           
-             // 还原AI解释 - 从数据库获取所有单词的最新解释
-             // 注意：这里不再并行请求所有解释，而是让DynamicExplanation组件按需加载
+             // 还原AI翻訳 - 从数据库获取所有单词的最新翻訳
+             // 注意：这里不再并行请求所有翻訳，而是让DynamicExplanation组件按需加载
              // 这样可以避免一次性发起大量API请求
           
           // 重新生成录音的signed URL，因为之前的URL可能已过期
@@ -1175,7 +1177,7 @@ export default function ShadowingPage() {
     }
   };
 
-  // 处理录音选择（用于重新评分）
+  // 处理录音选择（用于再採点）
   const handleRecordingSelected = (recording: AudioRecording) => {
     console.log('选择录音进行评分:', recording);
     if (recording.transcription) {
@@ -1225,7 +1227,7 @@ export default function ShadowingPage() {
   };
 
 
-  // 检查生词是否已有AI解释
+  // 检查生词是否已有AI翻訳
   const checkExistingExplanation = async (word: string) => {
     try {
       const headers = await getAuthHeaders();
@@ -1242,13 +1244,13 @@ export default function ShadowingPage() {
               ...prev,
               [word]: entry.explanation
             }));
-            console.log(`从单词本找到解释: ${word}`, entry.explanation);
+            console.log(`从单词本找到翻訳: ${word}`, entry.explanation);
             return true;
           }
         }
       }
     } catch (error) {
-      console.error('检查已有解释失败:', error);
+      console.error('检查已有翻訳失败:', error);
     }
     return false;
   };
@@ -1273,17 +1275,17 @@ export default function ShadowingPage() {
 
 
 
-  // 批量生成AI解释
+  // 批量生成AI翻訳
   const generateBatchExplanations = async () => {
     if (isGeneratingBatchExplanation || selectedWords.length === 0) return;
     
-    // 过滤出还没有解释的生词
+    // 过滤出还没有翻訳的生词
     const wordsNeedingExplanation = selectedWords.filter(item => 
       !item.explanation && !wordExplanations[item.word]
     );
     
     if (wordsNeedingExplanation.length === 0) {
-      alert('所有生词都已经有解释了！');
+      alert('所有生词都已经有翻訳了！');
       return;
     }
     
@@ -1291,7 +1293,7 @@ export default function ShadowingPage() {
     setBatchExplanationProgress({
       current: 0,
       total: wordsNeedingExplanation.length,
-      status: '准备生成AI解释...'
+      status: '准备生成AI翻訳...'
     });
     
     try {
@@ -1303,7 +1305,7 @@ export default function ShadowingPage() {
           setBatchExplanationProgress(prev => ({
             ...prev,
             current: index,
-            status: `正在为 "${item.word}" 生成AI解释...`
+            status: `正在为 "${item.word}" 生成AI翻訳...`
           }));
           
           const response = await fetch('/api/vocab/explain', {
@@ -1336,17 +1338,17 @@ export default function ShadowingPage() {
           
           return null;
         } catch (error) {
-          console.error(`为生词 "${item.word}" 生成AI解释时出错:`, error);
+          console.error(`为生词 "${item.word}" 生成AI翻訳时出错:`, error);
           return null;
         }
       });
       
-      // 等待所有解释生成完成
+      // 等待所有翻訳生成完成
       const results = await Promise.all(explanationPromises);
       const successfulResults = results.filter(result => result !== null);
       
       if (successfulResults.length > 0) {
-        // 更新解释缓存
+        // 更新翻訳缓存
         const newExplanations: Record<string, {
           gloss_native: string;
           pronunciation?: string;
@@ -1370,7 +1372,7 @@ export default function ShadowingPage() {
           ...newExplanations
         }));
         
-        // 更新selectedWords中的解释
+        // 更新selectedWords中的翻訳
         setSelectedWords(prev => prev.map(item => {
           const explanation = newExplanations[item.word];
           return explanation ? { ...item, explanation } : item;
@@ -1379,7 +1381,7 @@ export default function ShadowingPage() {
         setBatchExplanationProgress(prev => ({
           ...prev,
           current: successfulResults.length,
-          status: `成功为 ${successfulResults.length}/${wordsNeedingExplanation.length} 个生词生成解释！`
+          status: `成功为 ${successfulResults.length}/${wordsNeedingExplanation.length} 个生词生成翻訳！`
         }));
         
         // 保存到数据库
@@ -1404,10 +1406,10 @@ export default function ShadowingPage() {
             });
             
             if (saveResponse.ok) {
-              // 批量AI解释已保存到数据库
+              // 批量AI翻訳已保存到数据库
             }
           } catch (error) {
-            console.error('保存批量AI解释时出错:', error);
+            console.error('保存批量AI翻訳时出错:', error);
           }
         }
         
@@ -1415,12 +1417,12 @@ export default function ShadowingPage() {
         if (successfulResults.length === wordsNeedingExplanation.length) {
           setBatchExplanationProgress(prev => ({
             ...prev,
-            status: `✅ 成功为所有 ${successfulResults.length} 个生词生成解释！`
+            status: `✅ 成功为所有 ${successfulResults.length} 个生词生成翻訳！`
           }));
         } else {
           setBatchExplanationProgress(prev => ({
             ...prev,
-            status: `⚠️ 成功为 ${successfulResults.length}/${wordsNeedingExplanation.length} 个生词生成解释`
+            status: `⚠️ 成功为 ${successfulResults.length}/${wordsNeedingExplanation.length} 个生词生成翻訳`
           }));
         }
         
@@ -1432,24 +1434,24 @@ export default function ShadowingPage() {
           });
         }, 3000);
       } else {
-        alert('没有成功生成任何AI解释，请重试');
+        alert('没有成功生成任何AI翻訳，请重试');
       }
     } catch (error) {
-      console.error('批量生成AI解释失败:', error);
-      alert(`批量生成AI解释失败：${error instanceof Error ? error.message : '请重试'}`);
+      console.error('批量生成AI翻訳失败:', error);
+      alert(`批量生成AI翻訳失败：${error instanceof Error ? error.message : '请重试'}`);
     } finally {
       setIsGeneratingBatchExplanation(false);
     }
   };
 
-  // 生成AI解释
+  // 生成AI翻訳
   const generateWordExplanation = async (word: string, context: string, wordLang: string) => {
     if (isGeneratingExplanation) return;
     
-    // 先检查是否已有解释
+    // 先检查是否已有翻訳
     const hasExisting = await checkExistingExplanation(word);
     if (hasExisting) {
-      return; // 如果已有解释，直接返回
+      return; // 如果已有翻訳，直接返回
     }
     
     setIsGeneratingExplanation(true);
@@ -1485,18 +1487,18 @@ export default function ShadowingPage() {
             [word]: explanation
           }));
           
-          // 更新解释缓存，让DynamicExplanation组件能立即显示
+          // 更新翻訳缓存，让DynamicExplanation组件能立即显示
           setExplanationCache(prev => ({
             ...prev,
             [word]: explanation
           }));
           
-          // 将解释保存到生词数据中
+          // 将翻訳保存到生词数据中
           setSelectedWords(prev => prev.map(item => 
             item.word === word ? { ...item, explanation } : item
           ));
           
-          // 同时更新之前的生词中的解释（如果存在）
+          // 同时更新之前的生词中的翻訳（如果存在）
           setPreviousWords(prev => prev.map(item => 
             item.word === word ? { ...item, explanation } : item
           ));
@@ -1515,7 +1517,7 @@ export default function ShadowingPage() {
                 picked_preview: [...previousWords, ...updatedSelectedWords]
               };
               
-              console.log('保存AI解释到数据库:', saveData);
+              console.log('保存AI翻訳到数据库:', saveData);
               
               const saveResponse = await fetch('/api/shadowing/session', {
                 method: 'POST',
@@ -1524,37 +1526,58 @@ export default function ShadowingPage() {
               });
               
               if (saveResponse.ok) {
-                console.log('AI解释已保存到数据库');
+                console.log('AI翻訳已保存到数据库');
       } else {
-                console.error('保存AI解释失败');
+                console.error('保存AI翻訳失败');
       }
     } catch (error) {
-              console.error('保存AI解释时出错:', error);
+              console.error('保存AI翻訳时出错:', error);
             }
           }
         }
       } else {
         const errorData = await response.json();
-        alert(`生成解释失败：${errorData.error}`);
+        alert(`生成翻訳失败：${errorData.error}`);
       }
     } catch (error) {
-      console.error('生成解释失败:', error);
-      alert('生成解释失败，请重试');
+      console.error('生成翻訳失败:', error);
+      alert('生成翻訳失败，请重试');
     } finally {
       setIsGeneratingExplanation(false);
       setGeneratingWord(null);
     }
   };
 
-  // 播放音频
+  // 播放/暂停音频
   const playAudio = () => {
     if (!currentItem?.audio_url) return;
     
+    // 如果当前有音频在播放，则暂停
+    if (audioRef && !audioRef.paused) {
+      audioRef.pause();
+      setIsPlaying(false);
+      return;
+    }
+    
+    // 如果当前音频已暂停，则恢复播放
+    if (audioRef && audioRef.paused) {
+      audioRef.play();
+      setIsPlaying(true);
+      return;
+    }
+    
+    // 创建新的音频对象
     const audio = new Audio(currentItem.audio_url);
+    setAudioRef(audio);
+    
     audio.onplay = () => setIsPlaying(true);
-    audio.onended = () => setIsPlaying(false);
+    audio.onended = () => {
+      setIsPlaying(false);
+      setAudioRef(null);
+    };
     audio.onerror = () => {
       setIsPlaying(false);
+      setAudioRef(null);
       alert('音频播放失败');
     };
     audio.play();
@@ -1581,7 +1604,7 @@ export default function ShadowingPage() {
       // 获取原文
       const originalText = currentItem.text;
       
-      // 使用句子分析计算整体评分
+      // 使用文分析计算総合採点
       const simpleAnalysis = performSimpleAnalysis(originalText, textToScore);
       const { overallScore } = simpleAnalysis;
 
@@ -1647,7 +1670,7 @@ export default function ShadowingPage() {
 
 
 
-  // 简单直观的句子对比分析
+  // 简单直观的文对比分析
   const performSimpleAnalysis = (originalText: string, transcribedText: string) => {
     // 检查是否为中文
     const isChinese = /[\u4e00-\u9fff]/.test(originalText);
@@ -1690,7 +1713,7 @@ export default function ShadowingPage() {
       score: number;
     }> = [];
     
-    // 分析每个句子
+    // 分析每个文
     for (const sentence of originalSentences) {
       let cleanSentence: string[];
       
@@ -1711,7 +1734,7 @@ export default function ShadowingPage() {
           .filter(w => w.length > 0);
       }
       
-      // 计算句子匹配度
+      // 计算文匹配度
       const matchedItems = cleanSentence.filter(item => 
         cleanTranscribed.includes(item)
       );
@@ -2014,7 +2037,7 @@ export default function ShadowingPage() {
         source_id: currentItem?.id,
         context: item.context,
         tags: [],
-        explanation: item.explanation || null // 使用生词数据中的解释
+        explanation: item.explanation || null // 使用生词数据中的翻訳
       }));
 
       const headers = await getAuthHeaders();
@@ -2201,19 +2224,12 @@ export default function ShadowingPage() {
                     </div>
                     
                     {/* 语言选择 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">{t.shadowing.language}</Label>
-                      <Select value={lang} onValueChange={(v: "ja"|"en"|"zh") => setLang(v)}>
-                        <SelectTrigger className="h-11 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                          {permissions.allowed_languages.includes('ja') && <SelectItem value="ja" className="rounded-lg">{LANG_LABEL.ja}</SelectItem>}
-                          {permissions.allowed_languages.includes('en') && <SelectItem value="en" className="rounded-lg">{LANG_LABEL.en}</SelectItem>}
-                          {permissions.allowed_languages.includes('zh') && <SelectItem value="zh" className="rounded-lg">{LANG_LABEL.zh}</SelectItem>}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <FilterLanguageSelector
+                      value={lang}
+                      onChange={setLang}
+                      allowedLanguages={permissions.allowed_languages}
+                      className="h-11"
+                    />
 
                     {/* 等级选择 */}
                     <div className="space-y-2">
@@ -2555,13 +2571,12 @@ export default function ShadowingPage() {
                       <div className="grid grid-cols-1 gap-3">
                         <Button
                           onClick={playAudio}
-                          disabled={isPlaying}
                           variant="outline"
                           size="sm"
                           className="h-12 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all"
                         >
                           {isPlaying ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
-                          {isPlaying ? t.common.loading : t.shadowing.play_audio}
+                          {isPlaying ? '一時停止' : t.shadowing.play_audio}
                         </Button>
                         
                         <div className="grid grid-cols-2 gap-3">
@@ -2704,7 +2719,7 @@ export default function ShadowingPage() {
                             
                             const formattedText = formatDialogueText(currentItem.text);
                             
-                            // 获取所有已选择的生词（包括之前的和本次的）
+                            // 获取所有選択された単語（包括之前的和本次的）
                             const allSelectedWords = [...previousWords, ...selectedWords];
                             const selectedWordSet = new Set(allSelectedWords.map(item => item.word));
                             
@@ -2723,7 +2738,7 @@ export default function ShadowingPage() {
                                   let isHighlighted = false;
                                   let highlightLength = 0;
                                   
-                                  // 检查从当前位置开始的多个字符是否组成已选择的生词
+                                  // 检查从当前位置开始的多个字符是否组成選択された単語
                                   for (const selectedWord of allSelectedWords) {
                                     if (i + selectedWord.word.length <= chars.length) {
                                       const substring = chars.slice(i, i + selectedWord.word.length).join('');
@@ -2859,7 +2874,7 @@ export default function ShadowingPage() {
                                   disabled={isGeneratingExplanation}
                                   className="text-xs"
                                 >
-                                  {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                                  {generatingWord === item.word ? '生成中...' : 'AI翻訳'}
                                 </Button>
                               <Button
                                 variant="ghost"
@@ -2872,7 +2887,7 @@ export default function ShadowingPage() {
                               </div>
                             </div>
                             
-                            {/* AI解释显示 */}
+                            {/* AI翻訳显示 */}
                             <div className="mt-3 p-3 bg-white rounded border border-gray-100">
                               <DynamicExplanation 
                                 word={item.word}
@@ -2900,7 +2915,7 @@ export default function ShadowingPage() {
                             disabled={isGeneratingBatchExplanation}
                             className="text-green-600 hover:text-green-800 border-green-300"
                           >
-                            {isGeneratingBatchExplanation ? '生成中...' : '一键AI解释'}
+                            {isGeneratingBatchExplanation ? '生成中...' : '一键AI翻訳'}
                           </Button>
                           <Button
                             variant="outline"
@@ -2919,12 +2934,12 @@ export default function ShadowingPage() {
                         </div>
                       </div>
                       
-                      {/* 批量AI解释进度显示 */}
+                      {/* 批量AI翻訳进度显示 */}
                       {isGeneratingBatchExplanation && batchExplanationProgress.total > 0 && (
                         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                              <span className="font-medium text-green-700">AI解释生成进度</span>
+                              <span className="font-medium text-green-700">AI翻訳生成进度</span>
                               <span className="text-green-600">
                                 {batchExplanationProgress.current} / {batchExplanationProgress.total}
                               </span>
@@ -2974,7 +2989,7 @@ export default function ShadowingPage() {
                                   disabled={isGeneratingExplanation}
                                   className="text-xs"
                                 >
-                                  {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                                  {generatingWord === item.word ? '生成中...' : 'AI翻訳'}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -2987,7 +3002,7 @@ export default function ShadowingPage() {
                               </div>
                             </div>
                             
-                            {/* AI解释显示 */}
+                            {/* AI翻訳显示 */}
                             {(item.explanation || wordExplanations[item.word]) && (
                               <div className="mt-3 p-3 bg-white rounded border border-blue-100">
                                 <DynamicExplanation 
@@ -3004,24 +3019,31 @@ export default function ShadowingPage() {
 
                   {/* 翻译模块 - 移动端 */}
                   {currentItem && (
-                    <Card className="p-4">
-                      <div className="flex flex-col gap-3 mb-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold text-gray-600">🌐 {t.shadowing.translation}</span>
+                    <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                          <span className="text-white text-lg">🌐</span>
                         </div>
-                        <div className="flex flex-col gap-2">
-                          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{t.shadowing.translation || "翻译"}</h3>
+                          <p className="text-sm text-gray-600">多语言翻译支持</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg-white transition-colors">
                             <input 
                               type="checkbox" 
                               checked={showTranslation} 
                               onChange={e => setShowTranslation(e.target.checked)}
-                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                             />
-                            {t.shadowing.show_translation}
+                            <span className="font-medium">{t.shadowing.show_translation || "显示翻译"}</span>
                           </label>
                           {showTranslation && (
                             <select 
-                              className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              className="h-11 px-4 py-2 bg-white border border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium w-full" 
                               value={translationLang} 
                               onChange={e => setTranslationLang(e.target.value as 'en'|'ja'|'zh')}
                             >
@@ -3033,20 +3055,31 @@ export default function ShadowingPage() {
                             </select>
                           )}
                         </div>
-                      </div>
-                      
-                      {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
-                        <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
-                          {currentItem.translations[translationLang]}
-                        </div>
-                      ) : showTranslation ? (
-                        <div className="text-center py-4">
-                          <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
-                            <span>📝</span>
-                            （暂无翻译，可能尚未生成）
+                        
+                        {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
+                          <div className="p-4 bg-white rounded-xl border border-indigo-200 shadow-sm">
+                            <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
+                              {currentItem.translations[translationLang]}
+                            </div>
                           </div>
-                        </div>
-                      ) : null}
+                        ) : showTranslation ? (
+                          <div className="text-center py-8">
+                            <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <span className="text-2xl">📝</span>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-700 mb-2">暂无翻译</h3>
+                            <p className="text-gray-500">可能尚未生成翻译内容</p>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <span className="text-2xl">🌐</span>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-700 mb-2">开启翻译功能</h3>
+                            <p className="text-gray-500">勾选上方选项以显示翻译内容</p>
+                          </div>
+                        )}
+                      </div>
                     </Card>
                   )}
 
@@ -3067,30 +3100,51 @@ export default function ShadowingPage() {
 
                   {/* 评分区域 */}
                   {!scoringResult && (
-                    <Card className="p-4">
-                      <h3 className="text-lg font-semibold mb-4">{t.shadowing.practice_scoring}</h3>
-                      {currentRecordings.length > 0 ? (
+                    <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                          <span className="text-white text-lg">📊</span>
+                        </div>
                         <div>
-                          <p className="text-gray-600 mb-4">{t.shadowing.recording_completed_message || "您已完成录音，点击下方按钮进行评分"}</p>
+                          <h3 className="text-xl font-bold text-gray-900">{t.shadowing.practice_scoring || "练习评分"}</h3>
+                          <p className="text-sm text-gray-600">AI智能评分，精准分析发音</p>
+                        </div>
+                      </div>
+                      
+                      {currentRecordings.length > 0 ? (
+                        <div className="text-center space-y-4">
+                          <div className="p-4 bg-white/80 rounded-xl border border-purple-200">
+                            <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                              <CheckCircle className="w-8 h-8 text-green-600" />
+                            </div>
+                            <p className="text-gray-700 font-medium mb-2">{t.shadowing.recording_completed || "録音完了！"}</p>
+                            <p className="text-sm text-gray-600">{t.shadowing.recording_completed_message}</p>
+                          </div>
                           <Button
                             onClick={() => performScoring()}
                             disabled={isScoring}
-                            className="bg-blue-600 hover:bg-blue-700 w-full"
+                            className="h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all w-full"
                           >
-                            {isScoring ? "评分中..." : "开始评分"}
+                            {isScoring ? (
+                              <>
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                                {t.shadowing.scoring_in_progress || "採点中..."}
+                              </>
+                            ) : (
+                              <>
+                                <span className="mr-2">🚀</span>
+                                {t.shadowing.start_scoring || "採点開始"}
+                              </>
+                            )}
                           </Button>
                         </div>
                       ) : (
-                        <div>
-                          <p className="text-gray-600 mb-4">{t.shadowing.complete_recording_first}</p>
-                          <Button
-                            onClick={() => performScoring()}
-                            disabled={isScoring}
-                            variant="outline"
-                            className="w-full"
-                          >
-                            {isScoring ? "评分中..." : "开始评分"}
-                          </Button>
+                        <div className="text-center py-8">
+                          <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Mic className="w-10 h-10 text-gray-400" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-700 mb-2">{t.shadowing.no_recording_yet || "まだ録音していません"}</h3>
+                          <p className="text-gray-500 leading-relaxed">{t.shadowing.complete_recording_first}</p>
                         </div>
                       )}
                     </Card>
@@ -3098,56 +3152,80 @@ export default function ShadowingPage() {
 
                   {/* 评分结果区域 */}
                   {scoringResult && (
-                    <Card className="p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold">{t.shadowing.scoring_result || "评分结果"}</h3>
+                    <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                            <span className="text-white text-lg">🎯</span>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900">{t.shadowing.scoring_result || "评分结果"}</h3>
+                            <p className="text-sm text-gray-600">AI智能分析完成</p>
+                          </div>
+                        </div>
                         <Button
                           onClick={() => performScoring(currentTranscription)}
                           disabled={isScoring}
                           variant="outline"
                           size="sm"
+                          className="h-8 bg-white hover:bg-gray-50 border-gray-200 text-gray-700 rounded-lg"
                         >
-                          {isScoring ? "重新评分中..." : "重新评分"}
+                          {isScoring ? (t.shadowing.re_scoring_in_progress || "重新採点中...") : (t.shadowing.re_score || "再採点")}
                         </Button>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-3 mb-4">
-                        <div className="bg-green-50 p-3 rounded-lg">
-                          <div className="text-sm text-green-600 mb-1">{t.shadowing.overall_score || "整体评分"}</div>
-                          <div className="text-xl font-bold text-green-700">
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="p-4 bg-white rounded-xl border border-green-200 shadow-sm">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
+                              <span className="text-green-600 text-sm">🏆</span>
+                            </div>
+                            <div className="text-sm font-medium text-green-700">{t.shadowing.overall_score}</div>
+                          </div>
+                          <div className="text-2xl font-bold text-green-600">
                             {(scoringResult.score || 0).toFixed(1)}%
                           </div>
                         </div>
-                        <div className="bg-blue-50 p-3 rounded-lg">
-                          <div className="text-sm text-blue-600 mb-1">{t.shadowing.pronunciation_accuracy || "发音准确性"}</div>
-                          <div className="text-xl font-bold text-blue-700">
+                        <div className="p-4 bg-white rounded-xl border border-blue-200 shadow-sm">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <span className="text-blue-600 text-sm">🎯</span>
+                            </div>
+                            <div className="text-sm font-medium text-blue-700">{t.shadowing.pronunciation_accuracy}</div>
+                          </div>
+                          <div className="text-2xl font-bold text-blue-600">
                             {(scoringResult.score || 0).toFixed(1)}%
                           </div>
                         </div>
                       </div>
                       
                       {scoringResult.feedback && (
-                        <div className="bg-yellow-50 p-3 rounded-lg mb-4">
-                          <div className="text-sm text-yellow-600 mb-1">{t.shadowing.improvement_suggestions || "改进建议"}</div>
-                          <p className="text-yellow-800 text-sm">{scoringResult.feedback}</p>
+                        <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200 shadow-sm mb-6">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center">
+                              <span className="text-yellow-600 text-sm">💡</span>
+                            </div>
+                            <div className="text-sm font-medium text-yellow-700">{t.shadowing.improvement_suggestions}</div>
+                          </div>
+                          <p className="text-yellow-800 text-sm leading-relaxed">{scoringResult.feedback}</p>
                         </div>
                       )}
                       
                       {/* 转录文字和原文对比 - 手机端优化 */}
                       {scoringResult.transcription && scoringResult.originalText && (
                         <div className="mt-4">
-                          <h4 className="text-lg font-semibold mb-3">{t.shadowing.practice_comparison || "练习对比"}</h4>
+                          <h4 className="text-lg font-semibold mb-3">{t.shadowing.practice_comparison}</h4>
                           <div className="space-y-3">
                             <div className="border rounded-lg p-3">
                               <div className="space-y-3">
                                 <div>
-                                  <div className="text-sm text-gray-500 mb-2">{t.shadowing.original_text || "原文"}</div>
+                                  <div className="text-sm text-gray-500 mb-2">{t.shadowing.original_text}</div>
                                   <div className="p-3 bg-gray-50 rounded border text-sm">
                                     {scoringResult.originalText}
                                   </div>
                                 </div>
                                 <div>
-                                  <div className="text-sm text-gray-500 mb-2">{t.shadowing.your_pronunciation || "你的发音"}</div>
+                                  <div className="text-sm text-gray-500 mb-2">{t.shadowing.your_pronunciation}</div>
                                   <div className={`p-3 rounded border text-sm ${
                                     (scoringResult.score || 0) >= 80 ? 'bg-green-50 border-green-200' :
                                     (scoringResult.score || 0) >= 60 ? 'bg-yellow-50 border-yellow-200' :
@@ -3159,26 +3237,26 @@ export default function ShadowingPage() {
                               </div>
                             </div>
                             
-                            {/* 详细分析 - 手机端 */}
+                            {/* 詳細分析 - 手机端 */}
                             <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                              <div className="text-sm text-blue-600 mb-2">详细分析</div>
+                              <div className="text-sm text-blue-600 mb-2">{t.shadowing.detailed_analysis || "詳細分析"}</div>
                               <div className="text-sm text-gray-700">
                                 {(() => {
                                   // 处理中文文本，按字符分割而不是按单词分割
                                   
-                                  // 使用简单句子分析（支持中文和英文）
+                                  // 使用简单文分析（支持中文和英文）
                                   const simpleAnalysis = performSimpleAnalysis(scoringResult.originalText, scoringResult.transcription);
                                   const { sentenceAnalysis, overallScore } = simpleAnalysis;
                                   
                                   return (
                                     <div>
-                                      {/* 整体评分 */}
+                                      {/* 総合採点 */}
                                       <div className="mb-4 p-3 bg-white rounded border">
-                                        <div className="text-sm font-medium mb-2">整体评分：</div>
+                                        <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
                                         <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
                                       </div>
                                       
-                                      {/* 句子分析 */}
+                                      {/* 文分析 */}
                                       <div className="space-y-3">
                                         {sentenceAnalysis.map((sentence, idx) => (
                                           <div key={`sentence-${idx}-${sentence.sentence.substring(0, 20)}`} className={`p-3 rounded border ${
@@ -3191,7 +3269,7 @@ export default function ShadowingPage() {
                                                 {sentence.status === 'correct' && '✓ '}
                                                 {sentence.status === 'partial' && '⚠ '}
                                                 {sentence.status === 'missing' && '❌ '}
-                                                句子 {idx + 1}
+                                                {t.shadowing.sentence || "文"} {idx + 1}
                                               </div>
                                               <div className="text-sm font-bold">
                                                 {sentence.score}%
@@ -3199,13 +3277,13 @@ export default function ShadowingPage() {
                                             </div>
                                             
                                             <div className="text-sm mb-2">
-                                              <span className="font-medium">原文：</span>
+                                              <span className="font-medium">{t.shadowing.original_text}:</span>
                                               <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                             </div>
                                             
                                             {sentence.issues.length > 0 && (
                                               <div className="text-sm text-red-600">
-                                                <div className="font-medium">问题：</div>
+                                                <div className="font-medium">{t.shadowing.issues || "問題"}:</div>
                                                 <ul className="list-disc list-inside space-y-1">
                                                   {sentence.issues.map((issue, issueIdx) => (
                                                     <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`}>{issue}</li>
@@ -3218,20 +3296,20 @@ export default function ShadowingPage() {
                                       </div>
                                       
                                       <div className="mt-4 text-xs text-gray-500">
-                                        💡 分析基于句子级别，更直观地显示发音问题
+                                        💡 {t.shadowing.analysis_based_on_sentence_level || "分析基于文级别，更直观地显示发音問題"}
                                       </div>
                                     </div>
                                   );
                                     
                                     return (
                                       <div>
-                                        {/* 整体评分 */}
+                                        {/* 総合採点 */}
                                         <div className="mb-4 p-3 bg-white rounded border">
-                                          <div className="text-sm font-medium mb-2">整体评分：</div>
+                                          <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
                                           <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
                                         </div>
                                         
-                                        {/* 句子分析 */}
+                                        {/* 文分析 */}
                                         <div className="space-y-3">
                                           {sentenceAnalysis.map((sentence, idx) => (
                                             <div key={idx} className={`p-3 rounded border ${
@@ -3244,7 +3322,7 @@ export default function ShadowingPage() {
                                                   {sentence.status === 'correct' && '✓ '}
                                                   {sentence.status === 'partial' && '⚠ '}
                                                   {sentence.status === 'missing' && '❌ '}
-                                                  句子 {idx + 1}
+                                                  {t.shadowing.sentence || "文"} {idx + 1}
                                                 </div>
                                                 <div className="text-sm font-bold">
                                                   {sentence.score}%
@@ -3252,13 +3330,13 @@ export default function ShadowingPage() {
                                               </div>
                                               
                                               <div className="text-sm mb-2">
-                                                <span className="font-medium">原文：</span>
+                                                <span className="font-medium">{t.shadowing.original_text}:</span>
                                                 <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                               </div>
                                               
                                               {sentence.issues.length > 0 && (
                                                 <div className="text-xs">
-                                                  <span className="font-medium text-red-600">问题：</span>
+                                                  <span className="font-medium text-red-600">{t.shadowing.issues || "問題"}:</span>
                                                   <ul className="mt-1 space-y-1">
                                                     {sentence.issues.map((issue, issueIdx) => (
                                                       <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`} className="text-red-600">
@@ -3273,7 +3351,7 @@ export default function ShadowingPage() {
                                         </div>
                                         
                                         <div className="mt-3 text-xs text-gray-600">
-                                          💡 分析基于句子级别，更直观地显示发音问题
+                                          💡 {t.shadowing.analysis_based_on_sentence_level || "分析基于文级别，更直观地显示发音問題"}
                                         </div>
                                       </div>
                                     );
@@ -3301,9 +3379,9 @@ export default function ShadowingPage() {
           </div>
         ) : (
           /* 桌面端布局 - 优化滚动体验 */
-          <div className="flex gap-8 min-h-[600px]">
+          <div className="flex gap-6 min-h-[700px]">
           {/* 左侧题库列表 */}
-          <div className={`${sidebarCollapsed ? 'w-16' : 'w-96'} flex-shrink-0 transition-all duration-300 max-h-[80vh] overflow-y-auto`}>
+          <div className={`${sidebarCollapsed ? 'w-16' : 'w-72'} flex-shrink-0 transition-all duration-300 max-h-[85vh] overflow-y-auto`}>
             <Card className="min-h-full flex flex-col bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-2xl">
               {/* 标题和折叠按钮 */}
               <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-t-2xl">
@@ -3351,19 +3429,12 @@ export default function ShadowingPage() {
                     </div>
                     
                     {/* 语言选择 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">{t.shadowing.language}</Label>
-                      <Select value={lang} onValueChange={(v: "ja"|"en"|"zh") => setLang(v)}>
-                        <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                          {permissions.allowed_languages.includes('ja') && <SelectItem value="ja" className="rounded-lg">{LANG_LABEL.ja}</SelectItem>}
-                          {permissions.allowed_languages.includes('en') && <SelectItem value="en" className="rounded-lg">{LANG_LABEL.en}</SelectItem>}
-                          {permissions.allowed_languages.includes('zh') && <SelectItem value="zh" className="rounded-lg">{LANG_LABEL.zh}</SelectItem>}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <FilterLanguageSelector
+                      value={lang}
+                      onChange={setLang}
+                      allowedLanguages={permissions.allowed_languages}
+                      className="h-10"
+                    />
 
                     {/* 等级选择 */}
                     <div className="space-y-2">
@@ -3654,7 +3725,7 @@ export default function ShadowingPage() {
       </div>
 
           {/* 右侧练习区域 */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto max-h-[85vh]">
             {!currentItem ? (
               <Card className="h-full flex items-center justify-center bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl">
                 <div className="text-center p-8">
@@ -3707,13 +3778,12 @@ export default function ShadowingPage() {
                     <div className="flex gap-3 flex-wrap">
                       <Button
                         onClick={playAudio}
-                        disabled={isPlaying}
                         variant="outline"
                         size="sm"
                         className="h-11 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all"
                       >
                         {isPlaying ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
-                        {isPlaying ? "播放中..." : "播放音频"}
+                        {isPlaying ? "一時停止" : "音声再生"}
                       </Button>
                       
                       <Button
@@ -3858,7 +3928,7 @@ export default function ShadowingPage() {
                   
                   const formattedText = formatDialogueText(currentItem.text);
                   
-                  // 获取所有已选择的生词（包括之前的和本次的）
+                  // 获取所有選択された単語（包括之前的和本次的）
                   const allSelectedWords = [...previousWords, ...selectedWords];
                   const selectedWordSet = new Set(allSelectedWords.map(item => item.word));
                   
@@ -3877,7 +3947,7 @@ export default function ShadowingPage() {
                         let isHighlighted = false;
                         let highlightLength = 0;
                         
-                        // 检查从当前位置开始的多个字符是否组成已选择的生词
+                        // 检查从当前位置开始的多个字符是否组成選択された単語
                         for (const selectedWord of allSelectedWords) {
                           if (i + selectedWord.word.length <= chars.length) {
                             const substring = chars.slice(i, i + selectedWord.word.length).join('');
@@ -3979,24 +4049,31 @@ export default function ShadowingPage() {
 
                 {/* 翻译模块 */}
                 {currentItem && (
-                  <Card className="p-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-semibold text-gray-600">🌐 翻译</span>
+                  <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <span className="text-white text-lg">🌐</span>
                       </div>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                        <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">翻译</h3>
+                        <p className="text-sm text-gray-600">多语言翻译支持</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg-white transition-colors">
                           <input 
                             type="checkbox" 
                             checked={showTranslation} 
                             onChange={e => setShowTranslation(e.target.checked)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                           />
-                          显示翻译
+                          <span className="font-medium">显示翻译</span>
                         </label>
                         {showTranslation && (
                           <select 
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full sm:w-auto bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                            className="h-11 px-4 py-2 bg-white border border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium" 
                             value={translationLang} 
                             onChange={e => setTranslationLang(e.target.value as 'en'|'ja'|'zh')}
                           >
@@ -4008,20 +4085,31 @@ export default function ShadowingPage() {
                           </select>
                         )}
                       </div>
-                    </div>
-                    
-                    {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
-                      <div className="text-lg leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
-                        {currentItem.translations[translationLang]}
-                      </div>
-                    ) : showTranslation ? (
-                      <div className="text-center py-4">
-                        <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
-                          <span>📝</span>
-                          （暂无翻译，可能尚未生成）
+                      
+                      {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
+                        <div className="p-4 bg-white rounded-xl border border-indigo-200 shadow-sm">
+                          <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
+                            {currentItem.translations[translationLang]}
+                          </div>
                         </div>
-                      </div>
-                    ) : null}
+                      ) : showTranslation ? (
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-2xl">📝</span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-700 mb-2">暂无翻译</h3>
+                          <p className="text-gray-500">可能尚未生成翻译内容</p>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-2xl">🌐</span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-700 mb-2">开启翻译功能</h3>
+                          <p className="text-gray-500">勾选上方选项以显示翻译内容</p>
+                        </div>
+                      )}
+                    </div>
                   </Card>
                 )}
 
@@ -4067,7 +4155,7 @@ export default function ShadowingPage() {
                                 disabled={isGeneratingExplanation}
                                 className="text-xs"
                               >
-                                {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                                {generatingWord === item.word ? '生成中...' : 'AI翻訳'}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -4080,7 +4168,7 @@ export default function ShadowingPage() {
                   </div>
               </div>
                           
-                          {/* AI解释显示 */}
+                          {/* AI翻訳显示 */}
                           <div className="mt-3 p-3 bg-white rounded border border-gray-100">
                             <DynamicExplanation 
                               word={item.word}
@@ -4108,7 +4196,7 @@ export default function ShadowingPage() {
                 disabled={isGeneratingBatchExplanation}
                 className="text-green-600 hover:text-green-800 border-green-300"
               >
-                {isGeneratingBatchExplanation ? '生成中...' : '一键AI解释'}
+                {isGeneratingBatchExplanation ? '生成中...' : '一键AI翻訳'}
               </Button>
               <Button
                 variant="outline"
@@ -4127,12 +4215,12 @@ export default function ShadowingPage() {
             </div>
           </div>
           
-                    {/* 批量AI解释进度显示 */}
+                    {/* 批量AI翻訳进度显示 */}
                     {isGeneratingBatchExplanation && batchExplanationProgress.total > 0 && (
                       <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium text-green-700">AI解释生成进度</span>
+                            <span className="font-medium text-green-700">AI翻訳生成进度</span>
                             <span className="text-green-600">
                               {batchExplanationProgress.current} / {batchExplanationProgress.total}
                             </span>
@@ -4182,7 +4270,7 @@ export default function ShadowingPage() {
                                 disabled={isGeneratingExplanation}
                                 className="text-xs"
                               >
-                                {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                                {generatingWord === item.word ? '生成中...' : 'AI翻訳'}
                               </Button>
                 <Button
                   variant="ghost"
@@ -4195,7 +4283,7 @@ export default function ShadowingPage() {
                             </div>
                           </div>
                           
-                          {/* AI解释显示 */}
+                          {/* AI翻訳显示 */}
                           {(item.explanation || wordExplanations[item.word]) && (
                             <div className="mt-3 p-3 bg-white rounded border border-blue-100">
                               <DynamicExplanation 
@@ -4233,33 +4321,51 @@ export default function ShadowingPage() {
 
                 {/* 评分区域 */}
                 {!scoringResult && (
-                  <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-purple-50 to-pink-50">
-                    <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
-                      <span className="text-purple-600">📊</span>
-                      {t.shadowing.practice_scoring}
-                    </h3>
+                  <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                        <span className="text-white text-lg">📊</span>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">{t.shadowing.practice_scoring || "练习评分"}</h3>
+                        <p className="text-sm text-gray-600">AI智能评分，精准分析发音</p>
+                      </div>
+                    </div>
+                    
                     {currentRecordings.length > 0 ? (
-                      <div className="text-center">
-                        <p className="text-gray-600 mb-4">您已完成录音，点击下方按钮进行评分</p>
+                      <div className="text-center space-y-4">
+                        <div className="p-4 bg-white/80 rounded-xl border border-purple-200">
+                          <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <CheckCircle className="w-8 h-8 text-green-600" />
+                          </div>
+                          <p className="text-gray-700 font-medium mb-2">{t.shadowing.recording_completed}</p>
+                          <p className="text-sm text-gray-600">{t.shadowing.recording_completed_message}</p>
+                        </div>
                         <Button
                           onClick={() => performScoring()}
                           disabled={isScoring}
-                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200"
+                          className="h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all w-full"
                         >
-                          {isScoring ? "评分中..." : "开始评分"}
+                          {isScoring ? (
+                            <>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                              採点中...
+                            </>
+                          ) : (
+                            <>
+                              <span className="mr-2">🚀</span>
+                              採点開始
+                            </>
+                          )}
                         </Button>
                       </div>
                     ) : (
-                      <div className="text-center">
-                        <p className="text-gray-600 mb-4">请先完成录音，然后点击下方按钮进行评分</p>
-                        <Button
-                          onClick={() => performScoring()}
-                          disabled={isScoring}
-                          variant="outline"
-                          className="border-purple-300 text-purple-600 hover:bg-purple-50 px-6 py-2 rounded-lg font-medium transition-all duration-200"
-                        >
-                          {isScoring ? "评分中..." : "开始评分"}
-                        </Button>
+                      <div className="text-center py-8">
+                        <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Mic className="w-10 h-10 text-gray-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2">{t.shadowing.no_recording_yet}</h3>
+                        <p className="text-gray-500 leading-relaxed">{t.shadowing.complete_recording_first}</p>
                       </div>
                     )}
                   </Card>
@@ -4267,50 +4373,61 @@ export default function ShadowingPage() {
 
                 {/* 评分结果区域 */}
                 {scoringResult && (
-                  <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-orange-50 to-yellow-50">
+                  <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <span className="text-orange-600">🏆</span>
-                        评分结果
-                      </h3>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                          <span className="text-white text-lg">🎯</span>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{t.shadowing.scoring_result || "评分结果"}</h3>
+                          <p className="text-sm text-gray-600">AI智能分析完成</p>
+                        </div>
+                      </div>
                       <Button
                         onClick={() => performScoring(currentTranscription)}
                         disabled={isScoring}
                         variant="outline"
                         size="sm"
-                        className="border-orange-300 text-orange-600 hover:bg-orange-50 px-4 py-2 rounded-lg font-medium transition-all duration-200"
+                        className="h-8 bg-white hover:bg-gray-50 border-gray-200 text-gray-700 rounded-lg"
                       >
-                        {isScoring ? "重新评分中..." : "重新评分"}
+                        {isScoring ? "重新採点中..." : "再採点"}
                       </Button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      <div className="bg-white p-4 rounded-lg border border-green-200 shadow-sm">
-                        <div className="text-sm text-green-600 mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                          整体评分
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div className="p-4 bg-white rounded-xl border border-green-200 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
+                            <span className="text-green-600 text-sm">🏆</span>
+                          </div>
+                          <div className="text-sm font-medium text-green-700">{t.shadowing.overall_score}</div>
                         </div>
-                        <div className="text-3xl font-bold text-green-700">
+                        <div className="text-3xl font-bold text-green-600">
                           {(scoringResult.score || 0).toFixed(1)}%
                         </div>
                       </div>
-                      <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
-                        <div className="text-sm text-blue-600 mb-2 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                          发音准确性
+                      <div className="p-4 bg-white rounded-xl border border-blue-200 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span className="text-blue-600 text-sm">🎯</span>
+                          </div>
+                          <div className="text-sm font-medium text-blue-700">{t.shadowing.pronunciation_accuracy}</div>
                         </div>
-                        <div className="text-3xl font-bold text-blue-700">
+                        <div className="text-3xl font-bold text-blue-600">
                           {(scoringResult.score || 0).toFixed(1)}%
                         </div>
                       </div>
                     </div>
                     
                     {scoringResult.feedback && (
-                      <div className="bg-white p-4 rounded-lg border border-yellow-200 shadow-sm mb-6">
-                        <div className="text-sm text-yellow-600 mb-3 flex items-center gap-2">
-                          <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-                          改进建议
+                      <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200 shadow-sm mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <span className="text-yellow-600 text-sm">💡</span>
+                          </div>
+                          <div className="text-sm font-medium text-yellow-700">{t.shadowing.improvement_suggestions}</div>
                         </div>
-                        <p className="text-gray-800 leading-relaxed">{scoringResult.feedback}</p>
+                        <p className="text-yellow-800 text-sm leading-relaxed">{scoringResult.feedback}</p>
                       </div>
                     )}
           
@@ -4319,7 +4436,7 @@ export default function ShadowingPage() {
                       <div className="mt-6">
                         <h4 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
                           <span className="text-indigo-600">📝</span>
-                          练习对比
+                          {t.shadowing.practice_comparison}
                         </h4>
                         <div className="space-y-4">
                           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
@@ -4327,7 +4444,7 @@ export default function ShadowingPage() {
                               <div>
                                 <div className="text-sm text-gray-600 mb-3 flex items-center gap-2">
                                   <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
-                                  原文
+                                  {t.shadowing.original_text}
                                 </div>
                                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm leading-relaxed">
                                   {scoringResult.originalText}
@@ -4336,7 +4453,7 @@ export default function ShadowingPage() {
                               <div>
                                 <div className="text-sm text-gray-600 mb-3 flex items-center gap-2">
                                   <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                  你的发音
+                                  {t.shadowing.your_pronunciation}
                                 </div>
                                 <div className={`p-3 rounded-lg border text-sm leading-relaxed ${
                                   (scoringResult.score || 0) >= 80 ? 'bg-green-50 border-green-200' :
@@ -4352,25 +4469,25 @@ export default function ShadowingPage() {
                             <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200 shadow-sm">
                               <div className="text-sm text-blue-600 mb-3 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                详细分析
+                                {t.shadowing.detailed_analysis}
                               </div>
                               <div className="text-sm text-gray-700">
                                 {(() => {
                                   // 处理中文文本，按字符分割而不是按单词分割
                                   
-                                  // 使用简单句子分析（支持中文和英文）
+                                  // 使用简单文分析（支持中文和英文）
                                   const simpleAnalysis = performSimpleAnalysis(scoringResult.originalText, scoringResult.transcription);
                                   const { sentenceAnalysis, overallScore } = simpleAnalysis;
                                   
                                   return (
                                     <div>
-                                      {/* 整体评分 */}
+                                      {/* 総合採点 */}
                                       <div className="mb-4 p-3 bg-white rounded border">
-                                        <div className="text-sm font-medium mb-2">整体评分：</div>
+                                        <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
                                         <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
                                       </div>
                                       
-                                      {/* 句子分析 */}
+                                      {/* 文分析 */}
                                       <div className="space-y-3">
                                         {sentenceAnalysis.map((sentence, idx) => (
                                           <div key={`sentence-${idx}-${sentence.sentence.substring(0, 20)}`} className={`p-3 rounded border ${
@@ -4383,7 +4500,7 @@ export default function ShadowingPage() {
                                                 {sentence.status === 'correct' && '✓ '}
                                                 {sentence.status === 'partial' && '⚠ '}
                                                 {sentence.status === 'missing' && '❌ '}
-                                                句子 {idx + 1}
+                                                {t.shadowing.sentence || "文"} {idx + 1}
                                               </div>
                                               <div className="text-sm font-bold">
                                                 {sentence.score}%
@@ -4391,13 +4508,13 @@ export default function ShadowingPage() {
                                             </div>
                                             
                                             <div className="text-sm mb-2">
-                                              <span className="font-medium">原文：</span>
+                                              <span className="font-medium">{t.shadowing.original_text}:</span>
                                               <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                             </div>
                                             
                                             {sentence.issues.length > 0 && (
                                               <div className="text-sm text-red-600">
-                                                <div className="font-medium">问题：</div>
+                                                <div className="font-medium">{t.shadowing.issues || "問題"}:</div>
                                                 <ul className="list-disc list-inside space-y-1">
                                                   {sentence.issues.map((issue, issueIdx) => (
                                                     <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`}>{issue}</li>
@@ -4410,20 +4527,20 @@ export default function ShadowingPage() {
                                       </div>
                                       
                                       <div className="mt-4 text-xs text-gray-500">
-                                        💡 分析基于句子级别，更直观地显示发音问题
+                                        💡 {t.shadowing.analysis_based_on_sentence_level || "分析基于文级别，更直观地显示发音問題"}
                                       </div>
                                     </div>
                                   );
                                     
                                     return (
                                       <div>
-                                        {/* 整体评分 */}
+                                        {/* 総合採点 */}
                                         <div className="mb-4 p-3 bg-white rounded border">
-                                          <div className="text-sm font-medium mb-2">整体评分：</div>
+                                          <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
                                           <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
                                         </div>
                                         
-                                        {/* 句子分析 */}
+                                        {/* 文分析 */}
                                         <div className="space-y-3">
                                           {sentenceAnalysis.map((sentence, idx) => (
                                             <div key={idx} className={`p-3 rounded border ${
@@ -4436,7 +4553,7 @@ export default function ShadowingPage() {
                                                   {sentence.status === 'correct' && '✓ '}
                                                   {sentence.status === 'partial' && '⚠ '}
                                                   {sentence.status === 'missing' && '❌ '}
-                                                  句子 {idx + 1}
+                                                  {t.shadowing.sentence || "文"} {idx + 1}
                                                 </div>
                                                 <div className="text-sm font-bold">
                                                   {sentence.score}%
@@ -4444,13 +4561,13 @@ export default function ShadowingPage() {
                                               </div>
                                               
                                               <div className="text-sm mb-2">
-                                                <span className="font-medium">原文：</span>
+                                                <span className="font-medium">{t.shadowing.original_text}:</span>
                                                 <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                               </div>
                                               
                                               {sentence.issues.length > 0 && (
                                                 <div className="text-xs">
-                                                  <span className="font-medium text-red-600">问题：</span>
+                                                  <span className="font-medium text-red-600">{t.shadowing.issues || "問題"}:</span>
                                                   <ul className="mt-1 space-y-1">
                                                     {sentence.issues.map((issue, issueIdx) => (
                                                       <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`} className="text-red-600">
@@ -4465,7 +4582,7 @@ export default function ShadowingPage() {
                                         </div>
                                         
                                         <div className="mt-3 text-xs text-gray-600">
-                                          💡 分析基于句子级别，更直观地显示发音问题
+                                          💡 {t.shadowing.analysis_based_on_sentence_level || "分析基于文级别，更直观地显示发音問題"}
                                         </div>
                                       </div>
                                     );

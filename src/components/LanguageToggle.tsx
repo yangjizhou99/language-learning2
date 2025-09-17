@@ -11,11 +11,25 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Lang } from "@/types/lang";
 import { languageNames } from "@/lib/i18n";
 import { Globe } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function LanguageToggle() {
   const { language, setLanguage, t } = useLanguage();
+  const router = useRouter();
+  const pathname = usePathname();
   
   const languages: Lang[] = ['zh', 'en', 'ja'];
+
+  const handleLanguageChange = (newLang: Lang) => {
+    setLanguage(newLang);
+    
+    // 如果在shadowing页面，同步更新URL参数
+    if (pathname.startsWith('/practice/shadowing')) {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('lang', newLang);
+      router.push(currentUrl.pathname + currentUrl.search, { scroll: false });
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -29,7 +43,7 @@ export default function LanguageToggle() {
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang}
-            onClick={() => setLanguage(lang)}
+            onClick={() => handleLanguageChange(lang)}
             className={language === lang ? "bg-accent" : ""}
           >
             <div className="flex items-center justify-between w-full">

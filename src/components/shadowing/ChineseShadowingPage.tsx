@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LANG_LABEL } from "@/types/lang";
 import { useMobile } from "@/contexts/MobileContext";
+import FilterLanguageSelector from "./FilterLanguageSelector";
 import { speakText as speakTextUtil } from '@/lib/speechUtils';
 // import { getAuthHeaders } from "@/lib/supabase";
 import { 
@@ -489,6 +490,7 @@ export default function ShadowingPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
   const [practiceComplete, setPracticeComplete] = useState(false);
   const [showSentenceComparison, setShowSentenceComparison] = useState(false);
   const [scoringResult, setScoringResult] = useState<{
@@ -1546,15 +1548,36 @@ export default function ShadowingPage() {
     }
   };
 
-  // 播放音频
+  // 播放/暂停音频
   const playAudio = () => {
     if (!currentItem?.audio_url) return;
     
+    // 如果当前有音频在播放，则暂停
+    if (audioRef && !audioRef.paused) {
+      audioRef.pause();
+      setIsPlaying(false);
+      return;
+    }
+    
+    // 如果当前音频已暂停，则恢复播放
+    if (audioRef && audioRef.paused) {
+      audioRef.play();
+      setIsPlaying(true);
+      return;
+    }
+    
+    // 创建新的音频对象
     const audio = new Audio(currentItem.audio_url);
+    setAudioRef(audio);
+    
     audio.onplay = () => setIsPlaying(true);
-    audio.onended = () => setIsPlaying(false);
+    audio.onended = () => {
+      setIsPlaying(false);
+      setAudioRef(null);
+    };
     audio.onerror = () => {
       setIsPlaying(false);
+      setAudioRef(null);
       alert('音频播放失败');
     };
     audio.play();
@@ -2201,19 +2224,12 @@ export default function ShadowingPage() {
                     </div>
                     
                     {/* 语言选择 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">{t.shadowing.language}</Label>
-                      <Select value={lang} onValueChange={(v: "ja"|"en"|"zh") => setLang(v)}>
-                        <SelectTrigger className="h-11 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                          {permissions.allowed_languages.includes('ja') && <SelectItem value="ja" className="rounded-lg">{LANG_LABEL.ja}</SelectItem>}
-                          {permissions.allowed_languages.includes('en') && <SelectItem value="en" className="rounded-lg">{LANG_LABEL.en}</SelectItem>}
-                          {permissions.allowed_languages.includes('zh') && <SelectItem value="zh" className="rounded-lg">{LANG_LABEL.zh}</SelectItem>}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <FilterLanguageSelector
+                      value={lang}
+                      onChange={setLang}
+                      allowedLanguages={permissions.allowed_languages}
+                      className="h-11"
+                    />
 
                     {/* 等级选择 */}
                     <div className="space-y-2">
@@ -2555,13 +2571,12 @@ export default function ShadowingPage() {
                       <div className="grid grid-cols-1 gap-3">
                         <Button
                           onClick={playAudio}
-                          disabled={isPlaying}
                           variant="outline"
                           size="sm"
                           className="h-12 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all"
                         >
                           {isPlaying ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
-                          {isPlaying ? t.common.loading : t.shadowing.play_audio}
+                          {isPlaying ? '暂停' : t.shadowing.play_audio}
                         </Button>
                         
                         <div className="grid grid-cols-2 gap-3">
@@ -3102,8 +3117,8 @@ export default function ShadowingPage() {
                             <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
                               <CheckCircle className="w-8 h-8 text-green-600" />
                             </div>
-                            <p className="text-gray-700 font-medium mb-2">录音完成！</p>
-                            <p className="text-sm text-gray-600">{t.shadowing.recording_completed_message || "您已完成录音，点击下方按钮进行评分"}</p>
+                            <p className="text-gray-700 font-medium mb-2">{t.shadowing.recording_completed || "录音完成！"}</p>
+                            <p className="text-sm text-gray-600">{t.shadowing.recording_completed_message}</p>
                           </div>
                           <Button
                             onClick={() => performScoring()}
@@ -3113,12 +3128,12 @@ export default function ShadowingPage() {
                             {isScoring ? (
                               <>
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                评分中...
+                                {t.shadowing.scoring_in_progress || "评分中..."}
                               </>
                             ) : (
                               <>
                                 <span className="mr-2">🚀</span>
-                                开始评分
+                                {t.shadowing.start_scoring || "开始评分"}
                               </>
                             )}
                           </Button>
@@ -3128,8 +3143,8 @@ export default function ShadowingPage() {
                           <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Mic className="w-10 h-10 text-gray-400" />
                           </div>
-                          <h3 className="text-lg font-semibold text-gray-700 mb-2">还没有录音</h3>
-                          <p className="text-gray-500 leading-relaxed">{t.shadowing.complete_recording_first || "请先完成录音，然后点击下方按钮进行评分"}</p>
+                          <h3 className="text-lg font-semibold text-gray-700 mb-2">{t.shadowing.no_recording_yet || "还没有录音"}</h3>
+                          <p className="text-gray-500 leading-relaxed">{t.shadowing.complete_recording_first}</p>
                         </div>
                       )}
                     </Card>
@@ -3155,7 +3170,7 @@ export default function ShadowingPage() {
                           size="sm"
                           className="h-8 bg-white hover:bg-gray-50 border-gray-200 text-gray-700 rounded-lg"
                         >
-                          {isScoring ? "重新评分中..." : "重新评分"}
+                          {isScoring ? (t.shadowing.re_scoring_in_progress || "重新评分中...") : (t.shadowing.re_score || "重新评分")}
                         </Button>
                       </div>
                       
@@ -3165,7 +3180,7 @@ export default function ShadowingPage() {
                             <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
                               <span className="text-green-600 text-sm">🏆</span>
                             </div>
-                            <div className="text-sm font-medium text-green-700">{t.shadowing.overall_score || "整体评分"}</div>
+                            <div className="text-sm font-medium text-green-700">{t.shadowing.overall_score}</div>
                           </div>
                           <div className="text-2xl font-bold text-green-600">
                             {(scoringResult.score || 0).toFixed(1)}%
@@ -3176,7 +3191,7 @@ export default function ShadowingPage() {
                             <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
                               <span className="text-blue-600 text-sm">🎯</span>
                             </div>
-                            <div className="text-sm font-medium text-blue-700">{t.shadowing.pronunciation_accuracy || "发音准确性"}</div>
+                            <div className="text-sm font-medium text-blue-700">{t.shadowing.pronunciation_accuracy}</div>
                           </div>
                           <div className="text-2xl font-bold text-blue-600">
                             {(scoringResult.score || 0).toFixed(1)}%
@@ -3190,7 +3205,7 @@ export default function ShadowingPage() {
                             <div className="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center">
                               <span className="text-yellow-600 text-sm">💡</span>
                             </div>
-                            <div className="text-sm font-medium text-yellow-700">{t.shadowing.improvement_suggestions || "改进建议"}</div>
+                            <div className="text-sm font-medium text-yellow-700">{t.shadowing.improvement_suggestions}</div>
                           </div>
                           <p className="text-yellow-800 text-sm leading-relaxed">{scoringResult.feedback}</p>
                         </div>
@@ -3199,18 +3214,18 @@ export default function ShadowingPage() {
                       {/* 转录文字和原文对比 - 手机端优化 */}
                       {scoringResult.transcription && scoringResult.originalText && (
                         <div className="mt-4">
-                          <h4 className="text-lg font-semibold mb-3">{t.shadowing.practice_comparison || "练习对比"}</h4>
+                          <h4 className="text-lg font-semibold mb-3">{t.shadowing.practice_comparison}</h4>
                           <div className="space-y-3">
                             <div className="border rounded-lg p-3">
                               <div className="space-y-3">
                                 <div>
-                                  <div className="text-sm text-gray-500 mb-2">{t.shadowing.original_text || "原文"}</div>
+                                  <div className="text-sm text-gray-500 mb-2">{t.shadowing.original_text}</div>
                                   <div className="p-3 bg-gray-50 rounded border text-sm">
                                     {scoringResult.originalText}
                                   </div>
                                 </div>
                                 <div>
-                                  <div className="text-sm text-gray-500 mb-2">{t.shadowing.your_pronunciation || "你的发音"}</div>
+                                  <div className="text-sm text-gray-500 mb-2">{t.shadowing.your_pronunciation}</div>
                                   <div className={`p-3 rounded border text-sm ${
                                     (scoringResult.score || 0) >= 80 ? 'bg-green-50 border-green-200' :
                                     (scoringResult.score || 0) >= 60 ? 'bg-yellow-50 border-yellow-200' :
@@ -3224,7 +3239,7 @@ export default function ShadowingPage() {
                             
                             {/* 详细分析 - 手机端 */}
                             <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                              <div className="text-sm text-blue-600 mb-2">详细分析</div>
+                              <div className="text-sm text-blue-600 mb-2">{t.shadowing.detailed_analysis || "详细分析"}</div>
                               <div className="text-sm text-gray-700">
                                 {(() => {
                                   // 处理中文文本，按字符分割而不是按单词分割
@@ -3237,7 +3252,7 @@ export default function ShadowingPage() {
                                     <div>
                                       {/* 整体评分 */}
                                       <div className="mb-4 p-3 bg-white rounded border">
-                                        <div className="text-sm font-medium mb-2">整体评分：</div>
+                                        <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
                                         <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
                                       </div>
                                       
@@ -3254,7 +3269,7 @@ export default function ShadowingPage() {
                                                 {sentence.status === 'correct' && '✓ '}
                                                 {sentence.status === 'partial' && '⚠ '}
                                                 {sentence.status === 'missing' && '❌ '}
-                                                句子 {idx + 1}
+                                                {t.shadowing.sentence || "句子"} {idx + 1}
                                               </div>
                                               <div className="text-sm font-bold">
                                                 {sentence.score}%
@@ -3262,13 +3277,13 @@ export default function ShadowingPage() {
                                             </div>
                                             
                                             <div className="text-sm mb-2">
-                                              <span className="font-medium">原文：</span>
+                                              <span className="font-medium">{t.shadowing.original_text}:</span>
                                               <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                             </div>
                                             
                                             {sentence.issues.length > 0 && (
                                               <div className="text-sm text-red-600">
-                                                <div className="font-medium">问题：</div>
+                                                <div className="font-medium">{t.shadowing.issues || "问题"}:</div>
                                                 <ul className="list-disc list-inside space-y-1">
                                                   {sentence.issues.map((issue, issueIdx) => (
                                                     <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`}>{issue}</li>
@@ -3281,7 +3296,7 @@ export default function ShadowingPage() {
                                       </div>
                                       
                                       <div className="mt-4 text-xs text-gray-500">
-                                        💡 分析基于句子级别，更直观地显示发音问题
+                                        💡 {t.shadowing.analysis_based_on_sentence_level || "分析基于句子级别，更直观地显示发音问题"}
                                       </div>
                                     </div>
                                   );
@@ -3290,7 +3305,7 @@ export default function ShadowingPage() {
                                       <div>
                                         {/* 整体评分 */}
                                         <div className="mb-4 p-3 bg-white rounded border">
-                                          <div className="text-sm font-medium mb-2">整体评分：</div>
+                                          <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
                                           <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
                                         </div>
                                         
@@ -3307,7 +3322,7 @@ export default function ShadowingPage() {
                                                   {sentence.status === 'correct' && '✓ '}
                                                   {sentence.status === 'partial' && '⚠ '}
                                                   {sentence.status === 'missing' && '❌ '}
-                                                  句子 {idx + 1}
+                                                  {t.shadowing.sentence || "句子"} {idx + 1}
                                                 </div>
                                                 <div className="text-sm font-bold">
                                                   {sentence.score}%
@@ -3315,13 +3330,13 @@ export default function ShadowingPage() {
                                               </div>
                                               
                                               <div className="text-sm mb-2">
-                                                <span className="font-medium">原文：</span>
+                                                <span className="font-medium">{t.shadowing.original_text}:</span>
                                                 <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                               </div>
                                               
                                               {sentence.issues.length > 0 && (
                                                 <div className="text-xs">
-                                                  <span className="font-medium text-red-600">问题：</span>
+                                                  <span className="font-medium text-red-600">{t.shadowing.issues || "问题"}:</span>
                                                   <ul className="mt-1 space-y-1">
                                                     {sentence.issues.map((issue, issueIdx) => (
                                                       <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`} className="text-red-600">
@@ -3336,7 +3351,7 @@ export default function ShadowingPage() {
                                         </div>
                                         
                                         <div className="mt-3 text-xs text-gray-600">
-                                          💡 分析基于句子级别，更直观地显示发音问题
+                                          💡 {t.shadowing.analysis_based_on_sentence_level || "分析基于句子级别，更直观地显示发音问题"}
                                         </div>
                                       </div>
                                     );
@@ -3414,19 +3429,12 @@ export default function ShadowingPage() {
                     </div>
                     
                     {/* 语言选择 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">{t.shadowing.language}</Label>
-                      <Select value={lang} onValueChange={(v: "ja"|"en"|"zh") => setLang(v)}>
-                        <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                          {permissions.allowed_languages.includes('ja') && <SelectItem value="ja" className="rounded-lg">{LANG_LABEL.ja}</SelectItem>}
-                          {permissions.allowed_languages.includes('en') && <SelectItem value="en" className="rounded-lg">{LANG_LABEL.en}</SelectItem>}
-                          {permissions.allowed_languages.includes('zh') && <SelectItem value="zh" className="rounded-lg">{LANG_LABEL.zh}</SelectItem>}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <FilterLanguageSelector
+                      value={lang}
+                      onChange={setLang}
+                      allowedLanguages={permissions.allowed_languages}
+                      className="h-10"
+                    />
 
                     {/* 等级选择 */}
                     <div className="space-y-2">
@@ -3770,13 +3778,12 @@ export default function ShadowingPage() {
                     <div className="flex gap-3 flex-wrap">
                       <Button
                         onClick={playAudio}
-                        disabled={isPlaying}
                         variant="outline"
                         size="sm"
                         className="h-11 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all"
                       >
                         {isPlaying ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
-                        {isPlaying ? "播放中..." : "播放音频"}
+                        {isPlaying ? "暂停" : "播放音频"}
                       </Button>
                       
                       <Button
@@ -4331,8 +4338,8 @@ export default function ShadowingPage() {
                           <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
                             <CheckCircle className="w-8 h-8 text-green-600" />
                           </div>
-                          <p className="text-gray-700 font-medium mb-2">录音完成！</p>
-                          <p className="text-sm text-gray-600">您已完成录音，点击下方按钮进行评分</p>
+                          <p className="text-gray-700 font-medium mb-2">{t.shadowing.recording_completed}</p>
+                          <p className="text-sm text-gray-600">{t.shadowing.recording_completed_message}</p>
                         </div>
                         <Button
                           onClick={() => performScoring()}
@@ -4357,8 +4364,8 @@ export default function ShadowingPage() {
                         <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                           <Mic className="w-10 h-10 text-gray-400" />
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">还没有录音</h3>
-                        <p className="text-gray-500 leading-relaxed">请先完成录音，然后点击下方按钮进行评分</p>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2">{t.shadowing.no_recording_yet}</h3>
+                        <p className="text-gray-500 leading-relaxed">{t.shadowing.complete_recording_first}</p>
                       </div>
                     )}
                   </Card>
@@ -4393,7 +4400,7 @@ export default function ShadowingPage() {
                           <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
                             <span className="text-green-600 text-sm">🏆</span>
                           </div>
-                          <div className="text-sm font-medium text-green-700">整体评分</div>
+                          <div className="text-sm font-medium text-green-700">{t.shadowing.overall_score}</div>
                         </div>
                         <div className="text-3xl font-bold text-green-600">
                           {(scoringResult.score || 0).toFixed(1)}%
@@ -4404,7 +4411,7 @@ export default function ShadowingPage() {
                           <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
                             <span className="text-blue-600 text-sm">🎯</span>
                           </div>
-                          <div className="text-sm font-medium text-blue-700">发音准确性</div>
+                          <div className="text-sm font-medium text-blue-700">{t.shadowing.pronunciation_accuracy}</div>
                         </div>
                         <div className="text-3xl font-bold text-blue-600">
                           {(scoringResult.score || 0).toFixed(1)}%
@@ -4418,7 +4425,7 @@ export default function ShadowingPage() {
                           <div className="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center">
                             <span className="text-yellow-600 text-sm">💡</span>
                           </div>
-                          <div className="text-sm font-medium text-yellow-700">改进建议</div>
+                          <div className="text-sm font-medium text-yellow-700">{t.shadowing.improvement_suggestions}</div>
                         </div>
                         <p className="text-yellow-800 text-sm leading-relaxed">{scoringResult.feedback}</p>
                       </div>
@@ -4429,7 +4436,7 @@ export default function ShadowingPage() {
                       <div className="mt-6">
                         <h4 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
                           <span className="text-indigo-600">📝</span>
-                          练习对比
+                          {t.shadowing.practice_comparison}
                         </h4>
                         <div className="space-y-4">
                           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
@@ -4437,7 +4444,7 @@ export default function ShadowingPage() {
                               <div>
                                 <div className="text-sm text-gray-600 mb-3 flex items-center gap-2">
                                   <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
-                                  原文
+                                  {t.shadowing.original_text}
                                 </div>
                                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm leading-relaxed">
                                   {scoringResult.originalText}
@@ -4446,7 +4453,7 @@ export default function ShadowingPage() {
                               <div>
                                 <div className="text-sm text-gray-600 mb-3 flex items-center gap-2">
                                   <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                  你的发音
+                                  {t.shadowing.your_pronunciation}
                                 </div>
                                 <div className={`p-3 rounded-lg border text-sm leading-relaxed ${
                                   (scoringResult.score || 0) >= 80 ? 'bg-green-50 border-green-200' :
@@ -4462,7 +4469,7 @@ export default function ShadowingPage() {
                             <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200 shadow-sm">
                               <div className="text-sm text-blue-600 mb-3 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                详细分析
+                                {t.shadowing.detailed_analysis}
                               </div>
                               <div className="text-sm text-gray-700">
                                 {(() => {
@@ -4476,7 +4483,7 @@ export default function ShadowingPage() {
                                     <div>
                                       {/* 整体评分 */}
                                       <div className="mb-4 p-3 bg-white rounded border">
-                                        <div className="text-sm font-medium mb-2">整体评分：</div>
+                                        <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
                                         <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
                                       </div>
                                       
@@ -4493,7 +4500,7 @@ export default function ShadowingPage() {
                                                 {sentence.status === 'correct' && '✓ '}
                                                 {sentence.status === 'partial' && '⚠ '}
                                                 {sentence.status === 'missing' && '❌ '}
-                                                句子 {idx + 1}
+                                                {t.shadowing.sentence || "句子"} {idx + 1}
                                               </div>
                                               <div className="text-sm font-bold">
                                                 {sentence.score}%
@@ -4501,13 +4508,13 @@ export default function ShadowingPage() {
                                             </div>
                                             
                                             <div className="text-sm mb-2">
-                                              <span className="font-medium">原文：</span>
+                                              <span className="font-medium">{t.shadowing.original_text}:</span>
                                               <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                             </div>
                                             
                                             {sentence.issues.length > 0 && (
                                               <div className="text-sm text-red-600">
-                                                <div className="font-medium">问题：</div>
+                                                <div className="font-medium">{t.shadowing.issues || "问题"}:</div>
                                                 <ul className="list-disc list-inside space-y-1">
                                                   {sentence.issues.map((issue, issueIdx) => (
                                                     <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`}>{issue}</li>
@@ -4520,7 +4527,7 @@ export default function ShadowingPage() {
                                       </div>
                                       
                                       <div className="mt-4 text-xs text-gray-500">
-                                        💡 分析基于句子级别，更直观地显示发音问题
+                                        💡 {t.shadowing.analysis_based_on_sentence_level || "分析基于句子级别，更直观地显示发音问题"}
                                       </div>
                                     </div>
                                   );
@@ -4529,7 +4536,7 @@ export default function ShadowingPage() {
                                       <div>
                                         {/* 整体评分 */}
                                         <div className="mb-4 p-3 bg-white rounded border">
-                                          <div className="text-sm font-medium mb-2">整体评分：</div>
+                                          <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
                                           <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
                                         </div>
                                         
@@ -4546,7 +4553,7 @@ export default function ShadowingPage() {
                                                   {sentence.status === 'correct' && '✓ '}
                                                   {sentence.status === 'partial' && '⚠ '}
                                                   {sentence.status === 'missing' && '❌ '}
-                                                  句子 {idx + 1}
+                                                  {t.shadowing.sentence || "句子"} {idx + 1}
                                                 </div>
                                                 <div className="text-sm font-bold">
                                                   {sentence.score}%
@@ -4554,13 +4561,13 @@ export default function ShadowingPage() {
                                               </div>
                                               
                                               <div className="text-sm mb-2">
-                                                <span className="font-medium">原文：</span>
+                                                <span className="font-medium">{t.shadowing.original_text}:</span>
                                                 <span className="text-gray-700">&ldquo;{sentence.sentence}&rdquo;</span>
                                               </div>
                                               
                                               {sentence.issues.length > 0 && (
                                                 <div className="text-xs">
-                                                  <span className="font-medium text-red-600">问题：</span>
+                                                  <span className="font-medium text-red-600">{t.shadowing.issues || "问题"}:</span>
                                                   <ul className="mt-1 space-y-1">
                                                     {sentence.issues.map((issue, issueIdx) => (
                                                       <li key={`issue-${issueIdx}-${issue.substring(0, 20)}`} className="text-red-600">
@@ -4575,7 +4582,7 @@ export default function ShadowingPage() {
                                         </div>
                                         
                                         <div className="mt-3 text-xs text-gray-600">
-                                          💡 分析基于句子级别，更直观地显示发音问题
+                                          💡 {t.shadowing.analysis_based_on_sentence_level || "分析基于句子级别，更直观地显示发音问题"}
                                         </div>
                                       </div>
                                     );
