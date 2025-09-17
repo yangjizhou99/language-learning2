@@ -179,7 +179,6 @@ export interface Translations {
     no_recordings: string;
     start_recording_text: string;
     practice_scoring: string;
-    complete_recording_first: string;
     // 新增的按钮和界面文本翻译
     refresh_vocabulary: string;
     select_question_to_start: string;
@@ -198,8 +197,18 @@ export interface Translations {
     // 题目信息相关
     words: string;
     // 评分相关
+    recording_completed: string;
     recording_completed_message: string;
+    scoring_in_progress: string;
     scoring_result: string;
+    no_recording_yet: string;
+    complete_recording_first: string;
+    re_score: string;
+    re_scoring_in_progress: string;
+    detailed_analysis: string;
+    sentence: string;
+    issues: string;
+    analysis_based_on_sentence_level: string;
     overall_score: string;
     pronunciation_accuracy: string;
     improvement_suggestions: string;
@@ -485,7 +494,6 @@ const zh: Translations = {
     no_recordings: '还没有录音，点击"开始录音"开始练习',
     start_recording_text: '开始录音',
     practice_scoring: '练习评分',
-    complete_recording_first: '请先完成录音，然后点击下方按钮进行评分',
     // 新增的按钮和界面文本翻译
     refresh_vocabulary: '刷新题库',
     select_question_to_start: '选择题目开始练习',
@@ -504,8 +512,18 @@ const zh: Translations = {
     // 题目信息相关
     words: '词',
     // 评分相关
+    recording_completed: '录音完成！',
     recording_completed_message: '您已完成录音，点击下方按钮进行评分',
+    scoring_in_progress: '评分中...',
     scoring_result: '评分结果',
+    no_recording_yet: '还没有录音',
+    complete_recording_first: '请先完成录音',
+    re_score: '重新评分',
+    re_scoring_in_progress: '重新评分中...',
+    detailed_analysis: '详细分析',
+    sentence: '句子',
+    issues: '问题',
+    analysis_based_on_sentence_level: '分析基于句子级别，更直观地显示发音问题',
     overall_score: '整体评分',
     pronunciation_accuracy: '发音准确性',
     improvement_suggestions: '改进建议',
@@ -789,7 +807,6 @@ const en: Translations = {
     no_recordings: 'No recordings yet, click "Start Recording" to begin practice',
     start_recording_text: 'Start Recording',
     practice_scoring: 'Practice Scoring',
-    complete_recording_first: 'Please complete recording first, then click the button below for scoring',
     // 新增的按钮和界面文本翻译
     refresh_vocabulary: 'Refresh Vocabulary',
     select_question_to_start: 'Select a question to start practice',
@@ -808,8 +825,18 @@ const en: Translations = {
     // 题目信息相关
     words: 'words',
     // 评分相关
+    recording_completed: 'Recording Completed!',
     recording_completed_message: 'You have completed recording, click the button below to score',
+    scoring_in_progress: 'Scoring in progress...',
     scoring_result: 'Scoring Result',
+    no_recording_yet: 'No recording yet',
+    complete_recording_first: 'Please complete recording first',
+    re_score: 'Re-score',
+    re_scoring_in_progress: 'Re-scoring in progress...',
+    detailed_analysis: 'Detailed Analysis',
+    sentence: 'Sentence',
+    issues: 'Issues',
+    analysis_based_on_sentence_level: 'Analysis based on sentence level, more intuitively showing pronunciation issues',
     overall_score: 'Overall Score',
     pronunciation_accuracy: 'Pronunciation Accuracy',
     improvement_suggestions: 'Improvement Suggestions',
@@ -1093,7 +1120,6 @@ const ja: Translations = {
     no_recordings: 'まだ録音がありません。「録音開始」をクリックして練習を開始してください',
     start_recording_text: '録音開始',
     practice_scoring: '練習スコア',
-    complete_recording_first: 'まず録音を完了してから、下のボタンをクリックしてスコアを取得してください',
     // 新增的按钮和界面文本翻译
     refresh_vocabulary: 'シャドーイング试题库更新',
     select_question_to_start: '問題を選択して練習を開始',
@@ -1112,8 +1138,18 @@ const ja: Translations = {
     // 题目信息相关
     words: '語',
     // 评分相关
+    recording_completed: '録音完了！',
     recording_completed_message: '録音が完了しました。下のボタンをクリックして採点してください',
+    scoring_in_progress: '採点中...',
     scoring_result: '採点結果',
+    no_recording_yet: 'まだ録音がありません',
+    complete_recording_first: 'まず録音を完了してください',
+    re_score: '再採点',
+    re_scoring_in_progress: '再採点中...',
+    detailed_analysis: '詳細分析',
+    sentence: '文',
+    issues: '問題',
+    analysis_based_on_sentence_level: '文レベルに基づく分析で、発音の問題をより直感的に表示',
     overall_score: '総合スコア',
     pronunciation_accuracy: '発音の正確性',
     improvement_suggestions: '改善提案',

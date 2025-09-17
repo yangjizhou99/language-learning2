@@ -11,7 +11,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs';
 import TTSButton from '@/components/TTSButton';
 import Pagination from '@/components/Pagination';
 import { supabase } from '@/lib/supabase';
-import { useTranslation } from '@/contexts/LanguageContext';
+import { useLanguage, useTranslation } from '@/contexts/LanguageContext';
 
 interface VocabEntry {
   id: string;
@@ -43,7 +43,7 @@ interface Pagination {
 }
 
 export default function VocabPage() {
-  const { setLanguageFromUserProfile } = useTranslation();
+  const { setLanguageFromUserProfile } = useLanguage();
   const t = useTranslation();
   const [entries, setEntries] = useState<VocabEntry[]>([]);
   const [pagination, setPagination] = useState<Pagination>({

@@ -24,7 +24,7 @@ export default function LanguageToggle() {
     setLanguage(newLang);
     
     // 如果在shadowing页面，同步更新URL参数
-    if (pathname.startsWith('/practice/shadowing')) {
+    if (pathname && pathname.startsWith('/practice/shadowing')) {
       const currentUrl = new URL(window.location.href);
       currentUrl.searchParams.set('lang', newLang);
       router.push(currentUrl.pathname + currentUrl.search, { scroll: false });
