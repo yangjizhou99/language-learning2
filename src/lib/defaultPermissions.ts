@@ -196,3 +196,44 @@ export async function applyDefaultPermissionsToUser(userId: string): Promise<boo
     return false;
   }
 }
+
+/**
+ * 检查用户权限是否过期
+ */
+export async function checkUserPermissionsExpiry(userId: string): Promise<boolean> {
+  try {
+    const { data: permissions } = await supabase
+      .from('user_permissions')
+      .select('custom_restrictions')
+      .eq('user_id', userId)
+      .single();
+
+    if (!permissions?.custom_restrictions?.expires_at) {
+      return true; // 没有过期时间，权限有效
+    }
+
+    const expiresAt = new Date(permissions.custom_restrictions.expires_at);
+    const now = new Date();
+
+    if (now > expiresAt) {
+      // 权限已过期，禁用用户
+      await supabase
+        .from('user_permissions')
+        .update({
+          can_access_shadowing: false,
+          can_access_cloze: false,
+          can_access_alignment: false,
+          can_access_articles: false,
+          max_daily_attempts: 0
+        })
+        .eq('user_id', userId);
+
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`检查用户权限过期失败:`, error);
+    return true; // 出错时保持权限有效
+  }
+}
