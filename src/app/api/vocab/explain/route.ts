@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       // 从数据库获取要解释的生词
       const { data: dbEntries, error: fetchError } = await supabase
         .from('vocab_entries')
-        .select('*')
+        .select('id,term,definition,pronunciation,examples,lang,context')
         .in('id', entry_ids)
         .eq('user_id', user.id);
 

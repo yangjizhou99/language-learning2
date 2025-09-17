@@ -15,6 +15,8 @@ type Article = {
   id: string; lang: Lang; genre: string; difficulty: number;
   title: string; text: string; source_url: string | null; license: string | null;
   meta: ArticleMeta;
+  created_at?: string;
+  updated_at?: string | null;
 };
 type KeyPass1 = { span:[number,number]; tag:"connective"|"time"; surface:string }[];
 type KeyPass2 = { pron:[number,number]; antecedents:[number,number][] }[];
@@ -205,19 +207,41 @@ export default function WideReadPage() {
   const fetchList = useCallback(async () => {
     setErr(""); setLoading(true);
     try {
-      const { data, error } = await supabase
+      const key = `articles:lastSync:${lang}:${genre}`;
+      const since = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+      let q = supabase
         .from("articles")
-        .select("id,lang,genre,difficulty,title,text,source_url,license,meta")
+        .select("id,lang,genre,difficulty,title,text,source_url,license,meta,created_at,updated_at")
         .eq("lang", lang).eq("genre", genre)
-        .gte("difficulty", Math.max(1, difficulty-1)).lte("difficulty", Math.min(5, difficulty+1))
-        .order("created_at", { ascending: false })
-        .limit(30);
+        .gte("difficulty", Math.max(1, difficulty-1)).lte("difficulty", Math.min(5, difficulty+1));
+      if (since) q = q.gt("updated_at", since).order("updated_at", { ascending: true }).limit(200);
+      else q = q.order("created_at", { ascending: false }).limit(30);
+      const { data, error } = await q;
       if (error) throw error;
-      setArticles((data||[]) as Article[]);
-      setCur(((data?.[0] as unknown) as Article) ?? null);
+      if (since) {
+        const byId: Record<string, Article> = {};
+        for (const a of [...articles, ...(data||[] as Article[])]) byId[a.id] = a as Article;
+        const merged: Article[] = Object.values(byId).sort((a: Article, b: Article) =>
+          new Date((b.updated_at || b.created_at || 0)).getTime() - new Date((a.updated_at || a.created_at || 0)).getTime()
+        );
+        setArticles(merged);
+        const maxUpdated: string | null = (data as Article[] || []).reduce((m: string | null, d: Article) => {
+          const t = new Date(d.updated_at || d.created_at || 0).toISOString();
+          return m && m > t ? m : t;
+        }, (since as string | null) || null);
+        if (maxUpdated && typeof window !== 'undefined') localStorage.setItem(key, maxUpdated);
+      } else {
+        setArticles((data||[]) as Article[]);
+        setCur(((data?.[0] as unknown) as Article) ?? null);
+        const maxUpdated: string | null = (data as Article[] || []).reduce((m: string | null, d: Article) => {
+          const t = new Date(d.updated_at || d.created_at || 0).toISOString();
+          return m && m > t ? m : t;
+        }, null as string | null);
+        if (maxUpdated && typeof window !== 'undefined') localStorage.setItem(key, maxUpdated);
+      }
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "加载失败"); }
     finally { setLoading(false); }
-  }, [lang, genre, difficulty]);
+  }, [lang, genre, difficulty, articles]);
 
   const pickRandom = () => {
     if (!articles.length) return;
@@ -225,13 +249,13 @@ export default function WideReadPage() {
     setCur(articles[idx]);
   };
 
-  // 拉取答案键 + Cloze
+  // 拉取答案键 + Cloze - 优化字段选择
   useEffect(() => {
     (async () => {
       if (!cur?.id) { setKeys(null); setClozeSets([]); return; }
       const [k, c] = await Promise.all([
-        supabase.from("article_keys").select("*").eq("article_id", cur.id).single(),
-        supabase.from("article_cloze").select("*").eq("article_id", cur.id)
+        supabase.from("article_keys").select("pass1,pass2,pass3").eq("article_id", cur.id).single(),
+        supabase.from("article_cloze").select("id,version,items").eq("article_id", cur.id)
       ]);
       if (k.error) setErr(k.error.message);
       else setKeys({ pass1: (k.data?.pass1||[]) as KeyPass1, pass2: (k.data?.pass2||[]) as KeyPass2, pass3: (k.data?.pass3||[]) as KeyPass3 });
@@ -502,7 +526,7 @@ export default function WideReadPage() {
             </label>
             <button onClick={synth} className="px-3 py-1 rounded bg-black text-white">▶ 合成 TTS</button>
           </div>
-          {ttsUrl && <audio controls className="w-full" src={ttsUrl}></audio>}
+          {ttsUrl && <audio controls className="w-full" preload="metadata" src={ttsUrl}></audio>}
 
           <div ref={containerRef} className="p-3 bg-gray-50 rounded text-[15px] leading-7">
             {/* 字符粒度渲染，便于选择与高亮 */}

@@ -47,9 +47,12 @@ export async function GET(req: NextRequest) {
     console.log('Searching for term:', term, 'user_id:', user.id);
 
     // Search for vocabulary entries - first try exact match, then fuzzy match
+    // 只选择必要字段减少数据传输
+    const selectFields = 'id,term,definition,pronunciation,examples,lang,created_at,updated_at';
+    
     let { data: entries, error } = await supabase
       .from('vocab_entries')
-      .select('*')
+      .select(selectFields)
       .eq('user_id', user.id)
       .eq('term', term)
       .order('created_at', { ascending: false })
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest) {
     if (!entries || entries.length === 0) {
       const { data: fuzzyEntries, error: fuzzyError } = await supabase
         .from('vocab_entries')
-        .select('*')
+        .select(selectFields)
         .eq('user_id', user.id)
         .ilike('term', `%${term}%`)
         .order('created_at', { ascending: false })

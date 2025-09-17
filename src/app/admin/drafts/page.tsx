@@ -33,8 +33,12 @@ export default function DraftsPage(){
       // 添加认证头
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      
-      const r = await fetch(`/api/admin/drafts/list?status=${status}`, {
+      // 增量：读取本地 lastSync
+      const key = `drafts:lastSync:${status}`;
+      const since = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+      const qs = new URLSearchParams({ status });
+      if (since) qs.set('since', since);
+      const r = await fetch(`/api/admin/drafts/list?${qs.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       }); 
       const j = await r.json(); 
@@ -43,14 +47,33 @@ export default function DraftsPage(){
         throw new Error(j.error || `HTTP ${r.status}`);
       }
       
-      // 确保返回的是数组
+      // 确保返回的是数组（since 模式返回数组；分页模式返回对象）
       console.log("API响应状态:", r.status);
       console.log("API响应数据:", j);
       console.log("数据类型:", typeof j, Array.isArray(j));
       
       if (Array.isArray(j)) {
-        console.log("设置列表数据，长度:", j.length);
-        setList(j);
+        // 增量合并：按 id 去重并按 created_at/updated_at 排序
+        const byId: Record<string, Draft> = {} as any;
+        for (const d of [...list, ...j]) byId[d.id] = d;
+        const merged = Object.values(byId).sort((a:any,b:any)=>
+          new Date(b.updated_at||b.created_at).getTime() - new Date(a.updated_at||a.created_at).getTime()
+        ) as Draft[];
+        setList(merged);
+        // 更新 lastSync（取返回数据里最大的 updated_at）
+        const maxUpdated = j.reduce((m:any, d:any)=>{
+          const t = new Date(d.updated_at||d.created_at).toISOString();
+          return m && m>t ? m : t;
+        }, since || null);
+        if (maxUpdated && typeof window !== 'undefined') localStorage.setItem(key, maxUpdated);
+      } else if (j && j.data) {
+        setList(j.data);
+        // 初始设置 lastSync
+        const maxUpdated = (j.data as any[]).reduce((m:any, d:any)=>{
+          const t = new Date(d.updated_at||d.created_at).toISOString();
+          return m && m>t ? m : t;
+        }, null);
+        if (maxUpdated && typeof window !== 'undefined') localStorage.setItem(key, maxUpdated);
       } else {
         console.error("API返回的不是数组:", j);
         setList([]);
@@ -120,7 +143,7 @@ export default function DraftsPage(){
                   {d.title}
                 </a>
                 <div className="text-xs text-gray-500">
-                  {d.lang} · {d.genre}/L{d.difficulty} · {new Date(d.created_at).toLocaleString()} · {d.source} {d.ai_model?`· ${d.ai_model}`:""}
+                  {d.lang} · {d.genre}/L{d.difficulty} · {new Date(d.created_at).toLocaleString()} · {d.source} {d.ai_model?`· ${d.ai_model}`:""} · 更新: {new Date((d as any).updated_at || d.created_at).toLocaleString()}
                 </div>
               </li>
             )

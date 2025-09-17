@@ -4,8 +4,8 @@ export const maxDuration = 300; // 5分钟超时，支持长文本TTS合成
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
-import { getServiceSupabase } from "@/lib/supabaseAdmin";
 import { synthesizeTTS } from "@/lib/tts";
+import { uploadAudioFile } from "@/lib/storage-upload";
 import { synthesizeGeminiTTS } from "@/lib/gemini-tts";
 
 // 检测是否为对话格式
@@ -145,7 +145,6 @@ export async function POST(req: NextRequest) {
     }
 
     // 上传到 Supabase Storage
-    const supabaseAdmin = getServiceSupabase();
     const bucket = process.env.NEXT_PUBLIC_SHADOWING_AUDIO_BUCKET || 'tts';
     const timestamp = Date.now();
     const safeLang = String(lang).toLowerCase();
@@ -155,26 +154,24 @@ export async function POST(req: NextRequest) {
     const contentType = 'audio/mpeg';
     const filePath = `${safeLang}/${provider}-${timestamp}-${Math.random().toString(36).slice(2)}.${fileExtension}`;
 
-    const { error: upErr } = await supabaseAdmin.storage
-      .from(bucket)
-      .upload(filePath, audioBuffer, { contentType, upsert: false });
-    if (upErr) return NextResponse.json({ error: `上传失败: ${upErr.message}` }, { status: 500 });
+    const uploadResult = await uploadAudioFile(bucket, filePath, audioBuffer, {
+      contentType,
+      upsert: false
+    });
+    if (!uploadResult.success) {
+      return NextResponse.json({ error: `上传失败: ${uploadResult.error}` }, { status: 500 });
+    }
 
-    // 生成签名 URL
-    const { data: signed } = await supabaseAdmin.storage
-      .from(bucket)
-      .createSignedUrl(filePath, 60 * 60 * 24 * 30); // 30 天
-
-    const { data: pub } = supabaseAdmin.storage.from(bucket).getPublicUrl(filePath);
-    const publicUrl = pub?.publicUrl;
-    const audioUrl = signed?.signedUrl || publicUrl;
+    // 优先返回代理URL（带CDN缓存）
+    const audioUrl = uploadResult.proxyUrl || uploadResult.url;
     if (!audioUrl) return NextResponse.json({ error: '获取音频地址失败' }, { status: 500 });
 
-    return NextResponse.json({ 
-      ok: true, 
-      audio_url: audioUrl, 
-      bytes: audioBuffer.length, 
-      signed: Boolean(signed?.signedUrl),
+    return NextResponse.json({
+      ok: true,
+      audio_url: audioUrl,
+      bytes: audioBuffer.length,
+      proxy_url: uploadResult.proxyUrl,
+      direct_url: uploadResult.url,
       provider,
       voice,
       ...result

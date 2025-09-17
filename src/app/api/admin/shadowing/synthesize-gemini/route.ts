@@ -3,8 +3,8 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
-import { getServiceSupabase } from "@/lib/supabaseAdmin";
 import { synthesizeGeminiTTS } from "@/lib/gemini-tts";
+import { uploadAudioFile } from "@/lib/storage-upload";
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,32 +31,26 @@ export async function POST(req: NextRequest) {
     });
 
     // 上传到 Supabase Storage
-    const supabaseAdmin = getServiceSupabase();
     const bucket = process.env.NEXT_PUBLIC_SHADOWING_AUDIO_BUCKET || 'tts';
     const timestamp = Date.now();
     const safeLang = String(lang).toLowerCase();
     const filePath = `${safeLang}/gemini-${timestamp}-${Math.random().toString(36).slice(2)}.mp3`;
 
-    const { error: upErr } = await supabaseAdmin.storage
-      .from(bucket)
-      .upload(filePath, audioBuffer, { contentType: 'audio/mpeg', upsert: false });
-    if (upErr) return NextResponse.json({ error: `上传失败: ${upErr.message}` }, { status: 500 });
+    const uploadResult = await uploadAudioFile(bucket, filePath, audioBuffer);
+    if (!uploadResult.success) {
+      return NextResponse.json({ error: `上传失败: ${uploadResult.error}` }, { status: 500 });
+    }
 
-    // 尝试生成长期签名 URL
-    const { data: signed } = await supabaseAdmin.storage
-      .from(bucket)
-      .createSignedUrl(filePath, 60 * 60 * 24 * 30); // 30 天
-
-    const { data: pub } = supabaseAdmin.storage.from(bucket).getPublicUrl(filePath);
-    const publicUrl = pub?.publicUrl;
-    const audioUrl = signed?.signedUrl || publicUrl;
+    // 优先返回代理URL（带CDN缓存）
+    const audioUrl = uploadResult.proxyUrl || uploadResult.url;
     if (!audioUrl) return NextResponse.json({ error: '获取音频地址失败' }, { status: 500 });
 
-    return NextResponse.json({ 
-      ok: true, 
-      audio_url: audioUrl, 
-      bytes: audioBuffer.length, 
-      signed: Boolean(signed?.signedUrl),
+    return NextResponse.json({
+      ok: true,
+      audio_url: audioUrl,
+      bytes: audioBuffer.length,
+      proxy_url: uploadResult.proxyUrl,
+      direct_url: uploadResult.url,
       provider: 'gemini-tts',
       voice: voiceName || 'Kore'
     });

@@ -209,7 +209,7 @@ B: I'm planning to visit the museum. Would you like to join me?`);
           {audioUrl && (
             <div className="space-y-2">
               <div className="text-sm font-medium">生成的音频:</div>
-              <audio controls src={audioUrl} className="w-full" />
+              <audio controls src={audioUrl} preload="metadata" className="w-full" />
             </div>
           )}
         </CardContent>

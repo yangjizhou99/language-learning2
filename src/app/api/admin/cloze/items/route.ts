@@ -10,17 +10,37 @@ export async function GET(req: NextRequest) {
     }
 
     const supabaseAdmin = getServiceSupabase();
+    // 获取分页参数
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
+
     const { data: items, error } = await supabaseAdmin
       .from('cloze_items')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('id,lang,level,topic,title,created_at,updated_at')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error('Error fetching cloze items:', error);
       return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 });
     }
 
-    return NextResponse.json(items || []);
+    // 获取总数用于分页信息
+    const { count } = await supabaseAdmin
+      .from('cloze_items')
+      .select('*', { count: 'exact', head: true });
+
+    return NextResponse.json({
+      data: items || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limit)
+      }
+    });
   } catch (error) {
     console.error('Error in cloze items API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
