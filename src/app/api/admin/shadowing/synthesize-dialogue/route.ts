@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { getServiceSupabase } from "@/lib/supabaseAdmin";
 import { synthesizeTTS } from "@/lib/tts";
+import { uploadAudioFile } from "@/lib/storage-upload";
 
 // 解析对话文本，分离不同角色的内容
 function parseDialogue(text: string): { speaker: string; content: string }[] {
@@ -195,10 +196,10 @@ export async function POST(req: NextRequest) {
     const safeLang = String(lang).toLowerCase();
     const filePath = `${safeLang}/dialogue-${timestamp}-${Math.random().toString(36).slice(2)}.mp3`;
 
-    const { error: upErr } = await supabaseAdmin.storage
-      .from(bucket)
-      .upload(filePath, mergedAudio, { contentType: 'audio/mpeg', upsert: false });
-    if (upErr) return NextResponse.json({ error: `上传失败: ${upErr.message}` }, { status: 500 });
+    const uploadResult = await uploadAudioFile(bucket, filePath, mergedAudio);
+    if (!uploadResult.success) {
+      return NextResponse.json({ error: `上传失败: ${uploadResult.error}` }, { status: 500 });
+    }
 
     // 生成签名 URL
     const { data: signed } = await supabaseAdmin.storage

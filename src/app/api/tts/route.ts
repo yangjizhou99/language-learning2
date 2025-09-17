@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "audio/mpeg",
-        "Cache-Control": "no-store"
+        "Cache-Control": "public, s-maxage=86400, max-age=3600", // CDN 1天，浏览器1小时
+        "ETag": `"${text}-${lang}-${voiceName}-${speakingRate}-${pitch}"`,
       }
     });
   } catch (e: unknown) {

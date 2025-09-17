@@ -80,7 +80,11 @@ export async function GET(req: NextRequest) {
     // 尝试从缓存获取
     const cached = await CacheManager.get(cacheKey);
     if (cached) {
-      return NextResponse.json(cached);
+      return NextResponse.json(cached, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, max-age=60', // CDN 5分钟，浏览器1分钟
+        }
+      });
     }
 
     // 使用请求去重防止并发请求
@@ -149,6 +153,10 @@ export async function GET(req: NextRequest) {
         title: item.title,
         passage: item.passage,
         blanks
+      }
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, max-age=60', // CDN 5分钟，浏览器1分钟
       }
     });
 

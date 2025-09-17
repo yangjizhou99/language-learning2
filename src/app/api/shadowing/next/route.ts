@@ -35,7 +35,11 @@ export async function GET(req: NextRequest) {
 		// 尝试从缓存获取
 		const cached = await CacheManager.get(cacheKey);
 		if (cached) {
-			return NextResponse.json(cached);
+			return NextResponse.json(cached, {
+				headers: {
+					'Cache-Control': 'public, s-maxage=300, max-age=60', // CDN 5分钟，浏览器1分钟
+				}
+			});
 		}
 
 		// 使用请求去重防止并发请求
@@ -83,7 +87,11 @@ export async function GET(req: NextRequest) {
 		// 缓存结果（5分钟）
 		await CacheManager.set(cacheKey, result, 300);
 
-		return NextResponse.json(result);
+		return NextResponse.json(result, {
+			headers: {
+				'Cache-Control': 'public, s-maxage=300, max-age=60', // CDN 5分钟，浏览器1分钟
+			}
+		});
 
 	} catch (e) {
 		return NextResponse.json({ error: "服务器错误", code: "UNEXPECTED", detail: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) }, { status: 500 });

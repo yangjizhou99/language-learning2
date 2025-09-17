@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin";
 import { getServiceSupabase } from "@/lib/supabaseAdmin";
 import { synthesizeTTS } from "@/lib/tts";
+import { uploadAudioFile } from "@/lib/storage-upload";
 import { synthesizeGeminiTTS } from "@/lib/gemini-tts";
 
 // 检测是否为对话格式
@@ -155,10 +156,13 @@ export async function POST(req: NextRequest) {
     const contentType = 'audio/mpeg';
     const filePath = `${safeLang}/${provider}-${timestamp}-${Math.random().toString(36).slice(2)}.${fileExtension}`;
 
-    const { error: upErr } = await supabaseAdmin.storage
-      .from(bucket)
-      .upload(filePath, audioBuffer, { contentType, upsert: false });
-    if (upErr) return NextResponse.json({ error: `上传失败: ${upErr.message}` }, { status: 500 });
+    const uploadResult = await uploadAudioFile(bucket, filePath, audioBuffer, {
+      contentType,
+      upsert: false
+    });
+    if (!uploadResult.success) {
+      return NextResponse.json({ error: `上传失败: ${uploadResult.error}` }, { status: 500 });
+    }
 
     // 生成签名 URL
     const { data: signed } = await supabaseAdmin.storage

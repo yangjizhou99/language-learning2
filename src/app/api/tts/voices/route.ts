@@ -130,8 +130,7 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        // 允许边缘缓存一天（可选）
-        "Cache-Control": "s-maxage=86400, stale-while-revalidate=604800"
+        "Cache-Control": "public, s-maxage=3600, max-age=1800" // CDN 1小时，浏览器30分钟
       }
     });
   } catch (e: unknown) {
