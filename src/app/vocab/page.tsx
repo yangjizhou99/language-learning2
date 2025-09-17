@@ -686,110 +686,155 @@ export default function VocabPage() {
   };
 
   return (
-    <main className="p-6">
+    <main className="p-6 bg-gray-50 min-h-screen">
       <Container>
         <Breadcrumbs items={[
           { href: "/", label: t.nav.home }, 
           { label: t.vocabulary.title }
         ]} />
         
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">{t.vocabulary.title}</h1>
-            <div className="text-sm text-gray-600">
-              {t.vocabulary.total_vocab.replace('{count}', pagination.total.toString())}
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* 页面标题区域 */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">📚</span>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold">{t.vocabulary.title}</h1>
+                  <p className="text-blue-100 mt-1">管理您的生词收藏，提升语言学习效率</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold">
+                  {pagination.total}
+                </div>
+                <div className="text-blue-100 text-sm">
+                  {t.vocabulary.total_vocab.replace('{count}', pagination.total.toString())}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* 过滤器 */}
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4 p-4 bg-muted rounded-lg">
-            <div>
-              <Label htmlFor="lang-filter">{t.vocabulary.filters.language}</Label>
-              <Select value={filters.lang} onValueChange={(value) => setFilters(prev => ({ ...prev, lang: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t.vocabulary.filters.all_languages} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t.vocabulary.filters.all_languages}</SelectItem>
-                  <SelectItem value="en">{t.vocabulary.filters.english}</SelectItem>
-                  <SelectItem value="ja">{t.vocabulary.filters.japanese}</SelectItem>
-                  <SelectItem value="zh">{t.vocabulary.filters.chinese}</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* 过滤器卡片 */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+              <h2 className="text-lg font-semibold text-gray-800">筛选条件</h2>
             </div>
-
-            <div>
-              <Label htmlFor="status-filter">{t.vocabulary.filters.status}</Label>
-              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t.vocabulary.filters.all_status} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t.vocabulary.filters.all_status}</SelectItem>
-                  <SelectItem value="new">{t.vocabulary.filters.new_word}</SelectItem>
-                  <SelectItem value="starred">{t.vocabulary.filters.starred}</SelectItem>
-                  <SelectItem value="archived">{t.vocabulary.filters.archived}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="explanation-filter">{t.vocabulary.filters.explanation_status}</Label>
-              <Select value={filters.explanation} onValueChange={(value) => setFilters(prev => ({ ...prev, explanation: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t.vocabulary.filters.all_explanations} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t.vocabulary.filters.all_explanations}</SelectItem>
-                  <SelectItem value="has">{t.vocabulary.filters.has_explanation}</SelectItem>
-                  <SelectItem value="missing">{t.vocabulary.filters.missing_explanation}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="search">{t.vocabulary.filters.search}</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="search"
-                  placeholder={t.vocabulary.filters.search_placeholder}
-                  value={filters.search}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setFilters({
-                    lang: 'all',
-                    status: 'all',
-                    explanation: 'all',
-                    search: '',
-                  })}
-                >
-                  {t.vocabulary.filters.reset}
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="speech-rate">{t.vocabulary.filters.speech_rate}</Label>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* 语言筛选 */}
               <div className="space-y-2">
-                <input
-                  id="speech-rate"
-                  type="range"
-                  min="0.3"
-                  max="1.5"
-                  step="0.1"
-                  value={speechRate}
-                  onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="text-xs text-center text-gray-600">
-                  {speechRate}x
+                <Label htmlFor="lang-filter" className="text-sm font-medium text-gray-700">
+                  {t.vocabulary.filters.language}
+                </Label>
+                <Select value={filters.lang} onValueChange={(value) => setFilters(prev => ({ ...prev, lang: value }))}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder={t.vocabulary.filters.all_languages} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t.vocabulary.filters.all_languages}</SelectItem>
+                    <SelectItem value="en">{t.vocabulary.filters.english}</SelectItem>
+                    <SelectItem value="ja">{t.vocabulary.filters.japanese}</SelectItem>
+                    <SelectItem value="zh">{t.vocabulary.filters.chinese}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 状态筛选 */}
+              <div className="space-y-2">
+                <Label htmlFor="status-filter" className="text-sm font-medium text-gray-700">
+                  {t.vocabulary.filters.status}
+                </Label>
+                <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder={t.vocabulary.filters.all_status} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t.vocabulary.filters.all_status}</SelectItem>
+                    <SelectItem value="new">{t.vocabulary.filters.new_word}</SelectItem>
+                    <SelectItem value="starred">{t.vocabulary.filters.starred}</SelectItem>
+                    <SelectItem value="archived">{t.vocabulary.filters.archived}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 解释状态筛选 */}
+              <div className="space-y-2">
+                <Label htmlFor="explanation-filter" className="text-sm font-medium text-gray-700">
+                  {t.vocabulary.filters.explanation_status}
+                </Label>
+                <Select value={filters.explanation} onValueChange={(value) => setFilters(prev => ({ ...prev, explanation: value }))}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder={t.vocabulary.filters.all_explanations} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t.vocabulary.filters.all_explanations}</SelectItem>
+                    <SelectItem value="has">{t.vocabulary.filters.has_explanation}</SelectItem>
+                    <SelectItem value="missing">{t.vocabulary.filters.missing_explanation}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 搜索框 */}
+              <div className="space-y-2">
+                <Label htmlFor="search" className="text-sm font-medium text-gray-700">
+                  {t.vocabulary.filters.search}
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="search"
+                    placeholder={t.vocabulary.filters.search_placeholder}
+                    value={filters.search}
+                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className="h-10"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFilters({
+                      lang: 'all',
+                      status: 'all',
+                      explanation: 'all',
+                      search: '',
+                    })}
+                    className="h-10 px-3"
+                  >
+                    {t.vocabulary.filters.reset}
+                  </Button>
                 </div>
               </div>
             </div>
 
+            {/* 语音速度控制 */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-4">
+                <Label htmlFor="speech-rate" className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <span>🔊</span>
+                  {t.vocabulary.filters.speech_rate}
+                </Label>
+                <div className="flex-1 max-w-xs">
+                  <input
+                    id="speech-rate"
+                    type="range"
+                    min="0.3"
+                    max="1.5"
+                    step="0.1"
+                    value={speechRate}
+                    onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(speechRate - 0.3) / 1.2 * 100}%, #e5e7eb ${(speechRate - 0.3) / 1.2 * 100}%, #e5e7eb 100%)`
+                    }}
+                  />
+                </div>
+                <div className="text-sm font-medium text-gray-600 min-w-[3rem] text-center">
+                  {speechRate}x
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* 错误信息 */}
@@ -801,16 +846,27 @@ export default function VocabPage() {
 
           {/* AI生成设置 */}
           {selectedEntries.length > 0 && (
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h3 className="text-lg font-medium mb-3">{t.vocabulary.ai_generation.title}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-lg">🤖</span>
+                </div>
                 <div>
-                  <Label htmlFor="native-lang">{t.vocabulary.ai_generation.native_language}</Label>
+                  <h3 className="text-lg font-semibold text-gray-800">{t.vocabulary.ai_generation.title}</h3>
+                  <p className="text-sm text-gray-600">为选中的 {selectedEntries.length} 个生词生成AI解释</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="native-lang" className="text-sm font-medium text-gray-700">
+                    {t.vocabulary.ai_generation.native_language}
+                  </Label>
                   <Select 
                     value={generationSettings.native_lang} 
                     onValueChange={(value) => setGenerationSettings(prev => ({ ...prev, native_lang: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -820,14 +876,17 @@ export default function VocabPage() {
                     </SelectContent>
                   </Select>
                   {userProfile?.native_lang && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-blue-600 flex items-center gap-1">
+                      <span>💡</span>
                       {t.vocabulary.ai_generation.auto_selected}
                     </p>
                   )}
                 </div>
 
-                <div>
-                  <Label htmlFor="provider">{t.vocabulary.ai_generation.ai_provider}</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="provider" className="text-sm font-medium text-gray-700">
+                    {t.vocabulary.ai_generation.ai_provider}
+                  </Label>
                   <div className="flex gap-2">
                     <Select 
                       value={generationSettings.provider} 
@@ -841,7 +900,7 @@ export default function VocabPage() {
                         }));
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -857,19 +916,22 @@ export default function VocabPage() {
                       size="sm"
                       onClick={fetchAvailableModels}
                       title={t.vocabulary.ai_generation.refresh_models}
+                      className="h-10 px-3"
                     >
                       {t.vocabulary.ai_generation.refresh_models}
                     </Button>
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="model">{t.vocabulary.ai_generation.model}</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="model" className="text-sm font-medium text-gray-700">
+                    {t.vocabulary.ai_generation.model}
+                  </Label>
                   <Select 
                     value={generationSettings.model} 
                     onValueChange={(value) => setGenerationSettings(prev => ({ ...prev, model: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -889,44 +951,58 @@ export default function VocabPage() {
                   <Button 
                     onClick={generateExplanations}
                     disabled={isGenerating}
-                    className="w-full"
+                    className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium"
                   >
-                    {isGenerating ? t.vocabulary.ai_generation.generating : `${t.vocabulary.ai_generation.generate_explanations} (${selectedEntries.length})`}
+                    {isGenerating ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        {t.vocabulary.ai_generation.generating}
+                      </>
+                    ) : (
+                      <>
+                        ✨ {t.vocabulary.ai_generation.generate_explanations} ({selectedEntries.length})
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
               
               {/* 生成进度显示 */}
               {isGenerating && generationProgress.total > 0 && (
-                <div className="mt-4 p-4 bg-white rounded border border-blue-200">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{t.vocabulary.ai_generation.progress}</span>
-                      <span className="text-gray-600">
+                <div className="mt-6 bg-white rounded-lg border border-blue-200 p-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        <span className="font-medium text-gray-800">{t.vocabulary.ai_generation.progress}</span>
+                      </div>
+                      <span className="text-sm font-medium text-blue-600">
                         {generationProgress.current} / {generationProgress.total}
                       </span>
                     </div>
                     
                     <Progress 
                       value={(generationProgress.current / generationProgress.total) * 100} 
-                      className="w-full"
+                      className="w-full h-2"
                     />
                     
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-700 font-medium">
                       {generationProgress.status}
                     </div>
                     
-                    {generationProgress.estimatedTime > 0 && (
-                      <div className="text-xs text-gray-500">
-                        {t.vocabulary.ai_generation.estimated_time}: {Math.round(generationProgress.estimatedTime)}秒
-                      </div>
-                    )}
-                    
-                    {generationProgress.startTime && (
-                      <div className="text-xs text-gray-500">
-                        {t.vocabulary.ai_generation.elapsed_time}: {Math.round((new Date().getTime() - generationProgress.startTime.getTime()) / 1000)}秒
-                      </div>
-                    )}
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      {generationProgress.estimatedTime > 0 && (
+                        <span>
+                          ⏱️ {t.vocabulary.ai_generation.estimated_time}: {Math.round(generationProgress.estimatedTime)}秒
+                        </span>
+                      )}
+                      
+                      {generationProgress.startTime && (
+                        <span>
+                          ⏰ {t.vocabulary.ai_generation.elapsed_time}: {Math.round((new Date().getTime() - generationProgress.startTime.getTime()) / 1000)}秒
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -962,65 +1038,112 @@ export default function VocabPage() {
                 maxVisiblePages={5}
                 className="mb-4"
               />
-              {/* 批量操作 */}
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleSelectAll}
-                >
-                  {selectedEntries.length === entries.length ? t.vocabulary.batch_operations.deselect_all : t.vocabulary.batch_operations.select_all}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={selectUnexplainedEntries}
-                  className="bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100"
-                >
-                  {t.vocabulary.batch_operations.select_unexplained}
-                </Button>
-                <span className="text-sm text-gray-600">
-                  {t.vocabulary.batch_operations.selected_count.replace('{count}', selectedEntries.length.toString())}
-                  {(() => {
-                    const unexplainedCount = entries.filter(entry => !entry.explanation || !entry.explanation.gloss_native).length;
-                    return unexplainedCount > 0 ? ` (${t.vocabulary.batch_operations.selected_unexplained.replace('{count}', unexplainedCount.toString())})` : '';
-                  })()}
-                </span>
-                
-                {selectedEntries.length > 0 && (
-                  <div className="flex gap-2 ml-auto">
+              {/* 批量操作工具栏 */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       size="sm"
-                      onClick={deleteSelectedEntries}
-                      disabled={isDeleting}
+                      onClick={toggleSelectAll}
+                      className="h-9 px-4"
                     >
-                      {isDeleting ? t.vocabulary.batch_operations.deleting : `${t.vocabulary.batch_operations.delete_selected} (${selectedEntries.length})`}
+                      {selectedEntries.length === entries.length ? t.vocabulary.batch_operations.deselect_all : t.vocabulary.batch_operations.select_all}
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={selectUnexplainedEntries}
+                      className="h-9 px-4 bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100"
+                    >
+                      🎯 {t.vocabulary.batch_operations.select_unexplained}
+                    </Button>
+                    <div className="h-6 w-px bg-gray-300"></div>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-800">
+                        {t.vocabulary.batch_operations.selected_count.replace('{count}', selectedEntries.length.toString())}
+                      </span>
+                      {(() => {
+                        const unexplainedCount = entries.filter(entry => !entry.explanation || !entry.explanation.gloss_native).length;
+                        return unexplainedCount > 0 ? (
+                          <span className="ml-2 text-yellow-600">
+                            ({t.vocabulary.batch_operations.selected_unexplained.replace('{count}', unexplainedCount.toString())})
+                          </span>
+                        ) : '';
+                      })()}
+                    </div>
                   </div>
-                )}
+                  
+                  {selectedEntries.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={deleteSelectedEntries}
+                        disabled={isDeleting}
+                        className="h-9 px-4"
+                      >
+                        {isDeleting ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                            {t.vocabulary.batch_operations.deleting}
+                          </>
+                        ) : (
+                          <>
+                            🗑️ {t.vocabulary.batch_operations.delete_selected} ({selectedEntries.length})
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* 生词卡片 */}
-              {entries.map((entry) => (
-                <div key={entry.id} className="p-4 border rounded-lg bg-card">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedEntries.includes(entry.id)}
-                      onChange={() => toggleSelection(entry.id)}
-                      className="mt-1"
-                    />
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-semibold text-blue-600">{entry.term}</h3>
-                          {entry.explanation?.pronunciation && (
-                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs text-gray-600">
-                              {entry.explanation.pronunciation}
-                            </span>
-                          )}
+              {/* 生词卡片网格 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {entries.map((entry) => (
+                  <div key={entry.id} className="group bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden">
+                    {/* 卡片头部 */}
+                    <div className="p-4 border-b border-gray-100">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedEntries.includes(entry.id)}
+                            onChange={() => toggleSelection(entry.id)}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                                {entry.term}
+                              </h3>
+                              {entry.explanation?.pronunciation && (
+                                <span className="font-mono bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-sm font-medium">
+                                  {entry.explanation.pronunciation}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                entry.lang === 'en' ? 'bg-blue-100 text-blue-700' :
+                                entry.lang === 'ja' ? 'bg-red-100 text-red-700' :
+                                'bg-green-100 text-green-700'
+                              }`}>
+                                {t.vocabulary.language_labels[entry.lang as keyof typeof t.vocabulary.language_labels]}
+                              </span>
+                              <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                                {entry.source}
+                              </span>
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                entry.status === 'starred' ? 'bg-yellow-100 text-yellow-700' :
+                                entry.status === 'archived' ? 'bg-gray-100 text-gray-600' :
+                                'bg-green-100 text-green-700'
+                              }`}>
+                                {t.vocabulary.status_labels[entry.status as keyof typeof t.vocabulary.status_labels]}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                         <TTSButton
                           text={entry.term}
@@ -1030,57 +1153,87 @@ export default function VocabPage() {
                           onPlay={speakText}
                           disabled={speakingId !== null && speakingId !== entry.id}
                         />
-                        <span className="px-2 py-1 text-xs bg-gray-100 rounded">
-                          {t.vocabulary.language_labels[entry.lang as keyof typeof t.vocabulary.language_labels]}
-                        </span>
-                        <span className="px-2 py-1 text-xs bg-blue-100 rounded">
-                          {entry.source}
-                        </span>
                       </div>
+                    </div>
 
+                    {/* 卡片内容 */}
+                    <div className="p-4">
+                      {/* 上下文 */}
                       {entry.context && (
-                        <div className="text-sm text-gray-600 mb-2 bg-gray-50 p-2 rounded">
-                          {entry.context}
+                        <div className="mb-3 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-200">
+                          <p className="text-sm text-gray-700 italic">"{entry.context}"</p>
                         </div>
                       )}
 
-                      {entry.explanation && (
-                        <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
-                          <div className="text-gray-600">{entry.explanation.gloss_native}</div>
+                      {/* 解释内容 */}
+                      {entry.explanation ? (
+                        <div className="space-y-3">
+                          <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                            <p className="text-gray-800 font-medium">{entry.explanation.gloss_native}</p>
+                          </div>
                           
-                          {/* 显示词性信息 */}
-                          {entry.explanation.pos && (
-                            <div className="mt-1 text-xs text-gray-500">
-                              <strong>{t.vocabulary.vocab_card.part_of_speech}：</strong>{entry.explanation.pos}
-                            </div>
-                          )}
-                          
-                          {Array.isArray(entry.explanation.senses) && entry.explanation.senses.length > 0 && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {t.vocabulary.vocab_card.example}：{entry.explanation.senses[0].example_target} — {entry.explanation.senses[0].example_native}
-                            </div>
-                          )}
+                          {/* 词性和例句 */}
+                          <div className="space-y-2">
+                            {entry.explanation.pos && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                  {t.vocabulary.vocab_card.part_of_speech}
+                                </span>
+                                <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium">
+                                  {entry.explanation.pos}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {Array.isArray(entry.explanation.senses) && entry.explanation.senses.length > 0 && (
+                              <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                <div className="text-xs font-medium text-amber-700 mb-1">
+                                  {t.vocabulary.vocab_card.example}
+                                </div>
+                                <div className="text-sm text-gray-700">
+                                  <span className="font-medium">{entry.explanation.senses[0].example_target}</span>
+                                  <span className="text-gray-500 mx-2">—</span>
+                                  <span className="text-gray-600">{entry.explanation.senses[0].example_native}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200 text-center">
+                          <p className="text-sm text-yellow-700 font-medium">
+                            {t.vocabulary.vocab_card.no_explanation}
+                          </p>
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2 mt-2 text-xs">
-                        <button 
-                          className="px-2 py-1 rounded border" 
-                          onClick={() => updateEntryStatus(entry.id, entry.status === 'starred' ? 'new' : 'starred')}
-                        >
-                          {entry.status === 'starred' ? t.vocabulary.vocab_card.unstar : t.vocabulary.vocab_card.star}
-                        </button>
-                        <button 
-                          className="px-2 py-1 rounded border text-red-600 hover:bg-red-50" 
-                          onClick={() => deleteEntry(entry.id)}
-                        >
-                          {t.vocabulary.vocab_card.delete}
-                        </button>
+                      {/* 操作按钮 */}
+                      <div className="mt-4 pt-3 border-t border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <button 
+                              className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                                entry.status === 'starred' 
+                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              }`}
+                              onClick={() => updateEntryStatus(entry.id, entry.status === 'starred' ? 'new' : 'starred')}
+                            >
+                              {entry.status === 'starred' ? '⭐ ' + t.vocabulary.vocab_card.unstar : '☆ ' + t.vocabulary.vocab_card.star}
+                            </button>
+                          </div>
+                          <button 
+                            className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-colors" 
+                            onClick={() => deleteEntry(entry.id)}
+                          >
+                            🗑️ {t.vocabulary.vocab_card.delete}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
 
               {/* 底部分页 */}
               <div className="border-t pt-4">
