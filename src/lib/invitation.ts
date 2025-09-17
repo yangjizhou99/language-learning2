@@ -274,10 +274,21 @@ export async function useInvitationCode(
       return { success: false, error: useError.message };
     }
 
-    // 更新使用计数
+    // 更新使用计数 - 先获取当前值，然后更新
+    const { data: currentCode, error: fetchError } = await supabase
+      .from('invitation_codes')
+      .select('used_count')
+      .eq('id', codeId)
+      .single();
+
+    if (fetchError) {
+      console.error('获取邀请码当前使用计数失败:', fetchError);
+      return { success: false, error: '获取邀请码信息失败' };
+    }
+
     const { error: updateError } = await supabase
       .from('invitation_codes')
-      .update({ used_count: supabase.raw('used_count + 1') })
+      .update({ used_count: (currentCode.used_count || 0) + 1 })
       .eq('id', codeId);
 
     if (updateError) {

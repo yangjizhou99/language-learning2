@@ -5,7 +5,7 @@ import { getInvitationUses } from '@/lib/invitation';
 // GET /api/admin/invitations/[id]/uses - 获取邀请码使用记录
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminCheck = await requireAdmin(req);
@@ -16,7 +16,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const url = new URL(req.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '20');

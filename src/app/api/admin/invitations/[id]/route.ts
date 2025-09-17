@@ -6,7 +6,7 @@ import type { UpdateInvitationRequest } from '@/types/invitation';
 // PUT /api/admin/invitations/[id] - 更新邀请码
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminCheck = await requireAdmin(req);
@@ -18,7 +18,7 @@ export async function PUT(
     }
 
     const body: UpdateInvitationRequest = await req.json();
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: '邀请码ID不能为空' }, { status: 400 });
@@ -55,7 +55,7 @@ export async function PUT(
 // DELETE /api/admin/invitations/[id] - 删除邀请码
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const adminCheck = await requireAdmin(req);
@@ -66,7 +66,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     if (!id) {
       return NextResponse.json({ error: '邀请码ID不能为空' }, { status: 400 });

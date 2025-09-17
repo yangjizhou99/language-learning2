@@ -36,7 +36,7 @@ export default function AuthGate() {
     checkSession();
 
     // 监听认证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       
       setUser(session?.user || null);
