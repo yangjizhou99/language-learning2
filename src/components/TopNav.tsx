@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import useIsAdmin from "@/hooks/useIsAdmin";
 import useUserPermissions from "@/hooks/useUserPermissions";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useMobile } from "@/contexts/MobileContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,16 +18,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-// import { useRouter } from "next/navigation";
-
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import MobileToggle from "@/components/MobileToggle";
+import { Menu, X, BookOpen, Target, AlignCenter, FileText, GraduationCap, User, Settings, LogOut, Home } from "lucide-react";
 
 export default function TopNav() {
   const [email, setEmail] = useState<string|undefined>();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isAdmin = useIsAdmin();
   const { permissions } = useUserPermissions();
+  const { } = useMobile();
   const t = useTranslation();
 
   useEffect(() => {
@@ -58,7 +61,23 @@ export default function TopNav() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // const router = useRouter();
+  // 点击外部关闭移动端菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMobileMenuOpen]);
+
   const signOut = async () => {
     try {
       setEmail(undefined);
@@ -73,33 +92,87 @@ export default function TopNav() {
     }
   };
 
+  // 导航菜单项
+  const navItems = [
+    { href: "/", label: t.nav.home, icon: Home, show: true },
+    { href: "/practice/shadowing", label: t.nav.shadowing, icon: GraduationCap, show: permissions.can_access_shadowing },
+    { href: "/practice/cloze", label: t.nav.cloze, icon: Target, show: permissions.can_access_cloze },
+    { href: "/practice/alignment", label: t.nav.alignment_practice, icon: AlignCenter, show: permissions.can_access_alignment },
+    { href: "/practice/wideread", label: t.nav.wide_reading, icon: FileText, show: permissions.can_access_articles },
+    { href: "/vocab", label: t.nav.vocabulary, icon: BookOpen, show: true },
+  ];
+
+  // 用户菜单项
+  const userMenuItems = [
+    { href: "/profile", label: "个人资料", icon: User, show: !!email },
+    { href: "/admin", label: t.nav.admin, icon: Settings, show: isAdmin },
+  ];
+
   return (
-    <nav className="w-full border-b bg-background text-foreground">
-      <div className="max-w-6xl mx-auto px-4 py-2 flex items-center justify-between">
-        <Link href="/" className="font-semibold">Lang Trainer</Link>
-        <div className="flex items-center gap-3">
-          {permissions.can_access_cloze && <Link key="cloze" href="/practice/cloze">{t.nav.cloze}</Link>}
-          {permissions.can_access_alignment && <Link key="alignment" href="/practice/alignment">{t.nav.alignment_practice}</Link>}
-          {permissions.can_access_articles && <Link key="wideread" href="/practice/wideread" prefetch={false}>{t.nav.wide_reading}</Link>}
-          {permissions.can_access_shadowing && <Link key="shadowing" href="/practice/shadowing" prefetch={false}>{t.nav.shadowing}</Link>}
-          <Link key="vocab" href="/vocab">{t.nav.vocabulary}</Link>
-          {email && <Link key="profile" href="/profile" className="text-blue-600 hover:text-blue-700">👤 个人资料</Link>}
-          <MobileToggle />
-          {isAdmin && <Link key="admin" href="/admin" className="text-orange-600">🛠️ {t.nav.admin}</Link>}
-          <span className="mx-2 text-gray-400">|</span>
+    <nav className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
+                <span className="text-white font-bold text-sm">LT</span>
+              </div>
+              <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Lang Trainer
+              </span>
+            </Link>
+          </div>
+
+          {/* 桌面端导航 */}
+          <div className="hidden lg:flex items-center space-x-1">
+            {navItems.map((item) => 
+              item.show && (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </Link>
+              )
+            )}
+          </div>
+
+          {/* 右侧操作区 */}
+          <div className="flex items-center space-x-2">
+            {/* 语言切换 */}
+            <div className="hidden sm:block">
           <LanguageToggle />
+            </div>
+
+            {/* 主题切换 */}
+            <div className="hidden sm:block">
           <ThemeToggle />
+            </div>
+
+            {/* 移动端切换 */}
+            <div className="hidden sm:block">
+              <MobileToggle />
+            </div>
+
+            {/* 用户区域 */}
           {!email ? (
-            <Button asChild>
+              <Button asChild className="hidden sm:flex">
               <Link href="/auth">{t.common.login} / {t.common.register}</Link>
             </Button>
           ) : (
+              <div className="flex items-center space-x-2">
+                {/* 桌面端用户菜单 */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="rounded-full border p-0.5">
-                  <Avatar>
+                    <button className="rounded-full border-2 border-gray-200 hover:border-blue-300 transition-colors p-0.5">
+                      <Avatar className="w-8 h-8">
                     <AvatarImage src={`https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(email)}`} />
-                    <AvatarFallback>{email.substring(0,1).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback className="text-xs font-medium">
+                          {email.substring(0,1).toUpperCase()}
+                        </AvatarFallback>
                   </Avatar>
                 </button>
               </DropdownMenuTrigger>
@@ -111,17 +184,23 @@ export default function TopNav() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">个人资料</Link>
+                    {userMenuItems.map((item) => 
+                      item.show && (
+                        <DropdownMenuItem asChild key={item.href}>
+                          <Link href={item.href} className="flex items-center space-x-2">
+                            <item.icon className="w-4 h-4" />
+                            <span>{item.label}</span>
+                          </Link>
                 </DropdownMenuItem>
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin">{t.common.enter_admin}</Link>
-                  </DropdownMenuItem>
+                      )
                 )}
+                    <DropdownMenuSeparator />
                 <Dialog>
                   <DialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>{t.common.logout}</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600">
+                          <LogOut className="w-4 h-4 mr-2" />
+                          {t.common.logout}
+                        </DropdownMenuItem>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
@@ -133,14 +212,166 @@ export default function TopNav() {
                         <Button variant="ghost">{t.common.cancel}</Button>
                       </DialogClose>
                       <DialogClose asChild>
-                        <Button variant="destructive" onClick={signOut}>{t.common.confirm} {t.common.logout}</Button>
+                            <Button variant="destructive" onClick={signOut}>
+                              {t.common.confirm} {t.common.logout}
+                            </Button>
                       </DialogClose>
                     </div>
                   </DialogContent>
                 </Dialog>
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
+
+                {/* 移动端菜单按钮 */}
+                <div className="lg:hidden" ref={mobileMenuRef}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className={`relative ${isMobileMenuOpen ? 'bg-blue-50 text-blue-600' : ''}`}
+                  >
+                    <Menu className="w-5 h-5" />
+                  </Button>
+                  
+                  {/* 移动端下拉菜单 */}
+                  {isMobileMenuOpen && (
+                    <>
+                      {/* 背景遮罩 */}
+                      <div 
+                        className="fixed inset-0 bg-black/20 z-40 lg:hidden animate-in fade-in duration-200"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      />
+                      <div className="absolute top-16 right-0 sm:right-4 w-72 sm:w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50 max-h-[calc(100vh-5rem)] flex flex-col animate-in slide-in-from-top-2 duration-200">
+                        {/* 菜单头部 */}
+                        <div className="flex items-center justify-between p-4 border-b border-gray-100 flex-shrink-0">
+                          <h2 className="text-lg font-semibold text-gray-800">菜单</h2>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="h-8 w-8"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        {/* 可滚动内容区域 */}
+                        <div className="flex-1 overflow-y-auto p-4">
+                        {/* 用户信息 */}
+                        {email && (
+                          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg mb-4">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={`https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(email)}`} />
+                              <AvatarFallback className="font-medium">
+                                {email.substring(0,1).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{email}</p>
+                              <p className="text-xs text-gray-500">{t.common.logged_in}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 导航菜单 */}
+                        <div className="space-y-1 mb-4">
+                          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">导航</h3>
+                          {navItems.map((item) => 
+                            item.show && (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                              >
+                                <item.icon className="w-5 h-5" />
+                                <span>{item.label}</span>
+                              </Link>
+                            )
+                          )}
+                        </div>
+
+                        {/* 用户菜单 */}
+                        {email && (
+                          <div className="space-y-1 mb-4">
+                            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">账户</h3>
+                            {userMenuItems.map((item) => 
+                              item.show && (
+                                <Link
+                                  key={item.href}
+                                  href={item.href}
+                                  onClick={() => setIsMobileMenuOpen(false)}
+                                  className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                                >
+                                  <item.icon className="w-5 h-5" />
+                                  <span>{item.label}</span>
+                                </Link>
+                              )
+                            )}
+                          </div>
+                        )}
+
+                        {/* 设置区域 */}
+                        <div className="space-y-1 mb-4">
+                          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">设置</h3>
+                          <div className="grid grid-cols-1 gap-2">
+                            <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                              <span className="text-sm font-medium text-gray-700">语言</span>
+                              <LanguageToggle />
+                            </div>
+                            <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                              <span className="text-sm font-medium text-gray-700">主题</span>
+                              <ThemeToggle />
+                            </div>
+                            <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+                              <span className="text-sm font-medium text-gray-700">设备模式</span>
+                              <MobileToggle />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 登录/登出按钮 */}
+                        <div className="pt-4 border-t">
+                          {!email ? (
+                            <Button asChild className="w-full">
+                              <Link href="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                                {t.common.login} / {t.common.register}
+                              </Link>
+                            </Button>
+                          ) : (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="destructive" className="w-full">
+                                  <LogOut className="w-4 h-4 mr-2" />
+                                  {t.common.logout}
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>{t.common.confirm_logout}</DialogTitle>
+                                  <DialogDescription>{t.common.confirm_logout_desc}</DialogDescription>
+                                </DialogHeader>
+                                <div className="mt-4 flex justify-end gap-2">
+                                  <DialogClose asChild>
+                                    <Button variant="ghost">{t.common.cancel}</Button>
+                                  </DialogClose>
+                                  <DialogClose asChild>
+                                    <Button variant="destructive" onClick={signOut}>
+                                      {t.common.confirm} {t.common.logout}
+                                    </Button>
+                                  </DialogClose>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          )}
+                        </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>

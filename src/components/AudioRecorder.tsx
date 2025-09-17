@@ -418,73 +418,92 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(({
   };
 
   return (
-    <Card className={`p-4 space-y-4 ${className}`}>
+    <Card className={`p-6 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl space-y-6 ${className}`}>
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">录音练习</h3>
-        <div className="text-sm text-gray-500">
-          {recordings.length} 个录音
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl flex items-center justify-center">
+            <Mic className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">录音练习</h3>
+            <p className="text-sm text-gray-600">跟读练习，提升口语能力</p>
+          </div>
+        </div>
+        <div className="px-4 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full">
+          <span className="text-sm font-semibold text-blue-700">
+            {recordings.length} 个录音
+          </span>
         </div>
       </div>
 
       {/* Recording Controls */}
-      <div className="flex items-center gap-2">
-        {!isRecording ? (
-          <Button
-            onClick={startRecording}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Mic className="w-4 h-4" />
-            开始录音
-          </Button>
-        ) : (
-          <Button
-            onClick={stopRecording}
-            variant="destructive"
-            size="sm"
-            className="flex items-center gap-2"
-          >
-            <Square className="w-4 h-4" />
-            停止录音
-          </Button>
-        )}
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          {!isRecording ? (
+            <Button
+              onClick={startRecording}
+              variant="outline"
+              size="lg"
+              className="h-12 bg-gradient-to-r from-red-50 to-pink-50 border-red-200 text-red-700 hover:from-red-100 hover:to-pink-100 hover:border-red-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+            >
+              <Mic className="w-5 h-5 mr-2" />
+              开始录音
+            </Button>
+          ) : (
+            <Button
+              onClick={stopRecording}
+              variant="destructive"
+              size="lg"
+              className="h-12 bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 rounded-xl shadow-sm hover:shadow-md transition-all"
+            >
+              <Square className="w-5 h-5 mr-2" />
+              停止录音
+            </Button>
+          )}
+        </div>
 
-        {isRecording && (
-          <div className="flex items-center gap-2 text-red-600">
-            <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse" />
-            录音中...
-          </div>
-        )}
+        {/* 状态指示器 */}
+        <div className="flex items-center gap-4 flex-wrap">
+          {isRecording && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-lg border border-red-200">
+              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-red-700">录音中...</span>
+            </div>
+          )}
 
-        {isRealTimeTranscribing && (
-          <div className="flex items-center gap-2 text-green-600">
-            <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse" />
-            实时转录中...
-          </div>
-        )}
+          {isRealTimeTranscribing && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-green-700">实时转录中...</span>
+            </div>
+          )}
 
-        {isTranscribing && (
-          <div className="flex items-center gap-2 text-blue-600">
-            <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
-            转录中...
-          </div>
-        )}
+          {isTranscribing && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-blue-700">转录中...</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Current Recording Preview */}
       {currentRecordingUrl && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
+        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
               <Button
                 onClick={() => playAudio(currentRecordingUrl, 'current')}
                 variant="ghost"
                 size="sm"
+                className="w-10 h-10 bg-white hover:bg-blue-100 rounded-full shadow-sm"
               >
-                <Play className="w-4 h-4" />
+                <Play className="w-4 h-4 text-blue-600" />
               </Button>
-              <span className="text-sm">新录音（未保存）</span>
+              <div>
+                <span className="text-sm font-medium text-gray-900">新录音（未保存）</span>
+                <p className="text-xs text-gray-500">点击播放预览录音效果</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -492,15 +511,16 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(({
                 disabled={uploadingRecording || isTranscribing}
                 variant="default"
                 size="sm"
-                className="flex items-center gap-1"
+                className="h-8 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all"
               >
-                <Upload className="w-3 h-3" />
+                <Upload className="w-3 h-3 mr-1" />
                 {uploadingRecording ? '上传中...' : isTranscribing ? '转录中...' : '保存'}
               </Button>
               <Button
                 onClick={discardCurrentRecording}
                 variant="ghost"
                 size="sm"
+                className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
               >
                 <Trash2 className="w-3 h-3" />
               </Button>
@@ -509,9 +529,12 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(({
           
           {/* 实时转录显示 */}
           {isRealTimeTranscribing && realTimeTranscription && (
-            <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
-              <div className="text-xs text-green-600 mb-1">实时转录：</div>
-              <div className="text-sm text-green-800 max-h-32 overflow-y-auto whitespace-pre-wrap break-words">
+            <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-medium text-green-700">实时转录：</span>
+              </div>
+              <div className="text-sm text-green-800 max-h-32 overflow-y-auto whitespace-pre-wrap break-words leading-relaxed">
                 {realTimeTranscription}
               </div>
             </div>
@@ -519,9 +542,12 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(({
           
           {/* 转录文字显示 */}
           {currentTranscription && (
-            <div className="mt-2 p-2 bg-white rounded border">
-              <div className="text-xs text-gray-500 mb-1">转录文字：</div>
-              <div className="text-sm max-h-32 overflow-y-auto whitespace-pre-wrap break-words">
+            <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-xs font-medium text-gray-600">转录文字：</span>
+              </div>
+              <div className="text-sm text-gray-800 max-h-32 overflow-y-auto whitespace-pre-wrap break-words leading-relaxed">
                 {currentTranscription}
               </div>
             </div>
@@ -531,71 +557,88 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(({
 
       {/* Existing Recordings List */}
       {recordings.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-700">历史录音</h4>
-          {recordings.map((recording, index) => (
-            <div
-              key={recording.url}
-              className="p-3 bg-gray-50 rounded-lg space-y-2"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-1">
-                  <Button
-                    onClick={() => playAudio(recording.url, recording.url)}
-                    variant="ghost"
-                    size="sm"
-                    className={isPlaying === recording.url ? 'bg-blue-100' : ''}
-                  >
-                    <Play className="w-4 h-4" />
-                  </Button>
-                  <div className="flex-1">
-                    <div className="text-sm">录音 #{index + 1}</div>
-                    <div className="text-xs text-gray-500">
-                      {formatDuration(Math.floor(recording.duration / 1000))} · {formatFileSize(recording.size)} · 
-                      {new Date(recording.created_at).toLocaleString()}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Play className="w-3 h-3 text-gray-600" />
+            </div>
+            <h4 className="text-lg font-semibold text-gray-800">历史录音</h4>
+          </div>
+          <div className="space-y-3">
+            {recordings.map((recording, index) => (
+              <div
+                key={recording.url}
+                className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3 flex-1">
+                    <Button
+                      onClick={() => playAudio(recording.url, recording.url)}
+                      variant="ghost"
+                      size="sm"
+                      className={`w-10 h-10 rounded-full shadow-sm transition-all ${
+                        isPlaying === recording.url 
+                          ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                          : 'bg-white hover:bg-blue-50 text-blue-600'
+                      }`}
+                    >
+                      <Play className="w-4 h-4" />
+                    </Button>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-gray-900">录音 #{index + 1}</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {formatDuration(Math.floor(recording.duration / 1000))} · {formatFileSize(recording.size)} · 
+                        {new Date(recording.created_at).toLocaleString()}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  {recording.transcription && (
+                  <div className="flex items-center gap-2">
+                    {recording.transcription && (
+                      <Button
+                        onClick={() => onRecordingSelected?.(recording)}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100 hover:border-green-300 rounded-lg"
+                      >
+                        评分
+                      </Button>
+                    )}
                     <Button
-                      onClick={() => onRecordingSelected?.(recording)}
-                      variant="outline"
+                      onClick={() => deleteRecording(recording)}
+                      variant="ghost"
                       size="sm"
-                      className="text-blue-600 hover:text-blue-700"
+                      className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
                     >
-                      评分
+                      <Trash2 className="w-3 h-3" />
                     </Button>
-                  )}
-                  <Button
-                    onClick={() => deleteRecording(recording)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-              
-              {/* 显示转录文字 */}
-              {recording.transcription && (
-                <div className="p-2 bg-white rounded border">
-                  <div className="text-xs text-gray-500 mb-1">转录文字：</div>
-                  <div className="text-sm max-h-32 overflow-y-auto whitespace-pre-wrap break-words">
-                    {recording.transcription}
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+              
+                {/* 显示转录文字 */}
+                {recording.transcription && (
+                  <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-xs font-medium text-gray-600">转录文字：</span>
+                    </div>
+                    <div className="text-sm text-gray-800 max-h-32 overflow-y-auto whitespace-pre-wrap break-words leading-relaxed">
+                      {recording.transcription}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {recordings.length === 0 && !currentRecordingUrl && (
-        <div className="text-center py-8 text-gray-500">
-          <Mic className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">还没有录音，点击"开始录音"开始练习</p>
+        <div className="text-center py-12">
+          <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Mic className="w-10 h-10 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">还没有录音</h3>
+          <p className="text-gray-500 leading-relaxed">点击"开始录音"开始练习</p>
         </div>
       )}
     </Card>

@@ -7,7 +7,16 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req);
     if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
     const db = getServiceSupabase();
-    const { data, error } = await db.from('shadowing_items').select('*').order('created_at', { ascending: false });
+    const { data, error } = await db
+      .from('shadowing_items')
+      .select(`
+        *,
+        shadowing_themes(title),
+        shadowing_subtopics(title_cn)
+      `)
+      .order('shadowing_themes(title)', { ascending: true, nullsFirst: false })
+      .order('shadowing_subtopics(title_cn)', { ascending: true, nullsFirst: false })
+      .order('title', { ascending: true });
     if (error) return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
     return NextResponse.json(data||[]);
   } catch (e) {
@@ -40,6 +49,40 @@ export async function PUT(req: NextRequest) {
     const { error } = await db.from('shadowing_items').update(rest).eq('id', id);
     if (error) return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
     return NextResponse.json({ success:true });
+  } catch (e) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const auth = await requireAdmin(req);
+    if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
+    const { updates } = await req.json();
+    if (!Array.isArray(updates) || updates.length === 0) return NextResponse.json({ error: 'Missing updates array' }, { status: 400 });
+    
+    const db = getServiceSupabase();
+    let successCount = 0;
+    
+    // 批量更新每个项目
+    for (const update of updates) {
+      if (!update.id || !update.title) continue;
+      
+      const { error } = await db
+        .from('shadowing_items')
+        .update({ title: update.title })
+        .eq('id', update.id);
+      
+      if (!error) {
+        successCount++;
+      }
+    }
+    
+    return NextResponse.json({ 
+      success: true, 
+      updated_count: successCount,
+      total_requested: updates.length 
+    });
   } catch (e) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

@@ -24,9 +24,15 @@ export async function GET(req: NextRequest){
   // 构建基础查询
   let query = supabase
     .from("shadowing_drafts")
-    .select("id, lang, level, genre, title, text, status, created_at, notes, translations, trans_updated_at", { count: 'exact' })
+    .select(`
+      id, lang, level, genre, title, text, status, created_at, notes, translations, trans_updated_at,
+      shadowing_themes(title),
+      shadowing_subtopics(title_cn)
+    `, { count: 'exact' })
     .eq("status", status)
-    .order("created_at", { ascending: false });
+    .order("shadowing_themes(title)", { ascending: true, nullsFirst: false })
+    .order("shadowing_subtopics(title_cn)", { ascending: true, nullsFirst: false })
+    .order("title", { ascending: true });
   
   if (lang) query = query.eq("lang", lang);
   if (level) query = query.eq("level", Number(level));
