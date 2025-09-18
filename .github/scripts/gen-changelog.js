@@ -27,14 +27,14 @@ function run(cmd) {
 // 找到上一个 tag，如果没有就取第一个 commit
 let base;
 try {
-  base = run('git --no-pager --no-ext-diff --no-color describe --tags --abbrev=0');
+  base = run('git --no-pager describe --tags --abbrev=0');
 } catch {
-  base = run('git --no-pager --no-ext-diff --no-color rev-list --max-parents=0 --max-count=1 HEAD');
+  base = run('git --no-pager rev-list --max-parents=0 --max-count=1 HEAD');
 }
 const head = 'HEAD';
 
 // 获取 diff（禁用 pager & 外部 diff 工具 & 颜色）
-const diff = run(`git --no-pager --no-ext-diff --no-color diff ${base}...${head}`);
+const diff = run(`git --no-pager diff --no-ext-diff --no-color ${base}...${head}`);
 
 // 构造 prompt
 const messages = [
