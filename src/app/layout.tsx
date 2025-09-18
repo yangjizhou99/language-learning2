@@ -25,12 +25,13 @@ export const dynamic = 'force-dynamic'; // 强制动态渲染
 export const metadata: Metadata = {
   title: 'Lang Trainer - 语言学习平台',
   description: '专业的语言学习平台，支持多种练习模式',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

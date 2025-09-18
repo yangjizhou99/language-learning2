@@ -10,11 +10,44 @@ export async function GET() {
       console.log('OpenRouter API key not found, returning fallback models');
       return NextResponse.json(
         {
-          success: false,
-          error: 'OpenRouter API key not configured',
+          success: true,
+          models: {
+            'anthropic': [
+              {
+                id: 'anthropic/claude-3.5-sonnet',
+                name: 'Claude 3.5 Sonnet',
+                description: 'Anthropic\'s most capable model for complex tasks',
+              },
+              {
+                id: 'anthropic/claude-3-haiku',
+                name: 'Claude 3 Haiku',
+                description: 'Fast and efficient for simple tasks',
+              }
+            ],
+            'openai': [
+              {
+                id: 'openai/gpt-4o',
+                name: 'GPT-4o',
+                description: 'OpenAI\'s most advanced model',
+              },
+              {
+                id: 'openai/gpt-4o-mini',
+                name: 'GPT-4o Mini',
+                description: 'Faster and cheaper GPT-4o variant',
+              }
+            ],
+            'deepseek': [
+              {
+                id: 'deepseek/deepseek-chat',
+                name: 'DeepSeek Chat',
+                description: 'High-quality open source model',
+              }
+            ]
+          },
+          total: 5,
           fallback: true,
         },
-        { status: 500 },
+        { status: 200 },
       );
     }
 
@@ -35,6 +68,53 @@ export async function GET() {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenRouter API error:', response.status, errorText);
+      
+      // 如果API密钥无效，返回fallback模型
+      if (response.status === 401) {
+        console.log('OpenRouter API key invalid, returning fallback models');
+        return NextResponse.json(
+          {
+            success: true,
+            models: {
+              'anthropic': [
+                {
+                  id: 'anthropic/claude-3.5-sonnet',
+                  name: 'Claude 3.5 Sonnet',
+                  description: 'Anthropic\'s most capable model for complex tasks',
+                },
+                {
+                  id: 'anthropic/claude-3-haiku',
+                  name: 'Claude 3 Haiku',
+                  description: 'Fast and efficient for simple tasks',
+                }
+              ],
+              'openai': [
+                {
+                  id: 'openai/gpt-4o',
+                  name: 'GPT-4o',
+                  description: 'OpenAI\'s most advanced model',
+                },
+                {
+                  id: 'openai/gpt-4o-mini',
+                  name: 'GPT-4o Mini',
+                  description: 'Faster and cheaper GPT-4o variant',
+                }
+              ],
+              'deepseek': [
+                {
+                  id: 'deepseek/deepseek-chat',
+                  name: 'DeepSeek Chat',
+                  description: 'High-quality open source model',
+                }
+              ]
+            },
+            total: 5,
+            fallback: true,
+          },
+          { status: 200 },
+        );
+      }
+      
       throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
     }
 
