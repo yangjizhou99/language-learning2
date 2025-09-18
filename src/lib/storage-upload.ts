@@ -77,7 +77,7 @@ export async function uploadWithCache(
 
     // 生成代理路由URL（推荐使用）
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const proxyUrl = `${baseUrl}/api/storage-proxy?path=${options.bucket}/${options.path}`;
+    const proxyUrl = `${baseUrl}/api/storage-proxy?path=${options.path}&bucket=${options.bucket}`;
 
     return { 
       success: true, 

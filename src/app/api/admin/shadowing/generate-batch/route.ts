@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { chatJSON } from '@/lib/ai/client';
+import { requireAdmin } from '@/lib/admin';
 
 export const maxDuration = 300; // 5分钟超时，符合Vercel Hobby计划限制
 
@@ -22,6 +23,12 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
+    // 添加管理员权限验证
+    const auth = await requireAdmin(request);
+    if (!auth.ok) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+
     const { 
       subtopic_ids, 
       lang, 
@@ -145,7 +152,8 @@ export async function POST(request: NextRequest) {
             provider: actualProvider,
             model: actualModel,
             messages: [{ role: 'user', content: prompt }],
-            temperature: temperature || 0.7
+            temperature: temperature || 0.7,
+            userId: auth.user.id  // 传递用户ID以使用用户特定的API密钥
           });
           rawContent = result.content;
           usage = result.usage;
@@ -158,7 +166,8 @@ export async function POST(request: NextRequest) {
                 provider: 'openrouter',
                 model: 'deepseek/deepseek-chat',
                 messages: [{ role: 'user', content: prompt }],
-                temperature: temperature || 0.7
+                temperature: temperature || 0.7,
+                userId: auth.user.id  // 传递用户ID以使用用户特定的API密钥
               });
               rawContent = result.content;
               usage = result.usage;
@@ -202,6 +211,7 @@ export async function POST(request: NextRequest) {
             level: parseInt(actualLevel),
             genre: actualGenre,
             status: 'draft',
+            created_by: auth.user.id,  // 添加创建者ID，确保RLS策略允许插入
             created_at: new Date().toISOString()
           })
           .select()

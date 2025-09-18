@@ -51,6 +51,7 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
     title: "系统",
     items: [
       { href: "/admin/setup", label: "系统设置", icon: "⚙️" },
+      { href: "/admin/migrate", label: "数据迁移", icon: "🔄" },
       { href: "/admin/performance", label: "性能监控", icon: "📊" },
       { href: "/admin/performance-test", label: "性能测试", icon: "🧪" },
       { href: "/admin/performance-optimization", label: "性能优化", icon: "🚀" },
@@ -66,6 +67,10 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
       { href: "/admin/alignment/packs", label: "对齐训练包", icon: "🧭", match: "startsWith" },
       { href: "/admin/articles/list", label: "广读文章", icon: "📄", match: "startsWith" },
       { href: "/admin/shadowing/items", label: "Shadowing 素材", icon: "🎙️", match: "startsWith" },
+      { href: "/admin/question-bank/export", label: "题库导出", icon: "📦", match: "startsWith" },
+      { href: "/admin/question-bank/copy-sync", label: "COPY流式同步", icon: "⚡", match: "startsWith" },
+      { href: "/admin/question-bank/specialized", label: "专项题目打包", icon: "🎯", match: "startsWith" },
+      { href: "/admin/question-bank/test-env", label: "环境变量测试", icon: "🔧", match: "startsWith" },
     ],
   },
 ];

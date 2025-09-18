@@ -1,75 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServiceSupabase } from '@/lib/supabaseAdmin';
 import { requireAdmin } from '@/lib/admin';
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAdmin(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
-    const db = (await requireAdmin(req)).supabase!; // 已校验管理员，使用用户上下文以适配 RLS
-    const { data, error } = await db.from('alignment_packs').select('*').order('created_at', { ascending: false });
-    if (error) return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
-    return NextResponse.json(data||[]);
-  } catch (e) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const auth = await requireAdmin(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
-    const { lang, topic, tags=[], preferred_style={}, steps, status='draft' } = await req.json();
-    if (!lang || !topic || !steps) return NextResponse.json({ error:'Missing fields' }, { status:400 });
-    const db = (await requireAdmin(req)).supabase!;
-    const { data, error } = await db.from('alignment_packs').insert({ lang, topic, tags, preferred_style, steps, status }).select().single();
-    if (error) return NextResponse.json({ error:'Failed to create' }, { status:500 });
-    return NextResponse.json({ success:true, data });
-  } catch (e) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function PUT(req: NextRequest) {
-  try {
-    const auth = await requireAdmin(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
-    const { id, ...rest } = await req.json();
-    if (!id) return NextResponse.json({ error:'Missing id' }, { status:400 });
-    const db = (await requireAdmin(req)).supabase!;
-    const { error } = await db.from('alignment_packs').update(rest).eq('id', id);
-    if (error) return NextResponse.json({ error:'Failed to update' }, { status:500 });
-    return NextResponse.json({ success:true });
-  } catch (e) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const auth = await requireAdmin(req);
-    if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: auth.reason==='unauthorized'?401:403 });
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
-    const db = (await requireAdmin(req)).supabase!;
-    let error = null as any;
-    if (id) {
-      const res = await db.from('alignment_packs').delete().eq('id', id);
-      error = res.error;
-    } else {
-      let ids: string[] | undefined = undefined;
-      try {
-        const body = await req.json();
-        ids = Array.isArray(body?.ids) ? body.ids : undefined;
-      } catch {}
-      if (!ids || ids.length===0) return NextResponse.json({ error:'Missing id(s)' }, { status:400 });
-      const res = await db.from('alignment_packs').delete().in('id', ids);
-      error = res.error;
+    const adminResult = await requireAdmin(req);
+    if (!adminResult.ok) {
+      return NextResponse.json({ error: adminResult.reason }, { status: adminResult.reason === 'unauthorized' ? 401 : 403 });
     }
-    if (error) return NextResponse.json({ error:'Failed to delete' }, { status:500 });
-    return NextResponse.json({ success:true });
-  } catch (e) {
+
+    const supabaseAdmin = getServiceSupabase();
+    
+    // 获取分页参数
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '1000'); // 默认获取更多数据用于导出
+    const offset = (page - 1) * limit;
+    const lang = searchParams.get('lang');
+    const level = searchParams.get('level');
+
+    // 构建查询
+    let query = supabaseAdmin
+      .from('alignment_packs')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // 添加筛选条件
+    if (lang && lang !== 'all') {
+      query = query.eq('lang', lang);
+    }
+    if (level && level !== 'all') {
+      query = query.eq('level', parseInt(level));
+    }
+
+    const { data: items, error } = await query
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      console.error('Error fetching alignment packs:', error);
+      return NextResponse.json({ error: 'Failed to fetch packs' }, { status: 500 });
+    }
+
+    // 转换alignment_packs字段以匹配前端期望的格式
+    const itemsWithMappedFields = (items || []).map(item => ({
+      ...item,
+      level: item.level_min || 1, // 使用level_min作为level
+      text: item.steps ? JSON.stringify(item.steps) : '', // 将steps转换为text字段
+      passage: item.steps ? JSON.stringify(item.steps) : '', // 同样映射到passage
+      status: item.status || 'draft'
+    }));
+
+    // 获取总数用于分页信息
+    let countQuery = supabaseAdmin
+      .from('alignment_packs')
+      .select('*', { count: 'exact', head: true });
+
+    if (lang && lang !== 'all') {
+      countQuery = countQuery.eq('lang', lang);
+    }
+    if (level && level !== 'all') {
+      countQuery = countQuery.eq('level', parseInt(level));
+    }
+
+    const { count } = await countQuery;
+
+    return NextResponse.json({
+      items: itemsWithMappedFields,
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in alignment packs API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-
