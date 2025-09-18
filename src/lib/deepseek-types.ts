@@ -1,6 +1,6 @@
-import OpenAI from "openai";
+import OpenAI from 'openai';
 
-declare module "openai" {
+declare module 'openai' {
   namespace OpenAI {
     interface ChatCompletionMessage {
       reasoning_content?: string;

@@ -3,33 +3,39 @@
 ## ✅ 已完成的功能
 
 ### 🗂️ 题库管理
+
 - **左侧题库列表** - 显示所有shadowing题目，支持折叠/展开
 - **智能筛选** - 按语言、等级、体裁、练习状态筛选
 - **搜索功能** - 按标题、主题、内容搜索
 - **练习状态** - 清晰标识已练习/未练习，显示练习统计
 
 ### 🎯 练习导航
+
 - **随机未练** - 随机选择未练习过的题目
 - **顺序下一题** - 按顺序选择下一个未练习题目
 - **点击加载** - 点击任意题目开始或恢复练习
 
 ### 🎙️ 录音功能
+
 - **浏览器录音** - 使用MediaRecorder API实现录音
 - **录音管理** - 预览、保存、删除录音
 - **历史录音** - 查看和播放之前的录音
 - **自动上传** - 录音自动上传到Supabase Storage
 
 ### 💾 会话保存
+
 - **草稿保存** - 随时保存练习进度，包含录音和生词
 - **完成保存** - 标记练习完成，自动更新题库状态
 - **状态恢复** - 重新打开已练习题目时恢复之前的状态
 
 ### 📚 生词管理
+
 - **选词模式** - 切换生词选择模式，点击文本选择生词
 - **生词列表** - 显示本次选中的所有生词及上下文
 - **导入生词本** - 一键将选中生词导入到个人生词本
 
 ### 🔄 状态同步
+
 - **实时更新** - 完成练习后左侧列表立即显示"已练习"状态
 - **统计显示** - 显示录音数量、生词数量、练习时长
 - **会话恢复** - 再次打开已练习题目时完整还原练习场景
@@ -37,10 +43,11 @@
 ## 🏗️ 技术架构
 
 ### 数据库设计
+
 ```sql
 -- shadowing_sessions 表
 - user_id: 用户ID
-- shadowing_item_id: 题目ID  
+- shadowing_item_id: 题目ID
 - status: 'draft' | 'completed'
 - recordings: 录音列表JSON
 - selected_words: 选中生词JSON
@@ -49,6 +56,7 @@
 ```
 
 ### API设计
+
 ```
 GET /api/shadowing/catalog - 获取题库列表+练习状态
 GET /api/shadowing/session?item_id= - 获取指定会话
@@ -57,6 +65,7 @@ POST /api/upload/audio - 上传录音文件
 ```
 
 ### 存储设计
+
 ```
 Storage Bucket: recordings
 路径格式: {user_id}/{session_id}/{timestamp}.webm
@@ -66,29 +75,33 @@ Storage Bucket: recordings
 ## 🚀 部署清单
 
 ### 1. 数据库迁移
+
 ```bash
 # 执行迁移文件
 supabase/migrations/20250120000007_create_shadowing_sessions.sql
 ```
 
 ### 2. Storage配置
+
 ```bash
 # 在Supabase Dashboard创建bucket
 名称: recordings
-类型: Public 
+类型: Public
 大小限制: 50MB
 MIME类型: audio/webm, audio/wav, audio/mp3
 ```
 
 ### 3. 应用存储策略
+
 ```sql
 -- 执行 supabase/storage-policies.sql
 -- 用户只能访问自己的录音文件
 ```
 
 ### 4. 新增文件
+
 - ✅ `src/app/api/shadowing/catalog/route.ts`
-- ✅ `src/app/api/shadowing/session/route.ts`  
+- ✅ `src/app/api/shadowing/session/route.ts`
 - ✅ `src/app/api/upload/audio/route.ts`
 - ✅ `src/components/AudioRecorder.tsx`
 - ✅ `src/app/practice/shadowing/page.tsx` (完全重写)
@@ -114,6 +127,7 @@ MIME类型: audio/webm, audio/wav, audio/mp3
 ## 🔍 测试验证
 
 ### 功能测试
+
 - [ ] 题库列表正确显示
 - [ ] 筛选和搜索功能正常
 - [ ] 录音录制和播放正常
@@ -121,11 +135,13 @@ MIME类型: audio/webm, audio/wav, audio/mp3
 - [ ] 保存和恢复功能正常
 
 ### 权限测试
+
 - [ ] 用户只能看到自己的练习数据
 - [ ] 录音文件访问权限正确
 - [ ] RLS策略有效
 
 ### 性能测试
+
 - [ ] 题库列表加载速度
 - [ ] 录音上传响应时间
 - [ ] 大文件处理能力

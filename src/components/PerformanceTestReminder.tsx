@@ -21,12 +21,12 @@ export default function PerformanceTestReminder({ className }: TestReminderProps
     if (saved) {
       const lastTest = new Date(saved);
       setLastTestDate(lastTest);
-      
+
       const now = new Date();
       const diffTime = now.getTime() - lastTest.getTime();
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       setDaysSinceLastTest(diffDays);
-      
+
       if (diffDays > 14) {
         setTestStatus('overdue');
       } else if (diffDays > 7) {
@@ -64,9 +64,17 @@ export default function PerformanceTestReminder({ className }: TestReminderProps
   const getStatusBadge = () => {
     switch (testStatus) {
       case 'good':
-        return <Badge variant="default" className="bg-green-500">正常</Badge>;
+        return (
+          <Badge variant="default" className="bg-green-500">
+            正常
+          </Badge>
+        );
       case 'warning':
-        return <Badge variant="secondary" className="bg-yellow-500">提醒</Badge>;
+        return (
+          <Badge variant="secondary" className="bg-yellow-500">
+            提醒
+          </Badge>
+        );
       case 'overdue':
         return <Badge variant="destructive">逾期</Badge>;
     }
@@ -104,18 +112,16 @@ export default function PerformanceTestReminder({ className }: TestReminderProps
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          <p className="text-sm text-gray-600">
-            {getRecommendation()}
-          </p>
-          
+          <p className="text-sm text-gray-600">{getRecommendation()}</p>
+
           {lastTestDate && (
             <div className="text-sm text-gray-500">
               上次测试: {lastTestDate.toLocaleDateString()} ({daysSinceLastTest} 天前)
             </div>
           )}
-          
+
           <div className="flex space-x-2">
-            <Button 
+            <Button
               onClick={handleRunTest}
               size="sm"
               className={testStatus === 'overdue' ? 'bg-red-600 hover:bg-red-700' : ''}
@@ -123,10 +129,13 @@ export default function PerformanceTestReminder({ className }: TestReminderProps
               运行测试
             </Button>
             {testStatus === 'overdue' && (
-              <Button 
+              <Button
                 onClick={() => {
                   // 标记为已提醒，暂时隐藏
-                  localStorage.setItem('performance-test-reminder-dismissed', new Date().toISOString());
+                  localStorage.setItem(
+                    'performance-test-reminder-dismissed',
+                    new Date().toISOString(),
+                  );
                 }}
                 variant="outline"
                 size="sm"

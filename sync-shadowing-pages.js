@@ -6,18 +6,21 @@ const path = require('path');
 // 同步脚本：将中文页面的修改同步到日语和英语页面
 function syncShadowingPages() {
   console.log('🔄 开始同步跟读练习页面...');
-  
+
   const chineseFile = 'src/components/shadowing/ChineseShadowingPage.tsx';
   const japaneseFile = 'src/components/shadowing/JapaneseShadowingPage.tsx';
   const englishFile = 'src/components/shadowing/EnglishShadowingPage.tsx';
-  
+
   try {
     // 读取中文页面内容
     const chineseContent = fs.readFileSync(chineseFile, 'utf8');
-    
+
     // 生成日语页面内容
     let japaneseContent = chineseContent
-      .replace(/export default function ShadowingPage\(\)/g, 'export default function JapaneseShadowingPage()')
+      .replace(
+        /export default function ShadowingPage\(\)/g,
+        'export default function JapaneseShadowingPage()',
+      )
       .replace(/useState<"ja" \| "en" \| "zh">\("ja"\)/g, 'useState<"ja" | "en" | "zh">("ja")')
       .replace(/录音完成！/g, '録音完了！')
       .replace(/评分中\.\.\./g, '採点中...')
@@ -39,12 +42,21 @@ function syncShadowingPages() {
       .replace(/例句/g, '例文')
       .replace(/已选择的生词/g, '選択された単語')
       .replace(/所有题目都已练习过！/g, 'すべての問題を練習済みです！')
-      .replace(/请先完成录音，然后点击下方按钮进行评分/g, 'まず録音を完了してから、下のボタンをクリックして採点してください')
-      .replace(/您已完成录音，点击下方按钮进行评分/g, '録音が完了しました。下のボタンをクリックして採点してください');
-    
+      .replace(
+        /请先完成录音，然后点击下方按钮进行评分/g,
+        'まず録音を完了してから、下のボタンをクリックして採点してください',
+      )
+      .replace(
+        /您已完成录音，点击下方按钮进行评分/g,
+        '録音が完了しました。下のボタンをクリックして採点してください',
+      );
+
     // 生成英语页面内容
     let englishContent = chineseContent
-      .replace(/export default function ShadowingPage\(\)/g, 'export default function EnglishShadowingPage()')
+      .replace(
+        /export default function ShadowingPage\(\)/g,
+        'export default function EnglishShadowingPage()',
+      )
       .replace(/useState<"ja" \| "en" \| "zh">\("ja"\)/g, 'useState<"ja" | "en" | "zh">("en")')
       .replace(/录音完成！/g, 'Recording completed!')
       .replace(/评分中\.\.\./g, 'Scoring...')
@@ -66,13 +78,19 @@ function syncShadowingPages() {
       .replace(/例句/g, 'Example sentence')
       .replace(/已选择的生词/g, 'Selected vocabulary')
       .replace(/所有题目都已练习过！/g, 'All questions have been practiced!')
-      .replace(/请先完成录音，然后点击下方按钮进行评分/g, 'Please complete the recording first, then click the button below to score')
-      .replace(/您已完成录音，点击下方按钮进行评分/g, 'You have completed the recording, click the button below to score');
-    
+      .replace(
+        /请先完成录音，然后点击下方按钮进行评分/g,
+        'Please complete the recording first, then click the button below to score',
+      )
+      .replace(
+        /您已完成录音，点击下方按钮进行评分/g,
+        'You have completed the recording, click the button below to score',
+      );
+
     // 写入文件
     fs.writeFileSync(japaneseFile, japaneseContent);
     fs.writeFileSync(englishFile, englishContent);
-    
+
     console.log('✅ 同步完成！');
     console.log('📝 中文页面 → 日语页面');
     console.log('📝 中文页面 → 英语页面');
@@ -81,7 +99,6 @@ function syncShadowingPages() {
     console.log('1. 修改 src/components/shadowing/ChineseShadowingPage.tsx');
     console.log('2. 运行 node sync-shadowing-pages.js');
     console.log('3. 日语和英语页面会自动同步更新');
-    
   } catch (error) {
     console.error('❌ 同步失败:', error.message);
     process.exit(1);

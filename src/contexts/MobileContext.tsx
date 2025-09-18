@@ -1,6 +1,6 @@
-"use client";
-import React, { createContext, useContext, useState, useEffect } from "react";
-import useMobileDetection from "@/hooks/useMobileDetection";
+'use client';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import useMobileDetection from '@/hooks/useMobileDetection';
 
 interface MobileContextType {
   isMobile: boolean;
@@ -17,9 +17,10 @@ interface MobileContextType {
 const MobileContext = createContext<MobileContextType | undefined>(undefined);
 
 export function MobileProvider({ children }: { children: React.ReactNode }) {
-  const { isMobile, isTablet, isDesktop, screenWidth, screenHeight, userAgent } = useMobileDetection();
+  const { isMobile, isTablet, isDesktop, screenWidth, screenHeight, userAgent } =
+    useMobileDetection();
   const [forceMobileMode, setForceMobileMode] = useState(false);
-  
+
   const actualIsMobile = isMobile || forceMobileMode;
 
   // 将状态保存到localStorage，这样刷新页面后状态不会丢失

@@ -1,24 +1,30 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Container } from "@/components/Container";
-import { supabase } from "@/lib/supabase";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Users, 
-  UserPlus, 
-  Activity, 
-  TrendingUp, 
-  Globe, 
+import { useState, useEffect } from 'react';
+import { Container } from '@/components/Container';
+import { supabase } from '@/lib/supabase';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import {
+  Users,
+  UserPlus,
+  Activity,
+  TrendingUp,
+  Globe,
   Target,
   BarChart3,
   PieChart,
-  Calendar
-} from "lucide-react";
+  Calendar,
+} from 'lucide-react';
 
 interface UserAnalytics {
   total_users: number;
@@ -73,7 +79,7 @@ export default function UserAnalyticsPage() {
       daily_active_users: [] as Array<{ date: string; count: number }>,
       practice_type_distribution: {} as Record<string, number>,
       level_distribution: {} as Record<number, number>,
-      language_distribution: {} as Record<string, number>
+      language_distribution: {} as Record<string, number>,
     };
 
     try {
@@ -114,14 +120,14 @@ export default function UserAnalyticsPage() {
         supabase
           .from('alignment_attempts')
           .select('user_id')
-          .gte('created_at', sevenDaysAgo.toISOString())
+          .gte('created_at', sevenDaysAgo.toISOString()),
       ]);
 
       // 合并所有活跃用户ID
       const allActiveUserIds = new Set([
-        ...(shadowingUsers.data?.map(u => u.user_id) || []),
-        ...(clozeUsers.data?.map(u => u.user_id) || []),
-        ...(alignmentUsers.data?.map(u => u.user_id) || [])
+        ...(shadowingUsers.data?.map((u) => u.user_id) || []),
+        ...(clozeUsers.data?.map((u) => u.user_id) || []),
+        ...(alignmentUsers.data?.map((u) => u.user_id) || []),
       ]);
 
       analytics.active_users_7d = allActiveUserIds.size;
@@ -139,14 +145,14 @@ export default function UserAnalyticsPage() {
         supabase
           .from('alignment_attempts')
           .select('user_id')
-          .gte('created_at', thirtyDaysAgo.toISOString())
+          .gte('created_at', thirtyDaysAgo.toISOString()),
       ]);
 
       // 合并所有30天活跃用户ID
       const allActiveUserIds30d = new Set([
-        ...(shadowingUsers30d.data?.map(u => u.user_id) || []),
-        ...(clozeUsers30d.data?.map(u => u.user_id) || []),
-        ...(alignmentUsers30d.data?.map(u => u.user_id) || [])
+        ...(shadowingUsers30d.data?.map((u) => u.user_id) || []),
+        ...(clozeUsers30d.data?.map((u) => u.user_id) || []),
+        ...(alignmentUsers30d.data?.map((u) => u.user_id) || []),
       ]);
 
       analytics.active_users_30d = allActiveUserIds30d.size;
@@ -168,16 +174,12 @@ export default function UserAnalyticsPage() {
       analytics.practice_type_distribution.alignment = alignmentCount || 0;
 
       // 语言分布
-      const { data: shadowingByLang } = await supabase
-        .from('shadowing_attempts')
-        .select('lang');
+      const { data: shadowingByLang } = await supabase.from('shadowing_attempts').select('lang');
 
-      const { data: clozeByLang } = await supabase
-        .from('cloze_attempts')
-        .select('lang');
+      const { data: clozeByLang } = await supabase.from('cloze_attempts').select('lang');
 
       const langCounts: Record<string, number> = {};
-      [...(shadowingByLang || []), ...(clozeByLang || [])].forEach(attempt => {
+      [...(shadowingByLang || []), ...(clozeByLang || [])].forEach((attempt) => {
         langCounts[attempt.lang] = (langCounts[attempt.lang] || 0) + 1;
       });
 
@@ -188,16 +190,12 @@ export default function UserAnalyticsPage() {
         .slice(0, 5);
 
       // 等级分布
-      const { data: shadowingByLevel } = await supabase
-        .from('shadowing_attempts')
-        .select('level');
+      const { data: shadowingByLevel } = await supabase.from('shadowing_attempts').select('level');
 
-      const { data: clozeByLevel } = await supabase
-        .from('cloze_attempts')
-        .select('level');
+      const { data: clozeByLevel } = await supabase.from('cloze_attempts').select('level');
 
       const levelCounts: Record<number, number> = {};
-      [...(shadowingByLevel || []), ...(clozeByLevel || [])].forEach(attempt => {
+      [...(shadowingByLevel || []), ...(clozeByLevel || [])].forEach((attempt) => {
         levelCounts[attempt.level] = (levelCounts[attempt.level] || 0) + 1;
       });
 
@@ -228,27 +226,27 @@ export default function UserAnalyticsPage() {
             .from('alignment_attempts')
             .select('user_id')
             .gte('created_at', date.toISOString())
-            .lt('created_at', nextDate.toISOString())
+            .lt('created_at', nextDate.toISOString()),
         ]);
 
         // 合并当日所有活跃用户ID
         const dailyUserIds = new Set([
-          ...(dailyShadowing.data?.map(u => u.user_id) || []),
-          ...(dailyCloze.data?.map(u => u.user_id) || []),
-          ...(dailyAlignment.data?.map(u => u.user_id) || [])
+          ...(dailyShadowing.data?.map((u) => u.user_id) || []),
+          ...(dailyCloze.data?.map((u) => u.user_id) || []),
+          ...(dailyAlignment.data?.map((u) => u.user_id) || []),
         ]);
 
         analytics.daily_active_users.push({
           date: dateStr,
-          count: dailyUserIds.size
+          count: dailyUserIds.size,
         });
       }
 
       // 计算用户留存率（简化版）
       if (analytics.new_users_30d > 0) {
-        analytics.user_retention_rate = (analytics.active_users_30d / analytics.new_users_30d) * 100;
+        analytics.user_retention_rate =
+          (analytics.active_users_30d / analytics.new_users_30d) * 100;
       }
-
     } catch (error) {
       console.error('计算用户分析数据失败:', error);
     }
@@ -259,15 +257,15 @@ export default function UserAnalyticsPage() {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
   const getLanguageName = (code: string) => {
     const names: Record<string, string> = {
-      'en': '英语',
-      'ja': '日语',
-      'zh': '中文'
+      en: '英语',
+      ja: '日语',
+      zh: '中文',
     };
     return names[code] || code.toUpperCase();
   };
@@ -278,16 +276,16 @@ export default function UserAnalyticsPage() {
       2: '初中级',
       3: '中级',
       4: '中高级',
-      5: '高级'
+      5: '高级',
     };
     return names[level] || `等级 ${level}`;
   };
 
   const getPracticeTypeName = (type: string) => {
     const names: Record<string, string> = {
-      'shadowing': 'Shadowing',
-      'cloze': 'Cloze',
-      'alignment': 'Alignment'
+      shadowing: 'Shadowing',
+      cloze: 'Cloze',
+      alignment: 'Alignment',
     };
     return names[type] || type;
   };
@@ -312,7 +310,10 @@ export default function UserAnalyticsPage() {
     );
   }
 
-  const totalPracticeCount = Object.values(analytics.practice_type_distribution).reduce((sum, count) => sum + count, 0);
+  const totalPracticeCount = Object.values(analytics.practice_type_distribution).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
 
   return (
     <Container>
@@ -335,11 +336,13 @@ export default function UserAnalyticsPage() {
           </Select>
         </div>
 
-        <Breadcrumbs items={[
-          { label: "管理员", href: "/admin" },
-          { label: "用户管理", href: "/admin/users" },
-          { label: "用户分析", href: "/admin/users/analytics" }
-        ]} />
+        <Breadcrumbs
+          items={[
+            { label: '管理员', href: '/admin' },
+            { label: '用户管理', href: '/admin/users' },
+            { label: '用户分析', href: '/admin/users/analytics' },
+          ]}
+        />
 
         {/* 关键指标 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -410,8 +413,12 @@ export default function UserAnalyticsPage() {
                       <span>{formatDate(day.date)}</span>
                       <span className="font-medium">{day.count} 人</span>
                     </div>
-                    <Progress 
-                      value={(day.count / Math.max(...analytics.daily_active_users.map(d => d.count))) * 100} 
+                    <Progress
+                      value={
+                        (day.count /
+                          Math.max(...analytics.daily_active_users.map((d) => d.count))) *
+                        100
+                      }
                       className="h-2"
                     />
                   </div>
@@ -436,10 +443,7 @@ export default function UserAnalyticsPage() {
                       <span>{getPracticeTypeName(type)}</span>
                       <span className="font-medium">{count}</span>
                     </div>
-                    <Progress 
-                      value={(count / totalPracticeCount) * 100} 
-                      className="h-2"
-                    />
+                    <Progress value={(count / totalPracticeCount) * 100} className="h-2" />
                   </div>
                 ))}
               </div>
@@ -512,8 +516,10 @@ export default function UserAnalyticsPage() {
                     <span className="font-medium">{getLanguageName(lang)}</span>
                     <span className="text-sm text-muted-foreground">{count} 次</span>
                   </div>
-                  <Progress 
-                    value={(count / Math.max(...Object.values(analytics.language_distribution))) * 100} 
+                  <Progress
+                    value={
+                      (count / Math.max(...Object.values(analytics.language_distribution))) * 100
+                    }
                     className="h-2"
                   />
                 </div>
@@ -538,8 +544,8 @@ export default function UserAnalyticsPage() {
                     <div className="font-medium">{getLevelName(parseInt(level))}</div>
                     <div className="text-sm text-muted-foreground">{count} 次</div>
                   </div>
-                  <Progress 
-                    value={(count / Math.max(...Object.values(analytics.level_distribution))) * 100} 
+                  <Progress
+                    value={(count / Math.max(...Object.values(analytics.level_distribution))) * 100}
                     className="h-2"
                   />
                 </div>

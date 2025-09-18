@@ -1,8 +1,12 @@
-"use client";
+'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTranslation } from '@/contexts/LanguageContext';
-import type { InvitationCode, CreateInvitationRequest, InvitationPermissions } from '@/types/invitation';
+import type {
+  InvitationCode,
+  CreateInvitationRequest,
+  InvitationPermissions,
+} from '@/types/invitation';
 import InvitationPermissionTemplates from '@/components/InvitationPermissionTemplates';
 
 export default function AdminInvitationsPage() {
@@ -22,8 +26,8 @@ export default function AdminInvitationsPage() {
       allowed_languages: ['en', 'ja', 'zh'],
       allowed_levels: [1, 2, 3, 4, 5],
       max_daily_attempts: 50,
-      ai_enabled: false
-    }
+      ai_enabled: false,
+    },
   });
   const [defaultPermissions, setDefaultPermissions] = useState<any>(null);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
@@ -32,7 +36,9 @@ export default function AdminInvitationsPage() {
   const fetchInvitations = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         setError('未登录');
         return;
@@ -46,9 +52,9 @@ export default function AdminInvitationsPage() {
 
       const response = await fetch('/api/admin/invitations', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -69,7 +75,9 @@ export default function AdminInvitationsPage() {
   // 创建邀请码
   const createInvitation = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         setError('未登录');
         return;
@@ -84,10 +92,10 @@ export default function AdminInvitationsPage() {
       const response = await fetch('/api/admin/invitations', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(createForm)
+        body: JSON.stringify(createForm),
       });
 
       if (!response.ok) {
@@ -109,8 +117,8 @@ export default function AdminInvitationsPage() {
           allowed_languages: ['en', 'ja', 'zh'],
           allowed_levels: [1, 2, 3, 4, 5],
           max_daily_attempts: 50,
-          ai_enabled: false
-        }
+          ai_enabled: false,
+        },
       });
     } catch (err) {
       console.error('创建邀请码失败:', err);
@@ -125,7 +133,9 @@ export default function AdminInvitationsPage() {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         setError('未登录');
         return;
@@ -140,9 +150,9 @@ export default function AdminInvitationsPage() {
       const response = await fetch(`/api/admin/invitations/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -150,7 +160,7 @@ export default function AdminInvitationsPage() {
         throw new Error(errorData.error || '删除邀请码失败');
       }
 
-      setInvitations(invitations.filter(inv => inv.id !== id));
+      setInvitations(invitations.filter((inv) => inv.id !== id));
     } catch (err) {
       console.error('删除邀请码失败:', err);
       setError(err instanceof Error ? err.message : '删除邀请码失败');
@@ -160,7 +170,9 @@ export default function AdminInvitationsPage() {
   // 切换邀请码状态
   const toggleInvitationStatus = async (id: string, isActive: boolean) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         setError('未登录');
         return;
@@ -175,10 +187,10 @@ export default function AdminInvitationsPage() {
       const response = await fetch(`/api/admin/invitations/${id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ is_active: !isActive })
+        body: JSON.stringify({ is_active: !isActive }),
       });
 
       if (!response.ok) {
@@ -186,9 +198,9 @@ export default function AdminInvitationsPage() {
         throw new Error(errorData.error || '更新邀请码状态失败');
       }
 
-      setInvitations(invitations.map(inv => 
-        inv.id === id ? { ...inv, is_active: !isActive } : inv
-      ));
+      setInvitations(
+        invitations.map((inv) => (inv.id === id ? { ...inv, is_active: !isActive } : inv)),
+      );
     } catch (err) {
       console.error('更新邀请码状态失败:', err);
       setError(err instanceof Error ? err.message : '更新邀请码状态失败');
@@ -199,13 +211,12 @@ export default function AdminInvitationsPage() {
   const fetchDefaultPermissions = async () => {
     try {
       setLoadingPermissions(true);
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { data, error } = await supabase
-        .from('default_user_permissions')
-        .select('*')
-        .single();
+      const { data, error } = await supabase.from('default_user_permissions').select('*').single();
 
       if (error && error.code !== 'PGRST116') {
         console.error('获取默认权限设置失败:', error);
@@ -221,7 +232,7 @@ export default function AdminInvitationsPage() {
           allowed_languages: data.allowed_languages || ['en', 'ja', 'zh'],
           allowed_levels: data.allowed_levels || [1, 2, 3, 4, 5],
           max_daily_attempts: data.max_daily_attempts || 50,
-          ai_enabled: data.ai_enabled || false
+          ai_enabled: data.ai_enabled || false,
         });
       }
     } catch (error) {
@@ -246,8 +257,8 @@ export default function AdminInvitationsPage() {
           max_daily_attempts: defaultPermissions.max_daily_attempts,
           ai_enabled: defaultPermissions.ai_enabled,
           api_keys: defaultPermissions.api_keys,
-          model_permissions: defaultPermissions.model_permissions
-        }
+          model_permissions: defaultPermissions.model_permissions,
+        },
       });
     }
   };
@@ -256,7 +267,7 @@ export default function AdminInvitationsPage() {
   const handleTemplateSelect = (permissions: InvitationPermissions) => {
     setCreateForm({
       ...createForm,
-      permissions
+      permissions,
     });
   };
 
@@ -346,29 +357,64 @@ export default function AdminInvitationsPage() {
                         {invitation.used_count} / {invitation.max_uses}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {invitation.expires_at 
+                        {invitation.expires_at
                           ? new Date(invitation.expires_at).toLocaleDateString()
-                          : '永不过期'
-                        }
+                          : '永不过期'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <div className="flex flex-wrap gap-1">
-                          {invitation.permissions?.can_access_shadowing && <span className="px-1 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">跟读</span>}
-                          {invitation.permissions?.can_access_cloze && <span className="px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">完形</span>}
-                          {invitation.permissions?.can_access_alignment && <span className="px-1 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">对齐</span>}
-                          {invitation.permissions?.can_access_articles && <span className="px-1 py-0.5 bg-orange-100 text-orange-800 text-xs rounded">文章</span>}
-                          {invitation.permissions?.ai_enabled && <span className="px-1 py-0.5 bg-pink-100 text-pink-800 text-xs rounded">AI</span>}
-                          {invitation.permissions?.api_limits?.enabled && <span className="px-1 py-0.5 bg-red-100 text-red-800 text-xs rounded">API限制</span>}
-                          {(invitation.permissions?.api_keys?.deepseek || invitation.permissions?.api_keys?.openrouter) && <span className="px-1 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded">API Key</span>}
-                          {invitation.permissions?.model_permissions && invitation.permissions.model_permissions.length > 0 && <span className="px-1 py-0.5 bg-indigo-100 text-indigo-800 text-xs rounded">模型权限</span>}
+                          {invitation.permissions?.can_access_shadowing && (
+                            <span className="px-1 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                              跟读
+                            </span>
+                          )}
+                          {invitation.permissions?.can_access_cloze && (
+                            <span className="px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                              完形
+                            </span>
+                          )}
+                          {invitation.permissions?.can_access_alignment && (
+                            <span className="px-1 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">
+                              对齐
+                            </span>
+                          )}
+                          {invitation.permissions?.can_access_articles && (
+                            <span className="px-1 py-0.5 bg-orange-100 text-orange-800 text-xs rounded">
+                              文章
+                            </span>
+                          )}
+                          {invitation.permissions?.ai_enabled && (
+                            <span className="px-1 py-0.5 bg-pink-100 text-pink-800 text-xs rounded">
+                              AI
+                            </span>
+                          )}
+                          {invitation.permissions?.api_limits?.enabled && (
+                            <span className="px-1 py-0.5 bg-red-100 text-red-800 text-xs rounded">
+                              API限制
+                            </span>
+                          )}
+                          {(invitation.permissions?.api_keys?.deepseek ||
+                            invitation.permissions?.api_keys?.openrouter) && (
+                            <span className="px-1 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded">
+                              API Key
+                            </span>
+                          )}
+                          {invitation.permissions?.model_permissions &&
+                            invitation.permissions.model_permissions.length > 0 && (
+                              <span className="px-1 py-0.5 bg-indigo-100 text-indigo-800 text-xs rounded">
+                                模型权限
+                              </span>
+                            )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          invitation.is_active 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            invitation.is_active
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
                           {invitation.is_active ? '激活' : '禁用'}
                         </span>
                       </td>
@@ -377,10 +423,12 @@ export default function AdminInvitationsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
-                          onClick={() => toggleInvitationStatus(invitation.id, invitation.is_active)}
+                          onClick={() =>
+                            toggleInvitationStatus(invitation.id, invitation.is_active)
+                          }
                           className={`mr-2 ${
-                            invitation.is_active 
-                              ? 'text-red-600 hover:text-red-900' 
+                            invitation.is_active
+                              ? 'text-red-600 hover:text-red-900'
                               : 'text-green-600 hover:text-green-900'
                           }`}
                         >
@@ -400,9 +448,7 @@ export default function AdminInvitationsPage() {
             </div>
 
             {invitations.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                暂无邀请码
-              </div>
+              <div className="text-center py-8 text-gray-500">暂无邀请码</div>
             )}
           </div>
         </div>
@@ -413,49 +459,49 @@ export default function AdminInvitationsPage() {
             <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
               <div className="mt-3">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">创建邀请码</h3>
-                
+
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      最大使用次数
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">最大使用次数</label>
                     <input
                       type="number"
                       min="1"
                       value={createForm.max_uses}
-                      onChange={(e) => setCreateForm({
-                        ...createForm,
-                        max_uses: parseInt(e.target.value) || 1
-                      })}
+                      onChange={(e) =>
+                        setCreateForm({
+                          ...createForm,
+                          max_uses: parseInt(e.target.value) || 1,
+                        })
+                      }
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      过期时间
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">过期时间</label>
                     <input
                       type="datetime-local"
                       value={createForm.expires_at || ''}
-                      onChange={(e) => setCreateForm({
-                        ...createForm,
-                        expires_at: e.target.value || undefined
-                      })}
+                      onChange={(e) =>
+                        setCreateForm({
+                          ...createForm,
+                          expires_at: e.target.value || undefined,
+                        })
+                      }
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      描述
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700">描述</label>
                     <textarea
                       value={createForm.description || ''}
-                      onChange={(e) => setCreateForm({
-                        ...createForm,
-                        description: e.target.value
-                      })}
+                      onChange={(e) =>
+                        setCreateForm({
+                          ...createForm,
+                          description: e.target.value,
+                        })
+                      }
                       rows={3}
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       placeholder="可选，用于说明邀请码的用途"
@@ -464,9 +510,7 @@ export default function AdminInvitationsPage() {
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        权限设置
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700">权限设置</label>
                       {defaultPermissions && (
                         <button
                           onClick={useDefaultPermissions}
@@ -476,7 +520,7 @@ export default function AdminInvitationsPage() {
                         </button>
                       )}
                     </div>
-                    
+
                     {/* 权限模板 */}
                     <div className="mb-4">
                       <InvitationPermissionTemplates
@@ -484,7 +528,7 @@ export default function AdminInvitationsPage() {
                         currentPermissions={createForm.permissions}
                       />
                     </div>
-                    
+
                     <div className="space-y-4">
                       {/* 功能访问权限 */}
                       <div>
@@ -494,13 +538,15 @@ export default function AdminInvitationsPage() {
                             <input
                               type="checkbox"
                               checked={createForm.permissions?.can_access_shadowing || false}
-                              onChange={(e) => setCreateForm({
-                                ...createForm,
-                                permissions: {
-                                  ...createForm.permissions!,
-                                  can_access_shadowing: e.target.checked
-                                }
-                              })}
+                              onChange={(e) =>
+                                setCreateForm({
+                                  ...createForm,
+                                  permissions: {
+                                    ...createForm.permissions!,
+                                    can_access_shadowing: e.target.checked,
+                                  },
+                                })
+                              }
                               className="mr-2"
                             />
                             Shadowing 练习
@@ -509,13 +555,15 @@ export default function AdminInvitationsPage() {
                             <input
                               type="checkbox"
                               checked={createForm.permissions?.can_access_cloze || false}
-                              onChange={(e) => setCreateForm({
-                                ...createForm,
-                                permissions: {
-                                  ...createForm.permissions!,
-                                  can_access_cloze: e.target.checked
-                                }
-                              })}
+                              onChange={(e) =>
+                                setCreateForm({
+                                  ...createForm,
+                                  permissions: {
+                                    ...createForm.permissions!,
+                                    can_access_cloze: e.target.checked,
+                                  },
+                                })
+                              }
                               className="mr-2"
                             />
                             Cloze 练习
@@ -524,13 +572,15 @@ export default function AdminInvitationsPage() {
                             <input
                               type="checkbox"
                               checked={createForm.permissions?.can_access_alignment || false}
-                              onChange={(e) => setCreateForm({
-                                ...createForm,
-                                permissions: {
-                                  ...createForm.permissions!,
-                                  can_access_alignment: e.target.checked
-                                }
-                              })}
+                              onChange={(e) =>
+                                setCreateForm({
+                                  ...createForm,
+                                  permissions: {
+                                    ...createForm.permissions!,
+                                    can_access_alignment: e.target.checked,
+                                  },
+                                })
+                              }
                               className="mr-2"
                             />
                             Alignment 练习
@@ -539,13 +589,15 @@ export default function AdminInvitationsPage() {
                             <input
                               type="checkbox"
                               checked={createForm.permissions?.can_access_articles || false}
-                              onChange={(e) => setCreateForm({
-                                ...createForm,
-                                permissions: {
-                                  ...createForm.permissions!,
-                                  can_access_articles: e.target.checked
-                                }
-                              })}
+                              onChange={(e) =>
+                                setCreateForm({
+                                  ...createForm,
+                                  permissions: {
+                                    ...createForm.permissions!,
+                                    can_access_articles: e.target.checked,
+                                  },
+                                })
+                              }
                               className="mr-2"
                             />
                             广读文章
@@ -561,18 +613,21 @@ export default function AdminInvitationsPage() {
                             <label key={lang} className="flex items-center">
                               <input
                                 type="checkbox"
-                                checked={createForm.permissions?.allowed_languages?.includes(lang) || false}
+                                checked={
+                                  createForm.permissions?.allowed_languages?.includes(lang) || false
+                                }
                                 onChange={(e) => {
-                                  const currentLangs = createForm.permissions?.allowed_languages || [];
+                                  const currentLangs =
+                                    createForm.permissions?.allowed_languages || [];
                                   const newLangs = e.target.checked
                                     ? [...currentLangs, lang]
-                                    : currentLangs.filter(l => l !== lang);
+                                    : currentLangs.filter((l) => l !== lang);
                                   setCreateForm({
                                     ...createForm,
                                     permissions: {
                                       ...createForm.permissions!,
-                                      allowed_languages: newLangs
-                                    }
+                                      allowed_languages: newLangs,
+                                    },
                                   });
                                 }}
                                 className="mr-1"
@@ -591,18 +646,21 @@ export default function AdminInvitationsPage() {
                             <label key={level} className="flex items-center">
                               <input
                                 type="checkbox"
-                                checked={createForm.permissions?.allowed_levels?.includes(level) || false}
+                                checked={
+                                  createForm.permissions?.allowed_levels?.includes(level) || false
+                                }
                                 onChange={(e) => {
-                                  const currentLevels = createForm.permissions?.allowed_levels || [];
+                                  const currentLevels =
+                                    createForm.permissions?.allowed_levels || [];
                                   const newLevels = e.target.checked
                                     ? [...currentLevels, level]
-                                    : currentLevels.filter(l => l !== level);
+                                    : currentLevels.filter((l) => l !== level);
                                   setCreateForm({
                                     ...createForm,
                                     permissions: {
                                       ...createForm.permissions!,
-                                      allowed_levels: newLevels
-                                    }
+                                      allowed_levels: newLevels,
+                                    },
                                   });
                                 }}
                                 className="mr-1"
@@ -623,13 +681,15 @@ export default function AdminInvitationsPage() {
                               type="number"
                               min="0"
                               value={createForm.permissions?.max_daily_attempts || 50}
-                              onChange={(e) => setCreateForm({
-                                ...createForm,
-                                permissions: {
-                                  ...createForm.permissions!,
-                                  max_daily_attempts: parseInt(e.target.value) || 0
-                                }
-                              })}
+                              onChange={(e) =>
+                                setCreateForm({
+                                  ...createForm,
+                                  permissions: {
+                                    ...createForm.permissions!,
+                                    max_daily_attempts: parseInt(e.target.value) || 0,
+                                  },
+                                })
+                              }
                               className="w-24 px-2 py-1 border rounded text-sm"
                             />
                           </div>
@@ -643,13 +703,15 @@ export default function AdminInvitationsPage() {
                           <input
                             type="checkbox"
                             checked={createForm.permissions?.ai_enabled || false}
-                            onChange={(e) => setCreateForm({
-                              ...createForm,
-                              permissions: {
-                                ...createForm.permissions!,
-                                ai_enabled: e.target.checked
-                              }
-                            })}
+                            onChange={(e) =>
+                              setCreateForm({
+                                ...createForm,
+                                permissions: {
+                                  ...createForm.permissions!,
+                                  ai_enabled: e.target.checked,
+                                },
+                              })
+                            }
                             className="mr-2"
                           />
                           启用AI功能
@@ -661,39 +723,47 @@ export default function AdminInvitationsPage() {
                         <h4 className="text-sm font-medium text-gray-600 mb-2">API密钥配置</h4>
                         <div className="space-y-3">
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">DeepSeek API Key</label>
+                            <label className="block text-xs text-gray-500 mb-1">
+                              DeepSeek API Key
+                            </label>
                             <input
                               type="password"
                               value={createForm.permissions?.api_keys?.deepseek || ''}
-                              onChange={(e) => setCreateForm({
-                                ...createForm,
-                                permissions: {
-                                  ...createForm.permissions!,
-                                  api_keys: {
-                                    ...createForm.permissions?.api_keys,
-                                    deepseek: e.target.value
-                                  }
-                                }
-                              })}
+                              onChange={(e) =>
+                                setCreateForm({
+                                  ...createForm,
+                                  permissions: {
+                                    ...createForm.permissions!,
+                                    api_keys: {
+                                      ...createForm.permissions?.api_keys,
+                                      deepseek: e.target.value,
+                                    },
+                                  },
+                                })
+                              }
                               placeholder="输入DeepSeek API Key"
                               className="w-full px-2 py-1 border rounded text-sm"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-500 mb-1">OpenRouter API Key</label>
+                            <label className="block text-xs text-gray-500 mb-1">
+                              OpenRouter API Key
+                            </label>
                             <input
                               type="password"
                               value={createForm.permissions?.api_keys?.openrouter || ''}
-                              onChange={(e) => setCreateForm({
-                                ...createForm,
-                                permissions: {
-                                  ...createForm.permissions!,
-                                  api_keys: {
-                                    ...createForm.permissions?.api_keys,
-                                    openrouter: e.target.value
-                                  }
-                                }
-                              })}
+                              onChange={(e) =>
+                                setCreateForm({
+                                  ...createForm,
+                                  permissions: {
+                                    ...createForm.permissions!,
+                                    api_keys: {
+                                      ...createForm.permissions?.api_keys,
+                                      openrouter: e.target.value,
+                                    },
+                                  },
+                                })
+                              }
                               placeholder="输入OpenRouter API Key"
                               className="w-full px-2 py-1 border rounded text-sm"
                             />
@@ -709,21 +779,23 @@ export default function AdminInvitationsPage() {
                             <input
                               type="checkbox"
                               checked={createForm.permissions?.api_limits?.enabled || false}
-                              onChange={(e) => setCreateForm({
-                                ...createForm,
-                                permissions: {
-                                  ...createForm.permissions!,
-                                  api_limits: {
-                                    ...createForm.permissions?.api_limits,
-                                    enabled: e.target.checked
-                                  }
-                                }
-                              })}
+                              onChange={(e) =>
+                                setCreateForm({
+                                  ...createForm,
+                                  permissions: {
+                                    ...createForm.permissions!,
+                                    api_limits: {
+                                      ...createForm.permissions?.api_limits,
+                                      enabled: e.target.checked,
+                                    },
+                                  },
+                                })
+                              }
                               className="mr-2"
                             />
                             启用API使用限制
                           </label>
-                          
+
                           {createForm.permissions?.api_limits?.enabled && (
                             <div className="ml-6 space-y-3">
                               {/* 每日限制 */}
@@ -735,17 +807,21 @@ export default function AdminInvitationsPage() {
                                     <input
                                       type="number"
                                       min="0"
-                                      value={createForm.permissions?.api_limits?.daily_calls_limit || 0}
-                                      onChange={(e) => setCreateForm({
-                                        ...createForm,
-                                        permissions: {
-                                          ...createForm.permissions!,
-                                          api_limits: {
-                                            ...createForm.permissions?.api_limits,
-                                            daily_calls_limit: parseInt(e.target.value) || 0
-                                          }
-                                        }
-                                      })}
+                                      value={
+                                        createForm.permissions?.api_limits?.daily_calls_limit || 0
+                                      }
+                                      onChange={(e) =>
+                                        setCreateForm({
+                                          ...createForm,
+                                          permissions: {
+                                            ...createForm.permissions!,
+                                            api_limits: {
+                                              ...createForm.permissions?.api_limits,
+                                              daily_calls_limit: parseInt(e.target.value) || 0,
+                                            },
+                                          },
+                                        })
+                                      }
                                       className="w-full px-2 py-1 border rounded text-sm"
                                     />
                                   </div>
@@ -754,37 +830,47 @@ export default function AdminInvitationsPage() {
                                     <input
                                       type="number"
                                       min="0"
-                                      value={createForm.permissions?.api_limits?.daily_tokens_limit || 0}
-                                      onChange={(e) => setCreateForm({
-                                        ...createForm,
-                                        permissions: {
-                                          ...createForm.permissions!,
-                                          api_limits: {
-                                            ...createForm.permissions?.api_limits,
-                                            daily_tokens_limit: parseInt(e.target.value) || 0
-                                          }
-                                        }
-                                      })}
+                                      value={
+                                        createForm.permissions?.api_limits?.daily_tokens_limit || 0
+                                      }
+                                      onChange={(e) =>
+                                        setCreateForm({
+                                          ...createForm,
+                                          permissions: {
+                                            ...createForm.permissions!,
+                                            api_limits: {
+                                              ...createForm.permissions?.api_limits,
+                                              daily_tokens_limit: parseInt(e.target.value) || 0,
+                                            },
+                                          },
+                                        })
+                                      }
                                       className="w-full px-2 py-1 border rounded text-sm"
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-xs text-gray-500">费用限制 ($)</label>
+                                    <label className="block text-xs text-gray-500">
+                                      费用限制 ($)
+                                    </label>
                                     <input
                                       type="number"
                                       min="0"
                                       step="0.01"
-                                      value={createForm.permissions?.api_limits?.daily_cost_limit || 0}
-                                      onChange={(e) => setCreateForm({
-                                        ...createForm,
-                                        permissions: {
-                                          ...createForm.permissions!,
-                                          api_limits: {
-                                            ...createForm.permissions?.api_limits,
-                                            daily_cost_limit: parseFloat(e.target.value) || 0
-                                          }
-                                        }
-                                      })}
+                                      value={
+                                        createForm.permissions?.api_limits?.daily_cost_limit || 0
+                                      }
+                                      onChange={(e) =>
+                                        setCreateForm({
+                                          ...createForm,
+                                          permissions: {
+                                            ...createForm.permissions!,
+                                            api_limits: {
+                                              ...createForm.permissions?.api_limits,
+                                              daily_cost_limit: parseFloat(e.target.value) || 0,
+                                            },
+                                          },
+                                        })
+                                      }
                                       className="w-full px-2 py-1 border rounded text-sm"
                                     />
                                   </div>
@@ -800,17 +886,21 @@ export default function AdminInvitationsPage() {
                                     <input
                                       type="number"
                                       min="0"
-                                      value={createForm.permissions?.api_limits?.monthly_calls_limit || 0}
-                                      onChange={(e) => setCreateForm({
-                                        ...createForm,
-                                        permissions: {
-                                          ...createForm.permissions!,
-                                          api_limits: {
-                                            ...createForm.permissions?.api_limits,
-                                            monthly_calls_limit: parseInt(e.target.value) || 0
-                                          }
-                                        }
-                                      })}
+                                      value={
+                                        createForm.permissions?.api_limits?.monthly_calls_limit || 0
+                                      }
+                                      onChange={(e) =>
+                                        setCreateForm({
+                                          ...createForm,
+                                          permissions: {
+                                            ...createForm.permissions!,
+                                            api_limits: {
+                                              ...createForm.permissions?.api_limits,
+                                              monthly_calls_limit: parseInt(e.target.value) || 0,
+                                            },
+                                          },
+                                        })
+                                      }
                                       className="w-full px-2 py-1 border rounded text-sm"
                                     />
                                   </div>
@@ -819,37 +909,48 @@ export default function AdminInvitationsPage() {
                                     <input
                                       type="number"
                                       min="0"
-                                      value={createForm.permissions?.api_limits?.monthly_tokens_limit || 0}
-                                      onChange={(e) => setCreateForm({
-                                        ...createForm,
-                                        permissions: {
-                                          ...createForm.permissions!,
-                                          api_limits: {
-                                            ...createForm.permissions?.api_limits,
-                                            monthly_tokens_limit: parseInt(e.target.value) || 0
-                                          }
-                                        }
-                                      })}
+                                      value={
+                                        createForm.permissions?.api_limits?.monthly_tokens_limit ||
+                                        0
+                                      }
+                                      onChange={(e) =>
+                                        setCreateForm({
+                                          ...createForm,
+                                          permissions: {
+                                            ...createForm.permissions!,
+                                            api_limits: {
+                                              ...createForm.permissions?.api_limits,
+                                              monthly_tokens_limit: parseInt(e.target.value) || 0,
+                                            },
+                                          },
+                                        })
+                                      }
                                       className="w-full px-2 py-1 border rounded text-sm"
                                     />
                                   </div>
                                   <div>
-                                    <label className="block text-xs text-gray-500">费用限制 ($)</label>
+                                    <label className="block text-xs text-gray-500">
+                                      费用限制 ($)
+                                    </label>
                                     <input
                                       type="number"
                                       min="0"
                                       step="0.01"
-                                      value={createForm.permissions?.api_limits?.monthly_cost_limit || 0}
-                                      onChange={(e) => setCreateForm({
-                                        ...createForm,
-                                        permissions: {
-                                          ...createForm.permissions!,
-                                          api_limits: {
-                                            ...createForm.permissions?.api_limits,
-                                            monthly_cost_limit: parseFloat(e.target.value) || 0
-                                          }
-                                        }
-                                      })}
+                                      value={
+                                        createForm.permissions?.api_limits?.monthly_cost_limit || 0
+                                      }
+                                      onChange={(e) =>
+                                        setCreateForm({
+                                          ...createForm,
+                                          permissions: {
+                                            ...createForm.permissions!,
+                                            api_limits: {
+                                              ...createForm.permissions?.api_limits,
+                                              monthly_cost_limit: parseFloat(e.target.value) || 0,
+                                            },
+                                          },
+                                        })
+                                      }
                                       className="w-full px-2 py-1 border rounded text-sm"
                                     />
                                   </div>
@@ -877,14 +978,16 @@ export default function AdminInvitationsPage() {
                                       type="checkbox"
                                       checked={model.enabled}
                                       onChange={(e) => {
-                                        const newModels = [...(createForm.permissions?.model_permissions || [])];
+                                        const newModels = [
+                                          ...(createForm.permissions?.model_permissions || []),
+                                        ];
                                         newModels[index].enabled = e.target.checked;
                                         setCreateForm({
                                           ...createForm,
                                           permissions: {
                                             ...createForm.permissions!,
-                                            model_permissions: newModels
-                                          }
+                                            model_permissions: newModels,
+                                          },
                                         });
                                       }}
                                       className="mr-2"
@@ -900,14 +1003,17 @@ export default function AdminInvitationsPage() {
                                       min="0"
                                       value={model.daily_limit}
                                       onChange={(e) => {
-                                        const newModels = [...(createForm.permissions?.model_permissions || [])];
-                                        newModels[index].daily_limit = parseInt(e.target.value) || 0;
+                                        const newModels = [
+                                          ...(createForm.permissions?.model_permissions || []),
+                                        ];
+                                        newModels[index].daily_limit =
+                                          parseInt(e.target.value) || 0;
                                         setCreateForm({
                                           ...createForm,
                                           permissions: {
                                             ...createForm.permissions!,
-                                            model_permissions: newModels
-                                          }
+                                            model_permissions: newModels,
+                                          },
                                         });
                                       }}
                                       className="w-full px-1 py-0.5 border rounded"
@@ -920,14 +1026,17 @@ export default function AdminInvitationsPage() {
                                       min="0"
                                       value={model.token_limit}
                                       onChange={(e) => {
-                                        const newModels = [...(createForm.permissions?.model_permissions || [])];
-                                        newModels[index].token_limit = parseInt(e.target.value) || 0;
+                                        const newModels = [
+                                          ...(createForm.permissions?.model_permissions || []),
+                                        ];
+                                        newModels[index].token_limit =
+                                          parseInt(e.target.value) || 0;
                                         setCreateForm({
                                           ...createForm,
                                           permissions: {
                                             ...createForm.permissions!,
-                                            model_permissions: newModels
-                                          }
+                                            model_permissions: newModels,
+                                          },
                                         });
                                       }}
                                       className="w-full px-1 py-0.5 border rounded"
@@ -936,25 +1045,27 @@ export default function AdminInvitationsPage() {
                                 </div>
                               </div>
                             )) || []}
-                            
+
                             <button
                               type="button"
                               onClick={() => {
-                                const newModels = [...(createForm.permissions?.model_permissions || [])];
+                                const newModels = [
+                                  ...(createForm.permissions?.model_permissions || []),
+                                ];
                                 newModels.push({
                                   model_id: 'custom-model',
                                   model_name: '自定义模型',
                                   provider: 'custom',
                                   daily_limit: 10,
                                   token_limit: 10000,
-                                  enabled: true
+                                  enabled: true,
                                 });
                                 setCreateForm({
                                   ...createForm,
                                   permissions: {
                                     ...createForm.permissions!,
-                                    model_permissions: newModels
-                                  }
+                                    model_permissions: newModels,
+                                  },
                                 });
                               }}
                               className="text-xs text-blue-600 hover:text-blue-800 underline"

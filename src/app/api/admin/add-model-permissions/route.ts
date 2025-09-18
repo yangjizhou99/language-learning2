@@ -4,40 +4,43 @@ import { getServiceSupabase } from '@/lib/supabaseAdmin';
 export async function POST(req: NextRequest) {
   try {
     const supabase = getServiceSupabase();
-    
+
     const results = [];
-    
+
     // 先测试字段是否存在
     try {
       const { data: testData, error: testError } = await supabase
         .from('user_permissions')
         .select('model_permissions')
         .limit(1);
-      
+
       if (testError) {
-        results.push({ 
-          action: 'test_model_permissions', 
+        results.push({
+          action: 'test_model_permissions',
           error: testError.message,
-          code: testError.code 
+          code: testError.code,
         });
-        
+
         // 如果字段不存在，需要添加
         if (testError.code === '42703') {
-          results.push({ 
-            action: 'model_permissions_missing', 
-            message: 'model_permissions field is missing' 
+          results.push({
+            action: 'model_permissions_missing',
+            message: 'model_permissions field is missing',
           });
         }
       } else {
-        results.push({ 
-          action: 'test_model_permissions', 
+        results.push({
+          action: 'test_model_permissions',
           success: true,
           message: 'model_permissions field exists',
-          sampleData: testData?.[0]
+          sampleData: testData?.[0],
         });
       }
     } catch (e) {
-      results.push({ action: 'test_model_permissions', error: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) });
+      results.push({
+        action: 'test_model_permissions',
+        error: e instanceof Error ? (e instanceof Error ? e.message : String(e)) : String(e),
+      });
     }
 
     // 尝试添加字段（通过直接操作）
@@ -47,11 +50,11 @@ export async function POST(req: NextRequest) {
         .from('user_permissions')
         .select('id, user_id')
         .limit(1);
-      
+
       if (existingData && existingData.length > 0) {
         const { error: updateError } = await supabase
           .from('user_permissions')
-          .update({ 
+          .update({
             model_permissions: [
               {
                 model_id: 'deepseek-chat',
@@ -59,41 +62,51 @@ export async function POST(req: NextRequest) {
                 provider: 'deepseek',
                 daily_limit: 50,
                 token_limit: 100000,
-                enabled: true
-              }
-            ]
+                enabled: true,
+              },
+            ],
           })
           .eq('id', existingData[0].id);
-        
+
         if (updateError) {
-          results.push({ 
-            action: 'test_update_model_permissions', 
+          results.push({
+            action: 'test_update_model_permissions',
             error: updateError.message,
-            code: updateError.code 
+            code: updateError.code,
           });
         } else {
-          results.push({ 
-            action: 'test_update_model_permissions', 
+          results.push({
+            action: 'test_update_model_permissions',
             success: true,
-            message: 'model_permissions field can be updated'
+            message: 'model_permissions field can be updated',
           });
         }
       }
     } catch (e) {
-      results.push({ action: 'test_update_model_permissions', error: e instanceof Error ? e instanceof Error ? e.message : String(e) : String(e) });
+      results.push({
+        action: 'test_update_model_permissions',
+        error: e instanceof Error ? (e instanceof Error ? e.message : String(e)) : String(e),
+      });
     }
 
     return NextResponse.json({
       success: true,
       message: 'Model permissions check completed',
-      results
+      results,
     });
-
   } catch (error) {
     console.error('Model permissions check error:', error);
     return NextResponse.json(
-      { error: 'Model permissions check failed', details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) },
-      { status: 500 }
+      {
+        error: 'Model permissions check failed',
+        details:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : String(error),
+      },
+      { status: 500 },
     );
   }
 }

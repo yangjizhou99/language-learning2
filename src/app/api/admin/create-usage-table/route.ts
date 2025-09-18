@@ -4,9 +4,9 @@ import { getServiceSupabase } from '@/lib/supabaseAdmin';
 export async function POST(req: NextRequest) {
   try {
     const supabase = getServiceSupabase();
-    
+
     console.log('Creating api_usage_logs table...');
-    
+
     // 创建表的SQL
     const createTableSQL = `
       CREATE TABLE IF NOT EXISTS api_usage_logs (
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       'CREATE INDEX IF NOT EXISTS idx_api_usage_logs_provider ON api_usage_logs(provider);',
       'CREATE INDEX IF NOT EXISTS idx_api_usage_logs_created_at ON api_usage_logs(created_at);',
       'CREATE INDEX IF NOT EXISTS idx_api_usage_logs_user_created ON api_usage_logs(user_id, created_at);',
-      'CREATE INDEX IF NOT EXISTS idx_api_usage_logs_stats ON api_usage_logs(user_id, provider, created_at);'
+      'CREATE INDEX IF NOT EXISTS idx_api_usage_logs_stats ON api_usage_logs(user_id, provider, created_at);',
     ];
 
     // 启用RLS的SQL
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       `CREATE POLICY "Users can view own api usage logs" ON api_usage_logs
         FOR SELECT USING (user_id = auth.uid());`,
       `CREATE POLICY "Service role can insert api usage logs" ON api_usage_logs
-        FOR INSERT WITH CHECK (true);`
+        FOR INSERT WITH CHECK (true);`,
     ];
 
     // 创建触发器的SQL
@@ -75,31 +75,32 @@ export async function POST(req: NextRequest) {
       provider: 'test',
       model: 'test-model',
       tokens_used: 0,
-      cost: 0.0
+      cost: 0.0,
     };
 
-    const { error: testError } = await supabase
-      .from('api_usage_logs')
-      .insert(testData);
+    const { error: testError } = await supabase.from('api_usage_logs').insert(testData);
 
     if (testError && testError.code === 'PGRST116') {
       // 表不存在，我们创建一个临时的解决方案
       console.log('Table does not exist, creating mock data...');
-      
+
       // 由于无法直接创建表，我们返回模拟数据
       return NextResponse.json({
         success: true,
         message: 'Table does not exist, but mock data is ready',
         mockData: true,
-        sql: createTableSQL
+        sql: createTableSQL,
       });
     } else if (testError) {
       console.error('Error testing table:', testError);
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Failed to test table', 
-        details: testError.message 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to test table',
+          details: testError.message,
+        },
+        { status: 500 },
+      );
     }
 
     // 创建索引
@@ -132,12 +133,12 @@ export async function POST(req: NextRequest) {
 
     // 添加一些测试数据
     console.log('Adding test data...');
-    
+
     // 获取一个测试用户ID
     const { data: users } = await supabase.auth.admin.listUsers();
     if (users && users.users.length > 0) {
       const testUserId = users.users[0].id;
-      
+
       // 插入测试数据
       const testData = [
         {
@@ -148,7 +149,7 @@ export async function POST(req: NextRequest) {
           cost: 0.000021,
           request_data: { test: true, messages: [{ role: 'user', content: 'Hello' }] },
           response_data: { test: true, content: 'Hello! How can I help you?' },
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         },
         {
           user_id: testUserId,
@@ -158,7 +159,7 @@ export async function POST(req: NextRequest) {
           cost: 0.00003,
           request_data: { test: true, messages: [{ role: 'user', content: 'Test message' }] },
           response_data: { test: true, content: 'This is a test response' },
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // 1 day ago
+          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
         },
         {
           user_id: testUserId,
@@ -168,15 +169,13 @@ export async function POST(req: NextRequest) {
           cost: 0.000042,
           request_data: { test: true, messages: [{ role: 'user', content: 'Another test' }] },
           response_data: { test: true, content: 'Another test response' },
-          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // 2 days ago
-        }
+          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+        },
       ];
 
       for (const record of testData) {
-        const { error: insertError } = await supabase
-          .from('api_usage_logs')
-          .insert(record);
-        
+        const { error: insertError } = await supabase.from('api_usage_logs').insert(record);
+
         if (insertError) {
           console.error('Error inserting test data:', insertError);
         } else {
@@ -187,14 +186,17 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'API usage logs table created successfully with test data'
+      message: 'API usage logs table created successfully with test data',
     });
-
   } catch (error) {
     console.error('Create table error:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        success: false,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

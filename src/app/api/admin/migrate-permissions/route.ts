@@ -4,7 +4,7 @@ import { getServiceSupabase } from '@/lib/supabaseAdmin';
 export async function POST(req: NextRequest) {
   try {
     const supabase = getServiceSupabase();
-    
+
     // 添加api_keys字段
     const { error: apiKeysError } = await supabase.rpc('exec_sql', {
       sql: `
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
           "deepseek": "",
           "openrouter": ""
         }'::jsonb;
-      `
+      `,
     });
 
     if (apiKeysError) {
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       sql: `
         ALTER TABLE user_permissions 
         ADD COLUMN IF NOT EXISTS ai_enabled BOOLEAN DEFAULT false;
-      `
+      `,
     });
 
     if (aiEnabledError) {
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
           "openrouter": ""
         }'::jsonb
         WHERE api_keys IS NULL;
-      `
+      `,
     });
 
     if (updateApiKeysError) {
@@ -53,23 +53,19 @@ export async function POST(req: NextRequest) {
         UPDATE user_permissions 
         SET ai_enabled = false
         WHERE ai_enabled IS NULL;
-      `
+      `,
     });
 
     if (updateAiEnabledError) {
       console.error('Error updating ai_enabled defaults:', updateAiEnabledError);
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Migration completed successfully' 
+    return NextResponse.json({
+      success: true,
+      message: 'Migration completed successfully',
     });
-
   } catch (error) {
     console.error('Migration error:', error);
-    return NextResponse.json(
-      { error: 'Migration failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Migration failed' }, { status: 500 });
   }
 }

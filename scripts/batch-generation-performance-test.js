@@ -29,9 +29,9 @@ const TEST_CONFIG = {
           concurrency: 1,
           batch_size: 1,
           retries: 0,
-          throttle_ms: 0
-        }
-      }
+          throttle_ms: 0,
+        },
+      },
     },
     {
       name: '并发池模式（4并发）',
@@ -48,9 +48,9 @@ const TEST_CONFIG = {
           concurrency: 4,
           batch_size: 1,
           retries: 2,
-          throttle_ms: 0
-        }
-      }
+          throttle_ms: 0,
+        },
+      },
     },
     {
       name: '批量生成模式（3条/次）',
@@ -67,9 +67,9 @@ const TEST_CONFIG = {
           concurrency: 1,
           batch_size: 3,
           retries: 0,
-          throttle_ms: 0
-        }
-      }
+          throttle_ms: 0,
+        },
+      },
     },
     {
       name: '优化组合模式（4并发+3批量）',
@@ -86,11 +86,11 @@ const TEST_CONFIG = {
           concurrency: 4,
           batch_size: 3,
           retries: 2,
-          throttle_ms: 100
-        }
-      }
-    }
-  ]
+          throttle_ms: 100,
+        },
+      },
+    },
+  ],
 };
 
 class PerformanceTester {
@@ -100,8 +100,10 @@ class PerformanceTester {
 
   async runTest(testCase) {
     console.log(`\n🧪 开始测试: ${testCase.name}`);
-    console.log(`📊 参数: 并发=${testCase.params.params.concurrency}, 批量=${testCase.params.params.batch_size}, 重试=${testCase.params.params.retries}`);
-    
+    console.log(
+      `📊 参数: 并发=${testCase.params.params.concurrency}, 批量=${testCase.params.params.batch_size}, 重试=${testCase.params.params.retries}`,
+    );
+
     const startTime = Date.now();
     const events = [];
     let totalGenerated = 0;
@@ -113,9 +115,9 @@ class PerformanceTester {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${TEST_CONFIG.authToken}`
+          Authorization: `Bearer ${TEST_CONFIG.authToken}`,
         },
-        body: JSON.stringify(testCase.params)
+        body: JSON.stringify(testCase.params),
       });
 
       if (!response.ok) {
@@ -175,7 +177,7 @@ class PerformanceTester {
       throughput: throughput,
       tokenRate: tokenRate,
       events: events.length,
-      params: testCase.params.params
+      params: testCase.params.params,
     };
 
     console.log(`✅ 测试完成:`);
@@ -198,9 +200,9 @@ class PerformanceTester {
       if (result) {
         this.results.push(result);
       }
-      
+
       // 测试间隔，避免API限制
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
     this.generateReport();
@@ -215,7 +217,10 @@ class PerformanceTester {
 
     console.log('\n🏆 性能排名 (按吞吐量):');
     sortedResults.forEach((result, index) => {
-      const improvement = index === 0 ? '' : ` (+${((result.throughput / sortedResults[0].throughput - 1) * 100).toFixed(1)}%)`;
+      const improvement =
+        index === 0
+          ? ''
+          : ` (+${((result.throughput / sortedResults[0].throughput - 1) * 100).toFixed(1)}%)`;
       console.log(`${index + 1}. ${result.name}`);
       console.log(`   吞吐量: ${result.throughput.toFixed(2)} 条/秒${improvement}`);
       console.log(`   耗时: ${(result.duration / 1000).toFixed(2)}s`);
@@ -227,10 +232,10 @@ class PerformanceTester {
     if (this.results.length >= 2) {
       const baseline = this.results[0]; // 串行模式
       const optimized = this.results[this.results.length - 1]; // 优化组合模式
-      
+
       const speedImprovement = (optimized.throughput / baseline.throughput - 1) * 100;
       const timeReduction = (1 - optimized.duration / baseline.duration) * 100;
-      
+
       console.log('📈 性能提升分析:');
       console.log(`   速度提升: ${speedImprovement.toFixed(1)}%`);
       console.log(`   时间减少: ${timeReduction.toFixed(1)}%`);
@@ -246,10 +251,11 @@ class PerformanceTester {
       summary: {
         bestThroughput: sortedResults[0]?.throughput || 0,
         worstThroughput: sortedResults[sortedResults.length - 1]?.throughput || 0,
-        averageThroughput: this.results.reduce((sum, r) => sum + r.throughput, 0) / this.results.length,
+        averageThroughput:
+          this.results.reduce((sum, r) => sum + r.throughput, 0) / this.results.length,
         totalTests: this.results.length,
-        totalErrors: this.results.reduce((sum, r) => sum + r.errorCount, 0)
-      }
+        totalErrors: this.results.reduce((sum, r) => sum + r.errorCount, 0),
+      },
     };
 
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
@@ -261,7 +267,9 @@ class PerformanceTester {
 async function main() {
   if (!TEST_CONFIG.authToken) {
     console.error('❌ 请设置 TEST_AUTH_TOKEN 环境变量');
-    console.log('🔑 获取方法: 登录管理后台，打开浏览器开发者工具，在 Network 标签中找到 Authorization header');
+    console.log(
+      '🔑 获取方法: 登录管理后台，打开浏览器开发者工具，在 Network 标签中找到 Authorization header',
+    );
     process.exit(1);
   }
 

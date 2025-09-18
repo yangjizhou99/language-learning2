@@ -42,21 +42,21 @@ API路由 (env-config/route.ts)
 
 ### 必需的环境变量
 
-| 变量名 | 说明 | 示例值 |
-|--------|------|--------|
-| `LOCAL_DB_URL` | 本地数据库连接URL | `postgres://postgres:postgres@127.0.0.1:54322/postgres` |
-| `PROD_DB_URL` | 生产数据库连接URL | `postgresql://postgres:[password]@db.project.supabase.co:5432/postgres` |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase项目URL | `https://your-project.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase匿名密钥 | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| 变量名                          | 说明              | 示例值                                                                  |
+| ------------------------------- | ----------------- | ----------------------------------------------------------------------- |
+| `LOCAL_DB_URL`                  | 本地数据库连接URL | `postgres://postgres:postgres@127.0.0.1:54322/postgres`                 |
+| `PROD_DB_URL`                   | 生产数据库连接URL | `postgresql://postgres:[password]@db.project.supabase.co:5432/postgres` |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase项目URL   | `https://your-project.supabase.co`                                      |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase匿名密钥  | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`                               |
 
 ### 可选的环境变量
 
-| 变量名 | 说明 | 默认值 |
-|--------|------|--------|
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase服务角色密钥 | 无 |
-| `OPENROUTER_API_KEY` | OpenRouter API密钥 | 无 |
-| `DEEPSEEK_API_KEY` | DeepSeek API密钥 | 无 |
-| `OPENAI_API_KEY` | OpenAI API密钥 | 无 |
+| 变量名                      | 说明                 | 默认值 |
+| --------------------------- | -------------------- | ------ |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase服务角色密钥 | 无     |
+| `OPENROUTER_API_KEY`        | OpenRouter API密钥   | 无     |
+| `DEEPSEEK_API_KEY`          | DeepSeek API密钥     | 无     |
+| `OPENAI_API_KEY`            | OpenAI API密钥       | 无     |
 
 ## 配置步骤
 
@@ -124,6 +124,7 @@ pnpm dev
 **原因**：环境变量未正确设置或服务器未重启。
 
 **解决方案**：
+
 1. 检查 `.env.local` 文件是否存在且格式正确
 2. 重启开发服务器
 3. 检查环境变量名称是否正确
@@ -133,6 +134,7 @@ pnpm dev
 **原因**：数据库URL格式错误或数据库服务未启动。
 
 **解决方案**：
+
 1. 检查数据库URL格式
 2. 确保本地PostgreSQL服务正在运行
 3. 验证Supabase数据库连接信息
@@ -142,6 +144,7 @@ pnpm dev
 **原因**：API路由未正确创建或环境变量读取失败。
 
 **解决方案**：
+
 1. 检查 `src/app/api/admin/question-bank/env-config/route.ts` 文件是否存在
 2. 查看浏览器控制台错误信息
 3. 检查服务器端日志
@@ -194,4 +197,3 @@ pnpm dev
 5. ✅ 提供详细的错误信息
 
 如果遇到问题，请检查环境变量设置和服务器日志。
-

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import type { InvitationPermissions } from '@/types/invitation';
@@ -25,9 +25,9 @@ const PREDEFINED_TEMPLATES: PermissionTemplate[] = [
       max_daily_attempts: 20,
       ai_enabled: false,
       api_limits: {
-        enabled: false
-      }
-    }
+        enabled: false,
+      },
+    },
   },
   {
     id: 'standard',
@@ -43,9 +43,9 @@ const PREDEFINED_TEMPLATES: PermissionTemplate[] = [
       max_daily_attempts: 50,
       ai_enabled: false,
       api_limits: {
-        enabled: false
-      }
-    }
+        enabled: false,
+      },
+    },
   },
   {
     id: 'premium',
@@ -64,14 +64,14 @@ const PREDEFINED_TEMPLATES: PermissionTemplate[] = [
         enabled: true,
         daily_calls_limit: 100,
         daily_tokens_limit: 50000,
-        daily_cost_limit: 5.00,
+        daily_cost_limit: 5.0,
         monthly_calls_limit: 2000,
         monthly_tokens_limit: 1000000,
-        monthly_cost_limit: 100.00
+        monthly_cost_limit: 100.0,
       },
       api_keys: {
         deepseek: '',
-        openrouter: ''
+        openrouter: '',
       },
       model_permissions: [
         {
@@ -80,7 +80,7 @@ const PREDEFINED_TEMPLATES: PermissionTemplate[] = [
           provider: 'deepseek',
           daily_limit: 50,
           token_limit: 100000,
-          enabled: true
+          enabled: true,
         },
         {
           model_id: 'openrouter/auto',
@@ -88,10 +88,10 @@ const PREDEFINED_TEMPLATES: PermissionTemplate[] = [
           provider: 'openrouter',
           daily_limit: 30,
           token_limit: 80000,
-          enabled: true
-        }
-      ]
-    }
+          enabled: true,
+        },
+      ],
+    },
   },
   {
     id: 'trial',
@@ -107,9 +107,9 @@ const PREDEFINED_TEMPLATES: PermissionTemplate[] = [
       max_daily_attempts: 5,
       ai_enabled: false,
       api_limits: {
-        enabled: false
-      }
-    }
+        enabled: false,
+      },
+    },
   },
   {
     id: 'english_only',
@@ -128,14 +128,14 @@ const PREDEFINED_TEMPLATES: PermissionTemplate[] = [
         enabled: true,
         daily_calls_limit: 50,
         daily_tokens_limit: 25000,
-        daily_cost_limit: 2.50,
+        daily_cost_limit: 2.5,
         monthly_calls_limit: 1000,
         monthly_tokens_limit: 500000,
-        monthly_cost_limit: 50.00
+        monthly_cost_limit: 50.0,
       },
       api_keys: {
         deepseek: '',
-        openrouter: ''
+        openrouter: '',
       },
       model_permissions: [
         {
@@ -144,10 +144,10 @@ const PREDEFINED_TEMPLATES: PermissionTemplate[] = [
           provider: 'deepseek',
           daily_limit: 25,
           token_limit: 50000,
-          enabled: true
-        }
-      ]
-    }
+          enabled: true,
+        },
+      ],
+    },
   },
   {
     id: 'japanese_only',
@@ -166,14 +166,14 @@ const PREDEFINED_TEMPLATES: PermissionTemplate[] = [
         enabled: true,
         daily_calls_limit: 50,
         daily_tokens_limit: 25000,
-        daily_cost_limit: 2.50,
+        daily_cost_limit: 2.5,
         monthly_calls_limit: 1000,
         monthly_tokens_limit: 500000,
-        monthly_cost_limit: 50.00
+        monthly_cost_limit: 50.0,
       },
       api_keys: {
         deepseek: '',
-        openrouter: ''
+        openrouter: '',
       },
       model_permissions: [
         {
@@ -182,11 +182,11 @@ const PREDEFINED_TEMPLATES: PermissionTemplate[] = [
           provider: 'deepseek',
           daily_limit: 25,
           token_limit: 50000,
-          enabled: true
-        }
-      ]
-    }
-  }
+          enabled: true,
+        },
+      ],
+    },
+  },
 ];
 
 interface InvitationPermissionTemplatesProps {
@@ -194,9 +194,9 @@ interface InvitationPermissionTemplatesProps {
   currentPermissions?: InvitationPermissions;
 }
 
-export default function InvitationPermissionTemplates({ 
-  onSelectTemplate, 
-  currentPermissions 
+export default function InvitationPermissionTemplates({
+  onSelectTemplate,
+  currentPermissions,
 }: InvitationPermissionTemplatesProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
@@ -208,7 +208,7 @@ export default function InvitationPermissionTemplates({
   const isTemplateSelected = (template: PermissionTemplate) => {
     if (selectedTemplate === template.id) return true;
     if (!currentPermissions) return false;
-    
+
     // 检查当前权限是否匹配模板
     return (
       template.permissions.can_access_shadowing === currentPermissions.can_access_shadowing &&
@@ -217,8 +217,10 @@ export default function InvitationPermissionTemplates({
       template.permissions.can_access_articles === currentPermissions.can_access_articles &&
       template.permissions.ai_enabled === currentPermissions.ai_enabled &&
       template.permissions.max_daily_attempts === currentPermissions.max_daily_attempts &&
-      JSON.stringify(template.permissions.allowed_languages?.sort()) === JSON.stringify(currentPermissions.allowed_languages?.sort()) &&
-      JSON.stringify(template.permissions.allowed_levels?.sort()) === JSON.stringify(currentPermissions.allowed_levels?.sort())
+      JSON.stringify(template.permissions.allowed_languages?.sort()) ===
+        JSON.stringify(currentPermissions.allowed_languages?.sort()) &&
+      JSON.stringify(template.permissions.allowed_levels?.sort()) ===
+        JSON.stringify(currentPermissions.allowed_levels?.sort())
     );
   };
 
@@ -228,7 +230,7 @@ export default function InvitationPermissionTemplates({
         <h4 className="text-sm font-medium text-gray-600 mb-2">权限模板</h4>
         <p className="text-xs text-gray-500 mb-3">快速选择常用的权限配置</p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {PREDEFINED_TEMPLATES.map((template) => (
           <div
@@ -245,28 +247,48 @@ export default function InvitationPermissionTemplates({
                 <h5 className="font-medium text-sm text-gray-900">{template.name}</h5>
                 <p className="text-xs text-gray-600 mt-1">{template.description}</p>
               </div>
-              {isTemplateSelected(template) && (
-                <div className="text-blue-600 text-sm">✓</div>
+              {isTemplateSelected(template) && <div className="text-blue-600 text-sm">✓</div>}
+            </div>
+
+            <div className="mt-2 flex flex-wrap gap-1">
+              {template.permissions.can_access_shadowing && (
+                <span className="px-1 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">跟读</span>
+              )}
+              {template.permissions.can_access_cloze && (
+                <span className="px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                  完形
+                </span>
+              )}
+              {template.permissions.can_access_alignment && (
+                <span className="px-1 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">
+                  对齐
+                </span>
+              )}
+              {template.permissions.can_access_articles && (
+                <span className="px-1 py-0.5 bg-orange-100 text-orange-800 text-xs rounded">
+                  文章
+                </span>
+              )}
+              {template.permissions.ai_enabled && (
+                <span className="px-1 py-0.5 bg-pink-100 text-pink-800 text-xs rounded">AI</span>
               )}
             </div>
-            
-            <div className="mt-2 flex flex-wrap gap-1">
-              {template.permissions.can_access_shadowing && <span className="px-1 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">跟读</span>}
-              {template.permissions.can_access_cloze && <span className="px-1 py-0.5 bg-green-100 text-green-800 text-xs rounded">完形</span>}
-              {template.permissions.can_access_alignment && <span className="px-1 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">对齐</span>}
-              {template.permissions.can_access_articles && <span className="px-1 py-0.5 bg-orange-100 text-orange-800 text-xs rounded">文章</span>}
-              {template.permissions.ai_enabled && <span className="px-1 py-0.5 bg-pink-100 text-pink-800 text-xs rounded">AI</span>}
-            </div>
-            
+
             <div className="mt-2 text-xs text-gray-500">
-              <div>语言: {template.permissions.allowed_languages?.map(lang => 
-                lang === 'en' ? '英语' : lang === 'ja' ? '日语' : '中文'
-              ).join(', ')}</div>
-              <div>等级: {template.permissions.allowed_levels?.join(', ')} | 限制: {template.permissions.max_daily_attempts}次/日</div>
+              <div>
+                语言:{' '}
+                {template.permissions.allowed_languages
+                  ?.map((lang) => (lang === 'en' ? '英语' : lang === 'ja' ? '日语' : '中文'))
+                  .join(', ')}
+              </div>
+              <div>
+                等级: {template.permissions.allowed_levels?.join(', ')} | 限制:{' '}
+                {template.permissions.max_daily_attempts}次/日
+              </div>
               {template.permissions.api_limits?.enabled && (
                 <div className="text-blue-600">
-                  API限制: {template.permissions.api_limits.daily_calls_limit}次/日, 
-                  ${template.permissions.api_limits.daily_cost_limit}/日
+                  API限制: {template.permissions.api_limits.daily_calls_limit}次/日, $
+                  {template.permissions.api_limits.daily_cost_limit}/日
                 </div>
               )}
             </div>

@@ -3,6 +3,7 @@
 ## 概述
 
 现在音色数据已经存储在数据库中，这样可以：
+
 - 提高加载速度（不需要每次都调用Google Cloud TTS API）
 - 支持离线查看音色列表
 - 提供音色同步功能
@@ -10,6 +11,7 @@
 ## 数据库表结构
 
 ### voices 表
+
 - `id`: 音色唯一标识
 - `name`: 音色名称（如 cmn-CN-Chirp3-HD-Achernar）
 - `display_name`: 显示名称（如 Chirp3-HD-Achernar (女声)）
@@ -26,28 +28,34 @@
 ## 使用方法
 
 ### 1. 首次使用
+
 1. 访问 `/admin/test-voices` 页面
 2. 点击"同步音色"按钮
 3. 等待同步完成（会从Google Cloud TTS获取所有中英日音色）
 4. 同步完成后，音色数据将存储在数据库中
 
 ### 2. 日常使用
+
 1. 在音色管理器中，点击"刷新列表"从数据库获取音色
 2. 如需更新音色数据，点击"同步音色"重新从Google Cloud TTS同步
 
 ### 3. API 端点
 
 #### 同步音色
+
 ```
 POST /api/admin/shadowing/sync-voices
 ```
+
 - 从Google Cloud TTS获取所有音色并存储到数据库
 - 需要管理员权限
 
 #### 获取音色
+
 ```
 GET /api/admin/shadowing/voices-db?lang=all&category=all
 ```
+
 - 从数据库获取音色列表
 - 支持语言筛选：`lang=cmn-CN|en-US|ja-JP|all`
 - 支持分类筛选：`category=Chirp3HD|Neural2|Wavenet|Standard|Other|all`
@@ -69,14 +77,17 @@ GET /api/admin/shadowing/voices-db?lang=all&category=all
 ## 故障排除
 
 ### 同步失败
+
 - 检查Google Cloud TTS配置是否正确
 - 确保有管理员权限
 - 检查网络连接
 
 ### 音色数据不完整
+
 - 重新执行同步操作
 - 检查数据库连接是否正常
 
 ### 音色显示异常
+
 - 检查音色数据格式是否正确
 - 查看浏览器控制台错误信息

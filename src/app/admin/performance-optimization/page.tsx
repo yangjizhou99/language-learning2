@@ -4,15 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  Database, 
-  Zap, 
+import {
+  AlertTriangle,
+  CheckCircle,
+  Database,
+  Zap,
   TrendingUp,
   RefreshCw,
   Play,
-  Settings
+  Settings,
 } from 'lucide-react';
 
 interface OptimizationData {
@@ -53,15 +53,15 @@ export default function PerformanceOptimizationPage() {
         cache: {
           working: cacheData.success && cacheData.diagnostic?.dataMatch,
           hitRate: cacheData.success ? 100 : 0,
-          stats: cacheData.success ? cacheData.diagnostic?.stats : null
+          stats: cacheData.success ? cacheData.diagnostic?.stats : null,
         },
         database: {
           slowQueries: dbData.success ? dbData.optimization?.slowQueries || [] : [],
           indexStats: dbData.success ? dbData.optimization?.indexStats || [] : [],
           tableSizes: dbData.success ? dbData.optimization?.tableSizes || [] : [],
-          connections: dbData.success ? dbData.optimization?.connections || [] : []
+          connections: dbData.success ? dbData.optimization?.connections || [] : [],
         },
-        recommendations
+        recommendations,
       });
     } catch (error) {
       console.error('Failed to fetch optimization data:', error);
@@ -108,13 +108,13 @@ export default function PerformanceOptimizationPage() {
         response = await fetch('/api/admin/db-optimization', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action })
+          body: JSON.stringify({ action }),
         });
       } else if (action === 'clear-cache') {
         response = await fetch('/api/admin/cache-diagnostic', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'clear' })
+          body: JSON.stringify({ action: 'clear' }),
         });
       }
 
@@ -146,7 +146,9 @@ export default function PerformanceOptimizationPage() {
 
   const getStatusBadge = (status: boolean) => {
     return status ? (
-      <Badge variant="default" className="bg-green-500">正常</Badge>
+      <Badge variant="default" className="bg-green-500">
+        正常
+      </Badge>
     ) : (
       <Badge variant="destructive">异常</Badge>
     );
@@ -192,26 +194,20 @@ export default function PerformanceOptimizationPage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold">
-                    {data.cache.working ? '100%' : '0%'}
-                  </div>
+                  <div className="text-2xl font-bold">{data.cache.working ? '100%' : '0%'}</div>
                   <div className="text-sm text-gray-500">缓存命中率</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">
-                    {data.cache.stats?.memory?.active || 0}
-                  </div>
+                  <div className="text-2xl font-bold">{data.cache.stats?.memory?.active || 0}</div>
                   <div className="text-sm text-gray-500">活跃缓存条目</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">
-                    {data.cache.stats?.pendingRequests || 0}
-                  </div>
+                  <div className="text-2xl font-bold">{data.cache.stats?.pendingRequests || 0}</div>
                   <div className="text-sm text-gray-500">待处理请求</div>
                 </div>
               </div>
               <div className="mt-4 flex space-x-2">
-                <Button 
+                <Button
                   onClick={() => executeAction('clear-cache')}
                   disabled={actionLoading === 'clear-cache'}
                   variant="outline"
@@ -245,9 +241,7 @@ export default function PerformanceOptimizationPage() {
                   <div className="text-sm text-gray-500">慢查询</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">
-                    {data.database.indexStats.length}
-                  </div>
+                  <div className="text-2xl font-bold">{data.database.indexStats.length}</div>
                   <div className="text-sm text-gray-500">索引数量</div>
                 </div>
                 <div className="text-center">
@@ -257,15 +251,13 @@ export default function PerformanceOptimizationPage() {
                   <div className="text-sm text-gray-500">活跃连接</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">
-                    {data.database.tableSizes.length}
-                  </div>
+                  <div className="text-2xl font-bold">{data.database.tableSizes.length}</div>
                   <div className="text-sm text-gray-500">数据表</div>
                 </div>
               </div>
-              
+
               <div className="flex space-x-2">
-                <Button 
+                <Button
                   onClick={() => executeAction('analyze')}
                   disabled={actionLoading === 'analyze'}
                   variant="outline"
@@ -278,7 +270,7 @@ export default function PerformanceOptimizationPage() {
                   )}
                   更新统计信息
                 </Button>
-                <Button 
+                <Button
                   onClick={() => executeAction('vacuum')}
                   disabled={actionLoading === 'vacuum'}
                   variant="outline"
@@ -312,9 +304,7 @@ export default function PerformanceOptimizationPage() {
                         <div className="text-sm font-medium">
                           平均时间: {query.mean_time?.toFixed(2)}ms
                         </div>
-                        <Badge variant="destructive">
-                          {query.calls} 次调用
-                        </Badge>
+                        <Badge variant="destructive">{query.calls} 次调用</Badge>
                       </div>
                       <div className="text-xs text-gray-600 font-mono bg-gray-100 p-2 rounded">
                         {query.query?.substring(0, 200)}...
@@ -353,15 +343,15 @@ export default function PerformanceOptimizationPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button 
-                  onClick={() => window.location.href = '/admin/performance-test'}
+                <Button
+                  onClick={() => (window.location.href = '/admin/performance-test')}
                   className="h-20 flex flex-col items-center justify-center"
                 >
                   <Play className="w-6 h-6 mb-2" />
                   <span>运行性能测试</span>
                 </Button>
-                <Button 
-                  onClick={() => window.location.href = '/admin/performance'}
+                <Button
+                  onClick={() => (window.location.href = '/admin/performance')}
                   variant="outline"
                   className="h-20 flex flex-col items-center justify-center"
                 >

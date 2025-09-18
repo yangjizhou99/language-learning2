@@ -1,67 +1,79 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAdmin(req);
     if (!auth.ok) {
-      return NextResponse.json({ 
-        error: "权限检查失败", 
-        reason: auth.reason 
-      }, { status: 403 });
+      return NextResponse.json(
+        {
+          error: '权限检查失败',
+          reason: auth.reason,
+        },
+        { status: 403 },
+      );
     }
 
     // 1. 检查表是否存在
     const { data: tableCheck, error: tableError } = await auth.supabase
-      .from("article_drafts")
-      .select("count")
+      .from('article_drafts')
+      .select('count')
       .limit(1);
 
     if (tableError) {
-      return NextResponse.json({
-        error: "表不存在或无法访问",
-        table_error: tableError.message
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: '表不存在或无法访问',
+          table_error: tableError.message,
+        },
+        { status: 500 },
+      );
     }
 
     // 2. 检查所有草稿（不限状态）
     const { data: allDrafts, error: allError } = await auth.supabase
-      .from("article_drafts")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from('article_drafts')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     if (allError) {
-      return NextResponse.json({
-        error: "查询所有草稿失败",
-        query_error: allError.message
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: '查询所有草稿失败',
+          query_error: allError.message,
+        },
+        { status: 500 },
+      );
     }
 
     // 3. 按状态分组统计
     const statusCounts: Record<string, number> = {};
-    allDrafts?.forEach(draft => {
+    allDrafts?.forEach((draft) => {
       statusCounts[draft.status] = (statusCounts[draft.status] || 0) + 1;
     });
 
     // 4. 检查当前用户创建的草稿
     const { data: userDrafts, error: userError } = await auth.supabase
-      .from("article_drafts")
-      .select("*")
-      .eq("created_by", auth.user.id)
-      .order("created_at", { ascending: false });
+      .from('article_drafts')
+      .select('*')
+      .eq('created_by', auth.user.id)
+      .order('created_at', { ascending: false });
 
     if (userError) {
-      return NextResponse.json({
-        error: "查询用户草稿失败",
-        user_error: userError.message
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: '查询用户草稿失败',
+          user_error: userError.message,
+        },
+        { status: 500 },
+      );
     }
 
     // 5. 最近的几条记录详情
-    const recentDrafts = allDrafts?.slice(0, 3).map(draft => ({
+    const recentDrafts = allDrafts?.slice(0, 3).map((draft) => ({
       id: draft.id,
       title: draft.title,
       status: draft.status,
@@ -69,7 +81,7 @@ export async function GET(req: NextRequest) {
       created_by: draft.created_by,
       source: draft.source,
       ai_provider: draft.ai_provider,
-      ai_model: draft.ai_model
+      ai_model: draft.ai_model,
     }));
 
     return NextResponse.json({
@@ -82,14 +94,16 @@ export async function GET(req: NextRequest) {
       debug_info: {
         table_accessible: !tableError,
         all_query_success: !allError,
-        user_query_success: !userError
-      }
+        user_query_success: !userError,
+      },
     });
-
   } catch (error) {
-    return NextResponse.json({
-      error: "调试失败",
-      details: String(error)
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: '调试失败',
+        details: String(error),
+      },
+      { status: 500 },
+    );
   }
 }

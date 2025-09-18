@@ -25,8 +25,3 @@ const LanguageSpecificShadowing: React.FC<LanguageSpecificShadowingProps> = ({ c
 };
 
 export default LanguageSpecificShadowing;
-
-
-
-
-

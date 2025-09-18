@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useEffect } from 'react';
 
 export default function HydrationFix() {
@@ -9,9 +9,11 @@ export default function HydrationFix() {
       if (body) {
         // 移除可能由浏览器扩展添加的属性
         const attrs = Array.from(body.attributes);
-        attrs.forEach(attr => {
-          if (attr.name.startsWith('inmaintabuse') || 
-              (attr.name.startsWith('data-') && attr.name.includes('extension'))) {
+        attrs.forEach((attr) => {
+          if (
+            attr.name.startsWith('inmaintabuse') ||
+            (attr.name.startsWith('data-') && attr.name.includes('extension'))
+          ) {
             body.removeAttribute(attr.name);
           }
         });
@@ -32,7 +34,7 @@ export default function HydrationFix() {
 
     observer.observe(document.body, {
       attributes: true,
-      attributeFilter: ['inmaintabuse', 'data-extension']
+      attributeFilter: ['inmaintabuse', 'data-extension'],
     });
 
     return () => {

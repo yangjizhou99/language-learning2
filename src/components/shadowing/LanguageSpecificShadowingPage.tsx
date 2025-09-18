@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ChineseShadowingPage from './ChineseShadowingPage';
@@ -21,8 +21,3 @@ const LanguageSpecificShadowingPage: React.FC = () => {
 };
 
 export default LanguageSpecificShadowingPage;
-
-
-
-
-

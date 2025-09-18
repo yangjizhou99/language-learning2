@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   try {
     const supabase = getServiceSupabase();
-    
+
     // 1. 检查索引使用情况
     const indexStats = await supabase.rpc('exec_sql', {
       sql: `
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
         AND indexname LIKE 'idx_%'
         ORDER BY idx_scan DESC
         LIMIT 20;
-      `
+      `,
     });
 
     // 2. 检查慢查询
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
         WHERE mean_time > 100
         ORDER BY mean_time DESC
         LIMIT 10;
-      `
+      `,
     });
 
     // 3. 检查表大小
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
         FROM pg_tables 
         WHERE schemaname = 'public'
         ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
-      `
+      `,
     });
 
     // 4. 检查连接数
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
           count(*) FILTER (WHERE state = 'idle') as idle_connections
         FROM pg_stat_activity 
         WHERE datname = current_database();
-      `
+      `,
     });
 
     return NextResponse.json({
@@ -78,16 +78,23 @@ export async function GET(req: NextRequest) {
         slowQueries: slowQueries.data || [],
         tableSizes: tableSizes.data || [],
         connections: connections.data || [],
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
-
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -100,25 +107,32 @@ export async function POST(req: NextRequest) {
       case 'analyze':
         // 更新表统计信息
         await supabase.rpc('exec_sql', {
-          sql: 'ANALYZE;'
+          sql: 'ANALYZE;',
         });
         return NextResponse.json({ success: true, message: 'Database statistics updated' });
-      
+
       case 'vacuum':
         // 清理数据库
         await supabase.rpc('exec_sql', {
-          sql: 'VACUUM ANALYZE;'
+          sql: 'VACUUM ANALYZE;',
         });
         return NextResponse.json({ success: true, message: 'Database vacuumed' });
-      
+
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
-
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : 'Unknown error',
+      },
+      { status: 500 },
+    );
   }
 }

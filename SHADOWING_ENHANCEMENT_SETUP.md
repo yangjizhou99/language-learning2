@@ -39,6 +39,7 @@ supabase db push
    - 允许的 MIME 类型：`audio/webm, audio/wav, audio/mp3, audio/ogg`
 
 2. 应用存储策略：
+
 ```sql
 -- 在 Supabase Dashboard > SQL Editor 中执行
 -- 内容见 supabase/storage-policies.sql
@@ -49,14 +50,17 @@ supabase db push
 确保以下新文件已部署到你的项目：
 
 #### API 路由
+
 - `src/app/api/shadowing/catalog/route.ts` - 题库列表API
-- `src/app/api/shadowing/session/route.ts` - 会话管理API  
+- `src/app/api/shadowing/session/route.ts` - 会话管理API
 - `src/app/api/upload/audio/route.ts` - 录音上传API
 
 #### 组件
+
 - `src/components/AudioRecorder.tsx` - 录音组件
 
 #### 页面
+
 - `src/app/practice/shadowing/page.tsx` - 更新的练习页面
 
 ### 4. 验证部署
@@ -73,6 +77,7 @@ supabase db push
 ### 数据库设计
 
 `shadowing_sessions` 表结构：
+
 - 记录用户与题目的练习会话
 - 支持草稿和完成状态
 - 存储录音列表、选中生词、练习时间等
@@ -96,10 +101,12 @@ supabase db push
 ### Storage 策略
 
 **公开访问**（当前配置）：
+
 - 优点：简单，录音可直接播放
 - 缺点：URL可被猜测访问
 
 **私有访问**（可选）：
+
 - 优点：更安全
 - 缺点：需要签名URL，复杂度更高
 
@@ -139,6 +146,7 @@ const { data: urlData, error: urlError } = await supabase.storage
 ### 日志调试
 
 在浏览器开发者工具中查看：
+
 - Console 错误信息
 - Network 请求状态
 - Application > Storage 查看录音文件
@@ -154,6 +162,7 @@ const { data: urlData, error: urlError } = await supabase.storage
 ## 技术支持
 
 如遇问题，请检查：
+
 1. Supabase 项目配置
 2. 环境变量设置
 3. 数据库迁移状态

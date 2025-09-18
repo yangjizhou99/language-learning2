@@ -16,11 +16,11 @@ const keyFiles = [
   'src/app/api/storage-proxy/route.ts',
   'src/components/OptimizedImage.tsx',
   'src/components/OptimizedAudio.tsx',
-  'next.config.ts'
+  'next.config.ts',
 ];
 
 console.log('📁 检查关键文件:');
-keyFiles.forEach(file => {
+keyFiles.forEach((file) => {
   if (fs.existsSync(file)) {
     console.log(`✅ ${file}`);
   } else {
@@ -37,7 +37,7 @@ try {
   } else {
     console.log('❌ 图片优化配置缺失');
   }
-  
+
   if (nextConfig.includes('Cache-Control')) {
     console.log('✅ 缓存头配置已添加');
   } else {
@@ -54,10 +54,10 @@ const apiFiles = [
   'src/app/api/admin/shadowing/synthesize-unified/route.ts',
   'src/app/api/admin/shadowing/synthesize-gemini/route.ts',
   'src/app/api/admin/shadowing/synthesize-gemini-dialogue/route.ts',
-  'src/app/api/admin/shadowing/synthesize-dialogue/route.ts'
+  'src/app/api/admin/shadowing/synthesize-dialogue/route.ts',
 ];
 
-apiFiles.forEach(file => {
+apiFiles.forEach((file) => {
   if (fs.existsSync(file)) {
     const content = fs.readFileSync(file, 'utf8');
     if (content.includes('uploadAudioFile')) {
@@ -75,10 +75,10 @@ console.log('\n📊 检查监控工具:');
 const monitorFiles = [
   'scripts/monitor-bandwidth.js',
   'scripts/analyze-storage-usage.sql',
-  'scripts/quick-storage-check.sql'
+  'scripts/quick-storage-check.sql',
 ];
 
-monitorFiles.forEach(file => {
+monitorFiles.forEach((file) => {
   if (fs.existsSync(file)) {
     console.log(`✅ ${file}`);
   } else {
@@ -92,10 +92,10 @@ const docFiles = [
   'BANDWIDTH_OPTIMIZATION_COMPLETE_REPORT.md',
   'NEW_FILE_CACHE_GUIDE.md',
   'BANDWIDTH_OPTIMIZATION_GUIDE.md',
-  'FINAL_OPTIMIZATION_SUMMARY.md'
+  'FINAL_OPTIMIZATION_SUMMARY.md',
 ];
 
-docFiles.forEach(file => {
+docFiles.forEach((file) => {
   if (fs.existsSync(file)) {
     console.log(`✅ ${file}`);
   } else {

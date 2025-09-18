@@ -2,7 +2,7 @@
 
 export interface AlignmentPack {
   id: string;
-  lang: "en" | "ja" | "zh";
+  lang: 'en' | 'ja' | 'zh';
   topic: string;
   tags: string[];
   level_min: number;
@@ -12,16 +12,16 @@ export interface AlignmentPack {
   ai_provider?: string;
   ai_model?: string;
   ai_usage?: AIUsage;
-  status: "draft" | "published" | "archived";
+  status: 'draft' | 'published' | 'archived';
   created_by: string;
   created_at: string;
 }
 
 export interface PreferredStyle {
-  formality: "neutral" | "formal" | "casual";
-  tone: "friendly" | "direct" | "polite" | "academic";
-  length: "concise" | "balanced" | "detailed";
-  voice: "first" | "second" | "third";
+  formality: 'neutral' | 'formal' | 'casual';
+  tone: 'friendly' | 'direct' | 'polite' | 'academic';
+  length: 'concise' | 'balanced' | 'detailed';
+  voice: 'first' | 'second' | 'third';
   extras: string[];
 }
 
@@ -37,7 +37,7 @@ export interface AlignmentSteps {
 }
 
 export interface DialogueStep {
-  type: "dialogue_easy" | "dialogue_rich";
+  type: 'dialogue_easy' | 'dialogue_rich';
   title: string;
   prompt: string;
   exemplar: string;
@@ -48,7 +48,7 @@ export interface DialogueStep {
 }
 
 export interface DiscussionStep {
-  type: "discussion";
+  type: 'discussion';
   title: string;
   prompt: string;
   exemplar: string;
@@ -59,7 +59,7 @@ export interface DiscussionStep {
 }
 
 export interface WritingShortStep {
-  type: "writing_short";
+  type: 'writing_short';
   title: string;
   prompt: string;
   exemplar: string;
@@ -68,7 +68,7 @@ export interface WritingShortStep {
 }
 
 export interface TaskEmailStep {
-  type: "task_email";
+  type: 'task_email';
   title: string;
   prompt: string;
   exemplar: string;
@@ -77,7 +77,7 @@ export interface TaskEmailStep {
 }
 
 export interface WritingLongStep {
-  type: "writing_long";
+  type: 'writing_long';
   title: string;
   prompt: string;
   exemplar: string;

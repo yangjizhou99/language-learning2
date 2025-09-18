@@ -26,14 +26,14 @@ export default function OptimizedImage({
   priority = false,
   quality = 70,
   sizes,
-  fallback = '/placeholder-image.png'
+  fallback = '/placeholder-image.png',
 }: OptimizedImageProps) {
   const [imgSrc, setImgSrc] = useState(src);
   const [isLoading, setIsLoading] = useState(true);
 
   // 如果是 Supabase Storage URL，使用代理路由
   const isSupabaseUrl = src.includes('.supabase.co/storage');
-  const optimizedSrc = isSupabaseUrl 
+  const optimizedSrc = isSupabaseUrl
     ? `/api/storage-proxy?path=${encodeURIComponent(src.split('/storage/v1/object/public/')[1] || '')}&bucket=${src.split('/storage/v1/object/public/')[0].split('/').pop() || 'tts'}`
     : src;
 
@@ -51,7 +51,7 @@ export default function OptimizedImage({
   return (
     <div className={`relative ${className}`}>
       {isLoading && (
-        <div 
+        <div
           className="absolute inset-0 bg-gray-200 animate-pulse rounded"
           style={{ width, height }}
         />

@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 
 export default function MigratePage() {
   const [table, setTable] = useState('your_table');
-  const [columns, setColumns] = useState('');      // 为空=全列
-  const [where, setWhere] = useState('');          // e.g. "created_at >= '2025-09-01'"
-  const [mode, setMode] = useState<'insert'|'upsert'>('insert');
+  const [columns, setColumns] = useState(''); // 为空=全列
+  const [where, setWhere] = useState(''); // e.g. "created_at >= '2025-09-01'"
+  const [mode, setMode] = useState<'insert' | 'upsert'>('insert');
   const [conflictKeys, setConflictKeys] = useState('id'); // upsert 时必填
   const [log, setLog] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,8 +33,8 @@ export default function MigratePage() {
     try {
       const r = await fetch('/api/migrate', {
         method: 'POST',
-        headers: {'content-type':'application/json'},
-        body: JSON.stringify({ table, columns, where, mode, conflictKeys })
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ table, columns, where, mode, conflictKeys }),
       });
       const j = await r.json();
       setLog(JSON.stringify(j, null, 2));
@@ -47,11 +47,13 @@ export default function MigratePage() {
 
   return (
     <Container>
-      <Breadcrumbs items={[
-        { label: '管理后台', href: '/admin' },
-        { label: '数据迁移', href: '/admin/migrate' }
-      ]} />
-      
+      <Breadcrumbs
+        items={[
+          { label: '管理后台', href: '/admin' },
+          { label: '数据迁移', href: '/admin/migrate' },
+        ]}
+      />
+
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold">数据迁移</h1>
@@ -62,72 +64,64 @@ export default function MigratePage() {
           <div className="grid gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">表名（public 下）</label>
-              <input 
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                value={table} 
-                onChange={e=>setTable(e.target.value)} 
+              <input
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={table}
+                onChange={(e) => setTable(e.target.value)}
                 placeholder="例如: users, articles, drafts"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">列（留空=全列，逗号分隔）</label>
-              <input 
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                value={columns} 
-                onChange={e=>setColumns(e.target.value)} 
+              <input
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={columns}
+                onChange={(e) => setColumns(e.target.value)}
                 placeholder="例如: id,name,created_at"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">本地筛选 WHERE（可空）</label>
-              <input 
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                value={where} 
-                onChange={e=>setWhere(e.target.value)} 
+              <input
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={where}
+                onChange={(e) => setWhere(e.target.value)}
                 placeholder="例如: created_at >= '2025-01-01'"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">模式</label>
-              <select 
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                value={mode} 
-                onChange={e=>setMode(e.target.value as any)}
+              <select
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={mode}
+                onChange={(e) => setMode(e.target.value as any)}
               >
                 <option value="insert">insert（冲突报错）</option>
                 <option value="upsert">upsert（需冲突键）</option>
               </select>
             </div>
-            
+
             {mode === 'upsert' && (
               <div>
                 <label className="block text-sm font-medium mb-2">冲突键（逗号分隔）</label>
-                <input 
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                  value={conflictKeys} 
-                  onChange={e=>setConflictKeys(e.target.value)} 
+                <input
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={conflictKeys}
+                  onChange={(e) => setConflictKeys(e.target.value)}
                   placeholder="例如: id 或 id,code"
                 />
               </div>
             )}
           </div>
-          
+
           <div className="flex gap-3 pt-4">
-            <Button 
-              onClick={preview} 
-              disabled={loading}
-              variant="outline"
-            >
+            <Button onClick={preview} disabled={loading} variant="outline">
               {loading ? '预览中...' : '预览前20行/总数'}
             </Button>
-            <Button 
-              onClick={run} 
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
+            <Button onClick={run} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
               {loading ? '迁移中...' : '开始迁移'}
             </Button>
           </div>
@@ -136,7 +130,9 @@ export default function MigratePage() {
         {log && (
           <div className="bg-gray-50 rounded-lg border p-4">
             <h3 className="text-sm font-medium mb-2">执行结果</h3>
-            <pre className="text-sm overflow-auto whitespace-pre-wrap bg-white p-3 rounded border">{log}</pre>
+            <pre className="text-sm overflow-auto whitespace-pre-wrap bg-white p-3 rounded border">
+              {log}
+            </pre>
           </div>
         )}
 

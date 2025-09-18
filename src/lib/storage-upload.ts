@@ -7,27 +7,25 @@ import { getServiceSupabase } from './supabaseAdmin';
 async function setFileCacheControl(
   bucket: string,
   path: string,
-  cacheControl: string
+  cacheControl: string,
 ): Promise<void> {
   const supabase = getServiceSupabase();
-  
+
   // 下载文件
   const { data: fileData, error: downloadError } = await supabase.storage
     .from(bucket)
     .download(path);
-  
+
   if (downloadError || !fileData) {
     throw new Error(`下载文件失败: ${downloadError?.message || 'Unknown error'}`);
   }
-  
+
   // 重新上传文件，这次设置缓存头
-  const { error: uploadError } = await supabase.storage
-    .from(bucket)
-    .upload(path, fileData, {
-      upsert: true,
-      cacheControl: cacheControl
-    });
-  
+  const { error: uploadError } = await supabase.storage.from(bucket).upload(path, fileData, {
+    upsert: true,
+    cacheControl: cacheControl,
+  });
+
   if (uploadError) {
     throw new Error(`设置缓存头失败: ${uploadError.message}`);
   }
@@ -51,19 +49,19 @@ export interface UploadOptions {
  * 上传文件到 Supabase Storage，自动添加缓存头
  */
 export async function uploadWithCache(
-  options: UploadOptions
+  options: UploadOptions,
 ): Promise<{ success: boolean; url?: string; proxyUrl?: string; error?: string }> {
   try {
     const supabase = getServiceSupabase();
-    
+
     // 默认缓存策略：30天缓存
     const defaultCacheControl = 'public, max-age=2592000, immutable';
-    
+
     const { error } = await supabase.storage
       .from(options.bucket)
       .upload(options.path, options.file, {
         contentType: options.contentType || 'audio/mpeg',
-        upsert: options.upsert || false
+        upsert: options.upsert || false,
       });
 
     if (error) {
@@ -71,23 +69,23 @@ export async function uploadWithCache(
     }
 
     // 生成公共URL
-    const { data: { publicUrl } } = supabase.storage
-      .from(options.bucket)
-      .getPublicUrl(options.path);
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(options.bucket).getPublicUrl(options.path);
 
     // 生成代理路由URL（推荐使用）
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const proxyUrl = `${baseUrl}/api/storage-proxy?path=${options.path}&bucket=${options.bucket}`;
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       url: publicUrl, // 原始 Supabase URL
-      proxyUrl: proxyUrl // 代理路由 URL（推荐）
+      proxyUrl: proxyUrl, // 代理路由 URL（推荐）
     };
   } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -103,7 +101,7 @@ export async function uploadAudioFile(
     contentType?: string;
     cacheControl?: string;
     upsert?: boolean;
-  } = {}
+  } = {},
 ): Promise<{ success: boolean; url?: string; proxyUrl?: string; error?: string }> {
   return uploadWithCache({
     bucket,
@@ -111,7 +109,7 @@ export async function uploadAudioFile(
     file: audioBuffer,
     contentType: options.contentType || 'audio/mpeg',
     cacheControl: options.cacheControl || 'public, max-age=2592000, immutable',
-    upsert: options.upsert || false
+    upsert: options.upsert || false,
   });
 }
 
@@ -126,7 +124,7 @@ export async function uploadImageFile(
     contentType?: string;
     cacheControl?: string;
     upsert?: boolean;
-  } = {}
+  } = {},
 ): Promise<{ success: boolean; url?: string; proxyUrl?: string; error?: string }> {
   return uploadWithCache({
     bucket,
@@ -134,7 +132,7 @@ export async function uploadImageFile(
     file: imageBuffer,
     contentType: options.contentType || 'image/jpeg',
     cacheControl: options.cacheControl || 'public, max-age=2592000, immutable',
-    upsert: options.upsert || false
+    upsert: options.upsert || false,
   });
 }
 
@@ -149,7 +147,7 @@ export async function uploadDocumentFile(
     contentType?: string;
     cacheControl?: string;
     upsert?: boolean;
-  } = {}
+  } = {},
 ): Promise<{ success: boolean; url?: string; proxyUrl?: string; error?: string }> {
   return uploadWithCache({
     bucket,
@@ -157,7 +155,7 @@ export async function uploadDocumentFile(
     file: documentBuffer,
     contentType: options.contentType || 'application/octet-stream',
     cacheControl: options.cacheControl || 'public, max-age=86400', // 1天缓存
-    upsert: options.upsert || false
+    upsert: options.upsert || false,
   });
 }
 
@@ -169,8 +167,8 @@ export function getCacheControl(fileType: 'audio' | 'image' | 'document' | 'vide
     audio: 'public, max-age=2592000, immutable', // 30天
     image: 'public, max-age=2592000, immutable', // 30天
     video: 'public, max-age=2592000, immutable', // 30天
-    document: 'public, max-age=86400' // 1天
+    document: 'public, max-age=86400', // 1天
   };
-  
+
   return cacheStrategies[fileType];
 }

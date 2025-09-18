@@ -2,33 +2,33 @@ name: CI (Supabase local verify)
 
 on:
   pull_request:
-    branches: [ develop, main ]
+    branches: [develop, main]
   workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
-          
+
       - name: Start local stack & apply migrations
         run: |
           echo "Starting Supabase local development environment..."
           supabase db start
-          
+
           echo "Resetting database with migrations..."
           supabase db reset
-          
+
           echo "Verifying migrations applied successfully..."
           supabase db diff --schema public
-          
+
       - name: Stop local stack
         if: always()
         run: |

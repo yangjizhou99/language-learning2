@@ -23,6 +23,7 @@ ON CONFLICT (id) DO UPDATE SET
 ```
 
 **处理方式**：
+
 - ✅ **ID冲突**：如果题目ID已存在，更新所有字段
 - ✅ **数据覆盖**：用新数据覆盖旧数据
 - ✅ **保持关联**：保持`theme_id`和`subtopic_id`的关联关系
@@ -43,6 +44,7 @@ ON CONFLICT (id) DO UPDATE SET
 ```
 
 **处理方式**：
+
 - ✅ **主题ID冲突**：如果主题ID已存在，更新主题信息
 - ✅ **内容更新**：更新标题、描述、体裁等信息
 - ✅ **保持关联**：保持与子主题的关联关系
@@ -60,6 +62,7 @@ ON CONFLICT (id) DO UPDATE SET
 ```
 
 **处理方式**：
+
 - ✅ **子主题ID冲突**：如果子主题ID已存在，更新子主题信息
 - ✅ **主题关联更新**：更新与父主题的关联关系
 - ✅ **内容同步**：同步最新的子主题内容
@@ -70,15 +73,14 @@ ON CONFLICT (id) DO UPDATE SET
 
 ```typescript
 // 音频文件上传到Supabase Storage
-const { error: uploadError } = await this.supabase.storage
-  .from('tts')
-  .upload(fileName, data, {
-    contentType: 'audio/wav',
-    upsert: true  // 关键：允许覆盖同名文件
-  });
+const { error: uploadError } = await this.supabase.storage.from('tts').upload(fileName, data, {
+  contentType: 'audio/wav',
+  upsert: true, // 关键：允许覆盖同名文件
+});
 ```
 
 **处理方式**：
+
 - ✅ **文件覆盖**：使用`upsert: true`参数，同名文件会被覆盖
 - ✅ **URL更新**：更新题目中的`audio_url`字段
 - ✅ **版本控制**：通过时间戳参数避免缓存问题
@@ -91,6 +93,7 @@ item.audio_url = `${this.config.supabaseUrl}/storage/v1/object/public/tts/${file
 ```
 
 **处理方式**：
+
 - ✅ **URL同步**：确保音频URL指向正确的文件
 - ✅ **缓存清理**：添加时间戳参数清理浏览器缓存
 
@@ -107,6 +110,7 @@ if (item.translations && typeof item.translations === 'string') {
 ```
 
 **处理方式**：
+
 - ✅ **JSON验证**：确保翻译数据格式正确
 - ✅ **内容覆盖**：用新翻译覆盖旧翻译
 - ✅ **多语言支持**：支持英文、日文等多种翻译
@@ -118,6 +122,7 @@ if (item.translations && typeof item.translations === 'string') {
 **情况**：本地有题目ID为`abc123`的草稿，远程数据库也有相同ID的题目
 
 **处理结果**：
+
 ```sql
 -- 远程数据库执行
 UPDATE shadowing_drafts SET
@@ -136,6 +141,7 @@ WHERE id = 'abc123';
 **情况**：本地有主题ID为`theme_001`的主题，远程也有相同ID的主题
 
 **处理结果**：
+
 ```sql
 -- 远程数据库执行
 UPDATE shadowing_themes SET
@@ -153,13 +159,12 @@ WHERE id = 'theme_001';
 **情况**：本地和远程都有相同名称的音频文件
 
 **处理结果**：
+
 ```typescript
 // Supabase Storage处理
-await supabase.storage
-  .from('tts')
-  .upload('shadowing/zh/abc123.wav', newAudioData, {
-    upsert: true  // 覆盖现有文件
-  });
+await supabase.storage.from('tts').upload('shadowing/zh/abc123.wav', newAudioData, {
+  upsert: true, // 覆盖现有文件
+});
 ```
 
 **结果**：音频文件被覆盖，URL保持不变
@@ -169,6 +174,7 @@ await supabase.storage
 **情况**：题目存在但某些字段为空或过时
 
 **处理结果**：
+
 ```sql
 -- 只更新有值的字段
 UPDATE shadowing_drafts SET
@@ -189,13 +195,13 @@ await targetClient.query('BEGIN');
 try {
   // 同步主题和子主题
   await this.syncThemesAndSubtopics(sourceClient, targetClient, items);
-  
+
   // 同步题目数据
   await this.syncItemsToTarget(targetClient, items, 'shadowing_drafts');
-  
+
   // 处理音频文件
   await this.processAudioFiles(items);
-  
+
   await targetClient.query('COMMIT');
 } catch (error) {
   await targetClient.query('ROLLBACK');
@@ -204,6 +210,7 @@ try {
 ```
 
 **保证**：
+
 - ✅ **原子性**：要么全部成功，要么全部回滚
 - ✅ **一致性**：数据状态始终保持一致
 - ✅ **隔离性**：避免并发操作冲突
@@ -212,16 +219,17 @@ try {
 
 ```sql
 -- 确保主题关联的有效性
-ALTER TABLE shadowing_drafts 
-ADD CONSTRAINT fk_theme_id 
+ALTER TABLE shadowing_drafts
+ADD CONSTRAINT fk_theme_id
 FOREIGN KEY (theme_id) REFERENCES shadowing_themes(id);
 
-ALTER TABLE shadowing_drafts 
-ADD CONSTRAINT fk_subtopic_id 
+ALTER TABLE shadowing_drafts
+ADD CONSTRAINT fk_subtopic_id
 FOREIGN KEY (subtopic_id) REFERENCES shadowing_subtopics(id);
 ```
 
 **保证**：
+
 - ✅ **引用完整性**：确保关联的主题和子主题存在
 - ✅ **数据有效性**：防止无效的关联关系
 
@@ -235,6 +243,7 @@ ALTER TABLE shadowing_subtopics ADD CONSTRAINT pk_subtopics_id PRIMARY KEY (id);
 ```
 
 **保证**：
+
 - ✅ **ID唯一性**：防止重复ID
 - ✅ **冲突检测**：自动检测和处理冲突
 
@@ -246,9 +255,11 @@ ALTER TABLE shadowing_subtopics ADD CONSTRAINT pk_subtopics_id PRIMARY KEY (id);
 try {
   await client.query(query, params);
 } catch (error) {
-  if (error.code === '23505') { // 唯一性约束违反
+  if (error.code === '23505') {
+    // 唯一性约束违反
     console.error('数据冲突:', error.message);
-  } else if (error.code === '23503') { // 外键约束违反
+  } else if (error.code === '23503') {
+    // 外键约束违反
     console.error('关联数据不存在:', error.message);
   } else {
     console.error('数据库错误:', error.message);
@@ -261,10 +272,8 @@ try {
 
 ```typescript
 try {
-  const { error } = await supabase.storage
-    .from('tts')
-    .upload(fileName, data, { upsert: true });
-  
+  const { error } = await supabase.storage.from('tts').upload(fileName, data, { upsert: true });
+
   if (error) {
     console.error('音频上传失败:', error.message);
     // 使用原始URL作为备选
@@ -292,7 +301,7 @@ while (retryCount < maxRetries) {
     if (retryCount >= maxRetries) {
       throw error;
     }
-    await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+    await new Promise((resolve) => setTimeout(resolve, 1000 * retryCount));
   }
 }
 ```
@@ -302,6 +311,7 @@ while (retryCount < maxRetries) {
 ### 1. 数据备份
 
 在同步前建议备份远程数据库：
+
 ```sql
 -- 创建备份表
 CREATE TABLE shadowing_drafts_backup AS SELECT * FROM shadowing_drafts;
@@ -312,6 +322,7 @@ CREATE TABLE shadowing_subtopics_backup AS SELECT * FROM shadowing_subtopics;
 ### 2. 增量同步
 
 考虑实现增量同步机制：
+
 ```typescript
 // 只同步修改时间晚于上次同步的数据
 const lastSyncTime = await getLastSyncTime();
@@ -321,6 +332,7 @@ const items = await getItemsAfter(lastSyncTime);
 ### 3. 冲突日志
 
 记录所有冲突处理：
+
 ```typescript
 const conflictLog = {
   timestamp: new Date(),
@@ -328,7 +340,7 @@ const conflictLog = {
   table: 'shadowing_drafts',
   id: item.id,
   action: 'updated',
-  changes: Object.keys(updatedFields)
+  changes: Object.keys(updatedFields),
 };
 ```
 
@@ -343,4 +355,3 @@ const conflictLog = {
 5. **错误处理**：完善的错误处理和重试机制
 
 这种设计确保了数据同步的可靠性和一致性，避免了重复数据的问题。
-

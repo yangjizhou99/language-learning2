@@ -7,14 +7,17 @@ Shadowing草稿打包系统是专门用于打包Shadowing草稿题目的解决�
 ## 系统特点
 
 ### 🎯 专项处理
+
 - **Shadowing草稿题目**：包含草稿数据 + 音频文件 + 翻译内容 + 主题关联
 
 ### 📦 完整打包
+
 - **数据完整性**：确保所有相关数据都被同步
 - **文件处理**：自动处理音频文件和翻译数据
 - **关联数据**：包含主题、子主题等关联信息
 
 ### 🔄 智能同步
+
 - **类型识别**：自动识别题目类型并应用相应的打包策略
 - **增量同步**：只同步选中的题目，提高效率
 - **错误处理**：详细的错误信息和部分成功处理
@@ -30,6 +33,7 @@ Shadowing草稿打包系统是专门用于打包Shadowing草稿题目的解决�
 系统会自动从环境变量中读取数据库连接信息，无需手动填写：
 
 #### 必需的环境变量
+
 ```bash
 # 本地数据库连接
 LOCAL_DB_URL=postgres://postgres:postgres@127.0.0.1:54322/postgres
@@ -43,13 +47,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 #### 环境变量说明
+
 - **LOCAL_DB_URL**：本地数据库连接字符串（源数据库）
 - **PROD_DB_URL**：远程数据库连接字符串（目标数据库）
 - **NEXT_PUBLIC_SUPABASE_URL**：Supabase项目URL
 - **NEXT_PUBLIC_SUPABASE_ANON_KEY**：Supabase匿名密钥
 
 #### 配置验证
+
 页面会自动显示从环境变量读取的配置信息，包括：
+
 - 数据库主机地址和端口
 - 数据库名称和用户名
 - SSL连接状态
@@ -60,6 +67,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 系统专门处理Shadowing草稿题目：
 
 #### 跟读练习草稿 (Shadowing Drafts)
+
 - ✅ 草稿数据（shadowing_drafts表）
 - ✅ 音频文件（从Supabase Storage同步）
 - ✅ 翻译内容（translations字段）
@@ -103,9 +111,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 class PackerFactory {
   static createPacker(type: string, config: PackingConfig) {
     switch (type) {
-      case 'shadowing': return new ShadowingPacker(config);
-      case 'cloze': return new ClozePacker(config);
-      case 'alignment': return new AlignmentPacker(config);
+      case 'shadowing':
+        return new ShadowingPacker(config);
+      case 'cloze':
+        return new ClozePacker(config);
+      case 'alignment':
+        return new AlignmentPacker(config);
     }
   }
 }
@@ -118,17 +129,17 @@ class ShadowingPacker {
   async packShadowingItems(filters) {
     // 1. 获取已发布的题目
     const publishedItems = await this.getPublishedItems(filters);
-    
+
     // 2. 获取草稿题目
     const draftItems = await this.getDraftItems(filters);
-    
+
     // 3. 同步题目数据
     await this.syncItemsToTarget(publishedItems, 'shadowing_items');
     await this.syncItemsToTarget(draftItems, 'shadowing_drafts');
-    
+
     // 4. 处理音频文件
     const audioFiles = await this.processAudioFiles(items);
-    
+
     // 5. 处理翻译数据
     await this.processTranslations(items);
   }
@@ -138,38 +149,42 @@ class ShadowingPacker {
 ### 数据表映射
 
 #### Shadowing题目
+
 ```sql
 -- 已发布题目
-shadowing_items: id, lang, level, title, text, audio_url, 
+shadowing_items: id, lang, level, title, text, audio_url,
                  duration_ms, tokens, cefr, meta, created_at,
                  translations, theme_id, subtopic_id
 
 -- 草稿题目
-shadowing_drafts: id, lang, level, title, text, notes, 
+shadowing_drafts: id, lang, level, title, text, notes,
                   status, created_by, created_at, theme_id, subtopic_id
 ```
 
 #### Cloze题目
+
 ```sql
 -- 已发布题目
-cloze_items: id, lang, level, topic, title, passage, 
+cloze_items: id, lang, level, topic, title, passage,
              blanks, meta, created_at
 
 -- 草稿题目
-cloze_drafts: id, lang, level, topic, title, passage, 
+cloze_drafts: id, lang, level, topic, title, passage,
               blanks, status, created_by, created_at
 ```
 
 #### Alignment题目
+
 ```sql
 -- 训练包
-alignment_packs: id, lang, topic, level_min, level_max, 
+alignment_packs: id, lang, topic, level_min, level_max,
                  preferred_style, steps, status, created_by, created_at
 ```
 
 ### 文件处理
 
 #### 音频文件同步
+
 ```typescript
 private async processAudioFiles(items) {
   for (const item of items) {
@@ -178,13 +193,13 @@ private async processAudioFiles(items) {
       const { data } = await this.supabase.storage
         .from('tts')
         .download(item.audio_url);
-      
+
       // 上传到目标Supabase Storage
       const fileName = `shadowing/${item.lang}/${item.id}.wav`;
       await this.supabase.storage
         .from('tts')
         .upload(fileName, data);
-      
+
       // 更新音频URL
       item.audio_url = `${targetUrl}/storage/v1/object/public/tts/${fileName}`;
     }
@@ -193,15 +208,16 @@ private async processAudioFiles(items) {
 ```
 
 #### 翻译数据处理
+
 ```typescript
 private async processTranslations(items) {
   for (const item of items) {
     if (item.translations) {
       // 验证和清理翻译数据
-      const translations = typeof item.translations === 'string' 
-        ? JSON.parse(item.translations) 
+      const translations = typeof item.translations === 'string'
+        ? JSON.parse(item.translations)
         : item.translations;
-      
+
       // 确保翻译数据完整性
       item.translations = JSON.stringify(translations);
     }
@@ -212,6 +228,7 @@ private async processTranslations(items) {
 ## 使用场景
 
 ### 场景1：Shadowing题目完整迁移
+
 1. 选择"跟读练习"类型
 2. 筛选需要迁移的题目
 3. 系统自动包含：
@@ -222,6 +239,7 @@ private async processTranslations(items) {
    - 主题关联
 
 ### 场景2：Cloze题目批量同步
+
 1. 选择"完形填空"类型
 2. 按语言和等级筛选
 3. 系统自动包含：
@@ -230,6 +248,7 @@ private async processTranslations(items) {
    - 空白答案配置
 
 ### 场景3：Alignment训练包部署
+
 1. 选择"对齐练习"类型
 2. 筛选特定主题的训练包
 3. 系统自动包含：
@@ -240,16 +259,19 @@ private async processTranslations(items) {
 ## 注意事项
 
 ### 数据安全
+
 - 确保数据库连接信息的安全性
 - 建议在同步前备份目标数据库
 - 使用HTTPS连接确保数据传输安全
 
 ### 性能考虑
+
 - 大量音频文件同步可能需要较长时间
 - 建议分批处理大量数据
 - 监控网络带宽和存储空间
 
 ### 错误处理
+
 - 同步失败时会显示详细错误信息
 - 部分成功时会显示成功和失败的统计
 - 建议根据错误信息调整数据后重试
@@ -281,6 +303,7 @@ private async processTranslations(items) {
 ## 更新日志
 
 ### v1.0.0 (2025-01-20)
+
 - 初始版本发布
 - 支持三种题目类型的专项打包
 - 实现音频文件和翻译数据同步

@@ -14,25 +14,30 @@ export async function GET(req: NextRequest) {
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
     let supabase: any;
-    
+
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: authHeader } }
+        global: { headers: { Authorization: authHeader } },
       });
     } else {
       const cookieStore = await cookies();
       supabase = createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
           set() {},
           remove() {},
-        }
+        },
       });
     }
-    
+
     // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -49,7 +54,7 @@ export async function GET(req: NextRequest) {
     // Search for vocabulary entries - first try exact match, then fuzzy match
     // 只选择必要字段减少数据传输
     const selectFields = 'id,term,definition,pronunciation,examples,lang,created_at,updated_at';
-    
+
     let { data: entries, error } = await supabase
       .from('vocab_entries')
       .select(selectFields)
@@ -67,7 +72,7 @@ export async function GET(req: NextRequest) {
         .ilike('term', `%${term}%`)
         .order('created_at', { ascending: false })
         .limit(10);
-      
+
       if (!fuzzyError) {
         entries = fuzzyEntries;
         error = null;
@@ -78,19 +83,18 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       console.error('Error searching vocabulary:', error);
-      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : String(error) },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
       success: true,
-      entries: entries || []
+      entries: entries || [],
     });
-
   } catch (error) {
     console.error('Error in vocab search API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

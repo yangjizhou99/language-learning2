@@ -31,16 +31,16 @@ const defaultPermissions: UserPermissions = {
   model_permissions: [],
   api_keys: {
     deepseek: '',
-    openrouter: ''
+    openrouter: '',
   },
   ai_enabled: false,
-  custom_restrictions: {}
+  custom_restrictions: {},
 };
 
 export async function getUserPermissions(userId: string): Promise<UserPermissions> {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
+
     const { data: userPermissions, error } = await supabase
       .from('user_permissions')
       .select('*')
@@ -64,7 +64,7 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
         model_permissions: userPermissions.model_permissions ?? [],
         api_keys: userPermissions.api_keys ?? defaultPermissions.api_keys,
         ai_enabled: userPermissions.ai_enabled ?? false,
-        custom_restrictions: userPermissions.custom_restrictions ?? {}
+        custom_restrictions: userPermissions.custom_restrictions ?? {},
       };
     }
 
@@ -83,6 +83,12 @@ export function checkLanguagePermission(permissions: UserPermissions, language: 
   return permissions.allowed_languages.includes(language);
 }
 
-export function checkAccessPermission(permissions: UserPermissions, feature: keyof Pick<UserPermissions, 'can_access_shadowing' | 'can_access_cloze' | 'can_access_alignment' | 'can_access_articles'>): boolean {
+export function checkAccessPermission(
+  permissions: UserPermissions,
+  feature: keyof Pick<
+    UserPermissions,
+    'can_access_shadowing' | 'can_access_cloze' | 'can_access_alignment' | 'can_access_articles'
+  >,
+): boolean {
   return permissions[feature];
 }

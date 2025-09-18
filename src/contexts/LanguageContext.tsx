@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Lang } from '@/types/lang';
@@ -27,7 +27,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // 初始化语言设置
   useEffect(() => {
     if (!mounted) return;
-    
+
     // 检查是否已经根据用户资料设置过语言
     const profileLanguageSet = localStorage.getItem('profile-language-set');
     if (profileLanguageSet === 'true') {
@@ -39,7 +39,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         return;
       }
     }
-    
+
     // 从本地存储或浏览器语言检测默认语言
     const savedLanguage = localStorage.getItem('preferred-language') as Lang;
     if (savedLanguage && ['zh', 'en', 'ja'].includes(savedLanguage)) {
@@ -59,7 +59,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = (lang: Lang) => {
     setLanguageState(lang);
-    
+
     // 只在客户端更新localStorage和HTML属性
     if (mounted) {
       localStorage.setItem('preferred-language', lang);
@@ -70,7 +70,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // 根据用户母语设置界面语言
   const setLanguageFromUserProfile = (nativeLang: string) => {
     if (!mounted || hasSetFromProfile) return;
-    
+
     // 将用户母语映射到界面语言
     let interfaceLang: Lang;
     switch (nativeLang) {
@@ -87,15 +87,16 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
         // 如果母语不在支持范围内，不改变当前语言
         return;
     }
-    
+
     // 设置界面语言
     setLanguageState(interfaceLang);
     setHasSetFromProfile(true);
-    
+
     // 保存到localStorage
     localStorage.setItem('preferred-language', interfaceLang);
     localStorage.setItem('profile-language-set', 'true');
-    document.documentElement.lang = interfaceLang === 'zh' ? 'zh-CN' : interfaceLang === 'ja' ? 'ja-JP' : 'en-US';
+    document.documentElement.lang =
+      interfaceLang === 'zh' ? 'zh-CN' : interfaceLang === 'ja' ? 'ja-JP' : 'en-US';
   };
 
   const value = {
@@ -107,9 +108,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   return (
     <ClientOnly>
-      <LanguageContext.Provider value={value}>
-        {children}
-      </LanguageContext.Provider>
+      <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
     </ClientOnly>
   );
 }

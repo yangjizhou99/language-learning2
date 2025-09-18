@@ -6,17 +6,20 @@ import { requireAdmin } from '@/lib/admin';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
 
 type Filter = {
-  lang?: 'en'|'ja'|'zh';
+  lang?: 'en' | 'ja' | 'zh';
   level?: number;
-  status?: 'draft'|'needs_fix'|'approved';
-  provider?: 'deepseek'|'openrouter'|'openai';
+  status?: 'draft' | 'needs_fix' | 'approved';
+  provider?: 'deepseek' | 'openrouter' | 'openai';
 };
 
 export async function POST(req: NextRequest) {
   try {
     const adminResult = await requireAdmin(req);
     if (!adminResult.ok) {
-      return NextResponse.json({ error: adminResult.reason }, { status: adminResult.reason === 'unauthorized' ? 401 : 403 });
+      return NextResponse.json(
+        { error: adminResult.reason },
+        { status: adminResult.reason === 'unauthorized' ? 401 : 403 },
+      );
     }
 
     const { draftIds, filter }: { draftIds?: string[]; filter?: Filter } = await req.json();
@@ -53,7 +56,7 @@ export async function POST(req: NextRequest) {
       title: d.title,
       passage: d.passage,
       blanks: d.blanks,
-      meta: { from_draft: d.id, published_at: new Date().toISOString() }
+      meta: { from_draft: d.id, published_at: new Date().toISOString() },
     }));
 
     const { data: inserted, error: insErr } = await supabaseAdmin
@@ -79,8 +82,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, published: inserted?.length || 0 });
   } catch (error) {
     console.error('Publish many drafts error:', error);
-    return NextResponse.json({ error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : 'Internal server error',
+      },
+      { status: 500 },
+    );
   }
 }
-
-

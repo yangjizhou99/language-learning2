@@ -1,29 +1,29 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import { Container } from "@/components/Container";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase";
-import { 
-  ArrowLeft, 
-  User, 
-  Calendar, 
-  Activity, 
-  TrendingUp, 
-  BarChart3, 
-  Globe, 
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { Container } from '@/components/Container';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import {
+  ArrowLeft,
+  User,
+  Calendar,
+  Activity,
+  TrendingUp,
+  BarChart3,
+  Globe,
   Target,
   BookOpen,
-  Settings
-} from "lucide-react";
+  Settings,
+} from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -73,7 +73,7 @@ interface UserActivity {
 export default function UserDetailPage() {
   const params = useParams();
   const userId = params?.userId as string;
-  
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [practiceStats, setPracticeStats] = useState<PracticeStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<UserActivity[]>([]);
@@ -89,7 +89,7 @@ export default function UserDetailPage() {
     setLoading(true);
     try {
       console.log('正在获取用户详情，用户ID:', userId);
-      
+
       // 首先检查用户ID是否有效
       if (!userId || userId === 'undefined') {
         throw new Error('无效的用户ID');
@@ -98,7 +98,8 @@ export default function UserDetailPage() {
       // 获取用户基本信息
       const { data: user, error: userError } = await supabase
         .from('profiles')
-        .select(`
+        .select(
+          `
           id,
           email,
           username,
@@ -110,7 +111,8 @@ export default function UserDetailPage() {
           native_lang,
           target_langs,
           created_at
-        `)
+        `,
+        )
         .eq('id', userId)
         .single();
 
@@ -159,7 +161,7 @@ export default function UserDetailPage() {
       alignment_by_level: {} as Record<number, number>,
       average_scores: { shadowing: 0, cloze: 0, alignment: 0 },
       last_activity: null as string | null,
-      weekly_progress: [] as Array<{ date: string; count: number }>
+      weekly_progress: [] as Array<{ date: string; count: number }>,
     };
 
     try {
@@ -170,11 +172,12 @@ export default function UserDetailPage() {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      shadowingAttempts?.forEach(attempt => {
+      shadowingAttempts?.forEach((attempt) => {
         stats.total_shadowing_attempts++;
         stats.shadowing_by_lang[attempt.lang] = (stats.shadowing_by_lang[attempt.lang] || 0) + 1;
-        stats.shadowing_by_level[attempt.level] = (stats.shadowing_by_level[attempt.level] || 0) + 1;
-        
+        stats.shadowing_by_level[attempt.level] =
+          (stats.shadowing_by_level[attempt.level] || 0) + 1;
+
         if (!stats.last_activity || attempt.created_at > stats.last_activity) {
           stats.last_activity = attempt.created_at;
         }
@@ -182,7 +185,7 @@ export default function UserDetailPage() {
         if (attempt.metrics?.score) {
           const currentAvg = stats.average_scores.shadowing;
           const count = stats.total_shadowing_attempts;
-          stats.average_scores.shadowing = 
+          stats.average_scores.shadowing =
             (currentAvg * (count - 1) + attempt.metrics.score) / count;
         }
       });
@@ -194,11 +197,11 @@ export default function UserDetailPage() {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      clozeAttempts?.forEach(attempt => {
+      clozeAttempts?.forEach((attempt) => {
         stats.total_cloze_attempts++;
         stats.cloze_by_lang[attempt.lang] = (stats.cloze_by_lang[attempt.lang] || 0) + 1;
         stats.cloze_by_level[attempt.level] = (stats.cloze_by_level[attempt.level] || 0) + 1;
-        
+
         if (!stats.last_activity || attempt.created_at > stats.last_activity) {
           stats.last_activity = attempt.created_at;
         }
@@ -206,7 +209,7 @@ export default function UserDetailPage() {
         if (attempt.ai_result?.overall?.score) {
           const currentAvg = stats.average_scores.cloze;
           const count = stats.total_cloze_attempts;
-          stats.average_scores.cloze = 
+          stats.average_scores.cloze =
             (currentAvg * (count - 1) + attempt.ai_result.overall.score) / count;
         }
       });
@@ -218,9 +221,9 @@ export default function UserDetailPage() {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      alignmentAttempts?.forEach(attempt => {
+      alignmentAttempts?.forEach((attempt) => {
         stats.total_alignment_attempts++;
-        
+
         if (!stats.last_activity || attempt.created_at > stats.last_activity) {
           stats.last_activity = attempt.created_at;
         }
@@ -228,7 +231,7 @@ export default function UserDetailPage() {
         if (attempt.scores?.overall) {
           const currentAvg = stats.average_scores.alignment;
           const count = stats.total_alignment_attempts;
-          stats.average_scores.alignment = 
+          stats.average_scores.alignment =
             (currentAvg * (count - 1) + attempt.scores.overall) / count;
         }
       });
@@ -240,7 +243,7 @@ export default function UserDetailPage() {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      vocabEntries?.forEach(entry => {
+      vocabEntries?.forEach((entry) => {
         stats.total_vocab_entries++;
         if (!stats.last_activity || entry.created_at > stats.last_activity) {
           stats.last_activity = entry.created_at;
@@ -250,16 +253,16 @@ export default function UserDetailPage() {
       // 计算周进度（最近7天）
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
+
       const allAttempts = [
         ...(shadowingAttempts || []),
         ...(clozeAttempts || []),
-        ...(alignmentAttempts || [])
-      ].filter(attempt => new Date(attempt.created_at) >= sevenDaysAgo);
+        ...(alignmentAttempts || []),
+      ].filter((attempt) => new Date(attempt.created_at) >= sevenDaysAgo);
 
       // 按日期分组统计
       const dailyCounts: Record<string, number> = {};
-      allAttempts.forEach(attempt => {
+      allAttempts.forEach((attempt) => {
         const date = attempt.created_at.split('T')[0];
         dailyCounts[date] = (dailyCounts[date] || 0) + 1;
       });
@@ -271,10 +274,9 @@ export default function UserDetailPage() {
         const dateStr = date.toISOString().split('T')[0];
         stats.weekly_progress.push({
           date: dateStr,
-          count: dailyCounts[dateStr] || 0
+          count: dailyCounts[dateStr] || 0,
         });
       }
-
     } catch (error) {
       console.error('获取详细练习统计失败:', error);
     }
@@ -289,19 +291,21 @@ export default function UserDetailPage() {
       // 获取最近的 Shadowing 活动
       const { data: shadowingActivity } = await supabase
         .from('shadowing_attempts')
-        .select(`
+        .select(
+          `
           id,
           created_at,
           lang,
           level,
           metrics,
           shadowing_items!inner(title)
-        `)
+        `,
+        )
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      shadowingActivity?.forEach(attempt => {
+      shadowingActivity?.forEach((attempt) => {
         activities.push({
           id: attempt.id,
           type: 'shadowing',
@@ -309,26 +313,28 @@ export default function UserDetailPage() {
           lang: attempt.lang,
           level: attempt.level,
           score: attempt.metrics?.score,
-          created_at: attempt.created_at
+          created_at: attempt.created_at,
         });
       });
 
       // 获取最近的 Cloze 活动
       const { data: clozeActivity } = await supabase
         .from('cloze_attempts')
-        .select(`
+        .select(
+          `
           id,
           created_at,
           lang,
           level,
           ai_result,
           cloze_items!inner(title)
-        `)
+        `,
+        )
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      clozeActivity?.forEach(attempt => {
+      clozeActivity?.forEach((attempt) => {
         activities.push({
           id: attempt.id,
           type: 'cloze',
@@ -336,30 +342,32 @@ export default function UserDetailPage() {
           lang: attempt.lang,
           level: attempt.level,
           score: attempt.ai_result?.overall?.score,
-          created_at: attempt.created_at
+          created_at: attempt.created_at,
         });
       });
 
       // 获取最近的 Alignment 活动
       const { data: alignmentActivity } = await supabase
         .from('alignment_attempts')
-        .select(`
+        .select(
+          `
           id,
           created_at,
           scores,
           alignment_packs!inner(topic)
-        `)
+        `,
+        )
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(limit);
 
-      alignmentActivity?.forEach(attempt => {
+      alignmentActivity?.forEach((attempt) => {
         activities.push({
           id: attempt.id,
           type: 'alignment',
           title: attempt.alignment_packs?.[0]?.topic || '未知主题',
           score: attempt.scores?.overall,
-          created_at: attempt.created_at
+          created_at: attempt.created_at,
         });
       });
 
@@ -367,7 +375,6 @@ export default function UserDetailPage() {
       return activities
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, limit);
-
     } catch (error) {
       console.error('获取最近活动失败:', error);
       return [];
@@ -382,7 +389,7 @@ export default function UserDetailPage() {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
       });
     } catch (error) {
       return '无效日期';
@@ -396,16 +403,22 @@ export default function UserDetailPage() {
     if (primary && primary.length >= 2) {
       return primary.substring(0, 2).toUpperCase();
     }
-    return "??";
+    return '??';
   };
 
   const getTotalPracticeCount = (stats: PracticeStats) => {
-    return stats.total_shadowing_attempts + stats.total_cloze_attempts + stats.total_alignment_attempts;
+    return (
+      stats.total_shadowing_attempts + stats.total_cloze_attempts + stats.total_alignment_attempts
+    );
   };
 
   const getAverageScore = (stats: PracticeStats) => {
-    const scores = [stats.average_scores.shadowing, stats.average_scores.cloze, stats.average_scores.alignment];
-    const validScores = scores.filter(score => score > 0);
+    const scores = [
+      stats.average_scores.shadowing,
+      stats.average_scores.cloze,
+      stats.average_scores.alignment,
+    ];
+    const validScores = scores.filter((score) => score > 0);
     if (validScores.length === 0) return 0;
     return validScores.reduce((sum, score) => sum + score, 0) / validScores.length;
   };
@@ -415,7 +428,7 @@ export default function UserDetailPage() {
       shadowing: 'Shadowing',
       cloze: 'Cloze',
       alignment: 'Alignment',
-      vocab: '词汇'
+      vocab: '词汇',
     };
     return labels[type as keyof typeof labels] || type;
   };
@@ -425,7 +438,7 @@ export default function UserDetailPage() {
       shadowing: 'bg-blue-100 text-blue-800',
       cloze: 'bg-green-100 text-green-800',
       alignment: 'bg-purple-100 text-purple-800',
-      vocab: 'bg-orange-100 text-orange-800'
+      vocab: 'bg-orange-100 text-orange-800',
     };
     return colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -480,11 +493,16 @@ export default function UserDetailPage() {
           </div>
         </div>
 
-        <Breadcrumbs items={[
-          { label: "管理员", href: "/admin" },
-          { label: "用户管理", href: "/admin/users" },
-          { label: user.username || `用户 ${user.id.slice(0, 8)}`, href: `/admin/users/${userId}` }
-        ]} />
+        <Breadcrumbs
+          items={[
+            { label: '管理员', href: '/admin' },
+            { label: '用户管理', href: '/admin/users' },
+            {
+              label: user.username || `用户 ${user.id.slice(0, 8)}`,
+              href: `/admin/users/${userId}`,
+            },
+          ]}
+        />
 
         {/* 用户基本信息 */}
         <Card>
@@ -545,7 +563,9 @@ export default function UserDetailPage() {
                     <label className="text-sm font-medium text-muted-foreground">目标语言</label>
                     <div className="flex gap-2 mt-1">
                       {user.target_langs.map((lang) => (
-                        <Badge key={lang} variant="outline">{lang.toUpperCase()}</Badge>
+                        <Badge key={lang} variant="outline">
+                          {lang.toUpperCase()}
+                        </Badge>
                       ))}
                     </div>
                   </div>
@@ -574,7 +594,9 @@ export default function UserDetailPage() {
                         <TrendingUp className="h-5 w-5 text-blue-500" />
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">总练习次数</p>
-                          <p className="text-2xl font-bold">{getTotalPracticeCount(practiceStats)}</p>
+                          <p className="text-2xl font-bold">
+                            {getTotalPracticeCount(practiceStats)}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -585,7 +607,9 @@ export default function UserDetailPage() {
                         <BarChart3 className="h-5 w-5 text-green-500" />
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">平均分数</p>
-                          <p className="text-2xl font-bold">{getAverageScore(practiceStats).toFixed(1)}</p>
+                          <p className="text-2xl font-bold">
+                            {getAverageScore(practiceStats).toFixed(1)}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -608,10 +632,9 @@ export default function UserDetailPage() {
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">最后活动</p>
                           <p className="text-sm font-bold">
-                            {practiceStats.last_activity 
+                            {practiceStats.last_activity
                               ? formatDate(practiceStats.last_activity)
-                              : '无活动'
-                            }
+                              : '无活动'}
                           </p>
                         </div>
                       </div>
@@ -629,10 +652,16 @@ export default function UserDetailPage() {
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span>Shadowing</span>
-                          <span className="font-medium">{practiceStats.total_shadowing_attempts}</span>
+                          <span className="font-medium">
+                            {practiceStats.total_shadowing_attempts}
+                          </span>
                         </div>
-                        <Progress 
-                          value={(practiceStats.total_shadowing_attempts / getTotalPracticeCount(practiceStats)) * 100} 
+                        <Progress
+                          value={
+                            (practiceStats.total_shadowing_attempts /
+                              getTotalPracticeCount(practiceStats)) *
+                            100
+                          }
                           className="h-2"
                         />
                       </div>
@@ -641,18 +670,28 @@ export default function UserDetailPage() {
                           <span>Cloze</span>
                           <span className="font-medium">{practiceStats.total_cloze_attempts}</span>
                         </div>
-                        <Progress 
-                          value={(practiceStats.total_cloze_attempts / getTotalPracticeCount(practiceStats)) * 100} 
+                        <Progress
+                          value={
+                            (practiceStats.total_cloze_attempts /
+                              getTotalPracticeCount(practiceStats)) *
+                            100
+                          }
                           className="h-2"
                         />
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between">
                           <span>Alignment</span>
-                          <span className="font-medium">{practiceStats.total_alignment_attempts}</span>
+                          <span className="font-medium">
+                            {practiceStats.total_alignment_attempts}
+                          </span>
                         </div>
-                        <Progress 
-                          value={(practiceStats.total_alignment_attempts / getTotalPracticeCount(practiceStats)) * 100} 
+                        <Progress
+                          value={
+                            (practiceStats.total_alignment_attempts /
+                              getTotalPracticeCount(practiceStats)) *
+                            100
+                          }
                           className="h-2"
                         />
                       </div>
@@ -670,8 +709,8 @@ export default function UserDetailPage() {
                             <span className="uppercase">{lang}</span>
                             <span className="font-medium">{count}</span>
                           </div>
-                          <Progress 
-                            value={(count / getTotalPracticeCount(practiceStats)) * 100} 
+                          <Progress
+                            value={(count / getTotalPracticeCount(practiceStats)) * 100}
                             className="h-2"
                           />
                         </div>
@@ -692,22 +731,19 @@ export default function UserDetailPage() {
                 {recentActivity.length > 0 ? (
                   <div className="space-y-4">
                     {recentActivity.map((activity) => (
-                      <div key={activity.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                      <div
+                        key={activity.id}
+                        className="flex items-center gap-4 p-4 border rounded-lg"
+                      >
                         <Badge className={getActivityTypeColor(activity.type)}>
                           {getActivityTypeLabel(activity.type)}
                         </Badge>
                         <div className="flex-1">
                           <p className="font-medium">{activity.title}</p>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            {activity.lang && (
-                              <span className="uppercase">{activity.lang}</span>
-                            )}
-                            {activity.level && (
-                              <span>等级 {activity.level}</span>
-                            )}
-                            {activity.score && (
-                              <span>分数: {activity.score.toFixed(1)}</span>
-                            )}
+                            {activity.lang && <span className="uppercase">{activity.lang}</span>}
+                            {activity.level && <span>等级 {activity.level}</span>}
+                            {activity.score && <span>分数: {activity.score.toFixed(1)}</span>}
                           </div>
                         </div>
                         <div className="text-sm text-muted-foreground">
@@ -717,9 +753,7 @@ export default function UserDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    暂无活动记录
-                  </div>
+                  <div className="text-center py-8 text-muted-foreground">暂无活动记录</div>
                 )}
               </CardContent>
             </Card>
@@ -736,24 +770,28 @@ export default function UserDetailPage() {
                     {practiceStats.weekly_progress.map((day) => (
                       <div key={day.date} className="space-y-2">
                         <div className="flex justify-between">
-                          <span>{new Date(day.date).toLocaleDateString('zh-CN', { 
-                            month: 'short', 
-                            day: 'numeric',
-                            weekday: 'short'
-                          })}</span>
+                          <span>
+                            {new Date(day.date).toLocaleDateString('zh-CN', {
+                              month: 'short',
+                              day: 'numeric',
+                              weekday: 'short',
+                            })}
+                          </span>
                           <span className="font-medium">{day.count} 次练习</span>
                         </div>
-                        <Progress 
-                          value={(day.count / Math.max(...practiceStats.weekly_progress.map(d => d.count))) * 100} 
+                        <Progress
+                          value={
+                            (day.count /
+                              Math.max(...practiceStats.weekly_progress.map((d) => d.count))) *
+                            100
+                          }
                           className="h-2"
                         />
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    暂无进度数据
-                  </div>
+                  <div className="text-center py-8 text-muted-foreground">暂无进度数据</div>
                 )}
               </CardContent>
             </Card>

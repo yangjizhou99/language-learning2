@@ -12,12 +12,12 @@ const SUBTOPIC_SYS = `You expand a macro theme into concrete, classroom-ready SU
 - Return STRICT JSON only.`;
 
 // 小主题生成的用户提示词模板
-function buildSubtopicPrompt({ 
-  lang, 
-  level, 
-  genre, 
-  themeTitleCn, 
-  count 
+function buildSubtopicPrompt({
+  lang,
+  level,
+  genre,
+  themeTitleCn,
+  count,
 }: {
   lang: string;
   level: number;
@@ -27,7 +27,7 @@ function buildSubtopicPrompt({
 }) {
   const langMap = { en: 'English', ja: '日本語', zh: '简体中文' };
   const L = langMap[lang as keyof typeof langMap] || 'English';
-  
+
   return `LANG=${L}
 LEVEL=L${level}
 GENRE=${genre}
@@ -62,40 +62,47 @@ export async function POST(req: NextRequest) {
 
     const supabase = auth.supabase;
     const body = await req.json();
-    const { 
+    const {
       theme_id,
       theme_title_cn,
-      lang, 
-      level, 
-      genre, 
+      lang,
+      level,
+      genre,
       count = 5,
       provider = 'deepseek',
       model = 'deepseek-chat',
-      temperature = 0.7
+      temperature = 0.7,
     } = body;
 
     if (!theme_id || !theme_title_cn || !lang || !level || !genre) {
-      return NextResponse.json({ 
-        error: 'Missing required parameters',
-        received: { theme_id, theme_title_cn, lang, level, genre },
-        missing: {
-          theme_id: !theme_id,
-          theme_title_cn: !theme_title_cn,
-          lang: !lang,
-          level: !level,
-          genre: !genre
-        }
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Missing required parameters',
+          received: { theme_id, theme_title_cn, lang, level, genre },
+          missing: {
+            theme_id: !theme_id,
+            theme_title_cn: !theme_title_cn,
+            lang: !lang,
+            level: !level,
+            genre: !genre,
+          },
+        },
+        { status: 400 },
+      );
     }
 
     // 创建流式响应
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
-        
+
         try {
           // 发送开始信号
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'start', message: '开始生成小主题...' })}\n\n`));
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: 'start', message: '开始生成小主题...' })}\n\n`,
+            ),
+          );
 
           // 获取现有小主题信息
           const { data: existingSubtopics } = await supabase
@@ -103,19 +110,25 @@ export async function POST(req: NextRequest) {
             .select('title_cn, one_line_cn')
             .eq('theme_id', theme_id);
 
-          const existingSubtopicTitles = existingSubtopics?.map(s => s.title_cn) || [];
-          
+          const existingSubtopicTitles = existingSubtopics?.map((s) => s.title_cn) || [];
+
           // 构建包含现有小主题信息的提示词
-          const enhancedPrompt = buildSubtopicPrompt({ 
-            lang, 
-            level, 
-            genre, 
-            themeTitleCn: theme_title_cn, 
-            count 
-          }) + `\n\n现有小主题列表（请避免重复）：\n${existingSubtopicTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n\n请生成与上述小主题不同的新小主题。`;
+          const enhancedPrompt =
+            buildSubtopicPrompt({
+              lang,
+              level,
+              genre,
+              themeTitleCn: theme_title_cn,
+              count,
+            }) +
+            `\n\n现有小主题列表（请避免重复）：\n${existingSubtopicTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n\n请生成与上述小主题不同的新小主题。`;
 
           // 发送AI调用开始信号
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'ai_start', message: '正在调用AI生成...' })}\n\n`));
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: 'ai_start', message: '正在调用AI生成...' })}\n\n`,
+            ),
+          );
 
           // 调用AI生成，设置较短的超时时间
           const result = await chatJSON({
@@ -125,12 +138,16 @@ export async function POST(req: NextRequest) {
             timeoutMs: 60000, // 60秒超时
             messages: [
               { role: 'system', content: SUBTOPIC_SYS },
-              { role: 'user', content: enhancedPrompt }
-            ]
+              { role: 'user', content: enhancedPrompt },
+            ],
           });
 
           // 发送AI完成信号
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'ai_complete', message: 'AI生成完成，正在解析...' })}\n\n`));
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: 'ai_complete', message: 'AI生成完成，正在解析...' })}\n\n`,
+            ),
+          );
 
           // 解析 AI 响应
           let parsed;
@@ -151,7 +168,11 @@ export async function POST(req: NextRequest) {
           }
 
           // 发送解析完成信号
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'parse_complete', message: '解析完成，正在保存到数据库...' })}\n\n`));
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: 'parse_complete', message: '解析完成，正在保存到数据库...' })}\n\n`,
+            ),
+          );
 
           // 处理生成的小主题
           const subtopicsToProcess = parsed.subtopics.map((subtopic: any) => ({
@@ -165,7 +186,7 @@ export async function POST(req: NextRequest) {
             ai_provider: provider,
             ai_model: model,
             ai_usage: result.usage || {},
-            status: 'active'
+            status: 'active',
           }));
 
           let insertedData: any[] = [];
@@ -174,51 +195,62 @@ export async function POST(req: NextRequest) {
               .from('shadowing_subtopics')
               .insert(subtopicsToProcess)
               .select('id, title_cn');
-            
+
             if (error) {
-              throw new Error(`Database error: ${error instanceof Error ? error.message : String(error)}`);
+              throw new Error(
+                `Database error: ${error instanceof Error ? error.message : String(error)}`,
+              );
             }
-            
+
             insertedData = data || [];
           }
 
           // 发送完成信号
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-            type: 'complete', 
-            message: `成功生成 ${insertedData.length} 个新小主题`,
-            data: {
-              success: true,
-              inserted_count: insertedData.length,
-              inserted_subtopics: insertedData,
-              message: `成功生成 ${insertedData.length} 个新小主题（已避免与现有小主题重复）`
-            }
-          })}\n\n`));
-
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: 'complete',
+                message: `成功生成 ${insertedData.length} 个新小主题`,
+                data: {
+                  success: true,
+                  inserted_count: insertedData.length,
+                  inserted_subtopics: insertedData,
+                  message: `成功生成 ${insertedData.length} 个新小主题（已避免与现有小主题重复）`,
+                },
+              })}\n\n`,
+            ),
+          );
         } catch (error) {
           console.error('Streaming generation error:', error);
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-            type: 'error', 
-            message: error instanceof Error ? error.message : 'Generation failed',
-            error: error instanceof Error ? error.message : String(error)
-          })}\n\n`));
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: 'error',
+                message: error instanceof Error ? error.message : 'Generation failed',
+                error: error instanceof Error ? error.message : String(error),
+              })}\n\n`,
+            ),
+          );
         } finally {
           controller.close();
         }
-      }
+      },
     });
 
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        Connection: 'keep-alive',
       },
     });
-
   } catch (error) {
     console.error('Subtopic generation error:', error);
-    return NextResponse.json({
-      error: error instanceof Error ? error.message : 'Generation failed'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : 'Generation failed',
+      },
+      { status: 500 },
+    );
   }
 }

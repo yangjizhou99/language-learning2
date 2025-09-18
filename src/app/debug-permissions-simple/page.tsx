@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getUserPermissions } from '@/lib/user-permissions-server';
@@ -12,7 +12,9 @@ export default function DebugPermissionsSimplePage() {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         setUser(user);
 
         if (user) {
@@ -20,9 +22,9 @@ export default function DebugPermissionsSimplePage() {
           const response = await fetch('/api/debug-permissions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id })
+            body: JSON.stringify({ userId: user.id }),
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             setPermissions(data.permissions);
@@ -58,13 +60,17 @@ export default function DebugPermissionsSimplePage() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">权限调试页面（简化版）</h1>
-      
+
       <div className="space-y-6">
         {/* 用户信息 */}
         <div className="bg-gray-50 p-4 rounded-lg">
           <h2 className="text-lg font-semibold mb-2">用户信息</h2>
-          <p><strong>用户ID:</strong> {user?.id}</p>
-          <p><strong>邮箱:</strong> {user?.email}</p>
+          <p>
+            <strong>用户ID:</strong> {user?.id}
+          </p>
+          <p>
+            <strong>邮箱:</strong> {user?.email}
+          </p>
         </div>
 
         {/* 权限信息 */}
@@ -84,7 +90,7 @@ export default function DebugPermissionsSimplePage() {
         {/* 测试按钮 */}
         <div className="bg-yellow-50 p-4 rounded-lg">
           <h2 className="text-lg font-semibold mb-2">测试 Shadowing Catalog API</h2>
-          <button 
+          <button
             onClick={testCatalogAPI}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >

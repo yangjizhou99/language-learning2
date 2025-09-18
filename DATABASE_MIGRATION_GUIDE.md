@@ -19,6 +19,7 @@ PROD_DB_URL=postgres://postgres:<你的云端DB密码>@<host>:5432/postgres
 ```
 
 **重要提示：**
+
 - `LOCAL_DB_URL` 是本地 Supabase 实例的连接串（运行 `supabase start` 后的默认地址）
 - `PROD_DB_URL` 是云端 Supabase 项目的连接串（在 Supabase Dashboard → Database → Connection string 获取）
 - 云端连接串包含敏感信息，请勿提交到版本控制系统
@@ -66,16 +67,19 @@ pnpm dev
 ## 技术特性
 
 ### 高速传输
+
 - 使用 PostgreSQL COPY 协议进行流式传输
 - 避免了逐行插入的性能瓶颈
 - 支持大数据量的高效迁移
 
 ### 安全特性
+
 - 表名和列名自动转义，防止 SQL 注入
 - 仅允许访问 public schema 下的表
 - 环境变量分离，云端连接串不会暴露到前端
 
 ### 灵活配置
+
 - 支持选择性列迁移
 - 支持 WHERE 条件筛选
 - 支持 INSERT 和 UPSERT 两种模式
@@ -91,15 +95,18 @@ pnpm dev
 ## 故障排除
 
 ### 连接错误
+
 - 检查环境变量是否正确设置
 - 确认本地 Supabase 实例已启动
 - 验证云端连接串的有效性
 
 ### 权限错误
+
 - 确保数据库用户有足够的权限
 - 检查 RLS 策略是否阻止了操作
 
 ### 迁移失败
+
 - 检查表结构是否匹配
 - 确认冲突键设置正确
 - 查看错误日志获取详细信息
@@ -107,6 +114,7 @@ pnpm dev
 ## 高级用法
 
 ### 批量迁移多个表
+
 可以编写脚本调用 API 接口批量迁移多个表：
 
 ```javascript
@@ -114,13 +122,14 @@ const tables = ['users', 'posts', 'comments'];
 for (const table of tables) {
   await fetch('/api/migrate', {
     method: 'POST',
-    headers: {'content-type':'application/json'},
-    body: JSON.stringify({ table, mode: 'upsert', conflictKeys: 'id' })
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ table, mode: 'upsert', conflictKeys: 'id' }),
   });
 }
 ```
 
 ### 条件迁移
+
 使用 WHERE 条件迁移特定数据：
 
 ```sql

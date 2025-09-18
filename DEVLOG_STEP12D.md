@@ -3,16 +3,19 @@
 ## 🎯 完成功能
 
 ### 1. 草稿审核流水线
+
 - **AI 先产草稿** → **管理员严格复核** → **才入正式题库**
 - 新增 `article_drafts` 表，包含状态管理（pending/needs_fix/approved/published/rejected）
 - 支持 AI 生成和手动录入两种草稿来源
 
 ### 2. 多 AI 提供商支持
+
 - **统一 AI 客户端**：支持 OpenRouter、DeepSeek、OpenAI 三选一
 - **OpenRouter 集成**：动态拉取模型列表，支持多种最新模型
 - **模型选择界面**：管理员可在 UI 中选择 Provider 和具体模型
 
 ### 3. 新增 API 端点
+
 - `GET /api/ai/models` - 获取可用模型列表（支持 OpenRouter 动态拉取）
 - `POST /api/admin/drafts/ai` - AI 生成草稿
 - `POST /api/admin/drafts/manual` - 手动创建草稿
@@ -22,6 +25,7 @@
 - `POST /api/admin/drafts/[id]/publish` - 发布草稿到正式题库
 
 ### 4. 管理员 UI
+
 - `/admin/drafts` - 草稿箱（按状态筛选）
 - `/admin/drafts/[id]` - 草稿详情页（可编辑、审核、发布）
 - `/admin/articles` - 更新 AI 生成面板，支持模型选择和草稿生成
@@ -29,6 +33,7 @@
 ## 🔧 技术实现
 
 ### 数据库结构
+
 ```sql
 -- 草稿表
 CREATE TABLE article_drafts (
@@ -53,16 +58,22 @@ CREATE TABLE article_drafts (
 ```
 
 ### 统一 AI 客户端
+
 ```typescript
 // src/lib/ai/client.ts
-export async function chatJSON({ 
-  provider, model, messages, temperature, response_json 
+export async function chatJSON({
+  provider,
+  model,
+  messages,
+  temperature,
+  response_json,
 }: ChatJSONArgs) {
   // 统一处理 OpenRouter/DeepSeek/OpenAI 三种 API
 }
 ```
 
 ### OpenRouter 集成
+
 - **API Key**: `OPENROUTER_API_KEY`
 - **请求头**: 包含 `Authorization: Bearer <key>` 和可选的 `HTTP-Referer`、`X-Title`
 - **模型列表**: 从 `https://openrouter.ai/api/v1/models` 动态获取
@@ -71,6 +82,7 @@ export async function chatJSON({
 ## 📋 使用流程
 
 ### 1. 环境配置
+
 ```bash
 # 复制环境变量模板
 cp env.example.bak .env.local
@@ -82,12 +94,14 @@ OPENROUTER_SITE_NAME=Your App Name
 ```
 
 ### 2. 数据库迁移
+
 ```bash
 # 运行新的迁移文件
 supabase db push
 ```
 
 ### 3. 管理员操作流程
+
 1. **生成草稿**：
    - 访问 `/admin/articles`
    - 选择「AI 生成」标签页
@@ -110,6 +124,7 @@ supabase db push
    - 草稿状态更新为 `published`
 
 ### 4. 学习者使用
+
 - 发布后的文章自动出现在 `/practice/wideread` 等练习页面
 - 学习者可正常进行各种练习
 

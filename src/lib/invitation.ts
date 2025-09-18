@@ -1,12 +1,12 @@
 import { supabase } from './supabase';
 import { createClient } from '@supabase/supabase-js';
-import type { 
-  InvitationCode, 
-  InvitationUse, 
-  InvitationPermissions, 
+import type {
+  InvitationCode,
+  InvitationUse,
+  InvitationPermissions,
   InvitationValidationResult,
   CreateInvitationRequest,
-  UpdateInvitationRequest
+  UpdateInvitationRequest,
 } from '@/types/invitation';
 
 /**
@@ -31,19 +31,19 @@ export async function validateInvitationCode(code: string): Promise<InvitationVa
       const response = await fetch('/api/auth/validate-invitation', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ code })
+        body: JSON.stringify({ code }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         return {
           is_valid: false,
-          error_message: errorData.error || '验证邀请码失败'
+          error_message: errorData.error || '验证邀请码失败',
         };
       }
-      
+
       const data = await response.json();
       return {
         is_valid: data.success,
@@ -52,31 +52,32 @@ export async function validateInvitationCode(code: string): Promise<InvitationVa
         used_count: data.data?.used_count,
         expires_at: data.data?.expires_at,
         permissions: data.data?.permissions,
-        error_message: data.success ? null : (data.error || '邀请码无效')
+        error_message: data.success ? null : data.error || '邀请码无效',
       };
     }
-    
+
     // 在服务器端环境中，使用service role客户端
     const supabaseService = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
-    
-    const { data, error } = await supabaseService
-      .rpc('validate_invitation_code', { code_text: code });
+
+    const { data, error } = await supabaseService.rpc('validate_invitation_code', {
+      code_text: code,
+    });
 
     if (error) {
       console.error('验证邀请码失败:', error);
       return {
         is_valid: false,
-        error_message: '验证邀请码时发生错误'
+        error_message: '验证邀请码时发生错误',
       };
     }
 
     if (!data || data.length === 0) {
       return {
         is_valid: false,
-        error_message: '邀请码不存在'
+        error_message: '邀请码不存在',
       };
     }
 
@@ -88,13 +89,13 @@ export async function validateInvitationCode(code: string): Promise<InvitationVa
       used_count: result.used_count,
       expires_at: result.expires_at,
       permissions: result.permissions,
-      error_message: result.error_message
+      error_message: result.error_message,
     };
   } catch (error) {
     console.error('验证邀请码异常:', error);
     return {
       is_valid: false,
-      error_message: '验证邀请码时发生异常'
+      error_message: '验证邀请码时发生异常',
     };
   }
 }
@@ -105,11 +106,11 @@ export async function validateInvitationCode(code: string): Promise<InvitationVa
 export async function createInvitationCode(
   request: CreateInvitationRequest,
   createdBy: string,
-  supabaseClient?: any
+  supabaseClient?: any,
 ): Promise<{ success: boolean; data?: InvitationCode; error?: string }> {
   try {
     const client = supabaseClient || supabase;
-    
+
     // 生成唯一邀请码
     let code: string;
     let attempts = 0;
@@ -122,7 +123,7 @@ export async function createInvitationCode(
         .select('id')
         .eq('code', code)
         .single();
-      
+
       if (!existing) break;
       attempts++;
     } while (attempts < maxAttempts);
@@ -139,7 +140,7 @@ export async function createInvitationCode(
         max_uses: request.max_uses || 1,
         expires_at: request.expires_at,
         permissions: request.permissions || {},
-        description: request.description
+        description: request.description,
       })
       .select()
       .single();
@@ -163,11 +164,11 @@ export async function getInvitationCodes(
   page: number = 1,
   limit: number = 20,
   createdBy?: string,
-  supabaseClient?: any
+  supabaseClient?: any,
 ): Promise<{ data: InvitationCode[]; total: number; error?: string }> {
   try {
     const client = supabaseClient || supabase;
-    
+
     let query = client
       .from('invitation_codes')
       .select('*', { count: 'exact' })
@@ -177,8 +178,7 @@ export async function getInvitationCodes(
       query = query.eq('created_by', createdBy);
     }
 
-    const { data, error, count } = await query
-      .range((page - 1) * limit, page * limit - 1);
+    const { data, error, count } = await query.range((page - 1) * limit, page * limit - 1);
 
     if (error) {
       console.error('获取邀请码列表失败:', error);
@@ -197,7 +197,7 @@ export async function getInvitationCodes(
  */
 export async function updateInvitationCode(
   id: string,
-  request: UpdateInvitationRequest
+  request: UpdateInvitationRequest,
 ): Promise<{ success: boolean; data?: InvitationCode; error?: string }> {
   try {
     const { data, error } = await supabase
@@ -222,12 +222,11 @@ export async function updateInvitationCode(
 /**
  * 删除邀请码
  */
-export async function deleteInvitationCode(id: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteInvitationCode(
+  id: string,
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
-      .from('invitation_codes')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('invitation_codes').delete().eq('id', id);
 
     if (error) {
       console.error('删除邀请码失败:', error);
@@ -247,11 +246,11 @@ export async function deleteInvitationCode(id: string): Promise<{ success: boole
 export async function useInvitationCode(
   codeId: string,
   userId: string,
-  supabaseClient?: any
+  supabaseClient?: any,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const client = supabaseClient || supabase;
-    
+
     // 检查是否已经使用过
     const { data: existingUse } = await client
       .from('invitation_uses')
@@ -265,12 +264,10 @@ export async function useInvitationCode(
     }
 
     // 创建使用记录
-    const { error: useError } = await client
-      .from('invitation_uses')
-      .insert({
-        code_id: codeId,
-        used_by: userId
-      });
+    const { error: useError } = await client.from('invitation_uses').insert({
+      code_id: codeId,
+      used_by: userId,
+    });
 
     if (useError) {
       console.error('记录邀请码使用失败:', useError);
@@ -312,7 +309,7 @@ export async function useInvitationCode(
 export async function getInvitationUses(
   codeId: string,
   page: number = 1,
-  limit: number = 20
+  limit: number = 20,
 ): Promise<{ data: InvitationUse[]; total: number; error?: string }> {
   try {
     const { data, error, count } = await supabase
@@ -340,12 +337,11 @@ export async function getInvitationUses(
 export async function applyInvitationPermissions(
   userId: string,
   permissions: InvitationPermissions,
-  supabaseClient?: any
+  supabaseClient?: any,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const client = supabaseClient || supabase;
-    
-    
+
     // 检查用户是否已有权限记录
     const { data: existingPermissions } = await client
       .from('user_permissions')
@@ -368,7 +364,7 @@ export async function applyInvitationPermissions(
           ai_enabled: permissions.ai_enabled ?? false,
           api_keys: permissions.api_keys || { deepseek: '', openrouter: '' },
           model_permissions: permissions.model_permissions || [],
-          custom_restrictions: permissions.custom_restrictions || {}
+          custom_restrictions: permissions.custom_restrictions || {},
         })
         .eq('user_id', userId);
 
@@ -378,22 +374,20 @@ export async function applyInvitationPermissions(
       }
     } else {
       // 创建新权限记录
-      const { error } = await client
-        .from('user_permissions')
-        .insert({
-          user_id: userId,
-          can_access_shadowing: permissions.can_access_shadowing ?? true,
-          can_access_cloze: permissions.can_access_cloze ?? true,
-          can_access_alignment: permissions.can_access_alignment ?? true,
-          can_access_articles: permissions.can_access_articles ?? true,
-          allowed_languages: permissions.allowed_languages || ['en', 'ja', 'zh'],
-          allowed_levels: permissions.allowed_levels || [1, 2, 3, 4, 5],
-          max_daily_attempts: permissions.max_daily_attempts || 50,
-          ai_enabled: permissions.ai_enabled ?? false,
-          api_keys: permissions.api_keys || { deepseek: '', openrouter: '' },
-          model_permissions: permissions.model_permissions || [],
-          custom_restrictions: permissions.custom_restrictions || {}
-        });
+      const { error } = await client.from('user_permissions').insert({
+        user_id: userId,
+        can_access_shadowing: permissions.can_access_shadowing ?? true,
+        can_access_cloze: permissions.can_access_cloze ?? true,
+        can_access_alignment: permissions.can_access_alignment ?? true,
+        can_access_articles: permissions.can_access_articles ?? true,
+        allowed_languages: permissions.allowed_languages || ['en', 'ja', 'zh'],
+        allowed_levels: permissions.allowed_levels || [1, 2, 3, 4, 5],
+        max_daily_attempts: permissions.max_daily_attempts || 50,
+        ai_enabled: permissions.ai_enabled ?? false,
+        api_keys: permissions.api_keys || { deepseek: '', openrouter: '' },
+        model_permissions: permissions.model_permissions || [],
+        custom_restrictions: permissions.custom_restrictions || {},
+      });
 
       if (error) {
         console.error('创建用户权限失败:', error);
@@ -413,7 +407,7 @@ export async function applyInvitationPermissions(
  */
 export async function applyInvitationApiLimits(
   userId: string,
-  apiLimits: InvitationPermissions['api_limits']
+  apiLimits: InvitationPermissions['api_limits'],
 ): Promise<{ success: boolean; error?: string }> {
   try {
     if (!apiLimits) {
@@ -428,15 +422,13 @@ export async function applyInvitationApiLimits(
       daily_cost_limit: apiLimits.daily_cost_limit ?? 0,
       monthly_calls_limit: apiLimits.monthly_calls_limit ?? 0,
       monthly_tokens_limit: apiLimits.monthly_tokens_limit ?? 0,
-      monthly_cost_limit: apiLimits.monthly_cost_limit ?? 0
+      monthly_cost_limit: apiLimits.monthly_cost_limit ?? 0,
     };
 
     // 使用 upsert 更新或创建用户API限制
-    const { error } = await supabase
-      .from('user_api_limits')
-      .upsert(limitsData, {
-        onConflict: 'user_id'
-      });
+    const { error } = await supabase.from('user_api_limits').upsert(limitsData, {
+      onConflict: 'user_id',
+    });
 
     if (error) {
       console.error('应用邀请码API限制失败:', error);

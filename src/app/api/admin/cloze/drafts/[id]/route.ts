@@ -8,7 +8,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const adminResult = await requireAdmin(req);
     if (!adminResult.ok) {
-      return NextResponse.json({ error: adminResult.reason }, { status: adminResult.reason === 'unauthorized' ? 401 : 403 });
+      return NextResponse.json(
+        { error: adminResult.reason },
+        { status: adminResult.reason === 'unauthorized' ? 401 : 403 },
+      );
     }
 
     const { id } = await params;
@@ -27,5 +30,3 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-

@@ -1,12 +1,12 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from "next/server";
-import textToSpeech from "@google-cloud/text-to-speech";
+import { NextRequest, NextResponse } from 'next/server';
+import textToSpeech from '@google-cloud/text-to-speech';
 
 function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
-  if (!raw) throw new Error("GOOGLE_TTS_CREDENTIALS missing");
+  if (!raw) throw new Error('GOOGLE_TTS_CREDENTIALS missing');
 
   let credentials: any;
   try {
@@ -14,7 +14,9 @@ function makeClient() {
   } catch {
     try {
       if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-        throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
+        throw new Error(
+          'File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS',
+        );
       }
       const fs = require('fs');
       const path = require('path');
@@ -34,12 +36,12 @@ function makeClient() {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const lang = searchParams.get("lang") || "all";
+    const lang = searchParams.get('lang') || 'all';
 
     const client = makeClient();
-    
+
     let voices;
-    if (lang === "all") {
+    if (lang === 'all') {
       const [res] = await client.listVoices({});
       voices = res.voices || [];
     } else {
@@ -51,31 +53,38 @@ export async function GET(req: NextRequest) {
     const groupedVoices = voices.reduce((acc: any, voice: any) => {
       const langCode = voice.languageCodes?.[0] || 'unknown';
       if (!acc[langCode]) acc[langCode] = [];
-      
+
       acc[langCode].push({
         name: voice.name,
         languageCode: langCode,
         ssmlGender: voice.ssmlGender,
         naturalSampleRateHertz: voice.naturalSampleRateHertz,
         supportedEngines: voice.supportedEngines,
-        supportedModels: voice.supportedModels
+        supportedModels: voice.supportedModels,
       });
-      
+
       return acc;
     }, {});
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       voices: groupedVoices,
-      totalVoices: voices.length
+      totalVoices: voices.length,
     });
-
   } catch (error: unknown) {
-    console.error("获取音色列表失败:", error);
-    const message = error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error);
-    return NextResponse.json({ 
-      success: false, 
-      error: message
-    }, { status: 500 });
+    console.error('获取音色列表失败:', error);
+    const message =
+      error instanceof Error
+        ? error instanceof Error
+          ? error.message
+          : String(error)
+        : String(error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+      },
+      { status: 500 },
+    );
   }
 }

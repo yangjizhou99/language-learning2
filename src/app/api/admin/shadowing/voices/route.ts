@@ -1,12 +1,12 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from "next/server";
-import textToSpeech from "@google-cloud/text-to-speech";
+import { NextRequest, NextResponse } from 'next/server';
+import textToSpeech from '@google-cloud/text-to-speech';
 
 function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
-  if (!raw) throw new Error("GOOGLE_TTS_CREDENTIALS missing");
+  if (!raw) throw new Error('GOOGLE_TTS_CREDENTIALS missing');
 
   let credentials: any;
   try {
@@ -14,7 +14,9 @@ function makeClient() {
   } catch {
     try {
       if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-        throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
+        throw new Error(
+          'File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS',
+        );
       }
       const fs = require('fs');
       const path = require('path');
@@ -35,28 +37,28 @@ function makeClient() {
 const VOICE_PRICING = {
   // Chirp3-HD 系列 - 最高质量，最新AI模型
   'Chirp3-HD': {
-    pricePerMillionChars: 16.00, // $16 per million characters
+    pricePerMillionChars: 16.0, // $16 per million characters
     quality: '最高质量',
-    description: '最新 AI 模型，自然度最高，适合专业播报'
+    description: '最新 AI 模型，自然度最高，适合专业播报',
   },
   // Neural2 系列 - 高质量神经网络模型
-  'Neural2': {
-    pricePerMillionChars: 16.00, // $16 per million characters
+  Neural2: {
+    pricePerMillionChars: 16.0, // $16 per million characters
     quality: '高质量',
-    description: '神经网络模型，质量优秀，适合教育内容'
+    description: '神经网络模型，质量优秀，适合教育内容',
   },
   // Wavenet 系列 - 高质量WaveNet模型
-  'Wavenet': {
-    pricePerMillionChars: 16.00, // $16 per million characters
+  Wavenet: {
+    pricePerMillionChars: 16.0, // $16 per million characters
     quality: '高质量',
-    description: 'WaveNet 模型，质量良好，适合商务应用'
+    description: 'WaveNet 模型，质量良好，适合商务应用',
   },
   // Standard 系列 - 基础质量，成本较低
-  'Standard': {
-    pricePerMillionChars: 4.00, // $4 per million characters
+  Standard: {
+    pricePerMillionChars: 4.0, // $4 per million characters
     quality: '基础质量',
-    description: '标准模型，成本较低，适合简单应用'
-  }
+    description: '标准模型，成本较低，适合简单应用',
+  },
 };
 
 function getVoicePricing(voiceName: string) {
@@ -72,7 +74,7 @@ function generateVoiceCharacteristics(voice: any) {
   const name = voice.name;
   const gender = voice.ssmlGender;
   const languageCode = voice.languageCode;
-  
+
   // 基础特征
   let voiceType = gender === 'FEMALE' ? '女性' : gender === 'MALE' ? '男性' : '中性';
   let tone = '清晰自然';
@@ -83,7 +85,7 @@ function generateVoiceCharacteristics(voice: any) {
   let useCase = '通用';
   let ageRange = '20-50岁';
   let personality = '专业';
-  
+
   // 根据音色名称和语言调整特征
   if (languageCode.startsWith('zh') || languageCode.startsWith('cmn')) {
     accent = '标准普通话';
@@ -92,7 +94,7 @@ function generateVoiceCharacteristics(voice: any) {
   } else if (languageCode.startsWith('en')) {
     accent = '美式英语';
   }
-  
+
   // 根据音色质量调整特征
   if (name.includes('Chirp3-HD')) {
     tone = '自然流畅';
@@ -115,14 +117,14 @@ function generateVoiceCharacteristics(voice: any) {
     personality = '简单、直接、实用';
     ageRange = '20-60岁';
   }
-  
+
   // 根据性别调整音调（年龄范围已在质量分类中设置）
   if (gender === 'FEMALE') {
     pitch = '中高音';
   } else if (gender === 'MALE') {
     pitch = '中低音';
   }
-  
+
   return {
     voiceType,
     tone,
@@ -132,20 +134,20 @@ function generateVoiceCharacteristics(voice: any) {
     emotion,
     useCase,
     ageRange,
-    personality
+    personality,
   };
 }
 
 function categorizeVoices(voices: any[]) {
   const categories: any = {
     'Chirp3-HD': [],
-    'Neural2': [],
-    'Wavenet': [],
-    'Standard': [],
-    'Other': []
+    Neural2: [],
+    Wavenet: [],
+    Standard: [],
+    Other: [],
   };
 
-  voices.forEach(voice => {
+  voices.forEach((voice) => {
     const name = voice.name;
     if (name.includes('Chirp3-HD')) {
       categories['Chirp3-HD'].push(voice);
@@ -166,17 +168,17 @@ function categorizeVoices(voices: any[]) {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const lang = searchParams.get("lang") || "all";
-    const category = searchParams.get("category") || "all";
+    const lang = searchParams.get('lang') || 'all';
+    const category = searchParams.get('category') || 'all';
 
     // 获取 Google Cloud TTS 音色 - 总是获取所有音色，然后筛选
     const client = makeClient();
     const [res] = await client.listVoices({});
     let allVoices = res.voices || [];
-    
+
     // 根据语言筛选
     let voices = allVoices;
-    if (lang !== "all") {
+    if (lang !== 'all') {
       voices = allVoices.filter((voice: any) => {
         const voiceLang = voice.languageCode || voice.languageCodes?.[0];
         // 处理语言代码的大小写问题
@@ -196,7 +198,7 @@ export async function GET(req: NextRequest) {
       const voiceName = voice.name;
       const languageCode = voice.languageCode || voice.languageCodes?.[0] || 'unknown';
       const pricing = getVoicePricing(voiceName);
-      
+
       return {
         name: voiceName,
         displayName: voice.displayName, // 添加显示名称
@@ -208,18 +210,20 @@ export async function GET(req: NextRequest) {
         pricing: {
           pricePerMillionChars: pricing.pricePerMillionChars,
           quality: pricing.quality,
-          description: pricing.description
+          description: pricing.description,
         },
         // 计算示例价格（基于1000字符）
-        examplePrice: (pricing.pricePerMillionChars / 1000000 * 1000).toFixed(4),
+        examplePrice: ((pricing.pricePerMillionChars / 1000000) * 1000).toFixed(4),
         // 计算示例价格（基于10000字符，更实用的参考）
-        examplePrice10k: (pricing.pricePerMillionChars / 1000000 * 10000).toFixed(2),
+        examplePrice10k: ((pricing.pricePerMillionChars / 1000000) * 10000).toFixed(2),
         // 使用原始特征信息（如果存在）或生成新的
-        characteristics: voice.characteristics || generateVoiceCharacteristics({
-          name: voiceName,
-          ssmlGender: voice.ssmlGender,
-          languageCode
-        })
+        characteristics:
+          voice.characteristics ||
+          generateVoiceCharacteristics({
+            name: voiceName,
+            ssmlGender: voice.ssmlGender,
+            languageCode,
+          }),
       };
     });
 
@@ -235,33 +239,40 @@ export async function GET(req: NextRequest) {
     const categorizedVoices = categorizeVoices(processedVoices);
 
     // 如果指定了分类，只返回该分类
-    if (category !== "all" && categorizedVoices[category]) {
-      return NextResponse.json({ 
+    if (category !== 'all' && categorizedVoices[category]) {
+      return NextResponse.json({
         success: true,
         voices: categorizedVoices[category],
         groupedByLanguage,
         categorizedVoices,
         totalVoices: categorizedVoices[category].length,
         category,
-        pricing: VOICE_PRICING
+        pricing: VOICE_PRICING,
       });
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       voices: processedVoices,
       groupedByLanguage,
       categorizedVoices,
       totalVoices: voices.length,
-      pricing: VOICE_PRICING
+      pricing: VOICE_PRICING,
     });
-
   } catch (error: unknown) {
-    console.error("获取音色列表失败:", error);
-    const message = error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error);
-    return NextResponse.json({ 
-      success: false, 
-      error: message
-    }, { status: 500 });
+    console.error('获取音色列表失败:', error);
+    const message =
+      error instanceof Error
+        ? error instanceof Error
+          ? error.message
+          : String(error)
+        : String(error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+      },
+      { status: 500 },
+    );
   }
 }

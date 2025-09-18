@@ -11,48 +11,62 @@ import { normUsage } from '@/lib/ai/usage';
 
 function getSystemPrompt(explanationLang: string = 'zh') {
   const languageInstructions = {
-    'zh': '你是一位专业的语言教师。判断每个填空是否在文章语境中合适。只返回有效的JSON。',
-    'en': 'You are an expert language teacher. Judge if each filled blank is contextually appropriate for the passage. Return VALID JSON only.',
-    'ja': 'あなたは専門の言語教師です。各空欄が文章の文脈に適切かどうかを判断してください。有効なJSONのみを返してください。'
+    zh: '你是一位专业的语言教师。判断每个填空是否在文章语境中合适。只返回有效的JSON。',
+    en: 'You are an expert language teacher. Judge if each filled blank is contextually appropriate for the passage. Return VALID JSON only.',
+    ja: 'あなたは専門の言語教師です。各空欄が文章の文脈に適切かどうかを判断してください。有効なJSONのみを返してください。',
   };
-  return languageInstructions[explanationLang as keyof typeof languageInstructions] || languageInstructions['zh'];
+  return (
+    languageInstructions[explanationLang as keyof typeof languageInstructions] ||
+    languageInstructions['zh']
+  );
 }
 
 function normalizeBlanks(blanksRaw: any[]): { id: number; reference: string }[] {
-  return (Array.isArray(blanksRaw) ? blanksRaw : []).map((b: any, idx: number) => {
-    let id: number | null = null;
-    if (typeof b?.id === 'number') id = b.id;
-    if (id === null && typeof b?.placeholder === 'string') {
-      const m = b.placeholder.match(/\{\{(\d+)\}\}/);
-      if (m) id = Number(m[1]);
-    }
-    if (id === null) id = idx + 1;
-    return { id, reference: String(b?.answer || '') };
-  }).sort((a, b) => a.id - b.id);
+  return (Array.isArray(blanksRaw) ? blanksRaw : [])
+    .map((b: any, idx: number) => {
+      let id: number | null = null;
+      if (typeof b?.id === 'number') id = b.id;
+      if (id === null && typeof b?.placeholder === 'string') {
+        const m = b.placeholder.match(/\{\{(\d+)\}\}/);
+        if (m) id = Number(m[1]);
+      }
+      if (id === null) id = idx + 1;
+      return { id, reference: String(b?.answer || '') };
+    })
+    .sort((a, b) => a.id - b.id);
 }
 
-function buildScoringPrompt(item: any, answers: Record<string, string>, explanationLang: string = 'zh') {
+function buildScoringPrompt(
+  item: any,
+  answers: Record<string, string>,
+  explanationLang: string = 'zh',
+) {
   const blanks = normalizeBlanks(item.blanks);
 
   const languageInstructions = {
-    'zh': {
-      system: '你是一位专业的语言教师。判断每个填空是否在文章语境中合适。请用中文回复，只返回有效的JSON。',
+    zh: {
+      system:
+        '你是一位专业的语言教师。判断每个填空是否在文章语境中合适。请用中文回复，只返回有效的JSON。',
       task: '对于每个空白，判断学习者的答案在语境中是否合适。使用1.0（合适）、0.5（部分合适）、0.0（不合适）。为每个提供简要理由。请用中文回复。',
-      returnFormat: '返回JSON格式：'
+      returnFormat: '返回JSON格式：',
     },
-    'en': {
-      system: 'You are an expert language teacher. Judge if each filled blank is contextually appropriate for the passage. Please respond in English. Return VALID JSON only.',
-      task: 'For each blank, judge if the learner\'s answer is contextually appropriate. Use 1.0 (appropriate), 0.5 (partially ok), 0.0 (inappropriate). Provide a brief reason for each. Please respond in English.',
-      returnFormat: 'Return JSON:'
+    en: {
+      system:
+        'You are an expert language teacher. Judge if each filled blank is contextually appropriate for the passage. Please respond in English. Return VALID JSON only.',
+      task: "For each blank, judge if the learner's answer is contextually appropriate. Use 1.0 (appropriate), 0.5 (partially ok), 0.0 (inappropriate). Provide a brief reason for each. Please respond in English.",
+      returnFormat: 'Return JSON:',
     },
-    'ja': {
-      system: 'あなたは専門の言語教師です。各空欄が文章の文脈に適切かどうかを判断してください。日本語で回答してください。有効なJSONのみを返してください。',
+    ja: {
+      system:
+        'あなたは専門の言語教師です。各空欄が文章の文脈に適切かどうかを判断してください。日本語で回答してください。有効なJSONのみを返してください。',
       task: '各空欄について、学習者の答えが文脈的に適切かどうかを判断してください。1.0（適切）、0.5（部分的にOK）、0.0（不適切）を使用してください。それぞれに簡潔な理由を提供してください。日本語で回答してください。',
-      returnFormat: 'JSONを返す：'
-    }
+      returnFormat: 'JSONを返す：',
+    },
   };
 
-  const instructions = languageInstructions[explanationLang as keyof typeof languageInstructions] || languageInstructions['zh'];
+  const instructions =
+    languageInstructions[explanationLang as keyof typeof languageInstructions] ||
+    languageInstructions['zh'];
 
   return `LANGUAGE: ${item.lang.toUpperCase()}
 LEVEL: ${item.level}
@@ -78,8 +92,14 @@ ${instructions.returnFormat}
 
 export async function POST(req: NextRequest) {
   try {
-    const { itemId, answers, provider = 'deepseek', model: requestedModel, explanationLang = 'zh' } = await req.json();
-    
+    const {
+      itemId,
+      answers,
+      provider = 'deepseek',
+      model: requestedModel,
+      explanationLang = 'zh',
+    } = await req.json();
+
     if (!itemId || !answers) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -94,20 +114,24 @@ export async function POST(req: NextRequest) {
     if (hasBearer) {
       supabaseUser = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: authHeader } }
+        global: { headers: { Authorization: authHeader } },
       });
     } else {
       const cookieStore = await cookies();
       supabaseUser = createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
           set() {},
           remove() {},
-        }
+        },
       });
     }
 
-    const { data: { user } } = await (supabaseUser as any).auth.getUser();
+    const {
+      data: { user },
+    } = await (supabaseUser as any).auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -134,15 +158,15 @@ export async function POST(req: NextRequest) {
     // AI 评分
     const prompt = buildScoringPrompt(item, answers, explanationLang);
     const result = await chatJSON({
-      provider: provider as 'deepseek'|'openrouter'|'openai',
+      provider: provider as 'deepseek' | 'openrouter' | 'openai',
       model: model!,
       messages: [
         { role: 'system', content: getSystemPrompt(explanationLang) },
-        { role: 'user', content: prompt }
+        { role: 'user', content: prompt },
       ],
       temperature: 0.3,
       response_json: true,
-      userId: user.id  // 传递用户ID以使用用户特定的API密钥
+      userId: user.id, // 传递用户ID以使用用户特定的API密钥
     });
 
     if (!result.content) {
@@ -167,7 +191,7 @@ export async function POST(req: NextRequest) {
         lang: item.lang,
         level: item.level,
         answers,
-        ai_result: aiResult
+        ai_result: aiResult,
       })
       .select()
       .single();
@@ -181,13 +205,20 @@ export async function POST(req: NextRequest) {
       success: true,
       result: aiResult,
       attemptId: attempt.id,
-      usage: result.usage
+      usage: result.usage,
     });
-
   } catch (error) {
     console.error('Score cloze error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Internal server error' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : 'Internal server error',
+      },
+      { status: 500 },
+    );
   }
 }

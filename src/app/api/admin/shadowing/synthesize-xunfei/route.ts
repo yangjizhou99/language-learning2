@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 export async function POST(request: NextRequest) {
@@ -14,16 +14,13 @@ export async function POST(request: NextRequest) {
     if (!text || !voiceId) {
       return NextResponse.json(
         { success: false, error: '缺少必要参数: text 和 voiceId' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // 验证音色ID
     if (!isValidXunfeiVoice(voiceId)) {
-      return NextResponse.json(
-        { success: false, error: '无效的科大讯飞音色ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: '无效的科大讯飞音色ID' }, { status: 400 });
     }
 
     console.log(`开始科大讯飞TTS合成: ${voiceId}, 文本长度: ${text.length}`);
@@ -32,7 +29,7 @@ export async function POST(request: NextRequest) {
     const audioBuffer = await synthesizeXunfeiTTS(text, voiceId, {
       speed,
       volume,
-      pitch
+      pitch,
     });
 
     console.log(`科大讯飞TTS合成完成，音频大小: ${audioBuffer.length} bytes`);
@@ -46,14 +43,14 @@ export async function POST(request: NextRequest) {
       .from('tts-audio')
       .upload(fileName, audioBuffer, {
         contentType: 'audio/wav',
-        cacheControl: '3600'
+        cacheControl: '3600',
       });
 
     if (uploadError) {
       console.error('上传音频失败:', uploadError);
       return NextResponse.json(
         { success: false, error: '上传音频失败', details: uploadError.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -63,10 +60,7 @@ export async function POST(request: NextRequest) {
       .createSignedUrl(fileName, 7 * 24 * 60 * 60); // 7天有效期
 
     if (!urlData?.signedUrl) {
-      return NextResponse.json(
-        { success: false, error: '生成访问URL失败' },
-        { status: 500 }
-      );
+      return NextResponse.json({ success: false, error: '生成访问URL失败' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -76,18 +70,22 @@ export async function POST(request: NextRequest) {
       provider: 'xunfei',
       voiceId,
       duration: Math.round(audioBuffer.length / 32000), // 估算时长
-      size: audioBuffer.length
+      size: audioBuffer.length,
     });
-
   } catch (error) {
     console.error('科大讯飞TTS合成失败:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: '科大讯飞TTS合成失败', 
-        details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
+      {
+        success: false,
+        error: '科大讯飞TTS合成失败',
+        details:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

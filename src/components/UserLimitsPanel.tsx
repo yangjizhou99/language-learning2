@@ -7,7 +7,13 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Settings, Save, AlertCircle, User, Globe } from 'lucide-react';
 import { getAuthHeaders } from '@/lib/auth-headers';
 
@@ -30,7 +36,13 @@ interface UserLimitsPanelProps {
   onError?: (error: string) => void;
 }
 
-export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }: UserLimitsPanelProps) {
+export function UserLimitsPanel({
+  userId,
+  userName,
+  userEmail,
+  onSave,
+  onError,
+}: UserLimitsPanelProps) {
   const [limits, setLimits] = useState<UserLimits>({
     user_id: userId || '',
     daily_calls_limit: 0,
@@ -39,7 +51,7 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
     monthly_calls_limit: 0,
     monthly_tokens_limit: 0,
     monthly_cost_limit: 0,
-    enabled: false
+    enabled: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -61,10 +73,10 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
       setLoading(true);
       const headers = await getAuthHeaders();
       const response = await fetch(`/api/admin/users/${userId}/limits`, {
-        headers
+        headers,
       });
       const data = await response.json();
-      
+
       if (data.success && data.limits) {
         setLimits(data.limits);
       } else {
@@ -84,10 +96,10 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
       setLoading(true);
       const headers = await getAuthHeaders();
       const response = await fetch('/api/admin/api-limits', {
-        headers
+        headers,
       });
       const data = await response.json();
-      
+
       if (data.success && data.limits) {
         setLimits({
           user_id: '',
@@ -97,7 +109,7 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
           monthly_calls_limit: data.limits.monthly_calls_limit || 0,
           monthly_tokens_limit: data.limits.monthly_tokens_limit || 0,
           monthly_cost_limit: data.limits.monthly_cost_limit || 0,
-          enabled: data.limits.enabled || false
+          enabled: data.limits.enabled || false,
         });
       }
     } catch (error) {
@@ -109,7 +121,7 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
   };
 
   const handleLimitChange = (field: keyof UserLimits, value: any) => {
-    setLimits(prev => ({ ...prev, [field]: value }));
+    setLimits((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
@@ -123,7 +135,7 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
         const response = await fetch(`/api/admin/users/${userId}/limits`, {
           method: 'POST',
           headers,
-          body: JSON.stringify(limits)
+          body: JSON.stringify(limits),
         });
 
         const data = await response.json();
@@ -141,7 +153,7 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
         const response = await fetch('/api/admin/api-limits', {
           method: 'POST',
           headers,
-          body: JSON.stringify(limits)
+          body: JSON.stringify(limits),
         });
 
         const data = await response.json();
@@ -205,10 +217,9 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
               {scope === 'user' ? '启用用户限制' : '启用全局限制'}
             </Label>
             <p className="text-sm text-muted-foreground">
-              {scope === 'user' 
+              {scope === 'user'
                 ? '开启后将为此用户设置独立的使用限制'
-                : '开启后将限制所有用户的API使用量'
-              }
+                : '开启后将限制所有用户的API使用量'}
             </p>
           </div>
           <Switch
@@ -230,7 +241,9 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
                     id="daily-calls"
                     type="number"
                     value={limits.daily_calls_limit}
-                    onChange={(e) => handleLimitChange('daily_calls_limit', parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handleLimitChange('daily_calls_limit', parseInt(e.target.value) || 0)
+                    }
                     min="0"
                     placeholder="0表示无限制"
                   />
@@ -241,7 +254,9 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
                     id="daily-tokens"
                     type="number"
                     value={limits.daily_tokens_limit}
-                    onChange={(e) => handleLimitChange('daily_tokens_limit', parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handleLimitChange('daily_tokens_limit', parseInt(e.target.value) || 0)
+                    }
                     min="0"
                     placeholder="0表示无限制"
                   />
@@ -253,7 +268,9 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
                     type="number"
                     step="0.01"
                     value={limits.daily_cost_limit}
-                    onChange={(e) => handleLimitChange('daily_cost_limit', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handleLimitChange('daily_cost_limit', parseFloat(e.target.value) || 0)
+                    }
                     min="0"
                     placeholder="0表示无限制"
                   />
@@ -271,7 +288,9 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
                     id="monthly-calls"
                     type="number"
                     value={limits.monthly_calls_limit}
-                    onChange={(e) => handleLimitChange('monthly_calls_limit', parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handleLimitChange('monthly_calls_limit', parseInt(e.target.value) || 0)
+                    }
                     min="0"
                     placeholder="0表示无限制"
                   />
@@ -282,7 +301,9 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
                     id="monthly-tokens"
                     type="number"
                     value={limits.monthly_tokens_limit}
-                    onChange={(e) => handleLimitChange('monthly_tokens_limit', parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handleLimitChange('monthly_tokens_limit', parseInt(e.target.value) || 0)
+                    }
                     min="0"
                     placeholder="0表示无限制"
                   />
@@ -294,7 +315,9 @@ export function UserLimitsPanel({ userId, userName, userEmail, onSave, onError }
                     type="number"
                     step="0.01"
                     value={limits.monthly_cost_limit}
-                    onChange={(e) => handleLimitChange('monthly_cost_limit', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handleLimitChange('monthly_cost_limit', parseFloat(e.target.value) || 0)
+                    }
                     min="0"
                     placeholder="0表示无限制"
                   />

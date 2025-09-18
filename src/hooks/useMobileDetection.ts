@@ -1,5 +1,5 @@
-"use client";
-import { useEffect, useState } from "react";
+'use client';
+import { useEffect, useState } from 'react';
 
 interface MobileDetectionResult {
   isMobile: boolean;
@@ -17,7 +17,7 @@ export default function useMobileDetection(): MobileDetectionResult {
     isDesktop: true,
     screenWidth: 0,
     screenHeight: 0,
-    userAgent: "",
+    userAgent: '',
   });
 
   useEffect(() => {
@@ -29,14 +29,16 @@ export default function useMobileDetection(): MobileDetectionResult {
       // 多种检测方法
       const isMobileWidth = width < 768;
       const isTabletWidth = width >= 768 && width < 1024;
-      
+
       // User Agent 检测
-      const isMobileUA = /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+      const isMobileUA = /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(
+        userAgent,
+      );
       const isTabletUA = /ipad|android(?!.*mobile)/i.test(userAgent);
-      
+
       // 触摸设备检测
       const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      
+
       // 综合判断
       const isMobile = isMobileWidth || (isMobileUA && !isTabletUA);
       const isTablet = isTabletWidth || (isTabletUA && !isMobile);
@@ -68,13 +70,13 @@ export default function useMobileDetection(): MobileDetectionResult {
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleOrientationChange);
-    
+
     // 监听媒体查询变化
     const mediaQuery = window.matchMedia('(max-width: 767px)');
     const handleMediaChange = (e: MediaQueryListEvent) => {
       detectDevice();
     };
-    
+
     mediaQuery.addEventListener('change', handleMediaChange);
 
     return () => {

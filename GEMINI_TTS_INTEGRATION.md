@@ -7,15 +7,18 @@
 ## 功能特性
 
 ### 1. 双 TTS 提供商支持
+
 - **Google TTS (传统)**: 使用现有的 Google Cloud TTS API，稳定可靠
 - **Gemini TTS (AI增强)**: 使用 Gemini 2.5 模型，支持更自然的语音合成
 
 ### 2. 智能音色分配
+
 - 自动为对话中的不同角色分配合适的音色
 - 支持 10 种预置 Gemini 音色：Kore, Orus, Callirrhoe, Puck, Charon, Enceladus, Aoede, Pulcherrima, Umbriel, Vindemiatrix
 - 根据语言和角色特征智能推荐音色
 
 ### 3. 对话格式支持
+
 - 自动检测对话格式 (A: xxx, B: xxx)
 - 为不同角色分配不同音色和风格
 - 支持多角色对话合成
@@ -45,6 +48,7 @@ GEMINI_TTS_MODEL=gemini-2.5-flash-preview-tts
 ```
 
 可选模型：
+
 - `gemini-2.5-flash-preview-tts` (推荐，性价比高)
 - `gemini-2.5-pro-preview-tts` (质量更高)
 
@@ -60,35 +64,37 @@ GEMINI_TTS_MODEL=gemini-2.5-flash-preview-tts
 ### 2. API 调用示例
 
 #### 单句合成
+
 ```javascript
 const response = await fetch('/api/admin/shadowing/synthesize-gemini', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    text: "Hello, how are you?",
-    lang: "en",
-    voiceName: "Kore",
-    stylePrompt: "以自然、清晰的风格朗读",
+    text: 'Hello, how are you?',
+    lang: 'en',
+    voiceName: 'Kore',
+    stylePrompt: '以自然、清晰的风格朗读',
     speakingRate: 1.0,
-    pitch: 0
-  })
+    pitch: 0,
+  }),
 });
 ```
 
 #### 对话合成
+
 ```javascript
 const response = await fetch('/api/admin/shadowing/synthesize-gemini-dialogue', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     text: "A: Hello, how are you?\nB: I'm fine, thank you!",
-    lang: "en",
-    speakers: ["A", "B"],
+    lang: 'en',
+    speakers: ['A', 'B'],
     stylePrompts: {
-      "A": "以女性、清晰、自然的风格朗读",
-      "B": "以男性、中性、随意的风格朗读"
-    }
-  })
+      A: '以女性、清晰、自然的风格朗读',
+      B: '以男性、中性、随意的风格朗读',
+    },
+  }),
 });
 ```
 
@@ -96,18 +102,18 @@ const response = await fetch('/api/admin/shadowing/synthesize-gemini-dialogue', 
 
 ### 预置音色列表
 
-| 音色名称 | 特征 | 适用场景 |
-|---------|------|----------|
-| Kore | 女性，清晰，新闻风格，平静 | 新闻播报，正式场合 |
-| Orus | 男性，中性，随意 | 日常对话，中性场景 |
-| Callirrhoe | 女性，明亮，友好 | 轻松对话，友好交流 |
-| Puck | 男性，年轻，活泼 | 年轻角色，活泼场景 |
-| Charon | 男性，深沉，严肃 | 严肃话题，权威角色 |
-| Enceladus | 男性，正式 | 商务场合，正式对话 |
-| Aoede | 女性，柔和 | 温柔角色，柔和场景 |
-| Pulcherrima | 女性，温暖 | 温馨场景，温暖交流 |
-| Umbriel | 男性，圆润 | 成熟角色，稳重场景 |
-| Vindemiatrix | 女性，成熟 | 成熟女性，专业场景 |
+| 音色名称     | 特征                       | 适用场景           |
+| ------------ | -------------------------- | ------------------ |
+| Kore         | 女性，清晰，新闻风格，平静 | 新闻播报，正式场合 |
+| Orus         | 男性，中性，随意           | 日常对话，中性场景 |
+| Callirrhoe   | 女性，明亮，友好           | 轻松对话，友好交流 |
+| Puck         | 男性，年轻，活泼           | 年轻角色，活泼场景 |
+| Charon       | 男性，深沉，严肃           | 严肃话题，权威角色 |
+| Enceladus    | 男性，正式                 | 商务场合，正式对话 |
+| Aoede        | 女性，柔和                 | 温柔角色，柔和场景 |
+| Pulcherrima  | 女性，温暖                 | 温馨场景，温暖交流 |
+| Umbriel      | 男性，圆润                 | 成熟角色，稳重场景 |
+| Vindemiatrix | 女性，成熟                 | 成熟女性，专业场景 |
 
 ### 自定义音色分配
 
@@ -116,16 +122,19 @@ const response = await fetch('/api/admin/shadowing/synthesize-gemini-dialogue', 
 ## 技术特性
 
 ### 1. 智能文本处理
+
 - 自动分割长文本为合适长度的片段
 - 支持多种语言的分句规则
 - 智能处理特殊字符和标点符号
 
 ### 2. 音频合并
+
 - 使用 FFmpeg 进行高质量音频合并
 - 自动添加自然间隔
 - 支持多种音频格式输出
 
 ### 3. 错误处理
+
 - 完善的错误处理和重试机制
 - 详细的错误日志记录
 - 优雅的降级处理
@@ -133,11 +142,13 @@ const response = await fetch('/api/admin/shadowing/synthesize-gemini-dialogue', 
 ## 性能优化
 
 ### 1. 并发控制
+
 - 支持可配置的并发数量
 - 智能的节流控制
 - 避免 API 限流
 
 ### 2. 缓存机制
+
 - 音频文件自动上传到 Supabase Storage
 - 生成长期有效的签名 URL
 - 避免重复合成

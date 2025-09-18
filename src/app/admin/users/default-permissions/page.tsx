@@ -10,8 +10,28 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Shield, Globe, Target, Settings, CheckCircle, AlertCircle, Users, Copy, Bookmark, Download, Upload } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  ArrowLeft,
+  Save,
+  Shield,
+  Globe,
+  Target,
+  Settings,
+  CheckCircle,
+  AlertCircle,
+  Users,
+  Copy,
+  Bookmark,
+  Download,
+  Upload,
+} from 'lucide-react';
 import Link from 'next/link';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
@@ -45,7 +65,9 @@ export default function DefaultPermissionsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [templates, setTemplates] = useState<Array<{ id: string; name: string; permissions: DefaultPermissions }>>([]);
+  const [templates, setTemplates] = useState<
+    Array<{ id: string; name: string; permissions: DefaultPermissions }>
+  >([]);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [templateName, setTemplateName] = useState('');
 
@@ -55,7 +77,9 @@ export default function DefaultPermissionsPage() {
       setMessage(null);
 
       // 获取用户认证信息
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('未登录');
       }
@@ -66,7 +90,8 @@ export default function DefaultPermissionsPage() {
         .select('*')
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (error && error.code !== 'PGRST116') {
+        // PGRST116 = no rows returned
         console.error('获取默认权限设置失败:', error);
         throw new Error('获取默认权限设置失败');
       }
@@ -89,7 +114,7 @@ export default function DefaultPermissionsPage() {
               provider: 'deepseek',
               daily_limit: 50,
               token_limit: 100000,
-              enabled: true
+              enabled: true,
             },
             {
               model_id: 'openrouter/auto',
@@ -97,10 +122,10 @@ export default function DefaultPermissionsPage() {
               provider: 'openrouter',
               daily_limit: 30,
               token_limit: 80000,
-              enabled: true
-            }
+              enabled: true,
+            },
           ],
-          custom_restrictions: defaultPerms.custom_restrictions || {}
+          custom_restrictions: defaultPerms.custom_restrictions || {},
         });
       } else {
         // 没有默认权限记录，创建默认值
@@ -121,7 +146,7 @@ export default function DefaultPermissionsPage() {
               provider: 'deepseek',
               daily_limit: 50,
               token_limit: 100000,
-              enabled: true
+              enabled: true,
             },
             {
               model_id: 'openrouter/auto',
@@ -129,10 +154,10 @@ export default function DefaultPermissionsPage() {
               provider: 'openrouter',
               daily_limit: 30,
               token_limit: 80000,
-              enabled: true
-            }
+              enabled: true,
+            },
           ],
-          custom_restrictions: {}
+          custom_restrictions: {},
         };
         setPermissions(defaultPermissions);
       }
@@ -156,7 +181,7 @@ export default function DefaultPermissionsPage() {
   const handleModelPermissionChange = (index: number, field: string, value: any) => {
     if (!permissions) return;
     const updatedModelPermissions = permissions.model_permissions.map((model, i) =>
-      i === index ? { ...model, [field]: value } : model
+      i === index ? { ...model, [field]: value } : model,
     );
     setPermissions({ ...permissions, model_permissions: updatedModelPermissions });
   };
@@ -169,11 +194,11 @@ export default function DefaultPermissionsPage() {
       provider: 'deepseek',
       daily_limit: 50,
       token_limit: 100000,
-      enabled: true
+      enabled: true,
     };
     setPermissions({
       ...permissions,
-      model_permissions: [...permissions.model_permissions, newModel]
+      model_permissions: [...permissions.model_permissions, newModel],
     });
   };
 
@@ -181,7 +206,7 @@ export default function DefaultPermissionsPage() {
     if (!permissions) return;
     setPermissions({
       ...permissions,
-      model_permissions: permissions.model_permissions.filter((_, i) => i !== index)
+      model_permissions: permissions.model_permissions.filter((_, i) => i !== index),
     });
   };
 
@@ -192,15 +217,16 @@ export default function DefaultPermissionsPage() {
     setMessage(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('未登录');
       }
 
       // 保存默认权限设置
-      const { error } = await supabase
-        .from('default_user_permissions')
-        .upsert({
+      const { error } = await supabase.from('default_user_permissions').upsert(
+        {
           id: 'default', // 使用固定ID
           can_access_shadowing: permissions.can_access_shadowing,
           can_access_cloze: permissions.can_access_cloze,
@@ -212,11 +238,13 @@ export default function DefaultPermissionsPage() {
           ai_enabled: permissions.ai_enabled,
           api_keys: permissions.api_keys,
           model_permissions: permissions.model_permissions,
-          custom_restrictions: permissions.custom_restrictions
-        }, { 
+          custom_restrictions: permissions.custom_restrictions,
+        },
+        {
           onConflict: 'id',
-          ignoreDuplicates: false 
-        });
+          ignoreDuplicates: false,
+        },
+      );
 
       if (error) {
         console.error('保存默认权限设置失败:', error);
@@ -239,7 +267,9 @@ export default function DefaultPermissionsPage() {
     setMessage(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('未登录');
       }
@@ -248,10 +278,10 @@ export default function DefaultPermissionsPage() {
       const response = await fetch('/api/admin/users/apply-default-permissions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(permissions)
+        body: JSON.stringify(permissions),
       });
 
       if (!response.ok) {
@@ -260,9 +290,9 @@ export default function DefaultPermissionsPage() {
       }
 
       const result = await response.json();
-      setMessage({ 
-        type: 'success', 
-        text: `成功为 ${result.updated_count} 个用户应用了默认权限设置` 
+      setMessage({
+        type: 'success',
+        text: `成功为 ${result.updated_count} 个用户应用了默认权限设置`,
       });
     } catch (error) {
       console.error('应用权限失败:', error);
@@ -279,7 +309,9 @@ export default function DefaultPermissionsPage() {
     setMessage(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('未登录');
       }
@@ -287,7 +319,7 @@ export default function DefaultPermissionsPage() {
       const template = {
         id: `template_${Date.now()}`,
         name: templateName.trim(),
-        permissions: permissions
+        permissions: permissions,
       };
 
       // 保存模板到本地存储
@@ -307,19 +339,27 @@ export default function DefaultPermissionsPage() {
     }
   };
 
-  const loadTemplate = (template: { id: string; name: string; permissions: DefaultPermissions }) => {
+  const loadTemplate = (template: {
+    id: string;
+    name: string;
+    permissions: DefaultPermissions;
+  }) => {
     setPermissions(template.permissions);
     setMessage({ type: 'success', text: `已加载模板: ${template.name}` });
   };
 
   const deleteTemplate = (templateId: string) => {
-    const updatedTemplates = templates.filter(t => t.id !== templateId);
+    const updatedTemplates = templates.filter((t) => t.id !== templateId);
     setTemplates(updatedTemplates);
     localStorage.setItem('permission_templates', JSON.stringify(updatedTemplates));
     setMessage({ type: 'success', text: '模板删除成功' });
   };
 
-  const exportTemplate = (template: { id: string; name: string; permissions: DefaultPermissions }) => {
+  const exportTemplate = (template: {
+    id: string;
+    name: string;
+    permissions: DefaultPermissions;
+  }) => {
     const dataStr = JSON.stringify(template, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
@@ -339,10 +379,12 @@ export default function DefaultPermissionsPage() {
       try {
         const template = JSON.parse(e.target?.result as string);
         if (template.name && template.permissions) {
-          const existingTemplates = JSON.parse(localStorage.getItem('permission_templates') || '[]');
+          const existingTemplates = JSON.parse(
+            localStorage.getItem('permission_templates') || '[]',
+          );
           const newTemplate = {
             ...template,
-            id: `template_${Date.now()}`
+            id: `template_${Date.now()}`,
           };
           existingTemplates.push(newTemplate);
           localStorage.setItem('permission_templates', JSON.stringify(existingTemplates));
@@ -398,19 +440,19 @@ export default function DefaultPermissionsPage() {
 
   return (
     <Container>
-      <Breadcrumbs items={[
-        { label: "管理员", href: "/admin" },
-        { label: "用户管理", href: "/admin/users" },
-        { label: "默认权限设置", href: "/admin/users/default-permissions" }
-      ]} />
+      <Breadcrumbs
+        items={[
+          { label: '管理员', href: '/admin' },
+          { label: '用户管理', href: '/admin/users' },
+          { label: '默认权限设置', href: '/admin/users/default-permissions' },
+        ]}
+      />
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">默认权限设置</h1>
-            <p className="text-gray-600">
-              配置新注册用户的默认权限，这些设置将自动应用到新用户
-            </p>
+            <p className="text-gray-600">配置新注册用户的默认权限，这些设置将自动应用到新用户</p>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/admin/users">
@@ -435,14 +477,20 @@ export default function DefaultPermissionsPage() {
         </div>
 
         {message && (
-          <Alert className={message.type === 'error' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}>
+          <Alert
+            className={
+              message.type === 'error' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'
+            }
+          >
             <div className="flex items-center">
               {message.type === 'error' ? (
                 <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
               ) : (
                 <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
               )}
-              <AlertDescription className={message.type === 'error' ? 'text-red-800' : 'text-green-800'}>
+              <AlertDescription
+                className={message.type === 'error' ? 'text-red-800' : 'text-green-800'}
+              >
                 {message.text}
               </AlertDescription>
             </div>
@@ -465,9 +513,7 @@ export default function DefaultPermissionsPage() {
                   <Shield className="h-5 w-5" />
                   功能访问权限
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  设置新用户可以访问哪些功能模块
-                </p>
+                <p className="text-sm text-muted-foreground">设置新用户可以访问哪些功能模块</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -479,7 +525,9 @@ export default function DefaultPermissionsPage() {
                       </div>
                       <Switch
                         checked={permissions.can_access_shadowing}
-                        onCheckedChange={(checked) => handlePermissionChange('can_access_shadowing', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange('can_access_shadowing', checked)
+                        }
                       />
                     </div>
                     <div className="flex items-center justify-between">
@@ -489,7 +537,9 @@ export default function DefaultPermissionsPage() {
                       </div>
                       <Switch
                         checked={permissions.can_access_cloze}
-                        onCheckedChange={(checked) => handlePermissionChange('can_access_cloze', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange('can_access_cloze', checked)
+                        }
                       />
                     </div>
                   </div>
@@ -501,7 +551,9 @@ export default function DefaultPermissionsPage() {
                       </div>
                       <Switch
                         checked={permissions.can_access_alignment}
-                        onCheckedChange={(checked) => handlePermissionChange('can_access_alignment', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange('can_access_alignment', checked)
+                        }
                       />
                     </div>
                     <div className="flex items-center justify-between">
@@ -511,7 +563,9 @@ export default function DefaultPermissionsPage() {
                       </div>
                       <Switch
                         checked={permissions.can_access_articles}
-                        onCheckedChange={(checked) => handlePermissionChange('can_access_articles', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange('can_access_articles', checked)
+                        }
                       />
                     </div>
                   </div>
@@ -527,9 +581,7 @@ export default function DefaultPermissionsPage() {
                   <Globe className="h-5 w-5" />
                   内容权限
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  设置新用户可以访问的语言和难度等级
-                </p>
+                <p className="text-sm text-muted-foreground">设置新用户可以访问的语言和难度等级</p>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -543,9 +595,15 @@ export default function DefaultPermissionsPage() {
                             checked={permissions.allowed_languages.includes(lang)}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                handlePermissionChange('allowed_languages', [...permissions.allowed_languages, lang]);
+                                handlePermissionChange('allowed_languages', [
+                                  ...permissions.allowed_languages,
+                                  lang,
+                                ]);
                               } else {
-                                handlePermissionChange('allowed_languages', permissions.allowed_languages.filter(l => l !== lang));
+                                handlePermissionChange(
+                                  'allowed_languages',
+                                  permissions.allowed_languages.filter((l) => l !== lang),
+                                );
                               }
                             }}
                           />
@@ -567,9 +625,15 @@ export default function DefaultPermissionsPage() {
                             checked={permissions.allowed_levels.includes(level)}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                handlePermissionChange('allowed_levels', [...permissions.allowed_levels, level]);
+                                handlePermissionChange('allowed_levels', [
+                                  ...permissions.allowed_levels,
+                                  level,
+                                ]);
                               } else {
-                                handlePermissionChange('allowed_levels', permissions.allowed_levels.filter(l => l !== level));
+                                handlePermissionChange(
+                                  'allowed_levels',
+                                  permissions.allowed_levels.filter((l) => l !== level),
+                                );
                               }
                             }}
                           />
@@ -592,9 +656,7 @@ export default function DefaultPermissionsPage() {
                   <Target className="h-5 w-5" />
                   使用限制
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  设置新用户的每日使用限制
-                </p>
+                <p className="text-sm text-muted-foreground">设置新用户的每日使用限制</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -604,7 +666,9 @@ export default function DefaultPermissionsPage() {
                     type="number"
                     min="0"
                     value={permissions.max_daily_attempts}
-                    onChange={(e) => handlePermissionChange('max_daily_attempts', parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handlePermissionChange('max_daily_attempts', parseInt(e.target.value) || 0)
+                    }
                     className="mt-1"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
@@ -622,9 +686,7 @@ export default function DefaultPermissionsPage() {
                   <Settings className="h-5 w-5" />
                   AI功能配置
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  配置新用户的AI功能权限和模型访问
-                </p>
+                <p className="text-sm text-muted-foreground">配置新用户的AI功能权限和模型访问</p>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* AI功能总开关 */}
@@ -652,7 +714,7 @@ export default function DefaultPermissionsPage() {
                         为所有新用户提供默认的API密钥配置
                       </p>
                     </div>
-                    
+
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="openrouter-key">OpenRouter API Key (推荐)</Label>
@@ -661,16 +723,18 @@ export default function DefaultPermissionsPage() {
                           type="password"
                           placeholder="sk-or-..."
                           value={permissions.api_keys.openrouter || ''}
-                          onChange={(e) => handlePermissionChange('api_keys', {
-                            ...permissions.api_keys,
-                            openrouter: e.target.value
-                          })}
+                          onChange={(e) =>
+                            handlePermissionChange('api_keys', {
+                              ...permissions.api_keys,
+                              openrouter: e.target.value,
+                            })
+                          }
                         />
                         <p className="text-xs text-muted-foreground">
                           推荐使用OpenRouter，可以访问多种AI模型，性价比高
                         </p>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="deepseek-key">DeepSeek API Key (可选)</Label>
                         <Input
@@ -678,10 +742,12 @@ export default function DefaultPermissionsPage() {
                           type="password"
                           placeholder="sk-..."
                           value={permissions.api_keys.deepseek || ''}
-                          onChange={(e) => handlePermissionChange('api_keys', {
-                            ...permissions.api_keys,
-                            deepseek: e.target.value
-                          })}
+                          onChange={(e) =>
+                            handlePermissionChange('api_keys', {
+                              ...permissions.api_keys,
+                              deepseek: e.target.value,
+                            })
+                          }
                         />
                         <p className="text-xs text-muted-foreground">
                           可选，如果配置了DeepSeek密钥，将优先使用DeepSeek模型
@@ -700,7 +766,7 @@ export default function DefaultPermissionsPage() {
                         配置新用户可以访问的AI模型及其使用限制
                       </p>
                     </div>
-                  
+
                     <div className="space-y-4">
                       {permissions.model_permissions.map((model, index) => (
                         <div key={index} className="p-4 border rounded-lg space-y-4">
@@ -711,7 +777,7 @@ export default function DefaultPermissionsPage() {
                             <div className="flex items-center gap-2">
                               <Switch
                                 checked={model.enabled}
-                                onCheckedChange={(checked) => 
+                                onCheckedChange={(checked) =>
                                   handleModelPermissionChange(index, 'enabled', checked)
                                 }
                               />
@@ -731,7 +797,7 @@ export default function DefaultPermissionsPage() {
                               <Input
                                 id={`model-id-${index}`}
                                 value={model.model_id}
-                                onChange={(e) => 
+                                onChange={(e) =>
                                   handleModelPermissionChange(index, 'model_id', e.target.value)
                                 }
                                 placeholder="deepseek-chat"
@@ -742,7 +808,7 @@ export default function DefaultPermissionsPage() {
                               <Input
                                 id={`model-name-${index}`}
                                 value={model.model_name}
-                                onChange={(e) => 
+                                onChange={(e) =>
                                   handleModelPermissionChange(index, 'model_name', e.target.value)
                                 }
                                 placeholder="DeepSeek Chat"
@@ -752,7 +818,7 @@ export default function DefaultPermissionsPage() {
                               <Label htmlFor={`provider-${index}`}>提供商</Label>
                               <Select
                                 value={model.provider}
-                                onValueChange={(value) => 
+                                onValueChange={(value) =>
                                   handleModelPermissionChange(index, 'provider', value)
                                 }
                               >
@@ -772,8 +838,12 @@ export default function DefaultPermissionsPage() {
                                 type="number"
                                 min="0"
                                 value={model.daily_limit}
-                                onChange={(e) => 
-                                  handleModelPermissionChange(index, 'daily_limit', parseInt(e.target.value) || 0)
+                                onChange={(e) =>
+                                  handleModelPermissionChange(
+                                    index,
+                                    'daily_limit',
+                                    parseInt(e.target.value) || 0,
+                                  )
                                 }
                               />
                             </div>
@@ -784,8 +854,12 @@ export default function DefaultPermissionsPage() {
                                 type="number"
                                 min="0"
                                 value={model.token_limit}
-                                onChange={(e) => 
-                                  handleModelPermissionChange(index, 'token_limit', parseInt(e.target.value) || 0)
+                                onChange={(e) =>
+                                  handleModelPermissionChange(
+                                    index,
+                                    'token_limit',
+                                    parseInt(e.target.value) || 0,
+                                  )
                                 }
                                 placeholder="100000"
                               />
@@ -794,7 +868,7 @@ export default function DefaultPermissionsPage() {
                         </div>
                       ))}
                     </div>
-                    
+
                     <Button onClick={addModelPermission} size="sm" variant="outline">
                       添加模型
                     </Button>
@@ -814,8 +888,10 @@ export default function DefaultPermissionsPage() {
                     <div className="text-sm">
                       <strong>可用模型：</strong>
                       {permissions.model_permissions
-                        .filter(m => m.enabled)
-                        .map(m => `${m.model_name} (${m.daily_limit}次/日, ${m.token_limit} tokens)`)
+                        .filter((m) => m.enabled)
+                        .map(
+                          (m) => `${m.model_name} (${m.daily_limit}次/日, ${m.token_limit} tokens)`,
+                        )
                         .join(', ') || '无'}
                     </div>
                   </div>
@@ -862,9 +938,7 @@ export default function DefaultPermissionsPage() {
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">已保存的模板</h3>
                   {templates.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      暂无保存的模板
-                    </div>
+                    <div className="text-center py-8 text-muted-foreground">暂无保存的模板</div>
                   ) : (
                     <div className="grid gap-4">
                       {templates.map((template) => (
@@ -898,14 +972,21 @@ export default function DefaultPermissionsPage() {
                             </div>
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            <div>功能权限: {Object.entries(template.permissions)
-                              .filter(([key, value]) => 
-                                key.startsWith('can_access_') && value === true
-                              )
-                              .map(([key]) => key.replace('can_access_', ''))
-                              .join(', ') || '无'}</div>
-                            <div>语言: {template.permissions.allowed_languages?.join(', ') || '无'}</div>
-                            <div>等级: {template.permissions.allowed_levels?.join(', ') || '无'}</div>
+                            <div>
+                              功能权限:{' '}
+                              {Object.entries(template.permissions)
+                                .filter(
+                                  ([key, value]) => key.startsWith('can_access_') && value === true,
+                                )
+                                .map(([key]) => key.replace('can_access_', ''))
+                                .join(', ') || '无'}
+                            </div>
+                            <div>
+                              语言: {template.permissions.allowed_languages?.join(', ') || '无'}
+                            </div>
+                            <div>
+                              等级: {template.permissions.allowed_levels?.join(', ') || '无'}
+                            </div>
                             <div>AI功能: {template.permissions.ai_enabled ? '启用' : '禁用'}</div>
                           </div>
                         </div>
@@ -944,10 +1025,7 @@ export default function DefaultPermissionsPage() {
                   >
                     取消
                   </Button>
-                  <Button
-                    onClick={saveAsTemplate}
-                    disabled={!templateName.trim() || saving}
-                  >
+                  <Button onClick={saveAsTemplate} disabled={!templateName.trim() || saving}>
                     {saving ? '保存中...' : '保存'}
                   </Button>
                 </div>

@@ -18,7 +18,13 @@
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {},
-  "keywords": ["performance", "testing", "database", "api", "frontend"],
+  "keywords": [
+    "performance",
+    "testing",
+    "database",
+    "api",
+    "frontend"
+  ],
   "author": "Language Learning App",
   "license": "MIT"
 }

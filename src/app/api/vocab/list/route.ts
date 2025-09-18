@@ -8,13 +8,13 @@ import { createClient } from '@supabase/supabase-js';
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
-    
+
     // 检查是否有 Authorization header
     const authHeader = request.headers.get('authorization');
     const hasBearer = /^Bearer\s+/.test(authHeader || '');
-    
+
     let supabase: any;
-    
+
     if (hasBearer) {
       // 使用 Authorization header
       console.log('使用 Authorization header 认证');
@@ -23,15 +23,15 @@ export async function GET(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
           auth: { persistSession: false, autoRefreshToken: false },
-          global: { headers: { Authorization: authHeader! } }
-        }
+          global: { headers: { Authorization: authHeader! } },
+        },
       );
     } else {
       // 使用 cookie 认证
       console.log('使用 Cookie 认证');
       const authToken = cookieStore.get('sb-yyfyieqfuwwyqrlewswu-auth-token')?.value;
       console.log('Auth token cookie exists:', !!authToken);
-      
+
       supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -50,13 +50,16 @@ export async function GET(request: NextRequest) {
               console.log(`Removing cookie ${name}`);
               // no-op for Route Handler
             },
-          }
-        }
+          },
+        },
       );
     }
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     if (authError || !user) {
       return NextResponse.json({ error: '未授权' }, { status: 401 });
     }
@@ -82,11 +85,11 @@ export async function GET(request: NextRequest) {
     if (lang) {
       query = query.eq('lang', lang);
     }
-    
+
     if (status) {
       query = query.eq('status', status);
     }
-    
+
     if (explanation) {
       if (explanation === 'has') {
         query = query.not('explanation', 'is', null);
@@ -94,7 +97,7 @@ export async function GET(request: NextRequest) {
         query = query.is('explanation', null);
       }
     }
-    
+
     if (search) {
       query = query.or(`term.ilike.%${search}%,context.ilike.%${search}%`);
     }
@@ -113,9 +116,8 @@ export async function GET(request: NextRequest) {
         limit,
         total: count || 0,
         totalPages: Math.ceil((count || 0) / limit),
-      }
+      },
     });
-
   } catch (error) {
     console.error('查询生词列表API错误:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });

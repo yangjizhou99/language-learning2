@@ -8,7 +8,7 @@ import { synthesizeXunfeiTTS, synthesizeXunfeiLongTextTTS } from '@/lib/xunfei-t
 // 创建 TTS 客户端
 function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
-  if (!raw) throw new Error("GOOGLE_TTS_CREDENTIALS missing");
+  if (!raw) throw new Error('GOOGLE_TTS_CREDENTIALS missing');
 
   let credentials: any;
   try {
@@ -16,7 +16,9 @@ function makeClient() {
   } catch {
     try {
       if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-        throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
+        throw new Error(
+          'File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS',
+        );
       }
       const fs = require('fs');
       const path = require('path');
@@ -38,13 +40,14 @@ const PREVIEW_TEXTS = {
   'en-US': 'Hello! This is a preview of the voice quality.',
   'cmn-CN': '你好！这是音色质量的试听预览。',
   'ja-JP': 'こんにちは！これは音声品質のプレビューです。',
-  'multi': 'Hello! 你好！こんにちは！This is a multilingual preview.'
+  multi: 'Hello! 你好！こんにちは！This is a multilingual preview.',
 };
 
 // 获取试听文本
 function getPreviewText(languageCode: string): string {
   if (languageCode.startsWith('en')) return PREVIEW_TEXTS['en-US'];
-  if (languageCode.startsWith('cmn') || languageCode.startsWith('zh')) return PREVIEW_TEXTS['cmn-CN'];
+  if (languageCode.startsWith('cmn') || languageCode.startsWith('zh'))
+    return PREVIEW_TEXTS['cmn-CN'];
   if (languageCode.startsWith('ja')) return PREVIEW_TEXTS['ja-JP'];
   return PREVIEW_TEXTS['multi'];
 }
@@ -55,44 +58,44 @@ function mapToFullVoiceName(voiceName: string, languageCode: string): string {
   if (voiceName.includes('-') && voiceName.split('-').length >= 3) {
     return voiceName;
   }
-  
+
   // 简化名称映射到完整的Google Cloud TTS音色名称
   const simplifiedToFull: Record<string, string> = {
     // Chirp3-HD 音色
-    'Achernar': 'en-US-Chirp3-HD-Achernar',
-    'Achird': 'en-US-Chirp3-HD-Achird', 
-    'Algenib': 'en-US-Chirp3-HD-Algenib',
-    'Algieba': 'en-US-Chirp3-HD-Algieba',
-    'Alnilam': 'en-US-Chirp3-HD-Alnilam',
-    'Aoede': 'en-US-Chirp3-HD-Aoede',
-    'Autonoe': 'en-US-Chirp3-HD-Autonoe',
-    'Callirrhoe': 'en-US-Chirp3-HD-Callirrhoe',
-    'Charon': 'en-US-Chirp3-HD-Charon',
-    'Despina': 'en-US-Chirp3-HD-Despina',
-    'Enceladus': 'en-US-Chirp3-HD-Enceladus',
-    'Erinome': 'en-US-Chirp3-HD-Erinome',
-    'Fenrir': 'en-US-Chirp3-HD-Fenrir',
-    'Gacrux': 'en-US-Chirp3-HD-Gacrux',
-    'Iapetus': 'en-US-Chirp3-HD-Iapetus',
-    'Laomedeia': 'en-US-Chirp3-HD-Laomedeia',
-    'Leda': 'en-US-Chirp3-HD-Leda',
-    'Pulcherrima': 'en-US-Chirp3-HD-Pulcherrima',
-    'Rasalgethi': 'en-US-Chirp3-HD-Rasalgethi',
-    'Sadachbia': 'en-US-Chirp3-HD-Sadachbia',
-    'Sadaltager': 'en-US-Chirp3-HD-Sadaltager',
-    'Schedar': 'en-US-Chirp3-HD-Schedar',
-    'Sulafat': 'en-US-Chirp3-HD-Sulafat',
-    'Umbriel': 'en-US-Chirp3-HD-Umbriel',
-    'Vindemiatrix': 'en-US-Chirp3-HD-Vindemiatrix',
-    'Zephyr': 'en-US-Chirp3-HD-Zephyr',
-    'Zubenelgenubi': 'en-US-Chirp3-HD-Zubenelgenubi',
-    
+    Achernar: 'en-US-Chirp3-HD-Achernar',
+    Achird: 'en-US-Chirp3-HD-Achird',
+    Algenib: 'en-US-Chirp3-HD-Algenib',
+    Algieba: 'en-US-Chirp3-HD-Algieba',
+    Alnilam: 'en-US-Chirp3-HD-Alnilam',
+    Aoede: 'en-US-Chirp3-HD-Aoede',
+    Autonoe: 'en-US-Chirp3-HD-Autonoe',
+    Callirrhoe: 'en-US-Chirp3-HD-Callirrhoe',
+    Charon: 'en-US-Chirp3-HD-Charon',
+    Despina: 'en-US-Chirp3-HD-Despina',
+    Enceladus: 'en-US-Chirp3-HD-Enceladus',
+    Erinome: 'en-US-Chirp3-HD-Erinome',
+    Fenrir: 'en-US-Chirp3-HD-Fenrir',
+    Gacrux: 'en-US-Chirp3-HD-Gacrux',
+    Iapetus: 'en-US-Chirp3-HD-Iapetus',
+    Laomedeia: 'en-US-Chirp3-HD-Laomedeia',
+    Leda: 'en-US-Chirp3-HD-Leda',
+    Pulcherrima: 'en-US-Chirp3-HD-Pulcherrima',
+    Rasalgethi: 'en-US-Chirp3-HD-Rasalgethi',
+    Sadachbia: 'en-US-Chirp3-HD-Sadachbia',
+    Sadaltager: 'en-US-Chirp3-HD-Sadaltager',
+    Schedar: 'en-US-Chirp3-HD-Schedar',
+    Sulafat: 'en-US-Chirp3-HD-Sulafat',
+    Umbriel: 'en-US-Chirp3-HD-Umbriel',
+    Vindemiatrix: 'en-US-Chirp3-HD-Vindemiatrix',
+    Zephyr: 'en-US-Chirp3-HD-Zephyr',
+    Zubenelgenubi: 'en-US-Chirp3-HD-Zubenelgenubi',
+
     // 其他音色
-    'Orus': 'en-US-Chirp3-HD-Orus',
-    'Puck': 'en-US-Chirp3-HD-Puck',
-    'Kore': 'en-US-Chirp3-HD-Kore',
+    Orus: 'en-US-Chirp3-HD-Orus',
+    Puck: 'en-US-Chirp3-HD-Puck',
+    Kore: 'en-US-Chirp3-HD-Kore',
   };
-  
+
   return simplifiedToFull[voiceName] || voiceName;
 }
 
@@ -100,10 +103,10 @@ function mapToFullVoiceName(voiceName: string, languageCode: string): string {
 function getVoiceConfig(voiceName: string, languageCode: string) {
   // 映射简化名称为完整名称
   const fullVoiceName = mapToFullVoiceName(voiceName, languageCode);
-  
-  const ttsLanguageCode = languageCode === 'cmn-CN' ? 'cmn-cn' : 
-                         languageCode === 'multi' ? 'en-US' : languageCode;
-  
+
+  const ttsLanguageCode =
+    languageCode === 'cmn-CN' ? 'cmn-cn' : languageCode === 'multi' ? 'en-US' : languageCode;
+
   // 根据音色类型确定模型
   let modelName = undefined;
   if (fullVoiceName.includes('Chirp3-HD')) {
@@ -115,19 +118,23 @@ function getVoiceConfig(voiceName: string, languageCode: string) {
   } else if (fullVoiceName.includes('Standard')) {
     modelName = 'standard';
   }
-  
+
   return {
     languageCode: ttsLanguageCode,
     name: fullVoiceName,
-    modelName: modelName
+    modelName: modelName,
   };
 }
 
 // 生成Gemini TTS预览
-async function generateGeminiPreview(voiceName: string, text: string, languageCode: string): Promise<Uint8Array> {
+async function generateGeminiPreview(
+  voiceName: string,
+  text: string,
+  languageCode: string,
+): Promise<Uint8Array> {
   // 正确处理Gemini音色名称，支持Flash和Pro版本
   let actualVoiceName: string;
-  
+
   if (voiceName.includes('Gemini-Pro-')) {
     actualVoiceName = voiceName.replace('Gemini-Pro-', '');
   } else if (voiceName.includes('Gemini-Flash-')) {
@@ -136,38 +143,41 @@ async function generateGeminiPreview(voiceName: string, text: string, languageCo
     // 兼容旧格式
     actualVoiceName = voiceName.replace('Gemini-', '');
   }
-  
+
   console.log(`Generating Gemini preview: ${voiceName} -> ${actualVoiceName}`);
-  
+
   // Gemini TTS 只支持英语
   const audioBuffer = await synthesizeGeminiTTS({
     text,
     lang: 'en-US',
     voiceName: voiceName, // 传递完整的音色名称，让synthesizeGeminiTTS内部处理
     speakingRate: 1.0,
-    pitch: 0.0
+    pitch: 0.0,
   });
 
   return new Uint8Array(audioBuffer);
 }
 
 // 生成科大讯飞TTS预览
-async function generateXunfeiPreview(voiceName: string, text: string, languageCode: string): Promise<Uint8Array> {
+async function generateXunfeiPreview(
+  voiceName: string,
+  text: string,
+  languageCode: string,
+): Promise<Uint8Array> {
   // 将科大讯飞音色名称映射到实际的科大讯飞音色ID
   let actualVoiceId = voiceName.replace('xunfei-', '');
-  
+
   // 特殊映射：x4_yezi -> x4_yezi (已经是正确的)
   if (actualVoiceId === 'x4_yezi') {
     actualVoiceId = 'x4_yezi';
   }
-  
-  
+
   const audioBuffer = await synthesizeXunfeiTTS(text, actualVoiceId, {
     speed: 50,
     volume: 50,
-    pitch: 50
+    pitch: 50,
   });
-  
+
   // 科大讯飞TTS现在直接返回MP3格式，不需要转换
   return new Uint8Array(audioBuffer);
 }
@@ -176,23 +186,23 @@ async function generateXunfeiPreview(voiceName: string, text: string, languageCo
 function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
   const length = pcmData.length;
   console.log(`PCM数据长度: ${length}, 采样率: ${sampleRate}`);
-  
+
   // 检查PCM数据是否为空
   if (length === 0) {
     console.error('PCM数据为空');
     throw new Error('PCM数据为空');
   }
-  
+
   const buffer = new ArrayBuffer(44 + length);
   const view = new DataView(buffer);
-  
+
   // WAV文件头
   const writeString = (offset: number, string: string) => {
     for (let i = 0; i < string.length; i++) {
       view.setUint8(offset + i, string.charCodeAt(i));
     }
   };
-  
+
   // RIFF标识符
   writeString(0, 'RIFF');
   // 文件长度
@@ -219,10 +229,10 @@ function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
   writeString(36, 'data');
   // data chunk长度
   view.setUint32(40, length, true);
-  
+
   // 处理PCM数据
   const uint8Array = new Uint8Array(buffer);
-  
+
   // 如果PCM数据长度是奇数，说明可能不是16位PCM
   if (length % 2 !== 0) {
     console.log('警告: PCM数据长度不是偶数，可能格式不正确');
@@ -233,13 +243,13 @@ function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
     try {
       const pcmView = new DataView(pcmData.buffer, pcmData.byteOffset, pcmData.byteLength);
       const wavPcmView = new DataView(uint8Array.buffer, 44);
-      
+
       // 方法1: 尝试大端序到小端序转换
       for (let i = 0; i < length; i += 2) {
         const sample = pcmView.getInt16(i, false); // 大端序读取
         wavPcmView.setInt16(i, sample, true); // 小端序写入
       }
-      
+
       console.log('使用大端序到小端序转换');
     } catch (error) {
       console.log('字节序转换失败，直接复制数据:', error);
@@ -247,7 +257,7 @@ function convertPCMToWAV(pcmData: Buffer, sampleRate: number): Uint8Array {
       uint8Array.set(pcmData, 44);
     }
   }
-  
+
   console.log(`WAV文件总长度: ${uint8Array.length}`);
   return uint8Array;
 }
@@ -267,19 +277,19 @@ function getVoiceData(voiceName: string) {
 // 生成缓存键
 function generateCacheKey(voiceName: string, languageCode: string): string {
   const previewText = getPreviewText(languageCode);
-  
+
   // 获取音色数据以确定TTS提供商
   const voiceData = getVoiceData(voiceName);
-  
+
   const keyData = {
     voiceName: voiceName, // 使用完整的音色名称，包括Flash/Pro标识
     languageCode: languageCode,
     provider: voiceData?.provider || 'google', // 添加提供商信息
     text: previewText,
     speakingRate: 1.0,
-    pitch: 0.0
+    pitch: 0.0,
   };
-  
+
   return createHash('md5').update(JSON.stringify(keyData)).digest('hex');
 }
 
@@ -289,7 +299,7 @@ export async function OPTIONS(req: NextRequest) {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
 }
@@ -297,16 +307,16 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const { voiceName, languageCode } = await req.json();
-    
+
     if (!voiceName || !languageCode) {
       return NextResponse.json(
         { success: false, error: 'Missing voiceName or languageCode' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const supabaseAdmin = getServiceSupabase();
-    
+
     // 从数据库获取音色信息，包括provider
     // 不进行语言代码映射，直接使用原始语言代码
     const { data: voiceData, error: voiceError } = await supabaseAdmin
@@ -319,7 +329,7 @@ export async function POST(req: NextRequest) {
     if (voiceError || !voiceData) {
       return NextResponse.json(
         { success: false, error: 'Voice not found in database' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -328,9 +338,7 @@ export async function POST(req: NextRequest) {
     const filePath = `previews/${cacheKey}.mp3`;
 
     // 检查缓存是否存在
-    const { data: existingFile } = await supabaseAdmin.storage
-      .from(bucket)
-      .download(filePath);
+    const { data: existingFile } = await supabaseAdmin.storage.from(bucket).download(filePath);
 
     if (existingFile) {
       // 返回缓存的音频
@@ -344,7 +352,7 @@ export async function POST(req: NextRequest) {
           'X-Cache': 'HIT',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
+          'Access-Control-Allow-Headers': 'Content-Type',
         },
       });
     }
@@ -360,10 +368,11 @@ export async function POST(req: NextRequest) {
       // 使用科大讯飞TTS API
       try {
         // 检查是否为新闻播报音色，使用长文本API
-        const isNewsVoice = voiceName.includes('profnews') || 
-                           voiceName.includes('xiaoguo') || 
-                           voiceName.includes('pengfei');
-        
+        const isNewsVoice =
+          voiceName.includes('profnews') ||
+          voiceName.includes('xiaoguo') ||
+          voiceName.includes('pengfei');
+
         if (isNewsVoice) {
           const actualVoiceId = voiceName.replace('xunfei-', '');
           try {
@@ -371,7 +380,7 @@ export async function POST(req: NextRequest) {
               speed: 50,
               volume: 50,
               pitch: 50,
-              language: 'zh'
+              language: 'zh',
             });
             // 将Buffer转换为Uint8Array
             audioContent = new Uint8Array(audioBuffer);
@@ -385,12 +394,14 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         // 如果科大讯飞TTS失败，返回一个详细的错误消息
         console.error('科大讯飞TTS试听失败:', error);
-        throw new Error(`科大讯飞TTS试听失败: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(
+          `科大讯飞TTS试听失败: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     } else {
       // 使用Google Cloud TTS
       const voiceConfig = getVoiceConfig(voiceName, languageCode);
-      
+
       // 创建 TTS 请求
       const request = {
         input: { text: previewText },
@@ -398,8 +409,8 @@ export async function POST(req: NextRequest) {
         audioConfig: {
           audioEncoding: 'MP3' as const,
           speakingRate: 1.0,
-          pitch: 0.0
-        }
+          pitch: 0.0,
+        },
       };
 
       // 添加模型名称（如果需要）
@@ -409,11 +420,11 @@ export async function POST(req: NextRequest) {
 
       const client = makeClient();
       const [response] = await client.synthesizeSpeech(request);
-      
+
       if (!response.audioContent) {
         throw new Error('No audio content received');
       }
-      
+
       audioContent = response.audioContent as Uint8Array;
     }
 
@@ -422,7 +433,7 @@ export async function POST(req: NextRequest) {
       .from(bucket)
       .upload(filePath, audioContent, {
         contentType: 'audio/mpeg',
-        upsert: true // 允许覆盖
+        upsert: true, // 允许覆盖
       });
 
     if (uploadError) {
@@ -448,19 +459,18 @@ export async function POST(req: NextRequest) {
         'X-Cache': 'MISS',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        'Access-Control-Allow-Headers': 'Content-Type',
       },
     });
-
   } catch (error: any) {
     console.error('Voice preview error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Failed to generate voice preview',
-        details: error instanceof Error ? error.message : String(error) 
+        details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

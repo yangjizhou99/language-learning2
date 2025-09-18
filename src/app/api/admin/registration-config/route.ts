@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     if (!adminCheck.ok) {
       return NextResponse.json(
         { error: adminCheck.reason === 'unauthorized' ? '未登录' : '权限不足' },
-        { status: adminCheck.reason === 'unauthorized' ? 401 : 403 }
+        { status: adminCheck.reason === 'unauthorized' ? 401 : 403 },
       );
     }
 
@@ -21,10 +21,13 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       console.error('获取注册配置失败:', error);
-      return NextResponse.json({ 
-        error: '获取注册配置失败', 
-        details: error instanceof Error ? error.message : String(error) 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: '获取注册配置失败',
+          details: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
@@ -37,15 +40,17 @@ export async function GET(req: NextRequest) {
         allow_google_oauth: false,
         allow_anonymous_login: false,
         maintenance_mode: false,
-        maintenance_message: '系统维护中，请稍后再试'
-      }
+        maintenance_message: '系统维护中，请稍后再试',
+      },
     });
-
   } catch (error) {
     console.error('获取注册配置错误:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }
@@ -57,7 +62,7 @@ export async function PUT(req: NextRequest) {
     if (!adminCheck.ok) {
       return NextResponse.json(
         { error: adminCheck.reason === 'unauthorized' ? '未登录' : '权限不足' },
-        { status: adminCheck.reason === 'unauthorized' ? 401 : 403 }
+        { status: adminCheck.reason === 'unauthorized' ? 401 : 403 },
       );
     }
 
@@ -65,35 +70,43 @@ export async function PUT(req: NextRequest) {
 
     const { data, error } = await adminCheck.supabase
       .from('registration_config')
-      .upsert({
-        id: 'main',
-        ...body,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'id'
-      })
+      .upsert(
+        {
+          id: 'main',
+          ...body,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'id',
+        },
+      )
       .select()
       .single();
 
     if (error) {
       console.error('更新注册配置失败:', error);
-      return NextResponse.json({ 
-        error: '更新注册配置失败', 
-        details: error instanceof Error ? error.message : String(error) 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: '更新注册配置失败',
+          details: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
       success: true,
       config: data,
-      message: '注册配置更新成功'
+      message: '注册配置更新成功',
     });
-
   } catch (error) {
     console.error('更新注册配置错误:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

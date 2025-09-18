@@ -4,15 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Database, 
-  AlertTriangle, 
+import {
+  Database,
+  AlertTriangle,
   TrendingUp,
   RefreshCw,
   Play,
   Settings,
   Zap,
-  Target
+  Target,
 } from 'lucide-react';
 
 interface OptimizationData {
@@ -41,7 +41,7 @@ export default function AdvancedOptimizationPage() {
     try {
       const [queryResponse, errorResponse] = await Promise.all([
         fetch('/api/admin/query-optimization'),
-        fetch('/api/admin/error-analysis')
+        fetch('/api/admin/error-analysis'),
       ]);
 
       const queryData = await queryResponse.json();
@@ -49,7 +49,7 @@ export default function AdvancedOptimizationPage() {
 
       setData({
         queryOptimization: queryData.success ? queryData.optimization : null,
-        errorAnalysis: errorData.success ? errorData.analysis : null
+        errorAnalysis: errorData.success ? errorData.analysis : null,
       });
     } catch (error) {
       console.error('Failed to fetch optimization data:', error);
@@ -64,7 +64,7 @@ export default function AdvancedOptimizationPage() {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action })
+        body: JSON.stringify({ action }),
       });
 
       if (response.ok) {
@@ -152,21 +152,21 @@ export default function AdvancedOptimizationPage() {
                   <div className="mb-4">
                     <h4 className="font-medium mb-2">慢查询详情</h4>
                     <div className="space-y-2">
-                      {data.queryOptimization.slowQueries.slice(0, 3).map((query: any, index: number) => (
-                        <div key={index} className="p-3 border rounded-lg">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-medium">
-                              平均时间: {query.mean_time?.toFixed(1)}ms
-                            </span>
-                            <Badge variant="outline">
-                              {query.calls} 次调用
-                            </Badge>
+                      {data.queryOptimization.slowQueries
+                        .slice(0, 3)
+                        .map((query: any, index: number) => (
+                          <div key={index} className="p-3 border rounded-lg">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-sm font-medium">
+                                平均时间: {query.mean_time?.toFixed(1)}ms
+                              </span>
+                              <Badge variant="outline">{query.calls} 次调用</Badge>
+                            </div>
+                            <div className="text-xs text-gray-600 font-mono bg-gray-100 p-2 rounded">
+                              {query.query?.substring(0, 150)}...
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-600 font-mono bg-gray-100 p-2 rounded">
-                            {query.query?.substring(0, 150)}...
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 )}
@@ -175,26 +175,36 @@ export default function AdvancedOptimizationPage() {
                 <div className="mb-4">
                   <h4 className="font-medium mb-2">索引使用情况</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {data.queryOptimization.indexUsage.slice(0, 6).map((index: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-center p-2 border rounded">
-                        <span className="text-sm">{index.indexname}</span>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs text-gray-500">{index.idx_scan} 次扫描</span>
-                          <Badge 
-                            variant={index.usage_status === 'ACTIVE' ? 'default' : 
-                                   index.usage_status === 'LOW_USAGE' ? 'secondary' : 'destructive'}
-                            className="text-xs"
-                          >
-                            {index.usage_status}
-                          </Badge>
+                    {data.queryOptimization.indexUsage
+                      .slice(0, 6)
+                      .map((index: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex justify-between items-center p-2 border rounded"
+                        >
+                          <span className="text-sm">{index.indexname}</span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500">{index.idx_scan} 次扫描</span>
+                            <Badge
+                              variant={
+                                index.usage_status === 'ACTIVE'
+                                  ? 'default'
+                                  : index.usage_status === 'LOW_USAGE'
+                                    ? 'secondary'
+                                    : 'destructive'
+                              }
+                              className="text-xs"
+                            >
+                              {index.usage_status}
+                            </Badge>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
 
                 <div className="flex space-x-2">
-                  <Button 
+                  <Button
                     onClick={() => executeAction('vacuum', '/api/admin/query-optimization')}
                     disabled={actionLoading === 'vacuum'}
                     variant="outline"
@@ -207,7 +217,7 @@ export default function AdvancedOptimizationPage() {
                     )}
                     清理数据库
                   </Button>
-                  <Button 
+                  <Button
                     onClick={() => executeAction('reset_stats', '/api/admin/query-optimization')}
                     disabled={actionLoading === 'reset_stats'}
                     variant="outline"
@@ -267,17 +277,22 @@ export default function AdvancedOptimizationPage() {
                   <div className="mb-4">
                     <h4 className="font-medium mb-2">常见错误</h4>
                     <div className="space-y-2">
-                      {data.errorAnalysis.errorAnalysis.commonErrors.map((error: any, index: number) => (
-                        <div key={index} className="flex justify-between items-center p-2 border rounded">
-                          <span className="text-sm">{error.error}</span>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-xs text-gray-500">{error.count} 次</span>
-                            <Badge variant="outline" className="text-xs">
-                              {error.percentage}%
-                            </Badge>
+                      {data.errorAnalysis.errorAnalysis.commonErrors.map(
+                        (error: any, index: number) => (
+                          <div
+                            key={index}
+                            className="flex justify-between items-center p-2 border rounded"
+                          >
+                            <span className="text-sm">{error.error}</span>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs text-gray-500">{error.count} 次</span>
+                              <Badge variant="outline" className="text-xs">
+                                {error.percentage}%
+                              </Badge>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ),
+                      )}
                     </div>
                   </div>
                 )}
@@ -290,9 +305,7 @@ export default function AdvancedOptimizationPage() {
                       {data.errorAnalysis.longRunningQueries.map((query: any, index: number) => (
                         <div key={index} className="p-3 border border-red-200 rounded-lg bg-red-50">
                           <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-medium">
-                              运行时间: {query.duration}
-                            </span>
+                            <span className="text-sm font-medium">运行时间: {query.duration}</span>
                             <Badge variant="destructive" className="text-xs">
                               PID: {query.pid}
                             </Badge>
@@ -307,7 +320,7 @@ export default function AdvancedOptimizationPage() {
                 )}
 
                 <div className="flex space-x-2">
-                  <Button 
+                  <Button
                     onClick={() => executeAction('kill_long_queries', '/api/admin/error-analysis')}
                     disabled={actionLoading === 'kill_long_queries'}
                     variant="outline"
@@ -376,23 +389,23 @@ export default function AdvancedOptimizationPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button 
-                  onClick={() => window.location.href = '/admin/performance-test'}
+                <Button
+                  onClick={() => (window.location.href = '/admin/performance-test')}
                   className="h-16 flex flex-col items-center justify-center"
                 >
                   <Play className="w-5 h-5 mb-1" />
                   <span className="text-sm">运行性能测试</span>
                 </Button>
-                <Button 
-                  onClick={() => window.location.href = '/admin/performance'}
+                <Button
+                  onClick={() => (window.location.href = '/admin/performance')}
                   variant="outline"
                   className="h-16 flex flex-col items-center justify-center"
                 >
                   <TrendingUp className="w-5 h-5 mb-1" />
                   <span className="text-sm">查看性能监控</span>
                 </Button>
-                <Button 
-                  onClick={() => window.location.href = '/admin/performance-optimization'}
+                <Button
+                  onClick={() => (window.location.href = '/admin/performance-optimization')}
                   variant="outline"
                   className="h-16 flex flex-col items-center justify-center"
                 >

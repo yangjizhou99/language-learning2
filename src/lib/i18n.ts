@@ -26,7 +26,7 @@ export interface Translations {
     checking_login: string;
     login_required: string;
   };
-  
+
   // 导航
   nav: {
     home: string;
@@ -37,7 +37,7 @@ export interface Translations {
     vocabulary: string;
     admin: string;
   };
-  
+
   // 练习相关
   practice: {
     start_practice: string;
@@ -51,7 +51,7 @@ export interface Translations {
     no_items: string;
     practice_complete: string;
   };
-  
+
   // 管理员面板
   admin: {
     dashboard: string;
@@ -65,7 +65,7 @@ export interface Translations {
     batch_generation: string;
     settings: string;
   };
-  
+
   // 表单标签
   form: {
     title: string;
@@ -81,7 +81,7 @@ export interface Translations {
     password: string;
     password_min: string;
   };
-  
+
   // 认证页面
   auth: {
     login_title: string;
@@ -94,7 +94,7 @@ export interface Translations {
     signup_failed: string;
     google_login_failed: string;
   };
-  
+
   // Shadowing 练习
   shadowing: {
     title: string;
@@ -227,7 +227,7 @@ export interface Translations {
     // 功能说明
     functionality_guide: string;
   };
-  
+
   // 词汇页面
   vocabulary: {
     title: string;
@@ -540,7 +540,8 @@ const zh: Translations = {
     saving_modal_title: '保存中...',
     saving_modal_description: '正在保存练习数据，请稍候',
     // 功能说明
-    functionality_guide: '📚 题目选择：支持日英中三语，L1-L5难度等级，智能筛选\n🎤 录音练习：音频播放、实时录音、发音对比\n🎯 智能评分：语音识别、5级评分体系\n📖 生词管理：拖拽选择生词，自动保存到生词本\n💾 进度跟踪：练习状态管理，支持草稿保存',
+    functionality_guide:
+      '📚 题目选择：支持日英中三语，L1-L5难度等级，智能筛选\n🎤 录音练习：音频播放、实时录音、发音对比\n🎯 智能评分：语音识别、5级评分体系\n📖 生词管理：拖拽选择生词，自动保存到生词本\n💾 进度跟踪：练习状态管理，支持草稿保存',
   },
   vocabulary: {
     title: '生词本',
@@ -719,7 +720,8 @@ const en: Translations = {
     google_login: 'Login with Google',
     use_google_login: 'Login with Google',
     signup_success: 'Registration successful',
-    signup_success_email: 'Registration successful. If email verification is enabled, please check your email to complete confirmation.',
+    signup_success_email:
+      'Registration successful. If email verification is enabled, please check your email to complete confirmation.',
     login_failed: 'Login failed',
     signup_failed: 'Registration failed',
     google_login_failed: 'Google login initiation failed',
@@ -811,7 +813,8 @@ const en: Translations = {
     refresh_vocabulary: 'Refresh Vocabulary',
     select_question_to_start: 'Select a question to start practice',
     click_vocabulary_button: 'Click the "Vocabulary" button above to select a question',
-    select_from_left_vocabulary: 'Select a question from the left vocabulary to start Shadowing practice',
+    select_from_left_vocabulary:
+      'Select a question from the left vocabulary to start Shadowing practice',
     shadowing_practice: 'Shadowing Practice',
     shadowing_vocabulary: 'Shadowing Vocabulary',
     no_questions_found: 'No questions found',
@@ -836,7 +839,8 @@ const en: Translations = {
     detailed_analysis: 'Detailed Analysis',
     sentence: 'Sentence',
     issues: 'Issues',
-    analysis_based_on_sentence_level: 'Analysis based on sentence level, more intuitively showing pronunciation issues',
+    analysis_based_on_sentence_level:
+      'Analysis based on sentence level, more intuitively showing pronunciation issues',
     overall_score: 'Overall Score',
     pronunciation_accuracy: 'Pronunciation Accuracy',
     improvement_suggestions: 'Improvement Suggestions',
@@ -853,7 +857,8 @@ const en: Translations = {
     saving_modal_title: 'Saving...',
     saving_modal_description: 'Saving practice data, please wait',
     // 功能说明
-    functionality_guide: '📚 Question Selection: Japanese/English/Chinese, L1-L5 levels, smart filtering\n🎤 Recording Practice: Audio playback, real-time recording, pronunciation comparison\n🎯 Smart Scoring: Speech recognition, 5-level scoring system\n📖 Vocabulary Management: Drag to select words, auto-save to vocabulary\n💾 Progress Tracking: Practice status management, draft saving support',
+    functionality_guide:
+      '📚 Question Selection: Japanese/English/Chinese, L1-L5 levels, smart filtering\n🎤 Recording Practice: Audio playback, real-time recording, pronunciation comparison\n🎯 Smart Scoring: Speech recognition, 5-level scoring system\n📖 Vocabulary Management: Drag to select words, auto-save to vocabulary\n💾 Progress Tracking: Practice status management, draft saving support',
   },
   vocabulary: {
     title: 'Vocabulary',
@@ -930,7 +935,8 @@ const en: Translations = {
       no_vocab_desc: 'Go to Shadowing practice to add some words!',
       error: 'Error',
       confirm_delete: 'Are you sure you want to delete this word?',
-      confirm_batch_delete: 'Are you sure you want to delete {count} selected words? This action cannot be undone!',
+      confirm_batch_delete:
+        'Are you sure you want to delete {count} selected words? This action cannot be undone!',
       delete_success: 'Successfully deleted {count} words!',
       delete_failed: 'Delete failed: {error}',
       update_failed: 'Update failed, please try again',
@@ -1032,7 +1038,8 @@ const ja: Translations = {
     google_login: 'Googleでログイン',
     use_google_login: 'Googleでログイン',
     signup_success: '登録成功',
-    signup_success_email: '登録が完了しました。メール認証が有効な場合は、メールで確認を完了してください。',
+    signup_success_email:
+      '登録が完了しました。メール認証が有効な場合は、メールで確認を完了してください。',
     login_failed: 'ログイン失敗',
     signup_failed: '登録失敗',
     google_login_failed: 'Googleログインの開始に失敗しました',
@@ -1124,7 +1131,8 @@ const ja: Translations = {
     refresh_vocabulary: 'シャドーイング试题库更新',
     select_question_to_start: '問題を選択して練習を開始',
     click_vocabulary_button: '上の「シャドーイング试题库」ボタンをクリックして問題を選択',
-    select_from_left_vocabulary: '左側のシャドーイング试题库から問題を選択してシャドーイング練習を開始',
+    select_from_left_vocabulary:
+      '左側のシャドーイング试题库から問題を選択してシャドーイング練習を開始',
     shadowing_practice: 'シャドーイング練習',
     shadowing_vocabulary: 'シャドーイング试题库',
     no_questions_found: '問題が見つかりません',
@@ -1166,7 +1174,8 @@ const ja: Translations = {
     saving_modal_title: '保存中...',
     saving_modal_description: '練習データを保存中です。お待ちください',
     // 功能说明
-    functionality_guide: '📚 問題選択：日英中三言語、L1-L5レベル、スマートフィルタリング\n🎤 録音練習：音声再生、リアルタイム録音、発音比較\n🎯 スマート採点：音声認識、5段階採点システム\n📖 単語管理：ドラッグで単語選択、自動保存\n💾 進捗追跡：練習状況管理、下書き保存対応',
+    functionality_guide:
+      '📚 問題選択：日英中三言語、L1-L5レベル、スマートフィルタリング\n🎤 録音練習：音声再生、リアルタイム録音、発音比較\n🎯 スマート採点：音声認識、5段階採点システム\n📖 単語管理：ドラッグで単語選択、自動保存\n💾 進捗追跡：練習状況管理、下書き保存対応',
   },
   vocabulary: {
     title: '単語帳',
@@ -1243,7 +1252,8 @@ const ja: Translations = {
       no_vocab_desc: 'シャドーイング練習で単語を追加しましょう！',
       error: 'エラー',
       confirm_delete: 'この単語を削除してもよろしいですか？',
-      confirm_batch_delete: '選択した {count} 語を削除してもよろしいですか？この操作は元に戻せません！',
+      confirm_batch_delete:
+        '選択した {count} 語を削除してもよろしいですか？この操作は元に戻せません！',
       delete_success: '{count} 語を正常に削除しました！',
       delete_failed: '削除失敗：{error}',
       update_failed: '更新失敗、再試行してください',

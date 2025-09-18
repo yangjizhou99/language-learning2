@@ -25,10 +25,12 @@ class PerformanceMonitor {
 
   constructor(config: Partial<PerformanceConfig> = {}) {
     this.config = {
-      enabled: process.env.NODE_ENV === 'development' || process.env.ENABLE_PERFORMANCE_MONITORING === 'true',
+      enabled:
+        process.env.NODE_ENV === 'development' ||
+        process.env.ENABLE_PERFORMANCE_MONITORING === 'true',
       slowThreshold: 1000, // 1秒
       maxMetrics: 1000,
-      ...config
+      ...config,
     };
   }
 
@@ -44,9 +46,9 @@ class PerformanceMonitor {
    * 结束计时并记录指标
    */
   endTimer(
-    name: string, 
+    name: string,
     type: PerformanceMetric['type'] = 'custom',
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): number {
     if (!this.config.enabled) return 0;
 
@@ -64,7 +66,7 @@ class PerformanceMonitor {
       duration,
       timestamp: Date.now(),
       type,
-      metadata
+      metadata,
     };
 
     this.recordMetric(metric);
@@ -97,18 +99,18 @@ class PerformanceMonitor {
   async measureApiCall<T>(
     name: string,
     apiCall: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<T> {
     this.startTimer(name);
-    
+
     try {
       const result = await apiCall();
       const duration = this.endTimer(name, 'api', metadata);
-      
+
       if (duration > this.config.slowThreshold) {
         console.warn(`慢API调用: ${name} 耗时 ${duration.toFixed(2)}ms`);
       }
-      
+
       return result;
     } catch (error) {
       this.endTimer(name, 'api', { ...metadata, error: true });
@@ -122,13 +124,14 @@ class PerformanceMonitor {
   measureComponentRender(
     componentName: string,
     renderFn: () => void,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): void {
     this.startTimer(`component:${componentName}`);
     renderFn();
     const duration = this.endTimer(`component:${componentName}`, 'component', metadata);
-    
-    if (duration > 16) { // 超过一帧时间
+
+    if (duration > 16) {
+      // 超过一帧时间
       console.warn(`组件渲染慢: ${componentName} 耗时 ${duration.toFixed(2)}ms`);
     }
   }
@@ -139,18 +142,18 @@ class PerformanceMonitor {
   async measureDatabaseQuery<T>(
     queryName: string,
     queryFn: () => Promise<T>,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<T> {
     this.startTimer(queryName);
-    
+
     try {
       const result = await queryFn();
       const duration = this.endTimer(queryName, 'database', metadata);
-      
+
       if (duration > this.config.slowThreshold) {
         console.warn(`慢数据库查询: ${queryName} 耗时 ${duration.toFixed(2)}ms`);
       }
-      
+
       return result;
     } catch (error) {
       this.endTimer(queryName, 'database', { ...metadata, error: true });
@@ -170,13 +173,13 @@ class PerformanceMonitor {
   } {
     const total = this.metrics.length;
     const byType: Record<string, number> = {};
-    const slowOperations = this.metrics.filter(m => m.duration > this.config.slowThreshold);
+    const slowOperations = this.metrics.filter((m) => m.duration > this.config.slowThreshold);
     const averageDuration = this.metrics.reduce((sum, m) => sum + m.duration, 0) / total;
     const slowestOperations = [...this.metrics]
       .sort((a, b) => b.duration - a.duration)
       .slice(0, 10);
 
-    this.metrics.forEach(metric => {
+    this.metrics.forEach((metric) => {
       byType[metric.type] = (byType[metric.type] || 0) + 1;
     });
 
@@ -185,7 +188,7 @@ class PerformanceMonitor {
       byType,
       slowOperations,
       averageDuration,
-      slowestOperations
+      slowestOperations,
     };
   }
 
@@ -208,7 +211,7 @@ class PerformanceMonitor {
    * 获取特定类型的指标
    */
   getMetricsByType(type: PerformanceMetric['type']): PerformanceMetric[] {
-    return this.metrics.filter(m => m.type === type);
+    return this.metrics.filter((m) => m.type === type);
   }
 
   /**
@@ -216,7 +219,7 @@ class PerformanceMonitor {
    */
   getSlowMetrics(threshold?: number): PerformanceMetric[] {
     const thresholdToUse = threshold || this.config.slowThreshold;
-    return this.metrics.filter(m => m.duration > thresholdToUse);
+    return this.metrics.filter((m) => m.duration > thresholdToUse);
   }
 }
 
@@ -226,7 +229,7 @@ export const performanceMonitor = new PerformanceMonitor({
   onSlowOperation: (metric) => {
     // 可以在这里发送到监控服务
     console.warn(`性能警告: ${metric.name} 耗时 ${metric.duration.toFixed(2)}ms`, metric);
-  }
+  },
 });
 
 /**
@@ -235,14 +238,12 @@ export const performanceMonitor = new PerformanceMonitor({
 export function withPerformanceMonitoring<T extends any[], R>(
   fn: (...args: T) => Promise<R>,
   operationName: string,
-  type: PerformanceMetric['type'] = 'custom'
+  type: PerformanceMetric['type'] = 'custom',
 ) {
   return async (...args: T): Promise<R> => {
-    return performanceMonitor.measureApiCall(
-      operationName,
-      () => fn(...args),
-      { args: args.length }
-    );
+    return performanceMonitor.measureApiCall(operationName, () => fn(...args), {
+      args: args.length,
+    });
   };
 }
 
@@ -251,7 +252,7 @@ export function withPerformanceMonitoring<T extends any[], R>(
  */
 export function usePerformanceMonitoring(componentName: string) {
   const startTime = performance.now();
-  
+
   return {
     endRender: (metadata?: Record<string, any>) => {
       const duration = performance.now() - startTime;
@@ -260,9 +261,9 @@ export function usePerformanceMonitoring(componentName: string) {
         duration,
         timestamp: Date.now(),
         type: 'component',
-        metadata
+        metadata,
       });
-    }
+    },
   };
 }
 
@@ -271,18 +272,14 @@ export function usePerformanceMonitoring(componentName: string) {
  */
 export function withApiPerformanceMonitoring(
   handler: (req: Request) => Promise<Response>,
-  routeName: string
+  routeName: string,
 ) {
   return async (req: Request): Promise<Response> => {
-    return performanceMonitor.measureApiCall(
-      `api:${routeName}`,
-      () => handler(req),
-      {
-        method: req.method,
-        url: req.url,
-        userAgent: req.headers.get('user-agent')
-      }
-    );
+    return performanceMonitor.measureApiCall(`api:${routeName}`, () => handler(req), {
+      method: req.method,
+      url: req.url,
+      userAgent: req.headers.get('user-agent'),
+    });
   };
 }
 
@@ -292,7 +289,7 @@ export function withApiPerformanceMonitoring(
 export function withDatabasePerformanceMonitoring<T>(
   queryFn: () => Promise<T>,
   queryName: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, any>,
 ): Promise<T> {
   return performanceMonitor.measureDatabaseQuery(queryName, queryFn, metadata);
 }
@@ -302,7 +299,7 @@ export function withDatabasePerformanceMonitoring<T>(
  */
 export function generatePerformanceReport(): string {
   const stats = performanceMonitor.getStats();
-  
+
   return `
 性能监控报告
 ============

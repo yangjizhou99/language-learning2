@@ -4,12 +4,12 @@ export interface Lexicon {
   pronouns: string[];
 }
 
-declare module "../../../data/lexicon/en.json" {
+declare module '../../../data/lexicon/en.json' {
   const value: Lexicon;
   export default value;
 }
 
-declare module "../../../data/lexicon/ja.json" {
+declare module '../../../data/lexicon/ja.json' {
   export interface Lexicon {
     connectives: string[];
     time: string[];
@@ -19,7 +19,7 @@ declare module "../../../data/lexicon/ja.json" {
   export default value;
 }
 
-declare module "../../../data/lexicon/zh.json" {
+declare module '../../../data/lexicon/zh.json' {
   export interface Lexicon {
     connectives: string[];
     time: string[];
@@ -31,7 +31,7 @@ declare module "../../../data/lexicon/zh.json" {
 
 export interface SpanItem {
   span: [number, number];
-  tag: "connective" | "time";
+  tag: 'connective' | 'time';
   surface: string;
 }
 

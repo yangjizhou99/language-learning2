@@ -1,18 +1,19 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
-import { chatJSON } from "@/lib/ai/client";
-import { normUsage } from "@/lib/ai/usage";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
+import { chatJSON } from '@/lib/ai/client';
+import { normUsage } from '@/lib/ai/usage';
 
 function sysPrompt() {
   return `You are a JSON-only assistant that provides textual hints for manual annotation.
 Return **valid JSON only** (no extra text). Do NOT include character indices. Keep lists concise and high-quality.`;
 }
 
-function userPrompt(text: string, lang: "en"|"ja"|"zh") {
-  if (lang === "en") return `
+function userPrompt(text: string, lang: 'en' | 'ja' | 'zh') {
+  if (lang === 'en')
+    return `
 LANG=en
 
 TASK: Provide **textual suggestions only** for a language-learning annotator.
@@ -33,7 +34,8 @@ OUTPUT JSON schema:
 TEXT<<<
 ${text}
 >>>`;
-  if (lang === "ja") return `
+  if (lang === 'ja')
+    return `
 LANG=ja
 
 目的: 文字のみの参考意見（索引は不要）。管理者が手動でアノテーションします。
@@ -79,43 +81,55 @@ ${text}
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAdmin(req); if (!auth.ok) return NextResponse.json({ error:"forbidden" }, { status:403 });
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   const supabase = auth.supabase;
   const { id } = await params;
 
-  const { data: d, error } = await supabase.from("article_drafts").select("*").eq("id", id).single();
-  if (error || !d) return NextResponse.json({ error: "draft not found" }, { status:404 });
+  const { data: d, error } = await supabase
+    .from('article_drafts')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error || !d) return NextResponse.json({ error: 'draft not found' }, { status: 404 });
 
   const body = await req.json();
-  const provider = (body.provider || "deepseek") as "openrouter"|"deepseek"|"openai";
-  const model = body.model || "deepseek-chat";
+  const provider = (body.provider || 'deepseek') as 'openrouter' | 'deepseek' | 'openai';
+  const model = body.model || 'deepseek-chat';
   const temperature = body.temperature ?? 0.3;
 
-  const lang = (d.lang as "en"|"ja"|"zh") || "en";
+  const lang = (d.lang as 'en' | 'ja' | 'zh') || 'en';
   const text: string = d.text;
 
   const { content, usage } = await chatJSON({
-    provider, model, temperature, response_json: true,
+    provider,
+    model,
+    temperature,
+    response_json: true,
     messages: [
-      { role: "system", content: sysPrompt() },
-      { role: "user", content: userPrompt(text, lang) }
-    ]
+      { role: 'system', content: sysPrompt() },
+      { role: 'user', content: userPrompt(text, lang) },
+    ],
   });
 
-  let suggestions: any; try { suggestions = JSON.parse(content); } catch {
-    return NextResponse.json({ error: "LLM 未返回 JSON" }, { status: 400 });
+  let suggestions: any;
+  try {
+    suggestions = JSON.parse(content);
+  } catch {
+    return NextResponse.json({ error: 'LLM 未返回 JSON' }, { status: 400 });
   }
   const u = normUsage(usage);
 
-  await supabase.from("article_drafts").update({
-    ai_text_provider: provider,
-    ai_text_model: model,
-    ai_text_usage: u,
-    ai_text_suggestion: suggestions,
-    updated_at: new Date().toISOString()
-  }).eq("id", id);
+  await supabase
+    .from('article_drafts')
+    .update({
+      ai_text_provider: provider,
+      ai_text_model: model,
+      ai_text_usage: u,
+      ai_text_suggestion: suggestions,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id);
 
-  return NextResponse.json({ ok:true, suggestions, usage: u });
+  return NextResponse.json({ ok: true, suggestions, usage: u });
 }
-
-

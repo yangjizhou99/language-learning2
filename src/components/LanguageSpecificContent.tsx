@@ -6,7 +6,7 @@ const ChineseContent: React.FC = () => {
   return (
     <div className="chinese-content">
       <h1 className="text-2xl font-bold mb-4">Shadowing 跟读练习</h1>
-      
+
       {/* 筛选区域 */}
       <div className="filter-section mb-6">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -18,7 +18,7 @@ const ChineseContent: React.FC = () => {
               <option value="ja">日本語</option>
             </select>
           </div>
-          
+
           <div>
             <label className="filter-label">等级</label>
             <select className="w-full p-2 border border-gray-300 rounded">
@@ -28,7 +28,7 @@ const ChineseContent: React.FC = () => {
               <option value="3">L3 - 中级</option>
             </select>
           </div>
-          
+
           <div>
             <label className="filter-label">练习状态</label>
             <select className="w-full p-2 border border-gray-300 rounded">
@@ -40,7 +40,7 @@ const ChineseContent: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* 统计信息 */}
       <div className="stats-section mb-6">
         <div className="flex items-center justify-between text-sm text-gray-600">
@@ -52,7 +52,7 @@ const ChineseContent: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* 操作按钮 */}
       <div className="action-buttons mb-6">
         <button className="button-primary mr-2">播放音频</button>
@@ -69,7 +69,7 @@ const JapaneseContent: React.FC = () => {
   return (
     <div className="japanese-content">
       <h1 className="text-2xl font-bold mb-4">シャドーイング練習</h1>
-      
+
       {/* 筛选区域 */}
       <div className="filter-section mb-6">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -81,7 +81,7 @@ const JapaneseContent: React.FC = () => {
               <option value="ja">日本語</option>
             </select>
           </div>
-          
+
           <div>
             <label className="filter-label">レベル</label>
             <select className="w-full p-2 border border-gray-300 rounded">
@@ -91,7 +91,7 @@ const JapaneseContent: React.FC = () => {
               <option value="3">L3 - 中級</option>
             </select>
           </div>
-          
+
           <div>
             <label className="filter-label">練習状態</label>
             <select className="w-full p-2 border border-gray-300 rounded">
@@ -103,7 +103,7 @@ const JapaneseContent: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* 统计信息 */}
       <div className="stats-section mb-6">
         <div className="flex items-center justify-between text-sm text-gray-600">
@@ -115,7 +115,7 @@ const JapaneseContent: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* 操作按钮 */}
       <div className="action-buttons mb-6">
         <button className="button-primary mr-2">音声再生</button>
@@ -132,7 +132,7 @@ const EnglishContent: React.FC = () => {
   return (
     <div className="english-content">
       <h1 className="text-2xl font-bold mb-4">Shadowing Practice</h1>
-      
+
       {/* 筛选区域 */}
       <div className="filter-section mb-6">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -144,7 +144,7 @@ const EnglishContent: React.FC = () => {
               <option value="ja">Japanese</option>
             </select>
           </div>
-          
+
           <div>
             <label className="filter-label">Level</label>
             <select className="w-full p-2 border border-gray-300 rounded">
@@ -154,7 +154,7 @@ const EnglishContent: React.FC = () => {
               <option value="3">L3 - Intermediate</option>
             </select>
           </div>
-          
+
           <div>
             <label className="filter-label">Practice Status</label>
             <select className="w-full p-2 border border-gray-300 rounded">
@@ -166,7 +166,7 @@ const EnglishContent: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* 统计信息 */}
       <div className="stats-section mb-6">
         <div className="flex items-center justify-between text-sm text-gray-600">
@@ -178,7 +178,7 @@ const EnglishContent: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* 操作按钮 */}
       <div className="action-buttons mb-6">
         <button className="button-primary mr-2">Play Audio</button>
@@ -207,8 +207,3 @@ const LanguageSpecificContent: React.FC = () => {
 };
 
 export default LanguageSpecificContent;
-
-
-
-
-

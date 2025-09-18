@@ -13,36 +13,42 @@ const ExplainVocabSchema = z.object({
   provider: z.string().default('deepseek'),
   model: z.string().default('deepseek-chat'),
   temperature: z.number().min(0).max(2).default(0.7),
-  word_info: z.object({
-    term: z.string(),
-    lang: z.string(),
-    context: z.string().optional()
-  }).optional(),
-  word_info_batch: z.array(z.object({
-    term: z.string(),
-    lang: z.string(),
-    context: z.string().optional()
-  })).optional(),
+  word_info: z
+    .object({
+      term: z.string(),
+      lang: z.string(),
+      context: z.string().optional(),
+    })
+    .optional(),
+  word_info_batch: z
+    .array(
+      z.object({
+        term: z.string(),
+        lang: z.string(),
+        context: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const cookieStore = await cookies();
-    
+
     // 检查是否有 Authorization header
     const authHeader = request.headers.get('authorization');
     const hasBearer = /^Bearer\s+/.test(authHeader || '');
-    
+
     let supabase: any;
-    
+
     if (hasBearer) {
       supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
           auth: { persistSession: false, autoRefreshToken: false },
-          global: { headers: { Authorization: authHeader! } }
-        }
+          global: { headers: { Authorization: authHeader! } },
+        },
       );
     } else {
       supabase = createServerClient(
@@ -59,19 +65,23 @@ export async function POST(request: NextRequest) {
             remove() {
               // no-op for Route Handler
             },
-          }
-        }
+          },
+        },
       );
     }
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     if (authError || !user) {
       return NextResponse.json({ error: '未授权' }, { status: 401 });
     }
 
     const body = await request.json();
-    const { entry_ids, native_lang, provider, model, temperature, word_info, word_info_batch } = ExplainVocabSchema.parse(body);
+    const { entry_ids, native_lang, provider, model, temperature, word_info, word_info_batch } =
+      ExplainVocabSchema.parse(body);
 
     let entries: any[] = [];
 
@@ -82,17 +92,19 @@ export async function POST(request: NextRequest) {
         term: info.term,
         lang: info.lang,
         context: info.context || '',
-        user_id: user.id
+        user_id: user.id,
       }));
     } else if (word_info) {
       // 直接使用传递的单词信息
-      entries = [{
-        id: 'temp-' + Date.now(),
-        term: word_info.term,
-        lang: word_info.lang,
-        context: word_info.context || '',
-        user_id: user.id
-      }];
+      entries = [
+        {
+          id: 'temp-' + Date.now(),
+          term: word_info.term,
+          lang: word_info.lang,
+          context: word_info.context || '',
+          user_id: user.id,
+        },
+      ];
     } else if (entry_ids && entry_ids.length > 0) {
       // 从数据库获取要解释的生词
       const { data: dbEntries, error: fetchError } = await supabase
@@ -113,13 +125,13 @@ export async function POST(request: NextRequest) {
     const nativeLangNames = {
       zh: '中文',
       en: 'English',
-      ja: '日本語'
+      ja: '日本語',
     };
 
     const targetLangNames = {
       en: 'English',
       ja: '日本語',
-      zh: '中文'
+      zh: '中文',
     };
 
     const prompt = `你是一个专业的语言学习助手。请为以下生词生成详细的解释和例句。
@@ -166,11 +178,15 @@ JSON格式要求：
 }
 
 生词列表：
-${entries.map((entry: any) => `
+${entries
+  .map(
+    (entry: any) => `
 词条: ${entry.term}
 语言: ${targetLangNames[entry.lang as keyof typeof targetLangNames]}
 上下文: ${entry.context || '无'}
-`).join('\n')}
+`,
+  )
+  .join('\n')}
 
 ⚠️ 最终提醒：
 - 确保所有 gloss_native 都是${nativeLangNames[native_lang]}（解释用母语）
@@ -182,19 +198,19 @@ ${entries.map((entry: any) => `
 
     // 调用AI生成解释
     const response = await chatJSON({
-      provider: provider as "openrouter" | "deepseek" | "openai",
+      provider: provider as 'openrouter' | 'deepseek' | 'openai',
       model,
       messages: [
-        { 
-          role: 'system', 
-          content: `你是一个专业的语言学习助手。用户希望用${nativeLangNames[native_lang]}学习外语词汇。解释要用${nativeLangNames[native_lang]}，但例句要用生词的原语言，然后提供${nativeLangNames[native_lang]}翻译。`
+        {
+          role: 'system',
+          content: `你是一个专业的语言学习助手。用户希望用${nativeLangNames[native_lang]}学习外语词汇。解释要用${nativeLangNames[native_lang]}，但例句要用生词的原语言，然后提供${nativeLangNames[native_lang]}翻译。`,
         },
-        { role: 'user', content: prompt }
+        { role: 'user', content: prompt },
       ],
       temperature: Math.min(temperature, 0.3), // 降低温度以提高准确性
       userId: user.id, // 传递用户ID进行权限检查和使用用户特定的API密钥
       response_json: true,
-      timeoutMs: 30000
+      timeoutMs: 30000,
     });
 
     let explanations;
@@ -214,9 +230,9 @@ ${entries.map((entry: any) => `
         const explanation = explanations[index] || null;
         return supabase
           .from('vocab_entries')
-          .update({ 
+          .update({
             explanation,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq('id', entry.id)
           .eq('user_id', user.id);
@@ -235,21 +251,38 @@ ${entries.map((entry: any) => `
       success: true,
       count: entries.length,
       usage: response.usage,
-      explanations
+      explanations,
     });
-
   } catch (error) {
     console.error('生成生词解释API错误:', error);
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ 
-        error: '请求格式错误', 
-        details: error.issues?.map(issue => `${issue.path.join('.')}: ${issue.message}`).join(', ') || '未知验证错误'
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: '请求格式错误',
+          details:
+            error.issues?.map((issue) => `${issue.path.join('.')}: ${issue.message}`).join(', ') ||
+            '未知验证错误',
+        },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ 
-      error: '服务器错误', 
-      details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
-      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: '服务器错误',
+        details:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : String(error),
+        stack:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.stack
+              : undefined
+            : undefined,
+      },
+      { status: 500 },
+    );
   }
 }

@@ -7,6 +7,7 @@
 ## 功能特性
 
 ### 🎫 邀请码管理
+
 - **创建邀请码**：管理员可以创建带有自定义权限的邀请码
 - **权限控制**：细粒度控制用户可访问的功能模块
 - **使用限制**：设置最大使用次数和过期时间
@@ -14,6 +15,7 @@
 - **使用统计**：查看邀请码使用情况
 
 ### 🔐 权限系统
+
 - **模块权限**：控制用户可访问的练习模块（跟读、完形填空、对齐练习、文章阅读）
 - **AI功能**：控制用户是否可以使用AI功能
 - **语言限制**：限制用户可学习的语言
@@ -25,11 +27,13 @@
 - **权限过期**：支持权限过期时间设置
 
 ### 📋 权限来源规则
+
 - **邀请码注册**：使用邀请码的权限设置，完全覆盖任何现有权限
 - **直接注册**：使用系统默认权限设置
 - **无冲突**：两种注册方式使用不同的权限来源，不会产生冲突
 
 ### 👤 用户注册
+
 - **邀请码验证**：注册前验证邀请码有效性
 - **权限预览**：显示邀请码对应的权限设置
 - **自动权限应用**：注册成功后自动应用邀请码权限
@@ -86,6 +90,7 @@
 ## 数据库结构
 
 ### invitation_codes 表
+
 ```sql
 - id: 主键
 - code: 8位邀请码（唯一）
@@ -101,6 +106,7 @@
 ```
 
 ### invitation_uses 表
+
 ```sql
 - id: 主键
 - code_id: 邀请码ID
@@ -109,6 +115,7 @@
 ```
 
 ### profiles 表（新增字段）
+
 ```sql
 - invited_by: 邀请者ID
 - invitation_code_id: 使用的邀请码ID
@@ -120,12 +127,14 @@
 ### 管理员接口
 
 #### 获取邀请码列表
+
 ```
 GET /api/admin/invitations
 Query: page, limit, created_by
 ```
 
 #### 创建邀请码
+
 ```
 POST /api/admin/invitations
 Body: {
@@ -137,6 +146,7 @@ Body: {
 ```
 
 #### 更新邀请码
+
 ```
 PUT /api/admin/invitations/[id]
 Body: {
@@ -149,11 +159,13 @@ Body: {
 ```
 
 #### 删除邀请码
+
 ```
 DELETE /api/admin/invitations/[id]
 ```
 
 #### 获取使用记录
+
 ```
 GET /api/admin/invitations/[id]/uses
 Query: page, limit
@@ -162,12 +174,14 @@ Query: page, limit
 ### 用户接口
 
 #### 验证邀请码
+
 ```
 POST /api/auth/validate-invitation
 Body: { code: string }
 ```
 
 #### 使用邀请码注册
+
 ```
 POST /api/auth/register-with-invitation
 Body: {
@@ -265,12 +279,14 @@ Body: {
 ## 部署说明
 
 1. **数据库迁移**
+
    ```bash
    # 在Supabase控制台执行
    # 运行 supabase/migrations/20250120000010_create_invitation_system.sql
    ```
 
 2. **环境变量**
+
    ```env
    # 确保已设置
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
@@ -304,13 +320,14 @@ Body: {
 ### 调试方法
 
 1. **查看数据库**
+
    ```sql
    -- 检查邀请码
    SELECT * FROM invitation_codes WHERE code = 'YOUR_CODE';
-   
+
    -- 检查用户权限
    SELECT * FROM user_permissions WHERE user_id = 'USER_ID';
-   
+
    -- 检查使用记录
    SELECT * FROM invitation_uses WHERE code_id = 'CODE_ID';
    ```
@@ -334,6 +351,7 @@ Body: {
 ## 技术支持
 
 如有问题，请检查：
+
 1. 数据库连接是否正常
 2. 环境变量是否正确设置
 3. 用户权限是否足够

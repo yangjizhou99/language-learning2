@@ -1,11 +1,13 @@
 # DeepSeek Chat 默认设置修改总结
 
 ## 修改概述
+
 将所有 API 和前端组件的默认 AI 提供商和模型从 OpenRouter/OpenAI 改为 DeepSeek Chat。
 
 ## 修改的文件
 
 ### API 路由文件
+
 1. `src/app/api/admin/shadowing/generate-from-subtopics/stream/route.ts`
    - provider: 'gemini' → 'deepseek'
    - model: 'gemini-1.5-flash' → 'deepseek-chat'
@@ -62,6 +64,7 @@
     - model: 'anthropic/claude-3.5-sonnet' → 'deepseek-chat'
 
 ### 前端组件文件
+
 1. `src/app/admin/shadowing/ai/page.tsx`
    - 默认 provider: 'openrouter' → 'deepseek'
 
@@ -96,16 +99,19 @@
 ## 影响范围
 
 ### 功能影响
+
 - 所有 AI 生成功能现在默认使用 DeepSeek Chat
 - 包括：内容生成、翻译、建议、评分等
 - 用户仍可手动选择其他提供商和模型
 
 ### 性能影响
+
 - DeepSeek Chat 通常比 OpenRouter 更便宜
 - 响应速度可能有所不同
 - 需要确保 DEEPSEEK_API_KEY 环境变量已设置
 
 ### 兼容性
+
 - 所有现有功能保持兼容
 - 用户界面和操作流程不变
 - 只是默认选择发生变化

@@ -1,37 +1,53 @@
-"use client";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { Trash2, Search, Filter } from "lucide-react";
+'use client';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import { Trash2, Search, Filter } from 'lucide-react';
 
 export default function PracticeItemsAdmin() {
   const router = useRouter();
-  
+
   // 状态管理
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [deleting, setDeleting] = useState(false);
-  
+
   // 筛选状态
-  const [q, setQ] = useState(""); // 搜索关键词
-  const [lang, setLang] = useState<string>("all"); // 语言筛选
-  const [level, setLevel] = useState<string>("all"); // 等级筛选
-  const [status, setStatus] = useState<string>("approved"); // 状态筛选
+  const [q, setQ] = useState(''); // 搜索关键词
+  const [lang, setLang] = useState<string>('all'); // 语言筛选
+  const [level, setLevel] = useState<string>('all'); // 等级筛选
+  const [status, setStatus] = useState<string>('approved'); // 状态筛选
   const [selectAll, setSelectAll] = useState(false); // 全选状态
 
   // 获取认证头信息
   const getAuthHeaders = async (): Promise<Record<string, string>> => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const token = session?.access_token;
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
@@ -39,10 +55,16 @@ export default function PracticeItemsAdmin() {
   // 获取当前筛选结果
   const getFilteredItems = () => {
     return items
-      .filter(it => (q ? (String(it.title || '').toLowerCase().includes(q.toLowerCase())) : true))
-      .filter(it => (lang === 'all' ? true : it.lang === lang))
-      .filter(it => (level === 'all' ? true : it.level === parseInt(level)))
-      .filter(it => (status === 'all' ? true : it.status === status));
+      .filter((it) =>
+        q
+          ? String(it.title || '')
+              .toLowerCase()
+              .includes(q.toLowerCase())
+          : true,
+      )
+      .filter((it) => (lang === 'all' ? true : it.lang === lang))
+      .filter((it) => (level === 'all' ? true : it.level === parseInt(level)))
+      .filter((it) => (status === 'all' ? true : it.status === status));
   };
 
   // 加载练习题库列表
@@ -55,10 +77,10 @@ export default function PracticeItemsAdmin() {
       if (status !== 'all') params.set('status', status);
       if (q) params.set('q', q);
 
-      const r = await fetch(`/api/shadowing/catalog?${params}`, { 
-        headers: await getAuthHeaders() 
+      const r = await fetch(`/api/shadowing/catalog?${params}`, {
+        headers: await getAuthHeaders(),
       });
-      
+
       if (r.status === 401) {
         toast.error('认证失败，请重新登录');
         setTimeout(() => {
@@ -66,12 +88,12 @@ export default function PracticeItemsAdmin() {
         }, 2000);
         return;
       }
-      
+
       if (!r.ok) {
         const errorData = await r.json();
         throw new Error(errorData.error || `HTTP ${r.status}`);
       }
-      
+
       const data = await r.json();
       setItems(data.items || []);
     } catch (error) {
@@ -86,11 +108,11 @@ export default function PracticeItemsAdmin() {
   const remove = async (id: string) => {
     try {
       setDeleting(true);
-      const r = await fetch(`/api/admin/shadowing/drafts/${id}`, { 
-        method: 'DELETE', 
-        headers: await getAuthHeaders() 
+      const r = await fetch(`/api/admin/shadowing/drafts/${id}`, {
+        method: 'DELETE',
+        headers: await getAuthHeaders(),
       });
-      
+
       if (r.status === 401) {
         toast.error('认证失败，请重新登录');
         setTimeout(() => {
@@ -98,10 +120,10 @@ export default function PracticeItemsAdmin() {
         }, 2000);
         return;
       }
-      
-      if (r.ok) { 
-        toast.success('已删除'); 
-        load(); 
+
+      if (r.ok) {
+        toast.success('已删除');
+        load();
       } else {
         const errorData = await r.json();
         toast.error(`删除失败: ${errorData.error || '未知错误'}`);
@@ -116,25 +138,25 @@ export default function PracticeItemsAdmin() {
 
   // 批量删除
   const deleteSelected = async () => {
-    const selectedIds = Object.keys(selected).filter(id => selected[id]);
+    const selectedIds = Object.keys(selected).filter((id) => selected[id]);
     if (selectedIds.length === 0) return;
 
     try {
       setDeleting(true);
-      
+
       // 逐个删除选中的项目
       for (const id of selectedIds) {
-        const r = await fetch(`/api/admin/shadowing/drafts/${id}`, { 
-          method: 'DELETE', 
-          headers: await getAuthHeaders() 
+        const r = await fetch(`/api/admin/shadowing/drafts/${id}`, {
+          method: 'DELETE',
+          headers: await getAuthHeaders(),
         });
-        
+
         if (!r.ok) {
           const errorData = await r.json();
           throw new Error(`删除失败: ${errorData.error || '未知错误'}`);
         }
       }
-      
+
       toast.success(`已删除 ${selectedIds.length} 项`);
       setSelected({});
       load();
@@ -152,7 +174,7 @@ export default function PracticeItemsAdmin() {
     if (selectAll) {
       // 取消全选
       const newSelected = { ...selected };
-      filteredItems.forEach(item => {
+      filteredItems.forEach((item) => {
         delete newSelected[item.id];
       });
       setSelected(newSelected);
@@ -160,7 +182,7 @@ export default function PracticeItemsAdmin() {
     } else {
       // 全选
       const newSelected = { ...selected };
-      filteredItems.forEach(item => {
+      filteredItems.forEach((item) => {
         newSelected[item.id] = true;
       });
       setSelected(newSelected);
@@ -176,12 +198,12 @@ export default function PracticeItemsAdmin() {
   // 更新全选状态
   useEffect(() => {
     const filteredItems = getFilteredItems();
-    const selectedCount = filteredItems.filter(item => selected[item.id]).length;
+    const selectedCount = filteredItems.filter((item) => selected[item.id]).length;
     setSelectAll(selectedCount === filteredItems.length && filteredItems.length > 0);
   }, [selected, items, q, lang, level, status]);
 
   const filteredItems = getFilteredItems();
-  const selectedCount = filteredItems.filter(item => selected[item.id]).length;
+  const selectedCount = filteredItems.filter((item) => selected[item.id]).length;
 
   return (
     <div className="container mx-auto p-6">
@@ -213,7 +235,7 @@ export default function PracticeItemsAdmin() {
                 />
               </div>
             </div>
-            
+
             <div>
               <Label>语言</Label>
               <Select value={lang} onValueChange={setLang}>
@@ -228,7 +250,7 @@ export default function PracticeItemsAdmin() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label>等级</Label>
               <Select value={level} onValueChange={setLevel}>
@@ -246,7 +268,7 @@ export default function PracticeItemsAdmin() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label>状态</Label>
               <Select value={status} onValueChange={setStatus}>
@@ -274,11 +296,9 @@ export default function PracticeItemsAdmin() {
                 onCheckedChange={toggleSelectAll}
                 disabled={filteredItems.length === 0}
               />
-              <span className="text-sm text-gray-600">
-                已选择 {selectedCount} 项
-              </span>
+              <span className="text-sm text-gray-600">已选择 {selectedCount} 项</span>
             </div>
-            
+
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -290,13 +310,10 @@ export default function PracticeItemsAdmin() {
               >
                 清空选择
               </Button>
-              
+
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button 
-                    variant="destructive" 
-                    disabled={selectedCount === 0 || deleting}
-                  >
+                  <Button variant="destructive" disabled={selectedCount === 0 || deleting}>
                     <Trash2 className="w-4 h-4 mr-2" />
                     批量删除
                   </Button>
@@ -315,11 +332,7 @@ export default function PracticeItemsAdmin() {
                       <Button variant="ghost">取消</Button>
                     </DialogClose>
                     <DialogClose asChild>
-                      <Button 
-                        variant="destructive" 
-                        onClick={deleteSelected}
-                        disabled={deleting}
-                      >
+                      <Button variant="destructive" onClick={deleteSelected} disabled={deleting}>
                         {deleting ? '删除中...' : '确认删除'}
                       </Button>
                     </DialogClose>
@@ -335,28 +348,27 @@ export default function PracticeItemsAdmin() {
       <Card>
         <CardHeader>
           <CardTitle>内容列表</CardTitle>
-          <CardDescription>
-            共 {filteredItems.length} 项内容
-          </CardDescription>
+          <CardDescription>共 {filteredItems.length} 项内容</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-8">加载中...</div>
           ) : filteredItems.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              没有找到符合条件的内容
-            </div>
+            <div className="text-center py-8 text-gray-500">没有找到符合条件的内容</div>
           ) : (
             <div className="space-y-4">
               {filteredItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="flex items-center gap-4">
                     <Checkbox
                       checked={selected[item.id] || false}
                       onCheckedChange={(checked) => {
-                        setSelected(prev => ({
+                        setSelected((prev) => ({
                           ...prev,
-                          [item.id]: checked as boolean
+                          [item.id]: checked as boolean,
                         }));
                       }}
                     />
@@ -371,7 +383,7 @@ export default function PracticeItemsAdmin() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <Dialog>
                       <DialogTrigger asChild>
@@ -393,8 +405,8 @@ export default function PracticeItemsAdmin() {
                             <Button variant="ghost">取消</Button>
                           </DialogClose>
                           <DialogClose asChild>
-                            <Button 
-                              variant="destructive" 
+                            <Button
+                              variant="destructive"
                               onClick={() => remove(item.id)}
                               disabled={deleting}
                             >

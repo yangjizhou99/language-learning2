@@ -1,18 +1,26 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
-import { chatJSON } from "@/lib/ai/client";
-import { normUsage } from "@/lib/ai/usage";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
+import { chatJSON } from '@/lib/ai/client';
+import { normUsage } from '@/lib/ai/usage';
 
 const SYS = `You are a curriculum designer for language training. Return VALID JSON ONLY.`;
 
-function promptPack({ lang, topic, tags=[], style }:{
-  lang:"en"|"ja"|"zh", topic:string, tags?:string[], style?:any
-}){
-  const L = lang==="en"?"English": lang==="ja"?"日本語":"简体中文";
-  const styleLine = style ? `STYLE=${JSON.stringify(style)}` : "STYLE={}";
+function promptPack({
+  lang,
+  topic,
+  tags = [],
+  style,
+}: {
+  lang: 'en' | 'ja' | 'zh';
+  topic: string;
+  tags?: string[];
+  style?: any;
+}) {
+  const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : '简体中文';
+  const styleLine = style ? `STYLE=${JSON.stringify(style)}` : 'STYLE={}';
   return `
 LANG=${L}
 TOPIC=${topic}
@@ -48,29 +56,37 @@ Ensure the **exemplar** strictly matches the step type and is speakable/natural.
 `.trim();
 }
 
-export async function POST(req: NextRequest){
-  const auth = await requireAdmin(req); if (!auth.ok) return NextResponse.json({ error:"forbidden" }, { status:403 });
-  
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+
   const b = await req.json();
-  const lang = (b.lang || "en").toLowerCase();
-  const topic = String(b.topic || "Campus life");
-  const tags = Array.isArray(b.tags)? b.tags : [];
+  const lang = (b.lang || 'en').toLowerCase();
+  const topic = String(b.topic || 'Campus life');
+  const tags = Array.isArray(b.tags) ? b.tags : [];
   const style = b.style || {};
-  const provider = (b.provider || "deepseek") as "openrouter"|"deepseek"|"openai";
-  const model = b.model || "deepseek-chat";
+  const provider = (b.provider || 'deepseek') as 'openrouter' | 'deepseek' | 'openai';
+  const model = b.model || 'deepseek-chat';
   const temperature = b.temperature ?? 0.5;
 
   const { content, usage } = await chatJSON({
-    provider, model, temperature, response_json: true,
+    provider,
+    model,
+    temperature,
+    response_json: true,
     messages: [
-      { role:"system", content: SYS },
-      { role:"user", content: promptPack({ lang, topic, tags, style }) }
-    ]
+      { role: 'system', content: SYS },
+      { role: 'user', content: promptPack({ lang, topic, tags, style }) },
+    ],
   });
 
-  let pack:any; try { pack = JSON.parse(content); }
-  catch { return NextResponse.json({ error:"LLM 未返回 JSON" }, { status:400 }); }
+  let pack: any;
+  try {
+    pack = JSON.parse(content);
+  } catch {
+    return NextResponse.json({ error: 'LLM 未返回 JSON' }, { status: 400 });
+  }
 
   const u = normUsage(usage);
-  return NextResponse.json({ ok:true, pack, usage: u });
+  return NextResponse.json({ ok: true, pack, usage: u });
 }

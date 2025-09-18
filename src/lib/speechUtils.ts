@@ -27,14 +27,15 @@ export const speakText = (text: string, lang: string, options: SpeechOptions = {
 
   // 创建语音合成实例
   const utterance = new SpeechSynthesisUtterance(text);
-  
+
   // 根据语言设置语音代码
-  const langCode = {
-    'en': 'en-US',
-    'ja': 'ja-JP',
-    'zh': 'zh-CN'
-  }[lang] || 'en-US';
-  
+  const langCode =
+    {
+      en: 'en-US',
+      ja: 'ja-JP',
+      zh: 'zh-CN',
+    }[lang] || 'en-US';
+
   utterance.lang = langCode;
   utterance.rate = options.rate || 0.8;
   utterance.pitch = options.pitch || 1;
@@ -43,27 +44,28 @@ export const speakText = (text: string, lang: string, options: SpeechOptions = {
   // 选择最合适的语音引擎
   const selectBestVoice = () => {
     const voices = window.speechSynthesis.getVoices();
-    
+
     if (lang === 'ja') {
       // 对于日语，按优先级选择语音引擎
-      const japaneseVoices = voices.filter(voice => 
-        voice.lang.startsWith('ja') || 
-        voice.name.toLowerCase().includes('japanese') ||
-        voice.name.toLowerCase().includes('japan')
+      const japaneseVoices = voices.filter(
+        (voice) =>
+          voice.lang.startsWith('ja') ||
+          voice.name.toLowerCase().includes('japanese') ||
+          voice.name.toLowerCase().includes('japan'),
       );
-      
+
       if (japaneseVoices.length > 0) {
         // 优先选择本地日语语音引擎，避免使用错误的引擎
         utterance.voice = japaneseVoices[0];
         return;
       }
     }
-    
+
     // 如果没有找到特定语言的语音，尝试匹配语言代码
-    const matchingVoices = voices.filter(voice => 
-      voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0])
+    const matchingVoices = voices.filter(
+      (voice) => voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0]),
     );
-    
+
     if (matchingVoices.length > 0) {
       utterance.voice = matchingVoices[0];
     }
@@ -116,19 +118,20 @@ export const getAvailableVoices = () => {
  */
 export const getVoicesForLanguage = (lang: string) => {
   const voices = getAvailableVoices();
-  const langCode = {
-    'en': 'en-US',
-    'ja': 'ja-JP',
-    'zh': 'zh-CN'
-  }[lang] || 'en-US';
+  const langCode =
+    {
+      en: 'en-US',
+      ja: 'ja-JP',
+      zh: 'zh-CN',
+    }[lang] || 'en-US';
 
-  return voices.filter(voice => 
-    voice.lang === langCode || 
-    voice.lang.startsWith(langCode.split('-')[0]) ||
-    (lang === 'ja' && (
-      voice.lang.startsWith('ja') || 
-      voice.name.toLowerCase().includes('japanese') ||
-      voice.name.toLowerCase().includes('japan')
-    ))
+  return voices.filter(
+    (voice) =>
+      voice.lang === langCode ||
+      voice.lang.startsWith(langCode.split('-')[0]) ||
+      (lang === 'ja' &&
+        (voice.lang.startsWith('ja') ||
+          voice.name.toLowerCase().includes('japanese') ||
+          voice.name.toLowerCase().includes('japan'))),
   );
 };

@@ -1,18 +1,24 @@
-"use client";
-import React, { useEffect, useState, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
-import { Container } from "@/components/Container";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { supabase } from "@/lib/supabase";
-import { Play, Pause, RotateCcw, ArrowRight, Shuffle } from "lucide-react";
+'use client';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Card } from '@/components/ui/card';
+import { Container } from '@/components/Container';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { supabase } from '@/lib/supabase';
+import { Play, Pause, RotateCcw, ArrowRight, Shuffle } from 'lucide-react';
 
 // 题目数据类型
 interface ShadowingItem {
   id: string;
-  lang: "ja" | "en" | "zh";
+  lang: 'ja' | 'en' | 'zh';
   level: number;
   title: string;
   text: string;
@@ -24,12 +30,12 @@ interface ShadowingItem {
 }
 
 export default function ShadowingOriginalPage() {
-  const [lang, setLang] = useState<"ja" | "en" | "zh">("ja");
+  const [lang, setLang] = useState<'ja' | 'en' | 'zh'>('ja');
   const [level, setLevel] = useState<number>(2);
   const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
   const [currentItem, setCurrentItem] = useState<ShadowingItem | null>(null);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<{id: string, email?: string} | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [practiceStartTime, setPracticeStartTime] = useState<Date | null>(null);
@@ -40,7 +46,9 @@ export default function ShadowingOriginalPage() {
 
   // 获取认证头
   const getAuthHeaders = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
@@ -54,7 +62,9 @@ export default function ShadowingOriginalPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         setUser(session?.user || null);
         setAuthLoading(false);
       } catch (error) {
@@ -68,7 +78,7 @@ export default function ShadowingOriginalPage() {
   // 获取推荐等级
   const fetchRecommendedLevel = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(`/api/shadowing/recommended?lang=${lang}`, { headers });
@@ -111,7 +121,7 @@ export default function ShadowingOriginalPage() {
   // 播放音频
   const playAudio = () => {
     if (!currentItem?.audio_url) return;
-    
+
     const audio = new Audio(currentItem.audio_url);
     audio.onplay = () => setIsPlaying(true);
     audio.onended = () => setIsPlaying(false);
@@ -128,16 +138,16 @@ export default function ShadowingOriginalPage() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
-      
+
       recorder.ondataavailable = (event) => {
         chunks.push(event.data);
       };
-      
+
       recorder.onstop = () => {
         setAudioChunks(chunks);
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       };
-      
+
       recorder.start();
       setMediaRecorder(recorder);
       setRecording(true);
@@ -158,15 +168,15 @@ export default function ShadowingOriginalPage() {
   // 记录练习结果
   const recordPracticeResult = async () => {
     if (!currentItem || !practiceStartTime) return;
-    
+
     const practiceTime = Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000);
-    
+
     // 模拟评分数据（实际应用中应该使用语音识别API）
     const metrics = {
       accuracy: Math.random() * 0.3 + 0.7, // 70-100% 随机准确率
       complete: true,
       time_sec: practiceTime,
-      replays: Math.floor(Math.random() * 3) + 1
+      replays: Math.floor(Math.random() * 3) + 1,
     };
 
     try {
@@ -178,8 +188,8 @@ export default function ShadowingOriginalPage() {
           item_id: currentItem.id,
           lang: currentItem.lang,
           level: currentItem.level,
-          metrics
-        })
+          metrics,
+        }),
       });
 
       if (response.ok) {
@@ -229,9 +239,7 @@ export default function ShadowingOriginalPage() {
       <Container>
         <div className="p-8 text-center">
           <div className="text-lg mb-4">请先登录</div>
-          <Button onClick={() => window.location.href = '/auth'}>
-            去登录
-          </Button>
+          <Button onClick={() => (window.location.href = '/auth')}>去登录</Button>
         </div>
       </Container>
     );
@@ -239,20 +247,22 @@ export default function ShadowingOriginalPage() {
 
   return (
     <Container>
-      <Breadcrumbs items={[
-        { label: "首页", href: "/" },
-        { label: "Shadowing 跟读练习", href: "/practice/shadowing" }
-      ]} />
+      <Breadcrumbs
+        items={[
+          { label: '首页', href: '/' },
+          { label: 'Shadowing 跟读练习', href: '/practice/shadowing' },
+        ]}
+      />
 
       <div className="max-w-4xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">Shadowing 跟读练习</h1>
-        
+
         {/* 控制面板 */}
         <Card className="p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <Label htmlFor="lang">语言</Label>
-              <Select value={lang} onValueChange={(value: "ja" | "en" | "zh") => setLang(value)}>
+              <Select value={lang} onValueChange={(value: 'ja' | 'en' | 'zh') => setLang(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -263,7 +273,7 @@ export default function ShadowingOriginalPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label htmlFor="level">等级</Label>
               <Select value={level.toString()} onValueChange={(value) => setLevel(parseInt(value))}>
@@ -279,20 +289,20 @@ export default function ShadowingOriginalPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="flex items-end">
               <Button onClick={getNextItem} disabled={loading} className="w-full">
-                {loading ? "获取中..." : "获取下一题"}
+                {loading ? '获取中...' : '获取下一题'}
               </Button>
             </div>
           </div>
-          
+
           {recommendedLevel !== level && (
             <div className="text-sm text-blue-600 mb-4">
               系统推荐等级: L{recommendedLevel}
-              <Button 
-                variant="link" 
-                size="sm" 
+              <Button
+                variant="link"
+                size="sm"
                 onClick={() => setLevel(recommendedLevel)}
                 className="ml-2"
               >
@@ -306,47 +316,46 @@ export default function ShadowingOriginalPage() {
         {currentItem && (
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">{currentItem.title}</h2>
-            
+
             <div className="mb-6">
               <div className="flex items-center gap-4 mb-4">
                 <Button onClick={playAudio} disabled={isPlaying}>
                   {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  {isPlaying ? "播放中..." : "播放音频"}
+                  {isPlaying ? '播放中...' : '播放音频'}
                 </Button>
-                
-                <Button 
+
+                <Button
                   onClick={recording ? stopRecording : startRecording}
-                  variant={recording ? "destructive" : "outline"}
+                  variant={recording ? 'destructive' : 'outline'}
                 >
-                  {recording ? "停止录音" : "开始录音"}
+                  {recording ? '停止录音' : '开始录音'}
                 </Button>
-                
+
                 <Button onClick={resetPractice} variant="outline">
                   <RotateCcw className="w-4 h-4" />
                   重新开始
                 </Button>
               </div>
-              
+
               <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-lg leading-relaxed whitespace-pre-wrap">
-                  {currentItem.text}
-                </p>
+                <p className="text-lg leading-relaxed whitespace-pre-wrap">{currentItem.text}</p>
               </div>
             </div>
-            
+
             <div className="flex justify-between items-center">
               <div className="text-sm text-gray-600">
-                等级: L{currentItem.level} | 
-                语言: {currentItem.lang === 'ja' ? '日语' : currentItem.lang === 'en' ? '英语' : '中文'} |
-                时长: {currentItem.duration_ms ? Math.round(currentItem.duration_ms / 1000) : '未知'}秒
+                等级: L{currentItem.level} | 语言:{' '}
+                {currentItem.lang === 'ja' ? '日语' : currentItem.lang === 'en' ? '英语' : '中文'} |
+                时长:{' '}
+                {currentItem.duration_ms ? Math.round(currentItem.duration_ms / 1000) : '未知'}秒
               </div>
-              
-              <Button 
+
+              <Button
                 onClick={recordPracticeResult}
                 disabled={practiceComplete}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {practiceComplete ? "已完成" : "记录练习结果"}
+                {practiceComplete ? '已完成' : '记录练习结果'}
               </Button>
             </div>
           </Card>

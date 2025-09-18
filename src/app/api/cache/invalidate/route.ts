@@ -16,25 +16,30 @@ export async function POST(req: NextRequest) {
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
     let supabase: any;
-    
+
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: authHeader } }
+        global: { headers: { Authorization: authHeader } },
       });
     } else {
       const cookieStore = await cookies();
       supabase = createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
           set() {},
           remove() {},
-        }
+        },
       });
     }
-    
+
     // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -51,14 +56,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Cache invalidated for pattern: ${pattern}`
+      message: `Cache invalidated for pattern: ${pattern}`,
     });
-
   } catch (error) {
     console.error('Error in cache invalidate API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

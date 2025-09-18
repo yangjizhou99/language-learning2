@@ -43,18 +43,21 @@
 ## 功能特点
 
 ### 主题管理
+
 - 四维筛选：语言、等级、体裁、搜索
 - 批量操作：归档、删除
 - 导入导出：JSON 格式
 - 统计信息：显示每个主题下的小主题数量
 
 ### 小主题管理
+
 - 行内编辑：可直接在表格中修改关键词和说明
 - 批量保存：修改后统一保存
 - 实时筛选：支持按主题筛选和搜索
 - 状态管理：显示修改状态
 
 ### 批量生成
+
 - 并发控制：可设置并发数避免 API 限制
 - 实时进度：显示完成进度、保存数量、错误数量
 - 详细日志：显示每个小主题的生成状态
@@ -64,11 +67,13 @@
 ## 技术实现
 
 ### 数据库表
+
 - `shadowing_themes` - 大主题表
 - `shadowing_subtopics` - 小主题表
 - `shadowing_drafts` - 生成的草稿（添加了 source 字段）
 
 ### API 接口
+
 - `GET/POST /api/admin/shadowing/themes` - 主题 CRUD
 - `POST /api/admin/shadowing/themes/bulk` - 主题批量操作
 - `GET/POST /api/admin/shadowing/subtopics` - 小主题 CRUD
@@ -76,7 +81,9 @@
 - `POST /api/admin/shadowing/generate-from-subtopics/stream` - 批量生成（SSE）
 
 ### 难度预设
+
 系统会根据语言、等级、体裁自动设置：
+
 - 句子数量范围
 - 语域（casual/neutral/formal）
 - 长度目标（词数/字数）
@@ -93,20 +100,19 @@
 ## 故障排除
 
 ### 生成失败
+
 - 检查 API 配置和额度
 - 降低并发数
 - 查看详细错误日志
 
 ### 数据丢失
+
 - 检查数据库连接
 - 查看浏览器控制台错误
 - 确认权限设置
 
 ### 性能问题
+
 - 减少并发数
 - 分批处理大量数据
 - 检查数据库索引
-
-
-
-

@@ -32,21 +32,17 @@ const PRICING_CONFIG = {
     'claude-3.5-sonnet': 0.003,
     'claude-3-haiku': 0.00025,
     'claude-3-opus': 0.015,
-  }
+  },
 };
 
 // 计算API调用费用
-export function calculateAPICost(
-  provider: string, 
-  model: string, 
-  tokensUsed: number
-): number {
+export function calculateAPICost(provider: string, model: string, tokensUsed: number): number {
   const pricing = PRICING_CONFIG[provider as keyof typeof PRICING_CONFIG];
   if (!pricing) return 0;
-  
+
   const pricePer1K = pricing[model as keyof typeof pricing];
   if (!pricePer1K) return 0;
-  
+
   return (tokensUsed / 1000) * pricePer1K;
 }
 
@@ -54,18 +50,16 @@ export function calculateAPICost(
 export async function logAPIUsage(log: APIUsageLog): Promise<void> {
   try {
     const supabase = getServiceSupabase();
-    
-    const { error } = await supabase
-      .from('api_usage_logs')
-      .insert({
-        user_id: log.user_id,
-        provider: log.provider,
-        model: log.model,
-        tokens_used: log.tokens_used,
-        cost: log.cost,
-        request_data: log.request_data,
-        response_data: log.response_data
-      });
+
+    const { error } = await supabase.from('api_usage_logs').insert({
+      user_id: log.user_id,
+      provider: log.provider,
+      model: log.model,
+      tokens_used: log.tokens_used,
+      cost: log.cost,
+      request_data: log.request_data,
+      response_data: log.response_data,
+    });
 
     if (error) {
       console.error('Failed to log API usage:', error);
@@ -78,20 +72,20 @@ export async function logAPIUsage(log: APIUsageLog): Promise<void> {
 // 从响应中提取Token使用情况
 export function extractTokenUsage(response: any): number {
   if (!response) return 0;
-  
+
   // 尝试从不同字段提取token使用量
   if (response.usage?.total_tokens) {
     return response.usage.total_tokens;
   }
-  
+
   if (response.usage?.completion_tokens && response.usage?.prompt_tokens) {
     return response.usage.completion_tokens + response.usage.prompt_tokens;
   }
-  
+
   if (response.usage?.tokens) {
     return response.usage.tokens;
   }
-  
+
   // 如果没有找到token信息，尝试估算
   if (response.choices?.[0]?.message?.content) {
     const content = response.choices[0].message.content;
@@ -100,7 +94,7 @@ export function extractTokenUsage(response: any): number {
     const englishWords = (content.match(/\b[a-zA-Z]+\b/g) || []).length;
     return Math.ceil(chineseChars * 1.5 + englishWords * 1.3);
   }
-  
+
   return 0;
 }
 
@@ -109,7 +103,7 @@ export function withUsageTracking<T extends any[], R>(
   fn: (...args: T) => Promise<R>,
   provider: string,
   model: string,
-  userId?: string
+  userId?: string,
 ) {
   return async (...args: T): Promise<R> => {
     if (!userId) {
@@ -122,11 +116,11 @@ export function withUsageTracking<T extends any[], R>(
 
     try {
       const result = await fn(...args);
-      
+
       // 尝试从结果中提取token使用情况
       tokensUsed = extractTokenUsage(result);
       cost = calculateAPICost(provider, model, tokensUsed);
-      
+
       // 记录使用情况
       await logAPIUsage({
         user_id: userId,
@@ -135,9 +129,9 @@ export function withUsageTracking<T extends any[], R>(
         tokens_used: tokensUsed,
         cost,
         request_data: args[0], // 假设第一个参数是请求数据
-        response_data: result
+        response_data: result,
       });
-      
+
       return result;
     } catch (error) {
       // 即使出错也记录使用情况（如果有部分token使用）
@@ -149,10 +143,10 @@ export function withUsageTracking<T extends any[], R>(
           tokens_used: tokensUsed,
           cost,
           request_data: args[0],
-          response_data: { error: error instanceof Error ? error.message : String(error) }
+          response_data: { error: error instanceof Error ? error.message : String(error) },
         });
       }
-      
+
       throw error;
     }
   };

@@ -7,7 +7,9 @@
 ## 执行步骤
 
 ### 步骤 1: 删除未使用的索引
+
 运行第一个迁移文件：
+
 ```bash
 # 这个迁移只删除未使用的索引
 supabase db push
@@ -16,7 +18,9 @@ supabase db push
 迁移文件：`supabase/migrations/20250120000106_simple_performance_optimization.sql`
 
 ### 步骤 2: 添加外键索引
+
 运行第二个迁移文件：
+
 ```bash
 # 这个迁移添加外键索引
 supabase db push
@@ -31,6 +35,7 @@ supabase db push
 ### 在 Supabase SQL 编辑器中执行：
 
 1. **先删除未使用的索引**：
+
    ```sql
    -- 复制并执行 supabase/migrations/20250120000106_simple_performance_optimization.sql 中的内容
    ```
@@ -46,13 +51,13 @@ supabase db push
 
 ```sql
 -- 检查新创建的外键索引
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,
     indexdef
-FROM pg_indexes 
-WHERE indexname LIKE 'idx_%_created_by' 
+FROM pg_indexes
+WHERE indexname LIKE 'idx_%_created_by'
    OR indexname LIKE 'idx_%_user_id'
    OR indexname LIKE 'idx_%_pack_id'
    OR indexname LIKE 'idx_%_batch_id'

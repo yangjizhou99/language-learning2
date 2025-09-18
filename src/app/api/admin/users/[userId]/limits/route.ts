@@ -20,10 +20,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
 
     if (error && error.code !== 'PGRST116') {
       console.error('Error fetching user limits:', error);
-      return NextResponse.json({ 
-        error: 'Failed to fetch user limits', 
-        details: error instanceof Error ? error.message : String(error) 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: 'Failed to fetch user limits',
+          details: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 },
+      );
     }
 
     // 如果没有用户特定限制，返回默认值
@@ -35,19 +38,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
       daily_cost_limit: 0,
       monthly_calls_limit: 0,
       monthly_tokens_limit: 0,
-      monthly_cost_limit: 0
+      monthly_cost_limit: 0,
     };
 
     return NextResponse.json({
       success: true,
-      limits: userLimits || defaultLimits
+      limits: userLimits || defaultLimits,
     });
-
   } catch (error) {
     console.error('User limits error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }
@@ -70,7 +75,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
       daily_cost_limit,
       monthly_calls_limit,
       monthly_tokens_limit,
-      monthly_cost_limit
+      monthly_cost_limit,
     } = body;
 
     // 验证数据
@@ -87,36 +92,41 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
       monthly_calls_limit: Math.max(0, parseInt(monthly_calls_limit) || 0),
       monthly_tokens_limit: Math.max(0, parseInt(monthly_tokens_limit) || 0),
       monthly_cost_limit: Math.max(0, parseFloat(monthly_cost_limit) || 0),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     // 使用 upsert 更新或创建用户限制
     const { data, error } = await supabase
       .from('user_api_limits')
       .upsert(limitsData, {
-        onConflict: 'user_id'
+        onConflict: 'user_id',
       })
       .select()
       .single();
 
     if (error) {
       console.error('Error saving user limits:', error);
-      return NextResponse.json({ 
-        error: 'Failed to save user limits', 
-        details: error instanceof Error ? error.message : String(error) 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: 'Failed to save user limits',
+          details: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
       success: true,
-      limits: data
+      limits: data,
     });
-
   } catch (error) {
     console.error('User limits save error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

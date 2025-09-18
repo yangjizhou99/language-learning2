@@ -24,9 +24,12 @@ class EnhancedMemoryCache {
   private cleanupInterval: NodeJS.Timeout;
 
   constructor() {
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanup();
+      },
+      5 * 60 * 1000,
+    );
   }
 
   get<T>(key: string): { value: T; etag: string } | null {
@@ -44,7 +47,7 @@ class EnhancedMemoryCache {
   set<T>(key: string, value: T, ttlSeconds = 300): string {
     // 生成 ETag
     const etag = this.generateETag(value);
-    
+
     if (this.cache.size >= this.maxSize) {
       const oldestKey = this.cache.keys().next().value;
       if (oldestKey) {
@@ -55,9 +58,9 @@ class EnhancedMemoryCache {
     const now = Date.now();
     this.cache.set(key, {
       value,
-      expires: now + (ttlSeconds * 1000),
+      expires: now + ttlSeconds * 1000,
       created: now,
-      etag
+      etag,
     });
 
     return etag;
@@ -111,7 +114,7 @@ class EnhancedMemoryCache {
       total: this.cache.size,
       active,
       expired,
-      maxSize: this.maxSize
+      maxSize: this.maxSize,
     };
   }
 }
@@ -125,12 +128,9 @@ export class EnhancedCacheManager {
   /**
    * 检查 ETag 并决定是否返回 304
    */
-  static checkETag<T>(
-    key: string, 
-    clientETag?: string
-  ): ETagResponse {
+  static checkETag<T>(key: string, clientETag?: string): ETagResponse {
     const cached = enhancedCache.get<T>(key);
-    
+
     if (!cached) {
       return { data: null, etag: '', shouldReturn304: false };
     }
@@ -171,10 +171,10 @@ export class EnhancedCacheManager {
    * 请求去重 + ETag 支持
    */
   static async dedupeWithETag<T>(
-    key: string, 
+    key: string,
     fetcher: () => Promise<T>,
     clientETag?: string,
-    ttlSeconds = 300
+    ttlSeconds = 300,
   ): Promise<ETagResponse> {
     // 首先检查缓存和 ETag
     const etagCheck = this.checkETag<T>(key, clientETag);
@@ -195,7 +195,7 @@ export class EnhancedCacheManager {
     });
 
     this.requestCache.set(key, promise);
-    
+
     try {
       const data = await promise;
       const etag = await this.setWithETag(key, data, ttlSeconds);
@@ -212,7 +212,7 @@ export class EnhancedCacheManager {
   static generateKey(prefix: string, params: Record<string, any>): string {
     const sortedParams = Object.keys(params)
       .sort()
-      .map(key => `${key}:${params[key]}`)
+      .map((key) => `${key}:${params[key]}`)
       .join('|');
     return `${prefix}:${sortedParams}`;
   }
@@ -223,7 +223,7 @@ export class EnhancedCacheManager {
   static async invalidate(pattern: string): Promise<void> {
     try {
       const keys = Array.from(enhancedCache['cache'].keys());
-      const matchingKeys = keys.filter(key => {
+      const matchingKeys = keys.filter((key) => {
         if (pattern.includes('*')) {
           const regex = new RegExp(pattern.replace(/\*/g, '.*'));
           return regex.test(key);
@@ -247,7 +247,7 @@ export class EnhancedCacheManager {
   static getStats() {
     return {
       memory: enhancedCache.getStats(),
-      pendingRequests: this.requestCache.size
+      pendingRequests: this.requestCache.size,
     };
   }
 
@@ -279,7 +279,7 @@ export function withConditionalCache(ttlSeconds = 300) {
       const searchParams = Object.fromEntries(url.searchParams.entries());
       const cacheKey = EnhancedCacheManager.generateKey(
         `${target.constructor.name}:${propertyName}`,
-        searchParams
+        searchParams,
       );
 
       // 获取客户端 ETag
@@ -291,17 +291,17 @@ export function withConditionalCache(ttlSeconds = 300) {
           cacheKey,
           () => method.apply(this, [request, ...args]),
           clientETag,
-          ttlSeconds
+          ttlSeconds,
         );
 
         // 如果应该返回 304
         if (result.shouldReturn304) {
-          return new Response(null, { 
+          return new Response(null, {
             status: 304,
             headers: {
-              'ETag': result.etag,
-              'Cache-Control': `public, max-age=${ttlSeconds}`
-            }
+              ETag: result.etag,
+              'Cache-Control': `public, max-age=${ttlSeconds}`,
+            },
           });
         }
 
@@ -310,11 +310,10 @@ export function withConditionalCache(ttlSeconds = 300) {
           status: 200,
           headers: {
             'Content-Type': 'application/json',
-            'ETag': result.etag,
-            'Cache-Control': `public, max-age=${Math.min(ttlSeconds, 60)}, s-maxage=${ttlSeconds}`
-          }
+            ETag: result.etag,
+            'Cache-Control': `public, max-age=${Math.min(ttlSeconds, 60)}, s-maxage=${ttlSeconds}`,
+          },
         });
-
       } catch (error) {
         console.error(`Conditional cache error for ${cacheKey}:`, error);
         // 降级到原始方法

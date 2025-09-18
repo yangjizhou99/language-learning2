@@ -21,36 +21,36 @@ export const XUNFEI_VOICES: XunfeiVoice[] = [
     displayName: '讯飞小燕',
     language: 'zh-CN',
     gender: 'female',
-    description: '普通话女声，自然清晰'
+    description: '普通话女声，自然清晰',
   },
   {
     voiceId: 'x4_yezi',
     displayName: '讯飞小露',
     language: 'zh-CN',
     gender: 'female',
-    description: '普通话女声，温柔甜美'
+    description: '普通话女声，温柔甜美',
   },
   {
     voiceId: 'aisjiuxu',
     displayName: '讯飞许久',
     language: 'zh-CN',
     gender: 'male',
-    description: '普通话男声，沉稳专业'
+    description: '普通话男声，沉稳专业',
   },
   {
     voiceId: 'aisjinger',
     displayName: '讯飞小婧',
     language: 'zh-CN',
     gender: 'female',
-    description: '普通话女声，活泼可爱'
+    description: '普通话女声，活泼可爱',
   },
   {
     voiceId: 'aisbabyxu',
     displayName: '讯飞许小宝',
     language: 'zh-CN',
     gender: 'male',
-    description: '普通话男声，年轻活力'
-  }
+    description: '普通话男声，年轻活力',
+  },
 ];
 
 // 获取科大讯飞配置
@@ -60,7 +60,9 @@ function getXunfeiConfig(): XunfeiTTSConfig {
   const apiSecret = process.env.XUNFEI_API_SECRET;
 
   if (!appId || !apiKey || !apiSecret) {
-    throw new Error('科大讯飞TTS配置缺失，请设置XUNFEI_APP_ID、XUNFEI_API_KEY、XUNFEI_API_SECRET环境变量');
+    throw new Error(
+      '科大讯飞TTS配置缺失，请设置XUNFEI_APP_ID、XUNFEI_API_KEY、XUNFEI_API_SECRET环境变量',
+    );
   }
 
   return { appId, apiKey, apiSecret };
@@ -74,7 +76,7 @@ function generateAuthUrl(apiKey: string, apiSecret: string): string {
   const signatureOrigin = `host: tts-api.xfyun.cn\ndate: ${date}\nGET /v2/tts HTTP/1.1`;
   const signatureSha = createHmac('sha256', apiSecret).update(signatureOrigin).digest('base64');
   const authorization = `api_key="${apiKey}", algorithm="${algorithm}", headers="${headers}", signature="${signatureSha}"`;
-  
+
   return `wss://tts-api.xfyun.cn/v2/tts?authorization=${encodeURIComponent(authorization)}&date=${encodeURIComponent(date)}&host=tts-api.xfyun.cn`;
 }
 
@@ -86,7 +88,7 @@ export async function synthesizeXunfeiTTS(
     speed?: number;
     volume?: number;
     pitch?: number;
-  } = {}
+  } = {},
 ): Promise<Buffer> {
   const config = getXunfeiConfig();
   const { speed = 50, volume = 50, pitch = 50 } = options;
@@ -96,20 +98,23 @@ export async function synthesizeXunfeiTTS(
       // 动态导入WebSocket模块
       const WebSocket = (await import('ws')).default;
       const url = generateAuthUrl(config.apiKey, config.apiSecret);
-      
+
       console.log('科大讯飞WebSocket URL:', url);
-      console.log('科大讯飞配置:', { appId: config.appId, apiKey: config.apiKey.substring(0, 8) + '...' });
-      
+      console.log('科大讯飞配置:', {
+        appId: config.appId,
+        apiKey: config.apiKey.substring(0, 8) + '...',
+      });
+
       const ws = new WebSocket(url);
       const audioChunks: Buffer[] = [];
 
       ws.on('open', () => {
         console.log('科大讯飞WebSocket连接已建立');
-        
+
         // 发送合成请求
         const request = {
           common: {
-            app_id: config.appId
+            app_id: config.appId,
           },
           business: {
             aue: 'raw',
@@ -119,12 +124,12 @@ export async function synthesizeXunfeiTTS(
             volume: volume,
             pitch: pitch,
             bgs: 0,
-            ttp: 1
+            ttp: 1,
           },
           data: {
             status: 2,
-            text: Buffer.from(text, 'utf8').toString('base64')
-          }
+            text: Buffer.from(text, 'utf8').toString('base64'),
+          },
         };
 
         console.log('发送科大讯飞请求:', request);

@@ -42,10 +42,10 @@ export function APIUsageAlert({ userId, provider }: APIUsageAlertProps) {
     try {
       const params = new URLSearchParams({ userId });
       if (provider) params.append('provider', provider);
-      
+
       const response = await fetch(`/api/admin/api-usage/user-stats?${params}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setUsage(data.usage);
         setLimits(data.limits);
@@ -76,7 +76,10 @@ export function APIUsageAlert({ userId, provider }: APIUsageAlertProps) {
   const dailyTokensPercent = getUsagePercentage(usage.daily_tokens, limits.daily_tokens_limit);
   const dailyCostPercent = getUsagePercentage(usage.daily_cost, limits.daily_cost_limit);
   const monthlyCallsPercent = getUsagePercentage(usage.monthly_calls, limits.monthly_calls_limit);
-  const monthlyTokensPercent = getUsagePercentage(usage.monthly_tokens, limits.monthly_tokens_limit);
+  const monthlyTokensPercent = getUsagePercentage(
+    usage.monthly_tokens,
+    limits.monthly_tokens_limit,
+  );
   const monthlyCostPercent = getUsagePercentage(usage.monthly_cost, limits.monthly_cost_limit);
 
   const maxDailyPercent = Math.max(dailyCallsPercent, dailyTokensPercent, dailyCostPercent);
@@ -92,14 +95,16 @@ export function APIUsageAlert({ userId, provider }: APIUsageAlertProps) {
   const color = alertLevel === 'error' ? 'text-red-600' : 'text-yellow-600';
 
   return (
-    <Alert className={`border-l-4 ${alertLevel === 'error' ? 'border-red-500' : 'border-yellow-500'}`}>
+    <Alert
+      className={`border-l-4 ${alertLevel === 'error' ? 'border-red-500' : 'border-yellow-500'}`}
+    >
       <Icon className={`h-4 w-4 ${color}`} />
       <AlertDescription>
         <div className="space-y-2">
           <div className="font-medium">
             {alertLevel === 'error' ? 'API使用量已达上限' : 'API使用量接近上限'}
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
               <div className="font-medium text-gray-700 mb-1">今日使用情况</div>
@@ -113,7 +118,8 @@ export function APIUsageAlert({ userId, provider }: APIUsageAlertProps) {
                 <div className="flex justify-between">
                   <span>Token使用:</span>
                   <span className={dailyTokensPercent >= 100 ? 'text-red-600 font-medium' : ''}>
-                    {usage.daily_tokens.toLocaleString()} / {limits.daily_tokens_limit.toLocaleString()}
+                    {usage.daily_tokens.toLocaleString()} /{' '}
+                    {limits.daily_tokens_limit.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -124,7 +130,7 @@ export function APIUsageAlert({ userId, provider }: APIUsageAlertProps) {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <div className="font-medium text-gray-700 mb-1">本月使用情况</div>
               <div className="space-y-1">
@@ -137,7 +143,8 @@ export function APIUsageAlert({ userId, provider }: APIUsageAlertProps) {
                 <div className="flex justify-between">
                   <span>Token使用:</span>
                   <span className={monthlyTokensPercent >= 100 ? 'text-red-600 font-medium' : ''}>
-                    {usage.monthly_tokens.toLocaleString()} / {limits.monthly_tokens_limit.toLocaleString()}
+                    {usage.monthly_tokens.toLocaleString()} /{' '}
+                    {limits.monthly_tokens_limit.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -149,7 +156,7 @@ export function APIUsageAlert({ userId, provider }: APIUsageAlertProps) {
               </div>
             </div>
           </div>
-          
+
           {alertLevel === 'error' && (
             <div className="text-red-600 text-sm font-medium">
               ⚠️ 已达到使用上限，无法继续调用API

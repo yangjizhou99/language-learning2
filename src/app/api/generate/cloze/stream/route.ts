@@ -1,9 +1,9 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-import { NextRequest } from "next/server";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { NextRequest } from 'next/server';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
 const SYS = (lang: string, topic: string, level: string, rag?: string) => {
   const base = `
@@ -15,8 +15,8 @@ const SYS = (lang: string, topic: string, level: string, rag?: string) => {
 
 export async function POST(req: NextRequest) {
   try {
-    const { lang, topic, level = "mid", rag, model = "deepseek-chat" } = await req.json();
-    
+    const { lang, topic, level = 'mid', rag, model = 'deepseek-chat' } = await req.json();
+
     // 获取用户信息
     const cookieStore = await cookies();
     const supabase = createServerClient(
@@ -24,16 +24,21 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
           set() {},
           remove() {},
-        }
-      }
+        },
+      },
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
-      return new Response("Unauthorized", { status: 401 });
+      return new Response('Unauthorized', { status: 401 });
     }
 
     // 获取用户API密钥
@@ -41,41 +46,41 @@ export async function POST(req: NextRequest) {
     const userKeys = await getUserAPIKeys(user.id);
     const apiKey = userKeys?.deepseek || process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
-      return new Response("Missing DEEPSEEK_API_KEY", { status: 500 });
+      return new Response('Missing DEEPSEEK_API_KEY', { status: 500 });
     }
-    
+
     const sys = SYS(lang, topic, level, rag);
-    const ds = await fetch("https://api.deepseek.com/v1/chat/completions", {
-      method: "POST",
+    const ds = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "Accept": "text/event-stream"
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
       },
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: sys },
-          { role: "user", content: "生成题目" }
+          { role: 'system', content: sys },
+          { role: 'user', content: '生成题目' },
         ],
         temperature: 0.4,
-        stream: true
-      })
+        stream: true,
+      }),
     });
 
     if (!ds.ok || !ds.body) {
-      const text = await ds.text().catch(()=> "upstream error");
+      const text = await ds.text().catch(() => 'upstream error');
       return new Response(text, { status: 502 });
     }
 
     return new Response(ds.body, {
       headers: {
-        "Content-Type": "text/event-stream; charset=utf-8",
-        "Cache-Control": "no-cache, no-transform",
-        "Connection": "keep-alive"
-      }
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+      },
     });
   } catch (error) {
-    return new Response("Internal Server Error", { status: 500 });
+    return new Response('Internal Server Error', { status: 500 });
   }
 }

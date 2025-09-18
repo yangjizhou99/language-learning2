@@ -12,12 +12,12 @@ const SUBTOPIC_SYS = `You expand a macro theme into concrete, classroom-ready SU
 - Return STRICT JSON only.`;
 
 // 小主题生成的用户提示词模板
-function buildSubtopicPrompt({ 
-  lang, 
-  level, 
-  genre, 
-  themeTitleCn, 
-  count 
+function buildSubtopicPrompt({
+  lang,
+  level,
+  genre,
+  themeTitleCn,
+  count,
 }: {
   lang: string;
   level: number;
@@ -27,7 +27,7 @@ function buildSubtopicPrompt({
 }) {
   const langMap = { en: 'English', ja: '日本語', zh: '简体中文' };
   const L = langMap[lang as keyof typeof langMap] || 'English';
-  
+
   return `LANG=${L}
 LEVEL=L${level}
 GENRE=${genre}
@@ -62,30 +62,33 @@ export async function POST(req: NextRequest) {
 
     const supabase = auth.supabase;
     const body = await req.json();
-    const { 
+    const {
       theme_id,
       theme_title_cn,
-      lang, 
-      level, 
-      genre, 
+      lang,
+      level,
+      genre,
       count = 5,
       provider = 'deepseek',
       model = 'deepseek-chat',
-      temperature = 0.7
+      temperature = 0.7,
     } = body;
 
     if (!theme_id || !theme_title_cn || !lang || !level || !genre) {
-      return NextResponse.json({ 
-        error: 'Missing required parameters',
-        received: { theme_id, theme_title_cn, lang, level, genre },
-        missing: {
-          theme_id: !theme_id,
-          theme_title_cn: !theme_title_cn,
-          lang: !lang,
-          level: !level,
-          genre: !genre
-        }
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'Missing required parameters',
+          received: { theme_id, theme_title_cn, lang, level, genre },
+          missing: {
+            theme_id: !theme_id,
+            theme_title_cn: !theme_title_cn,
+            lang: !lang,
+            level: !level,
+            genre: !genre,
+          },
+        },
+        { status: 400 },
+      );
     }
 
     // 获取现有小主题信息
@@ -94,16 +97,18 @@ export async function POST(req: NextRequest) {
       .select('title_cn, one_line_cn')
       .eq('theme_id', theme_id);
 
-    const existingSubtopicTitles = existingSubtopics?.map(s => s.title_cn) || [];
-    
+    const existingSubtopicTitles = existingSubtopics?.map((s) => s.title_cn) || [];
+
     // 构建包含现有小主题信息的提示词（一次性生成所有小主题）
-    const enhancedPrompt = buildSubtopicPrompt({ 
-      lang, 
-      level, 
-      genre, 
-      themeTitleCn: theme_title_cn, 
-      count 
-    }) + `\n\n现有小主题列表（请避免重复）：\n${existingSubtopicTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n\n请生成与上述小主题不同的新小主题。`;
+    const enhancedPrompt =
+      buildSubtopicPrompt({
+        lang,
+        level,
+        genre,
+        themeTitleCn: theme_title_cn,
+        count,
+      }) +
+      `\n\n现有小主题列表（请避免重复）：\n${existingSubtopicTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n\n请生成与上述小主题不同的新小主题。`;
 
     // 只调用一次 AI 生成，设置90秒超时
     const result = await chatJSON({
@@ -113,8 +118,8 @@ export async function POST(req: NextRequest) {
       timeoutMs: 90000, // 90秒超时
       messages: [
         { role: 'system', content: SUBTOPIC_SYS },
-        { role: 'user', content: enhancedPrompt }
-      ]
+        { role: 'user', content: enhancedPrompt },
+      ],
     });
 
     // 解析 AI 响应
@@ -147,7 +152,7 @@ export async function POST(req: NextRequest) {
       ai_provider: provider,
       ai_model: model,
       ai_usage: result.usage || {},
-      status: 'active'
+      status: 'active',
     }));
 
     let insertedData: any[] = [];
@@ -156,11 +161,13 @@ export async function POST(req: NextRequest) {
         .from('shadowing_subtopics')
         .insert(subtopicsToProcess)
         .select('id, title_cn');
-      
+
       if (error) {
-        throw new Error(`Database error: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(
+          `Database error: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
-      
+
       insertedData = data || [];
     }
 
@@ -168,13 +175,20 @@ export async function POST(req: NextRequest) {
       success: true,
       inserted_count: insertedData.length,
       inserted_subtopics: insertedData,
-      message: `成功生成 ${insertedData.length} 个新小主题（已避免与现有小主题重复）`
+      message: `成功生成 ${insertedData.length} 个新小主题（已避免与现有小主题重复）`,
     });
-
   } catch (error) {
     console.error('Subtopic generation error:', error);
-    return NextResponse.json({
-      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Generation failed'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : 'Generation failed',
+      },
+      { status: 500 },
+    );
   }
 }

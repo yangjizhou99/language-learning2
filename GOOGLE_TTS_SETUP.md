@@ -1,6 +1,7 @@
 # Google TTS 配置指南
 
 ## 问题描述
+
 如果遇到错误：`Google TTS 失败，已回退本地合成：Unexpected token '.', "./service-"... is not valid JSON`
 
 这是因为 `GOOGLE_TTS_CREDENTIALS` 环境变量配置不正确导致的。
@@ -16,6 +17,7 @@
    - 创建服务账号并下载 JSON 凭据文件
 
 2. **配置凭据文件**：
+
    ```bash
    # 将下载的 JSON 文件重命名并放到项目根目录
    cp ~/Downloads/your-project-123456-abc123.json ./service-account.json
@@ -59,6 +61,7 @@ GOOGLE_TTS_PROJECT_ID=your-project-id
 ### 🌐 其他云平台
 
 #### Docker 部署
+
 ```dockerfile
 # 在 Dockerfile 中复制凭据文件
 COPY service-account.json /app/service-account.json
@@ -66,6 +69,7 @@ ENV GOOGLE_TTS_CREDENTIALS=/app/service-account.json
 ```
 
 #### Kubernetes 部署
+
 ```yaml
 # 使用 Secret 存储凭据
 apiVersion: v1
@@ -83,17 +87,17 @@ spec:
   template:
     spec:
       containers:
-      - name: app
-        env:
-        - name: GOOGLE_TTS_CREDENTIALS
-          value: /secrets/credentials.json
-        volumeMounts:
-        - name: credentials
-          mountPath: /secrets
+        - name: app
+          env:
+            - name: GOOGLE_TTS_CREDENTIALS
+              value: /secrets/credentials.json
+          volumeMounts:
+            - name: credentials
+              mountPath: /secrets
       volumes:
-      - name: credentials
-        secret:
-          secretName: google-tts-credentials
+        - name: credentials
+          secret:
+            secretName: google-tts-credentials
 ```
 
 ## 注意事项
@@ -106,21 +110,25 @@ spec:
 ## 故障排除
 
 1. **检查文件是否存在**：
+
    ```bash
    ls -la service-account.json
    ```
 
 2. **检查文件权限**：
+
    ```bash
    chmod 600 service-account.json
    ```
 
 3. **验证 JSON 格式**：
+
    ```bash
    cat service-account.json | jq .
    ```
 
 4. **重启开发服务器**：
+
    ```bash
    pnpm run dev
    ```
@@ -137,5 +145,6 @@ spec:
 ## 环境检测
 
 代码会自动检测运行环境：
+
 - **本地开发**：支持文件路径和 JSON 字符串
 - **云端生产**：仅支持 JSON 字符串，不支持文件路径

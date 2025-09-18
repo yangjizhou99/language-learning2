@@ -9,66 +9,70 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
-  
+
   const supabase = auth.supabase;
   const body = await req.json();
   const { action, items } = body;
-  
+
   if (!Array.isArray(items) || !items.length) {
     return NextResponse.json({ error: 'no items' }, { status: 400 });
   }
-  
+
   const user = (await supabase.auth.getUser()).data.user;
   const now = new Date().toISOString();
-  
+
   if (action === 'upsert') {
-    const rows = items.map(item => ({
+    const rows = items.map((item) => ({
       ...item,
       updated_at: now,
-      created_by: item.created_by || user?.id
+      created_by: item.created_by || user?.id,
     }));
-    
-    const { error } = await supabase
-      .from('shadowing_subtopics')
-      .upsert(rows, { onConflict: 'id' });
-    
+
+    const { error } = await supabase.from('shadowing_subtopics').upsert(rows, { onConflict: 'id' });
+
     if (error) {
-      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : String(error) },
+        { status: 400 },
+      );
     }
-    
+
     return NextResponse.json({ ok: true, count: rows.length });
   }
-  
+
   if (action === 'archive') {
-    const ids = items.map(x => x.id).filter(Boolean);
+    const ids = items.map((x) => x.id).filter(Boolean);
     const { error } = await supabase
       .from('shadowing_subtopics')
-      .update({ 
-        status: 'archived', 
-        updated_at: now 
+      .update({
+        status: 'archived',
+        updated_at: now,
       })
       .in('id', ids);
-    
+
     if (error) {
-      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : String(error) },
+        { status: 400 },
+      );
     }
-    
+
     return NextResponse.json({ ok: true, count: ids.length });
   }
-  
+
   if (action === 'delete') {
-    const ids = items.map(x => x.id).filter(Boolean);
-    const { error } = await supabase
-      .from('shadowing_subtopics')
-      .delete()
-      .in('id', ids);
-    
+    const ids = items.map((x) => x.id).filter(Boolean);
+    const { error } = await supabase.from('shadowing_subtopics').delete().in('id', ids);
+
     if (error) {
-      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : String(error) },
+        { status: 400 },
+      );
     }
-    
+
     return NextResponse.json({ ok: true, count: ids.length });
   }
-  
+
   return NextResponse.json({ error: 'unknown action' }, { status: 400 });
 }

@@ -16,9 +16,12 @@ class MemoryCache {
 
   constructor() {
     // 每5分钟清理一次过期缓存
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanup();
+      },
+      5 * 60 * 1000,
+    );
   }
 
   get<T>(key: string): T | null {
@@ -45,8 +48,8 @@ class MemoryCache {
     const now = Date.now();
     this.cache.set(key, {
       value,
-      expires: now + (ttlSeconds * 1000),
-      created: now
+      expires: now + ttlSeconds * 1000,
+      created: now,
     });
   }
 
@@ -92,7 +95,7 @@ class MemoryCache {
       total: this.cache.size,
       active,
       expired,
-      maxSize: this.maxSize
+      maxSize: this.maxSize,
     };
   }
 }
@@ -162,7 +165,7 @@ export class CacheManager {
     try {
       // 简单的通配符匹配
       const keys = Array.from(memoryCache['cache'].keys());
-      const matchingKeys = keys.filter(key => {
+      const matchingKeys = keys.filter((key) => {
         if (pattern.includes('*')) {
           const regex = new RegExp(pattern.replace(/\*/g, '.*'));
           return regex.test(key);
@@ -202,7 +205,7 @@ export class CacheManager {
   static generateKey(prefix: string, params: Record<string, any>): string {
     const sortedParams = Object.keys(params)
       .sort()
-      .map(key => `${key}:${params[key]}`)
+      .map((key) => `${key}:${params[key]}`)
       .join('|');
     return `${prefix}:${sortedParams}`;
   }
@@ -213,7 +216,7 @@ export class CacheManager {
   static getStats() {
     return {
       memory: memoryCache.getStats(),
-      pendingRequests: this.requestCache.size
+      pendingRequests: this.requestCache.size,
     };
   }
 
@@ -233,11 +236,7 @@ export class CacheManager {
   /**
    * 预热缓存
    */
-  static async warmup<T>(
-    key: string,
-    fetcher: () => Promise<T>,
-    ttlSeconds = 300
-  ): Promise<T> {
+  static async warmup<T>(key: string, fetcher: () => Promise<T>, ttlSeconds = 300): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached !== null) {
       return cached;
@@ -255,9 +254,11 @@ export function cached(ttlSeconds = 300, keyGenerator?: (...args: any[]) => stri
     const method = descriptor.value;
 
     descriptor.value = async function (...args: any[]) {
-      const key = keyGenerator 
+      const key = keyGenerator
         ? keyGenerator(...args)
-        : CacheManager.generateKey(`${target.constructor.name}:${propertyName}`, { args: JSON.stringify(args) });
+        : CacheManager.generateKey(`${target.constructor.name}:${propertyName}`, {
+            args: JSON.stringify(args),
+          });
 
       return CacheManager.warmup(key, () => method.apply(this, args), ttlSeconds);
     };

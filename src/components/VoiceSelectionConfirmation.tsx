@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  CheckCircle, 
-  DollarSign, 
-  Users, 
-  Volume2, 
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  CheckCircle,
+  DollarSign,
+  Users,
+  Volume2,
   Calculator,
   AlertTriangle,
   Play,
   Pause,
-  Brain
-} from "lucide-react";
+  Brain,
+} from 'lucide-react';
 
 interface Voice {
   id: string;
@@ -60,14 +60,14 @@ export default function VoiceSelectionConfirmation({
   candidateVoices,
   onConfirm,
   onCancel,
-  loading = false
+  loading = false,
 }: VoiceSelectionConfirmationProps) {
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
 
   // 获取AI选择的音色对象
   const getSelectedVoiceObjects = () => {
-    return candidateVoices.filter(voice => selectedVoices.includes(voice.name));
+    return candidateVoices.filter((voice) => selectedVoices.includes(voice.name));
   };
 
   const selectedVoiceObjects = getSelectedVoiceObjects();
@@ -79,14 +79,14 @@ export default function VoiceSelectionConfirmation({
       const cost = (textLength / 1000000) * voice.pricing.pricePerMillionChars;
       return total + cost;
     }, 0);
-    
+
     return {
       textLength,
       totalCost,
-      costPerVoice: selectedVoiceObjects.map(voice => ({
+      costPerVoice: selectedVoiceObjects.map((voice) => ({
         voice: voice.display_name || voice.name,
-        cost: (textLength / 1000000) * voice.pricing.pricePerMillionChars
-      }))
+        cost: (textLength / 1000000) * voice.pricing.pricePerMillionChars,
+      })),
     };
   };
 
@@ -99,9 +99,9 @@ export default function VoiceSelectionConfirmation({
         audioElement.pause();
         audioElement.currentTime = 0;
       }
-      
+
       setPreviewingVoice(voiceName);
-      
+
       const response = await fetch('/api/admin/shadowing/preview-voice-cached', {
         method: 'POST',
         headers: {
@@ -109,17 +109,17 @@ export default function VoiceSelectionConfirmation({
         },
         body: JSON.stringify({
           voiceName,
-          languageCode
+          languageCode,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('试听失败');
       }
-      
+
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
-      
+
       const newAudioElement = new Audio(audioUrl);
       newAudioElement.onended = () => {
         setPreviewingVoice(null);
@@ -129,10 +129,9 @@ export default function VoiceSelectionConfirmation({
         setPreviewingVoice(null);
         URL.revokeObjectURL(audioUrl);
       };
-      
+
       setAudioElement(newAudioElement);
       await newAudioElement.play();
-      
     } catch (error) {
       console.error('试听失败:', error);
       setPreviewingVoice(null);
@@ -164,9 +163,8 @@ export default function VoiceSelectionConfirmation({
           </h3>
           <div className="p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600 mb-2">
-              语言: {language === 'zh' ? '中文' : language === 'en' ? '英文' : '日文'} | 
-              类型: {isDialogue ? '对话' : '独白'} | 
-              字符数: {costInfo.textLength}
+              语言: {language === 'zh' ? '中文' : language === 'en' ? '英文' : '日文'} | 类型:{' '}
+              {isDialogue ? '对话' : '独白'} | 字符数: {costInfo.textLength}
             </p>
             <div className="max-h-32 overflow-y-auto">
               <p className="text-sm whitespace-pre-wrap">{text}</p>
@@ -183,7 +181,7 @@ export default function VoiceSelectionConfirmation({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {selectedVoiceObjects.map((voice, index) => {
               const isPreviewing = previewingVoice === voice.name;
-              
+
               return (
                 <div key={voice.id} className="p-4 border rounded-lg bg-blue-50">
                   <div className="flex items-start justify-between mb-3">
@@ -196,11 +194,11 @@ export default function VoiceSelectionConfirmation({
                           {voice.display_name || voice.name}
                         </span>
                         {voice.provider && (
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="secondary"
                             className={`text-xs ${
-                              voice.provider === 'gemini' 
-                                ? 'bg-purple-100 text-purple-700' 
+                              voice.provider === 'gemini'
+                                ? 'bg-purple-100 text-purple-700'
                                 : 'bg-blue-100 text-blue-700'
                             }`}
                           >
@@ -212,12 +210,15 @@ export default function VoiceSelectionConfirmation({
                         {voice.language_code} • {voice.ssml_gender}
                       </div>
                       {voice.useCase && (
-                        <Badge variant="secondary" className="text-xs bg-green-50 text-green-700 border-green-200">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-green-50 text-green-700 border-green-200"
+                        >
                           {voice.useCase}
                         </Badge>
                       )}
                     </div>
-                    
+
                     <Button
                       size="sm"
                       variant="outline"
@@ -230,14 +231,10 @@ export default function VoiceSelectionConfirmation({
                         }
                       }}
                     >
-                      {isPreviewing ? (
-                        <Pause className="h-3 w-3" />
-                      ) : (
-                        <Play className="h-3 w-3" />
-                      )}
+                      {isPreviewing ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                     </Button>
                   </div>
-                  
+
                   <div className="text-xs text-gray-600">
                     价格: ${voice.pricing.pricePerMillionChars}/M字符
                   </div>
@@ -260,9 +257,7 @@ export default function VoiceSelectionConfirmation({
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline">{speaker.name}</Badge>
-                      <span className="text-sm text-gray-600">
-                        → {speaker.selectedVoice}
-                      </span>
+                      <span className="text-sm text-gray-600">→ {speaker.selectedVoice}</span>
                     </div>
                     <p className="text-sm text-gray-600 mb-1">{speaker.description}</p>
                     <p className="text-xs text-blue-600">{speaker.reason}</p>
@@ -293,11 +288,12 @@ export default function VoiceSelectionConfirmation({
                 <span className="text-lg">${costInfo.totalCost.toFixed(4)}</span>
               </div>
             </div>
-            
+
             <Alert className="mt-3">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-sm">
-                AI已从您的备选音色中智能选择了 {selectedVoices.length} 种音色。费用基于文本长度和音色价格计算。
+                AI已从您的备选音色中智能选择了 {selectedVoices.length}{' '}
+                种音色。费用基于文本长度和音色价格计算。
               </AlertDescription>
             </Alert>
           </div>
@@ -305,11 +301,7 @@ export default function VoiceSelectionConfirmation({
 
         {/* 操作按钮 */}
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            disabled={loading}
-          >
+          <Button variant="outline" onClick={onCancel} disabled={loading}>
             取消
           </Button>
           <Button

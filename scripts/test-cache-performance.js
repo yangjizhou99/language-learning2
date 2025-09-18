@@ -13,7 +13,7 @@ const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
 const testEndpoints = [
   '/api/shadowing/next?lang=en&level=2',
   '/api/cloze/next?lang=en&level=3',
-  '/api/tts/voices?lang=en&kind=Neural2'
+  '/api/tts/voices?lang=en&kind=Neural2',
 ];
 
 const colors = {
@@ -22,7 +22,7 @@ const colors = {
   red: '\x1b[31m',
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
-  cyan: '\x1b[36m'
+  cyan: '\x1b[36m',
 };
 
 function log(message, color = colors.reset) {
@@ -34,7 +34,7 @@ function makeRequest(url, headers = {}) {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(url);
     const client = urlObj.protocol === 'https:' ? https : http;
-    
+
     const options = {
       hostname: urlObj.hostname,
       port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
@@ -42,19 +42,19 @@ function makeRequest(url, headers = {}) {
       method: 'GET',
       headers: {
         'User-Agent': 'Cache-Test-Script/1.0',
-        ...headers
-      }
+        ...headers,
+      },
     };
 
     const startTime = Date.now();
-    
+
     const req = client.request(options, (res) => {
       let data = '';
-      
+
       res.on('data', (chunk) => {
         data += chunk;
       });
-      
+
       res.on('end', () => {
         const duration = Date.now() - startTime;
         resolve({
@@ -62,7 +62,7 @@ function makeRequest(url, headers = {}) {
           headers: res.headers,
           data: data,
           duration,
-          size: Buffer.byteLength(data, 'utf8')
+          size: Buffer.byteLength(data, 'utf8'),
         });
       });
     });
@@ -72,7 +72,7 @@ function makeRequest(url, headers = {}) {
       req.destroy();
       reject(new Error('Request timeout'));
     });
-    
+
     req.end();
   });
 }
@@ -80,26 +80,28 @@ function makeRequest(url, headers = {}) {
 // 测试单个端点的缓存效果
 async function testEndpointCaching(endpoint) {
   log(`\n=== 测试端点: ${endpoint} ===`, colors.blue);
-  
+
   try {
     // 第一次请求 - 应该是冷缓存
     log('1. 第一次请求 (冷缓存)...', colors.yellow);
     const firstResponse = await makeRequest(baseUrl + endpoint);
-    
-    log(`   状态码: ${firstResponse.status}`, 
-        firstResponse.status === 200 ? colors.green : colors.red);
+
+    log(
+      `   状态码: ${firstResponse.status}`,
+      firstResponse.status === 200 ? colors.green : colors.red,
+    );
     log(`   响应时间: ${firstResponse.duration}ms`);
     log(`   响应大小: ${firstResponse.size} bytes`);
-    
+
     const etag = firstResponse.headers.etag;
     const cacheControl = firstResponse.headers['cache-control'];
-    
+
     if (etag) {
       log(`   ETag: ${etag}`, colors.cyan);
     } else {
       log('   ⚠️  缺少 ETag 头', colors.yellow);
     }
-    
+
     if (cacheControl) {
       log(`   Cache-Control: ${cacheControl}`, colors.cyan);
     } else {
@@ -109,13 +111,18 @@ async function testEndpointCaching(endpoint) {
     // 第二次请求 - 应该命中缓存或返回相同结果
     log('\n2. 第二次请求 (热缓存)...', colors.yellow);
     const secondResponse = await makeRequest(baseUrl + endpoint);
-    
-    log(`   状态码: ${secondResponse.status}`, 
-        secondResponse.status === 200 ? colors.green : colors.red);
+
+    log(
+      `   状态码: ${secondResponse.status}`,
+      secondResponse.status === 200 ? colors.green : colors.red,
+    );
     log(`   响应时间: ${secondResponse.duration}ms`);
-    
+
     // 比较响应时间
-    const speedImprovement = ((firstResponse.duration - secondResponse.duration) / firstResponse.duration * 100).toFixed(1);
+    const speedImprovement = (
+      ((firstResponse.duration - secondResponse.duration) / firstResponse.duration) *
+      100
+    ).toFixed(1);
     if (secondResponse.duration < firstResponse.duration) {
       log(`   ✅ 响应时间提升: ${speedImprovement}%`, colors.green);
     } else {
@@ -126,15 +133,18 @@ async function testEndpointCaching(endpoint) {
     if (etag) {
       log('\n3. 条件请求 (If-None-Match)...', colors.yellow);
       const conditionalResponse = await makeRequest(baseUrl + endpoint, {
-        'If-None-Match': etag
+        'If-None-Match': etag,
       });
-      
+
       if (conditionalResponse.status === 304) {
         log(`   ✅ 返回 304 Not Modified`, colors.green);
         log(`   响应时间: ${conditionalResponse.duration}ms`);
         log(`   响应大小: ${conditionalResponse.size} bytes (应该为0)`);
-        
-        const bandwidthSaving = ((firstResponse.size - conditionalResponse.size) / firstResponse.size * 100).toFixed(1);
+
+        const bandwidthSaving = (
+          ((firstResponse.size - conditionalResponse.size) / firstResponse.size) *
+          100
+        ).toFixed(1);
         log(`   💾 带宽节省: ${bandwidthSaving}%`, colors.green);
       } else {
         log(`   ⚠️  未返回 304，状态码: ${conditionalResponse.status}`, colors.yellow);
@@ -163,14 +173,16 @@ async function testEndpointCaching(endpoint) {
     maxScore += 25;
     if (etag) {
       const conditionalResponse = await makeRequest(baseUrl + endpoint, {
-        'If-None-Match': etag
+        'If-None-Match': etag,
       });
       if (conditionalResponse.status === 304) score += 25;
     }
 
     const finalScore = Math.round((score / maxScore) * 100);
-    log(`\n📊 缓存效果评分: ${finalScore}/100`, 
-        finalScore >= 80 ? colors.green : finalScore >= 60 ? colors.yellow : colors.red);
+    log(
+      `\n📊 缓存效果评分: ${finalScore}/100`,
+      finalScore >= 80 ? colors.green : finalScore >= 60 ? colors.yellow : colors.red,
+    );
 
     return {
       endpoint,
@@ -178,17 +190,20 @@ async function testEndpointCaching(endpoint) {
       hasETag: !!etag,
       hasCacheControl: !!cacheControl,
       speedImprovement: speedImprovement,
-      supportsConditional: etag ? (await makeRequest(baseUrl + endpoint, {
-        'If-None-Match': etag
-      })).status === 304 : false
+      supportsConditional: etag
+        ? (
+            await makeRequest(baseUrl + endpoint, {
+              'If-None-Match': etag,
+            })
+          ).status === 304
+        : false,
     };
-
   } catch (error) {
     log(`❌ 测试失败: ${error.message}`, colors.red);
     return {
       endpoint,
       score: 0,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -196,26 +211,26 @@ async function testEndpointCaching(endpoint) {
 // 并发请求测试
 async function testConcurrentRequests(endpoint, concurrency = 10) {
   log(`\n=== 并发测试: ${endpoint} (${concurrency} 个并发请求) ===`, colors.blue);
-  
+
   const startTime = Date.now();
-  const promises = Array(concurrency).fill().map(() => 
-    makeRequest(baseUrl + endpoint)
-  );
-  
+  const promises = Array(concurrency)
+    .fill()
+    .map(() => makeRequest(baseUrl + endpoint));
+
   try {
     const responses = await Promise.all(promises);
     const totalTime = Date.now() - startTime;
     const avgResponseTime = responses.reduce((sum, r) => sum + r.duration, 0) / responses.length;
-    
+
     log(`✅ 所有请求完成`, colors.green);
     log(`   总耗时: ${totalTime}ms`);
     log(`   平均响应时间: ${avgResponseTime.toFixed(1)}ms`);
-    log(`   成功率: ${responses.filter(r => r.status === 200).length}/${concurrency}`);
-    
+    log(`   成功率: ${responses.filter((r) => r.status === 200).length}/${concurrency}`);
+
     // 检查响应一致性
     const firstResponseData = responses[0].data;
-    const allIdentical = responses.every(r => r.data === firstResponseData);
-    
+    const allIdentical = responses.every((r) => r.data === firstResponseData);
+
     if (allIdentical) {
       log(`✅ 所有响应数据一致`, colors.green);
     } else {
@@ -225,10 +240,9 @@ async function testConcurrentRequests(endpoint, concurrency = 10) {
     return {
       totalTime,
       avgResponseTime,
-      successRate: responses.filter(r => r.status === 200).length / concurrency,
-      consistent: allIdentical
+      successRate: responses.filter((r) => r.status === 200).length / concurrency,
+      consistent: allIdentical,
     };
-
   } catch (error) {
     log(`❌ 并发测试失败: ${error.message}`, colors.red);
     return { error: error.message };
@@ -240,21 +254,25 @@ function generateReport(results, concurrentResults) {
   log(`\n${'='.repeat(50)}`, colors.blue);
   log(`📋 缓存性能测试报告`, colors.blue);
   log(`${'='.repeat(50)}`, colors.blue);
-  
+
   log(`\n📊 端点测试结果:`);
-  results.forEach(result => {
+  results.forEach((result) => {
     if (result.error) {
       log(`   ❌ ${result.endpoint}: 测试失败 (${result.error})`, colors.red);
     } else {
-      log(`   ${result.score >= 80 ? '✅' : result.score >= 60 ? '⚠️ ' : '❌'} ${result.endpoint}: ${result.score}/100`, 
-          result.score >= 80 ? colors.green : result.score >= 60 ? colors.yellow : colors.red);
-      log(`      ETag: ${result.hasETag ? '✅' : '❌'} | Cache-Control: ${result.hasCacheControl ? '✅' : '❌'} | 304支持: ${result.supportsConditional ? '✅' : '❌'}`);
+      log(
+        `   ${result.score >= 80 ? '✅' : result.score >= 60 ? '⚠️ ' : '❌'} ${result.endpoint}: ${result.score}/100`,
+        result.score >= 80 ? colors.green : result.score >= 60 ? colors.yellow : colors.red,
+      );
+      log(
+        `      ETag: ${result.hasETag ? '✅' : '❌'} | Cache-Control: ${result.hasCacheControl ? '✅' : '❌'} | 304支持: ${result.supportsConditional ? '✅' : '❌'}`,
+      );
       if (result.speedImprovement !== undefined) {
         log(`      响应时间改善: ${result.speedImprovement}%`);
       }
     }
   });
-  
+
   log(`\n🔄 并发测试结果:`);
   Object.entries(concurrentResults).forEach(([endpoint, result]) => {
     if (result.error) {
@@ -268,14 +286,17 @@ function generateReport(results, concurrentResults) {
   });
 
   // 总体评分
-  const validResults = results.filter(r => !r.error);
-  const avgScore = validResults.length > 0 
-    ? validResults.reduce((sum, r) => sum + r.score, 0) / validResults.length 
-    : 0;
-  
-  log(`\n🎯 总体缓存效果评分: ${avgScore.toFixed(1)}/100`, 
-      avgScore >= 80 ? colors.green : avgScore >= 60 ? colors.yellow : colors.red);
-  
+  const validResults = results.filter((r) => !r.error);
+  const avgScore =
+    validResults.length > 0
+      ? validResults.reduce((sum, r) => sum + r.score, 0) / validResults.length
+      : 0;
+
+  log(
+    `\n🎯 总体缓存效果评分: ${avgScore.toFixed(1)}/100`,
+    avgScore >= 80 ? colors.green : avgScore >= 60 ? colors.yellow : colors.red,
+  );
+
   if (avgScore >= 80) {
     log(`✅ 缓存系统表现优秀！`, colors.green);
   } else if (avgScore >= 60) {
@@ -286,10 +307,10 @@ function generateReport(results, concurrentResults) {
 
   // 建议
   log(`\n💡 优化建议:`);
-  const missingETag = validResults.filter(r => !r.hasETag);
-  const missingCacheControl = validResults.filter(r => !r.hasCacheControl);
-  const noConditional = validResults.filter(r => !r.supportsConditional);
-  
+  const missingETag = validResults.filter((r) => !r.hasETag);
+  const missingCacheControl = validResults.filter((r) => !r.hasCacheControl);
+  const noConditional = validResults.filter((r) => !r.supportsConditional);
+
   if (missingETag.length > 0) {
     log(`   📝 ${missingETag.length} 个端点缺少 ETag 支持`);
   }
@@ -299,7 +320,7 @@ function generateReport(results, concurrentResults) {
   if (noConditional.length > 0) {
     log(`   📝 ${noConditional.length} 个端点不支持条件请求`);
   }
-  
+
   log(`\n测试完成时间: ${new Date().toLocaleString()}`);
 }
 
@@ -307,24 +328,25 @@ function generateReport(results, concurrentResults) {
 async function main() {
   log(`🚀 开始缓存性能测试`, colors.blue);
   log(`测试目标: ${baseUrl}`);
-  
+
   // 测试各个端点
   const results = [];
   for (const endpoint of testEndpoints) {
     const result = await testEndpointCaching(endpoint);
     results.push(result);
-    
+
     // 稍微延迟避免过快请求
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-  
+
   // 并发测试
   const concurrentResults = {};
-  for (const endpoint of testEndpoints.slice(0, 2)) { // 只测试前两个端点
+  for (const endpoint of testEndpoints.slice(0, 2)) {
+    // 只测试前两个端点
     concurrentResults[endpoint] = await testConcurrentRequests(endpoint, 5);
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
   }
-  
+
   // 生成报告
   generateReport(results, concurrentResults);
 }
@@ -336,7 +358,7 @@ process.on('unhandledRejection', (error) => {
 });
 
 if (require.main === module) {
-  main().catch(error => {
+  main().catch((error) => {
     log(`❌ 测试失败: ${error.message}`, colors.red);
     process.exit(1);
   });

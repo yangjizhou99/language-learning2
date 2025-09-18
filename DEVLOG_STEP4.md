@@ -1,6 +1,7 @@
 # DEVLOG Step 4
 
 ## What we built
+
 - Supabase 匿名登录 + profiles upsert
 - SQL：profiles/sessions/phrases + RLS（仅本人可读写）
 - API：/api/generate/phrases（DeepSeek）
@@ -8,9 +9,10 @@
 - 写入 sessions：Cloze 判分、SFT 评测
 
 ## How to run
+
 1. 配置 .env.local:
    - NEXT_PUBLIC_SUPABASE_URL
-   - NEXT_PUBLIC_SUPABASE_ANON_KEY 
+   - NEXT_PUBLIC_SUPABASE_ANON_KEY
    - DEEPSEEK_API_KEY
 
 2. 在 Supabase 控制台执行 SQL 创建表结构（见下方 SQL 部分）
@@ -19,16 +21,19 @@
    - Auth → Settings → 开启 Allow anonymous sign-ins
 
 4. 运行开发服务器:
+
 ```bash
 pnpm dev
 ```
 
 5. 访问:
+
 - http://localhost:3000/phrase-bank （生成候选 → 保存 → 我的短语出现）
 - http://localhost:3000/practice/cloze （判分后写入 sessions）
 - http://localhost:3000/practice/sft （打分后写入 sessions）
 
 ## SQL (在 Supabase SQL Editor 执行)
+
 ```sql
 -- 扩展
 create extension if not exists pgcrypto;
@@ -97,10 +102,13 @@ with check ( user_id = auth.uid() );
 ```
 
 ## Screenshots
+
 请截图保存:
+
 - public/step4-phrase-bank.png （短语库页面）
 - public/step4-sessions.png （Supabase sessions 表数据）
 
 ## Notes / Issues
+
 - 若出现 RLS 错误，刷新后确保已匿名登录且 profiles 已 upsert
 - 首次访问需要等待 Supabase 初始化匿名用户

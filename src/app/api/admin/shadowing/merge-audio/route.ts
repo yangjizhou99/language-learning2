@@ -9,7 +9,7 @@ import { randomUUID } from 'crypto';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 // 智能并发控制：根据系统资源动态调整
@@ -23,9 +23,10 @@ let lastErrorTime = 0; // 上次错误时间
 const adjustConcurrencyLimit = () => {
   const now = Date.now();
   const timeSinceLastError = now - lastErrorTime;
-  
+
   // 如果最近有错误，降低并发
-  if (timeSinceLastError < 30000) { // 30秒内有错误
+  if (timeSinceLastError < 30000) {
+    // 30秒内有错误
     maxConcurrentMerges = 2;
   } else if (systemLoad > 0.9) {
     maxConcurrentMerges = 3; // 极高负载时限制为3
@@ -38,8 +39,10 @@ const adjustConcurrencyLimit = () => {
   } else {
     maxConcurrentMerges = 6; // 低负载时允许6个并发
   }
-  
-  console.log(`调整并发限制: ${maxConcurrentMerges} (系统负载: ${systemLoad.toFixed(2)}, ffmpeg进程: ${ffmpegProcessCount})`);
+
+  console.log(
+    `调整并发限制: ${maxConcurrentMerges} (系统负载: ${systemLoad.toFixed(2)}, ffmpeg进程: ${ffmpegProcessCount})`,
+  );
 };
 
 // 音频合并队列
@@ -56,13 +59,13 @@ const monitorSystemResources = async () => {
     const activeTaskLoad = activeMergeCount / 3; // 活跃任务负载
     const queueLoad = Math.min(mergeQueue.length / 10, 1); // 队列长度负载
     const ffmpegLoad = Math.min(ffmpegProcessCount / 3, 1); // ffmpeg进程负载
-    
+
     // 综合负载计算
     systemLoad = Math.max(activeTaskLoad, queueLoad, ffmpegLoad);
-    
+
     // 动态调整并发限制
     adjustConcurrencyLimit();
-    
+
     // 如果队列过长，可以适当增加并发
     if (mergeQueue.length > 3 && systemLoad < 0.6) {
       maxConcurrentMerges = Math.min(maxConcurrentMerges + 2, 8); // 最多8个并发
@@ -77,15 +80,17 @@ const monitorSystemResources = async () => {
 const processNextInQueue = async () => {
   // 监控系统资源
   await monitorSystemResources();
-  
+
   if (mergeQueue.length === 0 || activeMergeCount >= maxConcurrentMerges) {
     return;
   }
 
   const { resolve, reject, request } = mergeQueue.shift()!;
   activeMergeCount++;
-  console.log(`处理队列中的音频合并请求，队列长度: ${mergeQueue.length}, 活跃任务: ${activeMergeCount}/${maxConcurrentMerges}`);
-  
+  console.log(
+    `处理队列中的音频合并请求，队列长度: ${mergeQueue.length}, 活跃任务: ${activeMergeCount}/${maxConcurrentMerges}`,
+  );
+
   try {
     const result = await processMergeRequest(request);
     resolve(result);
@@ -94,7 +99,9 @@ const processNextInQueue = async () => {
     reject(error);
   } finally {
     activeMergeCount--;
-    console.log(`音频合并任务完成，剩余队列: ${mergeQueue.length}, 活跃任务: ${activeMergeCount}/${maxConcurrentMerges}`);
+    console.log(
+      `音频合并任务完成，剩余队列: ${mergeQueue.length}, 活跃任务: ${activeMergeCount}/${maxConcurrentMerges}`,
+    );
     // 处理队列中的下一个请求
     setTimeout(processNextInQueue, 50); // 减少延迟，提高响应速度
   }
@@ -108,10 +115,11 @@ setInterval(() => {
     maxConcurrentMerges = 5; // 重置为测试默认值
     console.log('系统空闲，重置并发限制为测试默认值');
   }
-  
+
   // 清理过期的错误记录
   const now = Date.now();
-  if (now - lastErrorTime > 60000) { // 1分钟后清除错误记录
+  if (now - lastErrorTime > 60000) {
+    // 1分钟后清除错误记录
     lastErrorTime = 0;
   }
 }, 30000); // 每30秒检查一次
@@ -120,7 +128,9 @@ export async function POST(request: NextRequest): Promise<Response> {
   // 使用队列机制处理并发请求
   return new Promise<Response>((resolve, reject) => {
     mergeQueue.push({ resolve, reject, request });
-    console.log(`新的音频合并请求加入队列，当前队列长度: ${mergeQueue.length}, 最大并发: ${maxConcurrentMerges}`);
+    console.log(
+      `新的音频合并请求加入队列，当前队列长度: ${mergeQueue.length}, 最大并发: ${maxConcurrentMerges}`,
+    );
     processNextInQueue();
   });
 }
@@ -131,7 +141,7 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
 
   try {
     const { audioUrls } = await request.json();
-    
+
     if (!audioUrls || !Array.isArray(audioUrls) || audioUrls.length === 0) {
       return NextResponse.json({ error: '无效的音频URL列表' }, { status: 400 });
     }
@@ -145,55 +155,61 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
     console.log('创建临时目录:', tempDir);
 
     const tempFiles: string[] = [];
-    
+
     try {
       // 下载每个音频文件
       for (let i = 0; i < audioUrls.length; i++) {
         const audioUrl = audioUrls[i];
         const response = await fetch(audioUrl);
-        
+
         if (!response.ok) {
           throw new Error(`下载音频文件失败: ${response.status}`);
         }
-        
+
         const audioBuffer = await response.arrayBuffer();
-        
+
         // 检测音频格式
         const buffer = Buffer.from(audioBuffer);
         let fileExtension = '.mp3'; // 默认MP3
-        
+
         // 检查文件头来确定格式
         if (buffer.length >= 4) {
           const header = buffer.toString('hex', 0, 4);
-          if (header === '52494646') { // 'RIFF'
+          if (header === '52494646') {
+            // 'RIFF'
             fileExtension = '.wav';
           } else if (header === 'fffb' || header === 'fff3' || header === 'fff2') {
             fileExtension = '.mp3';
           }
         }
-        
+
         const tempFile = path.join(tempDir, `audio_${i}${fileExtension}`);
         await fs.writeFile(tempFile, buffer);
         tempFiles.push(tempFile);
-        
+
         console.log(`下载音频文件 ${i + 1}/${audioUrls.length}: ${tempFile} (${fileExtension})`);
       }
 
       // 创建ffmpeg输入文件列表
       const inputListFile = path.join(tempDir, 'input_list.txt');
-      const inputListContent = tempFiles.map(file => `file '${file}'`).join('\n');
+      const inputListContent = tempFiles.map((file) => `file '${file}'`).join('\n');
       await fs.writeFile(inputListFile, inputListContent);
 
       // 使用ffmpeg合并音频
       const outputFile = path.join(tempDir, `merged_${Date.now()}.mp3`);
-      
+
       const ffmpegArgs = [
-        '-f', 'concat',
-        '-safe', '0',
-        '-i', inputListFile,
-        '-c:a', 'libmp3lame',  // 使用MP3编码器重新编码
-        '-b:a', '128k',         // 设置比特率
-        outputFile
+        '-f',
+        'concat',
+        '-safe',
+        '0',
+        '-i',
+        inputListFile,
+        '-c:a',
+        'libmp3lame', // 使用MP3编码器重新编码
+        '-b:a',
+        '128k', // 设置比特率
+        outputFile,
       ];
 
       console.log('执行ffmpeg命令:', ffmpeg, ffmpegArgs);
@@ -203,14 +219,14 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
       if (!ffmpegPath) {
         throw new Error('ffmpeg路径未找到，请检查ffmpeg-static安装');
       }
-      
+
       console.log('原始ffmpeg路径:', ffmpegPath);
       console.log('当前工作目录:', process.cwd());
-      
+
       // 标准化路径处理
       ffmpegPath = path.resolve(ffmpegPath);
       console.log('标准化后的ffmpeg路径:', ffmpegPath);
-      
+
       // 验证ffmpeg文件是否存在
       try {
         await fs.access(ffmpegPath);
@@ -218,7 +234,7 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
       } catch (accessError) {
         console.error('ffmpeg文件不存在:', ffmpegPath);
         console.error('accessError:', accessError);
-        
+
         // 尝试其他可能的路径格式
         const possiblePaths = [
           ffmpegPath,
@@ -228,9 +244,17 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
           // 尝试相对路径
           path.join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg.exe'),
           // 尝试pnpm路径
-          path.join(process.cwd(), 'node_modules', '.pnpm', 'ffmpeg-static@5.2.0', 'node_modules', 'ffmpeg-static', 'ffmpeg.exe')
+          path.join(
+            process.cwd(),
+            'node_modules',
+            '.pnpm',
+            'ffmpeg-static@5.2.0',
+            'node_modules',
+            'ffmpeg-static',
+            'ffmpeg.exe',
+          ),
         ];
-        
+
         let validPath = null;
         for (const testPath of possiblePaths) {
           try {
@@ -243,11 +267,11 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
             console.log('路径无效:', testPath);
           }
         }
-        
+
         if (!validPath) {
           throw new Error(`ffmpeg文件不存在，尝试的路径: ${possiblePaths.join(', ')}`);
         }
-        
+
         // 使用找到的有效路径
         ffmpegPath = validPath;
       }
@@ -255,63 +279,74 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
       // 添加重试机制
       let retryCount = 0;
       const maxRetries = 3;
-      
+
       const executeFfmpeg = async (): Promise<void> => {
         return new Promise((resolve, reject) => {
           // 使用spawn而不是exec来避免路径问题
           const args = [
-            '-f', 'concat',
-            '-safe', '0',
-            '-i', inputListFile,
-            '-c:a', 'libmp3lame',
-            '-b:a', '128k',
-            outputFile
+            '-f',
+            'concat',
+            '-safe',
+            '0',
+            '-i',
+            inputListFile,
+            '-c:a',
+            'libmp3lame',
+            '-b:a',
+            '128k',
+            outputFile,
           ];
-          
-          console.log(`执行ffmpeg命令 (尝试 ${retryCount + 1}/${maxRetries + 1}):`, ffmpegPath, args);
+
+          console.log(
+            `执行ffmpeg命令 (尝试 ${retryCount + 1}/${maxRetries + 1}):`,
+            ffmpegPath,
+            args,
+          );
           console.log('ffmpeg路径:', ffmpegPath);
-          
+
           // 增加ffmpeg进程计数
           ffmpegProcessCount++;
           console.log(`启动ffmpeg进程，当前进程数: ${ffmpegProcessCount}`);
-          
-          const child = spawn(ffmpegPath, args, { 
+
+          const child = spawn(ffmpegPath, args, {
             timeout: 60000,
-            stdio: ['ignore', 'pipe', 'pipe']
+            stdio: ['ignore', 'pipe', 'pipe'],
           });
-          
+
           let stdout = '';
           let stderr = '';
-          
+
           child.stdout?.on('data', (data) => {
             stdout += data.toString();
           });
-          
+
           child.stderr?.on('data', (data) => {
             stderr += data.toString();
           });
-          
+
           child.on('close', async (code) => {
             // 减少ffmpeg进程计数
             ffmpegProcessCount = Math.max(0, ffmpegProcessCount - 1);
             console.log(`ffmpeg进程结束，当前进程数: ${ffmpegProcessCount}`);
-            
+
             if (code !== 0) {
               console.error('ffmpeg执行错误，退出码:', code);
               console.error('stderr:', stderr);
               console.error('stdout:', stdout);
-              
+
               // 记录错误时间
               lastErrorTime = Date.now();
-              
-              reject(new Error(`ffmpeg合并失败，退出码: ${code}\nstderr: ${stderr}\nstdout: ${stdout}`));
+
+              reject(
+                new Error(`ffmpeg合并失败，退出码: ${code}\nstderr: ${stderr}\nstdout: ${stdout}`),
+              );
             } else {
               console.log('ffmpeg合并成功');
               console.log('stdout:', stdout);
               if (stderr) {
                 console.log('stderr:', stderr);
               }
-              
+
               // 检查输出文件是否存在
               try {
                 const outputStats = await fs.stat(outputFile);
@@ -325,16 +360,16 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
                 reject(new Error('ffmpeg合并成功但输出文件不存在'));
                 return;
               }
-              
+
               resolve(undefined);
             }
           });
-          
+
           child.on('error', (error) => {
             // 减少ffmpeg进程计数
             ffmpegProcessCount = Math.max(0, ffmpegProcessCount - 1);
             console.log(`ffmpeg进程错误，当前进程数: ${ffmpegProcessCount}`);
-            
+
             console.error('ffmpeg进程启动错误:', error);
             reject(new Error(`ffmpeg进程启动失败: ${error.message}`));
           });
@@ -351,15 +386,17 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
           if (retryCount > maxRetries) {
             throw error; // 超过最大重试次数，抛出错误
           }
-          console.log(`ffmpeg执行失败，${1000 * retryCount}ms后重试... (${retryCount}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)); // 递增延迟
+          console.log(
+            `ffmpeg执行失败，${1000 * retryCount}ms后重试... (${retryCount}/${maxRetries})`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, 1000 * retryCount)); // 递增延迟
         }
       }
 
       // 检查合并后的音频文件
       const stats = await fs.stat(outputFile);
       console.log('合并后的音频文件大小:', stats.size, 'bytes');
-      
+
       if (stats.size === 0) {
         throw new Error('合并后的音频文件大小为0');
       }
@@ -367,7 +404,7 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
       // 根据第一个音频URL推断语言路径
       const firstAudioUrl = audioUrls[0];
       let langPath = 'zh'; // 默认中文路径
-      
+
       // 从URL中提取语言路径
       if (firstAudioUrl) {
         const urlMatch = firstAudioUrl.match(/\/tts\/([^\/]+)\//);
@@ -375,17 +412,23 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
           langPath = urlMatch[1];
         }
       }
-      
+
       // 上传合并后的音频到Supabase Storage
       const mergedAudioBuffer = await fs.readFile(outputFile);
       const fileName = `merged_${Date.now()}.mp3`;
-      console.log('准备上传音频文件，大小:', mergedAudioBuffer.length, 'bytes', '语言路径:', langPath);
-      
+      console.log(
+        '准备上传音频文件，大小:',
+        mergedAudioBuffer.length,
+        'bytes',
+        '语言路径:',
+        langPath,
+      );
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('tts')
         .upload(`${langPath}/${fileName}`, mergedAudioBuffer, {
           contentType: 'audio/mpeg',
-          upsert: false
+          upsert: false,
         });
 
       if (uploadError) {
@@ -407,7 +450,7 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
         return NextResponse.json({
           success: true,
           mergedAudioUrl: publicUrlData.publicUrl,
-          message: '音频合并成功（使用公开URL）'
+          message: '音频合并成功（使用公开URL）',
         });
       }
 
@@ -426,9 +469,8 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
       return NextResponse.json({
         success: true,
         mergedAudioUrl: urlData.signedUrl,
-        message: '音频合并成功'
+        message: '音频合并成功',
       });
-
     } catch (error) {
       // 清理临时文件
       try {
@@ -436,19 +478,23 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
       } catch (cleanupError) {
         console.warn('清理临时文件失败:', cleanupError);
       }
-      
+
       throw error;
     }
-
   } catch (error) {
     console.error('音频合并失败:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: '音频合并失败', 
-        details: error instanceof Error ? error instanceof Error ? error.message : String(error) : '未知错误' 
-      }, 
-      { status: 500 }
+      {
+        success: false,
+        error: '音频合并失败',
+        details:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : '未知错误',
+      },
+      { status: 500 },
     );
   }
 }

@@ -103,7 +103,8 @@ export default function PerformancePage() {
 
   const getPerformanceStatus = (value: number, thresholds: { good: number; warning: number }) => {
     if (value <= thresholds.good) return { status: 'good', color: 'green', icon: TrendingUp };
-    if (value <= thresholds.warning) return { status: 'warning', color: 'yellow', icon: TrendingUp };
+    if (value <= thresholds.warning)
+      return { status: 'warning', color: 'yellow', icon: TrendingUp };
     return { status: 'poor', color: 'red', icon: TrendingDown };
   };
 
@@ -145,12 +146,26 @@ export default function PerformancePage() {
                     {formatTime(metrics.database.avgQueryTime)}
                   </div>
                   <div className="text-sm text-gray-500">平均查询时间</div>
-                  <Badge 
-                    variant={getPerformanceStatus(metrics.database.avgQueryTime, { good: 50, warning: 100 }).status === 'good' ? 'default' : 'destructive'}
+                  <Badge
+                    variant={
+                      getPerformanceStatus(metrics.database.avgQueryTime, {
+                        good: 50,
+                        warning: 100,
+                      }).status === 'good'
+                        ? 'default'
+                        : 'destructive'
+                    }
                     className="mt-1"
                   >
-                    {getPerformanceStatus(metrics.database.avgQueryTime, { good: 50, warning: 100 }).status === 'good' ? '优秀' : 
-                     getPerformanceStatus(metrics.database.avgQueryTime, { good: 50, warning: 100 }).status === 'warning' ? '良好' : '需要优化'}
+                    {getPerformanceStatus(metrics.database.avgQueryTime, { good: 50, warning: 100 })
+                      .status === 'good'
+                      ? '优秀'
+                      : getPerformanceStatus(metrics.database.avgQueryTime, {
+                            good: 50,
+                            warning: 100,
+                          }).status === 'warning'
+                        ? '良好'
+                        : '需要优化'}
                   </Badge>
                 </div>
                 <div className="text-center">
@@ -184,12 +199,24 @@ export default function PerformancePage() {
                     {formatTime(metrics.api.avgResponseTime)}
                   </div>
                   <div className="text-sm text-gray-500">平均响应时间</div>
-                  <Badge 
-                    variant={getPerformanceStatus(metrics.api.avgResponseTime, { good: 200, warning: 500 }).status === 'good' ? 'default' : 'destructive'}
+                  <Badge
+                    variant={
+                      getPerformanceStatus(metrics.api.avgResponseTime, { good: 200, warning: 500 })
+                        .status === 'good'
+                        ? 'default'
+                        : 'destructive'
+                    }
                     className="mt-1"
                   >
-                    {getPerformanceStatus(metrics.api.avgResponseTime, { good: 200, warning: 500 }).status === 'good' ? '优秀' : 
-                     getPerformanceStatus(metrics.api.avgResponseTime, { good: 200, warning: 500 }).status === 'warning' ? '良好' : '需要优化'}
+                    {getPerformanceStatus(metrics.api.avgResponseTime, { good: 200, warning: 500 })
+                      .status === 'good'
+                      ? '优秀'
+                      : getPerformanceStatus(metrics.api.avgResponseTime, {
+                            good: 200,
+                            warning: 500,
+                          }).status === 'warning'
+                        ? '良好'
+                        : '需要优化'}
                   </Badge>
                 </div>
                 <div className="text-center">
@@ -223,11 +250,15 @@ export default function PerformancePage() {
                     {formatPercentage(metrics.cache.hitRate)}
                   </div>
                   <div className="text-sm text-gray-500">缓存命中率</div>
-                  <Badge 
+                  <Badge
                     variant={metrics.cache.hitRate >= 80 ? 'default' : 'destructive'}
                     className="mt-1"
                   >
-                    {metrics.cache.hitRate >= 80 ? '优秀' : metrics.cache.hitRate >= 60 ? '良好' : '需要优化'}
+                    {metrics.cache.hitRate >= 80
+                      ? '优秀'
+                      : metrics.cache.hitRate >= 60
+                        ? '良好'
+                        : '需要优化'}
                   </Badge>
                 </div>
                 <div className="text-center">
@@ -267,12 +298,28 @@ export default function PerformancePage() {
                     {formatTime(metrics.frontend.avgLoadTime)}
                   </div>
                   <div className="text-sm text-gray-500">平均加载时间</div>
-                  <Badge 
-                    variant={getPerformanceStatus(metrics.frontend.avgLoadTime, { good: 1000, warning: 3000 }).status === 'good' ? 'default' : 'destructive'}
+                  <Badge
+                    variant={
+                      getPerformanceStatus(metrics.frontend.avgLoadTime, {
+                        good: 1000,
+                        warning: 3000,
+                      }).status === 'good'
+                        ? 'default'
+                        : 'destructive'
+                    }
                     className="mt-1"
                   >
-                    {getPerformanceStatus(metrics.frontend.avgLoadTime, { good: 1000, warning: 3000 }).status === 'good' ? '优秀' : 
-                     getPerformanceStatus(metrics.frontend.avgLoadTime, { good: 1000, warning: 3000 }).status === 'warning' ? '良好' : '需要优化'}
+                    {getPerformanceStatus(metrics.frontend.avgLoadTime, {
+                      good: 1000,
+                      warning: 3000,
+                    }).status === 'good'
+                      ? '优秀'
+                      : getPerformanceStatus(metrics.frontend.avgLoadTime, {
+                            good: 1000,
+                            warning: 3000,
+                          }).status === 'warning'
+                        ? '良好'
+                        : '需要优化'}
                   </Badge>
                 </div>
                 <div className="text-center">
@@ -280,12 +327,28 @@ export default function PerformancePage() {
                     {formatTime(metrics.frontend.avgFirstPaint)}
                   </div>
                   <div className="text-sm text-gray-500">首次绘制时间</div>
-                  <Badge 
-                    variant={getPerformanceStatus(metrics.frontend.avgFirstPaint, { good: 500, warning: 1500 }).status === 'good' ? 'default' : 'destructive'}
+                  <Badge
+                    variant={
+                      getPerformanceStatus(metrics.frontend.avgFirstPaint, {
+                        good: 500,
+                        warning: 1500,
+                      }).status === 'good'
+                        ? 'default'
+                        : 'destructive'
+                    }
                     className="mt-1"
                   >
-                    {getPerformanceStatus(metrics.frontend.avgFirstPaint, { good: 500, warning: 1500 }).status === 'good' ? '优秀' : 
-                     getPerformanceStatus(metrics.frontend.avgFirstPaint, { good: 500, warning: 1500 }).status === 'warning' ? '良好' : '需要优化'}
+                    {getPerformanceStatus(metrics.frontend.avgFirstPaint, {
+                      good: 500,
+                      warning: 1500,
+                    }).status === 'good'
+                      ? '优秀'
+                      : getPerformanceStatus(metrics.frontend.avgFirstPaint, {
+                            good: 500,
+                            warning: 1500,
+                          }).status === 'warning'
+                        ? '良好'
+                        : '需要优化'}
                   </Badge>
                 </div>
                 <div className="text-center">
@@ -307,9 +370,7 @@ export default function PerformancePage() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold">
-                      {cacheStats.memory.total}
-                    </div>
+                    <div className="text-2xl font-bold">{cacheStats.memory.total}</div>
                     <div className="text-sm text-gray-500">总缓存条目</div>
                   </div>
                   <div className="text-center">
@@ -325,9 +386,7 @@ export default function PerformancePage() {
                     <div className="text-sm text-gray-500">过期缓存</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold">
-                      {cacheStats.pendingRequests}
-                    </div>
+                    <div className="text-2xl font-bold">{cacheStats.pendingRequests}</div>
                     <div className="text-sm text-gray-500">待处理请求</div>
                   </div>
                 </div>
