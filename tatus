@@ -1,0 +1,96 @@
+  aipbug[m
+  bug处理[m
+  cloze优化[m
+  main[m
+  shadowing-手机界面优化[m
+  shadowing-推荐难度[m
+  shadowing生成逻辑调整[m
+  shadowing生成重构[m
+  shadowing界面优化[m
+  shadowing界面翻译[m
+  shadowing识别评分问题修复[m
+  任务练习[m
+  优化性能[m
+  优化操作手机端[m
+  修复bug[m
+  修复题目单次生成的bug[m
+  修改生词选中逻辑[m
+  加入不到题库的bug[m
+  加入谷歌gemini-tts[m
+  合成失败-bug[m
+  启动测试[m
+  导入科大讯飞服务[m
+  小建议shadowing[m
+  小改进[m
+  并发生成问题调整[m
+  手机端bug[m
+* [32m数据库分开处理[m
+  数据库分离[m
+  数据库安全bug[m
+  母语者调整[m
+  注册错误[m
+  测试[m
+  生成标题序号[m
+  生成速度提升[m
+  生词表开发[m
+  用户练习记录功能[m
+  用户语言[m
+  用量统计功能[m
+  界面UI优化[m
+  界面修改[m
+  筛选页面优化[m
+  管理功能增加[m
+  管理员界面优化[m
+  练习记录功能[m
+  英语bug处理[m
+  英语生成bug[m
+  试题调整[m
+  邀请码系统[m
+  [31mremotes/origin/HEAD[m -> origin/main
+  [31mremotes/origin/aipbug[m
+  [31mremotes/origin/bug处理[m
+  [31mremotes/origin/cloze优化[m
+  [31mremotes/origin/main[m
+  [31mremotes/origin/shadowing-手机界面优化[m
+  [31mremotes/origin/shadowing-推荐难度[m
+  [31mremotes/origin/shadowing生成逻辑调整[m
+  [31mremotes/origin/shadowing生成重构[m
+  [31mremotes/origin/shadowing界面优化[m
+  [31mremotes/origin/shadowing界面翻译[m
+  [31mremotes/origin/shadowing识别评分问题修复[m
+  [31mremotes/origin/任务练习[m
+  [31mremotes/origin/优化性能[m
+  [31mremotes/origin/优化操作手机端[m
+  [31mremotes/origin/修复bug[m
+  [31mremotes/origin/修复题目单次生成的bug[m
+  [31mremotes/origin/修改生词选中逻辑[m
+  [31mremotes/origin/加入不到题库的bug[m
+  [31mremotes/origin/加入谷歌gemini-tts[m
+  [31mremotes/origin/合成失败-bug[m
+  [31mremotes/origin/启动测试[m
+  [31mremotes/origin/导入科大讯飞服务[m
+  [31mremotes/origin/小建议shadowing[m
+  [31mremotes/origin/小改进[m
+  [31mremotes/origin/并发生成问题调整[m
+  [31mremotes/origin/手机端bug[m
+  [31mremotes/origin/数据库分开处理[m
+  [31mremotes/origin/数据库安全bug[m
+  [31mremotes/origin/母语者调整[m
+  [31mremotes/origin/注册错误[m
+  [31mremotes/origin/测试[m
+  [31mremotes/origin/生成标题序号[m
+  [31mremotes/origin/生成速度提升[m
+  [31mremotes/origin/生词表开发[m
+  [31mremotes/origin/用户练习记录功能[m
+  [31mremotes/origin/用户语言[m
+  [31mremotes/origin/用量统计功能[m
+  [31mremotes/origin/界面UI优化[m
+  [31mremotes/origin/界面修改[m
+  [31mremotes/origin/筛选页面优化[m
+  [31mremotes/origin/管理功能增加[m
+  [31mremotes/origin/管理员界面优化[m
+  [31mremotes/origin/练习记录功能[m
+  [31mremotes/origin/英语bug处理[m
+  [31mremotes/origin/英语生成bug[m
+  [31mremotes/origin/试题调整[m
+  [31mremotes/origin/邀请码系统[m
