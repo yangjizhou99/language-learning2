@@ -18,3 +18,4 @@ CREATE INDEX IF NOT EXISTS idx_vocab_entries_user_due
   ON public.vocab_entries (user_id, srs_due);
 
 
+
