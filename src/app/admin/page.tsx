@@ -140,6 +140,13 @@ export default function AdminDashboard() {
             <h3 className="font-medium text-gray-900">📈 API用量统计</h3>
             <p className="text-sm text-gray-600 mt-1">监控和管理用户的API使用情况</p>
           </Link>
+          <Link
+            href="/admin/database-sync"
+            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <h3 className="font-medium text-gray-900">🔄 数据库同步</h3>
+            <p className="text-sm text-gray-600 mt-1">将本地数据库数据覆盖到云端</p>
+          </Link>
         </div>
       </div>
     </div>
