@@ -11,8 +11,24 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Shield, Globe, Target, Settings, CheckCircle, AlertCircle, Trash } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  ArrowLeft,
+  Save,
+  Shield,
+  Globe,
+  Target,
+  Settings,
+  CheckCircle,
+  AlertCircle,
+  Trash,
+} from 'lucide-react';
 import Link from 'next/link';
 import { Container } from '@/components/Container';
 
@@ -53,7 +69,7 @@ interface UserProfile {
 export default function UserPermissionsPage() {
   const params = useParams();
   const userId = params?.userId as string;
-  
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,15 +82,17 @@ export default function UserPermissionsPage() {
       setMessage(null);
 
       // 获取用户信息
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('未登录');
       }
 
       const response = await fetch('/api/admin/users', {
         headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (!response.ok) {
@@ -85,7 +103,7 @@ export default function UserPermissionsPage() {
       const data = await response.json();
       const users = data.users || [];
       const foundUser = users.find((u: any) => u.id === userId);
-      
+
       if (!foundUser) {
         throw new Error('用户不存在');
       }
@@ -105,29 +123,30 @@ export default function UserPermissionsPage() {
       } else if (permissions) {
         const permissionsWithDefaults: UserPermissions = {
           ...permissions,
-          model_permissions: permissions.model_permissions || permissions.custom_restrictions?.model_permissions || [
-            {
-              model_id: 'deepseek-chat',
-              model_name: 'DeepSeek Chat',
-              provider: 'deepseek',
-              daily_limit: 50,
-              token_limit: 100000,
-              enabled: true
-            },
-            {
-              model_id: 'openrouter/auto',
-              model_name: 'OpenRouter Auto (推荐)',
-              provider: 'openrouter',
-              daily_limit: 30,
-              token_limit: 80000,
-              enabled: true
-            }
-          ],
+          model_permissions: permissions.model_permissions ||
+            permissions.custom_restrictions?.model_permissions || [
+              {
+                model_id: 'deepseek-chat',
+                model_name: 'DeepSeek Chat',
+                provider: 'deepseek',
+                daily_limit: 50,
+                token_limit: 100000,
+                enabled: true,
+              },
+              {
+                model_id: 'openrouter/auto',
+                model_name: 'OpenRouter Auto (推荐)',
+                provider: 'openrouter',
+                daily_limit: 30,
+                token_limit: 80000,
+                enabled: true,
+              },
+            ],
           api_keys: permissions.api_keys || {
             deepseek: '',
-            openrouter: ''
+            openrouter: '',
           },
-          ai_enabled: permissions.ai_enabled || false
+          ai_enabled: permissions.ai_enabled || false,
         };
         setPermissions(permissionsWithDefaults);
       } else {
@@ -148,7 +167,7 @@ export default function UserPermissionsPage() {
               provider: 'deepseek',
               daily_limit: 50,
               token_limit: 100000,
-              enabled: true
+              enabled: true,
             },
             {
               model_id: 'openrouter/auto',
@@ -156,15 +175,15 @@ export default function UserPermissionsPage() {
               provider: 'openrouter',
               daily_limit: 30,
               token_limit: 80000,
-              enabled: true
-            }
+              enabled: true,
+            },
           ],
           api_keys: {
             deepseek: '',
-            openrouter: ''
+            openrouter: '',
           },
           ai_enabled: false,
-          custom_restrictions: {}
+          custom_restrictions: {},
         };
         setPermissions(defaultPermissions);
       }
@@ -190,7 +209,7 @@ export default function UserPermissionsPage() {
   const handleModelPermissionChange = (index: number, field: keyof ModelPermission, value: any) => {
     if (!permissions) return;
     const updatedModelPermissions = permissions.model_permissions.map((model, i) =>
-      i === index ? { ...model, [field]: value } : model
+      i === index ? { ...model, [field]: value } : model,
     );
     setPermissions({ ...permissions, model_permissions: updatedModelPermissions });
   };
@@ -203,11 +222,11 @@ export default function UserPermissionsPage() {
       provider: 'deepseek',
       daily_limit: 50,
       token_limit: 100000,
-      enabled: true
+      enabled: true,
     };
     setPermissions({
       ...permissions,
-      model_permissions: [...permissions.model_permissions, newModel]
+      model_permissions: [...permissions.model_permissions, newModel],
     });
   };
 
@@ -215,7 +234,9 @@ export default function UserPermissionsPage() {
     if (!permissions) return;
     setPermissions({
       ...permissions,
-      model_permissions: permissions.model_permissions.filter(model => model.model_id !== modelId)
+      model_permissions: permissions.model_permissions.filter(
+        (model) => model.model_id !== modelId,
+      ),
     });
   };
 
@@ -240,16 +261,14 @@ export default function UserPermissionsPage() {
         ai_enabled: permissions.ai_enabled,
         custom_restrictions: {
           ...permissions.custom_restrictions,
-          model_permissions: permissions.model_permissions
-        }
+          model_permissions: permissions.model_permissions,
+        },
       };
-      
-      const { error } = await supabase
-        .from('user_permissions')
-        .upsert(permissionsToSave, { 
-          onConflict: 'user_id',
-          ignoreDuplicates: false 
-        });
+
+      const { error } = await supabase.from('user_permissions').upsert(permissionsToSave, {
+        onConflict: 'user_id',
+        ignoreDuplicates: false,
+      });
 
       if (error) {
         console.error('保存权限失败:', error);
@@ -302,9 +321,7 @@ export default function UserPermissionsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">用户权限管理</h1>
-            <p className="text-gray-600">
-              管理用户 {user.username || user.email} 的访问权限
-            </p>
+            <p className="text-gray-600">管理用户 {user.username || user.email} 的访问权限</p>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/admin/users">
@@ -321,14 +338,20 @@ export default function UserPermissionsPage() {
         </div>
 
         {message && (
-          <Alert className={message.type === 'error' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}>
+          <Alert
+            className={
+              message.type === 'error' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'
+            }
+          >
             <div className="flex items-center">
               {message.type === 'error' ? (
                 <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
               ) : (
                 <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
               )}
-              <AlertDescription className={message.type === 'error' ? 'text-red-800' : 'text-green-800'}>
+              <AlertDescription
+                className={message.type === 'error' ? 'text-red-800' : 'text-green-800'}
+              >
                 {message.text}
               </AlertDescription>
             </div>
@@ -361,7 +384,9 @@ export default function UserPermissionsPage() {
                       </div>
                       <Switch
                         checked={permissions.can_access_shadowing}
-                        onCheckedChange={(checked) => handlePermissionChange('can_access_shadowing', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange('can_access_shadowing', checked)
+                        }
                       />
                     </div>
                     <div className="flex items-center justify-between">
@@ -371,7 +396,9 @@ export default function UserPermissionsPage() {
                       </div>
                       <Switch
                         checked={permissions.can_access_cloze}
-                        onCheckedChange={(checked) => handlePermissionChange('can_access_cloze', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange('can_access_cloze', checked)
+                        }
                       />
                     </div>
                   </div>
@@ -383,7 +410,9 @@ export default function UserPermissionsPage() {
                       </div>
                       <Switch
                         checked={permissions.can_access_alignment}
-                        onCheckedChange={(checked) => handlePermissionChange('can_access_alignment', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange('can_access_alignment', checked)
+                        }
                       />
                     </div>
                     <div className="flex items-center justify-between">
@@ -393,7 +422,9 @@ export default function UserPermissionsPage() {
                       </div>
                       <Switch
                         checked={permissions.can_access_articles}
-                        onCheckedChange={(checked) => handlePermissionChange('can_access_articles', checked)}
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange('can_access_articles', checked)
+                        }
                       />
                     </div>
                   </div>
@@ -422,9 +453,15 @@ export default function UserPermissionsPage() {
                             checked={permissions.allowed_languages.includes(lang)}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                handlePermissionChange('allowed_languages', [...permissions.allowed_languages, lang]);
+                                handlePermissionChange('allowed_languages', [
+                                  ...permissions.allowed_languages,
+                                  lang,
+                                ]);
                               } else {
-                                handlePermissionChange('allowed_languages', permissions.allowed_languages.filter(l => l !== lang));
+                                handlePermissionChange(
+                                  'allowed_languages',
+                                  permissions.allowed_languages.filter((l) => l !== lang),
+                                );
                               }
                             }}
                           />
@@ -446,9 +483,15 @@ export default function UserPermissionsPage() {
                             checked={permissions.allowed_levels.includes(level)}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                handlePermissionChange('allowed_levels', [...permissions.allowed_levels, level]);
+                                handlePermissionChange('allowed_levels', [
+                                  ...permissions.allowed_levels,
+                                  level,
+                                ]);
                               } else {
-                                handlePermissionChange('allowed_levels', permissions.allowed_levels.filter(l => l !== level));
+                                handlePermissionChange(
+                                  'allowed_levels',
+                                  permissions.allowed_levels.filter((l) => l !== level),
+                                );
                               }
                             }}
                           />
@@ -480,7 +523,9 @@ export default function UserPermissionsPage() {
                     type="number"
                     min="0"
                     value={permissions.max_daily_attempts}
-                    onChange={(e) => handlePermissionChange('max_daily_attempts', parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      handlePermissionChange('max_daily_attempts', parseInt(e.target.value) || 0)
+                    }
                     className="mt-1"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
@@ -529,7 +574,7 @@ export default function UserPermissionsPage() {
                         配置一个API密钥即可使用所有AI功能，推荐使用OpenRouter
                       </p>
                     </div>
-                    
+
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="openrouter-key">OpenRouter API Key (推荐)</Label>
@@ -538,16 +583,18 @@ export default function UserPermissionsPage() {
                           type="password"
                           placeholder="sk-or-..."
                           value={permissions?.api_keys?.openrouter || ''}
-                          onChange={(e) => handlePermissionChange('api_keys', {
-                            ...permissions?.api_keys,
-                            openrouter: e.target.value
-                          })}
+                          onChange={(e) =>
+                            handlePermissionChange('api_keys', {
+                              ...permissions?.api_keys,
+                              openrouter: e.target.value,
+                            })
+                          }
                         />
                         <p className="text-xs text-muted-foreground">
                           推荐使用OpenRouter，可以访问多种AI模型，性价比高
                         </p>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="deepseek-key">DeepSeek API Key (可选)</Label>
                         <Input
@@ -555,10 +602,12 @@ export default function UserPermissionsPage() {
                           type="password"
                           placeholder="sk-..."
                           value={permissions?.api_keys?.deepseek || ''}
-                          onChange={(e) => handlePermissionChange('api_keys', {
-                            ...permissions?.api_keys,
-                            deepseek: e.target.value
-                          })}
+                          onChange={(e) =>
+                            handlePermissionChange('api_keys', {
+                              ...permissions?.api_keys,
+                              deepseek: e.target.value,
+                            })
+                          }
                         />
                         <p className="text-xs text-muted-foreground">
                           可选，如果配置了DeepSeek密钥，将优先使用DeepSeek模型
@@ -577,10 +626,13 @@ export default function UserPermissionsPage() {
                         配置用户可以访问的AI模型及其使用限制
                       </p>
                     </div>
-                  
+
                     <div className="space-y-4">
                       {(permissions?.model_permissions || []).map((model, index) => (
-                        <div key={model.model_id || index} className="p-4 border rounded-lg space-y-4">
+                        <div
+                          key={model.model_id || index}
+                          className="p-4 border rounded-lg space-y-4"
+                        >
                           <div className="flex items-center justify-between">
                             <h4 className="font-medium">
                               {model.model_name || `模型 ${index + 1}`}
@@ -588,7 +640,7 @@ export default function UserPermissionsPage() {
                             <div className="flex items-center gap-2">
                               <Switch
                                 checked={model.enabled}
-                                onCheckedChange={(checked) => 
+                                onCheckedChange={(checked) =>
                                   handleModelPermissionChange(index, 'enabled', checked)
                                 }
                               />
@@ -609,7 +661,7 @@ export default function UserPermissionsPage() {
                               <Input
                                 id={`model-id-${index}`}
                                 value={model.model_id}
-                                onChange={(e) => 
+                                onChange={(e) =>
                                   handleModelPermissionChange(index, 'model_id', e.target.value)
                                 }
                                 placeholder="deepseek-chat"
@@ -620,7 +672,7 @@ export default function UserPermissionsPage() {
                               <Input
                                 id={`model-name-${index}`}
                                 value={model.model_name}
-                                onChange={(e) => 
+                                onChange={(e) =>
                                   handleModelPermissionChange(index, 'model_name', e.target.value)
                                 }
                                 placeholder="DeepSeek Chat"
@@ -630,7 +682,7 @@ export default function UserPermissionsPage() {
                               <Label htmlFor={`provider-${index}`}>提供商</Label>
                               <Select
                                 value={model.provider}
-                                onValueChange={(value) => 
+                                onValueChange={(value) =>
                                   handleModelPermissionChange(index, 'provider', value)
                                 }
                               >
@@ -650,8 +702,12 @@ export default function UserPermissionsPage() {
                                 type="number"
                                 min="0"
                                 value={model.daily_limit}
-                                onChange={(e) => 
-                                  handleModelPermissionChange(index, 'daily_limit', parseInt(e.target.value) || 0)
+                                onChange={(e) =>
+                                  handleModelPermissionChange(
+                                    index,
+                                    'daily_limit',
+                                    parseInt(e.target.value) || 0,
+                                  )
                                 }
                               />
                             </div>
@@ -662,8 +718,12 @@ export default function UserPermissionsPage() {
                                 type="number"
                                 min="0"
                                 value={model.token_limit}
-                                onChange={(e) => 
-                                  handleModelPermissionChange(index, 'token_limit', parseInt(e.target.value) || 0)
+                                onChange={(e) =>
+                                  handleModelPermissionChange(
+                                    index,
+                                    'token_limit',
+                                    parseInt(e.target.value) || 0,
+                                  )
                                 }
                                 placeholder="100000"
                               />
@@ -672,7 +732,7 @@ export default function UserPermissionsPage() {
                         </div>
                       ))}
                     </div>
-                    
+
                     <Button onClick={addModelPermission} size="sm" variant="outline">
                       添加模型
                     </Button>
@@ -684,17 +744,20 @@ export default function UserPermissionsPage() {
                   <div className="p-4 bg-muted rounded-lg space-y-2">
                     <div className="text-sm">
                       <strong>API密钥：</strong>
-                      {permissions?.api_keys ? 
-                        Object.entries(permissions.api_keys)
-                          .filter(([_, value]) => value)
-                          .map(([key, _]) => key)
-                          .join(', ') || '无' : '无'}
+                      {permissions?.api_keys
+                        ? Object.entries(permissions.api_keys)
+                            .filter(([_, value]) => value)
+                            .map(([key, _]) => key)
+                            .join(', ') || '无'
+                        : '无'}
                     </div>
                     <div className="text-sm">
                       <strong>可用模型：</strong>
                       {(permissions?.model_permissions || [])
-                        .filter(m => m.enabled)
-                        .map(m => `${m.model_name} (${m.daily_limit}次/日, ${m.token_limit} tokens)`)
+                        .filter((m) => m.enabled)
+                        .map(
+                          (m) => `${m.model_name} (${m.daily_limit}次/日, ${m.token_limit} tokens)`,
+                        )
                         .join(', ') || '无'}
                     </div>
                   </div>

@@ -5,19 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Play, 
-  Database, 
-  Globe, 
-  Monitor, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Play,
+  Database,
+  Globe,
+  Monitor,
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertCircle,
   Download,
   RefreshCw,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
 } from 'lucide-react';
 
 interface TestResult {
@@ -52,7 +52,7 @@ export default function PerformanceTestPage() {
         { name: '用户练习记录查询', status: 'pending' },
         { name: '文章草稿状态查询', status: 'pending' },
         { name: '索引使用情况检查', status: 'pending' },
-      ]
+      ],
     },
     {
       id: 'api',
@@ -65,7 +65,7 @@ export default function PerformanceTestPage() {
         { name: 'Cloze下一题API', status: 'pending' },
         { name: 'Shadowing目录API', status: 'pending' },
         { name: '词汇表API', status: 'pending' },
-      ]
+      ],
     },
     {
       id: 'cache',
@@ -77,8 +77,8 @@ export default function PerformanceTestPage() {
         { name: '缓存命中率测试', status: 'pending' },
         { name: '缓存性能提升测试', status: 'pending' },
         { name: '缓存统计检查', status: 'pending' },
-      ]
-    }
+      ],
+    },
   ]);
 
   const [isRunning, setIsRunning] = useState(false);
@@ -89,7 +89,7 @@ export default function PerformanceTestPage() {
   // 真实测试执行
   const runTest = async (suiteId: string, testName: string): Promise<TestResult> => {
     const startTime = Date.now();
-    
+
     try {
       const response = await fetch('/api/admin/performance-test', {
         method: 'POST',
@@ -98,13 +98,13 @@ export default function PerformanceTestPage() {
         },
         body: JSON.stringify({
           testType: suiteId,
-          testName: testName
-        })
+          testName: testName,
+        }),
       });
 
       const data = await response.json();
       const duration = Date.now() - startTime;
-      
+
       if (data.success) {
         return {
           name: testName,
@@ -115,15 +115,15 @@ export default function PerformanceTestPage() {
             recordCount: data.result?.recordCount || 0,
             successRate: 100,
             dataSize: data.result?.dataSize || 0,
-            cacheStats: data.result?.cacheStats
-          }
+            cacheStats: data.result?.cacheStats,
+          },
         };
       } else {
         return {
           name: testName,
           status: 'failed',
           duration,
-          error: data.error || '测试失败'
+          error: data.error || '测试失败',
         };
       }
     } catch (error) {
@@ -131,21 +131,21 @@ export default function PerformanceTestPage() {
         name: testName,
         status: 'failed',
         duration: Date.now() - startTime,
-        error: error instanceof Error ? error.message : '网络错误'
+        error: error instanceof Error ? error.message : '网络错误',
       };
     }
   };
 
   const runTestSuite = async (suiteId: string) => {
-    const suiteIndex = testSuites.findIndex(s => s.id === suiteId);
+    const suiteIndex = testSuites.findIndex((s) => s.id === suiteId);
     if (suiteIndex === -1) return;
 
     // 更新测试套件状态
-    setTestSuites(prev => prev.map((suite, index) => 
-      index === suiteIndex 
-        ? { ...suite, status: 'running' as const }
-        : suite
-    ));
+    setTestSuites((prev) =>
+      prev.map((suite, index) =>
+        index === suiteIndex ? { ...suite, status: 'running' as const } : suite,
+      ),
+    );
 
     const suite = testSuites[suiteIndex];
     const startTime = Date.now();
@@ -154,52 +154,59 @@ export default function PerformanceTestPage() {
     for (let i = 0; i < suite.tests.length; i++) {
       const test = suite.tests[i];
       setCurrentTest(`${suite.name} - ${test.name}`);
-      
+
       // 更新测试状态为运行中
-      setTestSuites(prev => prev.map((s, index) => 
-        index === suiteIndex 
-          ? {
-              ...s,
-              tests: s.tests.map((t, testIndex) => 
-                testIndex === i ? { ...t, status: 'running' as const } : t
-              )
-            }
-          : s
-      ));
+      setTestSuites((prev) =>
+        prev.map((s, index) =>
+          index === suiteIndex
+            ? {
+                ...s,
+                tests: s.tests.map((t, testIndex) =>
+                  testIndex === i ? { ...t, status: 'running' as const } : t,
+                ),
+              }
+            : s,
+        ),
+      );
 
       const result = await runTest(suiteId, test.name);
 
       // 更新测试结果
-      setTestSuites(prev => prev.map((s, index) => 
-        index === suiteIndex 
-          ? {
-              ...s,
-              tests: s.tests.map((t, testIndex) => 
-                testIndex === i ? result : t
-              )
-            }
-          : s
-      ));
+      setTestSuites((prev) =>
+        prev.map((s, index) =>
+          index === suiteIndex
+            ? {
+                ...s,
+                tests: s.tests.map((t, testIndex) => (testIndex === i ? result : t)),
+              }
+            : s,
+        ),
+      );
 
       // 更新进度
       const totalTests = testSuites.reduce((sum, s) => sum + s.tests.length, 0);
-      const completedTests = testSuites.reduce((sum, s) => 
-        sum + s.tests.filter(t => t.status === 'completed' || t.status === 'failed').length, 0
-      ) + 1;
+      const completedTests =
+        testSuites.reduce(
+          (sum, s) =>
+            sum + s.tests.filter((t) => t.status === 'completed' || t.status === 'failed').length,
+          0,
+        ) + 1;
       setProgress((completedTests / totalTests) * 100);
     }
 
     // 完成测试套件
     const totalDuration = Date.now() - startTime;
-    setTestSuites(prev => prev.map((suite, index) => 
-      index === suiteIndex 
-        ? { 
-            ...suite, 
-            status: 'completed' as const,
-            totalDuration
-          }
-        : suite
-    ));
+    setTestSuites((prev) =>
+      prev.map((suite, index) =>
+        index === suiteIndex
+          ? {
+              ...suite,
+              status: 'completed' as const,
+              totalDuration,
+            }
+          : suite,
+      ),
+    );
 
     setCurrentTest('');
   };
@@ -211,11 +218,13 @@ export default function PerformanceTestPage() {
 
     try {
       // 重置所有测试状态
-      setTestSuites(prev => prev.map(suite => ({
-        ...suite,
-        status: 'pending' as const,
-        tests: suite.tests.map(test => ({ ...test, status: 'pending' as const }))
-      })));
+      setTestSuites((prev) =>
+        prev.map((suite) => ({
+          ...suite,
+          status: 'pending' as const,
+          tests: suite.tests.map((test) => ({ ...test, status: 'pending' as const })),
+        })),
+      );
 
       for (const suite of testSuites) {
         await runTestSuite(suite.id);
@@ -225,12 +234,14 @@ export default function PerformanceTestPage() {
       const testResult = {
         timestamp: new Date().toISOString(),
         suites: testSuites,
-        totalDuration: testSuites.reduce((sum, s) => sum + (s.totalDuration || 0), 0)
+        totalDuration: testSuites.reduce((sum, s) => sum + (s.totalDuration || 0), 0),
       };
-      
-      setTestHistory(prev => [testResult, ...prev.slice(0, 9)]); // 保留最近10次测试
-      localStorage.setItem('performance-test-history', JSON.stringify([testResult, ...testHistory.slice(0, 9)]));
 
+      setTestHistory((prev) => [testResult, ...prev.slice(0, 9)]); // 保留最近10次测试
+      localStorage.setItem(
+        'performance-test-history',
+        JSON.stringify([testResult, ...testHistory.slice(0, 9)]),
+      );
     } finally {
       setIsRunning(false);
       setCurrentTest('');
@@ -248,29 +259,31 @@ export default function PerformanceTestPage() {
 
       if (data.success) {
         // 更新测试结果
-        const updatedSuites = testSuites.map(suite => {
+        const updatedSuites = testSuites.map((suite) => {
           const suiteResults = data.results.filter((r: any) => r.testType === suite.id);
           return {
             ...suite,
             status: 'completed' as const,
-            tests: suite.tests.map(test => {
+            tests: suite.tests.map((test) => {
               const result = suiteResults.find((r: any) => r.testName === test.name);
               if (result) {
                 return {
                   name: test.name,
-                  status: result.success ? 'completed' as const : 'failed' as const,
+                  status: result.success ? ('completed' as const) : ('failed' as const),
                   duration: result.duration,
-                  details: result.success ? {
-                    avgTime: result.result?.duration || result.duration,
-                    recordCount: result.result?.recordCount || 0,
-                    successRate: 100
-                  } : undefined,
-                  error: result.success ? undefined : result.error
+                  details: result.success
+                    ? {
+                        avgTime: result.result?.duration || result.duration,
+                        recordCount: result.result?.recordCount || 0,
+                        successRate: 100,
+                      }
+                    : undefined,
+                  error: result.success ? undefined : result.error,
                 };
               }
               return test;
             }),
-            totalDuration: suiteResults.reduce((sum: number, r: any) => sum + r.duration, 0)
+            totalDuration: suiteResults.reduce((sum: number, r: any) => sum + r.duration, 0),
           };
         });
 
@@ -281,11 +294,14 @@ export default function PerformanceTestPage() {
           timestamp: new Date().toISOString(),
           suites: updatedSuites,
           totalDuration: data.summary.avgDuration * data.summary.total,
-          summary: data.summary
+          summary: data.summary,
         };
-        
-        setTestHistory(prev => [testResult, ...prev.slice(0, 9)]);
-        localStorage.setItem('performance-test-history', JSON.stringify([testResult, ...testHistory.slice(0, 9)]));
+
+        setTestHistory((prev) => [testResult, ...prev.slice(0, 9)]);
+        localStorage.setItem(
+          'performance-test-history',
+          JSON.stringify([testResult, ...testHistory.slice(0, 9)]),
+        );
       }
     } catch (error) {
       console.error('Quick test failed:', error);
@@ -311,11 +327,19 @@ export default function PerformanceTestPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="default" className="bg-green-500">完成</Badge>;
+        return (
+          <Badge variant="default" className="bg-green-500">
+            完成
+          </Badge>
+        );
       case 'failed':
         return <Badge variant="destructive">失败</Badge>;
       case 'running':
-        return <Badge variant="secondary" className="bg-blue-500">运行中</Badge>;
+        return (
+          <Badge variant="secondary" className="bg-blue-500">
+            运行中
+          </Badge>
+        );
       default:
         return <Badge variant="outline">待执行</Badge>;
     }
@@ -332,14 +356,16 @@ export default function PerformanceTestPage() {
       testSuites,
       summary: {
         totalTests: testSuites.reduce((sum, s) => sum + s.tests.length, 0),
-        completedTests: testSuites.reduce((sum, s) => 
-          sum + s.tests.filter(t => t.status === 'completed').length, 0
+        completedTests: testSuites.reduce(
+          (sum, s) => sum + s.tests.filter((t) => t.status === 'completed').length,
+          0,
         ),
-        failedTests: testSuites.reduce((sum, s) => 
-          sum + s.tests.filter(t => t.status === 'failed').length, 0
+        failedTests: testSuites.reduce(
+          (sum, s) => sum + s.tests.filter((t) => t.status === 'failed').length,
+          0,
         ),
-        totalDuration: testSuites.reduce((sum, s) => sum + (s.totalDuration || 0), 0)
-      }
+        totalDuration: testSuites.reduce((sum, s) => sum + (s.totalDuration || 0), 0),
+      },
     };
 
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
@@ -373,16 +399,12 @@ export default function PerformanceTestPage() {
           <p className="text-gray-600 mt-2">定期测试系统性能，确保最佳用户体验</p>
         </div>
         <div className="flex space-x-2">
-          <Button 
-            onClick={downloadReport} 
-            variant="outline"
-            disabled={isRunning}
-          >
+          <Button onClick={downloadReport} variant="outline" disabled={isRunning}>
             <Download className="w-4 h-4 mr-2" />
             下载报告
           </Button>
-          <Button 
-            onClick={runQuickTest} 
+          <Button
+            onClick={runQuickTest}
             disabled={isRunning}
             variant="outline"
             className="bg-green-600 hover:bg-green-700 text-white"
@@ -390,8 +412,8 @@ export default function PerformanceTestPage() {
             <Play className="w-4 h-4 mr-2" />
             {isRunning ? '测试中...' : '快速测试'}
           </Button>
-          <Button 
-            onClick={runAllTests} 
+          <Button
+            onClick={runAllTests}
             disabled={isRunning}
             className="bg-blue-600 hover:bg-blue-700"
           >
@@ -411,9 +433,7 @@ export default function PerformanceTestPage() {
                 <span>{Math.round(progress)}%</span>
               </div>
               <Progress value={progress} className="w-full" />
-              {currentTest && (
-                <p className="text-sm text-gray-600">正在执行: {currentTest}</p>
-              )}
+              {currentTest && <p className="text-sm text-gray-600">正在执行: {currentTest}</p>}
             </div>
           </CardContent>
         </Card>
@@ -488,9 +508,7 @@ export default function PerformanceTestPage() {
                       )}
                     </div>
                     <div>
-                      <p className="font-medium">
-                        {new Date(history.timestamp).toLocaleString()}
-                      </p>
+                      <p className="font-medium">{new Date(history.timestamp).toLocaleString()}</p>
                       <p className="text-sm text-gray-600">
                         总耗时: {formatDuration(history.totalDuration)}
                       </p>
@@ -498,9 +516,13 @@ export default function PerformanceTestPage() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge variant="outline">
-                      {history.suites.reduce((sum: number, s: any) => 
-                        sum + s.tests.filter((t: any) => t.status === 'completed').length, 0
-                      )} / {history.suites.reduce((sum: number, s: any) => sum + s.tests.length, 0)} 通过
+                      {history.suites.reduce(
+                        (sum: number, s: any) =>
+                          sum + s.tests.filter((t: any) => t.status === 'completed').length,
+                        0,
+                      )}{' '}
+                      / {history.suites.reduce((sum: number, s: any) => sum + s.tests.length, 0)}{' '}
+                      通过
                     </Badge>
                   </div>
                 </div>

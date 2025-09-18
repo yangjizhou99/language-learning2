@@ -6,11 +6,14 @@ export async function GET(req: NextRequest) {
   try {
     const adminResult = await requireAdmin(req);
     if (!adminResult.ok) {
-      return NextResponse.json({ error: adminResult.reason }, { status: adminResult.reason === 'unauthorized' ? 401 : 403 });
+      return NextResponse.json(
+        { error: adminResult.reason },
+        { status: adminResult.reason === 'unauthorized' ? 401 : 403 },
+      );
     }
 
     const supabaseAdmin = getServiceSupabase();
-    
+
     // 获取分页参数
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -33,8 +36,7 @@ export async function GET(req: NextRequest) {
       query = query.eq('level', parseInt(level));
     }
 
-    const { data: items, error } = await query
-      .range(offset, offset + limit - 1);
+    const { data: items, error } = await query.range(offset, offset + limit - 1);
 
     if (error) {
       console.error('Error fetching shadowing items:', error);
@@ -42,9 +44,9 @@ export async function GET(req: NextRequest) {
     }
 
     // 添加状态字段（shadowing_items没有status字段，我们添加一个默认值）
-    const itemsWithStatus = (items || []).map(item => ({
+    const itemsWithStatus = (items || []).map((item) => ({
       ...item,
-      status: 'approved' // shadowing_items默认为已审核状态
+      status: 'approved', // shadowing_items默认为已审核状态
     }));
 
     // 获取总数用于分页信息
@@ -67,10 +69,9 @@ export async function GET(req: NextRequest) {
         page,
         limit,
         total: count || 0,
-        pages: Math.ceil((count || 0) / limit)
-      }
+        pages: Math.ceil((count || 0) / limit),
+      },
     });
-
   } catch (error) {
     console.error('Error in shadowing items API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

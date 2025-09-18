@@ -21,7 +21,7 @@ export default function OptimizedAudio({
   preload = 'metadata',
   onLoadStart,
   onLoadEnd,
-  onError
+  onError,
 }: OptimizedAudioProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -30,7 +30,7 @@ export default function OptimizedAudio({
 
   // 如果是 Supabase Storage URL，使用代理路由
   const isSupabaseUrl = src.includes('.supabase.co/storage');
-  const optimizedSrc = isSupabaseUrl 
+  const optimizedSrc = isSupabaseUrl
     ? `/api/storage-proxy?path=${encodeURIComponent(src.split('/storage/v1/object/public/')[1] || '')}&bucket=${src.split('/storage/v1/object/public/')[0].split('/').pop() || 'tts'}`
     : src;
 
@@ -49,7 +49,7 @@ export default function OptimizedAudio({
     const audio = e.currentTarget;
     const error = audio.error;
     let message = '音频加载失败';
-    
+
     if (error) {
       switch (error.code) {
         case error.MEDIA_ERR_ABORTED:
@@ -68,7 +68,7 @@ export default function OptimizedAudio({
           message = `音频加载失败 (错误代码: ${error.code})`;
       }
     }
-    
+
     setHasError(true);
     setErrorMessage(message);
     setIsLoading(false);
@@ -83,11 +83,13 @@ export default function OptimizedAudio({
 
   if (hasError) {
     return (
-      <div className={`flex items-center justify-center p-4 border border-red-200 rounded bg-red-50 ${className}`}>
+      <div
+        className={`flex items-center justify-center p-4 border border-red-200 rounded bg-red-50 ${className}`}
+      >
         <div className="text-center">
           <div className="text-red-600 text-sm mb-2">🔊 音频加载失败</div>
           <div className="text-red-500 text-xs">{errorMessage}</div>
-          <button 
+          <button
             onClick={() => {
               setHasError(false);
               setErrorMessage('');

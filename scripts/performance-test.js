@@ -40,7 +40,7 @@ const testCases = [
         .limit(10);
       if (error) throw error;
       return data;
-    }
+    },
   },
   {
     name: 'Cloze题目查询 (lang + level)',
@@ -54,7 +54,7 @@ const testCases = [
         .limit(10);
       if (error) throw error;
       return data;
-    }
+    },
   },
   {
     name: '用户练习记录查询',
@@ -67,7 +67,7 @@ const testCases = [
         .limit(20);
       if (error) throw error;
       return data;
-    }
+    },
   },
   {
     name: '词汇表全文搜索',
@@ -79,7 +79,7 @@ const testCases = [
         .limit(10);
       if (error) throw error;
       return data;
-    }
+    },
   },
   {
     name: '文章草稿状态查询',
@@ -92,19 +92,19 @@ const testCases = [
         .limit(10);
       if (error) throw error;
       return data;
-    }
-  }
+    },
+  },
 ];
 
 // 性能测试函数
 async function runPerformanceTest() {
   console.log('🚀 开始性能测试...\n');
-  
+
   const results = [];
-  
+
   for (const testCase of testCases) {
     console.log(`📊 测试: ${testCase.name}`);
-    
+
     // 预热
     for (let i = 0; i < config.warmupRounds; i++) {
       try {
@@ -113,7 +113,7 @@ async function runPerformanceTest() {
         console.log(`⚠️  预热轮次 ${i + 1} 失败: ${error.message}`);
       }
     }
-    
+
     // 正式测试
     const times = [];
     for (let i = 0; i < config.testRounds; i++) {
@@ -128,24 +128,26 @@ async function runPerformanceTest() {
         console.log(`  ❌ 轮次 ${i + 1} 失败: ${error.message}`);
       }
     }
-    
+
     if (times.length > 0) {
       const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
       const minTime = Math.min(...times);
       const maxTime = Math.max(...times);
-      
+
       results.push({
         name: testCase.name,
         avgTime: avgTime,
         minTime: minTime,
         maxTime: maxTime,
-        times: times
+        times: times,
       });
-      
-      console.log(`  📈 平均: ${avgTime.toFixed(2)}ms, 最小: ${minTime.toFixed(2)}ms, 最大: ${maxTime.toFixed(2)}ms\n`);
+
+      console.log(
+        `  📈 平均: ${avgTime.toFixed(2)}ms, 最小: ${minTime.toFixed(2)}ms, 最大: ${maxTime.toFixed(2)}ms\n`,
+      );
     }
   }
-  
+
   return results;
 }
 
@@ -159,15 +161,15 @@ function generateReport(results) {
     summary: {
       totalTests: results.length,
       avgOverallTime: results.reduce((sum, r) => sum + r.avgTime, 0) / results.length,
-      fastestTest: results.reduce((min, r) => r.avgTime < min.avgTime ? r : min),
-      slowestTest: results.reduce((max, r) => r.avgTime > max.avgTime ? r : max)
-    }
+      fastestTest: results.reduce((min, r) => (r.avgTime < min.avgTime ? r : min)),
+      slowestTest: results.reduce((max, r) => (r.avgTime > max.avgTime ? r : max)),
+    },
   };
-  
+
   // 保存到文件
   const reportPath = path.join(__dirname, `performance-report-${Date.now()}.json`);
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
-  
+
   // 控制台输出
   console.log('📋 性能测试报告');
   console.log('='.repeat(50));
@@ -175,7 +177,7 @@ function generateReport(results) {
   console.log(`测试轮数: ${config.testRounds}`);
   console.log(`预热轮数: ${config.warmupRounds}`);
   console.log('');
-  
+
   console.log('📊 详细结果:');
   results.forEach((result, index) => {
     console.log(`${index + 1}. ${result.name}`);
@@ -183,22 +185,26 @@ function generateReport(results) {
     console.log(`   范围: ${result.minTime.toFixed(2)}ms - ${result.maxTime.toFixed(2)}ms`);
     console.log('');
   });
-  
+
   console.log('📈 总结:');
   console.log(`总测试数: ${report.summary.totalTests}`);
   console.log(`整体平均: ${report.summary.avgOverallTime.toFixed(2)}ms`);
-  console.log(`最快测试: ${report.summary.fastestTest.name} (${report.summary.fastestTest.avgTime.toFixed(2)}ms)`);
-  console.log(`最慢测试: ${report.summary.slowestTest.name} (${report.summary.slowestTest.avgTime.toFixed(2)}ms)`);
+  console.log(
+    `最快测试: ${report.summary.fastestTest.name} (${report.summary.fastestTest.avgTime.toFixed(2)}ms)`,
+  );
+  console.log(
+    `最慢测试: ${report.summary.slowestTest.name} (${report.summary.slowestTest.avgTime.toFixed(2)}ms)`,
+  );
   console.log('');
   console.log(`📄 详细报告已保存到: ${reportPath}`);
-  
+
   return report;
 }
 
 // 索引使用情况检查
 async function checkIndexUsage() {
   console.log('🔍 检查索引使用情况...\n');
-  
+
   const indexQueries = [
     {
       name: 'Shadowing Items 索引',
@@ -211,7 +217,7 @@ async function checkIndexUsage() {
         FROM pg_stat_user_indexes 
         WHERE tablename = 'shadowing_items'
         ORDER BY idx_scan DESC;
-      `
+      `,
     },
     {
       name: 'Cloze Items 索引',
@@ -224,7 +230,7 @@ async function checkIndexUsage() {
         FROM pg_stat_user_indexes 
         WHERE tablename = 'cloze_items'
         ORDER BY idx_scan DESC;
-      `
+      `,
     },
     {
       name: '所有性能索引',
@@ -241,10 +247,10 @@ async function checkIndexUsage() {
         AND indexname LIKE 'idx_%'
         ORDER BY idx_scan DESC
         LIMIT 20;
-      `
-    }
+      `,
+    },
   ];
-  
+
   for (const { name, query } of indexQueries) {
     console.log(`📊 ${name}:`);
     try {
@@ -254,8 +260,10 @@ async function checkIndexUsage() {
       } else {
         console.log(`   ✅ 查询成功，返回 ${data?.length || 0} 条记录`);
         if (data && data.length > 0) {
-          data.forEach(row => {
-            console.log(`     ${row.indexname}: 扫描 ${row.idx_scan} 次, 读取 ${row.idx_tup_read} 行`);
+          data.forEach((row) => {
+            console.log(
+              `     ${row.indexname}: 扫描 ${row.idx_scan} 次, 读取 ${row.idx_tup_read} 行`,
+            );
           });
         }
       }
@@ -271,15 +279,14 @@ async function main() {
   try {
     // 检查索引使用情况
     await checkIndexUsage();
-    
+
     // 运行性能测试
     const results = await runPerformanceTest();
-    
+
     // 生成报告
     generateReport(results);
-    
+
     console.log('✅ 性能测试完成！');
-    
   } catch (error) {
     console.error('❌ 测试失败:', error);
     process.exit(1);

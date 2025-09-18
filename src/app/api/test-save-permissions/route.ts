@@ -4,7 +4,7 @@ import { getServiceSupabase } from '@/lib/supabaseAdmin';
 export async function POST(req: NextRequest) {
   try {
     const supabase = getServiceSupabase();
-    
+
     // 测试保存权限数据
     const testPermissions = {
       user_id: '02c3f65f-5b06-433a-a8e0-ad7e245a3748', // 使用现有的用户ID
@@ -17,25 +17,26 @@ export async function POST(req: NextRequest) {
       max_daily_attempts: 30,
       api_keys: {
         deepseek: 'test-key-123',
-        openrouter: 'test-or-key-456'
+        openrouter: 'test-or-key-456',
       },
       ai_enabled: true,
-      custom_restrictions: {}
+      custom_restrictions: {},
     };
 
-    const { data, error } = await supabase
-      .from('user_permissions')
-      .upsert(testPermissions, { 
-        onConflict: 'user_id',
-        ignoreDuplicates: false 
-      });
+    const { data, error } = await supabase.from('user_permissions').upsert(testPermissions, {
+      onConflict: 'user_id',
+      ignoreDuplicates: false,
+    });
 
     if (error) {
-      return NextResponse.json({ 
-        error: 'Save test failed', 
-        details: error instanceof Error ? error.message : String(error),
-        code: error.code
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: 'Save test failed',
+          details: error instanceof Error ? error.message : String(error),
+          code: error.code,
+        },
+        { status: 500 },
+      );
     }
 
     // 验证保存的数据
@@ -46,10 +47,13 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (fetchError) {
-      return NextResponse.json({ 
-        error: 'Fetch test failed', 
-        details: fetchError.message 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: 'Fetch test failed',
+          details: fetchError.message,
+        },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
@@ -59,15 +63,17 @@ export async function POST(req: NextRequest) {
         allowed_levels: savedData.allowed_levels,
         can_access_cloze: savedData.can_access_cloze,
         api_keys: savedData.api_keys,
-        ai_enabled: savedData.ai_enabled
-      }
+        ai_enabled: savedData.ai_enabled,
+      },
     });
-
   } catch (error) {
     console.error('Save test error:', error);
     return NextResponse.json(
-      { error: 'Save test failed', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: 'Save test failed',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

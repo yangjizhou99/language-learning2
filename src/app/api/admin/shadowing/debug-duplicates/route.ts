@@ -9,9 +9,9 @@ export async function GET(req: NextRequest) {
   if (!auth.ok) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  
+
   const supabase = auth.supabase;
-  
+
   try {
     // 检查shadowing_drafts表中的重复
     const { data: draftsData } = await supabase
@@ -19,37 +19,37 @@ export async function GET(req: NextRequest) {
       .select('id, subtopic_id, title, created_at')
       .not('subtopic_id', 'is', null)
       .order('created_at', { ascending: false });
-    
+
     // 检查shadowing_items表中的重复
     const { data: itemsData } = await supabase
       .from('shadowing_items')
       .select('id, subtopic_id, title, created_at')
       .not('subtopic_id', 'is', null)
       .order('created_at', { ascending: false });
-    
+
     // 统计重复情况
     const subtopicCounts: Record<string, number> = {};
     const duplicates: any[] = [];
-    
-    [...(draftsData || []), ...(itemsData || [])].forEach(item => {
+
+    [...(draftsData || []), ...(itemsData || [])].forEach((item) => {
       const subtopicId = item.subtopic_id;
       if (!subtopicCounts[subtopicId]) {
         subtopicCounts[subtopicId] = 0;
       }
       subtopicCounts[subtopicId]++;
-      
+
       if (subtopicCounts[subtopicId] > 1) {
         duplicates.push({
           subtopic_id: subtopicId,
           title: item.title,
           table: draftsData?.includes(item) ? 'drafts' : 'items',
-          created_at: item.created_at
+          created_at: item.created_at,
         });
       }
     });
-    
-    const duplicateSubtopicIds = Object.keys(subtopicCounts).filter(id => subtopicCounts[id] > 1);
-    
+
+    const duplicateSubtopicIds = Object.keys(subtopicCounts).filter((id) => subtopicCounts[id] > 1);
+
     return NextResponse.json({
       totalDrafts: draftsData?.length || 0,
       totalItems: itemsData?.length || 0,
@@ -60,12 +60,14 @@ export async function GET(req: NextRequest) {
       subtopicCounts: Object.fromEntries(
         Object.entries(subtopicCounts)
           .filter(([_, count]) => count > 1)
-          .slice(0, 10)
-      )
+          .slice(0, 10),
+      ),
     });
-    
   } catch (error) {
     console.error('Debug duplicates error:', error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
+    );
   }
 }

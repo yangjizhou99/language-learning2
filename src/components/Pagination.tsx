@@ -1,10 +1,16 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface PaginationProps {
   currentPage: number;
@@ -29,7 +35,7 @@ export default function Pagination({
   showItemsPerPage = true,
   showPageInput = true,
   maxVisiblePages = 5,
-  className = "",
+  className = '',
 }: PaginationProps) {
   const t = useTranslation();
   // 如果只有一页，不显示分页
@@ -39,10 +45,10 @@ export default function Pagination({
   const getVisiblePages = () => {
     const pages: (number | string)[] = [];
     const half = Math.floor(maxVisiblePages / 2);
-    
+
     let start = Math.max(1, currentPage - half);
     let end = Math.min(totalPages, currentPage + half);
-    
+
     // 调整范围以确保显示足够的页码
     if (end - start + 1 < maxVisiblePages) {
       if (start === 1) {
@@ -51,28 +57,28 @@ export default function Pagination({
         start = Math.max(1, end - maxVisiblePages + 1);
       }
     }
-    
+
     // 添加第一页和省略号
     if (start > 1) {
       pages.push(1);
       if (start > 2) {
-        pages.push("...");
+        pages.push('...');
       }
     }
-    
+
     // 添加中间页码
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     // 添加最后一页和省略号
     if (end < totalPages) {
       if (end < totalPages - 1) {
-        pages.push("...");
+        pages.push('...');
       }
       pages.push(totalPages);
     }
-    
+
     return pages;
   };
 
@@ -135,11 +141,11 @@ export default function Pagination({
         <div className="flex items-center gap-1">
           {visiblePages.map((page, index) => (
             <div key={index}>
-              {page === "..." ? (
+              {page === '...' ? (
                 <span className="px-3 py-2 text-sm text-gray-500">...</span>
               ) : (
                 <Button
-                  variant={currentPage === page ? "default" : "outline"}
+                  variant={currentPage === page ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => onPageChange(page as number)}
                   className="min-w-[40px]"

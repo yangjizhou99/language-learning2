@@ -48,7 +48,7 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
       allowed_levels: permissions.allowed_levels || [],
       max_daily_attempts: permissions.max_daily_attempts || 0,
       ai_enabled: permissions.custom_restrictions?.ai_enabled || false,
-      custom_restrictions: permissions.custom_restrictions || {}
+      custom_restrictions: permissions.custom_restrictions || {},
     };
   } catch (error) {
     console.error('获取用户权限异常:', error);
@@ -60,8 +60,11 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
  * 检查用户是否有特定权限
  */
 export async function hasPermission(
-  userId: string, 
-  permission: keyof Omit<UserPermissions, 'allowed_languages' | 'allowed_levels' | 'custom_restrictions'>
+  userId: string,
+  permission: keyof Omit<
+    UserPermissions,
+    'allowed_languages' | 'allowed_levels' | 'custom_restrictions'
+  >,
 ): Promise<boolean> {
   const permissions = await getUserPermissions(userId);
   if (!permissions) {
@@ -116,14 +119,19 @@ export async function hasDailyAttemptsLeft(userId: string): Promise<boolean> {
 /**
  * 权限检查中间件
  */
-export function createPermissionMiddleware(requiredPermission: keyof Omit<UserPermissions, 'allowed_languages' | 'allowed_levels' | 'custom_restrictions'>) {
+export function createPermissionMiddleware(
+  requiredPermission: keyof Omit<
+    UserPermissions,
+    'allowed_languages' | 'allowed_levels' | 'custom_restrictions'
+  >,
+) {
   return async (userId: string): Promise<{ allowed: boolean; reason?: string }> => {
     const hasAccess = await hasPermission(userId, requiredPermission);
-    
+
     if (!hasAccess) {
       return {
         allowed: false,
-        reason: `需要 ${requiredPermission} 权限`
+        reason: `需要 ${requiredPermission} 权限`,
       };
     }
 

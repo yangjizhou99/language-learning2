@@ -11,7 +11,14 @@ interface TTSButtonProps {
   disabled?: boolean;
 }
 
-export default function TTSButton({ text, lang, entryId, isPlaying, onPlay, disabled }: TTSButtonProps) {
+export default function TTSButton({
+  text,
+  lang,
+  entryId,
+  isPlaying,
+  onPlay,
+  disabled,
+}: TTSButtonProps) {
   const [isSupported, setIsSupported] = useState(true);
 
   useEffect(() => {
@@ -38,13 +45,28 @@ export default function TTSButton({ text, lang, entryId, isPlaying, onPlay, disa
     >
       {isPlaying ? (
         // 播放中的图标 (带动画)
-        <svg className="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M9 12l3-3v6l-3-3zm6.268-8.536a9 9 0 010 12.728" />
+        <svg
+          className="w-4 h-4 animate-pulse"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15.536 8.464a5 5 0 010 7.072M9 12l3-3v6l-3-3zm6.268-8.536a9 9 0 010 12.728"
+          />
         </svg>
       ) : (
         // 普通的音量图标
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M9 12l3-3v6l-3-3zm6.268-8.536a9 9 0 010 12.728" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15.536 8.464a5 5 0 010 7.072M9 12l3-3v6l-3-3zm6.268-8.536a9 9 0 010 12.728"
+          />
         </svg>
       )}
     </button>

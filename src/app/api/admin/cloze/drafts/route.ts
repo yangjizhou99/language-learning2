@@ -6,7 +6,10 @@ export async function GET(req: NextRequest) {
   try {
     const adminResult = await requireAdmin(req);
     if (!adminResult.ok) {
-      return NextResponse.json({ error: adminResult.reason }, { status: adminResult.reason === 'unauthorized' ? 401 : 403 });
+      return NextResponse.json(
+        { error: adminResult.reason },
+        { status: adminResult.reason === 'unauthorized' ? 401 : 403 },
+      );
     }
 
     const supabaseAdmin = getServiceSupabase();
@@ -38,8 +41,8 @@ export async function GET(req: NextRequest) {
         page,
         limit,
         total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit)
-      }
+        totalPages: Math.ceil((count || 0) / limit),
+      },
     });
   } catch (error) {
     console.error('Error in cloze drafts API:', error);

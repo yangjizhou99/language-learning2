@@ -1,10 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const adminCheck = await requireAdmin(req);
     if (!adminCheck.ok) {
@@ -17,7 +14,8 @@ export async function GET(
     // 获取用户基本信息
     const { data: user, error: userError } = await supabase
       .from('profiles')
-      .select(`
+      .select(
+        `
         id,
         email,
         username,
@@ -30,7 +28,8 @@ export async function GET(
         target_langs,
         created_at,
         last_sign_in_at
-      `)
+      `,
+      )
       .eq('id', userId)
       .single();
 
@@ -47,9 +46,8 @@ export async function GET(
     return NextResponse.json({
       user,
       practice_stats: practiceStats,
-      recent_activity: recentActivity
+      recent_activity: recentActivity,
     });
-
   } catch (error) {
     console.error('获取用户详情失败:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });
@@ -70,7 +68,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
     alignment_by_level: {} as Record<number, number>,
     average_scores: { shadowing: 0, cloze: 0, alignment: 0 },
     last_activity: null as string | null,
-    weekly_progress: [] as Array<{ date: string; count: number }>
+    weekly_progress: [] as Array<{ date: string; count: number }>,
   };
 
   try {
@@ -85,7 +83,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
       stats.total_shadowing_attempts++;
       stats.shadowing_by_lang[attempt.lang] = (stats.shadowing_by_lang[attempt.lang] || 0) + 1;
       stats.shadowing_by_level[attempt.level] = (stats.shadowing_by_level[attempt.level] || 0) + 1;
-      
+
       if (!stats.last_activity || attempt.created_at > stats.last_activity) {
         stats.last_activity = attempt.created_at;
       }
@@ -93,8 +91,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
       if (attempt.metrics?.score) {
         const currentAvg = stats.average_scores.shadowing;
         const count = stats.total_shadowing_attempts;
-        stats.average_scores.shadowing = 
-          (currentAvg * (count - 1) + attempt.metrics.score) / count;
+        stats.average_scores.shadowing = (currentAvg * (count - 1) + attempt.metrics.score) / count;
       }
     });
 
@@ -109,7 +106,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
       stats.total_cloze_attempts++;
       stats.cloze_by_lang[attempt.lang] = (stats.cloze_by_lang[attempt.lang] || 0) + 1;
       stats.cloze_by_level[attempt.level] = (stats.cloze_by_level[attempt.level] || 0) + 1;
-      
+
       if (!stats.last_activity || attempt.created_at > stats.last_activity) {
         stats.last_activity = attempt.created_at;
       }
@@ -117,7 +114,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
       if (attempt.ai_result?.overall?.score) {
         const currentAvg = stats.average_scores.cloze;
         const count = stats.total_cloze_attempts;
-        stats.average_scores.cloze = 
+        stats.average_scores.cloze =
           (currentAvg * (count - 1) + attempt.ai_result.overall.score) / count;
       }
     });
@@ -131,7 +128,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
 
     alignmentAttempts?.forEach((attempt: any) => {
       stats.total_alignment_attempts++;
-      
+
       if (!stats.last_activity || attempt.created_at > stats.last_activity) {
         stats.last_activity = attempt.created_at;
       }
@@ -139,7 +136,7 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
       if (attempt.scores?.overall) {
         const currentAvg = stats.average_scores.alignment;
         const count = stats.total_alignment_attempts;
-        stats.average_scores.alignment = 
+        stats.average_scores.alignment =
           (currentAvg * (count - 1) + attempt.scores.overall) / count;
       }
     });
@@ -161,16 +158,16 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
     // 计算周进度（最近7天）
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
+
     const allAttempts = [
       ...(shadowingAttempts || []),
       ...(clozeAttempts || []),
-      ...(alignmentAttempts || [])
-    ].filter(attempt => new Date(attempt.created_at) >= sevenDaysAgo);
+      ...(alignmentAttempts || []),
+    ].filter((attempt) => new Date(attempt.created_at) >= sevenDaysAgo);
 
     // 按日期分组统计
     const dailyCounts: Record<string, number> = {};
-    allAttempts.forEach(attempt => {
+    allAttempts.forEach((attempt) => {
       const date = attempt.created_at.split('T')[0];
       dailyCounts[date] = (dailyCounts[date] || 0) + 1;
     });
@@ -182,10 +179,9 @@ async function getDetailedPracticeStats(supabase: any, userId: string) {
       const dateStr = date.toISOString().split('T')[0];
       stats.weekly_progress.push({
         date: dateStr,
-        count: dailyCounts[dateStr] || 0
+        count: dailyCounts[dateStr] || 0,
       });
     }
-
   } catch (error) {
     console.error('获取详细练习统计失败:', error);
   }
@@ -200,14 +196,16 @@ async function getRecentActivity(supabase: any, userId: string, limit = 20) {
     // 获取最近的 Shadowing 活动
     const { data: shadowingActivity } = await supabase
       .from('shadowing_attempts')
-      .select(`
+      .select(
+        `
         id,
         created_at,
         lang,
         level,
         metrics,
         shadowing_items!inner(title)
-      `)
+      `,
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -220,21 +218,23 @@ async function getRecentActivity(supabase: any, userId: string, limit = 20) {
         lang: attempt.lang,
         level: attempt.level,
         score: attempt.metrics?.score,
-        created_at: attempt.created_at
+        created_at: attempt.created_at,
       });
     });
 
     // 获取最近的 Cloze 活动
     const { data: clozeActivity } = await supabase
       .from('cloze_attempts')
-      .select(`
+      .select(
+        `
         id,
         created_at,
         lang,
         level,
         ai_result,
         cloze_items!inner(title)
-      `)
+      `,
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -247,19 +247,21 @@ async function getRecentActivity(supabase: any, userId: string, limit = 20) {
         lang: attempt.lang,
         level: attempt.level,
         score: attempt.ai_result?.overall?.score,
-        created_at: attempt.created_at
+        created_at: attempt.created_at,
       });
     });
 
     // 获取最近的 Alignment 活动
     const { data: alignmentActivity } = await supabase
       .from('alignment_attempts')
-      .select(`
+      .select(
+        `
         id,
         created_at,
         scores,
         alignment_packs!inner(topic)
-      `)
+      `,
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -270,7 +272,7 @@ async function getRecentActivity(supabase: any, userId: string, limit = 20) {
         type: 'alignment',
         title: attempt.alignment_packs.topic,
         score: attempt.scores?.overall,
-        created_at: attempt.created_at
+        created_at: attempt.created_at,
       });
     });
 
@@ -278,7 +280,6 @@ async function getRecentActivity(supabase: any, userId: string, limit = 20) {
     return activities
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, limit);
-
   } catch (error) {
     console.error('获取最近活动失败:', error);
     return [];

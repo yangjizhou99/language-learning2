@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
 
 export async function POST(req: NextRequest) {
   try {
     // 检查认证
     const auth = await requireAdmin(req);
-    
+
     if (!auth.ok) {
       return NextResponse.json({ error: auth.reason }, { status: 403 });
     }
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       ai_enabled,
       api_keys,
       model_permissions,
-      custom_restrictions
+      custom_restrictions,
     } = permissions;
 
     let updatedCount = 0;
@@ -48,26 +48,30 @@ export async function POST(req: NextRequest) {
         // 构建权限数据
         const permissionsData = {
           user_id: userId,
-          can_access_shadowing: can_access_shadowing !== undefined ? Boolean(can_access_shadowing) : true,
+          can_access_shadowing:
+            can_access_shadowing !== undefined ? Boolean(can_access_shadowing) : true,
           can_access_cloze: can_access_cloze !== undefined ? Boolean(can_access_cloze) : true,
-          can_access_alignment: can_access_alignment !== undefined ? Boolean(can_access_alignment) : true,
-          can_access_articles: can_access_articles !== undefined ? Boolean(can_access_articles) : true,
+          can_access_alignment:
+            can_access_alignment !== undefined ? Boolean(can_access_alignment) : true,
+          can_access_articles:
+            can_access_articles !== undefined ? Boolean(can_access_articles) : true,
           allowed_languages: allowed_languages || ['en', 'ja', 'zh'],
           allowed_levels: allowed_levels || [1, 2, 3, 4, 5],
-          max_daily_attempts: max_daily_attempts !== undefined ? Math.max(0, parseInt(max_daily_attempts) || 50) : 50,
+          max_daily_attempts:
+            max_daily_attempts !== undefined ? Math.max(0, parseInt(max_daily_attempts) || 50) : 50,
           custom_restrictions: {
             ...custom_restrictions,
             model_permissions: model_permissions || [],
             ai_enabled: ai_enabled || false,
-            api_keys: api_keys || { deepseek: '', openrouter: '' }
-          }
+            api_keys: api_keys || { deepseek: '', openrouter: '' },
+          },
         };
 
         // 使用 upsert 更新或创建权限记录
         const { error: upsertError } = await supabase
           .from('user_permissions')
           .upsert(permissionsData, {
-            onConflict: 'user_id'
+            onConflict: 'user_id',
           });
 
         if (upsertError) {
@@ -88,9 +92,8 @@ export async function POST(req: NextRequest) {
       updated_count: updatedCount,
       total_requested: user_ids.length,
       errors: errors.length > 0 ? errors : undefined,
-      message: `成功为 ${updatedCount} 个用户应用了权限设置${errors.length > 0 ? `，${errors.length} 个用户处理失败` : ''}`
+      message: `成功为 ${updatedCount} 个用户应用了权限设置${errors.length > 0 ? `，${errors.length} 个用户处理失败` : ''}`,
     });
-
   } catch (error) {
     console.error('批量应用权限API错误:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });

@@ -42,7 +42,7 @@ const defaultPermissions: UserPermissions = {
       provider: 'deepseek',
       daily_limit: 50,
       token_limit: 100000,
-      enabled: true
+      enabled: true,
     },
     {
       model_id: 'openrouter/auto',
@@ -50,15 +50,15 @@ const defaultPermissions: UserPermissions = {
       provider: 'openrouter',
       daily_limit: 30,
       token_limit: 80000,
-      enabled: true
-    }
+      enabled: true,
+    },
   ],
   api_keys: {
     deepseek: '',
-    openrouter: ''
+    openrouter: '',
   },
   ai_enabled: false,
-  custom_restrictions: {}
+  custom_restrictions: {},
 };
 
 export default function useUserPermissions() {
@@ -68,8 +68,10 @@ export default function useUserPermissions() {
   useEffect(() => {
     const fetchPermissions = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (!session?.user?.id) {
           setPermissions(defaultPermissions);
           setLoading(false);
@@ -96,10 +98,11 @@ export default function useUserPermissions() {
             allowed_languages: userPermissions.allowed_languages ?? ['en', 'ja', 'zh'],
             allowed_levels: userPermissions.allowed_levels ?? [1, 2, 3, 4, 5],
             max_daily_attempts: userPermissions.max_daily_attempts ?? 50,
-            model_permissions: userPermissions.model_permissions ?? defaultPermissions.model_permissions,
+            model_permissions:
+              userPermissions.model_permissions ?? defaultPermissions.model_permissions,
             api_keys: userPermissions.api_keys ?? defaultPermissions.api_keys,
             ai_enabled: userPermissions.ai_enabled ?? false,
-            custom_restrictions: userPermissions.custom_restrictions ?? {}
+            custom_restrictions: userPermissions.custom_restrictions ?? {},
           });
         } else {
           // 使用默认权限
@@ -116,7 +119,9 @@ export default function useUserPermissions() {
     fetchPermissions();
 
     // 监听认证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
         fetchPermissions();
       }

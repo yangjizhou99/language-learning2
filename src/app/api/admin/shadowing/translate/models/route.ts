@@ -1,8 +1,8 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
 
 // 模型缓存
 let modelCache: {
@@ -17,10 +17,10 @@ async function fetchOpenRouterModels(): Promise<string[]> {
   try {
     const response = await fetch('https://openrouter.ai/api/v1/models', {
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-        'X-Title': 'Language Learning App'
-      }
+        'X-Title': 'Language Learning App',
+      },
     });
 
     if (!response.ok) {
@@ -28,16 +28,18 @@ async function fetchOpenRouterModels(): Promise<string[]> {
     }
 
     const data = await response.json();
-    const models = data.data
-      ?.filter((model: any) => 
-        model.id && 
-        (model.id.includes('gpt') || 
-         model.id.includes('claude') || 
-         model.id.includes('gemini') ||
-         model.id.includes('llama'))
-      )
-      ?.map((model: any) => model.id)
-      ?.sort() || [];
+    const models =
+      data.data
+        ?.filter(
+          (model: any) =>
+            model.id &&
+            (model.id.includes('gpt') ||
+              model.id.includes('claude') ||
+              model.id.includes('gemini') ||
+              model.id.includes('llama')),
+        )
+        ?.map((model: any) => model.id)
+        ?.sort() || [];
 
     return models;
   } catch (error) {
@@ -48,7 +50,7 @@ async function fetchOpenRouterModels(): Promise<string[]> {
       'openai/gpt-4o',
       'anthropic/claude-3.5-sonnet',
       'anthropic/claude-3-haiku',
-      'google/gemini-pro'
+      'google/gemini-pro',
     ];
   }
 }
@@ -58,8 +60,8 @@ async function fetchDeepSeekModels(): Promise<string[]> {
   try {
     const response = await fetch('https://api.deepseek.com/v1/models', {
       headers: {
-        'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
-      }
+        Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+      },
     });
 
     if (!response.ok) {
@@ -67,10 +69,11 @@ async function fetchDeepSeekModels(): Promise<string[]> {
     }
 
     const data = await response.json();
-    const models = data.data
-      ?.filter((model: any) => model.id && model.id.includes('deepseek'))
-      ?.map((model: any) => model.id)
-      ?.sort() || [];
+    const models =
+      data.data
+        ?.filter((model: any) => model.id && model.id.includes('deepseek'))
+        ?.map((model: any) => model.id)
+        ?.sort() || [];
 
     return models;
   } catch (error) {
@@ -84,8 +87,8 @@ async function fetchOpenAIModels(): Promise<string[]> {
   try {
     const response = await fetch('https://api.openai.com/v1/models', {
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      }
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
     });
 
     if (!response.ok) {
@@ -93,13 +96,13 @@ async function fetchOpenAIModels(): Promise<string[]> {
     }
 
     const data = await response.json();
-    const models = data.data
-      ?.filter((model: any) => 
-        model.id && 
-        (model.id.includes('gpt-4') || model.id.includes('gpt-3.5'))
-      )
-      ?.map((model: any) => model.id)
-      ?.sort() || [];
+    const models =
+      data.data
+        ?.filter(
+          (model: any) => model.id && (model.id.includes('gpt-4') || model.id.includes('gpt-3.5')),
+        )
+        ?.map((model: any) => model.id)
+        ?.sort() || [];
 
     return models;
   } catch (error) {
@@ -119,25 +122,25 @@ async function getAllModels(): Promise<Record<string, string[]>> {
     const [openrouterModels, deepseekModels, openaiModels] = await Promise.all([
       fetchOpenRouterModels(),
       fetchDeepSeekModels(),
-      fetchOpenAIModels()
+      fetchOpenAIModels(),
     ]);
 
     const models = {
       openrouter: openrouterModels,
       deepseek: deepseekModels,
-      openai: openaiModels
+      openai: openaiModels,
     };
 
     // 更新缓存
     modelCache = {
       data: models,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     return models;
   } catch (error) {
     console.error('获取模型列表失败:', error);
-    
+
     // 返回默认模型
     return {
       openrouter: [
@@ -145,10 +148,10 @@ async function getAllModels(): Promise<Record<string, string[]>> {
         'openai/gpt-4o',
         'anthropic/claude-3.5-sonnet',
         'anthropic/claude-3-haiku',
-        'google/gemini-pro'
+        'google/gemini-pro',
       ],
       deepseek: ['deepseek-chat', 'deepseek-coder'],
-      openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo']
+      openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'],
     };
   }
 }
@@ -157,22 +160,29 @@ export async function GET(req: NextRequest) {
   try {
     const auth = await requireAdmin(req);
     if (!auth.ok) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
     const models = await getAllModels();
-    
+
     return NextResponse.json({
       success: true,
       models,
       cache_timestamp: modelCache?.timestamp,
-      cache_age: modelCache ? Date.now() - modelCache.timestamp : 0
+      cache_age: modelCache ? Date.now() - modelCache.timestamp : 0,
     });
-
   } catch (error) {
     console.error('获取模型列表失败:', error);
-    return NextResponse.json({
-      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : "获取模型列表失败"
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : '获取模型列表失败',
+      },
+      { status: 500 },
+    );
   }
 }

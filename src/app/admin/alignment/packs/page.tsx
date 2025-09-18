@@ -1,24 +1,40 @@
-"use client";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { toast } from "sonner";
+'use client';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
-export default function AlignmentPacksAdmin(){
+export default function AlignmentPacksAdmin() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<any|null>(null);
+  const [editing, setEditing] = useState<any | null>(null);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [q, setQ] = useState("");
-  const [lang, setLang] = useState<string>("all");
-  const [status, setStatus] = useState<string>("all");
+  const [q, setQ] = useState('');
+  const [lang, setLang] = useState<string>('all');
+  const [status, setStatus] = useState<string>('all');
 
   const authHeader = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const h = new Headers();
     if (session?.access_token) h.set('Authorization', `Bearer ${session.access_token}`);
     return h;
@@ -31,35 +47,62 @@ export default function AlignmentPacksAdmin(){
     if (Array.isArray(j)) setItems(j);
     setLoading(false);
   };
-  useEffect(()=>{ load(); },[]);
+  useEffect(() => {
+    load();
+  }, []);
 
-  const save = async ()=>{
+  const save = async () => {
     if (!editing) return;
     try {
-      const steps = JSON.parse(editing.stepsText||'{}');
-      const r = await fetch('/api/admin/alignment/packs', { method:'PUT', headers:{ 'Content-Type':'application/json', ...(await authHeader()) }, body: JSON.stringify({ id:editing.id, lang:editing.lang, topic:editing.topic, steps }) });
-      if (r.ok) { setEditing(null); toast.success('已保存'); load(); } else toast.error('保存失败');
-    } catch { toast.error('JSON 无效'); }
+      const steps = JSON.parse(editing.stepsText || '{}');
+      const r = await fetch('/api/admin/alignment/packs', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+        body: JSON.stringify({ id: editing.id, lang: editing.lang, topic: editing.topic, steps }),
+      });
+      if (r.ok) {
+        setEditing(null);
+        toast.success('已保存');
+        load();
+      } else toast.error('保存失败');
+    } catch {
+      toast.error('JSON 无效');
+    }
   };
 
-  const remove = async (id:string)=>{
-    const r = await fetch(`/api/admin/alignment/packs?id=${encodeURIComponent(id)}`, { method:'DELETE', headers: await authHeader() });
-    if (r.ok) { toast.success('已删除'); load(); } else toast.error('删除失败');
+  const remove = async (id: string) => {
+    const r = await fetch(`/api/admin/alignment/packs?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: await authHeader(),
+    });
+    if (r.ok) {
+      toast.success('已删除');
+      load();
+    } else toast.error('删除失败');
   };
 
   return (
     <main className="max-w-6xl mx-auto p-6 space-y-4">
       <h1 className="text-2xl font-semibold">对齐训练包管理</h1>
       <div>
-        <Button asChild><a href="/admin/alignment/ai">新增训练包 → 生成页</a></Button>
+        <Button asChild>
+          <a href="/admin/alignment/ai">新增训练包 → 生成页</a>
+        </Button>
       </div>
       {/* 搜索与筛选 */}
       <div className="flex flex-wrap gap-2 items-center">
-        <Input placeholder="搜索主题/标签" value={q} onChange={e=>setQ(e.target.value)} className="w-64" />
+        <Input
+          placeholder="搜索主题/标签"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="w-64"
+        />
         <div className="flex items-center gap-2">
           <Label>语言</Label>
           <Select value={lang} onValueChange={setLang}>
-            <SelectTrigger className="w-36"><SelectValue placeholder="所有语言" /></SelectTrigger>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="所有语言" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">所有语言</SelectItem>
               <SelectItem value="en">英语</SelectItem>
@@ -71,7 +114,9 @@ export default function AlignmentPacksAdmin(){
         <div className="flex items-center gap-2">
           <Label>状态</Label>
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="w-40"><SelectValue placeholder="全部状态" /></SelectTrigger>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="全部状态" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">全部状态</SelectItem>
               <SelectItem value="published">已发布</SelectItem>
@@ -94,58 +139,101 @@ export default function AlignmentPacksAdmin(){
                 <Button variant="ghost">取消</Button>
               </DialogClose>
               <DialogClose asChild>
-                <Button variant="destructive" onClick={async()=>{
-                  const ids = Object.keys(selected).filter(k=>selected[k]);
-                  if (ids.length===0) { toast.message('未选择任何项'); return; }
-                  const r = await fetch('/api/admin/alignment/packs', { method:'DELETE', headers:{ 'Content-Type':'application/json', ...(await authHeader()) }, body: JSON.stringify({ ids }) });
-                  if (r.ok) { setSelected({}); toast.success('已删除'); load(); } else toast.error('批量删除失败');
-                }}>确认删除</Button>
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    const ids = Object.keys(selected).filter((k) => selected[k]);
+                    if (ids.length === 0) {
+                      toast.message('未选择任何项');
+                      return;
+                    }
+                    const r = await fetch('/api/admin/alignment/packs', {
+                      method: 'DELETE',
+                      headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+                      body: JSON.stringify({ ids }),
+                    });
+                    if (r.ok) {
+                      setSelected({});
+                      toast.success('已删除');
+                      load();
+                    } else toast.error('批量删除失败');
+                  }}
+                >
+                  确认删除
+                </Button>
               </DialogClose>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {loading ? <div>加载中…</div> : (
+      {loading ? (
+        <div>加载中…</div>
+      ) : (
         <div className="grid gap-3">
           {items
-            .filter(it => (q? (String(it.topic||'').toLowerCase().includes(q.toLowerCase()) || (it.tags||[]).some((t:string)=>t.toLowerCase().includes(q.toLowerCase()))) : true))
-            .filter(it => (lang==='all'? true : it.lang===lang))
-            .filter(it => (status==='all'? true : it.status===status))
-            .map(it => (
-            <div key={it.id} className="border rounded p-3">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 mr-2 min-w-0">
-                  <input type="checkbox" checked={!!selected[it.id]} onChange={e=>setSelected(s=>({ ...s, [it.id]: e.target.checked }))} />
-                  <div className="font-medium truncate">{it.topic}</div>
+            .filter((it) =>
+              q
+                ? String(it.topic || '')
+                    .toLowerCase()
+                    .includes(q.toLowerCase()) ||
+                  (it.tags || []).some((t: string) => t.toLowerCase().includes(q.toLowerCase()))
+                : true,
+            )
+            .filter((it) => (lang === 'all' ? true : it.lang === lang))
+            .filter((it) => (status === 'all' ? true : it.status === status))
+            .map((it) => (
+              <div key={it.id} className="border rounded p-3">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2 mr-2 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={!!selected[it.id]}
+                      onChange={(e) => setSelected((s) => ({ ...s, [it.id]: e.target.checked }))}
+                    />
+                    <div className="font-medium truncate">{it.topic}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        setEditing({ ...it, stepsText: JSON.stringify(it.steps || {}, null, 2) })
+                      }
+                    >
+                      编辑
+                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="destructive">
+                          删除
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>确认删除</DialogTitle>
+                          <DialogDescription>将删除此训练包，操作不可撤销。</DialogDescription>
+                        </DialogHeader>
+                        <div className="mt-4 flex justify-end gap-2">
+                          <DialogClose asChild>
+                            <Button variant="ghost">取消</Button>
+                          </DialogClose>
+                          <DialogClose asChild>
+                            <Button variant="destructive" onClick={() => remove(it.id)}>
+                              确认删除
+                            </Button>
+                          </DialogClose>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={()=>setEditing({ ...it, stepsText: JSON.stringify(it.steps||{}, null, 2) })}>编辑</Button>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="destructive">删除</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>确认删除</DialogTitle>
-                        <DialogDescription>将删除此训练包，操作不可撤销。</DialogDescription>
-                      </DialogHeader>
-                      <div className="mt-4 flex justify-end gap-2">
-                        <DialogClose asChild>
-                          <Button variant="ghost">取消</Button>
-                        </DialogClose>
-                        <DialogClose asChild>
-                          <Button variant="destructive" onClick={()=>remove(it.id)}>确认删除</Button>
-                        </DialogClose>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                <div className="text-xs text-gray-500 mt-1">
+                  {it.lang} · 状态 {it.status}
                 </div>
               </div>
-              <div className="text-xs text-gray-500 mt-1">{it.lang} · 状态 {it.status}</div>
-            </div>
-          ))}
-          {items.length===0 && <div className="text-sm text-gray-500">暂无训练包</div>}
+            ))}
+          {items.length === 0 && <div className="text-sm text-gray-500">暂无训练包</div>}
         </div>
       )}
 
@@ -156,19 +244,34 @@ export default function AlignmentPacksAdmin(){
           <div className="bg-card text-card-foreground w-full max-w-3xl p-4 rounded border space-y-3">
             <div className="text-lg font-semibold">编辑训练包</div>
             <div className="flex gap-2">
-              <Select value={editing.lang} onValueChange={(v)=>setEditing({...editing, lang:v})}>
-                <SelectTrigger className="w-36"><SelectValue placeholder="语言" /></SelectTrigger>
+              <Select
+                value={editing.lang}
+                onValueChange={(v) => setEditing({ ...editing, lang: v })}
+              >
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="语言" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">英语</SelectItem>
                   <SelectItem value="ja">日语</SelectItem>
                   <SelectItem value="zh">中文</SelectItem>
                 </SelectContent>
               </Select>
-              <Input className="flex-1" value={editing.topic||''} onChange={e=>setEditing({...editing, topic:e.target.value})} />
+              <Input
+                className="flex-1"
+                value={editing.topic || ''}
+                onChange={(e) => setEditing({ ...editing, topic: e.target.value })}
+              />
             </div>
-            <textarea className="w-full border rounded px-2 py-1 h-40 bg-background" value={editing.stepsText||''} onChange={e=>setEditing({...editing, stepsText:e.target.value})} />
+            <textarea
+              className="w-full border rounded px-2 py-1 h-40 bg-background"
+              value={editing.stepsText || ''}
+              onChange={(e) => setEditing({ ...editing, stepsText: e.target.value })}
+            />
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={()=>setEditing(null)}>取消</Button>
+              <Button variant="outline" onClick={() => setEditing(null)}>
+                取消
+              </Button>
               <Button onClick={save}>保存</Button>
             </div>
           </div>
@@ -177,5 +280,3 @@ export default function AlignmentPacksAdmin(){
     </main>
   );
 }
-
-

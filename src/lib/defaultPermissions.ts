@@ -35,7 +35,8 @@ export async function getDefaultPermissions(): Promise<DefaultPermissions> {
       .eq('id', 'default')
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 = no rows returned
       console.error('获取默认权限设置失败:', error);
       throw error;
     }
@@ -58,7 +59,7 @@ export async function getDefaultPermissions(): Promise<DefaultPermissions> {
             provider: 'deepseek',
             daily_limit: 50,
             token_limit: 100000,
-            enabled: true
+            enabled: true,
           },
           {
             model_id: 'openrouter/auto',
@@ -66,10 +67,10 @@ export async function getDefaultPermissions(): Promise<DefaultPermissions> {
             provider: 'openrouter',
             daily_limit: 30,
             token_limit: 80000,
-            enabled: true
-          }
+            enabled: true,
+          },
         ],
-        custom_restrictions: defaultPerms.custom_restrictions || {}
+        custom_restrictions: defaultPerms.custom_restrictions || {},
       };
     }
 
@@ -91,7 +92,7 @@ export async function getDefaultPermissions(): Promise<DefaultPermissions> {
           provider: 'deepseek',
           daily_limit: 50,
           token_limit: 100000,
-          enabled: true
+          enabled: true,
         },
         {
           model_id: 'openrouter/auto',
@@ -99,10 +100,10 @@ export async function getDefaultPermissions(): Promise<DefaultPermissions> {
           provider: 'openrouter',
           daily_limit: 30,
           token_limit: 80000,
-          enabled: true
-        }
+          enabled: true,
+        },
       ],
-      custom_restrictions: {}
+      custom_restrictions: {},
     };
   } catch (error) {
     console.error('获取默认权限设置失败:', error);
@@ -124,7 +125,7 @@ export async function getDefaultPermissions(): Promise<DefaultPermissions> {
           provider: 'deepseek',
           daily_limit: 50,
           token_limit: 100000,
-          enabled: true
+          enabled: true,
         },
         {
           model_id: 'openrouter/auto',
@@ -132,10 +133,10 @@ export async function getDefaultPermissions(): Promise<DefaultPermissions> {
           provider: 'openrouter',
           daily_limit: 30,
           token_limit: 80000,
-          enabled: true
-        }
+          enabled: true,
+        },
       ],
-      custom_restrictions: {}
+      custom_restrictions: {},
     };
   }
 }
@@ -175,14 +176,12 @@ export async function applyDefaultPermissionsToUser(userId: string): Promise<boo
         ...defaultPermissions.custom_restrictions,
         model_permissions: defaultPermissions.model_permissions,
         ai_enabled: defaultPermissions.ai_enabled,
-        api_keys: defaultPermissions.api_keys
-      }
+        api_keys: defaultPermissions.api_keys,
+      },
     };
 
     // 创建用户权限记录
-    const { error } = await supabase
-      .from('user_permissions')
-      .insert(permissionsData);
+    const { error } = await supabase.from('user_permissions').insert(permissionsData);
 
     if (error) {
       console.error(`为用户 ${userId} 应用默认权限失败:`, error);
@@ -224,7 +223,7 @@ export async function checkUserPermissionsExpiry(userId: string): Promise<boolea
           can_access_cloze: false,
           can_access_alignment: false,
           can_access_articles: false,
-          max_daily_attempts: 0
+          max_daily_attempts: 0,
         })
         .eq('user_id', userId);
 

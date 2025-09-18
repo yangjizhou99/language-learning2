@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
 
 export async function GET(req: NextRequest) {
   try {
     // 检查认证
     const auth = await requireAdmin(req);
-    
+
     if (!auth.ok) {
       return NextResponse.json({ error: auth.reason }, { status: 403 });
     }
@@ -21,7 +21,8 @@ export async function GET(req: NextRequest) {
       .eq('id', 'default')
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 = no rows returned
       console.error('获取默认权限设置失败:', error);
       return NextResponse.json({ error: '获取默认权限设置失败' }, { status: 500 });
     }
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
           provider: 'deepseek',
           daily_limit: 50,
           token_limit: 100000,
-          enabled: true
+          enabled: true,
         },
         {
           model_id: 'openrouter/auto',
@@ -53,16 +54,15 @@ export async function GET(req: NextRequest) {
           provider: 'openrouter',
           daily_limit: 30,
           token_limit: 80000,
-          enabled: true
-        }
+          enabled: true,
+        },
       ],
-      custom_restrictions: {}
+      custom_restrictions: {},
     };
 
     return NextResponse.json({
-      permissions: defaultPerms || defaultPermissions
+      permissions: defaultPerms || defaultPermissions,
     });
-
   } catch (error) {
     console.error('获取默认权限设置API错误:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });
@@ -73,7 +73,7 @@ export async function PUT(req: NextRequest) {
   try {
     // 检查认证
     const auth = await requireAdmin(req);
-    
+
     if (!auth.ok) {
       return NextResponse.json({ error: auth.reason }, { status: 403 });
     }
@@ -95,7 +95,7 @@ export async function PUT(req: NextRequest) {
       ai_enabled,
       api_keys,
       model_permissions,
-      custom_restrictions
+      custom_restrictions,
     } = body;
 
     // 验证数据
@@ -110,24 +110,27 @@ export async function PUT(req: NextRequest) {
     // 构建权限数据
     const permissionsData = {
       id: 'default',
-      can_access_shadowing: can_access_shadowing !== undefined ? Boolean(can_access_shadowing) : true,
+      can_access_shadowing:
+        can_access_shadowing !== undefined ? Boolean(can_access_shadowing) : true,
       can_access_cloze: can_access_cloze !== undefined ? Boolean(can_access_cloze) : true,
-      can_access_alignment: can_access_alignment !== undefined ? Boolean(can_access_alignment) : true,
+      can_access_alignment:
+        can_access_alignment !== undefined ? Boolean(can_access_alignment) : true,
       can_access_articles: can_access_articles !== undefined ? Boolean(can_access_articles) : true,
       allowed_languages: allowed_languages || ['en', 'ja', 'zh'],
       allowed_levels: allowed_levels || [1, 2, 3, 4, 5],
-      max_daily_attempts: max_daily_attempts !== undefined ? Math.max(0, parseInt(max_daily_attempts) || 50) : 50,
+      max_daily_attempts:
+        max_daily_attempts !== undefined ? Math.max(0, parseInt(max_daily_attempts) || 50) : 50,
       ai_enabled: ai_enabled !== undefined ? Boolean(ai_enabled) : false,
       api_keys: api_keys || { deepseek: '', openrouter: '' },
       model_permissions: model_permissions || [],
-      custom_restrictions: custom_restrictions || {}
+      custom_restrictions: custom_restrictions || {},
     };
 
     // 使用 upsert 更新或创建默认权限记录
     const { data, error } = await supabase
       .from('default_user_permissions')
       .upsert(permissionsData, {
-        onConflict: 'id'
+        onConflict: 'id',
       })
       .select()
       .single();
@@ -139,9 +142,8 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      permissions: data
+      permissions: data,
     });
-
   } catch (error) {
     console.error('更新默认权限设置API错误:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });

@@ -4,9 +4,9 @@ import { getServiceSupabase } from '@/lib/supabaseAdmin';
 export async function POST(req: NextRequest) {
   try {
     const supabase = getServiceSupabase();
-    
+
     const results = [];
-    
+
     // 执行迁移SQL
     const migrationSQL = `
       -- 添加API密钥字段
@@ -43,33 +43,41 @@ export async function POST(req: NextRequest) {
     // 分割SQL语句并逐个执行
     const statements = migrationSQL
       .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
 
     for (const statement of statements) {
       try {
         const { error } = await supabase.rpc('exec', { sql: statement });
         if (error) {
-          results.push({ statement: statement.substring(0, 50) + '...', error: error instanceof Error ? error.message : String(error) });
+          results.push({
+            statement: statement.substring(0, 50) + '...',
+            error: error instanceof Error ? error.message : String(error),
+          });
         } else {
           results.push({ statement: statement.substring(0, 50) + '...', success: true });
         }
       } catch (e) {
-        results.push({ statement: statement.substring(0, 50) + '...', error: e instanceof Error ? e.message : String(e) });
+        results.push({
+          statement: statement.substring(0, 50) + '...',
+          error: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
     return NextResponse.json({
       success: true,
       message: 'Migration applied successfully',
-      results
+      results,
     });
-
   } catch (error) {
     console.error('Migration error:', error);
     return NextResponse.json(
-      { error: 'Migration failed', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: 'Migration failed',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

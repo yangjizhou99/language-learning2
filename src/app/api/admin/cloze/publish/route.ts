@@ -9,11 +9,14 @@ export async function POST(req: NextRequest) {
   try {
     const adminResult = await requireAdmin(req);
     if (!adminResult.ok) {
-      return NextResponse.json({ error: adminResult.reason }, { status: adminResult.reason === 'unauthorized' ? 401 : 403 });
+      return NextResponse.json(
+        { error: adminResult.reason },
+        { status: adminResult.reason === 'unauthorized' ? 401 : 403 },
+      );
     }
-    
+
     const { draftId } = await req.json();
-    
+
     if (!draftId) {
       return NextResponse.json({ error: 'Missing draft ID' }, { status: 400 });
     }
@@ -42,8 +45,8 @@ export async function POST(req: NextRequest) {
         blanks: draft.blanks,
         meta: {
           from_draft: draftId,
-          published_at: new Date().toISOString()
-        }
+          published_at: new Date().toISOString(),
+        },
       })
       .select()
       .single();
@@ -54,17 +57,21 @@ export async function POST(req: NextRequest) {
     }
 
     // 更新草稿状态
-    await supabaseAdmin
-      .from('cloze_drafts')
-      .update({ status: 'approved' })
-      .eq('id', draftId);
+    await supabaseAdmin.from('cloze_drafts').update({ status: 'approved' }).eq('id', draftId);
 
     return NextResponse.json({ success: true, data: item });
-
   } catch (error) {
     console.error('Publish cloze item error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Internal server error' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : 'Internal server error',
+      },
+      { status: 500 },
+    );
   }
 }

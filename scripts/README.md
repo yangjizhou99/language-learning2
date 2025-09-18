@@ -17,6 +17,7 @@
 #### IMMUTABLE 函数说明
 
 **可以在索引谓词中使用的函数：**
+
 - `CURRENT_DATE` - 当前日期（IMMUTABLE）
 - `CURRENT_TIME` - 当前时间（IMMUTABLE）
 - `CURRENT_TIMESTAMP` - 当前时间戳（IMMUTABLE）
@@ -24,6 +25,7 @@
 - 数学函数：`ABS()`, `ROUND()`, `FLOOR()` 等
 
 **不能在索引谓词中使用的函数：**
+
 - `NOW()` - 当前时间戳（VOLATILE）
 - `CURRENT_USER` - 当前用户（STABLE）
 - `RANDOM()` - 随机数（VOLATILE）
@@ -34,31 +36,33 @@
 
 ```sql
 -- 方法1：使用固定时间戳（需要定期更新）
-CREATE INDEX idx_recent_items 
-ON shadowing_items(id, lang, level) 
+CREATE INDEX idx_recent_items
+ON shadowing_items(id, lang, level)
 WHERE created_at > '2024-01-01'::timestamp;
 
 -- 方法2：使用日期范围
-CREATE INDEX idx_current_year_items 
-ON shadowing_items(id, lang, level) 
+CREATE INDEX idx_current_year_items
+ON shadowing_items(id, lang, level)
 WHERE created_at >= DATE_TRUNC('year', CURRENT_DATE);
 
 -- 方法3：创建普通索引，在查询时使用时间条件
-CREATE INDEX idx_items_created_at 
+CREATE INDEX idx_items_created_at
 ON shadowing_items(created_at DESC, lang, level);
 ```
 
 #### 表结构说明
 
 **有 status 列的表：**
+
 - `cloze_drafts` - 状态：draft|needs_fix|approved
-- `shadowing_drafts` - 状态：draft|approved  
+- `shadowing_drafts` - 状态：draft|approved
 - `alignment_packs` - 状态：draft|published|archived
 - `article_drafts` - 状态：pending|needs_fix|approved|published|rejected
 - `article_batches` - 状态：pending|running|done|canceled|failed
 - `shadowing_sessions` - 状态：draft|completed
 
 **没有 status 列的表：**
+
 - `shadowing_items` - 正式题库，无需状态
 - `cloze_items` - 正式题库，无需状态
 - `articles` - 正式文章库，无需状态
@@ -68,6 +72,7 @@ ON shadowing_items(created_at DESC, lang, level);
 ### 1. 开发环境（推荐）
 
 使用修改后的迁移文件 `supabase/migrations/20250120000008_performance_indexes.sql`，该文件已：
+
 - 移除 `CONCURRENTLY` 关键字以支持事务执行
 - 移除不存在的 `status` 列相关索引
 - 移除使用 `NOW()` 函数的索引（非 IMMUTABLE）
@@ -99,7 +104,7 @@ npx supabase db reset --linked
 ### 推荐做法
 
 1. **开发环境**: 使用普通索引（迁移文件）
-2. **生产环境**: 
+2. **生产环境**:
    - 如果数据量小（< 100万行），使用普通索引
    - 如果数据量大（> 100万行），使用并发索引
 
@@ -109,21 +114,21 @@ npx supabase db reset --linked
 
 ```sql
 -- 查看所有索引
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,
     indexdef
-FROM pg_indexes 
-WHERE schemaname = 'public' 
+FROM pg_indexes
+WHERE schemaname = 'public'
 AND indexname LIKE 'idx_%'
 ORDER BY tablename, indexname;
 
 -- 查看特定表的索引
-SELECT 
+SELECT
     indexname,
     indexdef
-FROM pg_indexes 
+FROM pg_indexes
 WHERE tablename = 'shadowing_items'
 ORDER BY indexname;
 ```
@@ -134,25 +139,25 @@ ORDER BY indexname;
 
 ```sql
 -- 查看索引使用情况
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,
     idx_scan,
     idx_tup_read,
     idx_tup_fetch
-FROM pg_stat_user_indexes 
+FROM pg_stat_user_indexes
 WHERE schemaname = 'public'
 ORDER BY idx_scan DESC;
 
 -- 查看慢查询
-SELECT 
+SELECT
     query,
     calls,
     total_time,
     mean_time,
     rows
-FROM pg_stat_statements 
+FROM pg_stat_statements
 WHERE mean_time > 1000  -- 超过1秒的查询
 ORDER BY mean_time DESC
 LIMIT 10;

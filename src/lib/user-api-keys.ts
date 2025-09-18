@@ -8,7 +8,7 @@ export async function getUserAPIKeys(userId: string): Promise<{
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
     const { data: permissions, error } = await supabase
@@ -31,12 +31,12 @@ export async function getUserAPIKeys(userId: string): Promise<{
 
 // 根据提供商获取API密钥
 export async function getAPIKeyForProvider(
-  userId: string, 
-  provider: 'deepseek' | 'openrouter'
+  userId: string,
+  provider: 'deepseek' | 'openrouter',
 ): Promise<string | null> {
   const apiKeys = await getUserAPIKeys(userId);
   if (!apiKeys) return null;
-  
+
   return apiKeys[provider] || null;
 }
 
@@ -44,7 +44,7 @@ export async function getAPIKeyForProvider(
 export async function getAPIConfig(
   userId: string,
   provider: 'deepseek' | 'openrouter',
-  model: string
+  model: string,
 ): Promise<{
   url: string;
   headers: Record<string, string>;
@@ -59,20 +59,20 @@ export async function getAPIConfig(
     return {
       url: 'https://api.deepseek.com/v1/chat/completions',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      apiKey
+      apiKey,
     };
   } else if (provider === 'openrouter') {
     return {
       url: 'https://openrouter.ai/api/v1/chat/completions',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+        'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       },
-      apiKey
+      apiKey,
     };
   }
 

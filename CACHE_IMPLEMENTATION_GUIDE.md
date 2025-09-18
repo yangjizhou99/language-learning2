@@ -24,6 +24,7 @@
 **位置**: `src/hooks/useEnhancedFetch.ts`
 
 **特性**:
+
 - ✅ 请求去重 (Deduplication)
 - ✅ Stale-while-revalidate
 - ✅ ETag 条件请求支持
@@ -32,6 +33,7 @@
 - ✅ 容错机制
 
 **使用示例**:
+
 ```typescript
 import useEnhancedFetch from '@/hooks/useEnhancedFetch';
 
@@ -63,6 +65,7 @@ function MyComponent() {
 **位置**: `src/lib/enhanced-cache.ts`
 
 **特性**:
+
 - ✅ 自动 ETag 生成 (SHA1 哈希)
 - ✅ 条件请求处理 (If-None-Match)
 - ✅ 304 Not Modified 响应
@@ -71,6 +74,7 @@ function MyComponent() {
 - ✅ 缓存统计和监控
 
 **API 路由示例**:
+
 ```typescript
 // src/app/api/example/route.ts
 export const revalidate = 60; // ISR: 页面级缓存
@@ -78,12 +82,13 @@ export const revalidate = 60; // ISR: 页面级缓存
 import { EnhancedCacheManager } from '@/lib/enhanced-cache';
 
 export async function GET(req: NextRequest) {
-  const cacheKey = EnhancedCacheManager.generateKey("example", { 
-    lang: "en", level: 2 
+  const cacheKey = EnhancedCacheManager.generateKey('example', {
+    lang: 'en',
+    level: 2,
   });
-  
+
   const clientETag = req.headers.get('if-none-match');
-  
+
   const result = await EnhancedCacheManager.dedupeWithETag(
     cacheKey,
     async () => {
@@ -91,7 +96,7 @@ export async function GET(req: NextRequest) {
       return await fetchDataFromDatabase();
     },
     clientETag,
-    300 // 5分钟缓存
+    300, // 5分钟缓存
   );
 
   // 返回 304 Not Modified
@@ -99,18 +104,18 @@ export async function GET(req: NextRequest) {
     return new Response(null, {
       status: 304,
       headers: {
-        'ETag': result.etag,
-        'Cache-Control': 'public, max-age=60, s-maxage=300'
-      }
+        ETag: result.etag,
+        'Cache-Control': 'public, max-age=60, s-maxage=300',
+      },
     });
   }
 
   // 返回正常响应
   return NextResponse.json(result.data, {
     headers: {
-      'ETag': result.etag,
-      'Cache-Control': 'public, max-age=60, s-maxage=300'
-    }
+      ETag: result.etag,
+      'Cache-Control': 'public, max-age=60, s-maxage=300',
+    },
   });
 }
 ```
@@ -118,11 +123,13 @@ export async function GET(req: NextRequest) {
 ### 3. 页面层 ISR 缓存
 
 已在以下 API 路由中实现:
+
 - ✅ `/api/shadowing/next` - 跟读练习
 - ⚠️ `/api/cloze/next` - 需要添加 ISR 配置
 - ⚠️ `/api/tts/voices` - 需要添加 ISR 配置
 
 **配置方式**:
+
 ```typescript
 export const revalidate = 60; // 60秒重新验证
 export const dynamic = 'force-dynamic'; // 强制动态渲染（与 ISR 配合）
@@ -135,6 +142,7 @@ export const dynamic = 'force-dynamic'; // 强制动态渲染（与 ISR 配合�
 **访问**: `http://localhost:3000/cache-demo`
 
 **功能**:
+
 - 🎯 实时缓存统计
 - 📊 多端点测试
 - 🔄 手动刷新和缓存清空
@@ -148,6 +156,7 @@ export const dynamic = 'force-dynamic'; // 强制动态渲染（与 ISR 配合�
 **位置**: `scripts/test-cache-performance.js`
 
 **运行方式**:
+
 ```bash
 # 测试本地环境
 node scripts/test-cache-performance.js
@@ -157,6 +166,7 @@ TEST_URL=https://your-domain.com node scripts/test-cache-performance.js
 ```
 
 **测试内容**:
+
 - ETag 头检查
 - Cache-Control 头检查
 - 304 响应验证
@@ -189,15 +199,18 @@ curl -I https://your-domain.com/api/shadowing/next?lang=en&level=2 \
 ## 📊 性能指标目标
 
 ### 缓存命中率
+
 - **列表接口**: >60% 请求命中缓存或 304
 - **静态资源**: >80% 缓存命中
 
 ### 响应时间
+
 - **缓存命中**: <50ms
 - **304 响应**: <100ms
 - **数据库查询**: 相比无缓存下降 50%+
 
 ### 带宽节省
+
 - **304 响应**: 99% 带宽节省
 - **CDN 缓存**: 80%+ 回源请求减少
 
@@ -207,11 +220,11 @@ curl -I https://your-domain.com/api/shadowing/next?lang=en&level=2 \
 
 ```typescript
 const cacheOptions = {
-  staleTime: 60 * 1000,      // 1分钟内数据视为新鲜
-  cacheTime: 5 * 60 * 1000,  // 5分钟后清除缓存
-  revalidateOnFocus: true,   // 窗口聚焦时重新验证
-  dedupe: true,              // 启用请求去重
-  retryCount: 3              // 失败重试次数
+  staleTime: 60 * 1000, // 1分钟内数据视为新鲜
+  cacheTime: 5 * 60 * 1000, // 5分钟后清除缓存
+  revalidateOnFocus: true, // 窗口聚焦时重新验证
+  dedupe: true, // 启用请求去重
+  retryCount: 3, // 失败重试次数
 };
 ```
 
@@ -219,16 +232,16 @@ const cacheOptions = {
 
 ```typescript
 const apiCacheConfig = {
-  defaultTTL: 300,          // 默认5分钟
-  maxSize: 2000,            // 最大缓存条目数
-  cleanupInterval: 300000,  // 5分钟清理一次
+  defaultTTL: 300, // 默认5分钟
+  maxSize: 2000, // 最大缓存条目数
+  cleanupInterval: 300000, // 5分钟清理一次
 };
 ```
 
 ### ISR 配置
 
 ```typescript
-export const revalidate = 60;        // 页面60秒重新验证
+export const revalidate = 60; // 页面60秒重新验证
 export const dynamic = 'force-dynamic'; // 动态渲染
 ```
 
@@ -237,6 +250,7 @@ export const dynamic = 'force-dynamic'; // 动态渲染
 ### 1. ETag 不生成
 
 **检查**:
+
 - API 路由是否导入了 `EnhancedCacheManager`
 - 响应是否使用了 `dedupeWithETag` 方法
 - 响应头是否包含 ETag
@@ -244,6 +258,7 @@ export const dynamic = 'force-dynamic'; // 动态渲染
 ### 2. 304 不返回
 
 **检查**:
+
 - 客户端是否发送 `If-None-Match` 头
 - ETag 值是否匹配
 - 缓存是否过期
@@ -251,6 +266,7 @@ export const dynamic = 'force-dynamic'; // 动态渲染
 ### 3. 前端缓存不生效
 
 **检查**:
+
 - 是否使用了 `useEnhancedFetch`
 - 缓存配置是否合理
 - 浏览器开发者工具的网络面板禁用缓存选项
@@ -258,6 +274,7 @@ export const dynamic = 'force-dynamic'; // 动态渲染
 ### 4. ISR 不工作
 
 **检查**:
+
 - API 路由是否导出 `revalidate`
 - Vercel 部署是否启用了 ISR
 - 是否设置了正确的 `Cache-Control` 头
@@ -267,12 +284,14 @@ export const dynamic = 'force-dynamic'; // 动态渲染
 ### Vercel 部署
 
 1. **环境变量配置**:
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    SUPABASE_SERVICE_ROLE_KEY=your_service_key
    ```
 
 2. **Vercel 配置** (`vercel.json`):
+
    ```json
    {
      "functions": {
@@ -290,6 +309,7 @@ export const dynamic = 'force-dynamic'; // 动态渲染
 ### 自托管部署
 
 1. **Redis 缓存** (可选增强):
+
    ```typescript
    // 在 enhanced-cache.ts 中取消注释 Redis 部分
    import Redis from 'ioredis';
@@ -311,7 +331,7 @@ import { EnhancedCacheManager } from '@/lib/enhanced-cache';
 // 前端缓存统计
 const frontendStats = cacheManager.getStats();
 
-// API 层缓存统计  
+// API 层缓存统计
 const apiStats = EnhancedCacheManager.getStats();
 ```
 

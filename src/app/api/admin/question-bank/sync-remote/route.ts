@@ -1,23 +1,26 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
-import { createClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
+import { createClient } from '@supabase/supabase-js';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAdmin(req);
     if (!auth.ok) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
     const body = await req.json();
     const { package: exportPackage, remoteConfig } = body;
 
     if (!exportPackage || !remoteConfig || !remoteConfig.url || !remoteConfig.key) {
-      return NextResponse.json({ 
-        error: "缺少必要的参数：package, remoteConfig" 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: '缺少必要的参数：package, remoteConfig',
+        },
+        { status: 400 },
+      );
     }
 
     // 创建远程数据库客户端
@@ -30,15 +33,18 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     if (testError) {
-      return NextResponse.json({ 
-        error: `远程数据库连接失败: ${testError.message}` 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: `远程数据库连接失败: ${testError.message}`,
+        },
+        { status: 500 },
+      );
     }
 
     const results = {
       shadowing: { success: 0, failed: 0, errors: [] as string[] },
       cloze: { success: 0, failed: 0, errors: [] as string[] },
-      alignment: { success: 0, failed: 0, errors: [] as string[] }
+      alignment: { success: 0, failed: 0, errors: [] as string[] },
     };
 
     // 按类型分组题目
@@ -66,14 +72,14 @@ export async function POST(req: NextRequest) {
           translations: item.translations,
           trans_updated_at: item.trans_updated_at,
           theme_id: item.theme_id,
-          subtopic_id: item.subtopic_id
+          subtopic_id: item.subtopic_id,
         }));
 
         const { error: shadowingError } = await remoteSupabase
           .from('shadowing_items')
-          .upsert(shadowingData, { 
+          .upsert(shadowingData, {
             onConflict: 'id',
-            ignoreDuplicates: false 
+            ignoreDuplicates: false,
           });
 
         if (shadowingError) {
@@ -100,15 +106,13 @@ export async function POST(req: NextRequest) {
           passage: item.passage,
           blanks: item.blanks,
           meta: item.meta || {},
-          created_at: item.created_at
+          created_at: item.created_at,
         }));
 
-        const { error: clozeError } = await remoteSupabase
-          .from('cloze_items')
-          .upsert(clozeData, { 
-            onConflict: 'id',
-            ignoreDuplicates: false 
-          });
+        const { error: clozeError } = await remoteSupabase.from('cloze_items').upsert(clozeData, {
+          onConflict: 'id',
+          ignoreDuplicates: false,
+        });
 
         if (clozeError) {
           results.cloze.failed = itemsByType.cloze.length;
@@ -133,14 +137,14 @@ export async function POST(req: NextRequest) {
           title: item.title,
           content: item.content || item.text,
           meta: item.meta || {},
-          created_at: item.created_at
+          created_at: item.created_at,
         }));
 
         const { error: alignmentError } = await remoteSupabase
           .from('alignment_packs')
-          .upsert(alignmentData, { 
+          .upsert(alignmentData, {
             onConflict: 'id',
-            ignoreDuplicates: false 
+            ignoreDuplicates: false,
           });
 
         if (alignmentError) {
@@ -156,7 +160,8 @@ export async function POST(req: NextRequest) {
     }
 
     // 计算总体结果
-    const totalSuccess = results.shadowing.success + results.cloze.success + results.alignment.success;
+    const totalSuccess =
+      results.shadowing.success + results.cloze.success + results.alignment.success;
     const totalFailed = results.shadowing.failed + results.cloze.failed + results.alignment.failed;
     const totalItems = exportPackage.items.length;
 
@@ -167,15 +172,16 @@ export async function POST(req: NextRequest) {
       summary: {
         total: totalItems,
         success: totalSuccess,
-        failed: totalFailed
-      }
+        failed: totalFailed,
+      },
     });
-
   } catch (error) {
     console.error('同步到远程数据库失败:', error);
-    return NextResponse.json({ 
-      error: `同步失败: ${error instanceof Error ? error.message : String(error)}` 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: `同步失败: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 },
+    );
   }
 }
-

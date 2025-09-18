@@ -1,17 +1,20 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5分钟超时，支持长文本TTS合成
 
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
-import { synthesizeTTS } from "@/lib/tts";
-import { uploadAudioFile } from "@/lib/storage-upload";
-import { synthesizeGeminiTTS } from "@/lib/gemini-tts";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
+import { synthesizeTTS } from '@/lib/tts';
+import { uploadAudioFile } from '@/lib/storage-upload';
+import { synthesizeGeminiTTS } from '@/lib/gemini-tts';
 
 // 检测是否为对话格式
 function isDialogueFormat(text: string): boolean {
-  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-  return lines.some(line => /^[A-Z]:\s/.test(line));
+  const lines = text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  return lines.some((line) => /^[A-Z]:\s/.test(line));
 }
 
 // 根据音色名称确定提供商
@@ -20,15 +23,23 @@ function getProviderFromVoice(voiceName: string): 'google' | 'gemini' | 'xunfei'
   if (voiceName.startsWith('xunfei-')) {
     return 'xunfei';
   }
-  
+
   // Gemini TTS 音色
   const geminiVoices = [
-    'Kore', 'Orus', 'Callirrhoe', 'Puck',
-    'cmn-CN-Chirp3-HD-Kore', 'cmn-CN-Chirp3-HD-Orus', 
-    'cmn-CN-Chirp3-HD-Callirrhoe', 'cmn-CN-Chirp3-HD-Puck',
-    'ja-JP-Neural2-A', 'ja-JP-Neural2-B', 'ja-JP-Neural2-C', 'ja-JP-Neural2-D'
+    'Kore',
+    'Orus',
+    'Callirrhoe',
+    'Puck',
+    'cmn-CN-Chirp3-HD-Kore',
+    'cmn-CN-Chirp3-HD-Orus',
+    'cmn-CN-Chirp3-HD-Callirrhoe',
+    'cmn-CN-Chirp3-HD-Puck',
+    'ja-JP-Neural2-A',
+    'ja-JP-Neural2-B',
+    'ja-JP-Neural2-C',
+    'ja-JP-Neural2-D',
   ];
-  
+
   return geminiVoices.includes(voiceName) ? 'gemini' : 'google';
 }
 
@@ -36,25 +47,25 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await requireAdmin(req);
     if (!auth.ok) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
     const body = await req.json();
     const { text, lang, voice, speakingRate = 1.0, pitch = 0 } = body;
 
     if (!text || !lang) {
-      return NextResponse.json({ error: "缺少必要参数" }, { status: 400 });
+      return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
     // 检查是否为对话格式
     const isDialogue = isDialogueFormat(text);
-    
+
     // 根据音色确定提供商
     const provider = getProviderFromVoice(voice);
-    
+
     console.log(`使用 ${provider} ${isDialogue ? '对话' : '普通'} TTS 合成: ${voice}`);
     console.log(`文本内容: ${text.substring(0, 100)}...`);
-    
+
     // 启用对话合成功能
     const forceNormalTTS = false;
     const actualIsDialogue = isDialogue && !forceNormalTTS;
@@ -71,13 +82,13 @@ export async function POST(req: NextRequest) {
           text,
           lang,
           speakingRate,
-          pitch
+          pitch,
         });
         audioBuffer = dialogueResult.audio;
         result = {
           dialogue_count: dialogueResult.dialogueCount,
           speakers: dialogueResult.speakers,
-          is_dialogue: true
+          is_dialogue: true,
         };
       } else {
         // 普通格式使用 Gemini 单句合成
@@ -86,7 +97,7 @@ export async function POST(req: NextRequest) {
           lang,
           voiceName: voice,
           speakingRate,
-          pitch
+          pitch,
         });
       }
     } else if (provider === 'xunfei') {
@@ -98,13 +109,13 @@ export async function POST(req: NextRequest) {
           text,
           lang,
           speakingRate,
-          pitch
+          pitch,
         });
         audioBuffer = dialogueResult.audio;
         result = {
           dialogue_count: dialogueResult.dialogueCount,
           speakers: dialogueResult.speakers,
-          is_dialogue: true
+          is_dialogue: true,
         };
       } else {
         // 普通格式使用科大讯飞单句合成
@@ -113,7 +124,7 @@ export async function POST(req: NextRequest) {
           lang,
           voiceName: voice,
           speakingRate,
-          pitch
+          pitch,
         });
       }
     } else {
@@ -125,21 +136,21 @@ export async function POST(req: NextRequest) {
           text,
           lang,
           speakingRate,
-          pitch
+          pitch,
         });
         audioBuffer = dialogueResult.audio;
         result = {
           dialogue_count: dialogueResult.dialogueCount,
           speakers: dialogueResult.speakers,
-          is_dialogue: true
+          is_dialogue: true,
         };
       } else {
         // 普通格式使用 Google 单句合成
-        audioBuffer = await synthesizeTTS({ 
-          text, 
-          lang, 
-          voiceName: voice, 
-          speakingRate 
+        audioBuffer = await synthesizeTTS({
+          text,
+          lang,
+          voiceName: voice,
+          speakingRate,
         });
       }
     }
@@ -148,7 +159,7 @@ export async function POST(req: NextRequest) {
     const bucket = process.env.NEXT_PUBLIC_SHADOWING_AUDIO_BUCKET || 'tts';
     const timestamp = Date.now();
     const safeLang = String(lang).toLowerCase();
-    
+
     // 所有提供商都使用MP3格式
     const fileExtension = 'mp3';
     const contentType = 'audio/mpeg';
@@ -156,7 +167,7 @@ export async function POST(req: NextRequest) {
 
     const uploadResult = await uploadAudioFile(bucket, filePath, audioBuffer, {
       contentType,
-      upsert: false
+      upsert: false,
     });
     if (!uploadResult.success) {
       return NextResponse.json({ error: `上传失败: ${uploadResult.error}` }, { status: 500 });
@@ -174,12 +185,16 @@ export async function POST(req: NextRequest) {
       direct_url: uploadResult.url,
       provider,
       voice,
-      ...result
+      ...result,
     });
-
   } catch (error: unknown) {
-    console.error("统一TTS合成失败:", error);
-    const message = error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error);
-    return NextResponse.json({ error: message || "服务器错误" }, { status: 500 });
+    console.error('统一TTS合成失败:', error);
+    const message =
+      error instanceof Error
+        ? error instanceof Error
+          ? error.message
+          : String(error)
+        : String(error);
+    return NextResponse.json({ error: message || '服务器错误' }, { status: 500 });
   }
 }

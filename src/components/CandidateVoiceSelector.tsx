@@ -1,12 +1,18 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Volume2, Play, Pause, CheckCircle, Settings } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Volume2, Play, Pause, CheckCircle, Settings } from 'lucide-react';
 
 interface Voice {
   id: string;
@@ -37,16 +43,16 @@ interface CandidateVoiceSelectorProps {
   showLanguageSelector?: boolean; // 新增：是否显示语言选择器
 }
 
-export default function CandidateVoiceSelector({ 
-  language, 
-  onCandidateVoicesSet, 
+export default function CandidateVoiceSelector({
+  language,
+  onCandidateVoicesSet,
   maxCandidates = 999, // 默认不限制数量
-  showLanguageSelector = false // 默认不显示语言选择器
+  showLanguageSelector = false, // 默认不显示语言选择器
 }: CandidateVoiceSelectorProps) {
   const [voices, setVoices] = useState<Voice[]>([]);
   const [candidateVoices, setCandidateVoices] = useState<Set<string>>(new Set());
   const [selectedLanguage, setSelectedLanguage] = useState<string>(language);
-  const [selectedPriceRange, setSelectedPriceRange] = useState<string>("all");
+  const [selectedPriceRange, setSelectedPriceRange] = useState<string>('all');
 
   // 从本地存储加载备选音色
   useEffect(() => {
@@ -56,7 +62,7 @@ export default function CandidateVoiceSelector({
         const candidateNames = JSON.parse(savedCandidates);
         setCandidateVoices(new Set(candidateNames));
         // 通知父组件
-        const candidateVoiceObjects = voices.filter(v => candidateNames.includes(v.name));
+        const candidateVoiceObjects = voices.filter((v) => candidateNames.includes(v.name));
         onCandidateVoicesSet(candidateVoiceObjects);
       } catch (error) {
         console.error('加载备选音色失败:', error);
@@ -67,7 +73,10 @@ export default function CandidateVoiceSelector({
   // 保存备选音色到本地存储
   useEffect(() => {
     if (candidateVoices.size > 0) {
-      localStorage.setItem(`candidateVoices_${language}`, JSON.stringify(Array.from(candidateVoices)));
+      localStorage.setItem(
+        `candidateVoices_${language}`,
+        JSON.stringify(Array.from(candidateVoices)),
+      );
     } else {
       localStorage.removeItem(`candidateVoices_${language}`);
     }
@@ -82,9 +91,9 @@ export default function CandidateVoiceSelector({
       try {
         setLoading(true);
         const currentLang = showLanguageSelector ? selectedLanguage : language;
-        
+
         let allVoices: Voice[] = [];
-        
+
         if (currentLang === 'all') {
           // 获取所有语言的音色
           const languages = ['zh', 'ja', 'en'];
@@ -93,29 +102,29 @@ export default function CandidateVoiceSelector({
             const data = await response.json();
             return data.success ? data.voices || [] : [];
           });
-          
+
           const results = await Promise.all(promises);
           allVoices = results.flat();
         } else {
           // 获取特定语言的音色
           const response = await fetch(`/api/admin/shadowing/voices-db?lang=${currentLang}`);
           const data = await response.json();
-          
+
           if (data.success) {
             allVoices = data.voices || [];
           }
         }
-        
+
         // 优先显示完整名称的音色，按名称排序
         const sortedVoices = allVoices.sort((a, b) => {
           const aIsFullName = a.name.includes('-') && a.name.split('-').length >= 3;
           const bIsFullName = b.name.includes('-') && b.name.split('-').length >= 3;
-          
+
           if (aIsFullName && !bIsFullName) return -1;
           if (!aIsFullName && bIsFullName) return 1;
           return a.name.localeCompare(b.name);
         });
-        
+
         setVoices(sortedVoices);
       } catch (error) {
         console.error('获取音色失败:', error);
@@ -129,9 +138,9 @@ export default function CandidateVoiceSelector({
 
   // 备选音色选择处理
   const handleCandidateSelect = (voiceName: string) => {
-    setCandidateVoices(prev => {
+    setCandidateVoices((prev) => {
       const newCandidates = new Set(prev);
-      
+
       if (newCandidates.has(voiceName)) {
         newCandidates.delete(voiceName);
       } else {
@@ -141,14 +150,14 @@ export default function CandidateVoiceSelector({
         }
         newCandidates.add(voiceName);
       }
-      
+
       return newCandidates;
     });
   };
 
   // 使用useEffect来通知父组件，避免在渲染过程中调用
   useEffect(() => {
-    const candidateVoiceObjects = voices.filter(v => candidateVoices.has(v.name));
+    const candidateVoiceObjects = voices.filter((v) => candidateVoices.has(v.name));
     onCandidateVoicesSet(candidateVoiceObjects);
   }, [candidateVoices, voices, onCandidateVoicesSet]);
 
@@ -160,11 +169,11 @@ export default function CandidateVoiceSelector({
         audioElement.pause();
         audioElement.currentTime = 0;
       }
-      
+
       setPreviewingVoice(voiceName);
-      
+
       console.log('试听音色:', { voiceName, languageCode });
-      
+
       const response = await fetch('/api/admin/shadowing/preview-voice-cached', {
         method: 'POST',
         headers: {
@@ -172,17 +181,17 @@ export default function CandidateVoiceSelector({
         },
         body: JSON.stringify({
           voiceName,
-          languageCode
+          languageCode,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('试听失败');
       }
-      
+
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
-      
+
       const newAudioElement = new Audio(audioUrl);
       newAudioElement.onended = () => {
         setPreviewingVoice(null);
@@ -192,10 +201,9 @@ export default function CandidateVoiceSelector({
         setPreviewingVoice(null);
         URL.revokeObjectURL(audioUrl);
       };
-      
+
       setAudioElement(newAudioElement);
       await newAudioElement.play();
-      
     } catch (error) {
       console.error('试听失败:', error);
       setPreviewingVoice(null);
@@ -223,72 +231,74 @@ export default function CandidateVoiceSelector({
     if (voiceName.includes('-') && voiceName.split('-').length >= 3) {
       return voiceName;
     }
-    
+
     // 简化名称映射到完整的Google Cloud TTS音色名称
     const simplifiedToFull: Record<string, string> = {
       // Chirp3-HD 音色
-      'Achernar': 'en-US-Chirp3-HD-Achernar',
-      'Achird': 'en-US-Chirp3-HD-Achird', 
-      'Algenib': 'en-US-Chirp3-HD-Algenib',
-      'Algieba': 'en-US-Chirp3-HD-Algieba',
-      'Alnilam': 'en-US-Chirp3-HD-Alnilam',
-      'Aoede': 'en-US-Chirp3-HD-Aoede',
-      'Autonoe': 'en-US-Chirp3-HD-Autonoe',
-      'Callirrhoe': 'en-US-Chirp3-HD-Callirrhoe',
-      'Charon': 'en-US-Chirp3-HD-Charon',
-      'Despina': 'en-US-Chirp3-HD-Despina',
-      'Enceladus': 'en-US-Chirp3-HD-Enceladus',
-      'Erinome': 'en-US-Chirp3-HD-Erinome',
-      'Fenrir': 'en-US-Chirp3-HD-Fenrir',
-      'Gacrux': 'en-US-Chirp3-HD-Gacrux',
-      'Iapetus': 'en-US-Chirp3-HD-Iapetus',
-      'Laomedeia': 'en-US-Chirp3-HD-Laomedeia',
-      'Leda': 'en-US-Chirp3-HD-Leda',
-      'Pulcherrima': 'en-US-Chirp3-HD-Pulcherrima',
-      'Rasalgethi': 'en-US-Chirp3-HD-Rasalgethi',
-      'Sadachbia': 'en-US-Chirp3-HD-Sadachbia',
-      'Sadaltager': 'en-US-Chirp3-HD-Sadaltager',
-      'Schedar': 'en-US-Chirp3-HD-Schedar',
-      'Sulafat': 'en-US-Chirp3-HD-Sulafat',
-      'Umbriel': 'en-US-Chirp3-HD-Umbriel',
-      'Vindemiatrix': 'en-US-Chirp3-HD-Vindemiatrix',
-      'Zephyr': 'en-US-Chirp3-HD-Zephyr',
-      'Zubenelgenubi': 'en-US-Chirp3-HD-Zubenelgenubi',
-      
+      Achernar: 'en-US-Chirp3-HD-Achernar',
+      Achird: 'en-US-Chirp3-HD-Achird',
+      Algenib: 'en-US-Chirp3-HD-Algenib',
+      Algieba: 'en-US-Chirp3-HD-Algieba',
+      Alnilam: 'en-US-Chirp3-HD-Alnilam',
+      Aoede: 'en-US-Chirp3-HD-Aoede',
+      Autonoe: 'en-US-Chirp3-HD-Autonoe',
+      Callirrhoe: 'en-US-Chirp3-HD-Callirrhoe',
+      Charon: 'en-US-Chirp3-HD-Charon',
+      Despina: 'en-US-Chirp3-HD-Despina',
+      Enceladus: 'en-US-Chirp3-HD-Enceladus',
+      Erinome: 'en-US-Chirp3-HD-Erinome',
+      Fenrir: 'en-US-Chirp3-HD-Fenrir',
+      Gacrux: 'en-US-Chirp3-HD-Gacrux',
+      Iapetus: 'en-US-Chirp3-HD-Iapetus',
+      Laomedeia: 'en-US-Chirp3-HD-Laomedeia',
+      Leda: 'en-US-Chirp3-HD-Leda',
+      Pulcherrima: 'en-US-Chirp3-HD-Pulcherrima',
+      Rasalgethi: 'en-US-Chirp3-HD-Rasalgethi',
+      Sadachbia: 'en-US-Chirp3-HD-Sadachbia',
+      Sadaltager: 'en-US-Chirp3-HD-Sadaltager',
+      Schedar: 'en-US-Chirp3-HD-Schedar',
+      Sulafat: 'en-US-Chirp3-HD-Sulafat',
+      Umbriel: 'en-US-Chirp3-HD-Umbriel',
+      Vindemiatrix: 'en-US-Chirp3-HD-Vindemiatrix',
+      Zephyr: 'en-US-Chirp3-HD-Zephyr',
+      Zubenelgenubi: 'en-US-Chirp3-HD-Zubenelgenubi',
+
       // 其他音色
-      'Orus': 'en-US-Chirp3-HD-Orus',
-      'Puck': 'en-US-Chirp3-HD-Puck',
-      'Kore': 'en-US-Chirp3-HD-Kore',
+      Orus: 'en-US-Chirp3-HD-Orus',
+      Puck: 'en-US-Chirp3-HD-Puck',
+      Kore: 'en-US-Chirp3-HD-Kore',
     };
-    
+
     return simplifiedToFull[voiceName] || voiceName;
   };
 
   // 根据价格范围筛选音色，并统一显示完整名称
-  const filteredVoices = voices.filter(voice => {
-    if (selectedPriceRange !== "all") {
-      const price = voice.pricing?.pricePerMillionChars || 0;
-      switch (selectedPriceRange) {
-        case "free":
-          return price === 0;
-        case "low":
-          return price > 0 && price <= 5;
-        case "medium":
-          return price > 5 && price <= 10;
-        case "high":
-          return price > 10 && price <= 20;
-        case "premium":
-          return price > 20;
-        default:
-          return true;
+  const filteredVoices = voices
+    .filter((voice) => {
+      if (selectedPriceRange !== 'all') {
+        const price = voice.pricing?.pricePerMillionChars || 0;
+        switch (selectedPriceRange) {
+          case 'free':
+            return price === 0;
+          case 'low':
+            return price > 0 && price <= 5;
+          case 'medium':
+            return price > 5 && price <= 10;
+          case 'high':
+            return price > 10 && price <= 20;
+          case 'premium':
+            return price > 20;
+          default:
+            return true;
+        }
       }
-    }
-    return true;
-  }).map(voice => ({
-    ...voice,
-    display_name: mapToFullVoiceName(voice.name), // 统一使用完整名称作为显示名称
-    name: mapToFullVoiceName(voice.name) // 同时更新实际名称
-  }));
+      return true;
+    })
+    .map((voice) => ({
+      ...voice,
+      display_name: mapToFullVoiceName(voice.name), // 统一使用完整名称作为显示名称
+      name: mapToFullVoiceName(voice.name), // 同时更新实际名称
+    }));
 
   if (loading) {
     return (
@@ -324,29 +334,19 @@ export default function CandidateVoiceSelector({
           )}
         </CardTitle>
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600">
-            从备选音色中随机选择，A=男声，B=女声，C+=随机
-          </p>
+          <p className="text-sm text-gray-600">从备选音色中随机选择，A=男声，B=女声，C+=随机</p>
           <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              总音色: {voices.length}
-            </Badge>
-            {selectedPriceRange !== "all" && (
-              <Badge variant="secondary">
-                筛选后: {filteredVoices.length}
-              </Badge>
+            <Badge variant="outline">总音色: {voices.length}</Badge>
+            {selectedPriceRange !== 'all' && (
+              <Badge variant="secondary">筛选后: {filteredVoices.length}</Badge>
             )}
-            <Badge variant="default">
-              已选择: {candidateVoices.size}
-            </Badge>
+            <Badge variant="default">已选择: {candidateVoices.size}</Badge>
           </div>
         </div>
         <div className="mt-4 space-y-4">
           {showLanguageSelector && (
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                选择语言音色
-              </label>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">选择语言音色</label>
               <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                 <SelectTrigger className="w-48">
                   <SelectValue />
@@ -360,12 +360,10 @@ export default function CandidateVoiceSelector({
               </Select>
             </div>
           )}
-          
+
           {/* 价格筛选 */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              价格范围筛选
-            </label>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">价格范围筛选</label>
             <Select value={selectedPriceRange} onValueChange={setSelectedPriceRange}>
               <SelectTrigger className="w-48">
                 <SelectValue />
@@ -380,18 +378,16 @@ export default function CandidateVoiceSelector({
               </SelectContent>
             </Select>
           </div>
-          
+
           {/* 批量选择按钮 */}
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              批量选择
-            </label>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">批量选择</label>
             <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  const allVoiceNames = filteredVoices.map(v => v.name);
+                  const allVoiceNames = filteredVoices.map((v) => v.name);
                   setCandidateVoices(new Set(allVoiceNames));
                 }}
                 className="text-xs"
@@ -402,7 +398,9 @@ export default function CandidateVoiceSelector({
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  const maleVoices = filteredVoices.filter(v => v.ssml_gender === 'MALE').map(v => v.name);
+                  const maleVoices = filteredVoices
+                    .filter((v) => v.ssml_gender === 'MALE')
+                    .map((v) => v.name);
                   setCandidateVoices(new Set(maleVoices));
                 }}
                 className="text-xs"
@@ -413,19 +411,16 @@ export default function CandidateVoiceSelector({
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  const femaleVoices = filteredVoices.filter(v => v.ssml_gender === 'FEMALE').map(v => v.name);
+                  const femaleVoices = filteredVoices
+                    .filter((v) => v.ssml_gender === 'FEMALE')
+                    .map((v) => v.name);
                   setCandidateVoices(new Set(femaleVoices));
                 }}
                 className="text-xs"
               >
                 全选女声
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={clearAllCandidates}
-                className="text-xs"
-              >
+              <Button size="sm" variant="outline" onClick={clearAllCandidates} className="text-xs">
                 清除全部
               </Button>
             </div>
@@ -439,7 +434,8 @@ export default function CandidateVoiceSelector({
             <div className="p-3 bg-green-50 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-medium text-green-800">
-                  备选音色 ({candidateVoices.size}{maxCandidates < 999 ? `/${maxCandidates}` : ''})
+                  备选音色 ({candidateVoices.size}
+                  {maxCandidates < 999 ? `/${maxCandidates}` : ''})
                 </h4>
                 <Button
                   size="sm"
@@ -452,9 +448,13 @@ export default function CandidateVoiceSelector({
               </div>
               <div className="flex flex-wrap gap-2">
                 {voices
-                  .filter(v => candidateVoices.has(v.name))
-                  .map(voice => (
-                    <Badge key={voice.name} variant="secondary" className="bg-green-100 text-green-800">
+                  .filter((v) => candidateVoices.has(v.name))
+                  .map((voice) => (
+                    <Badge
+                      key={voice.name}
+                      variant="secondary"
+                      className="bg-green-100 text-green-800"
+                    >
                       {mapToFullVoiceName(voice.name)}
                     </Badge>
                   ))}
@@ -467,7 +467,7 @@ export default function CandidateVoiceSelector({
             {filteredVoices.map((voice) => {
               const isCandidate = candidateVoices.has(voice.name);
               const isPreviewing = previewingVoice === voice.name;
-              
+
               return (
                 <div
                   key={voice.name}
@@ -478,15 +478,13 @@ export default function CandidateVoiceSelector({
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <Checkbox 
+                      <Checkbox
                         checked={isCandidate}
                         onChange={() => handleCandidateSelect(voice.name)}
                         className="mt-1"
                       />
                       <div className="flex-1">
-                        <h4 className="font-medium text-sm truncate">
-                          {voice.display_name}
-                        </h4>
+                        <h4 className="font-medium text-sm truncate">{voice.display_name}</h4>
                         <div className="flex items-center gap-1 text-xs text-gray-500">
                           <span>{voice.language_code}</span>
                           <span>•</span>
@@ -494,111 +492,139 @@ export default function CandidateVoiceSelector({
                           {voice.provider && (
                             <>
                               <span>•</span>
-                              <span className={`px-1 py-0.5 rounded text-xs ${
-                                voice.provider === 'gemini' 
-                                  ? 'bg-purple-100 text-purple-700' 
+                              <span
+                                className={`px-1 py-0.5 rounded text-xs ${
+                                  voice.provider === 'gemini'
+                                    ? 'bg-purple-100 text-purple-700'
+                                    : voice.provider === 'xunfei'
+                                      ? 'bg-orange-100 text-orange-700'
+                                      : 'bg-blue-100 text-blue-700'
+                                }`}
+                              >
+                                {voice.provider === 'gemini'
+                                  ? 'Gemini'
                                   : voice.provider === 'xunfei'
-                                  ? 'bg-orange-100 text-orange-700'
-                                  : 'bg-blue-100 text-blue-700'
-                              }`}>
-                                {voice.provider === 'gemini' ? 'Gemini' : 
-                                 voice.provider === 'xunfei' ? '科大讯飞' : 'Google'}
+                                    ? '科大讯飞'
+                                    : 'Google'}
                               </span>
                             </>
                           )}
                         </div>
                       </div>
                     </div>
-                    
+
                     {isCandidate && (
                       <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
                     )}
                   </div>
-                  
+
                   {/* 使用场景标签 */}
                   <div className="mb-2 flex flex-wrap gap-1">
                     {/* 新闻播报标签 */}
-                    {(voice.name.includes('profnews') || 
-                      voice.name.includes('xiaoguo') || 
+                    {(voice.name.includes('profnews') ||
+                      voice.name.includes('xiaoguo') ||
                       voice.name.includes('pengfei') ||
                       voice.display_name?.includes('新闻播报')) && (
-                      <Badge variant="secondary" className="text-xs bg-red-100 text-red-700 border-red-200">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-red-100 text-red-700 border-red-200"
+                      >
                         📰 新闻播报
                       </Badge>
                     )}
-                    
+
                     {/* 对话标签 */}
-                    {(voice.name.includes('talk') || 
-                      voice.display_name?.includes('对话')) && (
-                      <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 border-purple-200">
+                    {(voice.name.includes('talk') || voice.display_name?.includes('对话')) && (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-purple-100 text-purple-700 border-purple-200"
+                      >
                         💬 对话
                       </Badge>
                     )}
-                    
+
                     {/* 情感标签 */}
-                    {(voice.name.includes('em') || 
+                    {(voice.name.includes('em') ||
                       voice.name.includes('emo') ||
                       voice.display_name?.includes('情感')) && (
-                      <Badge variant="secondary" className="text-xs bg-pink-100 text-pink-700 border-pink-200">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-pink-100 text-pink-700 border-pink-200"
+                      >
                         😊 情感
                       </Badge>
                     )}
-                    
+
                     {/* 闲聊标签 */}
-                    {(voice.name.includes('chat') || 
-                      voice.display_name?.includes('闲聊')) && (
-                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+                    {(voice.name.includes('chat') || voice.display_name?.includes('闲聊')) && (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-green-100 text-green-700 border-green-200"
+                      >
                         💭 闲聊
                       </Badge>
                     )}
-                    
+
                     {/* 角色标签 */}
-                    {(voice.name.includes('boy') || 
+                    {(voice.name.includes('boy') ||
                       voice.display_name?.includes('小男孩') ||
                       voice.display_name?.includes('老人')) && (
-                      <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-700 border-yellow-200">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-yellow-100 text-yellow-700 border-yellow-200"
+                      >
                         🎭 角色
                       </Badge>
                     )}
-                    
+
                     {/* 高质量标签 */}
-                    {(voice.name.includes('Chirp3-HD') || 
+                    {(voice.name.includes('Chirp3-HD') ||
                       voice.display_name?.includes('Chirp3-HD')) && (
-                      <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-blue-100 text-blue-700 border-blue-200"
+                      >
                         ⭐ 高质量
                       </Badge>
                     )}
-                    
+
                     {/* 基础标签 */}
-                    {(voice.name.includes('Standard') || 
+                    {(voice.name.includes('Standard') ||
                       voice.display_name?.includes('Standard')) && (
-                      <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-700 border-gray-200">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-gray-100 text-gray-700 border-gray-200"
+                      >
                         💰 经济型
                       </Badge>
                     )}
-                    
+
                     {/* 通用useCase标签 */}
-                    {voice.useCase && !voice.name.includes('profnews') && 
-                     !voice.name.includes('xiaoguo') && 
-                     !voice.name.includes('pengfei') &&
-                     !voice.name.includes('talk') &&
-                     !voice.name.includes('em') &&
-                     !voice.name.includes('chat') &&
-                     !voice.name.includes('boy') &&
-                     !voice.name.includes('Chirp3-HD') &&
-                     !voice.name.includes('Standard') && (
-                      <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                        {voice.useCase}
-                      </Badge>
-                    )}
+                    {voice.useCase &&
+                      !voice.name.includes('profnews') &&
+                      !voice.name.includes('xiaoguo') &&
+                      !voice.name.includes('pengfei') &&
+                      !voice.name.includes('talk') &&
+                      !voice.name.includes('em') &&
+                      !voice.name.includes('chat') &&
+                      !voice.name.includes('boy') &&
+                      !voice.name.includes('Chirp3-HD') &&
+                      !voice.name.includes('Standard') && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                        >
+                          {voice.useCase}
+                        </Badge>
+                      )}
                   </div>
-                  
+
                   {/* 价格信息 */}
                   <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
                     <span>${voice.pricing.pricePerMillionChars}/M 字符</span>
                     <span>示例: ${voice.pricing.examplePrice}/1K字符</span>
                   </div>
-                  
+
                   {/* 试听按钮 */}
                   <Button
                     size="sm"
@@ -629,7 +655,7 @@ export default function CandidateVoiceSelector({
               );
             })}
           </div>
-          
+
           {filteredVoices.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <Volume2 className="h-12 w-12 mx-auto mb-2 opacity-50" />

@@ -44,13 +44,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       deleted_subtopics: subtopicCount,
-      message: `Successfully deleted theme and ${subtopicCount} subtopics`
+      message: `Successfully deleted theme and ${subtopicCount} subtopics`,
     });
-
   } catch (error) {
     console.error('Theme deletion error:', error);
-    return NextResponse.json({
-      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Deletion failed'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : 'Deletion failed',
+      },
+      { status: 500 },
+    );
   }
 }

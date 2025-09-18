@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
 export async function GET() {
-  return NextResponse.json({ 
+  return NextResponse.json({
     success: true,
-    message: "Migration endpoint deprecated - migrations already run in Supabase console"
+    message: 'Migration endpoint deprecated - migrations already run in Supabase console',
   });
 }

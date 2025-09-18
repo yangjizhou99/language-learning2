@@ -1,10 +1,10 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
   trailingSlash: false,
-  
+
   // 图片优化配置
   images: {
     remotePatterns: [
@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30天
   },
-  
+
   // 支持多域名CORS + 缓存头优化
   async headers() {
     return [

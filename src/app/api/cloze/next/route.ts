@@ -7,7 +7,12 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { CacheManager } from '@/lib/cache';
-import { getUserPermissions, checkLevelPermission, checkLanguagePermission, checkAccessPermission } from '@/lib/user-permissions-server';
+import {
+  getUserPermissions,
+  checkLevelPermission,
+  checkLanguagePermission,
+  checkAccessPermission,
+} from '@/lib/user-permissions-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -17,7 +22,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const lang = searchParams.get('lang');
     const level = searchParams.get('level');
-    
+
     if (!lang || !level || !['en', 'ja', 'zh'].includes(lang)) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     }
@@ -34,21 +39,25 @@ export async function GET(req: NextRequest) {
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: authHeader } }
+        global: { headers: { Authorization: authHeader } },
       });
     } else {
       const cookieStore = await cookies();
       supabase = createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
           set() {},
           remove() {},
-        }
+        },
       });
     }
 
     // 先确认用户身份（RLS 需要已认证角色）
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -76,8 +85,8 @@ export async function GET(req: NextRequest) {
     }
 
     // 生成缓存键
-    const cacheKey = CacheManager.generateKey("cloze:next", { lang, level: levelNum });
-    
+    const cacheKey = CacheManager.generateKey('cloze:next', { lang, level: levelNum });
+
     // 尝试从缓存获取
     const cached = await CacheManager.get(cacheKey);
     if (cached) {
@@ -88,18 +97,18 @@ export async function GET(req: NextRequest) {
         return new Response(null, {
           status: 304,
           headers: {
-            'ETag': etag,
-            'Cache-Control': 'public, s-maxage=300, max-age=60'
-          }
+            ETag: etag,
+            'Cache-Control': 'public, s-maxage=300, max-age=60',
+          },
         });
       }
       return new NextResponse(body, {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'ETag': etag,
-          'Cache-Control': 'public, s-maxage=300, max-age=60'
-        }
+          ETag: etag,
+          'Cache-Control': 'public, s-maxage=300, max-age=60',
+        },
       });
     }
 
@@ -113,7 +122,9 @@ export async function GET(req: NextRequest) {
         .eq('level', levelNum);
 
       if (error) {
-        throw new Error(`Failed to get item: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(
+          `Failed to get item: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
 
       if (!items || items.length === 0) {
@@ -135,7 +146,7 @@ export async function GET(req: NextRequest) {
 
     // 兼容缺失 id 的 blanks（从 placeholder 提取或按顺序补齐）
     const blanksRaw = Array.isArray(item.blanks) ? item.blanks : [];
-    
+
     const blanks = blanksRaw
       .map((blank: any, idx: number) => {
         let id: number | null = null;
@@ -145,16 +156,24 @@ export async function GET(req: NextRequest) {
           if (m) id = Number(m[1]);
         }
         if (id === null) id = idx + 1;
-        
+
         // 尝试多种可能的字段名
-        const answer = blank?.answer || blank?.correct_answer || blank?.text || blank?.value || blank?.content || blank?.reference || '';
-        const explanation = blank?.explanation || blank?.hint || blank?.reason || blank?.description || '';
-        
+        const answer =
+          blank?.answer ||
+          blank?.correct_answer ||
+          blank?.text ||
+          blank?.value ||
+          blank?.content ||
+          blank?.reference ||
+          '';
+        const explanation =
+          blank?.explanation || blank?.hint || blank?.reason || blank?.description || '';
+
         return {
           id,
           type: blank?.type || 'mixed',
           answer,
-          explanation
+          explanation,
         };
       })
       .sort((a: any, b: any) => a.id - b.id);
@@ -168,8 +187,8 @@ export async function GET(req: NextRequest) {
         topic: item.topic,
         title: item.title,
         passage: item.passage,
-        blanks
-      }
+        blanks,
+      },
     });
 
     const etag2 = '"' + crypto.createHash('sha1').update(responseBody).digest('hex') + '"';
@@ -178,9 +197,9 @@ export async function GET(req: NextRequest) {
       return new Response(null, {
         status: 304,
         headers: {
-          'ETag': etag2,
-          'Cache-Control': 'public, s-maxage=300, max-age=60'
-        }
+          ETag: etag2,
+          'Cache-Control': 'public, s-maxage=300, max-age=60',
+        },
       });
     }
 
@@ -188,15 +207,22 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'ETag': etag2,
-        'Cache-Control': 'public, s-maxage=300, max-age=60'
-      }
+        ETag: etag2,
+        'Cache-Control': 'public, s-maxage=300, max-age=60',
+      },
     });
-
   } catch (error) {
     console.error('Get cloze item error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Internal server error' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : 'Internal server error',
+      },
+      { status: 500 },
+    );
   }
 }

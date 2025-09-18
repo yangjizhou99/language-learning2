@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Volume2, Play, Pause, CheckCircle } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Volume2, Play, Pause, CheckCircle } from 'lucide-react';
 
 interface Voice {
   id: string;
@@ -35,10 +35,10 @@ interface VoiceSelectionPanelProps {
   maxSelections?: number;
 }
 
-export default function VoiceSelectionPanel({ 
-  language, 
-  onVoicesSelected, 
-  maxSelections = 3 
+export default function VoiceSelectionPanel({
+  language,
+  onVoicesSelected,
+  maxSelections = 3,
 }: VoiceSelectionPanelProps) {
   const [voices, setVoices] = useState<Voice[]>([]);
   const [selectedVoices, setSelectedVoices] = useState<Set<string>>(new Set());
@@ -53,7 +53,7 @@ export default function VoiceSelectionPanel({
         setLoading(true);
         const response = await fetch(`/api/admin/shadowing/voices-db?lang=${language}`);
         const data = await response.json();
-        
+
         if (data.success) {
           setVoices(data.voices || []);
         }
@@ -69,9 +69,9 @@ export default function VoiceSelectionPanel({
 
   // 音色选择处理
   const handleVoiceSelect = (voiceId: string) => {
-    setSelectedVoices(prev => {
+    setSelectedVoices((prev) => {
       const newSelected = new Set(prev);
-      
+
       if (newSelected.has(voiceId)) {
         newSelected.delete(voiceId);
       } else {
@@ -84,11 +84,11 @@ export default function VoiceSelectionPanel({
         }
         newSelected.add(voiceId);
       }
-      
+
       // 通知父组件选中的音色
-      const selectedVoiceObjects = voices.filter(v => newSelected.has(v.id));
+      const selectedVoiceObjects = voices.filter((v) => newSelected.has(v.id));
       onVoicesSelected(selectedVoiceObjects);
-      
+
       return newSelected;
     });
   };
@@ -101,9 +101,9 @@ export default function VoiceSelectionPanel({
         audioElement.pause();
         audioElement.currentTime = 0;
       }
-      
+
       setPreviewingVoice(voiceName);
-      
+
       const response = await fetch('/api/admin/shadowing/preview-voice-cached', {
         method: 'POST',
         headers: {
@@ -111,17 +111,17 @@ export default function VoiceSelectionPanel({
         },
         body: JSON.stringify({
           voiceName,
-          languageCode
+          languageCode,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('试听失败');
       }
-      
+
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
-      
+
       const newAudioElement = new Audio(audioUrl);
       newAudioElement.onended = () => {
         setPreviewingVoice(null);
@@ -131,10 +131,9 @@ export default function VoiceSelectionPanel({
         setPreviewingVoice(null);
         URL.revokeObjectURL(audioUrl);
       };
-      
+
       setAudioElement(newAudioElement);
       await newAudioElement.play();
-      
     } catch (error) {
       console.error('试听失败:', error);
       setPreviewingVoice(null);
@@ -192,8 +191,8 @@ export default function VoiceSelectionPanel({
               </h4>
               <div className="flex flex-wrap gap-2">
                 {voices
-                  .filter(v => selectedVoices.has(v.id))
-                  .map(voice => (
+                  .filter((v) => selectedVoices.has(v.id))
+                  .map((voice) => (
                     <Badge key={voice.id} variant="secondary" className="bg-blue-100 text-blue-800">
                       {voice.display_name || voice.name}
                     </Badge>
@@ -207,7 +206,7 @@ export default function VoiceSelectionPanel({
             {voices.map((voice) => {
               const isSelected = selectedVoices.has(voice.id);
               const isPreviewing = previewingVoice === voice.name;
-              
+
               return (
                 <div
                   key={voice.id}
@@ -218,7 +217,7 @@ export default function VoiceSelectionPanel({
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <Checkbox 
+                      <Checkbox
                         checked={isSelected}
                         onChange={() => handleVoiceSelect(voice.id)}
                         className="mt-1"
@@ -234,11 +233,13 @@ export default function VoiceSelectionPanel({
                           {voice.provider && (
                             <>
                               <span>•</span>
-                              <span className={`px-1 py-0.5 rounded text-xs ${
-                                voice.provider === 'gemini' 
-                                  ? 'bg-purple-100 text-purple-700' 
-                                  : 'bg-blue-100 text-blue-700'
-                              }`}>
+                              <span
+                                className={`px-1 py-0.5 rounded text-xs ${
+                                  voice.provider === 'gemini'
+                                    ? 'bg-purple-100 text-purple-700'
+                                    : 'bg-blue-100 text-blue-700'
+                                }`}
+                              >
                                 {voice.provider === 'gemini' ? 'Gemini' : 'Google'}
                               </span>
                             </>
@@ -246,27 +247,28 @@ export default function VoiceSelectionPanel({
                         </div>
                       </div>
                     </div>
-                    
-                    {isSelected && (
-                      <CheckCircle className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                    )}
+
+                    {isSelected && <CheckCircle className="h-4 w-4 text-blue-600 flex-shrink-0" />}
                   </div>
-                  
+
                   {/* 使用场景 */}
                   {voice.useCase && (
                     <div className="mb-2">
-                      <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                      >
                         {voice.useCase}
                       </Badge>
                     </div>
                   )}
-                  
+
                   {/* 价格信息 */}
                   <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
                     <span>${voice.pricing.pricePerMillionChars}/M 字符</span>
                     <span>示例: ${voice.pricing.examplePrice}/1K字符</span>
                   </div>
-                  
+
                   {/* 试听按钮 */}
                   <Button
                     size="sm"
@@ -297,7 +299,7 @@ export default function VoiceSelectionPanel({
               );
             })}
           </div>
-          
+
           {voices.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <Volume2 className="h-12 w-12 mx-auto mb-2 opacity-50" />

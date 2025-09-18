@@ -5,11 +5,13 @@
 ## 步骤
 
 ### 1. 访问Supabase控制台
+
 1. 打开 [Supabase Dashboard](https://supabase.com/dashboard)
 2. 选择你的项目
 3. 进入 "SQL Editor"
 
 ### 2. 执行SQL迁移
+
 复制以下SQL代码并在SQL Editor中执行：
 
 ```sql
@@ -59,13 +61,14 @@ create trigger update_voices_updated_at
 ```
 
 ### 3. 验证表创建
+
 执行以下查询验证表是否创建成功：
 
 ```sql
 -- 检查表是否存在
-SELECT table_name 
-FROM information_schema.tables 
-WHERE table_schema = 'public' 
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
 AND table_name = 'voices';
 
 -- 检查表结构
@@ -73,6 +76,7 @@ AND table_name = 'voices';
 ```
 
 ### 4. 测试功能
+
 1. 访问 `http://localhost:3001/admin/test-voices`
 2. 点击"同步音色"按钮
 3. 等待同步完成
@@ -86,6 +90,7 @@ AND table_name = 'voices';
 ## 故障排除
 
 ### 权限错误
+
 如果遇到权限错误，可以临时禁用RLS进行测试：
 
 ```sql
@@ -94,6 +99,7 @@ alter table public.voices disable row level security;
 ```
 
 ### 表已存在
+
 如果表已存在，可以先删除：
 
 ```sql

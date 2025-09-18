@@ -1,18 +1,24 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
-import { useTranslation } from "@/contexts/LanguageContext";
-import { User, Save, Loader2 } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { toast } from 'sonner';
+import { useTranslation } from '@/contexts/LanguageContext';
+import { User, Save, Loader2 } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -85,11 +91,14 @@ export default function ProfilePage() {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      
+
       // 获取当前用户
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
       if (userError) throw userError;
-      
+
       setUser(user);
 
       // 获取用户资料
@@ -122,7 +131,7 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -149,20 +158,20 @@ export default function ProfilePage() {
   };
 
   const handleDomainToggle = (domain: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       domains: prev.domains.includes(domain)
-        ? prev.domains.filter(d => d !== domain)
-        : [...prev.domains, domain]
+        ? prev.domains.filter((d) => d !== domain)
+        : [...prev.domains, domain],
     }));
   };
 
   const handleTargetLangToggle = (lang: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       target_langs: prev.target_langs.includes(lang)
-        ? prev.target_langs.filter(l => l !== lang)
-        : [...prev.target_langs, lang]
+        ? prev.target_langs.filter((l) => l !== lang)
+        : [...prev.target_langs, lang],
     }));
   };
 
@@ -197,14 +206,18 @@ export default function ProfilePage() {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(user?.email || '')}`} />
+                  <AvatarImage
+                    src={`https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(user?.email || '')}`}
+                  />
                   <AvatarFallback className="text-lg">
                     {user?.email?.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium">{user?.email}</p>
-                  <p className="text-sm text-muted-foreground">注册时间: {new Date(profile?.created_at || '').toLocaleDateString('zh-CN')}</p>
+                  <p className="text-sm text-muted-foreground">
+                    注册时间: {new Date(profile?.created_at || '').toLocaleDateString('zh-CN')}
+                  </p>
                 </div>
               </div>
 
@@ -214,7 +227,7 @@ export default function ProfilePage() {
                   <Input
                     id="username"
                     value={formData.username}
-                    onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
                     placeholder="输入您的用户名"
                   />
                 </div>
@@ -222,13 +235,15 @@ export default function ProfilePage() {
                   <Label htmlFor="native_lang">母语</Label>
                   <Select
                     value={formData.native_lang}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, native_lang: value }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, native_lang: value }))
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="选择您的母语" />
                     </SelectTrigger>
                     <SelectContent>
-                      {LANGUAGES.map(lang => (
+                      {LANGUAGES.map((lang) => (
                         <SelectItem key={lang.value} value={lang.value}>
                           {lang.label}
                         </SelectItem>
@@ -243,7 +258,7 @@ export default function ProfilePage() {
                 <Textarea
                   id="bio"
                   value={formData.bio}
-                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
                   placeholder="介绍一下自己..."
                   rows={3}
                 />
@@ -254,7 +269,7 @@ export default function ProfilePage() {
                 <Textarea
                   id="goals"
                   value={formData.goals}
-                  onChange={(e) => setFormData(prev => ({ ...prev, goals: e.target.value }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, goals: e.target.value }))}
                   placeholder="描述您的学习目标..."
                   rows={3}
                 />
@@ -271,10 +286,10 @@ export default function ProfilePage() {
               <div>
                 <Label>目标语言</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {LANGUAGES.map(lang => (
+                  {LANGUAGES.map((lang) => (
                     <Badge
                       key={lang.value}
-                      variant={formData.target_langs.includes(lang.value) ? "default" : "outline"}
+                      variant={formData.target_langs.includes(lang.value) ? 'default' : 'outline'}
                       className="cursor-pointer"
                       onClick={() => handleTargetLangToggle(lang.value)}
                     >
@@ -288,13 +303,15 @@ export default function ProfilePage() {
                 <Label htmlFor="preferred_tone">偏好的语调</Label>
                 <Select
                   value={formData.preferred_tone}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, preferred_tone: value }))}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, preferred_tone: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="选择您偏好的语调" />
                   </SelectTrigger>
                   <SelectContent>
-                    {TONE_OPTIONS.map(tone => (
+                    {TONE_OPTIONS.map((tone) => (
                       <SelectItem key={tone.value} value={tone.value}>
                         {tone.label}
                       </SelectItem>
@@ -306,10 +323,10 @@ export default function ProfilePage() {
               <div>
                 <Label>感兴趣的领域</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {DOMAIN_OPTIONS.map(domain => (
+                  {DOMAIN_OPTIONS.map((domain) => (
                     <Badge
                       key={domain.value}
-                      variant={formData.domains.includes(domain.value) ? "default" : "outline"}
+                      variant={formData.domains.includes(domain.value) ? 'default' : 'outline'}
                       className="cursor-pointer"
                       onClick={() => handleDomainToggle(domain.value)}
                     >

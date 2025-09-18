@@ -1,28 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
-import { StreamCopySync, createTableConfigs } from "@/lib/database/stream-copy";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
+import { StreamCopySync, createTableConfigs } from '@/lib/database/stream-copy';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAdmin(req);
     if (!auth.ok) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
     const body = await req.json();
-    const { 
-      sourceConfig, 
-      targetConfig, 
+    const {
+      sourceConfig,
+      targetConfig,
       tables = ['shadowing_items', 'cloze_items', 'alignment_packs'],
-      options = {}
+      options = {},
     } = body;
 
     if (!sourceConfig?.url || !targetConfig?.url) {
-      return NextResponse.json({ 
-        error: "缺少源数据库或目标数据库配置" 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: '缺少源数据库或目标数据库配置',
+        },
+        { status: 400 },
+      );
     }
 
     // 构建数据库连接字符串
@@ -36,7 +39,7 @@ export async function POST(req: NextRequest) {
     const syncConfig = {
       sourceUrl,
       targetUrl,
-      tables: tableConfigs
+      tables: tableConfigs,
     };
 
     // 创建同步实例
@@ -45,11 +48,11 @@ export async function POST(req: NextRequest) {
     try {
       // 执行同步
       const results = await sync.syncAll();
-      
+
       // 计算总体统计
       const totalRows = results.reduce((sum, r) => sum + r.rowsProcessed, 0);
-      const successCount = results.filter(r => r.success).length;
-      const failedCount = results.filter(r => !r.success).length;
+      const successCount = results.filter((r) => r.success).length;
+      const failedCount = results.filter((r) => !r.success).length;
       const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
 
       return NextResponse.json({
@@ -61,20 +64,21 @@ export async function POST(req: NextRequest) {
           successTables: successCount,
           failedTables: failedCount,
           totalRows,
-          totalDuration: `${totalDuration}ms`
-        }
+          totalDuration: `${totalDuration}ms`,
+        },
       });
-
     } finally {
       // 关闭连接池
       await sync.close();
     }
-
   } catch (error) {
     console.error('COPY同步失败:', error);
-    return NextResponse.json({ 
-      error: `COPY同步失败: ${error instanceof Error ? error.message : String(error)}` 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: `COPY同步失败: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -90,14 +94,14 @@ function buildConnectionString(config: {
   ssl?: boolean;
 }): string {
   const { host, port = 5432, database, username, password, ssl = true } = config;
-  
+
   const params = new URLSearchParams({
     host,
     port: port.toString(),
     database,
     user: username,
     password,
-    ssl: ssl.toString()
+    ssl: ssl.toString(),
   });
 
   return `postgresql://${username}:${password}@${host}:${port}/${database}?${params.toString()}`;

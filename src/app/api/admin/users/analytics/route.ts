@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +15,6 @@ export async function GET(req: NextRequest) {
     const analytics = await getUserAnalytics(supabase, period);
 
     return NextResponse.json(analytics);
-
   } catch (error) {
     console.error('获取用户分析失败:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });
@@ -37,7 +36,7 @@ async function getUserAnalytics(supabase: any, period: string) {
     daily_active_users: [] as Array<{ date: string; count: number }>,
     practice_type_distribution: {} as Record<string, number>,
     level_distribution: {} as Record<number, number>,
-    language_distribution: {} as Record<string, number>
+    language_distribution: {} as Record<string, number>,
   };
 
   try {
@@ -74,13 +73,13 @@ async function getUserAnalytics(supabase: any, period: string) {
         supabase
           .from('cloze_attempts')
           .select('user_id')
-          .gte('created_at', sevenDaysAgo.toISOString())
+          .gte('created_at', sevenDaysAgo.toISOString()),
       )
       .union(
         supabase
           .from('alignment_attempts')
           .select('user_id')
-          .gte('created_at', sevenDaysAgo.toISOString())
+          .gte('created_at', sevenDaysAgo.toISOString()),
       );
 
     const uniqueActiveUsers7d = new Set(activeUsers7d?.map((u: any) => u.user_id) || []);
@@ -94,13 +93,13 @@ async function getUserAnalytics(supabase: any, period: string) {
         supabase
           .from('cloze_attempts')
           .select('user_id')
-          .gte('created_at', thirtyDaysAgo.toISOString())
+          .gte('created_at', thirtyDaysAgo.toISOString()),
       )
       .union(
         supabase
           .from('alignment_attempts')
           .select('user_id')
-          .gte('created_at', thirtyDaysAgo.toISOString())
+          .gte('created_at', thirtyDaysAgo.toISOString()),
       );
 
     const uniqueActiveUsers30d = new Set(activeUsers30d?.map((u: any) => u.user_id) || []);
@@ -123,16 +122,12 @@ async function getUserAnalytics(supabase: any, period: string) {
     analytics.practice_type_distribution.alignment = alignmentCount || 0;
 
     // 语言分布
-    const { data: shadowingByLang } = await supabase
-      .from('shadowing_attempts')
-      .select('lang');
+    const { data: shadowingByLang } = await supabase.from('shadowing_attempts').select('lang');
 
-    const { data: clozeByLang } = await supabase
-      .from('cloze_attempts')
-      .select('lang');
+    const { data: clozeByLang } = await supabase.from('cloze_attempts').select('lang');
 
     const langCounts: Record<string, number> = {};
-    [...(shadowingByLang || []), ...(clozeByLang || [])].forEach(attempt => {
+    [...(shadowingByLang || []), ...(clozeByLang || [])].forEach((attempt) => {
       langCounts[attempt.lang] = (langCounts[attempt.lang] || 0) + 1;
     });
 
@@ -143,16 +138,12 @@ async function getUserAnalytics(supabase: any, period: string) {
       .slice(0, 5);
 
     // 等级分布
-    const { data: shadowingByLevel } = await supabase
-      .from('shadowing_attempts')
-      .select('level');
+    const { data: shadowingByLevel } = await supabase.from('shadowing_attempts').select('level');
 
-    const { data: clozeByLevel } = await supabase
-      .from('cloze_attempts')
-      .select('level');
+    const { data: clozeByLevel } = await supabase.from('cloze_attempts').select('level');
 
     const levelCounts: Record<number, number> = {};
-    [...(shadowingByLevel || []), ...(clozeByLevel || [])].forEach(attempt => {
+    [...(shadowingByLevel || []), ...(clozeByLevel || [])].forEach((attempt) => {
       levelCounts[attempt.level] = (levelCounts[attempt.level] || 0) + 1;
     });
 
@@ -178,20 +169,20 @@ async function getUserAnalytics(supabase: any, period: string) {
             .from('cloze_attempts')
             .select('user_id')
             .gte('created_at', date.toISOString())
-            .lt('created_at', nextDate.toISOString())
+            .lt('created_at', nextDate.toISOString()),
         )
         .union(
           supabase
             .from('alignment_attempts')
             .select('user_id')
             .gte('created_at', date.toISOString())
-            .lt('created_at', nextDate.toISOString())
+            .lt('created_at', nextDate.toISOString()),
         );
 
       const uniqueDailyUsers = new Set(dailyUsers?.map((u: any) => u.user_id) || []);
       analytics.daily_active_users.push({
         date: dateStr,
-        count: uniqueDailyUsers.size
+        count: uniqueDailyUsers.size,
       });
     }
 
@@ -199,7 +190,6 @@ async function getUserAnalytics(supabase: any, period: string) {
     if (analytics.new_users_30d > 0) {
       analytics.user_retention_rate = (analytics.active_users_30d / analytics.new_users_30d) * 100;
     }
-
   } catch (error) {
     console.error('计算用户分析数据失败:', error);
   }

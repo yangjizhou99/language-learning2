@@ -9,11 +9,26 @@ export async function POST(req: NextRequest) {
   try {
     const adminResult = await requireAdmin(req);
     if (!adminResult.ok) {
-      return NextResponse.json({ error: adminResult.reason }, { status: adminResult.reason === 'unauthorized' ? 401 : 403 });
+      return NextResponse.json(
+        { error: adminResult.reason },
+        { status: adminResult.reason === 'unauthorized' ? 401 : 403 },
+      );
     }
-    
-    const { id, lang, level, topic = '', title, passage, blanks, status = 'draft', ai_provider, ai_model, ai_usage } = await req.json();
-    
+
+    const {
+      id,
+      lang,
+      level,
+      topic = '',
+      title,
+      passage,
+      blanks,
+      status = 'draft',
+      ai_provider,
+      ai_model,
+      ai_usage,
+    } = await req.json();
+
     if (!title || !passage || !Array.isArray(blanks)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
@@ -40,7 +55,7 @@ export async function POST(req: NextRequest) {
         ai_model,
         ai_usage,
         status,
-        created_by: adminResult.user.id
+        created_by: adminResult.user.id,
       })
       .select()
       .single();
@@ -51,11 +66,18 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, data });
-
   } catch (error) {
     console.error('Save cloze draft error:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Internal server error' 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : 'Internal server error',
+      },
+      { status: 500 },
+    );
   }
 }

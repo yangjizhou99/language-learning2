@@ -1,6 +1,7 @@
 # 手动数据库更新指南
 
 ## 问题
+
 当前代码中使用了`model_permissions`字段，但该字段在数据库中不存在，导致"Cannot read properties of undefined (reading 'map')"错误。
 
 ## 解决方案
@@ -14,7 +15,7 @@
 
 ```sql
 -- 添加model_permissions字段
-ALTER TABLE user_permissions 
+ALTER TABLE user_permissions
 ADD COLUMN IF NOT EXISTS model_permissions JSONB DEFAULT '[]'::jsonb;
 
 -- 为现有用户添加默认模型权限
@@ -74,6 +75,7 @@ node add-model-permissions-direct.js
 ## 临时解决方案
 
 如果暂时无法更新数据库，代码已经修改为：
+
 - 在`model_permissions`为`undefined`时使用空数组`[]`
 - 在权限管理页面中提供默认的模型权限配置
 - 确保所有`map`操作都有安全检查

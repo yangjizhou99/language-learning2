@@ -9,13 +9,15 @@ const fetch = require('node-fetch');
 
 async function quickTest() {
   console.log('🧪 快速批量生成测试\n');
-  
+
   const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:3000';
   const authToken = process.env.TEST_AUTH_TOKEN || '';
-  
+
   if (!authToken) {
     console.error('❌ 请设置 TEST_AUTH_TOKEN 环境变量');
-    console.log('🔑 获取方法: 登录管理后台，打开浏览器开发者工具，在 Network 标签中找到 Authorization header');
+    console.log(
+      '🔑 获取方法: 登录管理后台，打开浏览器开发者工具，在 Network 标签中找到 Authorization header',
+    );
     process.exit(1);
   }
 
@@ -33,8 +35,8 @@ async function quickTest() {
       concurrency: 2,
       batch_size: 2,
       retries: 1,
-      throttle_ms: 50
-    }
+      throttle_ms: 50,
+    },
   };
 
   console.log('📊 测试参数:');
@@ -46,14 +48,14 @@ async function quickTest() {
   try {
     console.log('🚀 开始测试...');
     const startTime = Date.now();
-    
+
     const response = await fetch(`${baseUrl}/api/admin/batch/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
+        Authorization: `Bearer ${authToken}`,
       },
-      body: JSON.stringify(testParams)
+      body: JSON.stringify(testParams),
     });
 
     if (!response.ok) {
@@ -82,14 +84,16 @@ async function quickTest() {
         try {
           const event = JSON.parse(json);
           eventCount++;
-          
+
           if (event.type === 'start') {
             console.log(`✅ 开始处理 ${event.total} 个任务`);
           } else if (event.type === 'progress') {
             console.log(`🔄 处理中 #${event.idx + 1} [L${event.level}] ${event.topic}`);
           } else if (event.type === 'saved') {
             savedCount += event.saved?.count || 1;
-            console.log(`💾 已保存 #${event.idx + 1} → ${event.saved?.table} (${event.saved?.count}条)`);
+            console.log(
+              `💾 已保存 #${event.idx + 1} → ${event.saved?.table} (${event.saved?.count}条)`,
+            );
           } else if (event.type === 'error') {
             console.log(`❌ 错误 #${event.idx + 1}: ${event.message}`);
           } else if (event.type === 'done') {
@@ -111,7 +115,6 @@ async function quickTest() {
     console.log(`   💾 保存数: ${savedCount}`);
     console.log(`   🎯 吞吐量: ${throughput.toFixed(2)} 条/秒`);
     console.log(`   ✅ 测试通过！优化功能正常工作`);
-
   } catch (error) {
     console.error(`❌ 测试失败: ${error.message}`);
     process.exit(1);

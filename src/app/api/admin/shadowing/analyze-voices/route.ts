@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
-import { chatJSON } from "@/lib/ai/client";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
+import { chatJSON } from '@/lib/ai/client';
 
 /**
  * AI音色分析API
@@ -10,22 +10,28 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await requireAdmin(req);
     if (!auth.ok) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
     const body = await req.json();
     const { text, language, candidateVoices } = body;
 
     if (!text || !language || !candidateVoices) {
-      return NextResponse.json({ 
-        error: "缺少必要参数: text, language, candidateVoices" 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: '缺少必要参数: text, language, candidateVoices',
+        },
+        { status: 400 },
+      );
     }
 
     // 构建备选音色信息字符串
-    const voiceInfo = candidateVoices.map((voice: any) => 
-      `- ${voice.name}: ${voice.useCase || '通用场景'}, ${voice.ssml_gender}, ${voice.provider || 'google'}`
-    ).join('\n');
+    const voiceInfo = candidateVoices
+      .map(
+        (voice: any) =>
+          `- ${voice.name}: ${voice.useCase || '通用场景'}, ${voice.ssml_gender}, ${voice.provider || 'google'}`,
+      )
+      .join('\n');
 
     // 构建分析提示词
     const systemPrompt = `你是一个专业的音色分析师。请分析给定的文本内容，从备选音色中选择最合适的1-2种音色。
@@ -64,31 +70,37 @@ ${voiceInfo}
 请从备选音色中选择最合适的1-2种音色。`;
 
     const { content, usage } = await chatJSON({
-      provider: "deepseek",
-      model: "deepseek-chat",
+      provider: 'deepseek',
+      model: 'deepseek-chat',
       temperature: 0.3,
       response_json: true,
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ]
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
     });
 
     let parsed: any;
     try {
       parsed = JSON.parse(content);
     } catch {
-      return NextResponse.json({ 
-        error: "AI分析结果格式错误", 
-        details: content 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'AI分析结果格式错误',
+          details: content,
+        },
+        { status: 400 },
+      );
     }
 
     // 验证分析结果
     if (!parsed.speakers || !Array.isArray(parsed.speakers)) {
-      return NextResponse.json({ 
-        error: "AI分析结果缺少speakers字段" 
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: 'AI分析结果缺少speakers字段',
+        },
+        { status: 400 },
+      );
     }
 
     // 验证选择的音色是否在备选音色列表中
@@ -103,25 +115,32 @@ ${voiceInfo}
     });
 
     // 验证selectedVoices列表
-    const validatedSelectedVoices = (parsed.selectedVoices || []).filter((voiceName: string) => 
-      candidateVoiceNames.includes(voiceName)
+    const validatedSelectedVoices = (parsed.selectedVoices || []).filter((voiceName: string) =>
+      candidateVoiceNames.includes(voiceName),
     );
 
     return NextResponse.json({
       success: true,
       speakers: validatedSpeakers,
       isDialogue: parsed.isDialogue || false,
-      analysis: parsed.analysis || "AI音色分析完成",
+      analysis: parsed.analysis || 'AI音色分析完成',
       selectedVoices: validatedSelectedVoices,
-      usage
+      usage,
     });
-
   } catch (error) {
     console.error('AI音色分析失败:', error);
-    return NextResponse.json({ 
-      success: false,
-      error: 'AI音色分析失败', 
-      details: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'AI音色分析失败',
+        details:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : String(error),
+      },
+      { status: 500 },
+    );
   }
 }

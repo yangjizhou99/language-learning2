@@ -1,22 +1,22 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
-import { getServiceSupabase } from "@/lib/supabaseAdmin";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
+import { getServiceSupabase } from '@/lib/supabaseAdmin';
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAdmin(req);
     if (!auth.ok) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
     const body = await req.json();
     const { ids } = body;
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json({ error: "缺少必要参数" }, { status: 400 });
+      return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
     const db = getServiceSupabase();
@@ -32,11 +32,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (!items || items.length === 0) {
-      return NextResponse.json({ error: "未找到指定的素材" }, { status: 404 });
+      return NextResponse.json({ error: '未找到指定的素材' }, { status: 404 });
     }
 
     // 将素材转换为草稿格式
-    const drafts = items.map(item => ({
+    const drafts = items.map((item) => ({
       lang: item.lang,
       level: item.level,
       title: item.title,
@@ -48,10 +48,10 @@ export async function POST(req: NextRequest) {
         tokens: item.tokens,
         cefr: item.cefr,
         reverted_from_item_id: item.id, // 记录原始素材ID
-        reverted_at: new Date().toISOString()
+        reverted_at: new Date().toISOString(),
       },
       status: 'draft',
-      created_by: null // 系统操作
+      created_by: null, // 系统操作
     }));
 
     // 批量插入草稿
@@ -65,24 +65,28 @@ export async function POST(req: NextRequest) {
     }
 
     // 删除原始素材
-    const { error: deleteError } = await db
-      .from('shadowing_items')
-      .delete()
-      .in('id', ids);
+    const { error: deleteError } = await db.from('shadowing_items').delete().in('id', ids);
 
     if (deleteError) {
-      return NextResponse.json({ error: `删除原始素材失败: ${deleteError.message}` }, { status: 500 });
+      return NextResponse.json(
+        { error: `删除原始素材失败: ${deleteError.message}` },
+        { status: 500 },
+      );
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       reverted_count: insertedDrafts?.length || 0,
-      draft_ids: insertedDrafts?.map(d => d.id) || []
+      draft_ids: insertedDrafts?.map((d) => d.id) || [],
     });
-
   } catch (error: unknown) {
-    console.error("退回草稿失败:", error);
-    const message = error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error);
-    return NextResponse.json({ error: message || "服务器错误" }, { status: 500 });
+    console.error('退回草稿失败:', error);
+    const message =
+      error instanceof Error
+        ? error instanceof Error
+          ? error.message
+          : String(error)
+        : String(error);
+    return NextResponse.json({ error: message || '服务器错误' }, { status: 500 });
   }
 }

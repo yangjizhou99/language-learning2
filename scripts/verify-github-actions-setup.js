@@ -15,11 +15,11 @@ console.log('🔍 验证 GitHub Actions 设置...\n');
 const requiredFiles = [
   '.github/workflows/ci.yml',
   '.github/workflows/deploy-staging.yml',
-  'supabase/config.toml'
+  'supabase/config.toml',
 ];
 
 console.log('📁 检查必要文件:');
-requiredFiles.forEach(file => {
+requiredFiles.forEach((file) => {
   if (fs.existsSync(file)) {
     console.log(`  ✅ ${file}`);
   } else {
@@ -42,13 +42,13 @@ console.log('\n⚙️ 检查 Supabase 配置:');
 try {
   const configPath = path.join(__dirname, '..', 'supabase', 'config.toml');
   const config = fs.readFileSync(configPath, 'utf8');
-  
+
   if (config.includes('project_id = "language-learning2"')) {
     console.log('  ✅ 项目 ID 配置正确');
   } else {
     console.log('  ⚠️ 项目 ID 配置可能不正确');
   }
-  
+
   if (config.includes('enabled = true')) {
     console.log('  ✅ 数据库迁移已启用');
   } else {
@@ -63,10 +63,10 @@ console.log('\n📦 检查迁移文件:');
 try {
   const migrationsPath = path.join(__dirname, '..', 'supabase', 'migrations');
   const migrationFiles = fs.readdirSync(migrationsPath);
-  
+
   if (migrationFiles.length > 0) {
     console.log(`  ✅ 找到 ${migrationFiles.length} 个迁移文件`);
-    migrationFiles.forEach(file => {
+    migrationFiles.forEach((file) => {
       console.log(`    - ${file}`);
     });
   } else {

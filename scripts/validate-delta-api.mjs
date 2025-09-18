@@ -12,7 +12,9 @@ import { createClient } from '@supabase/supabase-js';
 
 // 依次加载本地环境文件（若存在）
 for (const p of ['.env.local', '.env.development.local', '.env.development', '.env']) {
-  try { if (fs.existsSync(p)) dotenv.config({ path: p, override: false }); } catch {}
+  try {
+    if (fs.existsSync(p)) dotenv.config({ path: p, override: false });
+  } catch {}
 }
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
@@ -53,7 +55,9 @@ async function fetchJson(url, token) {
   });
   const text = await res.text();
   let json = null;
-  try { json = JSON.parse(text); } catch {}
+  try {
+    json = JSON.parse(text);
+  } catch {}
   return { ok: res.ok, status: res.status, json, size: Buffer.byteLength(text, 'utf8') };
 }
 
@@ -73,7 +77,9 @@ function maxUpdated(items) {
   return m;
 }
 
-function kb(bytes) { return (bytes / 1024).toFixed(1) + 'KB'; }
+function kb(bytes) {
+  return (bytes / 1024).toFixed(1) + 'KB';
+}
 
 async function testDrafts(token) {
   const status = 'pending';
@@ -81,7 +87,7 @@ async function testDrafts(token) {
   const full = await fetchJson(urlFull, token);
   if (!full.ok) throw new Error(`drafts full 请求失败: HTTP ${full.status}`);
   const fullArr = toArrayResult(full.json);
-  const since = maxUpdated(fullArr) || new Date(Date.now() - 7*24*3600*1000).toISOString();
+  const since = maxUpdated(fullArr) || new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
   const urlDelta = `${BASE_URL}/api/admin/drafts/list?status=${encodeURIComponent(status)}&since=${encodeURIComponent(since)}`;
   const delta = await fetchJson(urlDelta, token);
   if (!delta.ok) throw new Error(`drafts delta 请求失败: HTTP ${delta.status}`);
@@ -89,7 +95,12 @@ async function testDrafts(token) {
   console.log('\n[Drafts]');
   console.log('  full  :', fullArr.length, '|', kb(full.size));
   console.log('  since :', deltaArr.length, '|', kb(delta.size), '| since =', since);
-  return { fullCount: fullArr.length, deltaCount: deltaArr.length, fullSize: full.size, deltaSize: delta.size };
+  return {
+    fullCount: fullArr.length,
+    deltaCount: deltaArr.length,
+    fullSize: full.size,
+    deltaSize: delta.size,
+  };
 }
 
 async function testShadowing(token) {
@@ -99,7 +110,7 @@ async function testShadowing(token) {
   const full = await fetchJson(urlFull, token);
   if (!full.ok) throw new Error(`shadowing full 请求失败: HTTP ${full.status}`);
   const fullArr = toArrayResult(full.json?.items ?? full.json);
-  const since = maxUpdated(fullArr) || new Date(Date.now() - 7*24*3600*1000).toISOString();
+  const since = maxUpdated(fullArr) || new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
   const urlDelta = `${BASE_URL}/api/shadowing/catalog?lang=${lang}&level=${level}&since=${encodeURIComponent(since)}`;
   const delta = await fetchJson(urlDelta, token);
   if (!delta.ok) throw new Error(`shadowing delta 请求失败: HTTP ${delta.status}`);
@@ -107,7 +118,12 @@ async function testShadowing(token) {
   console.log('\n[Shadowing Catalog]');
   console.log('  full  :', fullArr.length, '|', kb(full.size));
   console.log('  since :', deltaArr.length, '|', kb(delta.size), '| since =', since);
-  return { fullCount: fullArr.length, deltaCount: deltaArr.length, fullSize: full.size, deltaSize: delta.size };
+  return {
+    fullCount: fullArr.length,
+    deltaCount: deltaArr.length,
+    fullSize: full.size,
+    deltaSize: delta.size,
+  };
 }
 
 async function main() {
@@ -124,8 +140,12 @@ async function main() {
     console.log('\n=== 结果摘要 ===');
     const ok1 = r1.deltaSize <= r1.fullSize;
     const ok2 = r2.deltaSize <= r2.fullSize;
-    console.log(`Drafts   : delta(${kb(r1.deltaSize)}) <= full(${kb(r1.fullSize)}) -> ${ok1 ? 'PASS' : 'FAIL'}`);
-    console.log(`Shadowing : delta(${kb(r2.deltaSize)}) <= full(${kb(r2.fullSize)}) -> ${ok2 ? 'PASS' : 'FAIL'}`);
+    console.log(
+      `Drafts   : delta(${kb(r1.deltaSize)}) <= full(${kb(r1.fullSize)}) -> ${ok1 ? 'PASS' : 'FAIL'}`,
+    );
+    console.log(
+      `Shadowing : delta(${kb(r2.deltaSize)}) <= full(${kb(r2.fullSize)}) -> ${ok2 ? 'PASS' : 'FAIL'}`,
+    );
     if (!ok1 || !ok2) process.exitCode = 1;
   } catch (e) {
     console.error('验证失败:', e?.message || e);
@@ -134,5 +154,3 @@ async function main() {
 }
 
 main();
-
-

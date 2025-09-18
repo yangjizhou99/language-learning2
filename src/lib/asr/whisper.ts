@@ -1,5 +1,5 @@
 // 轻量封装：自动选择多语种模型，返回文本+时间戳
-import type { AutomaticSpeechRecognitionPipeline } from "@xenova/transformers";
+import type { AutomaticSpeechRecognitionPipeline } from '@xenova/transformers';
 
 export type TranscribeOutput =
   | { text: string; chunks?: { text: string; timestamp: [number, number] }[] }
@@ -16,14 +16,26 @@ export type DownloadProgress = {
   file?: string;
 };
 
-export async function getWhisper(modelId = "Xenova/whisper-tiny", progressCallback?: (info: DownloadProgress) => void): Promise<AutomaticSpeechRecognitionPipeline> {
+export async function getWhisper(
+  modelId = 'Xenova/whisper-tiny',
+  progressCallback?: (info: DownloadProgress) => void,
+): Promise<AutomaticSpeechRecognitionPipeline> {
   if (!pipePromiseMap[modelId]) {
     pipePromiseMap[modelId] = (async (): Promise<AutomaticSpeechRecognitionPipeline> => {
-      const { pipeline } = await import("@xenova/transformers");
+      const { pipeline } = await import('@xenova/transformers');
       const pipe = await pipeline(
-        "automatic-speech-recognition",
+        'automatic-speech-recognition',
         modelId,
-        progressCallback ? { progress_callback: (x: { status?: string; loaded?: number; total?: number; file?: string }) => progressCallback(x) } : undefined
+        progressCallback
+          ? {
+              progress_callback: (x: {
+                status?: string;
+                loaded?: number;
+                total?: number;
+                file?: string;
+              }) => progressCallback(x),
+            }
+          : undefined,
       );
       return pipe as unknown as AutomaticSpeechRecognitionPipeline;
     })();
@@ -31,33 +43,41 @@ export async function getWhisper(modelId = "Xenova/whisper-tiny", progressCallba
   return pipePromiseMap[modelId];
 }
 
-/** 
+/**
  * transcribeBlob: 传入麦克风 Blob，得到转写结果
  * @param blob 录音 blob（webm/mp3）
  * @param lang 'ja'|'en'|'zh'（Whisper会自动检测，但指定更稳）
  */
-export async function transcribeBlob(blob: Blob, lang: string, modelId = "Xenova/whisper-tiny"): Promise<TranscribeOutput> {
+export async function transcribeBlob(
+  blob: Blob,
+  lang: string,
+  modelId = 'Xenova/whisper-tiny',
+): Promise<TranscribeOutput> {
   const pipe = await getWhisper(modelId);
-  const langHint = lang === "zh" ? "zh" : lang; // zh-CN -> zh
+  const langHint = lang === 'zh' ? 'zh' : lang; // zh-CN -> zh
   const { data: audioF32, sampleRate } = await decodeToFloat32MonoWithRate(blob);
   const targetRate = 16000;
-  const audio16k = sampleRate === targetRate ? audioF32 : resampleFloat32(audioF32, sampleRate, targetRate);
+  const audio16k =
+    sampleRate === targetRate ? audioF32 : resampleFloat32(audioF32, sampleRate, targetRate);
   const out: unknown = await pipe(audio16k, {
     chunk_length_s: 15,
     stride_length_s: 5,
     language: langHint,
-    task: "transcribe",
+    task: 'transcribe',
     return_timestamps: true,
   });
   // out.text; out.chunks: [{text, timestamp: [start,end]}]
   return out as unknown as TranscribeOutput;
 }
 
-async function decodeToFloat32MonoWithRate(blob: Blob): Promise<{ data: Float32Array; sampleRate: number }> {
+async function decodeToFloat32MonoWithRate(
+  blob: Blob,
+): Promise<{ data: Float32Array; sampleRate: number }> {
   const arrayBuffer = await blob.arrayBuffer();
-  const AC: typeof AudioContext | undefined = (window as unknown as { AudioContext?: typeof AudioContext }).AudioContext
-    || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AC) throw new Error("AudioContext 不可用");
+  const AC: typeof AudioContext | undefined =
+    (window as unknown as { AudioContext?: typeof AudioContext }).AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AC) throw new Error('AudioContext 不可用');
   const audioCtx = new AC();
   const audioBuffer: AudioBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
     audioCtx.decodeAudioData(arrayBuffer.slice(0), resolve, reject);

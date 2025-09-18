@@ -1,4 +1,4 @@
-type Lang = "en"|"ja"|"zh";
+type Lang = 'en' | 'ja' | 'zh';
 
 const SENT_SPLIT = {
   en: /(?<=[.!?])\s+/,
@@ -10,7 +10,7 @@ export function splitSentencesWithIndex(text: string, lang: Lang) {
   const sentences = text.split(SENT_SPLIT[lang]);
   const result = [];
   let start = 0;
-  
+
   for (const sentence of sentences) {
     const trimmed = sentence.trim();
     if (trimmed) {
@@ -19,11 +19,11 @@ export function splitSentencesWithIndex(text: string, lang: Lang) {
       result.push({
         text: trimmed,
         start: sentStart,
-        end: sentEnd
+        end: sentEnd,
       });
       start = sentEnd;
     }
   }
-  
+
   return result;
 }

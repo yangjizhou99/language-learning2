@@ -2,7 +2,7 @@ import { GoogleAuth } from 'google-auth-library';
 
 type GeminiTTSParams = {
   text: string;
-  lang: "ja" | "en" | "zh" | string;
+  lang: 'ja' | 'en' | 'zh' | string;
   voiceName?: string;
   stylePrompt?: string;
   speakingRate?: number;
@@ -13,7 +13,7 @@ type GeminiTTSParams = {
 async function makeRestClient() {
   // 使用现有的 Google TTS 凭证
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
-  if (!raw) throw new Error("GOOGLE_TTS_CREDENTIALS missing");
+  if (!raw) throw new Error('GOOGLE_TTS_CREDENTIALS missing');
 
   let credentials: any;
   try {
@@ -21,7 +21,9 @@ async function makeRestClient() {
   } catch {
     try {
       if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-        throw new Error("File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS");
+        throw new Error(
+          'File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS',
+        );
       }
       const fs = require('fs');
       const path = require('path');
@@ -36,23 +38,23 @@ async function makeRestClient() {
 
   const auth = new GoogleAuth({
     credentials,
-    scopes: ['https://www.googleapis.com/auth/cloud-platform']
+    scopes: ['https://www.googleapis.com/auth/cloud-platform'],
   });
   const client = await auth.getClient();
   return client;
 }
 
 // 使用 REST API 调用 Gemini TTS
-export async function synthesizeGeminiTTSRest({ 
-  text, 
-  lang, 
-  voiceName = "Kore", 
-  stylePrompt = "以自然、清晰的风格朗读，注意自然停连、口语化",
-  speakingRate = 1.0, 
-  pitch = 0 
+export async function synthesizeGeminiTTSRest({
+  text,
+  lang,
+  voiceName = 'Kore',
+  stylePrompt = '以自然、清晰的风格朗读，注意自然停连、口语化',
+  speakingRate = 1.0,
+  pitch = 0,
 }: GeminiTTSParams): Promise<Buffer> {
-  const clean = (text || "").trim().slice(0, 4000);
-  if (!clean || !lang) throw new Error("missing text/lang");
+  const clean = (text || '').trim().slice(0, 4000);
+  if (!clean || !lang) throw new Error('missing text/lang');
 
   const modelName = process.env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts';
 
@@ -60,35 +62,37 @@ export async function synthesizeGeminiTTSRest({
   const url = 'https://texttospeech.googleapis.com/v1/text:synthesize';
 
   const body = {
-    input: { 
+    input: {
       text: clean,
-      prompt: stylePrompt
+      prompt: stylePrompt,
     },
     voice: {
-      languageCode: "en-US", // Gemini TTS 目前主要支持英语
+      languageCode: 'en-US', // Gemini TTS 目前主要支持英语
       name: voiceName,
-      model_name: modelName // 👈 REST API 使用下划线格式
+      model_name: modelName, // 👈 REST API 使用下划线格式
     },
     audioConfig: {
-      audioEncoding: "MP3",
+      audioEncoding: 'MP3',
       speakingRate: Number.isFinite(speakingRate) ? speakingRate : 1.0,
       pitch: Number.isFinite(pitch) ? pitch : 0,
-    }
+    },
   };
 
   console.log('Gemini TTS REST 请求参数:', JSON.stringify(body, null, 2));
 
   try {
-    const res = await client.request({ 
-      url, 
-      method: 'POST', 
-      headers: process.env.GOOGLE_TTS_PROJECT_ID ? { 'x-goog-user-project': process.env.GOOGLE_TTS_PROJECT_ID } : undefined,
-      data: body 
+    const res = await client.request({
+      url,
+      method: 'POST',
+      headers: process.env.GOOGLE_TTS_PROJECT_ID
+        ? { 'x-goog-user-project': process.env.GOOGLE_TTS_PROJECT_ID }
+        : undefined,
+      data: body,
     });
     const audioB64 = (res.data as any).audioContent;
-    
-    if (!audioB64) throw new Error("no audio content in response");
-    
+
+    if (!audioB64) throw new Error('no audio content in response');
+
     const audio = Buffer.from(audioB64, 'base64');
     console.log('Gemini TTS REST 调用成功，音频大小:', audio.length);
     return audio;

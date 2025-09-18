@@ -1,6 +1,6 @@
-"use client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+'use client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export default function TestEnvPage() {
   // 从环境变量读取配置
@@ -20,7 +20,7 @@ export default function TestEnvPage() {
         database: urlObj.pathname.slice(1),
         username: urlObj.username,
         password: urlObj.password ? '***' : '无',
-        ssl: urlObj.searchParams.get('sslmode') === 'require'
+        ssl: urlObj.searchParams.get('sslmode') === 'require',
       };
     } catch (error) {
       return null;
@@ -48,8 +48,8 @@ export default function TestEnvPage() {
             <div className="space-y-2">
               <div className="text-sm">
                 <span className="text-gray-600">状态:</span>
-                <Badge variant={localDbInfo ? "default" : "destructive"} className="ml-2">
-                  {localDbInfo ? "已配置" : "未配置"}
+                <Badge variant={localDbInfo ? 'default' : 'destructive'} className="ml-2">
+                  {localDbInfo ? '已配置' : '未配置'}
                 </Badge>
               </div>
               {localDbInfo ? (
@@ -76,15 +76,11 @@ export default function TestEnvPage() {
                   </div>
                 </>
               ) : (
-                <div className="text-sm text-red-600">
-                  无法解析数据库URL: {localDbUrl}
-                </div>
+                <div className="text-sm text-red-600">无法解析数据库URL: {localDbUrl}</div>
               )}
             </div>
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <div className="text-xs text-gray-600 font-mono break-all">
-                {localDbUrl}
-              </div>
+              <div className="text-xs text-gray-600 font-mono break-all">{localDbUrl}</div>
             </div>
           </CardContent>
         </Card>
@@ -99,8 +95,8 @@ export default function TestEnvPage() {
             <div className="space-y-2">
               <div className="text-sm">
                 <span className="text-gray-600">状态:</span>
-                <Badge variant={prodDbInfo ? "default" : "destructive"} className="ml-2">
-                  {prodDbInfo ? "已配置" : "未配置"}
+                <Badge variant={prodDbInfo ? 'default' : 'destructive'} className="ml-2">
+                  {prodDbInfo ? '已配置' : '未配置'}
                 </Badge>
               </div>
               {prodDbInfo ? (
@@ -127,15 +123,11 @@ export default function TestEnvPage() {
                   </div>
                 </>
               ) : (
-                <div className="text-sm text-red-600">
-                  无法解析数据库URL: {prodDbUrl}
-                </div>
+                <div className="text-sm text-red-600">无法解析数据库URL: {prodDbUrl}</div>
               )}
             </div>
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <div className="text-xs text-gray-600 font-mono break-all">
-                {prodDbUrl}
-              </div>
+              <div className="text-xs text-gray-600 font-mono break-all">{prodDbUrl}</div>
             </div>
           </CardContent>
         </Card>
@@ -150,23 +142,27 @@ export default function TestEnvPage() {
             <div className="space-y-2">
               <div className="text-sm">
                 <span className="text-gray-600">URL状态:</span>
-                <Badge variant={supabaseUrl !== '未设置' ? "default" : "destructive"} className="ml-2">
-                  {supabaseUrl !== '未设置' ? "已配置" : "未配置"}
+                <Badge
+                  variant={supabaseUrl !== '未设置' ? 'default' : 'destructive'}
+                  className="ml-2"
+                >
+                  {supabaseUrl !== '未设置' ? '已配置' : '未配置'}
                 </Badge>
               </div>
               <div className="text-sm">
                 <span className="text-gray-600">密钥状态:</span>
-                <Badge variant={supabaseKey !== '未设置' ? "default" : "destructive"} className="ml-2">
-                  {supabaseKey !== '未设置' ? "已配置" : "未配置"}
+                <Badge
+                  variant={supabaseKey !== '未设置' ? 'default' : 'destructive'}
+                  className="ml-2"
+                >
+                  {supabaseKey !== '未设置' ? '已配置' : '未配置'}
                 </Badge>
               </div>
             </div>
             <div className="mt-4 space-y-2">
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="text-xs text-gray-600">NEXT_PUBLIC_SUPABASE_URL</div>
-                <div className="text-xs text-gray-800 font-mono break-all mt-1">
-                  {supabaseUrl}
-                </div>
+                <div className="text-xs text-gray-800 font-mono break-all mt-1">{supabaseUrl}</div>
               </div>
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="text-xs text-gray-600">NEXT_PUBLIC_SUPABASE_ANON_KEY</div>
@@ -188,15 +184,11 @@ export default function TestEnvPage() {
             <div className="space-y-3">
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                 <div className="text-sm font-medium text-green-800">LOCAL_DB_URL</div>
-                <div className="text-xs text-green-600 font-mono break-all mt-1">
-                  {localDbUrl}
-                </div>
+                <div className="text-xs text-green-600 font-mono break-all mt-1">{localDbUrl}</div>
               </div>
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="text-sm font-medium text-blue-800">PROD_DB_URL</div>
-                <div className="text-xs text-blue-600 font-mono break-all mt-1">
-                  {prodDbUrl}
-                </div>
+                <div className="text-xs text-blue-600 font-mono break-all mt-1">{prodDbUrl}</div>
               </div>
               <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
                 <div className="text-sm font-medium text-purple-800">NEXT_PUBLIC_SUPABASE_URL</div>
@@ -205,7 +197,9 @@ export default function TestEnvPage() {
                 </div>
               </div>
               <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                <div className="text-sm font-medium text-purple-800">NEXT_PUBLIC_SUPABASE_ANON_KEY</div>
+                <div className="text-sm font-medium text-purple-800">
+                  NEXT_PUBLIC_SUPABASE_ANON_KEY
+                </div>
                 <div className="text-xs text-purple-600 font-mono break-all mt-1">
                   {supabaseKey !== '未设置' ? `${supabaseKey.substring(0, 30)}...` : '未设置'}
                 </div>
@@ -217,4 +211,3 @@ export default function TestEnvPage() {
     </div>
   );
 }
-

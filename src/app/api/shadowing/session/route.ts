@@ -15,25 +15,30 @@ export async function GET(req: NextRequest) {
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
     let supabase: any;
-    
+
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: authHeader } }
+        global: { headers: { Authorization: authHeader } },
       });
     } else {
       const cookieStore = await cookies();
       supabase = createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
           set() {},
           remove() {},
-        }
+        },
       });
     }
-    
+
     // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -53,22 +58,22 @@ export async function GET(req: NextRequest) {
       .eq('item_id', itemId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 is "not found"
       console.error('Error fetching session:', error);
-      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : String(error) },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
       success: true,
-      session: session || null
+      session: session || null,
     });
-
   } catch (error) {
     console.error('Error in GET shadowing session API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -78,46 +83,51 @@ export async function POST(req: NextRequest) {
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
     let supabase: any;
-    
+
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: authHeader } }
+        global: { headers: { Authorization: authHeader } },
       });
     } else {
       const cookieStore = await cookies();
       supabase = createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
           set() {},
           remove() {},
-        }
+        },
       });
     }
-    
+
     // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-  const body = await req.json();
-  const {
-    item_id, // 前端传入的字段名
-    status = 'draft', // 使用正确的默认值
-    recordings = [],
-    vocab_entry_ids = [], // 使用正确的列名
-    picked_preview = [], // 使用正确的列名
-    selected_words = [], // 添加selected_words参数
-    notes = {}
-  } = body;
+    const body = await req.json();
+    const {
+      item_id, // 前端传入的字段名
+      status = 'draft', // 使用正确的默认值
+      recordings = [],
+      vocab_entry_ids = [], // 使用正确的列名
+      picked_preview = [], // 使用正确的列名
+      selected_words = [], // 添加selected_words参数
+      notes = {},
+    } = body;
 
-  if (!item_id) {
-    return NextResponse.json({ error: 'item_id is required' }, { status: 400 });
-  }
-  
-  // 数据库中实际使用的字段名是item_id
-  const item_id_db = item_id;
+    if (!item_id) {
+      return NextResponse.json({ error: 'item_id is required' }, { status: 400 });
+    }
+
+    // 数据库中实际使用的字段名是item_id
+    const item_id_db = item_id;
 
     // Check if session already exists
     const { data: existingSession, error: checkError } = await supabase
@@ -128,7 +138,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     let session, error;
-    
+
     if (checkError && checkError.code === 'PGRST116') {
       // No existing session, create new one
       const { data: newSession, error: insertError } = await supabase
@@ -140,11 +150,11 @@ export async function POST(req: NextRequest) {
           recordings,
           vocab_entry_ids,
           picked_preview,
-          notes
+          notes,
         })
         .select()
         .single();
-      
+
       session = newSession;
       error = insertError;
     } else if (checkError) {
@@ -160,20 +170,23 @@ export async function POST(req: NextRequest) {
           recordings,
           vocab_entry_ids,
           picked_preview,
-          notes
+          notes,
         })
         .eq('user_id', user.id)
         .eq('item_id', item_id_db)
         .select()
         .single();
-      
+
       session = updatedSession;
       error = updateError;
     }
 
     if (error) {
       console.error('Error saving session:', error);
-      return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : String(error) },
+        { status: 500 },
+      );
     }
 
     // If status is 'completed' and there are selected words to import
@@ -190,13 +203,13 @@ export async function POST(req: NextRequest) {
           source_type: 'shadowing',
           source_id: item_id,
           frequency_rank: word.frequency_rank || null,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         }));
 
         const { data: insertedVocab, error: vocabError } = await supabase
           .from('vocab_entries')
           .upsert(vocabEntries, {
-            onConflict: 'user_id,word,source_lang'
+            onConflict: 'user_id,word,source_lang',
           })
           .select('id');
 
@@ -206,7 +219,7 @@ export async function POST(req: NextRequest) {
           await supabase
             .from('shadowing_sessions')
             .update({
-              imported_vocab_ids: vocabIds
+              imported_vocab_ids: vocabIds,
             })
             .eq('id', session.id);
         }
@@ -218,14 +231,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      session
+      session,
     });
-
   } catch (error) {
     console.error('Error in POST shadowing session API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

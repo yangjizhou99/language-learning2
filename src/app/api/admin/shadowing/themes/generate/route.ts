@@ -14,7 +14,12 @@ Produce CEFR-appropriate, teachable and diverse THEMES.
 - Avoid duplicates; avoid niche proper nouns unless L5+.`;
 
 // 大主题生成的用户提示词模板
-function buildThemePrompt({ lang, level, genre, count }: {
+function buildThemePrompt({
+  lang,
+  level,
+  genre,
+  count,
+}: {
   lang: string;
   level: number;
   genre: string;
@@ -22,7 +27,7 @@ function buildThemePrompt({ lang, level, genre, count }: {
 }) {
   const langMap = { en: 'English', ja: '日本語', zh: '简体中文' };
   const L = langMap[lang as keyof typeof langMap] || 'English';
-  
+
   return `LANG=${L}
 LEVEL=L${level}
 GENRE=${genre}
@@ -58,14 +63,14 @@ export async function POST(req: NextRequest) {
 
     const supabase = auth.supabase;
     const body = await req.json();
-    const { 
-      lang, 
-      level, 
-      genre, 
+    const {
+      lang,
+      level,
+      genre,
       count = 5,
       provider = 'deepseek',
       model = 'deepseek-chat',
-      temperature = 0.7
+      temperature = 0.7,
     } = body;
 
     if (!lang || !level || !genre) {
@@ -80,10 +85,11 @@ export async function POST(req: NextRequest) {
       .eq('level', level)
       .eq('genre', genre);
 
-    const existingTitles = existingThemes?.map(t => t.title) || [];
-    
+    const existingTitles = existingThemes?.map((t) => t.title) || [];
+
     // 构建包含现有主题信息的提示词（一次性生成所有主题）
-    const enhancedPrompt = buildThemePrompt({ lang, level, genre, count }) + 
+    const enhancedPrompt =
+      buildThemePrompt({ lang, level, genre, count }) +
       `\n\n现有主题列表（请避免重复）：\n${existingTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n\n请生成与上述主题不同的新主题。`;
 
     // 只调用一次 AI 生成，设置90秒超时
@@ -94,8 +100,8 @@ export async function POST(req: NextRequest) {
       timeoutMs: 90000, // 90秒超时
       messages: [
         { role: 'system', content: CURRICULUM_SYS },
-        { role: 'user', content: enhancedPrompt }
-      ]
+        { role: 'user', content: enhancedPrompt },
+      ],
     });
 
     // 解析 AI 响应
@@ -128,7 +134,7 @@ export async function POST(req: NextRequest) {
       ai_provider: provider,
       ai_model: model,
       ai_usage: result.usage || {},
-      status: 'active'
+      status: 'active',
     }));
 
     let insertedData: any[] = [];
@@ -137,11 +143,13 @@ export async function POST(req: NextRequest) {
         .from('shadowing_themes')
         .insert(themesToProcess)
         .select('id, title');
-      
+
       if (error) {
-        throw new Error(`Database error: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(
+          `Database error: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
-      
+
       insertedData = data || [];
     }
 
@@ -149,13 +157,20 @@ export async function POST(req: NextRequest) {
       success: true,
       inserted_count: insertedData.length,
       inserted_themes: insertedData,
-      message: `成功生成 ${insertedData.length} 个新主题（已避免与现有主题重复）`
+      message: `成功生成 ${insertedData.length} 个新主题（已避免与现有主题重复）`,
     });
-
   } catch (error) {
     console.error('Theme generation error:', error);
-    return NextResponse.json({
-      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Generation failed'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : 'Generation failed',
+      },
+      { status: 500 },
+    );
   }
 }

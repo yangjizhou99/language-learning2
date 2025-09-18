@@ -12,34 +12,39 @@ const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export async function POST(req: NextRequest) {
   try {
     console.log('录音上传API被调用');
-    
+
     // Bearer 优先，其次 Cookie 方式
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
     console.log('认证方式:', hasBearer ? 'Bearer' : 'Cookie');
-    
+
     let supabase: any;
-    
+
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
-        global: { headers: { Authorization: authHeader } }
+        global: { headers: { Authorization: authHeader } },
       });
     } else {
       const cookieStore = await cookies();
       supabase = createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
-          get(name: string) { return cookieStore.get(name)?.value; },
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
           set() {},
           remove() {},
-        }
+        },
       });
     }
-    
+
     // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     console.log('用户认证结果:', { user: user?.id, error: authError?.message });
-    
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -54,7 +59,7 @@ export async function POST(req: NextRequest) {
       fileName: audioFile?.name,
       size: audioFile?.size,
       type: audioFile?.type,
-      sessionId
+      sessionId,
     });
 
     if (!audioFile) {
@@ -79,7 +84,7 @@ export async function POST(req: NextRequest) {
       .from('tts')
       .upload(fileName, buffer, {
         contentType: audioFile.type || 'audio/webm',
-        duplex: 'half'
+        duplex: 'half',
       });
 
     if (uploadError) {
@@ -108,19 +113,15 @@ export async function POST(req: NextRequest) {
       size: audioFile.size,
       type: audioFile.type,
       duration: recordingDuration,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
 
     return NextResponse.json({
       success: true,
-      audio: audioData
+      audio: audioData,
     });
-
   } catch (error) {
     console.error('Error in audio upload API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

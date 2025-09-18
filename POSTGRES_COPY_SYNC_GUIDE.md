@@ -9,12 +9,14 @@
 ### 1. COPY协议优势
 
 #### 性能优势
+
 - **批量传输**：一次性传输大量数据，减少网络往返次数
 - **二进制格式**：比文本格式更紧凑，传输效率更高
 - **流式处理**：边读边写，内存占用低
 - **事务安全**：整个同步过程在一个事务中完成
 
 #### 与传统方法对比
+
 ```
 传统方法 (逐条INSERT):
 INSERT INTO table VALUES (...);
@@ -36,6 +38,7 @@ COPY table FROM STDIN WITH (FORMAT binary);
 ```
 
 #### 组件说明
+
 - **查询流 (QueryStream)**：从源数据库流式读取数据
 - **转换流 (TransformStream)**：数据格式转换和字段映射
 - **COPY流 (CopyStream)**：将数据格式化为COPY协议格式
@@ -54,9 +57,10 @@ await targetClient.query('BEGIN');
 await targetClient.query('TRUNCATE TABLE target_table CASCADE');
 
 // 4. 创建流式管道
-sourceClient.query(selectQuery)
-  .pipe(transformStream)      // 数据转换
-  .pipe(copyStream)          // COPY格式输出
+sourceClient
+  .query(selectQuery)
+  .pipe(transformStream) // 数据转换
+  .pipe(copyStream) // COPY格式输出
   .on('finish', async () => {
     await targetClient.query('COMMIT');
   });
@@ -83,7 +87,7 @@ const sourceConfig = {
   database: 'local_db',
   username: 'postgres',
   password: 'password',
-  ssl: false
+  ssl: false,
 };
 
 const targetConfig = {
@@ -92,7 +96,7 @@ const targetConfig = {
   database: 'production_db',
   username: 'postgres',
   password: 'password',
-  ssl: true
+  ssl: true,
 };
 ```
 
@@ -105,7 +109,7 @@ import { StreamCopySync, createTableConfigs } from '@/lib/database/stream-copy';
 const syncConfig = {
   sourceUrl: 'postgresql://user:pass@localhost:5432/source_db',
   targetUrl: 'postgresql://user:pass@remote:5432/target_db',
-  tables: createTableConfigs(['shadowing_items', 'cloze_items'])
+  tables: createTableConfigs(['shadowing_items', 'cloze_items']),
 };
 
 // 执行同步
@@ -128,13 +132,13 @@ const results = await sync.syncAll();
 
 ```typescript
 class StreamCopySync {
-  private sourcePool: Pool;      // 源数据库连接池
-  private targetPool: Pool;      // 目标数据库连接池
+  private sourcePool: Pool; // 源数据库连接池
+  private targetPool: Pool; // 目标数据库连接池
   private config: StreamCopyConfig;
 
-  async syncAll(): Promise<CopyResult[]>
-  async copyTable(tableConfig: TableConfig): Promise<CopyResult>
-  private buildSelectQuery(tableConfig: TableConfig): string
+  async syncAll(): Promise<CopyResult[]>;
+  async copyTable(tableConfig: TableConfig): Promise<CopyResult>;
+  private buildSelectQuery(tableConfig: TableConfig): string;
 }
 ```
 
@@ -148,16 +152,15 @@ const sourceStream = sourceClient.query(selectQuery);
 const transformStream = new Transform({
   objectMode: true,
   transform: (row, encoding, callback) => {
-    const transformedRow = tableConfig.transform ? 
-      tableConfig.transform(row) : row;
-    const orderedRow = tableConfig.columns.map(col => transformedRow[col]);
+    const transformedRow = tableConfig.transform ? tableConfig.transform(row) : row;
+    const orderedRow = tableConfig.columns.map((col) => transformedRow[col]);
     callback(null, orderedRow);
-  }
+  },
 });
 
 // COPY流
 const copyStream = targetClient.query(
-  copyTo(`COPY ${tableName} (${columns.join(', ')}) FROM STDIN WITH (FORMAT text)`)
+  copyTo(`COPY ${tableName} (${columns.join(', ')}) FROM STDIN WITH (FORMAT text)`),
 );
 ```
 
@@ -166,22 +169,28 @@ const copyStream = targetClient.query(
 ```typescript
 // 字段映射
 const columnMap = {
-  'shadowing_items': [
-    'id', 'lang', 'level', 'title', 'text', 'audio_url', 
-    'duration_ms', 'tokens', 'cefr', 'meta', 'created_at'
+  shadowing_items: [
+    'id',
+    'lang',
+    'level',
+    'title',
+    'text',
+    'audio_url',
+    'duration_ms',
+    'tokens',
+    'cefr',
+    'meta',
+    'created_at',
   ],
-  'cloze_items': [
-    'id', 'lang', 'level', 'topic', 'title', 'passage', 
-    'blanks', 'meta', 'created_at'
-  ]
+  cloze_items: ['id', 'lang', 'level', 'topic', 'title', 'passage', 'blanks', 'meta', 'created_at'],
 };
 
 // JSON字段处理
 const transforms = {
-  'shadowing_items': (row) => ({
+  shadowing_items: (row) => ({
     ...row,
-    meta: typeof row.meta === 'string' ? JSON.parse(row.meta) : row.meta
-  })
+    meta: typeof row.meta === 'string' ? JSON.parse(row.meta) : row.meta,
+  }),
 };
 ```
 
@@ -192,8 +201,8 @@ const transforms = {
 ```typescript
 const pool = new Pool({
   connectionString: url,
-  max: 5,                    // 最大连接数
-  idleTimeoutMillis: 30000,  // 空闲超时
+  max: 5, // 最大连接数
+  idleTimeoutMillis: 30000, // 空闲超时
   connectionTimeoutMillis: 2000, // 连接超时
 });
 ```
@@ -219,8 +228,8 @@ cursor.read(batchSize, (err, rows) => {
 ```typescript
 // 流式处理，避免一次性加载所有数据
 sourceStream
-  .pipe(transformStream)  // 边读边转换
-  .pipe(copyStream)       // 边转换边写入
+  .pipe(transformStream) // 边读边转换
+  .pipe(copyStream) // 边转换边写入
   .on('finish', resolve);
 ```
 
@@ -250,7 +259,7 @@ transform: (row, encoding, callback) => {
     console.error('数据转换错误:', error);
     callback(null, null); // 跳过错误行
   }
-}
+};
 ```
 
 ### 3. 事务回滚
@@ -279,7 +288,7 @@ return {
   table: tableName,
   success: true,
   rowsProcessed: rowCount,
-  duration: duration
+  duration: duration,
 };
 ```
 
@@ -311,8 +320,8 @@ copyStream.on('error', (error) => {
 // 使用SSL连接
 const config = {
   ssl: {
-    rejectUnauthorized: false  // 生产环境应设为true
-  }
+    rejectUnauthorized: false, // 生产环境应设为true
+  },
 };
 ```
 
@@ -334,7 +343,7 @@ for (const field of requiredFields) {
 // 检查管理员权限
 const auth = await requireAdmin(req);
 if (!auth.ok) {
-  return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 }
 ```
 
@@ -343,21 +352,24 @@ if (!auth.ok) {
 ### 1. 常见问题
 
 #### 连接超时
+
 ```typescript
 // 增加连接超时时间
 const pool = new Pool({
   connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 60000
+  idleTimeoutMillis: 60000,
 });
 ```
 
 #### 内存不足
+
 ```typescript
 // 减少批次大小
 const batchSize = 100; // 从1000减少到100
 ```
 
 #### 数据格式错误
+
 ```typescript
 // 添加数据验证
 const validateRow = (row) => {
@@ -385,7 +397,7 @@ if (debug) {
 
 ```sql
 -- 同步前备份目标表
-CREATE TABLE shadowing_items_backup AS 
+CREATE TABLE shadowing_items_backup AS
 SELECT * FROM shadowing_items;
 ```
 
@@ -396,7 +408,7 @@ SELECT * FROM shadowing_items;
 const tables = ['table1', 'table2', 'table3'];
 for (const table of tables) {
   await syncTable(table);
-  await new Promise(resolve => setTimeout(resolve, 1000)); // 间隔1秒
+  await new Promise((resolve) => setTimeout(resolve, 1000)); // 间隔1秒
 }
 ```
 
@@ -404,7 +416,8 @@ for (const table of tables) {
 
 ```typescript
 // 设置性能阈值
-if (duration > 300000) { // 5分钟
+if (duration > 300000) {
+  // 5分钟
   sendAlert('同步时间过长，请检查性能');
 }
 ```
@@ -414,8 +427,8 @@ if (duration > 300000) { // 5分钟
 PostgreSQL COPY协议流式同步提供了高效、安全、可靠的数据传输解决方案。通过合理的配置和错误处理，可以处理大量数据的同步需求，同时保持系统的稳定性和性能。
 
 关键优势：
+
 - **高性能**：比传统方法快10-100倍
 - **低内存**：流式处理，内存占用恒定
 - **事务安全**：原子性操作，数据一致性保证
 - **易于监控**：详细的进度和错误信息
-

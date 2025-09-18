@@ -1,22 +1,14 @@
-"use client";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
-import { 
-  Database, 
-  ArrowRight, 
-  Play, 
-  CheckCircle, 
-  XCircle, 
-  Clock,
-  Zap
-} from "lucide-react";
+'use client';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { Database, ArrowRight, Play, CheckCircle, XCircle, Clock, Zap } from 'lucide-react';
 
 interface DatabaseConfig {
   host: string;
@@ -37,27 +29,27 @@ interface SyncResult {
 
 export default function CopySyncPage() {
   const [sourceConfig, setSourceConfig] = useState<DatabaseConfig>({
-    host: "",
+    host: '',
     port: 5432,
-    database: "",
-    username: "",
-    password: "",
-    ssl: true
+    database: '',
+    username: '',
+    password: '',
+    ssl: true,
   });
 
   const [targetConfig, setTargetConfig] = useState<DatabaseConfig>({
-    host: "",
+    host: '',
     port: 5432,
-    database: "",
-    username: "",
-    password: "",
-    ssl: true
+    database: '',
+    username: '',
+    password: '',
+    ssl: true,
   });
 
   const [selectedTables, setSelectedTables] = useState<Record<string, boolean>>({
-    'shadowing_items': true,
-    'cloze_items': true,
-    'alignment_packs': true
+    shadowing_items: true,
+    cloze_items: true,
+    alignment_packs: true,
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -67,19 +59,19 @@ export default function CopySyncPage() {
   const tableOptions = [
     { name: 'shadowing_items', label: '跟读练习题库', description: '包含音频URL、文本内容等' },
     { name: 'cloze_items', label: '完形填空题库', description: '包含文章、空白位置等' },
-    { name: 'alignment_packs', label: '对齐练习包', description: '包含多步骤训练内容' }
+    { name: 'alignment_packs', label: '对齐练习包', description: '包含多步骤训练内容' },
   ];
 
   const handleTableToggle = (tableName: string) => {
-    setSelectedTables(prev => ({
+    setSelectedTables((prev) => ({
       ...prev,
-      [tableName]: !prev[tableName]
+      [tableName]: !prev[tableName],
     }));
   };
 
   const handleSync = async () => {
-    const selectedTableNames = Object.keys(selectedTables).filter(name => selectedTables[name]);
-    
+    const selectedTableNames = Object.keys(selectedTables).filter((name) => selectedTables[name]);
+
     if (selectedTableNames.length === 0) {
       toast.error('请至少选择一个表进行同步');
       return;
@@ -100,9 +92,9 @@ export default function CopySyncPage() {
           targetConfig,
           tables: selectedTableNames,
           options: {
-            batchSize: 1000
-          }
-        })
+            batchSize: 1000,
+          },
+        }),
       });
 
       const data = await response.json();
@@ -151,9 +143,7 @@ export default function CopySyncPage() {
               <Database className="w-5 h-5" />
               源数据库 (本地)
             </CardTitle>
-            <CardDescription>
-              配置本地开发数据库连接信息
-            </CardDescription>
+            <CardDescription>配置本地开发数据库连接信息</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -163,7 +153,7 @@ export default function CopySyncPage() {
                   id="source-host"
                   placeholder="localhost"
                   value={sourceConfig.host}
-                  onChange={(e) => setSourceConfig(prev => ({ ...prev, host: e.target.value }))}
+                  onChange={(e) => setSourceConfig((prev) => ({ ...prev, host: e.target.value }))}
                 />
               </div>
               <div>
@@ -173,7 +163,9 @@ export default function CopySyncPage() {
                   type="number"
                   placeholder="5432"
                   value={sourceConfig.port}
-                  onChange={(e) => setSourceConfig(prev => ({ ...prev, port: parseInt(e.target.value) || 5432 }))}
+                  onChange={(e) =>
+                    setSourceConfig((prev) => ({ ...prev, port: parseInt(e.target.value) || 5432 }))
+                  }
                 />
               </div>
             </div>
@@ -183,7 +175,7 @@ export default function CopySyncPage() {
                 id="source-database"
                 placeholder="local_db"
                 value={sourceConfig.database}
-                onChange={(e) => setSourceConfig(prev => ({ ...prev, database: e.target.value }))}
+                onChange={(e) => setSourceConfig((prev) => ({ ...prev, database: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -193,7 +185,9 @@ export default function CopySyncPage() {
                   id="source-username"
                   placeholder="postgres"
                   value={sourceConfig.username}
-                  onChange={(e) => setSourceConfig(prev => ({ ...prev, username: e.target.value }))}
+                  onChange={(e) =>
+                    setSourceConfig((prev) => ({ ...prev, username: e.target.value }))
+                  }
                 />
               </div>
               <div>
@@ -203,7 +197,9 @@ export default function CopySyncPage() {
                   type="password"
                   placeholder="password"
                   value={sourceConfig.password}
-                  onChange={(e) => setSourceConfig(prev => ({ ...prev, password: e.target.value }))}
+                  onChange={(e) =>
+                    setSourceConfig((prev) => ({ ...prev, password: e.target.value }))
+                  }
                 />
               </div>
             </div>
@@ -211,7 +207,9 @@ export default function CopySyncPage() {
               <Checkbox
                 id="source-ssl"
                 checked={sourceConfig.ssl}
-                onCheckedChange={(checked) => setSourceConfig(prev => ({ ...prev, ssl: checked as boolean }))}
+                onCheckedChange={(checked) =>
+                  setSourceConfig((prev) => ({ ...prev, ssl: checked as boolean }))
+                }
               />
               <Label htmlFor="source-ssl">启用SSL</Label>
             </div>
@@ -225,9 +223,7 @@ export default function CopySyncPage() {
               <Database className="w-5 h-5" />
               目标数据库 (远程)
             </CardTitle>
-            <CardDescription>
-              配置远程生产数据库连接信息
-            </CardDescription>
+            <CardDescription>配置远程生产数据库连接信息</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -237,7 +233,7 @@ export default function CopySyncPage() {
                   id="target-host"
                   placeholder="db.example.com"
                   value={targetConfig.host}
-                  onChange={(e) => setTargetConfig(prev => ({ ...prev, host: e.target.value }))}
+                  onChange={(e) => setTargetConfig((prev) => ({ ...prev, host: e.target.value }))}
                 />
               </div>
               <div>
@@ -247,7 +243,9 @@ export default function CopySyncPage() {
                   type="number"
                   placeholder="5432"
                   value={targetConfig.port}
-                  onChange={(e) => setTargetConfig(prev => ({ ...prev, port: parseInt(e.target.value) || 5432 }))}
+                  onChange={(e) =>
+                    setTargetConfig((prev) => ({ ...prev, port: parseInt(e.target.value) || 5432 }))
+                  }
                 />
               </div>
             </div>
@@ -257,7 +255,7 @@ export default function CopySyncPage() {
                 id="target-database"
                 placeholder="production_db"
                 value={targetConfig.database}
-                onChange={(e) => setTargetConfig(prev => ({ ...prev, database: e.target.value }))}
+                onChange={(e) => setTargetConfig((prev) => ({ ...prev, database: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -267,7 +265,9 @@ export default function CopySyncPage() {
                   id="target-username"
                   placeholder="postgres"
                   value={targetConfig.username}
-                  onChange={(e) => setTargetConfig(prev => ({ ...prev, username: e.target.value }))}
+                  onChange={(e) =>
+                    setTargetConfig((prev) => ({ ...prev, username: e.target.value }))
+                  }
                 />
               </div>
               <div>
@@ -277,7 +277,9 @@ export default function CopySyncPage() {
                   type="password"
                   placeholder="password"
                   value={targetConfig.password}
-                  onChange={(e) => setTargetConfig(prev => ({ ...prev, password: e.target.value }))}
+                  onChange={(e) =>
+                    setTargetConfig((prev) => ({ ...prev, password: e.target.value }))
+                  }
                 />
               </div>
             </div>
@@ -285,7 +287,9 @@ export default function CopySyncPage() {
               <Checkbox
                 id="target-ssl"
                 checked={targetConfig.ssl}
-                onCheckedChange={(checked) => setTargetConfig(prev => ({ ...prev, ssl: checked as boolean }))}
+                onCheckedChange={(checked) =>
+                  setTargetConfig((prev) => ({ ...prev, ssl: checked as boolean }))
+                }
               />
               <Label htmlFor="target-ssl">启用SSL</Label>
             </div>
@@ -297,9 +301,7 @@ export default function CopySyncPage() {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>选择要同步的表</CardTitle>
-          <CardDescription>
-            选择需要从源数据库同步到目标数据库的表
-          </CardDescription>
+          <CardDescription>选择需要从源数据库同步到目标数据库的表</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -314,9 +316,7 @@ export default function CopySyncPage() {
                   <Label htmlFor={table.name} className="font-medium">
                     {table.label}
                   </Label>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {table.description}
-                  </p>
+                  <p className="text-sm text-gray-600 mt-1">{table.description}</p>
                 </div>
               </div>
             ))}
@@ -330,11 +330,9 @@ export default function CopySyncPage() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-medium">开始同步</h3>
-              <p className="text-sm text-gray-600">
-                将选中的表从源数据库同步到目标数据库
-              </p>
+              <p className="text-sm text-gray-600">将选中的表从源数据库同步到目标数据库</p>
             </div>
-            <Button 
+            <Button
               onClick={handleSync}
               disabled={isSyncing}
               className="bg-blue-600 hover:bg-blue-700"
@@ -365,16 +363,18 @@ export default function CopySyncPage() {
             </CardTitle>
             {syncSummary && (
               <CardDescription>
-                总计处理 {formatNumber(syncSummary.totalRows)} 行数据，
-                成功 {syncSummary.successTables} 个表，
-                耗时 {syncSummary.totalDuration}
+                总计处理 {formatNumber(syncSummary.totalRows)} 行数据， 成功{' '}
+                {syncSummary.successTables} 个表， 耗时 {syncSummary.totalDuration}
               </CardDescription>
             )}
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {syncResults.map((result) => (
-                <div key={result.table} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={result.table}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     {result.success ? (
                       <CheckCircle className="w-5 h-5 text-green-500" />
@@ -383,21 +383,17 @@ export default function CopySyncPage() {
                     )}
                     <div>
                       <h4 className="font-medium">{result.table}</h4>
-                      {result.error && (
-                        <p className="text-sm text-red-600 mt-1">{result.error}</p>
-                      )}
+                      {result.error && <p className="text-sm text-red-600 mt-1">{result.error}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <Badge variant={result.success ? "default" : "destructive"}>
-                      {result.success ? "成功" : "失败"}
+                    <Badge variant={result.success ? 'default' : 'destructive'}>
+                      {result.success ? '成功' : '失败'}
                     </Badge>
                     <span className="text-sm text-gray-600">
                       {formatNumber(result.rowsProcessed)} 行
                     </span>
-                    <span className="text-sm text-gray-600">
-                      {formatDuration(result.duration)}
-                    </span>
+                    <span className="text-sm text-gray-600">{formatDuration(result.duration)}</span>
                   </div>
                 </div>
               ))}
@@ -408,4 +404,3 @@ export default function CopySyncPage() {
     </div>
   );
 }
-

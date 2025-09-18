@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
 
 export async function GET(req: NextRequest) {
   try {
     // 检查认证
     const auth = await requireAdmin(req);
-    
+
     if (!auth.ok) {
       return NextResponse.json({ error: auth.reason }, { status: 403 });
     }
@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     // 构建查询条件
     let query = supabase
       .from('profiles')
-      .select(`
+      .select(
+        `
         id,
         username,
         role,
@@ -35,7 +36,9 @@ export async function GET(req: NextRequest) {
         native_lang,
         target_langs,
         created_at
-      `, { count: 'exact' })
+      `,
+        { count: 'exact' },
+      )
       .order('created_at', { ascending: false });
 
     // 添加搜索条件
@@ -48,8 +51,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 获取分页数据和总数
-    const { data: users, error, count } = await query
-      .range(offset, offset + limit - 1);
+    const { data: users, error, count } = await query.range(offset, offset + limit - 1);
 
     if (error) {
       console.error('获取用户列表失败:', error);
@@ -57,10 +59,10 @@ export async function GET(req: NextRequest) {
     }
 
     // 获取每个用户的练习统计
-    const userIds = users?.map(u => u.id) || [];
+    const userIds = users?.map((u) => u.id) || [];
     const practiceStats = await getPracticeStats(supabase, userIds);
 
-    const usersWithStats = users?.map(user => ({
+    const usersWithStats = users?.map((user) => ({
       ...user,
       practice_stats: practiceStats[user.id] || {
         total_shadowing_attempts: 0,
@@ -68,8 +70,8 @@ export async function GET(req: NextRequest) {
         total_alignment_attempts: 0,
         total_vocab_entries: 0,
         last_activity: null,
-        average_scores: { shadowing: 0, cloze: 0, alignment: 0 }
-      }
+        average_scores: { shadowing: 0, cloze: 0, alignment: 0 },
+      },
     }));
 
     return NextResponse.json({
@@ -78,10 +80,9 @@ export async function GET(req: NextRequest) {
         page,
         limit,
         total: count || 0,
-        pages: Math.ceil((count || 0) / limit)
-      }
+        pages: Math.ceil((count || 0) / limit),
+      },
     });
-
   } catch (error) {
     console.error('用户列表API错误:', error);
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });
@@ -94,14 +95,14 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
   const stats: Record<string, any> = {};
 
   // 初始化统计
-  userIds.forEach(id => {
+  userIds.forEach((id) => {
     stats[id] = {
       total_shadowing_attempts: 0,
       total_cloze_attempts: 0,
       total_alignment_attempts: 0,
       total_vocab_entries: 0,
       last_activity: null,
-      average_scores: { shadowing: 0, cloze: 0, alignment: 0 }
+      average_scores: { shadowing: 0, cloze: 0, alignment: 0 },
     };
   });
 
@@ -123,7 +124,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
         if (attempt.metrics?.score) {
           const currentAvg = stats[userId].average_scores.shadowing;
           const count = stats[userId].total_shadowing_attempts;
-          stats[userId].average_scores.shadowing = 
+          stats[userId].average_scores.shadowing =
             (currentAvg * (count - 1) + attempt.metrics.score) / count;
         }
       }
@@ -146,7 +147,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
         if (attempt.ai_result?.overall?.score) {
           const currentAvg = stats[userId].average_scores.cloze;
           const count = stats[userId].total_cloze_attempts;
-          stats[userId].average_scores.cloze = 
+          stats[userId].average_scores.cloze =
             (currentAvg * (count - 1) + attempt.ai_result.overall.score) / count;
         }
       }
@@ -169,7 +170,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
         if (attempt.scores?.overall) {
           const currentAvg = stats[userId].average_scores.alignment;
           const count = stats[userId].total_alignment_attempts;
-          stats[userId].average_scores.alignment = 
+          stats[userId].average_scores.alignment =
             (currentAvg * (count - 1) + attempt.scores.overall) / count;
         }
       }
@@ -190,7 +191,6 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
         }
       }
     });
-
   } catch (error) {
     console.error('获取练习统计失败:', error);
   }

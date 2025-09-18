@@ -38,7 +38,7 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
   const [config, setConfig] = useState<AIConfig>({
     ai_enabled: false,
     api_keys: {},
-    model_permissions: []
+    model_permissions: [],
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -55,14 +55,14 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
         // 获取用户特定配置
         const headers = await getAuthHeaders();
         const response = await fetch(`/api/admin/users/${userId}/permissions`, {
-          headers
+          headers,
         });
         const data = await response.json();
         if (data.permissions) {
           setConfig({
             ai_enabled: data.permissions.ai_enabled || false,
             api_keys: data.permissions.api_keys || {},
-            model_permissions: data.permissions.model_permissions || []
+            model_permissions: data.permissions.model_permissions || [],
           });
         } else {
           console.error('Failed to fetch permissions:', data);
@@ -80,7 +80,7 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
               provider: 'OpenRouter',
               daily_limit: 30,
               token_limit: 80000,
-              enabled: true
+              enabled: true,
             },
             {
               model_id: 'deepseek-chat',
@@ -88,9 +88,9 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
               provider: 'DeepSeek',
               daily_limit: 20,
               token_limit: 100000,
-              enabled: true
-            }
-          ]
+              enabled: true,
+            },
+          ],
         });
       }
     } catch (error) {
@@ -102,30 +102,30 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
   };
 
   const handleConfigChange = (field: keyof AIConfig, value: any) => {
-    setConfig(prev => ({ ...prev, [field]: value }));
+    setConfig((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleAPIKeyChange = (provider: 'deepseek' | 'openrouter', value: string) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       api_keys: {
         ...prev.api_keys,
-        [provider]: value
-      }
+        [provider]: value,
+      },
     }));
   };
 
   const handleModelPermissionChange = (index: number, field: keyof ModelPermission, value: any) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       model_permissions: prev.model_permissions.map((model, i) =>
-        i === index ? { ...model, [field]: value } : model
-      )
+        i === index ? { ...model, [field]: value } : model,
+      ),
     }));
   };
 
   const addModelPermission = () => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       model_permissions: [
         ...prev.model_permissions,
@@ -135,16 +135,16 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
           provider: 'OpenRouter',
           daily_limit: 10,
           token_limit: 50000,
-          enabled: true
-        }
-      ]
+          enabled: true,
+        },
+      ],
     }));
   };
 
   const removeModelPermission = (index: number) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
-      model_permissions: prev.model_permissions.filter((_, i) => i !== index)
+      model_permissions: prev.model_permissions.filter((_, i) => i !== index),
     }));
   };
 
@@ -162,8 +162,8 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
           body: JSON.stringify({
             ai_enabled: config.ai_enabled,
             api_keys: config.api_keys,
-            model_permissions: config.model_permissions
-          })
+            model_permissions: config.model_permissions,
+          }),
         });
 
         const data = await response.json();
@@ -237,7 +237,7 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
                 配置一个API密钥即可使用所有AI功能，推荐使用OpenRouter
               </p>
             </div>
-            
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="openrouter-key">OpenRouter API Key (推荐)</Label>
@@ -279,18 +279,18 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
                 配置用户可以访问的AI模型及其使用限制
               </p>
             </div>
-          
+
             <div className="space-y-4">
               {config.model_permissions.map((model, index) => (
                 <div key={model.model_id || index} className="p-4 border rounded-lg space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">
-                      {model.model_name || `模型 ${index + 1}`}
-                    </h4>
+                    <h4 className="font-medium">{model.model_name || `模型 ${index + 1}`}</h4>
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={model.enabled}
-                        onCheckedChange={(checked) => handleModelPermissionChange(index, 'enabled', checked)}
+                        onCheckedChange={(checked) =>
+                          handleModelPermissionChange(index, 'enabled', checked)
+                        }
                       />
                       <Button
                         variant="ghost"
@@ -308,7 +308,9 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
                       <Label>模型ID</Label>
                       <Input
                         value={model.model_id}
-                        onChange={(e) => handleModelPermissionChange(index, 'model_id', e.target.value)}
+                        onChange={(e) =>
+                          handleModelPermissionChange(index, 'model_id', e.target.value)
+                        }
                         placeholder="例如: openrouter/auto"
                       />
                     </div>
@@ -316,7 +318,9 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
                       <Label>模型名称</Label>
                       <Input
                         value={model.model_name}
-                        onChange={(e) => handleModelPermissionChange(index, 'model_name', e.target.value)}
+                        onChange={(e) =>
+                          handleModelPermissionChange(index, 'model_name', e.target.value)
+                        }
                         placeholder="例如: GPT-4"
                       />
                     </div>
@@ -324,7 +328,9 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
                       <Label>提供商</Label>
                       <Input
                         value={model.provider}
-                        onChange={(e) => handleModelPermissionChange(index, 'provider', e.target.value)}
+                        onChange={(e) =>
+                          handleModelPermissionChange(index, 'provider', e.target.value)
+                        }
                         placeholder="例如: OpenRouter"
                       />
                     </div>
@@ -333,7 +339,13 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
                       <Input
                         type="number"
                         value={model.daily_limit}
-                        onChange={(e) => handleModelPermissionChange(index, 'daily_limit', parseInt(e.target.value) || 0)}
+                        onChange={(e) =>
+                          handleModelPermissionChange(
+                            index,
+                            'daily_limit',
+                            parseInt(e.target.value) || 0,
+                          )
+                        }
                         min="0"
                       />
                     </div>
@@ -342,7 +354,13 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
                       <Input
                         type="number"
                         value={model.token_limit}
-                        onChange={(e) => handleModelPermissionChange(index, 'token_limit', parseInt(e.target.value) || 0)}
+                        onChange={(e) =>
+                          handleModelPermissionChange(
+                            index,
+                            'token_limit',
+                            parseInt(e.target.value) || 0,
+                          )
+                        }
                         min="0"
                       />
                     </div>
@@ -350,7 +368,7 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
                 </div>
               ))}
             </div>
-            
+
             <Button onClick={addModelPermission} size="sm" variant="outline">
               <Plus className="h-4 w-4 mr-2" />
               添加模型
@@ -364,19 +382,21 @@ export function AIConfigPanel({ userId, onSave, onError }: AIConfigPanelProps) {
           <div className="p-4 bg-muted rounded-lg space-y-2">
             <div className="text-sm">
               <strong>API密钥：</strong>
-              {config.api_keys ? 
-                Object.entries(config.api_keys)
-                  .filter(([_, value]) => value)
-                  .map(([key, _]) => key)
-                  .join(', ') || '无' : '无'}
+              {config.api_keys
+                ? Object.entries(config.api_keys)
+                    .filter(([_, value]) => value)
+                    .map(([key, _]) => key)
+                    .join(', ') || '无'
+                : '无'}
             </div>
             <div className="text-sm">
               <strong>可用模型：</strong>
-              {config.model_permissions.length > 0 ? 
-                config.model_permissions
-                  .filter(m => m.enabled)
-                  .map(m => `${m.model_name} (${m.daily_limit}次/日, ${m.token_limit} tokens)`)
-                  .join(', ') : '无'}
+              {config.model_permissions.length > 0
+                ? config.model_permissions
+                    .filter((m) => m.enabled)
+                    .map((m) => `${m.model_name} (${m.daily_limit}次/日, ${m.token_limit} tokens)`)
+                    .join(', ')
+                : '无'}
             </div>
           </div>
         </div>

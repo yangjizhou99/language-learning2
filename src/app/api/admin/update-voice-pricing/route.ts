@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -7,7 +7,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("开始更新音色价格...");
+    console.log('开始更新音色价格...');
 
     // 根据最新价格表定义价格映射
     const priceUpdates = [
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
     for (const update of priceUpdates) {
       console.log(`更新 ${update.description} 音色价格...`);
-      
+
       // 构建SQL查询来更新匹配的音色
       const { data, error } = await supabase
         .from('voices')
@@ -46,9 +46,9 @@ export async function POST(request: NextRequest) {
           pricing: {
             pricePerMillionChars: update.price,
             examplePrice: (update.price / 1000).toFixed(4),
-            examplePrice10k: (update.price / 100).toFixed(2)
+            examplePrice10k: (update.price / 100).toFixed(2),
           },
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .like('name', `%${update.pattern}%`)
         .select('name, pricing');
@@ -59,17 +59,19 @@ export async function POST(request: NextRequest) {
           pattern: update.pattern,
           success: false,
           error: error.message,
-          count: 0
+          count: 0,
         });
       } else {
         const count = data?.length || 0;
         totalUpdated += count;
-        console.log(`成功更新 ${count} 个 ${update.description} 音色，价格: $${update.price}/100万字符`);
+        console.log(
+          `成功更新 ${count} 个 ${update.description} 音色，价格: $${update.price}/100万字符`,
+        );
         updateResults.push({
           pattern: update.pattern,
           success: true,
           count: count,
-          price: update.price
+          price: update.price,
         });
       }
     }
@@ -80,40 +82,41 @@ export async function POST(request: NextRequest) {
       .select('name, pricing, category')
       .order('name');
 
-    const categoryStats: Record<string, { count: number, avgPrice: number, totalPrice: number }> = {};
-    stats?.forEach(voice => {
+    const categoryStats: Record<string, { count: number; avgPrice: number; totalPrice: number }> =
+      {};
+    stats?.forEach((voice) => {
       const category = voice.category || 'Unknown';
       const price = voice.pricing?.pricePerMillionChars || 0;
-      
+
       if (!categoryStats[category]) {
         categoryStats[category] = { count: 0, avgPrice: 0, totalPrice: 0 };
       }
       categoryStats[category].count++;
       categoryStats[category].totalPrice += price;
-      categoryStats[category].avgPrice = categoryStats[category].totalPrice / categoryStats[category].count;
+      categoryStats[category].avgPrice =
+        categoryStats[category].totalPrice / categoryStats[category].count;
     });
 
-    console.log("价格更新完成！");
+    console.log('价格更新完成！');
     console.log(`总共更新了 ${totalUpdated} 个音色`);
-    console.log("分类统计:", categoryStats);
+    console.log('分类统计:', categoryStats);
 
     return NextResponse.json({
       success: true,
       message: `成功更新 ${totalUpdated} 个音色的价格`,
       totalUpdated,
       updateResults,
-      categoryStats
+      categoryStats,
     });
-
   } catch (error) {
-    console.error("更新音色价格失败:", error);
+    console.error('更新音色价格失败:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : "未知错误",
-        message: "更新音色价格失败"
+      {
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误',
+        message: '更新音色价格失败',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

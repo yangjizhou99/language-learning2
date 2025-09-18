@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  CheckCircle, 
-  DollarSign, 
-  Users, 
-  Volume2, 
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  CheckCircle,
+  DollarSign,
+  Users,
+  Volume2,
   Calculator,
   AlertTriangle,
   Play,
-  Pause
-} from "lucide-react";
+  Pause,
+} from 'lucide-react';
 
 interface Voice {
   id: string;
@@ -57,7 +57,7 @@ export default function GenerationConfirmation({
   selectedVoices,
   onConfirm,
   onCancel,
-  loading = false
+  loading = false,
 }: GenerationConfirmationProps) {
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
@@ -69,14 +69,14 @@ export default function GenerationConfirmation({
       const cost = (textLength / 1000000) * voice.pricing.pricePerMillionChars;
       return total + cost;
     }, 0);
-    
+
     return {
       textLength,
       totalCost,
-      costPerVoice: selectedVoices.map(voice => ({
+      costPerVoice: selectedVoices.map((voice) => ({
         voice: voice.display_name || voice.name,
-        cost: (textLength / 1000000) * voice.pricing.pricePerMillionChars
-      }))
+        cost: (textLength / 1000000) * voice.pricing.pricePerMillionChars,
+      })),
     };
   };
 
@@ -89,9 +89,9 @@ export default function GenerationConfirmation({
         audioElement.pause();
         audioElement.currentTime = 0;
       }
-      
+
       setPreviewingVoice(voiceName);
-      
+
       const response = await fetch('/api/admin/shadowing/preview-voice-cached', {
         method: 'POST',
         headers: {
@@ -99,17 +99,17 @@ export default function GenerationConfirmation({
         },
         body: JSON.stringify({
           voiceName,
-          languageCode
+          languageCode,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('试听失败');
       }
-      
+
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
-      
+
       const newAudioElement = new Audio(audioUrl);
       newAudioElement.onended = () => {
         setPreviewingVoice(null);
@@ -119,10 +119,9 @@ export default function GenerationConfirmation({
         setPreviewingVoice(null);
         URL.revokeObjectURL(audioUrl);
       };
-      
+
       setAudioElement(newAudioElement);
       await newAudioElement.play();
-      
     } catch (error) {
       console.error('试听失败:', error);
       setPreviewingVoice(null);
@@ -154,9 +153,8 @@ export default function GenerationConfirmation({
           </h3>
           <div className="p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600 mb-2">
-              语言: {language === 'zh' ? '中文' : language === 'en' ? '英文' : '日文'} | 
-              类型: {isDialogue ? '对话' : '独白'} | 
-              字符数: {costInfo.textLength}
+              语言: {language === 'zh' ? '中文' : language === 'en' ? '英文' : '日文'} | 类型:{' '}
+              {isDialogue ? '对话' : '独白'} | 字符数: {costInfo.textLength}
             </p>
             <div className="max-h-32 overflow-y-auto">
               <p className="text-sm whitespace-pre-wrap">{text}</p>
@@ -172,9 +170,9 @@ export default function GenerationConfirmation({
           </h3>
           <div className="space-y-3">
             {speakers.map((speaker, index) => {
-              const voice = selectedVoices.find(v => v.name === speaker.recommendedVoice);
+              const voice = selectedVoices.find((v) => v.name === speaker.recommendedVoice);
               const isPreviewing = previewingVoice === speaker.recommendedVoice;
-              
+
               return (
                 <div key={index} className="p-3 border rounded-lg">
                   <div className="flex items-start justify-between">
@@ -185,11 +183,11 @@ export default function GenerationConfirmation({
                           {voice?.display_name || speaker.recommendedVoice}
                         </span>
                         {voice?.provider && (
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="secondary"
                             className={`text-xs ${
-                              voice.provider === 'gemini' 
-                                ? 'bg-purple-100 text-purple-700' 
+                              voice.provider === 'gemini'
+                                ? 'bg-purple-100 text-purple-700'
                                 : 'bg-blue-100 text-blue-700'
                             }`}
                           >
@@ -200,7 +198,7 @@ export default function GenerationConfirmation({
                       <p className="text-sm text-gray-600 mb-1">{speaker.description}</p>
                       <p className="text-xs text-blue-600">{speaker.reason}</p>
                     </div>
-                    
+
                     <Button
                       size="sm"
                       variant="outline"
@@ -213,11 +211,7 @@ export default function GenerationConfirmation({
                         }
                       }}
                     >
-                      {isPreviewing ? (
-                        <Pause className="h-3 w-3" />
-                      ) : (
-                        <Play className="h-3 w-3" />
-                      )}
+                      {isPreviewing ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                     </Button>
                   </div>
                 </div>
@@ -246,7 +240,7 @@ export default function GenerationConfirmation({
                 <span className="text-lg">${costInfo.totalCost.toFixed(4)}</span>
               </div>
             </div>
-            
+
             <Alert className="mt-3">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription className="text-sm">
@@ -258,11 +252,7 @@ export default function GenerationConfirmation({
 
         {/* 操作按钮 */}
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={onCancel}
-            disabled={loading}
-          >
+          <Button variant="outline" onClick={onCancel} disabled={loading}>
             取消
           </Button>
           <Button

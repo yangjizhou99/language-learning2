@@ -1,18 +1,26 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from "next/server";
-import { chatJSON } from "@/lib/ai/client";
-import { normUsage } from "@/lib/ai/usage";
-import { requireAdmin } from "@/lib/admin";
+import { NextRequest, NextResponse } from 'next/server';
+import { chatJSON } from '@/lib/ai/client';
+import { normUsage } from '@/lib/ai/usage';
+import { requireAdmin } from '@/lib/admin';
 
 const SYS = `You are a curriculum designer for language training. Return VALID JSON ONLY.`;
 
-function promptPack({ lang, topic, tags=[], style }:{
-  lang:"en"|"ja"|"zh", topic:string, tags?:string[], style?:any
-}){
-  const L = lang==="en"?"English": lang==="ja"?"日本語":"简体中文";
-  const styleLine = style ? `STYLE=${JSON.stringify(style)}` : "STYLE={}";
+function promptPack({
+  lang,
+  topic,
+  tags = [],
+  style,
+}: {
+  lang: 'en' | 'ja' | 'zh';
+  topic: string;
+  tags?: string[];
+  style?: any;
+}) {
+  const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : '简体中文';
+  const styleLine = style ? `STYLE=${JSON.stringify(style)}` : 'STYLE={}';
   return `
 LANG=${L}
 TOPIC=${topic}
@@ -48,16 +56,17 @@ Ensure the **exemplar** strictly matches the step type and is speakable/natural.
 `.trim();
 }
 
-export async function POST(req: NextRequest){
-  const auth = await requireAdmin(req); if (!auth.ok) return NextResponse.json({ error:"forbidden" }, { status:403 });
-  
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+
   const b = await req.json();
-  const lang = (b.lang || "en").toLowerCase();
-  const topic = String(b.topic || "Campus life");
-  const tags = Array.isArray(b.tags)? b.tags : [];
+  const lang = (b.lang || 'en').toLowerCase();
+  const topic = String(b.topic || 'Campus life');
+  const tags = Array.isArray(b.tags) ? b.tags : [];
   const style = b.style || {};
-  const provider = (b.provider || "deepseek") as "openrouter"|"deepseek"|"openai";
-  const model = b.model || "deepseek-chat";
+  const provider = (b.provider || 'deepseek') as 'openrouter' | 'deepseek' | 'openai';
+  const model = b.model || 'deepseek-chat';
   const temperature = b.temperature ?? 0.5;
 
   // 创建流式响应
@@ -65,34 +74,37 @@ export async function POST(req: NextRequest){
     async start(controller) {
       try {
         // 发送开始标记
-        controller.enqueue(new TextEncoder().encode("data: [START]\n\n"));
-        
+        controller.enqueue(new TextEncoder().encode('data: [START]\n\n'));
+
         const { content, usage } = await chatJSON({
-          provider, model, temperature, response_json: true,
+          provider,
+          model,
+          temperature,
+          response_json: true,
           messages: [
-            { role:"system", content: SYS },
-            { role:"user", content: promptPack({ lang, topic, tags, style }) }
-          ]
+            { role: 'system', content: SYS },
+            { role: 'user', content: promptPack({ lang, topic, tags, style }) },
+          ],
         });
 
         // 发送完整内容，确保 JSON 完整性
         controller.enqueue(new TextEncoder().encode(`data: ${content}\n\n`));
-        
+
         // 发送结束标记
-        controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
-        
+        controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+
         controller.close();
       } catch (error) {
         controller.error(error);
       }
-    }
+    },
   });
 
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   });
 }

@@ -8,19 +8,44 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Archive, Trash2, Download, Upload, Eye, Sparkles, Brain, Pause, Play, X } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Plus,
+  Edit,
+  Archive,
+  Trash2,
+  Download,
+  Upload,
+  Eye,
+  Sparkles,
+  Brain,
+  Pause,
+  Play,
+  X,
+} from 'lucide-react';
 
-type Lang = 'en'|'ja'|'zh';
-type Genre = 'dialogue'|'monologue'|'news'|'lecture';
+type Lang = 'en' | 'ja' | 'zh';
+type Genre = 'dialogue' | 'monologue' | 'news' | 'lecture';
 
 const LANG_OPTIONS = [
   { value: 'ja', label: '日语' },
   { value: 'en', label: '英语' },
-  { value: 'zh', label: '中文' }
+  { value: 'zh', label: '中文' },
 ];
 
 const LEVEL_OPTIONS = [1, 2, 3, 4, 5, 6];
@@ -29,7 +54,7 @@ const GENRE_OPTIONS = [
   { value: 'dialogue', label: '对话' },
   { value: 'monologue', label: '独白' },
   { value: 'news', label: '新闻' },
-  { value: 'lecture', label: '讲座' }
+  { value: 'lecture', label: '讲座' },
 ];
 
 // 等级与体裁的对应关系（基于6级难度设计）
@@ -39,7 +64,7 @@ const LEVEL_GENRE_RESTRICTIONS: Record<number, Genre[]> = {
   3: ['monologue', 'news'], // L3: 独白/新闻-lite
   4: ['news', 'dialogue'], // L4: 新闻/对话（正式）
   5: ['lecture', 'news'], // L5: 讲座/新闻（信息密度↑）
-  6: ['lecture', 'news']  // L6: 讲座/社论
+  6: ['lecture', 'news'], // L6: 讲座/社论
 };
 
 // 根据等级获取可用的体裁选项
@@ -48,105 +73,134 @@ const getAvailableGenres = (level: number): Genre[] => {
 };
 
 // 等级详细配置（基于6级难度设计）
-const LEVEL_CONFIG: Record<number, {
-  genrePriority: string;
-  themeBandwidth: string;
-  lengthTarget: {
-    en: { min: number; max: number };
-    ja: { min: number; max: number };
-    zh: { min: number; max: number };
-  };
-  sentenceRange: { min: number; max: number };
-  maxSentenceLength: {
-    en: number;
-    ja: number;
-    zh: number;
-  };
-}> = {
+const LEVEL_CONFIG: Record<
+  number,
+  {
+    genrePriority: string;
+    themeBandwidth: string;
+    lengthTarget: {
+      en: { min: number; max: number };
+      ja: { min: number; max: number };
+      zh: { min: number; max: number };
+    };
+    sentenceRange: { min: number; max: number };
+    maxSentenceLength: {
+      en: number;
+      ja: number;
+      zh: number;
+    };
+  }
+> = {
   1: {
     genrePriority: 'dialogue（对话）',
     themeBandwidth: '高熟悉：问路、点餐、打招呼、校园办事',
-    lengthTarget: { en: { min: 60, max: 90 }, ja: { min: 180, max: 260 }, zh: { min: 160, max: 240 } },
+    lengthTarget: {
+      en: { min: 60, max: 90 },
+      ja: { min: 180, max: 260 },
+      zh: { min: 160, max: 240 },
+    },
     sentenceRange: { min: 6, max: 8 },
-    maxSentenceLength: { en: 12, ja: 35, zh: 35 }
+    maxSentenceLength: { en: 12, ja: 35, zh: 35 },
   },
   2: {
     genrePriority: 'dialogue/monologue',
     themeBandwidth: '日常任务：购物、预约、住户问题、课程安排',
-    lengthTarget: { en: { min: 90, max: 120 }, ja: { min: 260, max: 360 }, zh: { min: 240, max: 320 } },
+    lengthTarget: {
+      en: { min: 90, max: 120 },
+      ja: { min: 260, max: 360 },
+      zh: { min: 240, max: 320 },
+    },
     sentenceRange: { min: 7, max: 9 },
-    maxSentenceLength: { en: 16, ja: 45, zh: 45 }
+    maxSentenceLength: { en: 16, ja: 45, zh: 45 },
   },
   3: {
     genrePriority: 'monologue/news-lite',
     themeBandwidth: '泛新闻/校园新闻、社交媒体短评',
-    lengthTarget: { en: { min: 120, max: 160 }, ja: { min: 360, max: 480 }, zh: { min: 320, max: 420 } },
+    lengthTarget: {
+      en: { min: 120, max: 160 },
+      ja: { min: 360, max: 480 },
+      zh: { min: 320, max: 420 },
+    },
     sentenceRange: { min: 8, max: 10 },
-    maxSentenceLength: { en: 20, ja: 55, zh: 55 }
+    maxSentenceLength: { en: 20, ja: 55, zh: 55 },
   },
   4: {
     genrePriority: 'news/dialogue（formal）',
     themeBandwidth: '主题扩展：科技、教育、健康政策入门',
-    lengthTarget: { en: { min: 160, max: 200 }, ja: { min: 480, max: 620 }, zh: { min: 420, max: 560 } },
+    lengthTarget: {
+      en: { min: 160, max: 200 },
+      ja: { min: 480, max: 620 },
+      zh: { min: 420, max: 560 },
+    },
     sentenceRange: { min: 9, max: 11 },
-    maxSentenceLength: { en: 24, ja: 65, zh: 65 }
+    maxSentenceLength: { en: 24, ja: 65, zh: 65 },
   },
   5: {
     genrePriority: 'lecture/news（信息密度↑）',
     themeBandwidth: '专题：经济/科技/文化比较、数据引用',
-    lengthTarget: { en: { min: 200, max: 260 }, ja: { min: 620, max: 780 }, zh: { min: 560, max: 720 } },
+    lengthTarget: {
+      en: { min: 200, max: 260 },
+      ja: { min: 620, max: 780 },
+      zh: { min: 560, max: 720 },
+    },
     sentenceRange: { min: 10, max: 12 },
-    maxSentenceLength: { en: 28, ja: 75, zh: 75 }
+    maxSentenceLength: { en: 28, ja: 75, zh: 75 },
   },
   6: {
     genrePriority: 'lecture/editorial',
     themeBandwidth: '深度议题：国际关系、AI伦理、产业趋势',
-    lengthTarget: { en: { min: 260, max: 320 }, ja: { min: 780, max: 980 }, zh: { min: 720, max: 900 } },
+    lengthTarget: {
+      en: { min: 260, max: 320 },
+      ja: { min: 780, max: 980 },
+      zh: { min: 720, max: 900 },
+    },
     sentenceRange: { min: 11, max: 13 },
-    maxSentenceLength: { en: 32, ja: 90, zh: 90 }
-  }
+    maxSentenceLength: { en: 32, ja: 90, zh: 90 },
+  },
 };
 
 export default function ThemesPage() {
   const [lang, setLang] = useState<Lang>('ja');
-  const [level, setLevel] = useState<1|2|3|4|5|6>(3);
+  const [level, setLevel] = useState<1 | 2 | 3 | 4 | 5 | 6>(3);
   const [genre, setGenre] = useState<Genre>('monologue');
   const [q, setQ] = useState('');
-  
+
   const [items, setItems] = useState<any[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
-  
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  
+
   const [fileInput, setFileInput] = useState<HTMLInputElement | null>(null);
 
   // AI 生成相关状态
   const [aiGenerationType, setAiGenerationType] = useState<'themes' | 'subtopics' | null>(null);
   const [aiGenerationCount, setAiGenerationCount] = useState(5);
   const [aiProvider, setAiProvider] = useState<'openrouter' | 'deepseek' | 'openai'>('openrouter');
-  const [aiModels, setAiModels] = useState<{id: string; name: string}[]>([]);
+  const [aiModels, setAiModels] = useState<{ id: string; name: string }[]>([]);
   const [aiModel, setAiModel] = useState('');
   const [aiTemperature, setAiTemperature] = useState(0.7);
   const [selectedThemeForSubtopic, setSelectedThemeForSubtopic] = useState<any>(null);
 
   // 任务队列相关状态
-  const [taskQueue, setTaskQueue] = useState<Array<{
-    id: string;
-    type: 'themes' | 'subtopics';
-    status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
-    progress: number;
-    title: string;
-    params: any;
-    result?: any;
-    error?: string;
-    createdAt: Date;
-    startedAt?: Date;
-    pausedAt?: Date;
-    completedAt?: Date;
-    abortController?: AbortController;
-  }>>([]);
+  const [taskQueue, setTaskQueue] = useState<
+    Array<{
+      id: string;
+      type: 'themes' | 'subtopics';
+      status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+      progress: number;
+      title: string;
+      params: any;
+      result?: any;
+      error?: string;
+      createdAt: Date;
+      startedAt?: Date;
+      pausedAt?: Date;
+      completedAt?: Date;
+      abortController?: AbortController;
+    }>
+  >([]);
   const [maxConcurrent, setMaxConcurrent] = useState(3);
   const [runningTasks, setRunningTasks] = useState(0);
   const [queuePaused, setQueuePaused] = useState(false);
@@ -154,7 +208,9 @@ export default function ThemesPage() {
 
   // 获取认证头信息
   const getAuthHeaders = async (): Promise<Record<string, string>> => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const token = session?.access_token;
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
@@ -164,7 +220,7 @@ export default function ThemesPage() {
     try {
       const qs = new URLSearchParams({ lang, level: String(level), genre });
       const r = await fetch(`/api/admin/shadowing/themes?${qs.toString()}`, {
-        headers: await getAuthHeaders()
+        headers: await getAuthHeaders(),
       });
       const j = await r.json();
       if (r.ok) {
@@ -187,17 +243,19 @@ export default function ThemesPage() {
   useEffect(() => {
     const loadModels = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const token = session?.access_token;
-        
+
         if (aiProvider === 'openrouter') {
           const r = await fetch(`/api/admin/providers/models?provider=${aiProvider}`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
           });
           const j = await r.json();
           if (r.ok && Array.isArray(j.models)) {
-            const sortedModels = [...j.models].sort((a: any, b: any) => 
-              String(a.name || a.id).localeCompare(String(b.name || b.id))
+            const sortedModels = [...j.models].sort((a: any, b: any) =>
+              String(a.name || a.id).localeCompare(String(b.name || b.id)),
             );
             setAiModels(sortedModels);
             setAiModel(sortedModels[0]?.id || '');
@@ -208,14 +266,14 @@ export default function ThemesPage() {
         } else if (aiProvider === 'deepseek') {
           const staticModels = [
             { id: 'deepseek-chat', name: 'deepseek-chat' },
-            { id: 'deepseek-reasoner', name: 'deepseek-reasoner' }
+            { id: 'deepseek-reasoner', name: 'deepseek-reasoner' },
           ];
           setAiModels(staticModels);
           setAiModel(staticModels[0].id);
         } else if (aiProvider === 'openai') {
           const staticModels = [
             { id: 'gpt-4o', name: 'gpt-4o' },
-            { id: 'gpt-4o-mini', name: 'gpt-4o-mini' }
+            { id: 'gpt-4o-mini', name: 'gpt-4o-mini' },
           ];
           setAiModels(staticModels);
           setAiModel(staticModels[0].id);
@@ -226,7 +284,7 @@ export default function ThemesPage() {
         setAiModel('');
       }
     };
-    
+
     loadModels();
   }, [aiProvider]);
 
@@ -241,23 +299,23 @@ export default function ThemesPage() {
 
   function toggleAll(v: boolean) {
     const m: Record<string, boolean> = {};
-    items.forEach(it => m[it.id] = v);
+    items.forEach((it) => (m[it.id] = v));
     setSelected(m);
   }
 
   function toggleOne(id: string) {
-    setSelected(s => ({ ...s, [id]: !s[id] }));
+    setSelected((s) => ({ ...s, [id]: !s[id] }));
   }
 
   function openNew() {
-    setEditing({ 
-      id: undefined, 
-      lang, 
-      level, 
-      genre, 
-      title: '', 
-      desc: '', 
-      status: 'active' 
+    setEditing({
+      id: undefined,
+      lang,
+      level,
+      genre,
+      title: '',
+      desc: '',
+      status: 'active',
     });
     setModalOpen(true);
   }
@@ -277,15 +335,15 @@ export default function ThemesPage() {
       alert('请填写主题标题');
       return;
     }
-    
+
     try {
       const r = await fetch('/api/admin/shadowing/themes', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          ...(await getAuthHeaders())
+          ...(await getAuthHeaders()),
         },
-        body: JSON.stringify({ action: 'upsert', item: editing })
+        body: JSON.stringify({ action: 'upsert', item: editing }),
       });
       const j = await r.json();
       if (!r.ok) {
@@ -300,21 +358,21 @@ export default function ThemesPage() {
   }
 
   async function archiveSelected() {
-    const ids = Object.keys(selected).filter(id => selected[id]);
+    const ids = Object.keys(selected).filter((id) => selected[id]);
     if (!ids.length) {
       alert('未选择');
       return;
     }
     if (!confirm(`确认归档 ${ids.length} 个大主题？`)) return;
-    
+
     try {
       const r = await fetch('/api/admin/shadowing/themes/bulk', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          ...(await getAuthHeaders())
+          ...(await getAuthHeaders()),
         },
-        body: JSON.stringify({ action: 'archive', items: ids.map(id => ({ id })) })
+        body: JSON.stringify({ action: 'archive', items: ids.map((id) => ({ id })) }),
       });
       const j = await r.json();
       if (!r.ok) {
@@ -328,21 +386,21 @@ export default function ThemesPage() {
   }
 
   async function deleteSelected() {
-    const ids = Object.keys(selected).filter(id => selected[id]);
+    const ids = Object.keys(selected).filter((id) => selected[id]);
     if (!ids.length) {
       alert('未选择');
       return;
     }
     if (!confirm(`⚠️永久删除 ${ids.length} 个大主题？其下小主题也会被删除。`)) return;
-    
+
     try {
       const r = await fetch('/api/admin/shadowing/themes/bulk', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          ...(await getAuthHeaders())
+          ...(await getAuthHeaders()),
         },
-        body: JSON.stringify({ action: 'delete', items: ids.map(id => ({ id })) })
+        body: JSON.stringify({ action: 'delete', items: ids.map((id) => ({ id })) }),
       });
       const j = await r.json();
       if (!r.ok) {
@@ -364,19 +422,19 @@ export default function ThemesPage() {
     try {
       const r = await fetch('/api/admin/shadowing/themes/delete', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          ...(await getAuthHeaders())
+          ...(await getAuthHeaders()),
         },
-        body: JSON.stringify({ theme_id: theme.id })
+        body: JSON.stringify({ theme_id: theme.id }),
       });
-      
+
       const j = await r.json();
       if (!r.ok) {
         alert('删除失败：' + j.error);
         return;
       }
-      
+
       // 重新加载数据
       await load();
       alert(`成功删除主题"${theme.title}"及其下 ${j.deleted_subtopics || 0} 个小主题`);
@@ -386,7 +444,7 @@ export default function ThemesPage() {
   }
 
   function exportData() {
-    const data = items.filter(item => selected[item.id] || Object.keys(selected).length === 0);
+    const data = items.filter((item) => selected[item.id] || Object.keys(selected).length === 0);
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -405,7 +463,7 @@ export default function ThemesPage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
@@ -414,14 +472,14 @@ export default function ThemesPage() {
           alert('文件格式错误');
           return;
         }
-        
+
         const r = await fetch('/api/admin/shadowing/themes/bulk', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            ...(await getAuthHeaders())
+            ...(await getAuthHeaders()),
           },
-          body: JSON.stringify({ action: 'upsert', items: data })
+          body: JSON.stringify({ action: 'upsert', items: data }),
         });
         const j = await r.json();
         if (!r.ok) {
@@ -445,53 +503,57 @@ export default function ThemesPage() {
       type,
       status: 'pending' as const,
       progress: 0,
-      title: type === 'themes' 
-        ? `生成 ${params.count} 个大主题 (${LANG_OPTIONS.find(l => l.value === params.lang)?.label} L${params.level} ${GENRE_OPTIONS.find(g => g.value === params.genre)?.label})`
-        : `为主题"${params.theme_title_cn}"生成 ${params.count} 个小主题`,
+      title:
+        type === 'themes'
+          ? `生成 ${params.count} 个大主题 (${LANG_OPTIONS.find((l) => l.value === params.lang)?.label} L${params.level} ${GENRE_OPTIONS.find((g) => g.value === params.genre)?.label})`
+          : `为主题"${params.theme_title_cn}"生成 ${params.count} 个小主题`,
       params,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
-    
-    setTaskQueue(prev => [...prev, task]);
+
+    setTaskQueue((prev) => [...prev, task]);
     return taskId;
   }
 
   // 执行任务
   async function executeTask(taskId: string) {
-    const task = taskQueue.find(t => t.id === taskId);
+    const task = taskQueue.find((t) => t.id === taskId);
     if (!task) return;
 
     // 创建 AbortController
     const abortController = new AbortController();
 
     // 更新任务状态为运行中
-    setTaskQueue(prev => prev.map(t => 
-      t.id === taskId 
-        ? { 
-            ...t, 
-            status: 'running', 
-            startedAt: new Date(), 
-            progress: 10,
-            abortController
-          }
-        : t
-    ));
-    setRunningTasks(prev => prev + 1);
+    setTaskQueue((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              status: 'running',
+              startedAt: new Date(),
+              progress: 10,
+              abortController,
+            }
+          : t,
+      ),
+    );
+    setRunningTasks((prev) => prev + 1);
 
     try {
       // 对于小主题生成，使用流式API
-      const endpoint = task.type === 'themes' 
-        ? '/api/admin/shadowing/themes/generate'
-        : '/api/admin/shadowing/subtopics/generate-stream';
+      const endpoint =
+        task.type === 'themes'
+          ? '/api/admin/shadowing/themes/generate'
+          : '/api/admin/shadowing/subtopics/generate-stream';
 
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          ...(await getAuthHeaders())
+          ...(await getAuthHeaders()),
         },
         body: JSON.stringify(task.params),
-        signal: abortController.signal
+        signal: abortController.signal,
       });
 
       if (!response.ok) {
@@ -520,29 +582,29 @@ export default function ThemesPage() {
             if (line.startsWith('data: ')) {
               try {
                 const data = JSON.parse(line.slice(6));
-                
+
                 // 更新进度
                 if (data.type === 'start') {
-                  setTaskQueue(prev => prev.map(t => 
-                    t.id === taskId ? { ...t, progress: 20 } : t
-                  ));
+                  setTaskQueue((prev) =>
+                    prev.map((t) => (t.id === taskId ? { ...t, progress: 20 } : t)),
+                  );
                 } else if (data.type === 'ai_start') {
-                  setTaskQueue(prev => prev.map(t => 
-                    t.id === taskId ? { ...t, progress: 40 } : t
-                  ));
+                  setTaskQueue((prev) =>
+                    prev.map((t) => (t.id === taskId ? { ...t, progress: 40 } : t)),
+                  );
                 } else if (data.type === 'ai_complete') {
-                  setTaskQueue(prev => prev.map(t => 
-                    t.id === taskId ? { ...t, progress: 70 } : t
-                  ));
+                  setTaskQueue((prev) =>
+                    prev.map((t) => (t.id === taskId ? { ...t, progress: 70 } : t)),
+                  );
                 } else if (data.type === 'parse_complete') {
-                  setTaskQueue(prev => prev.map(t => 
-                    t.id === taskId ? { ...t, progress: 90 } : t
-                  ));
+                  setTaskQueue((prev) =>
+                    prev.map((t) => (t.id === taskId ? { ...t, progress: 90 } : t)),
+                  );
                 } else if (data.type === 'complete') {
                   result = data.data;
-                  setTaskQueue(prev => prev.map(t => 
-                    t.id === taskId ? { ...t, progress: 100 } : t
-                  ));
+                  setTaskQueue((prev) =>
+                    prev.map((t) => (t.id === taskId ? { ...t, progress: 100 } : t)),
+                  );
                 } else if (data.type === 'error') {
                   throw new Error(data.message || 'Generation failed');
                 }
@@ -558,19 +620,20 @@ export default function ThemesPage() {
         }
 
         // 更新任务状态为完成
-        setTaskQueue(prev => prev.map(t => 
-          t.id === taskId 
-            ? { 
-                ...t, 
-                status: 'completed', 
-                progress: 100, 
-                result,
-                completedAt: new Date(),
-                abortController: undefined
-              }
-            : t
-        ));
-
+        setTaskQueue((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  status: 'completed',
+                  progress: 100,
+                  result,
+                  completedAt: new Date(),
+                  abortController: undefined,
+                }
+              : t,
+          ),
+        );
       } else {
         // 非流式响应处理
         const responseText = await response.text();
@@ -580,58 +643,63 @@ export default function ThemesPage() {
         } catch (jsonError) {
           throw new Error(`API返回非JSON格式响应: ${responseText}`);
         }
-        
+
         if (!response.ok) {
           throw new Error(result.error || '生成失败');
         }
 
         // 更新任务状态为完成
-        setTaskQueue(prev => prev.map(t => 
-          t.id === taskId 
-            ? { 
-                ...t, 
-                status: 'completed', 
-                progress: 100, 
-                result,
-                completedAt: new Date(),
-                abortController: undefined
-              }
-            : t
-        ));
+        setTaskQueue((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  status: 'completed',
+                  progress: 100,
+                  result,
+                  completedAt: new Date(),
+                  abortController: undefined,
+                }
+              : t,
+          ),
+        );
       }
 
       // 重新加载数据
       await load();
-
     } catch (error) {
       // 检查是否是被取消的任务
       if (error instanceof Error && error.name === 'AbortError') {
-        setTaskQueue(prev => prev.map(t => 
-          t.id === taskId 
-            ? { 
-                ...t, 
-                status: 'cancelled', 
-                completedAt: new Date(),
-                abortController: undefined
-              }
-            : t
-        ));
+        setTaskQueue((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  status: 'cancelled',
+                  completedAt: new Date(),
+                  abortController: undefined,
+                }
+              : t,
+          ),
+        );
       } else {
         // 更新任务状态为失败
-        setTaskQueue(prev => prev.map(t => 
-          t.id === taskId 
-            ? { 
-                ...t, 
-                status: 'failed', 
-                error: error instanceof Error ? error.message : String(error),
-                completedAt: new Date(),
-                abortController: undefined
-              }
-            : t
-        ));
+        setTaskQueue((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? {
+                  ...t,
+                  status: 'failed',
+                  error: error instanceof Error ? error.message : String(error),
+                  completedAt: new Date(),
+                  abortController: undefined,
+                }
+              : t,
+          ),
+        );
       }
     } finally {
-      setRunningTasks(prev => prev - 1);
+      setRunningTasks((prev) => prev - 1);
     }
   }
 
@@ -639,8 +707,8 @@ export default function ThemesPage() {
   useEffect(() => {
     const processQueue = async () => {
       if (queuePaused || !autoStart) return; // 如果队列暂停或未开启自动开始，不处理新任务
-      
-      const pendingTasks = taskQueue.filter(t => t.status === 'pending');
+
+      const pendingTasks = taskQueue.filter((t) => t.status === 'pending');
       const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
 
       for (let i = 0; i < canStart; i++) {
@@ -655,17 +723,17 @@ export default function ThemesPage() {
   // 当运行中的任务数量变化时，自动处理队列
   useEffect(() => {
     if (autoStart && !queuePaused) {
-      const pendingTasks = taskQueue.filter(t => t.status === 'pending');
+      const pendingTasks = taskQueue.filter((t) => t.status === 'pending');
       const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
-      
+
       if (canStart > 0) {
         // 延迟一点时间再处理，避免状态更新冲突
         const timer = setTimeout(() => {
-          pendingTasks.slice(0, canStart).forEach(task => {
+          pendingTasks.slice(0, canStart).forEach((task) => {
             executeTask(task.id);
           });
         }, 100);
-        
+
         return () => clearTimeout(timer);
       }
     }
@@ -673,7 +741,7 @@ export default function ThemesPage() {
 
   // 任务控制函数
   function pauseTask(taskId: string) {
-    const task = taskQueue.find(t => t.id === taskId);
+    const task = taskQueue.find((t) => t.id === taskId);
     if (!task || task.status !== 'running') return;
 
     // 取消正在进行的请求
@@ -682,28 +750,28 @@ export default function ThemesPage() {
     }
 
     // 更新任务状态为暂停
-    setTaskQueue(prev => prev.map(t => 
-      t.id === taskId 
-        ? { ...t, status: 'paused', pausedAt: new Date(), abortController: undefined }
-        : t
-    ));
-    setRunningTasks(prev => prev - 1);
+    setTaskQueue((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? { ...t, status: 'paused', pausedAt: new Date(), abortController: undefined }
+          : t,
+      ),
+    );
+    setRunningTasks((prev) => prev - 1);
   }
 
   function resumeTask(taskId: string) {
-    const task = taskQueue.find(t => t.id === taskId);
+    const task = taskQueue.find((t) => t.id === taskId);
     if (!task || task.status !== 'paused') return;
 
     // 更新任务状态为等待中，让队列处理
-    setTaskQueue(prev => prev.map(t => 
-      t.id === taskId 
-        ? { ...t, status: 'pending', pausedAt: undefined }
-        : t
-    ));
+    setTaskQueue((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: 'pending', pausedAt: undefined } : t)),
+    );
   }
 
   function cancelTask(taskId: string) {
-    const task = taskQueue.find(t => t.id === taskId);
+    const task = taskQueue.find((t) => t.id === taskId);
     if (!task) return;
 
     // 如果任务正在运行，取消请求
@@ -712,26 +780,28 @@ export default function ThemesPage() {
     }
 
     // 更新任务状态为已取消
-    setTaskQueue(prev => prev.map(t => 
-      t.id === taskId 
-        ? { 
-            ...t, 
-            status: 'cancelled', 
-            completedAt: new Date(),
-            abortController: undefined
-          }
-        : t
-    ));
+    setTaskQueue((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              status: 'cancelled',
+              completedAt: new Date(),
+              abortController: undefined,
+            }
+          : t,
+      ),
+    );
 
     if (task.status === 'running') {
-      setRunningTasks(prev => prev - 1);
+      setRunningTasks((prev) => prev - 1);
     }
   }
 
   function pauseAllTasks() {
     setQueuePaused(true);
     // 暂停所有运行中的任务
-    taskQueue.forEach(task => {
+    taskQueue.forEach((task) => {
       if (task.status === 'running') {
         pauseTask(task.id);
       }
@@ -741,7 +811,7 @@ export default function ThemesPage() {
   function resumeAllTasks() {
     setQueuePaused(false);
     // 恢复所有暂停的任务
-    taskQueue.forEach(task => {
+    taskQueue.forEach((task) => {
       if (task.status === 'paused') {
         resumeTask(task.id);
       }
@@ -750,7 +820,7 @@ export default function ThemesPage() {
 
   function cancelAllTasks() {
     // 取消所有未完成的任务
-    taskQueue.forEach(task => {
+    taskQueue.forEach((task) => {
       if (['pending', 'running', 'paused'].includes(task.status)) {
         cancelTask(task.id);
       }
@@ -758,7 +828,7 @@ export default function ThemesPage() {
   }
 
   function startAllPendingTasks() {
-    const pendingTasks = taskQueue.filter(t => t.status === 'pending');
+    const pendingTasks = taskQueue.filter((t) => t.status === 'pending');
     const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
 
     for (let i = 0; i < canStart; i++) {
@@ -768,7 +838,7 @@ export default function ThemesPage() {
   }
 
   function startTask(taskId: string) {
-    const task = taskQueue.find(t => t.id === taskId);
+    const task = taskQueue.find((t) => t.id === taskId);
     if (!task || task.status !== 'pending') return;
 
     executeTask(taskId);
@@ -781,14 +851,14 @@ export default function ThemesPage() {
       return;
     }
 
-    const selectedThemes = items.filter(theme => selected[theme.id]);
+    const selectedThemes = items.filter((theme) => selected[theme.id]);
     if (selectedThemes.length === 0) {
       alert('请先选择要生成小主题的大主题');
       return;
     }
 
     // 为每个选中的主题添加生成小主题的任务
-    selectedThemes.forEach(theme => {
+    selectedThemes.forEach((theme) => {
       addTaskToQueue('subtopics', {
         theme_id: theme.id,
         theme_title_cn: theme.title,
@@ -798,7 +868,7 @@ export default function ThemesPage() {
         count: aiGenerationCount,
         provider: aiProvider,
         model: aiModel,
-        temperature: aiTemperature
+        temperature: aiTemperature,
       });
     });
 
@@ -819,7 +889,7 @@ export default function ThemesPage() {
       count: aiGenerationCount,
       provider: aiProvider,
       model: aiModel,
-      temperature: aiTemperature
+      temperature: aiTemperature,
     });
 
     setAiGenerationType(null);
@@ -841,7 +911,7 @@ export default function ThemesPage() {
       count: aiGenerationCount,
       provider: aiProvider,
       model: aiModel,
-      temperature: aiTemperature
+      temperature: aiTemperature,
     });
 
     setAiGenerationType(null);
@@ -857,11 +927,11 @@ export default function ThemesPage() {
           {taskQueue.length > 0 && (
             <div className="mt-2 flex items-center gap-4">
               <div className="text-sm text-muted-foreground">
-                任务队列: {taskQueue.filter(t => t.status === 'pending').length} 等待中, 
-                {taskQueue.filter(t => t.status === 'running').length} 执行中, 
-                {taskQueue.filter(t => t.status === 'paused').length} 暂停, 
-                {taskQueue.filter(t => t.status === 'completed').length} 已完成, 
-                {taskQueue.filter(t => t.status === 'failed').length} 失败
+                任务队列: {taskQueue.filter((t) => t.status === 'pending').length} 等待中,
+                {taskQueue.filter((t) => t.status === 'running').length} 执行中,
+                {taskQueue.filter((t) => t.status === 'paused').length} 暂停,
+                {taskQueue.filter((t) => t.status === 'completed').length} 已完成,
+                {taskQueue.filter((t) => t.status === 'failed').length} 失败
               </div>
               <div className="flex gap-2">
                 <div className="flex items-center gap-2">
@@ -876,10 +946,15 @@ export default function ThemesPage() {
                     自动开始
                   </label>
                 </div>
-                {!autoStart && taskQueue.filter(t => t.status === 'pending').length > 0 && (
-                  <Button onClick={startAllPendingTasks} size="sm" variant="default" className="bg-green-600 hover:bg-green-700 text-white">
+                {!autoStart && taskQueue.filter((t) => t.status === 'pending').length > 0 && (
+                  <Button
+                    onClick={startAllPendingTasks}
+                    size="sm"
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
                     <Play className="w-4 h-4 mr-1" />
-                    开始所有 ({taskQueue.filter(t => t.status === 'pending').length})
+                    开始所有 ({taskQueue.filter((t) => t.status === 'pending').length})
                   </Button>
                 )}
                 {queuePaused ? (
@@ -907,8 +982,8 @@ export default function ThemesPage() {
             <Upload className="w-4 h-4 mr-2" />
             导入
           </Button>
-          <Button 
-            onClick={() => setAiGenerationType('themes')} 
+          <Button
+            onClick={() => setAiGenerationType('themes')}
             variant="outline"
             className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
           >
@@ -936,7 +1011,7 @@ export default function ThemesPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {LANG_OPTIONS.map(opt => (
+                  {LANG_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
                     </SelectItem>
@@ -944,25 +1019,28 @@ export default function ThemesPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label>等级</Label>
-              <Select value={String(level)} onValueChange={(v) => {
-                const newLevel = parseInt(v) as 1|2|3|4|5|6;
-                setLevel(newLevel);
-                
-                // 检查当前体裁是否在新等级中可用
-                const availableGenres = getAvailableGenres(newLevel);
-                if (!availableGenres.includes(genre)) {
-                  // 如果当前体裁不可用，自动选择第一个可用的体裁
-                  setGenre(availableGenres[0]);
-                }
-              }}>
+              <Select
+                value={String(level)}
+                onValueChange={(v) => {
+                  const newLevel = parseInt(v) as 1 | 2 | 3 | 4 | 5 | 6;
+                  setLevel(newLevel);
+
+                  // 检查当前体裁是否在新等级中可用
+                  const availableGenres = getAvailableGenres(newLevel);
+                  if (!availableGenres.includes(genre)) {
+                    // 如果当前体裁不可用，自动选择第一个可用的体裁
+                    setGenre(availableGenres[0]);
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {LEVEL_OPTIONS.map(opt => (
+                  {LEVEL_OPTIONS.map((opt) => (
                     <SelectItem key={opt} value={String(opt)}>
                       L{opt}
                     </SelectItem>
@@ -970,7 +1048,7 @@ export default function ThemesPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label>体裁</Label>
               <Select value={genre} onValueChange={(v: Genre) => setGenre(v)}>
@@ -978,30 +1056,27 @@ export default function ThemesPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {GENRE_OPTIONS
-                    .filter(opt => getAvailableGenres(level).includes(opt.value as Genre))
-                    .map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                  {GENRE_OPTIONS.filter((opt) =>
+                    getAvailableGenres(level).includes(opt.value as Genre),
+                  ).map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <div className="text-xs text-muted-foreground mt-1 space-y-1">
                 <p>
-                  <strong>等级 L{level}</strong> 可用体裁: {getAvailableGenres(level).map(g => 
-                    GENRE_OPTIONS.find(opt => opt.value === g)?.label
-                  ).join('、')}
+                  <strong>等级 L{level}</strong> 可用体裁:{' '}
+                  {getAvailableGenres(level)
+                    .map((g) => GENRE_OPTIONS.find((opt) => opt.value === g)?.label)
+                    .join('、')}
                 </p>
-                <p>
-                  体裁优先: {LEVEL_CONFIG[level]?.genrePriority}
-                </p>
-                <p>
-                  主题带宽: {LEVEL_CONFIG[level]?.themeBandwidth}
-                </p>
+                <p>体裁优先: {LEVEL_CONFIG[level]?.genrePriority}</p>
+                <p>主题带宽: {LEVEL_CONFIG[level]?.themeBandwidth}</p>
               </div>
             </div>
-            
+
             <div>
               <Label>搜索</Label>
               <Input
@@ -1041,16 +1116,12 @@ export default function ThemesPage() {
                   onClick={startAllPendingTasks}
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white"
-                  disabled={taskQueue.filter(t => t.status === 'pending').length === 0}
+                  disabled={taskQueue.filter((t) => t.status === 'pending').length === 0}
                 >
                   <Play className="w-4 h-4 mr-1" />
-                  一键开始 ({taskQueue.filter(t => t.status === 'pending').length})
+                  一键开始 ({taskQueue.filter((t) => t.status === 'pending').length})
                 </Button>
-                <Button
-                  onClick={() => setTaskQueue([])}
-                  variant="outline"
-                  size="sm"
-                >
+                <Button onClick={() => setTaskQueue([])} variant="outline" size="sm">
                   清空队列
                 </Button>
               </div>
@@ -1062,46 +1133,70 @@ export default function ThemesPage() {
                 <div
                   key={task.id}
                   className={`p-3 rounded-lg border ${
-                    task.status === 'completed' ? 'bg-green-50 border-green-200' :
-                    task.status === 'failed' ? 'bg-red-50 border-red-200' :
-                    task.status === 'cancelled' ? 'bg-gray-50 border-gray-200' :
-                    task.status === 'running' ? 'bg-blue-50 border-blue-200' :
-                    task.status === 'paused' ? 'bg-yellow-50 border-yellow-200' :
-                    'bg-gray-50 border-gray-200'
+                    task.status === 'completed'
+                      ? 'bg-green-50 border-green-200'
+                      : task.status === 'failed'
+                        ? 'bg-red-50 border-red-200'
+                        : task.status === 'cancelled'
+                          ? 'bg-gray-50 border-gray-200'
+                          : task.status === 'running'
+                            ? 'bg-blue-50 border-blue-200'
+                            : task.status === 'paused'
+                              ? 'bg-yellow-50 border-yellow-200'
+                              : 'bg-gray-50 border-gray-200'
                   }`}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${
-                          task.status === 'completed' ? 'bg-green-500' :
-                          task.status === 'failed' ? 'bg-red-500' :
-                          task.status === 'cancelled' ? 'bg-gray-500' :
-                          task.status === 'running' ? 'bg-blue-500' :
-                          task.status === 'paused' ? 'bg-yellow-500' :
-                          'bg-gray-400'
-                        }`} />
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            task.status === 'completed'
+                              ? 'bg-green-500'
+                              : task.status === 'failed'
+                                ? 'bg-red-500'
+                                : task.status === 'cancelled'
+                                  ? 'bg-gray-500'
+                                  : task.status === 'running'
+                                    ? 'bg-blue-500'
+                                    : task.status === 'paused'
+                                      ? 'bg-yellow-500'
+                                      : 'bg-gray-400'
+                          }`}
+                        />
                         <span className="font-medium">{task.title}</span>
-                        <Badge variant={
-                          task.status === 'completed' ? 'default' :
-                          task.status === 'failed' ? 'destructive' :
-                          task.status === 'cancelled' ? 'secondary' :
-                          task.status === 'running' ? 'secondary' :
-                          task.status === 'paused' ? 'outline' :
-                          'outline'
-                        }>
-                          {task.status === 'pending' ? '等待中' :
-                           task.status === 'running' ? '执行中' :
-                           task.status === 'paused' ? '暂停' :
-                           task.status === 'cancelled' ? '已取消' :
-                           task.status === 'completed' ? '已完成' :
-                           '失败'}
+                        <Badge
+                          variant={
+                            task.status === 'completed'
+                              ? 'default'
+                              : task.status === 'failed'
+                                ? 'destructive'
+                                : task.status === 'cancelled'
+                                  ? 'secondary'
+                                  : task.status === 'running'
+                                    ? 'secondary'
+                                    : task.status === 'paused'
+                                      ? 'outline'
+                                      : 'outline'
+                          }
+                        >
+                          {task.status === 'pending'
+                            ? '等待中'
+                            : task.status === 'running'
+                              ? '执行中'
+                              : task.status === 'paused'
+                                ? '暂停'
+                                : task.status === 'cancelled'
+                                  ? '已取消'
+                                  : task.status === 'completed'
+                                    ? '已完成'
+                                    : '失败'}
                         </Badge>
                       </div>
                       {task.status === 'running' && (
                         <div className="mt-2">
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                               style={{ width: `${task.progress}%` }}
                             />
@@ -1109,20 +1204,17 @@ export default function ThemesPage() {
                         </div>
                       )}
                       {task.status === 'failed' && task.error && (
-                        <div className="mt-2 text-sm text-red-600">
-                          错误: {task.error}
-                        </div>
+                        <div className="mt-2 text-sm text-red-600">错误: {task.error}</div>
                       )}
                       {task.status === 'completed' && task.result && (
-                        <div className="mt-2 text-sm text-green-600">
-                          {task.result.message}
-                        </div>
+                        <div className="mt-2 text-sm text-green-600">{task.result.message}</div>
                       )}
                       <div className="mt-1 text-xs text-muted-foreground">
                         创建时间: {task.createdAt.toLocaleTimeString()}
                         {task.startedAt && ` | 开始时间: ${task.startedAt.toLocaleTimeString()}`}
                         {task.pausedAt && ` | 暂停时间: ${task.pausedAt.toLocaleTimeString()}`}
-                        {task.completedAt && ` | 完成时间: ${task.completedAt.toLocaleTimeString()}`}
+                        {task.completedAt &&
+                          ` | 完成时间: ${task.completedAt.toLocaleTimeString()}`}
                       </div>
                     </div>
                     <div className="flex gap-1">
@@ -1173,7 +1265,7 @@ export default function ThemesPage() {
                       {['completed', 'failed', 'cancelled'].includes(task.status) && (
                         <Button
                           onClick={() => {
-                            setTaskQueue(prev => prev.filter(t => t.id !== task.id));
+                            setTaskQueue((prev) => prev.filter((t) => t.id !== task.id));
                           }}
                           variant="ghost"
                           size="sm"
@@ -1197,12 +1289,10 @@ export default function ThemesPage() {
         <Card className="mb-4">
           <CardContent className="pt-4">
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                已选择 {selectedCount} 个主题
-              </span>
-              <Button 
-                onClick={batchAddToQueue} 
-                variant="default" 
+              <span className="text-sm text-muted-foreground">已选择 {selectedCount} 个主题</span>
+              <Button
+                onClick={batchAddToQueue}
+                variant="default"
                 size="sm"
                 className="bg-purple-600 hover:bg-purple-700 text-white"
               >
@@ -1231,7 +1321,7 @@ export default function ThemesPage() {
                 <tr>
                   <th className="p-4 text-left">
                     <Checkbox
-                      checked={items.length > 0 && items.every(item => selected[item.id])}
+                      checked={items.length > 0 && items.every((item) => selected[item.id])}
                       onCheckedChange={toggleAll}
                     />
                   </th>
@@ -1256,7 +1346,7 @@ export default function ThemesPage() {
                     </td>
                   </tr>
                 ) : (
-                  items.map(item => (
+                  items.map((item) => (
                     <tr key={item.id} className="border-b hover:bg-muted/50">
                       <td className="p-4">
                         <Checkbox
@@ -1267,7 +1357,8 @@ export default function ThemesPage() {
                       <td className="p-4">
                         <div className="font-medium">{item.title}</div>
                         <div className="text-sm text-muted-foreground">
-                          {LANG_OPTIONS.find(l => l.value === item.lang)?.label} L{item.level} {GENRE_OPTIONS.find(g => g.value === item.genre)?.label}
+                          {LANG_OPTIONS.find((l) => l.value === item.lang)?.label} L{item.level}{' '}
+                          {GENRE_OPTIONS.find((g) => g.value === item.genre)?.label}
                         </div>
                       </td>
                       <td className="p-4">
@@ -1276,20 +1367,14 @@ export default function ThemesPage() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <Badge variant="secondary">
-                          {item.subtopic_count || 0}
-                        </Badge>
+                        <Badge variant="secondary">{item.subtopic_count || 0}</Badge>
                       </td>
                       <td className="p-4 text-sm text-muted-foreground">
                         {new Date(item.created_at).toLocaleDateString()}
                       </td>
                       <td className="p-4">
                         <div className="flex gap-2">
-                          <Button
-                            onClick={() => openEdit(item)}
-                            variant="ghost"
-                            size="sm"
-                          >
+                          <Button onClick={() => openEdit(item)} variant="ghost" size="sm">
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
@@ -1303,11 +1388,7 @@ export default function ThemesPage() {
                           >
                             <Brain className="w-4 h-4" />
                           </Button>
-                          <Button
-                            asChild
-                            variant="ghost"
-                            size="sm"
-                          >
+                          <Button asChild variant="ghost" size="sm">
                             <Link href={`/admin/shadowing/subtopics-gen?theme_id=${item.id}`}>
                               <Eye className="w-4 h-4" />
                             </Link>
@@ -1335,23 +1416,21 @@ export default function ThemesPage() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent aria-describedby="dialog-description">
           <DialogHeader>
-            <DialogTitle>
-              {editing?.id ? '编辑主题' : '新建主题'}
-            </DialogTitle>
+            <DialogTitle>{editing?.id ? '编辑主题' : '新建主题'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>语言</Label>
-                <Select 
-                  value={editing?.lang || ''} 
-                  onValueChange={(v: Lang) => setEditing({...editing, lang: v})}
+                <Select
+                  value={editing?.lang || ''}
+                  onValueChange={(v: Lang) => setEditing({ ...editing, lang: v })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {LANG_OPTIONS.map(opt => (
+                    {LANG_OPTIONS.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </SelectItem>
@@ -1359,22 +1438,22 @@ export default function ThemesPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label>等级</Label>
-                <Select 
-                  value={String(editing?.level || '')} 
+                <Select
+                  value={String(editing?.level || '')}
                   onValueChange={(v) => {
-                    const newLevel = parseInt(v) as 1|2|3|4|5|6;
-                    const newEditing = {...editing, level: newLevel};
-                    
+                    const newLevel = parseInt(v) as 1 | 2 | 3 | 4 | 5 | 6;
+                    const newEditing = { ...editing, level: newLevel };
+
                     // 检查当前体裁是否在新等级中可用
                     const availableGenres = getAvailableGenres(newLevel);
                     if (editing?.genre && !availableGenres.includes(editing.genre)) {
                       // 如果当前体裁不可用，自动选择第一个可用的体裁
                       newEditing.genre = availableGenres[0];
                     }
-                    
+
                     setEditing(newEditing);
                   }}
                 >
@@ -1382,7 +1461,7 @@ export default function ThemesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {LEVEL_OPTIONS.map(opt => (
+                    {LEVEL_OPTIONS.map((opt) => (
                       <SelectItem key={opt} value={String(opt)}>
                         L{opt}
                       </SelectItem>
@@ -1391,67 +1470,62 @@ export default function ThemesPage() {
                 </Select>
               </div>
             </div>
-            
+
             <div>
               <Label>体裁</Label>
-              <Select 
-                value={editing?.genre || ''} 
-                onValueChange={(v: Genre) => setEditing({...editing, genre: v})}
+              <Select
+                value={editing?.genre || ''}
+                onValueChange={(v: Genre) => setEditing({ ...editing, genre: v })}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {GENRE_OPTIONS
-                    .filter(opt => getAvailableGenres(editing?.level || level).includes(opt.value as Genre))
-                    .map(opt => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                  {GENRE_OPTIONS.filter((opt) =>
+                    getAvailableGenres(editing?.level || level).includes(opt.value as Genre),
+                  ).map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <div className="text-xs text-muted-foreground mt-1 space-y-1">
                 <p>
-                  <strong>等级 L{editing?.level || level}</strong> 可用体裁: {getAvailableGenres(editing?.level || level).map(g => 
-                    GENRE_OPTIONS.find(opt => opt.value === g)?.label
-                  ).join('、')}
+                  <strong>等级 L{editing?.level || level}</strong> 可用体裁:{' '}
+                  {getAvailableGenres(editing?.level || level)
+                    .map((g) => GENRE_OPTIONS.find((opt) => opt.value === g)?.label)
+                    .join('、')}
                 </p>
-                <p>
-                  体裁优先: {LEVEL_CONFIG[editing?.level || level]?.genrePriority}
-                </p>
-                <p>
-                  主题带宽: {LEVEL_CONFIG[editing?.level || level]?.themeBandwidth}
-                </p>
+                <p>体裁优先: {LEVEL_CONFIG[editing?.level || level]?.genrePriority}</p>
+                <p>主题带宽: {LEVEL_CONFIG[editing?.level || level]?.themeBandwidth}</p>
               </div>
             </div>
-            
+
             <div>
               <Label>主题标题 *</Label>
               <Input
                 value={editing?.title || ''}
-                onChange={(e) => setEditing({...editing, title: e.target.value})}
+                onChange={(e) => setEditing({ ...editing, title: e.target.value })}
                 placeholder="请输入主题标题"
               />
             </div>
-            
+
             <div>
               <Label>描述</Label>
               <Textarea
                 value={editing?.desc || ''}
-                onChange={(e) => setEditing({...editing, desc: e.target.value})}
+                onChange={(e) => setEditing({ ...editing, desc: e.target.value })}
                 placeholder="请输入主题描述（可选）"
                 rows={3}
               />
             </div>
-            
+
             <div className="flex justify-end gap-2">
               <Button onClick={closeModal} variant="outline">
                 取消
               </Button>
-              <Button onClick={saveOne}>
-                保存
-              </Button>
+              <Button onClick={saveOne}>保存</Button>
             </div>
           </div>
         </DialogContent>
@@ -1474,7 +1548,7 @@ export default function ThemesPage() {
               {aiGenerationType === 'themes' ? 'AI 生成大主题' : 'AI 生成小主题'}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {aiGenerationType === 'subtopics' && selectedThemeForSubtopic && (
               <div className="p-3 bg-muted rounded-lg">
@@ -1482,7 +1556,7 @@ export default function ThemesPage() {
                 <p className="text-sm text-muted-foreground">{selectedThemeForSubtopic.title}</p>
               </div>
             )}
-            
+
             <div>
               <Label>生成数量</Label>
               <Input
@@ -1493,7 +1567,7 @@ export default function ThemesPage() {
                 onChange={(e) => setAiGenerationCount(parseInt(e.target.value) || 5)}
               />
             </div>
-            
+
             <div>
               <Label>AI 提供者</Label>
               <Select value={aiProvider} onValueChange={(v: any) => setAiProvider(v)}>
@@ -1507,7 +1581,7 @@ export default function ThemesPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label>AI 模型</Label>
               <Select value={aiModel} onValueChange={setAiModel}>
@@ -1515,7 +1589,7 @@ export default function ThemesPage() {
                   <SelectValue placeholder="选择模型..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {aiModels.map(model => (
+                  {aiModels.map((model) => (
                     <SelectItem key={model.id} value={model.id}>
                       {model.name}
                     </SelectItem>
@@ -1523,7 +1597,7 @@ export default function ThemesPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label>温度: {aiTemperature}</Label>
               <input
@@ -1536,16 +1610,17 @@ export default function ThemesPage() {
                 className="w-full"
               />
             </div>
-            
+
             <div className="flex justify-end gap-2">
-              <Button 
-                onClick={() => setAiGenerationType(null)} 
-                variant="outline"
-              >
+              <Button onClick={() => setAiGenerationType(null)} variant="outline">
                 取消
               </Button>
-              <Button 
-                onClick={aiGenerationType === 'themes' ? generateThemes : () => generateSubtopics(selectedThemeForSubtopic)}
+              <Button
+                onClick={
+                  aiGenerationType === 'themes'
+                    ? generateThemes
+                    : () => generateSubtopics(selectedThemeForSubtopic)
+                }
                 disabled={!aiModel}
                 className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
               >

@@ -1,14 +1,14 @@
-"use client";
-import { Button } from "@/components/ui/button";
-import { Smartphone, Monitor } from "lucide-react";
-import { useMobile } from "@/contexts/MobileContext";
+'use client';
+import { Button } from '@/components/ui/button';
+import { Smartphone, Monitor } from 'lucide-react';
+import { useMobile } from '@/contexts/MobileContext';
 
 interface MobileToggleProps {
   onToggle?: (isMobile: boolean) => void;
   className?: string;
 }
 
-export default function MobileToggle({ onToggle, className = "" }: MobileToggleProps) {
+export default function MobileToggle({ onToggle, className = '' }: MobileToggleProps) {
   const { actualIsMobile, screenWidth, setForceMobileMode } = useMobile();
 
   const handleToggle = () => {
@@ -19,9 +19,7 @@ export default function MobileToggle({ onToggle, className = "" }: MobileToggleP
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <span className="text-xs text-gray-500 hidden sm:inline">
-        {screenWidth}px
-      </span>
+      <span className="text-xs text-gray-500 hidden sm:inline">{screenWidth}px</span>
       <Button
         size="sm"
         variant="outline"

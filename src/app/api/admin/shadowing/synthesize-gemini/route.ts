@@ -1,33 +1,33 @@
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin";
-import { synthesizeGeminiTTS } from "@/lib/gemini-tts";
-import { uploadAudioFile } from "@/lib/storage-upload";
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/admin';
+import { synthesizeGeminiTTS } from '@/lib/gemini-tts';
+import { uploadAudioFile } from '@/lib/storage-upload';
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAdmin(req);
     if (!auth.ok) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
     const body = await req.json();
     const { text, lang, voiceName, stylePrompt, speakingRate = 1.0, pitch = 0 } = body;
 
     if (!text || !lang) {
-      return NextResponse.json({ error: "缺少必要参数" }, { status: 400 });
+      return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
     // 调用 Gemini TTS 合成
-    const audioBuffer = await synthesizeGeminiTTS({ 
-      text, 
-      lang, 
-      voiceName, 
+    const audioBuffer = await synthesizeGeminiTTS({
+      text,
+      lang,
+      voiceName,
       stylePrompt,
-      speakingRate, 
-      pitch 
+      speakingRate,
+      pitch,
     });
 
     // 上传到 Supabase Storage
@@ -52,12 +52,16 @@ export async function POST(req: NextRequest) {
       proxy_url: uploadResult.proxyUrl,
       direct_url: uploadResult.url,
       provider: 'gemini-tts',
-      voice: voiceName || 'Kore'
+      voice: voiceName || 'Kore',
     });
-
   } catch (error: unknown) {
-    console.error("Gemini TTS 音频合成失败:", error);
-    const message = error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error);
-    return NextResponse.json({ error: message || "服务器错误" }, { status: 500 });
+    console.error('Gemini TTS 音频合成失败:', error);
+    const message =
+      error instanceof Error
+        ? error instanceof Error
+          ? error.message
+          : String(error)
+        : String(error);
+    return NextResponse.json({ error: message || '服务器错误' }, { status: 500 });
   }
 }

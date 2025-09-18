@@ -7,7 +7,7 @@ export const maxDuration = 300; // 5分钟超时，符合Vercel Hobby计划限�
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 export async function OPTIONS() {
@@ -26,25 +26,28 @@ export async function POST(request: NextRequest) {
     // 添加管理员权限验证
     const auth = await requireAdmin(request);
     if (!auth.ok) {
-      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
 
-    const { 
-      subtopic_ids, 
-      lang, 
-      level, 
-      genre, 
-      provider, 
-      model, 
+    const {
+      subtopic_ids,
+      lang,
+      level,
+      genre,
+      provider,
+      model,
       temperature,
-      concurrency = 10
+      concurrency = 10,
     } = await request.json();
 
     if (!subtopic_ids || !Array.isArray(subtopic_ids) || subtopic_ids.length === 0) {
-      return NextResponse.json({ error: 'subtopic_ids is required and must be a non-empty array' }, { 
-        status: 400,
-        headers: { 'Access-Control-Allow-Origin': '*' }
-      });
+      return NextResponse.json(
+        { error: 'subtopic_ids is required and must be a non-empty array' },
+        {
+          status: 400,
+          headers: { 'Access-Control-Allow-Origin': '*' },
+        },
+      );
     }
 
     // 获取小主题数据
@@ -58,10 +61,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (!subtopics || subtopics.length === 0) {
-      return NextResponse.json({ error: 'No subtopics found' }, { 
-        status: 404,
-        headers: { 'Access-Control-Allow-Origin': '*' }
-      });
+      return NextResponse.json(
+        { error: 'No subtopics found' },
+        {
+          status: 404,
+          headers: { 'Access-Control-Allow-Origin': '*' },
+        },
+      );
     }
 
     const results = [];
@@ -81,7 +87,7 @@ export async function POST(request: NextRequest) {
           return {
             subtopic_id: subtopic.id,
             status: 'skipped',
-            message: 'Draft already exists'
+            message: 'Draft already exists',
           };
         }
 
@@ -89,9 +95,9 @@ export async function POST(request: NextRequest) {
         const getWordCountRange = (level: string, lang: string) => {
           const levelNum = parseInt(level);
           const baseRanges = {
-            'en': [25, 50, 100, 200, 400, 800],
-            'ja': [50, 100, 200, 400, 800, 1600],
-            'zh': [50, 100, 200, 400, 800, 1600]
+            en: [25, 50, 100, 200, 400, 800],
+            ja: [50, 100, 200, 400, 800, 1600],
+            zh: [50, 100, 200, 400, 800, 1600],
           };
           const ranges = baseRanges[lang as keyof typeof baseRanges] || baseRanges.zh;
           const min = ranges[levelNum - 1] || ranges[0];
@@ -105,15 +111,18 @@ export async function POST(request: NextRequest) {
         const actualGenre = genre === 'all' ? subtopic.genre : genre;
         // 如果lang为'all'，使用小主题本身的语言
         const actualLang = lang === 'all' ? subtopic.lang : lang;
-        console.log(`Processing subtopic ${subtopic.id}: level=${level}, subtopic.level=${subtopic.level}, actualLevel=${actualLevel}, genre=${genre}, subtopic.genre=${subtopic.genre}, actualGenre=${actualGenre}, lang=${lang}, subtopic.lang=${subtopic.lang}, actualLang=${actualLang}`);
+        console.log(
+          `Processing subtopic ${subtopic.id}: level=${level}, subtopic.level=${subtopic.level}, actualLevel=${actualLevel}, genre=${genre}, subtopic.genre=${subtopic.genre}, actualGenre=${actualGenre}, lang=${lang}, subtopic.lang=${subtopic.lang}, actualLang=${actualLang}`,
+        );
         const wordCountRange = getWordCountRange(actualLevel, actualLang);
         const sentenceCount = Math.min(7 + parseInt(actualLevel), 15); // 级别越高，句子越多
 
         // 构建AI提示
-        const formatInstruction = actualGenre === 'dialogue' 
-          ? '必须使用A: B: 对话格式，每行以A: 或B: 开头' 
-          : '使用完整句子，不要使用A/B对话格式';
-          
+        const formatInstruction =
+          actualGenre === 'dialogue'
+            ? '必须使用A: B: 对话格式，每行以A: 或B: 开头'
+            : '使用完整句子，不要使用A/B对话格式';
+
         const prompt = `请为以下小主题生成一篇${actualLang}语言、${actualLevel}级、${actualGenre}类型的影子跟读文章：
 
 小主题：${subtopic.title_cn}
@@ -136,24 +145,24 @@ export async function POST(request: NextRequest) {
 
         // 调用AI生成
         let rawContent, usage;
-        
+
         // 根据provider决定使用哪个API
         let actualProvider = provider;
         let actualModel = model;
-        
+
         if (provider === 'deepseek') {
           // 如果选择的是DeepSeek，使用OpenRouter的DeepSeek模型
           actualProvider = 'openrouter';
           actualModel = 'deepseek/deepseek-chat';
         }
-        
+
         try {
           const result = await chatJSON({
             provider: actualProvider,
             model: actualModel,
             messages: [{ role: 'user', content: prompt }],
             temperature: temperature || 0.7,
-            userId: auth.user.id  // 传递用户ID以使用用户特定的API密钥
+            userId: auth.user.id, // 传递用户ID以使用用户特定的API密钥
           });
           rawContent = result.content;
           usage = result.usage;
@@ -167,7 +176,7 @@ export async function POST(request: NextRequest) {
                 model: 'deepseek/deepseek-chat',
                 messages: [{ role: 'user', content: prompt }],
                 temperature: temperature || 0.7,
-                userId: auth.user.id  // 传递用户ID以使用用户特定的API密钥
+                userId: auth.user.id, // 传递用户ID以使用用户特定的API密钥
               });
               rawContent = result.content;
               usage = result.usage;
@@ -194,7 +203,7 @@ export async function POST(request: NextRequest) {
           console.error('AI response missing required fields:', {
             hasTitle: !!aiResponse?.title,
             hasContent: !!aiResponse?.content,
-            response: aiResponse
+            response: aiResponse,
           });
           throw new Error('AI response is invalid');
         }
@@ -211,8 +220,8 @@ export async function POST(request: NextRequest) {
             level: parseInt(actualLevel),
             genre: actualGenre,
             status: 'draft',
-            created_by: auth.user.id,  // 添加创建者ID，确保RLS策略允许插入
-            created_at: new Date().toISOString()
+            created_by: auth.user.id, // 添加创建者ID，确保RLS策略允许插入
+            created_at: new Date().toISOString(),
           })
           .select()
           .single();
@@ -229,15 +238,14 @@ export async function POST(request: NextRequest) {
           subtopic_id: subtopic.id,
           status: 'success',
           draft_id: draft.id,
-          title: aiResponse.title
+          title: aiResponse.title,
         };
-
       } catch (error: any) {
         console.error(`Error processing subtopic ${subtopic.id}:`, error);
         return {
           subtopic_id: subtopic.id,
           status: 'error',
-          error: error.message
+          error: error.message,
         };
       }
     };
@@ -248,37 +256,42 @@ export async function POST(request: NextRequest) {
       const batch = subtopics.slice(i, i + batchSize);
       const batchPromises = batch.map(processSubtopic);
       const batchResults = await Promise.all(batchPromises);
-      
+
       results.push(...batchResults);
-      
+
       // 批次间延迟，避免过载
       if (i + batchSize < subtopics.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
     }
 
-    const successCount = results.filter(r => r.status === 'success').length;
-    const skippedCount = results.filter(r => r.status === 'skipped').length;
-    const errorCount = results.filter(r => r.status === 'error').length;
+    const successCount = results.filter((r) => r.status === 'success').length;
+    const skippedCount = results.filter((r) => r.status === 'skipped').length;
+    const errorCount = results.filter((r) => r.status === 'error').length;
 
-    return NextResponse.json({
-      success: true,
-      total: subtopics.length,
-      success_count: successCount,
-      skipped_count: skippedCount,
-      error_count: errorCount,
-      results
-    }, {
-      headers: { 'Access-Control-Allow-Origin': '*' }
-    });
-
+    return NextResponse.json(
+      {
+        success: true,
+        total: subtopics.length,
+        success_count: successCount,
+        skipped_count: skippedCount,
+        error_count: errorCount,
+        results,
+      },
+      {
+        headers: { 'Access-Control-Allow-Origin': '*' },
+      },
+    );
   } catch (error: any) {
     console.error('Batch generation error:', error);
-    return NextResponse.json({ 
-      error: error.message || 'Internal server error' 
-    }, { 
-      status: 500,
-      headers: { 'Access-Control-Allow-Origin': '*' }
-    });
+    return NextResponse.json(
+      {
+        error: error.message || 'Internal server error',
+      },
+      {
+        status: 500,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+      },
+    );
   }
 }

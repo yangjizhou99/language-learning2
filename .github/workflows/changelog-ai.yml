@@ -2,18 +2,24 @@ name: AI Changelog (DeepSeek Reason → CHANGELOG)
 
 on:
   push:
-    branches: [ main ]   # 只在合并进 main 时触发
-  workflow_dispatch: {}  # 手动触发也可以
+    branches: [main] # 只在合并进 main 时触发
+  workflow_dispatch: {} # 手动触发也可以
 
 jobs:
   ai_changelog:
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # 允许修改仓库文件
+      contents: write # 允许修改仓库文件
+    env:
+      PAGER: cat
+      GIT_PAGER: cat
+      GH_PAGER: cat
+      MANPAGER: cat
+      LESS: -+FXR
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # 拉取完整 commit 历史
+          fetch-depth: 0 # 拉取完整 commit 历史
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -34,5 +40,5 @@ jobs:
       - name: Commit updated CHANGELOG.md
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "docs: update AI changelog [skip ci]"
+          commit_message: 'docs: update AI changelog [skip ci]'
           file_pattern: CHANGELOG.md

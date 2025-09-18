@@ -11,11 +11,13 @@
 在 GitHub 仓库中设置以下环境变量之一：
 
 **选项 A: 使用 DeepSeek 官方 API**
+
 - 进入仓库 → Settings → Secrets and variables → Actions
 - 添加 `DEEPSEEK_API_KEY`，值为你的 DeepSeek API 密钥
 
 **选项 B: 使用 OpenRouter API**
-- 进入仓库 → Settings → Secrets and variables → Actions  
+
+- 进入仓库 → Settings → Secrets and variables → Actions
 - 添加 `OPENROUTER_API_KEY`，值为你的 OpenRouter API 密钥
 
 ### 2. 文件结构
@@ -42,6 +44,7 @@ CHANGELOG.md                      # 自动更新的变更日志
 ### 4. 手动触发
 
 你也可以手动触发工作流：
+
 - 进入仓库 → Actions 标签页
 - 选择 "AI Changelog" 工作流
 - 点击 "Run workflow" 按钮
@@ -52,15 +55,19 @@ CHANGELOG.md                      # 自动更新的变更日志
 ## 2025-01-XX
 
 ### 概要
+
 - 简要描述主要变更
 
 ### 主要改动
+
 - 按功能模块列出具体改动
 
 ### 可能的破坏性变更
+
 - 如有破坏性变更会在此说明
 
 ### 测试或注意事项
+
 - 测试要点和注意事项
 ```
 

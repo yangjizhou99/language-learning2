@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServiceSupabase } from "@/lib/supabaseAdmin";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServiceSupabase } from '@/lib/supabaseAdmin';
 
 /**
  * 音色数据库API - 获取音色列表
@@ -14,9 +14,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const lang = searchParams.get('lang') || 'all';
     const category = searchParams.get('category') || 'all';
-    
+
     const supabase = getServiceSupabase();
-    
+
     // 构建查询条件
     let query = supabase
       .from('voices')
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       .eq('is_active', true)
       .order('language_code', { ascending: true })
       .order('name', { ascending: true });
-    
+
     // 语言筛选
     if (lang !== 'all') {
       if (lang === 'cmn-CN' || lang === 'zh') {
@@ -38,41 +38,44 @@ export async function GET(req: NextRequest) {
         query = query.eq('language_code', lang);
       }
     }
-    
+
     // 分类筛选
     if (category !== 'all') {
       query = query.eq('category', category);
     }
-    
+
     const { data: voices, error } = await query;
-    
+
     if (error) {
       console.error('获取音色数据失败:', error);
-      return NextResponse.json({ 
-        success: false, 
-        error: '获取音色数据失败', 
-        details: error instanceof Error ? error.message : String(error) 
-      }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: '获取音色数据失败',
+          details: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 },
+      );
     }
-    
+
     if (!voices || voices.length === 0) {
       return NextResponse.json({
         success: true,
         voices: [],
         totalVoices: 0,
-        message: '没有找到音色数据，请先同步音色'
+        message: '没有找到音色数据，请先同步音色',
       });
     }
-    
+
     // 为每个音色添加 useCase 字段
     const voicesWithUseCase = voices.map((voice: any) => {
       const useCase = generateUseCase(voice.name);
       return {
         ...voice,
-        useCase: useCase
+        useCase: useCase,
       };
     });
-    
+
     // 按分类分组（使用带 useCase 的数据）
     const categorizedVoices = voicesWithUseCase.reduce((acc: any, voice: any) => {
       const category = voice.category;
@@ -82,7 +85,7 @@ export async function GET(req: NextRequest) {
       acc[category].push(voice);
       return acc;
     }, {});
-    
+
     // 按语言分组统计
     const groupedByLanguage = voicesWithUseCase.reduce((acc: any, voice: any) => {
       const lang = voice.language_code;
@@ -92,14 +95,17 @@ export async function GET(req: NextRequest) {
       acc[lang]++;
       return acc;
     }, {});
-    
+
     console.log(`从数据库获取到 ${voicesWithUseCase.length} 个音色`);
     console.log('语言分布:', groupedByLanguage);
-    console.log('分类分布:', Object.keys(categorizedVoices).reduce((acc: any, key: any) => {
-      acc[key] = categorizedVoices[key].length;
-      return acc;
-    }, {}));
-    
+    console.log(
+      '分类分布:',
+      Object.keys(categorizedVoices).reduce((acc: any, key: any) => {
+        acc[key] = categorizedVoices[key].length;
+        return acc;
+      }, {}),
+    );
+
     return NextResponse.json({
       success: true,
       voices: voicesWithUseCase,
@@ -108,17 +114,24 @@ export async function GET(req: NextRequest) {
       groupedByLanguage,
       filters: {
         language: lang,
-        category: category
-      }
+        category: category,
+      },
     });
-    
   } catch (error) {
     console.error('获取音色数据失败:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: '获取音色数据失败', 
-      details: error instanceof Error ? error instanceof Error ? error.message : String(error) : '未知错误'
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: '获取音色数据失败',
+        details:
+          error instanceof Error
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : '未知错误',
+      },
+      { status: 500 },
+    );
   }
 }
 

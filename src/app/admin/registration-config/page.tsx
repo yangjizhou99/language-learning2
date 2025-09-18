@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { RegistrationConfig, UpdateRegistrationConfigRequest } from '@/types/registrationConfig';
+import type {
+  RegistrationConfig,
+  UpdateRegistrationConfigRequest,
+} from '@/types/registrationConfig';
 
 export default function RegistrationConfigPage() {
   const router = useRouter();
@@ -20,9 +23,9 @@ export default function RegistrationConfigPage() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch('/api/admin/registration-config');
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '获取注册配置失败');
@@ -37,7 +40,7 @@ export default function RegistrationConfigPage() {
     } catch (err) {
       console.error('获取注册配置失败:', err);
       setError(err instanceof Error ? err.message : '获取注册配置失败');
-      
+
       // 如果获取失败，设置默认配置
       setConfig({
         id: 'main',
@@ -49,7 +52,7 @@ export default function RegistrationConfigPage() {
         maintenance_mode: false,
         maintenance_message: '系统维护中，请稍后再试',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       });
     } finally {
       setLoading(false);
@@ -67,7 +70,7 @@ export default function RegistrationConfigPage() {
       const response = await fetch('/api/admin/registration-config', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           allow_direct_registration: config.allow_direct_registration,
@@ -76,8 +79,8 @@ export default function RegistrationConfigPage() {
           allow_google_oauth: config.allow_google_oauth,
           allow_anonymous_login: config.allow_anonymous_login,
           maintenance_mode: config.maintenance_mode,
-          maintenance_message: config.maintenance_message
-        })
+          maintenance_message: config.maintenance_message,
+        }),
       });
 
       const data = await response.json();
@@ -150,9 +153,7 @@ export default function RegistrationConfigPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">注册配置管理</h1>
-              <p className="mt-2 text-gray-600">
-                配置用户注册方式和系统访问权限
-              </p>
+              <p className="mt-2 text-gray-600">配置用户注册方式和系统访问权限</p>
             </div>
             <button
               onClick={() => router.back()}
@@ -189,7 +190,7 @@ export default function RegistrationConfigPage() {
             {/* 注册方式配置 */}
             <div className="bg-white shadow rounded-lg p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">注册方式配置</h2>
-              
+
               <div className="space-y-4">
                 {/* 直接注册 */}
                 <div className="flex items-center justify-between">
@@ -201,7 +202,9 @@ export default function RegistrationConfigPage() {
                     <input
                       type="checkbox"
                       checked={config.allow_direct_registration}
-                      onChange={(e) => updateConfig({ allow_direct_registration: e.target.checked })}
+                      onChange={(e) =>
+                        updateConfig({ allow_direct_registration: e.target.checked })
+                      }
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -218,7 +221,9 @@ export default function RegistrationConfigPage() {
                     <input
                       type="checkbox"
                       checked={config.allow_invitation_registration}
-                      onChange={(e) => updateConfig({ allow_invitation_registration: e.target.checked })}
+                      onChange={(e) =>
+                        updateConfig({ allow_invitation_registration: e.target.checked })
+                      }
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -264,7 +269,7 @@ export default function RegistrationConfigPage() {
             {/* 系统配置 */}
             <div className="bg-white shadow rounded-lg p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">系统配置</h2>
-              
+
               <div className="space-y-4">
                 {/* 邮箱验证 */}
                 <div className="flex items-center justify-between">
@@ -276,7 +281,9 @@ export default function RegistrationConfigPage() {
                     <input
                       type="checkbox"
                       checked={config.require_email_verification}
-                      onChange={(e) => updateConfig({ require_email_verification: e.target.checked })}
+                      onChange={(e) =>
+                        updateConfig({ require_email_verification: e.target.checked })
+                      }
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>

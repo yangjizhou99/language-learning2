@@ -6,11 +6,11 @@
 
 在您的 GitHub 仓库中设置以下 3 个 Secrets：
 
-| Secret 名称 | 获取位置 |
-|------------|----------|
-| `SUPABASE_ACCESS_TOKEN` | Supabase Dashboard → Account → Access Tokens |
-| `STAGING_PROJECT_ID` | Supabase Dashboard → Staging 项目 → Settings → General |
-| `STAGING_DB_PASSWORD` | Supabase Dashboard → Staging 项目 → Settings → Database |
+| Secret 名称             | 获取位置                                                |
+| ----------------------- | ------------------------------------------------------- |
+| `SUPABASE_ACCESS_TOKEN` | Supabase Dashboard → Account → Access Tokens            |
+| `STAGING_PROJECT_ID`    | Supabase Dashboard → Staging 项目 → Settings → General  |
+| `STAGING_DB_PASSWORD`   | Supabase Dashboard → Staging 项目 → Settings → Database |
 
 **安全策略**: 仅自动部署到 Staging，生产环境手动部署
 
