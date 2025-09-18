@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # 允许修改仓库文件
+    env:
+      PAGER: cat
+      GIT_PAGER: cat
+      GH_PAGER: cat
+      MANPAGER: cat
+      LESS: -+FXR
     steps:
       - uses: actions/checkout@v4
         with:
