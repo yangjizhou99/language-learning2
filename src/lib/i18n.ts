@@ -314,6 +314,49 @@ export interface Translations {
       select_unexplained_result: string;
       speech_not_supported: string;
       speech_failed: string;
+      // 复习相关
+      review_completed: string;
+      review_close: string;
+      review_progress: string;
+      review_show_explanation: string;
+      review_no_explanation: string;
+      review_again: string;
+      review_hard: string;
+      review_good: string;
+      review_easy: string;
+      review_tomorrow: string;
+      review_days_later: string;
+      review_failed: string;
+      review_no_due: string;
+      // AI生成状态
+      generation_preparing: string;
+      generation_sending_request: string;
+      generation_processing: string;
+      generation_generating: string;
+      generation_finalizing: string;
+      generation_completed: string;
+      generation_failed_status: string;
+      // 页面描述
+      page_description: string;
+      review_count_placeholder: string;
+      review_count_all: string;
+      review_count_10: string;
+      review_count_20: string;
+      review_count_30: string;
+      review_count_50: string;
+      review_count_100: string;
+      start_review: string;
+      filter_conditions: string;
+      ai_generation_for_selected: string;
+      example_sentence_label: string;
+      // 错误和状态消息
+      fetch_vocab_failed: string;
+      fetch_due_failed: string;
+      update_status_failed: string;
+      delete_failed_unknown: string;
+      batch_delete_partial_failed: string;
+      batch_delete_retry: string;
+      generation_details: string;
     };
     status_labels: {
       new: string;
@@ -628,6 +671,49 @@ const zh: Translations = {
       select_unexplained_result: '已选择 {count} 个未解释的生词\n{langText}',
       speech_not_supported: '您的浏览器不支持语音功能',
       speech_failed: '语音播放失败，请重试',
+      // 复习相关
+      review_completed: '今日复习完成！',
+      review_close: '关闭',
+      review_progress: '进度 {current} / {total}',
+      review_show_explanation: '显示解释 / 例句',
+      review_no_explanation: '暂无解释',
+      review_again: '再来',
+      review_hard: '稍难',
+      review_good: '可以',
+      review_easy: '容易',
+      review_tomorrow: '明天',
+      review_days_later: '{days}天后',
+      review_failed: '获取到期生词失败',
+      review_no_due: '今天没有到期的生词，明天再来！',
+      // AI生成状态
+      generation_preparing: '准备开始生成...',
+      generation_sending_request: '正在发送请求到AI服务...',
+      generation_processing: 'AI正在分析和处理 {count} 个生词...',
+      generation_generating: '正在生成解释... {progress}%',
+      generation_finalizing: '即将完成，正在整理结果...',
+      generation_completed: '成功生成 {count} 个生词的解释！',
+      generation_failed_status: '生成失败：{error}',
+      // 页面描述
+      page_description: '管理您的生词收藏，提升语言学习效率',
+      review_count_placeholder: '复习数量',
+      review_count_all: '全部',
+      review_count_10: '10 条',
+      review_count_20: '20 条',
+      review_count_30: '30 条',
+      review_count_50: '50 条',
+      review_count_100: '100 条',
+      start_review: '开始复习',
+      filter_conditions: '筛选条件',
+      ai_generation_for_selected: '为选中的 {count} 个生词生成AI解释',
+      example_sentence_label: '例句',
+      // 错误和状态消息
+      fetch_vocab_failed: '获取生词列表失败',
+      fetch_due_failed: '获取到期生词失败',
+      update_status_failed: '更新生词状态失败',
+      delete_failed_unknown: '未知错误',
+      batch_delete_partial_failed: '，但有 {count} 个生词删除失败，请重试',
+      batch_delete_retry: '，失败 {count} 个',
+      generation_details: '详情：',
     },
     status_labels: {
       new: '新词',
@@ -946,6 +1032,49 @@ const en: Translations = {
       select_unexplained_result: 'Selected {count} unexplained words\n{langText}',
       speech_not_supported: 'Your browser does not support speech functionality',
       speech_failed: 'Speech playback failed, please try again',
+      // 复习相关
+      review_completed: 'Today\'s review completed!',
+      review_close: 'Close',
+      review_progress: 'Progress {current} / {total}',
+      review_show_explanation: 'Show explanation / examples',
+      review_no_explanation: 'No explanation available',
+      review_again: 'Again',
+      review_hard: 'Hard',
+      review_good: 'Good',
+      review_easy: 'Easy',
+      review_tomorrow: 'Tomorrow',
+      review_days_later: '{days} days later',
+      review_failed: 'Failed to fetch due words',
+      review_no_due: 'No words due today, come back tomorrow!',
+      // AI生成状态
+      generation_preparing: 'Preparing to start generation...',
+      generation_sending_request: 'Sending request to AI service...',
+      generation_processing: 'AI is analyzing and processing {count} words...',
+      generation_generating: 'Generating explanations... {progress}%',
+      generation_finalizing: 'Almost done, organizing results...',
+      generation_completed: 'Successfully generated explanations for {count} words!',
+      generation_failed_status: 'Generation failed: {error}',
+      // 页面描述
+      page_description: 'Manage your vocabulary collection and improve language learning efficiency',
+      review_count_placeholder: 'Review count',
+      review_count_all: 'All',
+      review_count_10: '10 items',
+      review_count_20: '20 items',
+      review_count_30: '30 items',
+      review_count_50: '50 items',
+      review_count_100: '100 items',
+      start_review: 'Start Review',
+      filter_conditions: 'Filter Conditions',
+      ai_generation_for_selected: 'Generate AI explanations for {count} selected words',
+      example_sentence_label: 'Example',
+      // 错误和状态消息
+      fetch_vocab_failed: 'Failed to fetch vocabulary list',
+      fetch_due_failed: 'Failed to fetch due words',
+      update_status_failed: 'Failed to update word status',
+      delete_failed_unknown: 'Unknown error',
+      batch_delete_partial_failed: ', but {count} words failed to delete, please retry',
+      batch_delete_retry: ', {count} failed',
+      generation_details: 'Details: ',
     },
     status_labels: {
       new: 'New',
@@ -1263,6 +1392,49 @@ const ja: Translations = {
       select_unexplained_result: '{count} 語の説明なし単語を選択しました\n{langText}',
       speech_not_supported: 'お使いのブラウザは音声機能をサポートしていません',
       speech_failed: '音声再生に失敗しました、再試行してください',
+      // 复习相关
+      review_completed: '今日の復習完了！',
+      review_close: '閉じる',
+      review_progress: '進捗 {current} / {total}',
+      review_show_explanation: '説明 / 例文を表示',
+      review_no_explanation: '説明がありません',
+      review_again: 'もう一度',
+      review_hard: '難しい',
+      review_good: '良い',
+      review_easy: '簡単',
+      review_tomorrow: '明日',
+      review_days_later: '{days}日後',
+      review_failed: '期限切れ単語の取得に失敗',
+      review_no_due: '今日期限切れの単語はありません。明日また来てください！',
+      // AI生成状态
+      generation_preparing: '生成準備中...',
+      generation_sending_request: 'AIサービスにリクエスト送信中...',
+      generation_processing: 'AIが{count}語を分析・処理中...',
+      generation_generating: '説明生成中... {progress}%',
+      generation_finalizing: 'ほぼ完了、結果を整理中...',
+      generation_completed: '{count}語の説明を正常に生成しました！',
+      generation_failed_status: '生成失敗：{error}',
+      // 页面描述
+      page_description: '単語コレクションを管理し、言語学習効率を向上',
+      review_count_placeholder: '復習数',
+      review_count_all: 'すべて',
+      review_count_10: '10 語',
+      review_count_20: '20 語',
+      review_count_30: '30 語',
+      review_count_50: '50 語',
+      review_count_100: '100 語',
+      start_review: '復習開始',
+      filter_conditions: 'フィルター条件',
+      ai_generation_for_selected: '選択した{count}語のAI説明を生成',
+      example_sentence_label: '例文',
+      // 错误和状态消息
+      fetch_vocab_failed: '単語リストの取得に失敗',
+      fetch_due_failed: '期限切れ単語の取得に失敗',
+      update_status_failed: '単語ステータスの更新に失敗',
+      delete_failed_unknown: '不明なエラー',
+      batch_delete_partial_failed: '、ただし{count}語の削除に失敗、再試行してください',
+      batch_delete_retry: '、{count}語失敗',
+      generation_details: '詳細：',
     },
     status_labels: {
       new: '新規',
