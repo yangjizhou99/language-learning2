@@ -1,6 +1,5 @@
-import { execSync } from "node:child_process";
-import { writeFileSync, readFileSync, existsSync } from "node:fs";
-import { request } from "undici";
+const { execSync } = require("node:child_process");
+const { writeFileSync, readFileSync, existsSync } = require("node:fs");
 
 const { DEEPSEEK_API_KEY, OPENROUTER_API_KEY } = process.env;
 
@@ -46,16 +45,27 @@ async function callDeepseek() {
   } else {
     throw new Error("No API key provided");
   }
-  const res = await request(url, { method: "POST", headers, body: JSON.stringify(body) });
-  const data = await res.body.json();
+  const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Request failed: ${res.status} ${res.statusText} - ${text}`);
+  }
+  const data = await res.json();
   return data?.choices?.[0]?.message?.content || "";
 }
 
-const summary = await callDeepseek();
+async function main() {
+  const summary = await callDeepseek();
 
-// 更新 CHANGELOG.md
-let changelog = existsSync("CHANGELOG.md") ? readFileSync("CHANGELOG.md", "utf8") : "# Changelog\n\n";
-changelog += `\n\n## ${new Date().toISOString().split("T")[0]}\n\n${summary}\n`;
-writeFileSync("CHANGELOG.md", changelog);
+  // 更新 CHANGELOG.md
+  let changelog = existsSync("CHANGELOG.md") ? readFileSync("CHANGELOG.md", "utf8") : "# Changelog\n\n";
+  changelog += `\n\n## ${new Date().toISOString().split("T")[0]}\n\n${summary}\n`;
+  writeFileSync("CHANGELOG.md", changelog);
 
-console.log("✅ AI Changelog updated");
+  console.log("✅ AI Changelog updated");
+}
+
+main().catch((err) => {
+  console.error("❌ Failed to update AI Changelog:", err);
+  process.exit(1);
+});

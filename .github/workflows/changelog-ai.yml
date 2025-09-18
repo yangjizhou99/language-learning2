@@ -20,11 +20,6 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install deps for script
-        run: |
-          npm init -y
-          npm i -S undici@6
-
       - name: Run AI changelog
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
