@@ -26,15 +26,24 @@ function run(cmd) {
 
 // 找到上一个 tag，如果没有就取第一个 commit
 let base;
+const gitCfg = "-c core.pager=cat -c pager.diff=false -c pager.log=false -c pager.branch=false";
 try {
-  base = run('git --no-pager describe --tags --abbrev=0');
+  base = run(`git ${gitCfg} --no-pager describe --tags --abbrev=0`);
 } catch {
-  base = run('git --no-pager rev-list --max-parents=0 --max-count=1 HEAD');
+  base = run(`git ${gitCfg} --no-pager rev-list --max-parents=0 --max-count=1 HEAD`);
 }
 const head = 'HEAD';
 
 // 获取 diff（禁用 pager & 外部 diff 工具 & 颜色）
-const diff = run(`git --no-pager diff --no-ext-diff --no-color ${base}...${head}`);
+let diff = '';
+try {
+  diff = run(`git ${gitCfg} --no-pager diff --no-ext-diff --no-color ${base}...${head}`);
+} catch (e) {
+  console.error('[ai-changelog] git diff 失败，继续使用回退逻辑：', e?.message || e);
+  diff = '';
+}
+console.log(`[ai-changelog] base=${base}`);
+console.log(`[ai-changelog] diff_length=${diff.length}`);
 
 // 构造 prompt
 const messages = [
@@ -71,8 +80,23 @@ async function callDeepseek() {
   return data?.choices?.[0]?.message?.content || '';
 }
 
+function fallbackSummary() {
+  try {
+    const shortlog = run(`git --no-pager log --no-color --pretty=format:"- %s" ${base}..${head}`);
+    return `### 概要\n\n基于 git 提交信息自动生成（AI 调用失败或被跳过）。\n\n### 主要改动\n\n${shortlog || '- （无提交）'}`;
+  } catch (e) {
+    return '### 概要\n\n无可用提交或提取失败。';
+  }
+}
+
 async function main() {
-  const summary = await callDeepseek();
+  let summary = '';
+  try {
+    summary = await callDeepseek();
+  } catch (e) {
+    console.error('[ai-changelog] AI 生成失败，使用回退摘要：', e?.message || e);
+    summary = fallbackSummary();
+  }
 
   // 更新 CHANGELOG.md
   let changelog = existsSync('CHANGELOG.md')
