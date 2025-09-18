@@ -16,3 +16,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ count, sample: rows });
   } finally { await lc.end(); }
 }
+
+

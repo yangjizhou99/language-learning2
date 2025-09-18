@@ -77,6 +77,11 @@ yarn.lock text eol=lf
 *.p12 binary
 *.pfx binary
 
+# 环境变量文件
+.env* text eol=lf
+env.minimal text eol=lf
+env.template text eol=lf
+
 # 忽略文件应该保持原样
 .gitignore text eol=lf
 .gitattributes text eol=lf
