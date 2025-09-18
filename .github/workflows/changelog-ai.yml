@@ -46,6 +46,12 @@ jobs:
 
       - name: Commit updated CHANGELOG.md
         uses: stefanzweifel/git-auto-commit-action@v5
+        env:
+          PAGER: cat
+          GIT_PAGER: cat
+          GH_PAGER: cat
+          MANPAGER: cat
+          LESS: -+FXR
         with:
           commit_message: 'docs: update AI changelog [skip ci]'
           file_pattern: CHANGELOG.md
