@@ -1,23 +1,40 @@
 const { execSync } = require('node:child_process');
 const { writeFileSync, readFileSync, existsSync } = require('node:fs');
 
+// 强制禁用所有 pager，避免 CI 中触发 less
+process.env.PAGER = 'cat';
+process.env.GIT_PAGER = 'cat';
+process.env.GH_PAGER = 'cat';
+process.env.MANPAGER = 'cat';
+process.env.LESS = '-+FXR';
+
 const { DEEPSEEK_API_KEY, OPENROUTER_API_KEY } = process.env;
 
 function run(cmd) {
-  return execSync(cmd, { encoding: 'utf8' }).trim();
+  return execSync(cmd, {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      PAGER: 'cat',
+      GIT_PAGER: 'cat',
+      GH_PAGER: 'cat',
+      MANPAGER: 'cat',
+      LESS: '-+FXR',
+    },
+  }).trim();
 }
 
 // 找到上一个 tag，如果没有就取第一个 commit
 let base;
 try {
-  base = run('git describe --tags --abbrev=0');
+  base = run('git --no-pager describe --tags --abbrev=0');
 } catch {
-  base = run('git rev-list --max-parents=0 HEAD | tail -n1');
+  base = run('git --no-pager rev-list --max-parents=0 HEAD | tail -n1');
 }
 const head = 'HEAD';
 
-// 获取 diff
-const diff = run(`git diff ${base}...${head}`);
+// 获取 diff（禁用 pager）
+const diff = run(`git --no-pager diff ${base}...${head}`);
 
 // 构造 prompt
 const messages = [

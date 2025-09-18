@@ -26,6 +26,13 @@ jobs:
         with:
           node-version: 22
 
+      - name: Disable git pagers
+        run: |
+          git config --global core.pager cat
+          git config --global pager.log false
+          git config --global pager.diff false
+          git config --global pager.branch false
+
       - name: Run AI changelog
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
