@@ -99,9 +99,9 @@ export default function Pagination({
   };
 
   return (
-    <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 ${className}`}>
-      {/* 左侧：显示条目信息 */}
-      <div className="text-sm text-gray-600">
+    <div className={`flex flex-col gap-4 ${className}`}>
+      {/* 顶部：显示条目信息 */}
+      <div className="text-sm text-gray-600 text-center sm:text-left">
         {totalItems > 0 ? (
           <span>
             {t.vocabulary.pagination.showing_items
@@ -115,14 +115,14 @@ export default function Pagination({
       </div>
 
       {/* 中间：分页控件 */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-center gap-1 sm:gap-2">
         {/* 首页按钮 */}
         <Button
           variant="outline"
           size="sm"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          className="hidden sm:flex"
+          className="hidden sm:flex h-8 w-8 p-0"
         >
           <ChevronsLeft className="h-4 w-4" />
         </Button>
@@ -133,6 +133,7 @@ export default function Pagination({
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
+          className="h-8 w-8 p-0"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -142,13 +143,13 @@ export default function Pagination({
           {visiblePages.map((page, index) => (
             <div key={index}>
               {page === '...' ? (
-                <span className="px-3 py-2 text-sm text-gray-500">...</span>
+                <span className="px-2 sm:px-3 py-2 text-sm text-gray-500">...</span>
               ) : (
                 <Button
                   variant={currentPage === page ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => onPageChange(page as number)}
-                  className="min-w-[40px]"
+                  className="min-w-[32px] sm:min-w-[40px] h-8 text-xs sm:text-sm"
                 >
                   {page}
                 </Button>
@@ -163,6 +164,7 @@ export default function Pagination({
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
+          className="h-8 w-8 p-0"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -173,20 +175,20 @@ export default function Pagination({
           size="sm"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          className="hidden sm:flex"
+          className="hidden sm:flex h-8 w-8 p-0"
         >
           <ChevronsRight className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* 右侧：每页显示条数和跳转 */}
-      <div className="flex items-center gap-2">
+      {/* 底部：每页显示条数和跳转 */}
+      <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3 sm:gap-4">
         {/* 每页显示条数选择 */}
         {showItemsPerPage && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">{t.vocabulary.pagination.per_page}</span>
+            <span className="text-xs sm:text-sm text-gray-600">{t.vocabulary.pagination.per_page}</span>
             <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
-              <SelectTrigger className="w-20">
+              <SelectTrigger className="w-16 sm:w-20 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -196,23 +198,23 @@ export default function Pagination({
                 <SelectItem value="100">100</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-sm text-gray-600">{t.vocabulary.pagination.items}</span>
+            <span className="text-xs sm:text-sm text-gray-600">{t.vocabulary.pagination.items}</span>
           </div>
         )}
 
         {/* 跳转到指定页面 */}
         {showPageInput && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">{t.vocabulary.pagination.go_to}</span>
+            <span className="text-xs sm:text-sm text-gray-600">{t.vocabulary.pagination.go_to}</span>
             <Input
               type="number"
               min="1"
               max={totalPages}
               value={currentPage}
               onChange={handlePageInputChange}
-              className="w-16 h-8 text-center"
+              className="w-12 sm:w-16 h-8 text-center text-xs sm:text-sm"
             />
-            <span className="text-sm text-gray-600">{t.vocabulary.pagination.page}</span>
+            <span className="text-xs sm:text-sm text-gray-600">{t.vocabulary.pagination.page}</span>
           </div>
         )}
       </div>
