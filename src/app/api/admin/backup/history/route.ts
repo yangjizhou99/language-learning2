@@ -31,26 +31,25 @@ export async function GET(req: NextRequest) {
         const itemPath = path.join(backupPath, item);
         const stats = await fs.stat(itemPath);
         
-        if (stats.isDirectory() && item.startsWith('storage-')) {
-          // 存储桶备份目录
-          const timestamp = item.replace('storage-', '');
-          const size = await getDirectorySize(itemPath);
+        if (item.endsWith('.zip') && item.startsWith('database-backup-')) {
+          // 数据库备份ZIP文件
+          const timestamp = item.replace('database-backup-', '').replace('.zip', '');
           
           backups.push({
-            type: 'storage',
+            type: 'database',
             name: item,
             timestamp: timestamp,
-            size: size,
+            size: stats.size,
             path: itemPath,
             createdAt: stats.birthtime,
             modifiedAt: stats.mtime
           });
-        } else if (item.endsWith('.sql') && item.startsWith('database-backup-')) {
-          // 数据库备份文件
-          const timestamp = item.replace('database-backup-', '').replace('.sql', '');
+        } else if (item.endsWith('.zip') && item.startsWith('storage-backup-')) {
+          // 存储桶备份ZIP文件
+          const timestamp = item.replace('storage-backup-', '').replace('.zip', '');
           
           backups.push({
-            type: 'database',
+            type: 'storage',
             name: item,
             timestamp: timestamp,
             size: stats.size,
