@@ -109,3 +109,4 @@ async function getDirectorySize(dirPath: string): Promise<number> {
   
   return totalSize;
 }
+

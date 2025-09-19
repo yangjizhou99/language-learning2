@@ -160,3 +160,4 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 2. 浏览器控制台错误信息
 3. 服务器日志（如果有）
 4. 您的 Supabase 项目配置信息
+

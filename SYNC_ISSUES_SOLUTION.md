@@ -191,3 +191,4 @@ GROUP BY table_name, column_name;
 
 这将使您的数据库同步达到完美的100%成功率！
 
+
