@@ -32,3 +32,4 @@ node scripts/db-sync.js
 echo.
 echo 同步完成！
 pause
+

@@ -253,3 +253,4 @@ if (require.main === module) {
 }
 
 module.exports = { main, analyzeProblemTable, checkJsonColumns };
+

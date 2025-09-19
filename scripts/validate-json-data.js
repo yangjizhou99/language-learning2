@@ -247,3 +247,4 @@ if (require.main === module) {
 }
 
 module.exports = { main, validateJsonData, validateTableJsonColumns };
+

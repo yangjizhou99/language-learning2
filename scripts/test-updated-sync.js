@@ -285,3 +285,4 @@ if (require.main === module) {
 }
 
 module.exports = { testTableSyncWithPool };
+

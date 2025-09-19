@@ -274,3 +274,4 @@ node scripts/sync-database.js --tables=posts,comments
 2. 确认无误后执行同步
 3. 使用命令行工具进行批量操作
 4. 通过 API 接口集成到自动化流程
+

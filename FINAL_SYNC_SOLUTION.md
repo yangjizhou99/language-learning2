@@ -92,3 +92,4 @@ const values = columns.map(col => {
 这个问题的根本原因是PostgreSQL JSONB类型的数据处理方式。通过确保在同步过程中将JavaScript对象正确转换为JSON字符串，我们解决了所有同步问题。
 
 现在您的数据库同步应该能够达到完美的100%成功率！
+

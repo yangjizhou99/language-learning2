@@ -325,3 +325,4 @@ if (require.main === module) {
 }
 
 module.exports = { main, syncTable, getAllTables };
+
