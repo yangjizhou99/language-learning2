@@ -940,7 +940,7 @@ export default function EnglishShadowingPage() {
                 );
 
                 const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-                  .from('tts')
+                  .from('recordings')
                   .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days
 
                 if (signedUrlError) {

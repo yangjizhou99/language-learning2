@@ -262,3 +262,4 @@ WHERE tc.constraint_type = 'FOREIGN KEY';
 
 建议您启用高级同步模式重新执行同步操作，这样可以解决您遇到的所有问题。
 
+

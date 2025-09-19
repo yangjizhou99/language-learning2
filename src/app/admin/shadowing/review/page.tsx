@@ -1130,45 +1130,31 @@ export default function ShadowingReviewList() {
         throw new Error('没有找到有效的对话片段');
       }
 
-      // 分别合成每个说话者的音频
-      const audioPromises = speakerSegments.map(async (segment, index) => {
-        console.log(
-          `合成第${index + 1}个片段: ${segment.speaker} - ${segment.text.substring(0, 50)}...`,
-        );
+      // 直接调用对话合成API，避免生成独立音频文件
+      console.log('调用对话合成API，避免独立音频存储');
 
-        const response = await fetch('/api/admin/shadowing/synthesize', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            text: segment.text,
-            lang: lang,
-            voice: segment.voice,
-            speakingRate: speakingRate,
-            pitch: pitch,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`TTS合成失败: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log(`第${index + 1}个片段合成成功:`, result.audio_url);
-        return result.audio_url;
+      const response = await fetch('/api/admin/shadowing/synthesize-dialogue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          text: text,
+          lang: lang,
+          speakingRate: speakingRate,
+          pitch: pitch,
+        }),
       });
 
-      // 等待所有音频合成完成
-      const audioUrls = await Promise.all(audioPromises);
-      console.log('所有音频合成完成:', audioUrls);
+      if (!response.ok) {
+        throw new Error(`对话合成失败: ${response.status}`);
+      }
 
-      // 合并音频：使用ffmpeg将多个音频合并成一个完整的对话音频
-      const mergedAudioUrl = await mergeAudioFiles(audioUrls, token);
-      console.log('音频合并完成:', mergedAudioUrl);
+      const result = await response.json();
+      console.log('对话合成完成:', result.audio_url);
 
-      return [mergedAudioUrl];
+      return [result.audio_url];
     } catch (error) {
       console.error('多音色对话合成失败:', error);
       throw error;
