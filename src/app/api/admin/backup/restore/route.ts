@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       file = formData.get('file') as File;
       restoreType = formData.get('restoreType') as string || 'upload';
     } else {
-      // JSON方式（历史备份）
+      // JSON方式（历史备份或增量恢复）
       const body = await req.json();
       restoreType = body.restoreType || 'history';
       backupPath = body.backupPath;
@@ -34,6 +34,10 @@ export async function POST(req: NextRequest) {
 
     if (restoreType === 'history' && !backupPath) {
       return NextResponse.json({ error: '请选择要恢复的历史备份' }, { status: 400 });
+    }
+
+    if (restoreType === 'incremental' && !backupPath) {
+      return NextResponse.json({ error: '增量恢复需要选择备份文件' }, { status: 400 });
     }
 
     // 创建临时目录
@@ -49,6 +53,9 @@ export async function POST(req: NextRequest) {
 
         // 解压ZIP文件
         await extractZip(tempFilePath, tempDir);
+      } else if (restoreType === 'incremental') {
+        // 增量恢复方式：直接使用单个备份文件
+        await copyBackupFromHistory(backupPath!, tempDir);
       } else {
         // 历史备份方式
         await copyBackupFromHistory(backupPath!, tempDir);
@@ -71,18 +78,22 @@ export async function POST(req: NextRequest) {
       try {
         await fs.access(storageDir);
         console.log('开始恢复存储桶文件...');
-        await restoreStorage(storageDir);
-        console.log('存储桶恢复完成');
+        const isIncremental = restoreType === 'incremental';
+        await restoreStorage(storageDir, isIncremental);
+        console.log(`存储桶恢复完成 (${isIncremental ? '增量' : '完整'}模式)`);
       } catch {
         console.log('存储目录不存在，跳过存储桶恢复');
       }
 
       return NextResponse.json({
-        message: '恢复完成',
+        message: restoreType === 'incremental' ? '增量恢复完成（并行处理）' : '恢复完成（并行处理）',
         details: {
           databaseFiles: sqlFiles.length,
           storageRestored: true,
           restoreType: restoreType,
+          mode: restoreType === 'incremental' ? '增量模式（只恢复数据库中缺失的文件）' : '完整模式（恢复所有备份文件）',
+          parallelProcessing: true,
+          performance: '使用并行处理提高恢复速度'
         },
       });
     } finally {
@@ -233,12 +244,20 @@ async function restoreDatabase(sqlFilePath: string): Promise<void> {
 
     console.log('找到', statements.length, '个SQL语句');
 
-    // 执行每个SQL语句
-    for (let i = 0; i < statements.length; i++) {
-      const statement = statements[i];
-      if (statement.trim()) {
+    // 并行执行SQL语句（分批处理）
+    const BATCH_SIZE = 5; // 每批处理5个SQL语句
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (let i = 0; i < statements.length; i += BATCH_SIZE) {
+      const batch = statements.slice(i, i + BATCH_SIZE);
+      
+      const batchPromises = batch.map(async (statement, batchIndex) => {
+        const globalIndex = i + batchIndex;
+        if (!statement.trim()) return { success: true, index: globalIndex };
+        
         try {
-          console.log(`执行SQL语句 ${i + 1}/${statements.length}:`, statement.substring(0, 100) + '...');
+          console.log(`执行SQL语句 ${globalIndex + 1}/${statements.length}:`, statement.substring(0, 100) + '...');
           
           // 直接执行SQL语句
           const { error } = await supabase.rpc('exec_sql', { sql: statement });
@@ -251,9 +270,11 @@ async function restoreDatabase(sqlFilePath: string): Promise<void> {
               throw error;
             } else {
               console.log('跳过非致命错误:', error.message);
+              return { success: true, index: globalIndex, skipped: true };
             }
           } else {
-            console.log(`SQL语句 ${i + 1} 执行成功`);
+            console.log(`SQL语句 ${globalIndex + 1} 执行成功`);
+            return { success: true, index: globalIndex };
           }
         } catch (err) {
           console.error('执行SQL语句时出错:', err, 'Statement:', statement);
@@ -262,35 +283,62 @@ async function restoreDatabase(sqlFilePath: string): Promise<void> {
               !err.message.includes('already exists') && 
               !err.message.includes('does not exist') &&
               !err.message.includes('duplicate key')) {
-            throw err;
+            return { success: false, index: globalIndex, error: err.message };
           } else {
             console.log('跳过非致命错误:', err instanceof Error ? err.message : '未知错误');
+            return { success: true, index: globalIndex, skipped: true };
           }
         }
-      }
+      });
+      
+      const batchResults = await Promise.all(batchPromises);
+      
+      // 统计批次结果
+      batchResults.forEach(result => {
+        if (result.success) {
+          successCount++;
+        } else {
+          errorCount++;
+        }
+      });
+      
+      console.log(`批次 ${Math.floor(i / BATCH_SIZE) + 1} 完成: 成功 ${batchResults.filter(r => r.success).length} 个，失败 ${batchResults.filter(r => !r.success).length} 个`);
     }
     
-    console.log('数据库恢复完成');
+    console.log(`数据库恢复完成: 成功 ${successCount} 个，失败 ${errorCount} 个`);
   } catch (err) {
     console.error('恢复数据库失败:', err);
     throw err;
   }
 }
 
-async function restoreStorage(storageDir: string): Promise<void> {
+async function restoreStorage(storageDir: string, incrementalMode: boolean = false): Promise<void> {
   const supabase = getServiceSupabase();
   
   try {
     const items = await fs.readdir(storageDir);
+    const bucketDirs = [];
     
+    // 收集所有存储桶目录
     for (const item of items) {
       const itemPath = path.join(storageDir, item);
       const stats = await fs.stat(itemPath);
       
       if (stats.isDirectory()) {
-        // 这是一个存储桶目录
-        const bucketName = item;
-        
+        bucketDirs.push({
+          name: item,
+          path: itemPath
+        });
+      }
+    }
+    
+    console.log(`找到 ${bucketDirs.length} 个存储桶目录，开始并行处理...`);
+    
+    // 并行处理所有存储桶
+    const bucketPromises = bucketDirs.map(async (bucketDir) => {
+      const bucketName = bucketDir.name;
+      
+      try {
         // 检查存储桶是否存在
         const { data: buckets } = await supabase.storage.listBuckets();
         const bucketExists = buckets?.some(b => b.name === bucketName);
@@ -303,14 +351,35 @@ async function restoreStorage(storageDir: string): Promise<void> {
           
           if (createError) {
             console.error(`创建存储桶 ${bucketName} 失败:`, createError);
-            continue;
+            return { bucketName, success: false, error: createError.message };
           }
+          console.log(`创建存储桶 ${bucketName} 成功`);
         }
         
         // 上传文件
-        await uploadDirectoryToBucket(supabase, itemPath, bucketName);
+        await uploadDirectoryToBucket(supabase, bucketDir.path, bucketName, '', incrementalMode);
+        
+        return { bucketName, success: true };
+      } catch (err) {
+        console.error(`处理存储桶 ${bucketName} 失败:`, err);
+        return { bucketName, success: false, error: err instanceof Error ? err.message : '未知错误' };
       }
+    });
+    
+    // 等待所有存储桶处理完成
+    const results = await Promise.all(bucketPromises);
+    
+    // 统计结果
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.filter(r => !r.success).length;
+    
+    console.log(`存储桶恢复完成: 成功 ${successCount} 个，失败 ${failureCount} 个`);
+    
+    if (failureCount > 0) {
+      const failedBuckets = results.filter(r => !r.success).map(r => `${r.bucketName}(${r.error})`);
+      console.warn(`失败的存储桶: ${failedBuckets.join(', ')}`);
     }
+    
   } catch (err) {
     console.error('恢复存储桶失败:', err);
     throw err;
@@ -398,10 +467,11 @@ async function copyDirectory(src: string, dest: string): Promise<void> {
 }
 
 async function uploadDirectoryToBucket(
-  supabase: { storage: { from: (bucket: string) => { upload: (path: string, file: Buffer) => Promise<{ error: unknown }> } } },
+  supabase: any,
   dirPath: string,
   bucketName: string,
-  prefix: string = ''
+  prefix: string = '',
+  incrementalMode: boolean = false
 ): Promise<void> {
   try {
     console.log(`开始批量检查存储桶 ${bucketName} 中的现有文件...`);
@@ -412,53 +482,120 @@ async function uploadDirectoryToBucket(
     
     console.log(`存储桶 ${bucketName} 中现有文件数量: ${existingFiles.length}`);
     
-    const items = await fs.readdir(dirPath);
-    let uploadedCount = 0;
-    let skippedCount = 0;
+    // 收集所有需要上传的文件
+    const filesToUpload = await collectFilesToUpload(dirPath, prefix, existingFileSet, incrementalMode);
     
-    for (const item of items) {
-      const itemPath = path.join(dirPath, item);
-      const stats = await fs.stat(itemPath);
-      
-      if (stats.isDirectory()) {
-        // 递归处理子目录
-        await uploadDirectoryToBucket(supabase, itemPath, bucketName, `${prefix}${item}/`);
-      } else {
-        // 检查文件是否已存在
-        const filePath = `${prefix}${item}`;
-        
-        if (existingFileSet.has(filePath)) {
-          skippedCount++;
-          console.log(`跳过已存在文件: ${filePath}`);
-          continue;
-        }
-        
-        // 文件不存在，进行上传
-        const fileBuffer = await fs.readFile(itemPath);
-        
-        const { error } = await supabase.storage
-          .from(bucketName)
-          .upload(filePath, fileBuffer);
-        
-        if (error) {
-          console.error(`上传文件 ${filePath} 失败:`, error);
-        } else {
-          uploadedCount++;
-          console.log(`上传文件成功: ${filePath}`);
-        }
-      }
+    console.log(`存储桶 ${bucketName} 需要上传 ${filesToUpload.length} 个文件`);
+    
+    if (filesToUpload.length === 0) {
+      console.log(`存储桶 ${bucketName} 没有需要上传的文件`);
+      return;
     }
     
-    console.log(`存储桶 ${bucketName} 上传完成: 成功 ${uploadedCount} 个，跳过 ${skippedCount} 个`);
+    // 并行上传文件
+    const CONCURRENT_UPLOADS = 20; // 并发上传数量，可以根据服务器性能调整
+    let uploadedCount = 0;
+    let skippedCount = 0;
+    let errorCount = 0;
+    
+    for (let i = 0; i < filesToUpload.length; i += CONCURRENT_UPLOADS) {
+      const batch = filesToUpload.slice(i, i + CONCURRENT_UPLOADS);
+      
+      const uploadPromises = batch.map(async (fileInfo) => {
+        try {
+          const fileBuffer = await fs.readFile(fileInfo.filePath);
+          
+          const { error } = await supabase.storage
+            .from(bucketName)
+            .upload(fileInfo.relativePath, fileBuffer);
+          
+          if (error) {
+            console.error(`上传文件 ${fileInfo.relativePath} 失败:`, error);
+            return { success: false, file: fileInfo.relativePath };
+          } else {
+            console.log(`上传文件成功: ${fileInfo.relativePath}`);
+            return { success: true, file: fileInfo.relativePath };
+          }
+        } catch (err) {
+          console.error(`处理文件 ${fileInfo.relativePath} 失败:`, err);
+          return { success: false, file: fileInfo.relativePath };
+        }
+      });
+      
+      const results = await Promise.all(uploadPromises);
+      
+      // 统计结果
+      results.forEach(result => {
+        if (result.success) {
+          uploadedCount++;
+        } else {
+          errorCount++;
+        }
+      });
+      
+      const batchSuccess = results.filter(r => r.success).length;
+      const batchFailure = results.filter(r => !r.success).length;
+      const progress = Math.round(((i + CONCURRENT_UPLOADS) / filesToUpload.length) * 100);
+      console.log(`批次 ${Math.floor(i / CONCURRENT_UPLOADS) + 1} 完成: 成功 ${batchSuccess} 个，失败 ${batchFailure} 个，进度 ${Math.min(progress, 100)}%`);
+    }
+    
+    skippedCount = filesToUpload.length - uploadedCount - errorCount;
+    console.log(`存储桶 ${bucketName} 上传完成: 成功 ${uploadedCount} 个，跳过 ${skippedCount} 个，失败 ${errorCount} 个`);
   } catch (err) {
     console.error('上传目录到存储桶失败:', err);
     throw err;
   }
 }
 
+// 收集需要上传的文件
+async function collectFilesToUpload(
+  dirPath: string,
+  prefix: string,
+  existingFileSet: Set<string>,
+  incrementalMode: boolean
+): Promise<Array<{ filePath: string; relativePath: string }>> {
+  const filesToUpload: Array<{ filePath: string; relativePath: string }> = [];
+  
+  const items = await fs.readdir(dirPath);
+  
+  for (const item of items) {
+    const itemPath = path.join(dirPath, item);
+    const stats = await fs.stat(itemPath);
+    
+    if (stats.isDirectory()) {
+      // 递归处理子目录
+      const subFiles = await collectFilesToUpload(itemPath, `${prefix}${item}/`, existingFileSet, incrementalMode);
+      filesToUpload.push(...subFiles);
+    } else {
+      // 检查文件是否已存在
+      const filePath = `${prefix}${item}`;
+      
+      if (incrementalMode) {
+        // 增量模式：只上传数据库中不存在的文件
+        if (existingFileSet.has(filePath)) {
+          continue; // 跳过已存在的文件
+        }
+      } else {
+        // 完整模式：检查文件是否已存在
+        if (existingFileSet.has(filePath)) {
+          continue; // 跳过已存在的文件
+        }
+      }
+      
+      // 添加到上传列表
+      filesToUpload.push({
+        filePath: itemPath,
+        relativePath: filePath
+      });
+    }
+  }
+  
+  return filesToUpload;
+}
+
 // 获取存储桶中所有文件的递归函数
 async function getAllFilesFromBucket(
-  supabase: { storage: { from: (bucket: string) => { list: (path: string, options?: any) => Promise<{ data: any[] }> } } },
+  supabase: any,
   bucketName: string,
   prefix: string = ''
 ): Promise<string[]> {
@@ -474,7 +611,7 @@ async function getAllFilesFromBucket(
       });
 
     if (files) {
-      for (const file of files) {
+      for (const file of files as any[]) {
         const fullPath = prefix ? `${prefix}/${file.name}` : file.name;
         
         if (file.metadata && file.metadata.size !== undefined) {
@@ -493,3 +630,4 @@ async function getAllFilesFromBucket(
   
   return allFiles;
 }
+

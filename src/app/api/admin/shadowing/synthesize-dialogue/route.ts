@@ -28,7 +28,7 @@ function parseDialogue(text: string): { speaker: string; content: string }[] {
   return dialogue;
 }
 
-// 合并音频缓冲区
+// 合并音频缓冲区（优化版本，减少临时文件使用）
 async function mergeAudioBuffers(buffers: Buffer[]): Promise<Buffer> {
   if (buffers.length === 0) throw new Error('No audio buffers to merge');
   if (buffers.length === 1) return buffers[0];
@@ -67,7 +67,7 @@ async function mergeAudioBuffers(buffers: Buffer[]): Promise<Buffer> {
       // 读取合并后的音频
       const mergedBuffer = fs.readFileSync(outputFile);
 
-      // 清理临时文件
+      // 立即清理临时文件
       [...inputFiles, listFile, outputFile].forEach((file) => {
         try {
           fs.unlinkSync(file);
@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`解析到 ${dialogue.length} 段对话`);
 
-    // 为每个角色分别合成音频
+    // 为每个角色分别合成音频（只在内存中处理，不上传独立音频）
     const audioBuffers: Buffer[] = [];
 
     for (const { speaker, content } of dialogue) {
@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
       audioBuffers.push(audioBuffer);
     }
 
-    // 合并音频
+    // 合并音频（在内存中完成，不保存独立音频）
     console.log(`合并 ${audioBuffers.length} 个音频片段`);
     const mergedAudio = await mergeAudioBuffers(audioBuffers);
 

@@ -3,7 +3,7 @@
 
 -- First, create the 'recordings' bucket in Supabase Dashboard with these settings:
 -- Bucket name: recordings
--- Public: true (for easier access to recordings)
+-- Public: false (private bucket for security)
 -- File size limit: 50MB
 -- Allowed MIME types: audio/webm, audio/wav, audio/mp3, audio/ogg
 

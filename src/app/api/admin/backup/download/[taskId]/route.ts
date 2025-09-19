@@ -93,7 +93,7 @@ export async function GET(
     headers.set('Content-Disposition', `attachment; filename="${path.basename(task.filePath)}"`);
     headers.set('Content-Length', fileStats.size.toString());
 
-    return new NextResponse(fileBuffer, { headers });
+    return new NextResponse(fileBuffer as BodyInit, { headers });
   } catch (error) {
     console.error('下载备份失败:', error);
     return NextResponse.json(

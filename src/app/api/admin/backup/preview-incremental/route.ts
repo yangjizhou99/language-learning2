@@ -116,7 +116,7 @@ async function extractZip(zipPath: string, extractDir: string): Promise<void> {
     console.log(`ZIP文件解压成功: ${zipPath} -> ${extractDir}`);
   } catch (error) {
     console.error('ZIP解压失败:', error);
-    throw new Error(`ZIP解压失败: ${error.message}`);
+    throw new Error(`ZIP解压失败: ${error instanceof Error ? error.message : '未知错误'}`);
   }
 }
 
@@ -291,7 +291,7 @@ export async function POST(req: NextRequest) {
         
         // 方式2：尝试添加存储桶名称前缀
         if (!isFound) {
-          const withBucketPrefix = `${bucket.bucketName}/${normalizedPath}`;
+          const withBucketPrefix = `${bucket.name}/${normalizedPath}`;
           if (existingBackupFiles.has(withBucketPrefix)) {
             isFound = true;
           }
@@ -309,10 +309,10 @@ export async function POST(req: NextRequest) {
         
         // 调试信息：显示前几个文件的对比情况
         if (bucketFilesToDownload + bucketFilesToSkip < 5) {
-          console.log(`文件对比调试 - 存储桶: ${bucket.bucketName}`);
+          console.log(`文件对比调试 - 存储桶: ${bucket.name}`);
           console.log(`文件对比调试 - 原始路径: ${filePath}`);
           console.log(`文件对比调试 - 标准化路径: ${normalizedPath}`);
-          console.log(`文件对比调试 - 带存储桶前缀: ${bucket.bucketName}/${normalizedPath}`);
+          console.log(`文件对比调试 - 带存储桶前缀: ${bucket.name}/${normalizedPath}`);
           console.log(`文件对比调试 - 是否找到匹配: ${isFound}`);
           if (existingBackupFiles.size > 0) {
             const sampleExisting = Array.from(existingBackupFiles).slice(0, 3);

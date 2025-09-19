@@ -79,9 +79,9 @@ export async function POST(req: NextRequest) {
 
     console.log('文件转换为buffer完成，大小:', buffer.length);
 
-    // Upload to Supabase Storage (使用tts bucket)
+    // Upload to Supabase Storage (使用recordings bucket)
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('tts')
+      .from('recordings')
       .upload(fileName, buffer, {
         contentType: audioFile.type || 'audio/webm',
         duplex: 'half',
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     // Get signed URL (for private bucket access)
     const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from('tts')
+      .from('recordings')
       .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
 
     if (signedUrlError) {

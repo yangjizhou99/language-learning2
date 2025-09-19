@@ -45,11 +45,40 @@ export async function GET(req: NextRequest) {
             modifiedAt: stats.mtime
           });
         } else if (item.endsWith('.zip') && item.startsWith('storage-backup-')) {
-          // 存储桶备份ZIP文件
+          // 存储桶完整备份ZIP文件
           const timestamp = item.replace('storage-backup-', '').replace('.zip', '');
           
           backups.push({
             type: 'storage',
+            backupType: 'full',
+            name: item,
+            timestamp: timestamp,
+            size: stats.size,
+            path: itemPath,
+            createdAt: stats.birthtime,
+            modifiedAt: stats.mtime
+          });
+        } else if (item.endsWith('.zip') && item.startsWith('storage-incremental-')) {
+          // 存储桶增量备份ZIP文件
+          const timestamp = item.replace('storage-incremental-', '').replace('.zip', '');
+          
+          backups.push({
+            type: 'storage',
+            backupType: 'incremental',
+            name: item,
+            timestamp: timestamp,
+            size: stats.size,
+            path: itemPath,
+            createdAt: stats.birthtime,
+            modifiedAt: stats.mtime
+          });
+        } else if (item.endsWith('.zip') && item.startsWith('merged-backup-')) {
+          // 合并备份ZIP文件
+          const timestamp = item.replace('merged-backup-', '').replace('.zip', '');
+          
+          backups.push({
+            type: 'storage',
+            backupType: 'merged',
             name: item,
             timestamp: timestamp,
             size: stats.size,

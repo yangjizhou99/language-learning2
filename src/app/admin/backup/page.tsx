@@ -44,14 +44,14 @@ export default function AdminBackupPage() {
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
   const [selectedBackup, setSelectedBackup] = useState<string | null>(null);
   const [restoreType, setRestoreType] = useState<'upload' | 'history'>('upload');
-  const [isRestoring, setIsRestoring] = useState(false);
+  const [isRestoringBackup, setIsRestoringBackup] = useState(false);
   const [restoreProgress, setRestoreProgress] = useState(0);
   const [restoreMessage, setRestoreMessage] = useState('');
   const [testResult, setTestResult] = useState<{ error?: string; tableCount?: number; tables?: { table_name: string }[]; details?: unknown } | null>(null);
   const [functionCheck, setFunctionCheck] = useState<{ error?: string; hasGetTableList?: boolean; functionTest?: unknown; details?: unknown } | null>(null);
   const [diagnostics, setDiagnostics] = useState<{ error?: string; success?: boolean; summary?: { passed: number; total: number }; diagnostics?: { status: string; test: string; message: string; details?: unknown }[] } | null>(null);
   const [storageTest, setStorageTest] = useState<{ error?: string; success?: boolean; totalBuckets?: number; summary?: { totalFiles: number }; buckets?: { name: string; error?: string; simpleFileCount?: number; recursiveFileCount?: number; allFiles?: string[] }[] } | null>(null);
-  const [backupHistory, setBackupHistory] = useState<{ error?: string; total?: number; totalSize?: number; backups?: { name: string; type: string; size: number; createdAt: string; path: string }[] } | null>(null);
+  const [backupHistory, setBackupHistory] = useState<{ error?: string; total?: number; totalSize?: number; backups?: { name: string; type: string; backupType?: string; size: number; createdAt: string; path: string }[] } | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [incrementalPreview, setIncrementalPreview] = useState<{
     compareBackupInfo?: { filename: string; size: number; createdAt: Date };
@@ -128,6 +128,42 @@ export default function AdminBackupPage() {
     outputPath?: string;
     fileSize?: number;
     fileCount?: number;
+    error?: string;
+  } | null>(null);
+  const [restorePreview, setRestorePreview] = useState<{
+    restoreType: 'full' | 'incremental';
+    backupPath: string;
+    currentFiles: number;
+    backupFiles: number;
+    filesToRestore: number;
+    filesToSkip: number;
+    filesToOverwrite: number;
+    bucketAnalysis: Array<{
+      bucketName: string;
+      currentFiles: number;
+      backupFiles: number;
+      filesToRestore: number;
+      filesToSkip: number;
+      filesToOverwrite: number;
+      filesToRestoreList: string[];
+      filesToOverwriteList: string[];
+    }>;
+    summary: {
+      currentFiles: number;
+      backupFiles: number;
+      filesToRestore: number;
+      filesToSkip: number;
+      filesToOverwrite: number;
+      restorePercentage: number;
+      overwritePercentage: number;
+    };
+  } | null>(null);
+  const [isPreviewingRestore, setIsPreviewingRestore] = useState(false);
+  const [showRestorePreview, setShowRestorePreview] = useState(false);
+  const [selectedRestoreBackup, setSelectedRestoreBackup] = useState<string>('');
+  const [restoreResult, setRestoreResult] = useState<{
+    success?: boolean;
+    message?: string;
     error?: string;
   } | null>(null);
 
@@ -254,7 +290,7 @@ export default function AdminBackupPage() {
       return;
     }
 
-    setIsRestoring(true);
+    setIsRestoringBackup(true);
     setError(null);
     setRestoreProgress(0);
     setRestoreMessage('开始恢复...');
@@ -323,7 +359,7 @@ export default function AdminBackupPage() {
       setRestoreMessage('恢复失败');
       setRestoreProgress(0);
     } finally {
-      setIsRestoring(false);
+      setIsRestoringBackup(false);
     }
   };
 
@@ -485,6 +521,83 @@ export default function AdminBackupPage() {
       });
     } finally {
       setIsMerging(false);
+    }
+  };
+
+  const previewRestore = async (restoreType: 'full' | 'incremental' = 'full') => {
+    if (!selectedRestoreBackup) {
+      setError('请选择要恢复的备份文件');
+      return;
+    }
+
+    setIsPreviewingRestore(true);
+    setRestorePreview(null);
+
+    try {
+      const response = await fetch('/api/admin/backup/preview-restore', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          backupPath: selectedRestoreBackup,
+          restoreType
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setRestorePreview(data);
+        setShowRestorePreview(true);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '预览恢复失败');
+    } finally {
+      setIsPreviewingRestore(false);
+    }
+  };
+
+  const confirmRestore = async () => {
+    if (!selectedRestoreBackup) {
+      setError('请选择要恢复的备份文件');
+      return;
+    }
+
+    setIsRestoringBackup(true);
+    setRestoreResult(null);
+    setShowRestorePreview(false);
+
+    try {
+      const mode = (document.querySelector('input[name="restoreMode"]:checked') as HTMLInputElement)?.value as 'full' | 'incremental';
+      const restoreType = mode === 'incremental' ? 'incremental' : 'history';
+      
+      const response = await fetch('/api/admin/backup/restore', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          restoreType,
+          backupPath: selectedRestoreBackup
+        }),
+      });
+
+      const data = await response.json();
+      setRestoreResult(data);
+
+      if (data.error) {
+        setError(data.error);
+      }
+    } catch (err) {
+      setRestoreResult({
+        success: false,
+        error: err instanceof Error ? err.message : '恢复失败'
+      });
+    } finally {
+      setIsRestoringBackup(false);
     }
   };
 
@@ -1301,6 +1414,16 @@ export default function AdminBackupPage() {
                   >
                     备份管理
                   </Button>
+                  <Button
+                    onClick={() => {
+                      setShowRestorePreview(true);
+                      loadBackupHistory();
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    恢复预览
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -1319,7 +1442,7 @@ export default function AdminBackupPage() {
                 <Select
                   value={restoreType}
                   onValueChange={(value: 'upload' | 'history') => setRestoreType(value)}
-                  disabled={isRestoring}
+                  disabled={isRestoringBackup}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="选择恢复方式" />
@@ -1349,7 +1472,7 @@ export default function AdminBackupPage() {
                     type="file"
                     accept=".zip"
                     onChange={handleRestoreFile}
-                    disabled={isRestoring}
+                    disabled={isRestoringBackup}
                   />
                   <p className="text-sm text-gray-500">
                     支持ZIP格式的备份文件
@@ -1403,7 +1526,7 @@ export default function AdminBackupPage() {
                 </div>
               )}
 
-              {isRestoring && (
+              {isRestoringBackup && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span>{restoreMessage}</span>
@@ -1415,11 +1538,11 @@ export default function AdminBackupPage() {
 
               <Button
                 onClick={startRestore}
-                disabled={isRestoring || (restoreType === 'upload' ? !restoreFile : !selectedBackup)}
+                disabled={isRestoringBackup || (restoreType === 'upload' ? !restoreFile : !selectedBackup)}
                 className="w-full"
                 variant="outline"
               >
-                {isRestoring ? '恢复进行中...' : '开始恢复'}
+                {isRestoringBackup ? '恢复进行中...' : '开始恢复'}
               </Button>
             </CardContent>
           </Card>
@@ -1723,6 +1846,262 @@ export default function AdminBackupPage() {
                     ))}
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 恢复预览界面 */}
+        {showRestorePreview && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>恢复预览</span>
+                <Button
+                  onClick={() => setShowRestorePreview(false)}
+                  variant="outline"
+                  size="sm"
+                >
+                  关闭
+                </Button>
+              </CardTitle>
+              <CardDescription>
+                预览恢复操作，分析需要恢复的文件
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {/* 选择备份文件 */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">选择要恢复的备份文件</label>
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={loadBackupHistory}
+                        variant="outline"
+                        size="sm"
+                      >
+                        刷新备份列表
+                      </Button>
+                    </div>
+                    
+                    {backupHistory && backupHistory.backups && backupHistory.backups.length > 0 ? (
+                      <div className="max-h-60 overflow-y-auto border rounded-lg p-2 space-y-1">
+                        {backupHistory.backups
+                          .filter(backup => backup.type === 'storage')
+                          .map((backup) => {
+                            const backupType = backup.backupType || 'unknown';
+                            const typeColor = backupType === 'full' ? 'text-green-600' : 
+                                            backupType === 'incremental' ? 'text-orange-600' : 
+                                            backupType === 'merged' ? 'text-blue-600' : 'text-gray-600';
+                            const typeIcon = backupType === 'full' ? '📦' : 
+                                           backupType === 'incremental' ? '📈' : 
+                                           backupType === 'merged' ? '🔗' : '❓';
+                            
+                            return (
+                              <label key={backup.name} className="flex items-center space-x-2 p-3 hover:bg-gray-50 rounded cursor-pointer border">
+                                <input
+                                  type="radio"
+                                  name="selectedBackup"
+                                  value={backup.path}
+                                  checked={selectedRestoreBackup === backup.path}
+                                  onChange={(e) => setSelectedRestoreBackup(e.target.value)}
+                                  className="rounded"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-lg">{typeIcon}</span>
+                                      <span className="text-sm font-medium truncate">{backup.name}</span>
+                                    </div>
+                                    <span className="text-xs text-gray-500">{formatFileSize(backup.size)}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    <span className={`font-medium ${typeColor}`}>
+                                      {backupType === 'full' ? '完整备份' : 
+                                       backupType === 'incremental' ? '增量备份' : 
+                                       backupType === 'merged' ? '合并备份' : '未知类型'}
+                                    </span>
+                                    <span className="mx-2">•</span>
+                                    <span>{new Date(backup.createdAt).toLocaleString()}</span>
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500">
+                        {backupHistory ? '没有找到备份文件' : '点击"刷新备份列表"加载备份文件'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 恢复模式选择 */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">恢复模式</label>
+                    <div className="flex space-x-4">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          name="restoreMode"
+                          value="incremental"
+                          defaultChecked
+                          className="rounded"
+                        />
+                        <span className="text-sm">增量恢复（只恢复数据库中缺失的文件）</span>
+                      </label>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          name="restoreMode"
+                          value="full"
+                          className="rounded"
+                        />
+                        <span className="text-sm">完整恢复（恢复所有备份文件）</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 预览按钮 */}
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => {
+                        const mode = (document.querySelector('input[name="restoreMode"]:checked') as HTMLInputElement)?.value as 'full' | 'incremental';
+                        previewRestore(mode);
+                      }}
+                      disabled={isPreviewingRestore || !selectedRestoreBackup}
+                      className="flex-1"
+                    >
+                      {isPreviewingRestore ? '分析中...' : '预览恢复'}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 恢复预览结果 */}
+                {restorePreview && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-800">恢复分析结果</h4>
+                    
+                    {/* 总体统计 */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 bg-blue-50 rounded-lg">
+                        <div className="text-xl font-bold text-blue-600">{restorePreview.currentFiles}</div>
+                        <div className="text-sm text-blue-600">数据库文件</div>
+                      </div>
+                      <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <div className="text-xl font-bold text-green-600">{restorePreview.backupFiles}</div>
+                        <div className="text-sm text-green-600">备份文件</div>
+                      </div>
+                      <div className="text-center p-3 bg-orange-50 rounded-lg">
+                        <div className="text-xl font-bold text-orange-600">{restorePreview.filesToRestore}</div>
+                        <div className="text-sm text-orange-600">{restorePreview.restoreType === 'incremental' ? '需要恢复' : '需要恢复'}</div>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 rounded-lg">
+                        <div className="text-xl font-bold text-gray-600">{restorePreview.filesToSkip}</div>
+                        <div className="text-sm text-gray-600">{restorePreview.restoreType === 'incremental' ? '已存在跳过' : '跳过文件'}</div>
+                      </div>
+                    </div>
+
+                    {/* 详细分析 */}
+                    <div className="space-y-4">
+                      <h5 className="font-medium text-gray-700">存储桶分析</h5>
+                      {restorePreview.bucketAnalysis.map((bucket, index) => (
+                        <div key={index} className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h6 className="font-medium">{bucket.bucketName}</h6>
+                            <div className="text-sm text-gray-500">
+                              {restorePreview.restoreType === 'incremental' 
+                                ? `恢复 ${bucket.filesToRestore} 个，跳过 ${bucket.filesToSkip} 个`
+                                : `恢复 ${bucket.filesToRestore} 个，覆盖 ${bucket.filesToOverwrite} 个`
+                              }
+                            </div>
+                          </div>
+                          
+                          {bucket.filesToRestore > 0 && (
+                            <div className="mb-2">
+                              <p className="text-sm text-gray-600 mb-1">需要恢复的文件示例：</p>
+                              <div className="text-xs text-gray-500 space-y-1">
+                                {bucket.filesToRestoreList.map((file, i) => (
+                                  <div key={i} className="truncate">• {file}</div>
+                                ))}
+                                {bucket.filesToRestore > 10 && (
+                                  <div>... 还有 {bucket.filesToRestore - 10} 个文件</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {restorePreview.restoreType === 'full' && bucket.filesToOverwrite > 0 && (
+                            <div>
+                              <p className="text-sm text-gray-600 mb-1">将被覆盖的文件示例：</p>
+                              <div className="text-xs text-gray-500 space-y-1">
+                                {bucket.filesToOverwriteList.map((file, i) => (
+                                  <div key={i} className="truncate">• {file}</div>
+                                ))}
+                                {bucket.filesToOverwrite > 10 && (
+                                  <div>... 还有 {bucket.filesToOverwrite - 10} 个文件</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {restorePreview.restoreType === 'incremental' && bucket.filesToSkip > 0 && (
+                            <div>
+                              <p className="text-sm text-gray-600 mb-1">已存在跳过的文件示例：</p>
+                              <div className="text-xs text-gray-500 space-y-1">
+                                {bucket.filesToOverwriteList.slice(0, 5).map((file, i) => (
+                                  <div key={i} className="truncate">• {file}</div>
+                                ))}
+                                {bucket.filesToSkip > 5 && (
+                                  <div>... 还有 {bucket.filesToSkip - 5} 个文件</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 确认恢复按钮 */}
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={confirmRestore}
+                        disabled={isRestoringBackup}
+                        className="flex-1"
+                      >
+                        {isRestoringBackup ? '正在恢复...' : '确认恢复'}
+                      </Button>
+                      <Button
+                        onClick={() => setShowRestorePreview(false)}
+                        variant="outline"
+                      >
+                        取消
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 恢复结果 */}
+                {restoreResult && (
+                  <div className={`p-3 rounded-lg ${restoreResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                    <div className="flex items-start space-x-2">
+                      {restoreResult.success ? (
+                        <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                      )}
+                      <div className="text-sm">
+                        <p className={`font-medium ${restoreResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                          {restoreResult.success ? '恢复成功' : '恢复失败'}
+                        </p>
+                        <p className={`mt-1 ${restoreResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                          {restoreResult.message || restoreResult.error}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -777,7 +777,7 @@ async function extractZip(zipPath: string, extractDir: string): Promise<void> {
     console.log(`ZIP文件解压成功: ${zipPath} -> ${extractDir}`);
   } catch (error) {
     console.error('ZIP解压失败:', error);
-    throw new Error(`ZIP解压失败: ${error.message}`);
+    throw new Error(`ZIP解压失败: ${error instanceof Error ? error.message : '未知错误'}`);
   }
 }
 

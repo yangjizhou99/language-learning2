@@ -392,9 +392,56 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
     );
 
     const deleteRecording = useCallback(
-      (recording: AudioRecording) => {
-        setRecordings((prev) => prev.filter((r) => r.url !== recording.url));
-        onRecordingDeleted?.(recording);
+      async (recording: AudioRecording) => {
+        try {
+          // 如果录音有fileName（已上传的录音），从存储中删除
+          if (recording.fileName) {
+            console.log('准备删除存储中的录音文件:', recording.fileName);
+            
+            // 获取认证头
+            const { createClient } = await import('@supabase/supabase-js');
+            const supabase = createClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            );
+
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            const headers: HeadersInit = {};
+            if (session?.access_token) {
+              headers['Authorization'] = `Bearer ${session.access_token}`;
+            }
+
+            const response = await fetch(`/api/upload/audio/delete?path=${encodeURIComponent(recording.fileName)}`, {
+              method: 'DELETE',
+              headers,
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('删除录音文件失败:', errorText);
+              throw new Error(`Delete failed: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            if (data.success) {
+              console.log('录音文件删除成功');
+            } else {
+              console.warn('录音文件删除失败:', data.error);
+            }
+          }
+
+          // 从本地状态中移除
+          setRecordings((prev) => prev.filter((r) => r.url !== recording.url));
+          onRecordingDeleted?.(recording);
+        } catch (error) {
+          console.error('删除录音时发生错误:', error);
+          // 即使删除失败，也从本地状态中移除
+          setRecordings((prev) => prev.filter((r) => r.url !== recording.url));
+          onRecordingDeleted?.(recording);
+          alert(`删除录音失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        }
       },
       [onRecordingDeleted],
     );
