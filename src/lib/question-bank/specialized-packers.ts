@@ -147,6 +147,8 @@ export class ShadowingPacker {
   private async getPublishedItems(client: PoolClient, filters: any) {
     let query = `
       SELECT si.*, 
+             si.theme_id,
+             si.subtopic_id,
              st.title as theme_title,
              st.genre as theme_genre,
              ss.title_cn as subtopic_title
@@ -196,6 +198,8 @@ export class ShadowingPacker {
   private async getDraftItems(client: PoolClient, filters: any) {
     let query = `
       SELECT sd.*, 
+             sd.theme_id,
+             sd.subtopic_id,
              st.title as theme_title,
              st.genre as theme_genre,
              ss.title_cn as subtopic_title
@@ -392,30 +396,27 @@ export class ShadowingPacker {
     const themeIds = new Set<string>();
     const subtopicIds = new Set<string>();
 
-    items.forEach((item) => {
-      if (item.theme_id) themeIds.add(item.theme_id);
-      if (item.subtopic_id) subtopicIds.add(item.subtopic_id);
+    console.log(`开始收集主题和子主题ID，共 ${items.length} 个题目`);
+    
+    items.forEach((item, index) => {
+      if (item.theme_id) {
+        themeIds.add(item.theme_id);
+        console.log(`题目 ${index + 1} 引用主题: ${item.theme_id}`);
+      }
+      if (item.subtopic_id) {
+        subtopicIds.add(item.subtopic_id);
+        console.log(`题目 ${index + 1} 引用子主题: ${item.subtopic_id}`);
+      }
     });
+    
+    console.log(`收集到的主题ID: ${Array.from(themeIds).join(', ')}`);
+    console.log(`收集到的子主题ID: ${Array.from(subtopicIds).join(', ')}`);
 
     let themesCount = 0;
     let subtopicsCount = 0;
 
-    // 同步主题数据
-    if (themeIds.size > 0) {
-      const themeIdsArray = Array.from(themeIds);
-      const themeQuery = `
-        SELECT * FROM shadowing_themes 
-        WHERE id = ANY($1)
-      `;
-      const themes = await sourceClient.query(themeQuery, [themeIdsArray]);
-
-      if (themes.rows.length > 0) {
-        await this.syncThemesToTarget(targetClient, themes.rows);
-        themesCount = themes.rows.length;
-      }
-    }
-
-    // 同步子主题数据
+    // 1. 先获取所有子主题，收集它们引用的主题ID
+    const allThemeIds = new Set(themeIds);
     if (subtopicIds.size > 0) {
       const subtopicIdsArray = Array.from(subtopicIds);
       const subtopicQuery = `
@@ -425,8 +426,87 @@ export class ShadowingPacker {
       const subtopics = await sourceClient.query(subtopicQuery, [subtopicIdsArray]);
 
       if (subtopics.rows.length > 0) {
-        await this.syncSubtopicsToTarget(targetClient, subtopics.rows);
-        subtopicsCount = subtopics.rows.length;
+        // 收集子主题引用的所有主题ID
+        subtopics.rows.forEach(subtopic => {
+          if (subtopic.theme_id) {
+            allThemeIds.add(subtopic.theme_id);
+            console.log(`子主题 ${subtopic.title_cn} 引用主题: ${subtopic.theme_id}`);
+          }
+        });
+        console.log(`从子主题中收集到 ${subtopics.rows.length} 个子主题，引用了 ${allThemeIds.size} 个主题`);
+      }
+    }
+
+    // 2. 确保题目直接引用的主题也被收集
+    console.log(`题目直接引用的主题: ${themeIds.size} 个`);
+    console.log(`所有需要同步的主题: ${allThemeIds.size} 个`);
+    
+    // 如果没有主题ID，说明题目只通过子主题间接引用主题
+    if (allThemeIds.size === 0) {
+      console.log('⚠️  没有找到任何主题ID，可能题目只通过子主题间接引用主题');
+    }
+
+    // 2. 同步所有必需的主题数据（包括子主题引用的主题）
+    if (allThemeIds.size > 0) {
+      const allThemeIdsArray = Array.from(allThemeIds);
+      const themeQuery = `
+        SELECT * FROM shadowing_themes 
+        WHERE id = ANY($1)
+      `;
+      const themes = await sourceClient.query(themeQuery, [allThemeIdsArray]);
+
+      if (themes.rows.length > 0) {
+        console.log(`同步 ${themes.rows.length} 个主题到目标数据库`);
+        await this.syncThemesToTarget(targetClient, themes.rows);
+        themesCount = themes.rows.length;
+        console.log(`✅ 主题同步完成`);
+      } else {
+        console.log(`⚠️  源数据库中未找到主题数据，主题ID: ${allThemeIdsArray.join(', ')}`);
+      }
+    }
+
+    // 3. 同步子主题数据 - 在主题同步完成后进行
+    if (subtopicIds.size > 0) {
+      const subtopicIdsArray = Array.from(subtopicIds);
+      const subtopicQuery = `
+        SELECT * FROM shadowing_subtopics 
+        WHERE id = ANY($1)
+      `;
+      const subtopics = await sourceClient.query(subtopicQuery, [subtopicIdsArray]);
+
+      if (subtopics.rows.length > 0) {
+        console.log(`同步 ${subtopics.rows.length} 个子主题到目标数据库`);
+        
+        // 验证子主题引用的主题是否已同步
+        const invalidSubtopics: any[] = [];
+        for (const subtopic of subtopics.rows) {
+          if (subtopic.theme_id) {
+            // 检查目标数据库中是否存在该主题
+            const themeCheck = await targetClient.query(
+              'SELECT id FROM shadowing_themes WHERE id = $1',
+              [subtopic.theme_id]
+            );
+            if (themeCheck.rows.length === 0) {
+              invalidSubtopics.push(subtopic);
+            }
+          }
+        }
+        
+        if (invalidSubtopics.length > 0) {
+          console.log(`⚠️  发现 ${invalidSubtopics.length} 个子主题引用了不存在的主题，将跳过这些子主题`);
+          // 只同步有效的子主题
+          const validSubtopics = subtopics.rows.filter(s => !invalidSubtopics.includes(s));
+          if (validSubtopics.length > 0) {
+            await this.syncSubtopicsToTarget(targetClient, validSubtopics);
+            subtopicsCount = validSubtopics.length;
+          }
+        } else {
+          await this.syncSubtopicsToTarget(targetClient, subtopics.rows);
+          subtopicsCount = subtopics.rows.length;
+        }
+        console.log(`✅ 子主题同步完成`);
+      } else {
+        console.log(`⚠️  源数据库中未找到子主题数据，子主题ID: ${subtopicIdsArray.join(', ')}`);
       }
     }
 

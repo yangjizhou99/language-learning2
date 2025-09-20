@@ -126,6 +126,8 @@ export default function SpecializedPackingPage() {
   // 打包结果
   const [packingResults, setPackingResults] = useState<PackingResult[]>([]);
   const [isPacking, setIsPacking] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+  const [cleanResult, setCleanResult] = useState<any>(null);
 
   // 添加runId防抖，防止HMR导致的延迟日志
   const runIdRef = useRef(0);
@@ -336,6 +338,41 @@ export default function SpecializedPackingPage() {
     }
 
     return publishedCount;
+  };
+
+  // 清理外键约束问题
+  const cleanConstraints = async () => {
+    setIsCleaning(true);
+    setCleanResult(null);
+    
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const response = await fetch('/api/admin/question-bank/clean-constraints', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setCleanResult(data);
+        toast.success(data.message);
+      } else {
+        toast.error(data.error || '清理失败');
+      }
+    } catch (error) {
+      console.error('清理失败:', error);
+      toast.error('清理失败，请检查网络连接');
+    } finally {
+      setIsCleaning(false);
+    }
   };
 
   // 开始专项打包
@@ -1105,33 +1142,83 @@ export default function SpecializedPackingPage() {
         </Card>
       )}
 
-      {/* 打包操作 */}
+      {/* 清理和打包操作 */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium">开始Shadowing草稿打包</h3>
-              <p className="text-sm text-gray-600">
-                将选中的Shadowing草稿题目同步到远程数据库（保持草稿状态），然后发布到本地数据库
-              </p>
+          <div className="space-y-4">
+            {/* 清理外键约束问题 */}
+            <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div>
+                <h3 className="font-medium text-yellow-800">清理外键约束问题</h3>
+                <p className="text-sm text-yellow-700">
+                  如果遇到外键约束错误，请先点击此按钮清理无效的引用关系
+                </p>
+              </div>
+              <Button
+                onClick={cleanConstraints}
+                disabled={isCleaning}
+                variant="outline"
+                className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+              >
+                {isCleaning ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    清理中...
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 mr-2" />
+                    清理约束
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={startPacking}
-              disabled={isPacking || selected.size === 0}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isPacking ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  打包中...
-                </>
-              ) : (
-                <>
-                  <Package className="w-4 h-4 mr-2" />
-                  开始打包
-                </>
-              )}
-            </Button>
+
+            {/* 清理结果 */}
+            {cleanResult && (
+              <div className={`p-4 rounded-lg border ${
+                cleanResult.success 
+                  ? 'bg-green-50 border-green-200 text-green-800' 
+                  : 'bg-red-50 border-red-200 text-red-800'
+              }`}>
+                <div className="font-medium">
+                  {cleanResult.success ? '✅ 清理成功' : '❌ 清理失败'}
+                </div>
+                <div className="text-sm mt-1">{cleanResult.message}</div>
+                {cleanResult.cleaned > 0 && (
+                  <div className="text-sm mt-2">
+                    已清理 {cleanResult.cleaned} 个无效的子主题引用
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 开始打包 */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium">开始Shadowing草稿打包</h3>
+                <p className="text-sm text-gray-600">
+                  将选中的Shadowing草稿题目同步到远程数据库（保持草稿状态），然后发布到本地数据库
+                </p>
+              </div>
+              <Button
+                onClick={startPacking}
+                disabled={isPacking || selected.size === 0}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isPacking ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    打包中...
+                  </>
+                ) : (
+                  <>
+                    <Package className="w-4 h-4 mr-2" />
+                    开始打包
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

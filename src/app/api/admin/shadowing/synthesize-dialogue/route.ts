@@ -108,24 +108,24 @@ function simpleMerge(buffers: Buffer[]): Buffer {
   return merged;
 }
 
-// 为不同角色分配音色 - 使用更自然的声音
+// 为不同角色分配音色 - 使用存在的音色
 function getVoiceForSpeaker(speaker: string, lang: string): string {
   const voices: Record<string, Record<string, string>> = {
     en: {
-      A: 'en-US-Neural2-F', // 女性声音 - 更自然
-      B: 'en-US-Neural2-D', // 男性声音 - 更自然
+      A: 'en-US-Standard-A', // 女性声音
+      B: 'en-US-Standard-B', // 男性声音
     },
     ja: {
-      A: 'ja-JP-Neural2-A', // 女性声音 - 保持原有
-      B: 'ja-JP-Neural2-D', // 男性声音 - 更自然
+      A: 'ja-JP-Standard-A', // 女性声音
+      B: 'ja-JP-Standard-C', // 男性声音
     },
     zh: {
-      A: 'cmn-CN-Neural2-A', // 女性声音 - 使用 Neural2
-      B: 'cmn-CN-Neural2-B', // 男性声音 - 使用 Neural2
+      A: 'cmn-CN-Standard-A', // 女性声音
+      B: 'cmn-CN-Standard-B', // 男性声音
     },
   };
 
-  return voices[lang]?.[speaker] || voices[lang]?.A || 'en-US-Neural2-F';
+  return voices[lang]?.[speaker] || voices[lang]?.A || 'en-US-Standard-A';
 }
 
 // 为不同角色分配音色参数
