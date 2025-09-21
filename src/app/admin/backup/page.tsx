@@ -272,6 +272,50 @@ export default function AdminBackupPage() {
     window.open(downloadUrl, '_blank');
   };
 
+  const downloadDirect = async () => {
+    if (!backupType) {
+      setError('请选择备份类型');
+      return;
+    }
+
+    setIsBackingUp(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/admin/backup/download-direct', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          backupType: backupType,
+          incremental: incremental,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '下载备份失败');
+      }
+
+      // 处理文件下载
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `language-learning-backup-${new Date().toISOString().replace(/[:.]/g, '-').split('T').join('_')}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setIsBackingUp(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '下载备份失败');
+      setIsBackingUp(false);
+    }
+  };
+
   const handleRestoreFile = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -1366,12 +1410,22 @@ export default function AdminBackupPage() {
                 )}
                 <div className="grid grid-cols-2 gap-2">
                   <Button
+                    onClick={downloadDirect}
+                    disabled={isBackingUp}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {isBackingUp ? '下载中...' : '直接下载'}
+                  </Button>
+                  <Button
                     onClick={testBackupConnection}
                     variant="outline"
                     className="w-full"
                   >
                     测试连接
                   </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={checkFunctions}
                     variant="outline"
