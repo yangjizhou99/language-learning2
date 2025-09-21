@@ -272,48 +272,48 @@ export default function AdminBackupPage() {
     window.open(downloadUrl, '_blank');
   };
 
-  const downloadDirect = async () => {
-    if (!backupType) {
-      setError('请选择备份类型');
-      return;
-    }
-
-    setIsBackingUp(true);
+  const autoSetBackupPath = async () => {
     setError(null);
+    
+    // 常见的服务器备份路径列表
+    const commonPaths = [
+      '/tmp/backups',
+      '/var/backups',
+      '/opt/backups',
+      './backups',
+      '../backups',
+      '/home/backups',
+      './data/backups'
+    ];
 
-    try {
-      const response = await fetch('/api/admin/backup/download-direct', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          backupType: backupType,
-          incremental: incremental,
-        }),
-      });
+    for (const testPath of commonPaths) {
+      try {
+        const response = await fetch('/api/admin/backup/check-path', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            backupPath: testPath
+          }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '下载备份失败');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setBackupPath(testPath);
+            setError(null);
+            return; // 找到可用路径，退出
+          }
+        }
+      } catch (err) {
+        // 继续尝试下一个路径
+        continue;
       }
-
-      // 处理文件下载
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `language-learning-backup-${new Date().toISOString().replace(/[:.]/g, '-').split('T').join('_')}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      setIsBackingUp(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '下载备份失败');
-      setIsBackingUp(false);
     }
+
+    // 如果所有路径都不可用，显示错误
+    setError('无法找到可用的备份路径，请手动设置');
   };
 
   const handleRestoreFile = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1410,12 +1410,11 @@ export default function AdminBackupPage() {
                 )}
                 <div className="grid grid-cols-2 gap-2">
                   <Button
-                    onClick={downloadDirect}
-                    disabled={isBackingUp}
+                    onClick={autoSetBackupPath}
                     variant="outline"
                     className="w-full"
                   >
-                    {isBackingUp ? '下载中...' : '直接下载'}
+                    一键设置路径
                   </Button>
                   <Button
                     onClick={testBackupConnection}

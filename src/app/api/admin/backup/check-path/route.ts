@@ -139,6 +139,13 @@ function getAlternativePaths(originalPath: string): string[] {
     alternatives.push(path.join(process.cwd(), 'backups'));
     alternatives.push(path.join(process.cwd(), 'data', 'backups'));
     
+    // 添加一些常见的服务器路径
+    alternatives.push('/var/backups');
+    alternatives.push('/opt/backups');
+    alternatives.push('/home/backups');
+    alternatives.push('./backups');
+    alternatives.push('../backups');
+    
   } catch (err) {
     // 如果获取系统路径失败，提供一些通用建议
     alternatives.push('/tmp/backups');
