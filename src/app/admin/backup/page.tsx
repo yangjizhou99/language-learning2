@@ -272,6 +272,50 @@ export default function AdminBackupPage() {
     window.open(downloadUrl, '_blank');
   };
 
+  const autoSetBackupPath = async () => {
+    setError(null);
+    
+    // 常见的服务器备份路径列表
+    const commonPaths = [
+      '/tmp/backups',
+      '/var/backups',
+      '/opt/backups',
+      './backups',
+      '../backups',
+      '/home/backups',
+      './data/backups'
+    ];
+
+    for (const testPath of commonPaths) {
+      try {
+        const response = await fetch('/api/admin/backup/check-path', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            backupPath: testPath
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setBackupPath(testPath);
+            setError(null);
+            return; // 找到可用路径，退出
+          }
+        }
+      } catch (err) {
+        // 继续尝试下一个路径
+        continue;
+      }
+    }
+
+    // 如果所有路径都不可用，显示错误
+    setError('无法找到可用的备份路径，请手动设置');
+  };
+
   const handleRestoreFile = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -1366,12 +1410,21 @@ export default function AdminBackupPage() {
                 )}
                 <div className="grid grid-cols-2 gap-2">
                   <Button
+                    onClick={autoSetBackupPath}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    一键设置路径
+                  </Button>
+                  <Button
                     onClick={testBackupConnection}
                     variant="outline"
                     className="w-full"
                   >
                     测试连接
                   </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     onClick={checkFunctions}
                     variant="outline"

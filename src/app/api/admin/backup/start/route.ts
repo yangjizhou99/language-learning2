@@ -83,19 +83,75 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '无效的备份类型' }, { status: 400 });
     }
 
-    // 检查备份路径是否存在
+    // 检查备份路径是否存在和可写
     try {
       await fsPromises.access(backupPath);
+      // 检查是否为目录
+      const stats = await fsPromises.stat(backupPath);
+      if (!stats.isDirectory()) {
+        return NextResponse.json(
+          { 
+            error: '备份路径不是目录',
+            details: `路径 ${backupPath} 存在但不是目录`,
+            suggestions: ['请提供目录路径而不是文件路径']
+          },
+          { status: 400 }
+        );
+      }
     } catch {
       // 尝试创建目录
       try {
         await fsPromises.mkdir(backupPath, { recursive: true });
+        console.log(`成功创建备份目录: ${backupPath}`);
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '未知错误';
+        console.error(`创建备份目录失败: ${backupPath}`, errorMessage);
+        
         return NextResponse.json(
-          { error: '无法创建备份目录，请检查路径权限' },
+          { 
+            error: '无法创建备份目录，请检查路径权限',
+            details: errorMessage,
+            suggestions: [
+              '请检查路径是否存在',
+              '确保应用有创建目录的权限',
+              '尝试使用绝对路径',
+              '在 Linux/Mac 上检查父目录权限',
+              '在 Windows 上以管理员身份运行'
+            ],
+            alternativePaths: [
+              '/tmp/backups',
+              './backups',
+              '../backups'
+            ]
+          },
           { status: 400 }
         );
       }
+    }
+
+    // 验证目录写入权限
+    try {
+      const testFile = path.join(backupPath, '.backup-test-' + Date.now());
+      await fsPromises.writeFile(testFile, 'test');
+      await fsPromises.unlink(testFile);
+      console.log(`备份目录写入权限验证成功: ${backupPath}`);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '未知错误';
+      console.error(`备份目录写入权限验证失败: ${backupPath}`, errorMessage);
+      
+      return NextResponse.json(
+        { 
+          error: '备份目录无写入权限',
+          details: errorMessage,
+          suggestions: [
+            '请检查目录写入权限',
+            '在 Linux/Mac 上尝试: chmod 755 ' + backupPath,
+            '在 Windows 上更改文件夹权限',
+            '确保应用有写入权限'
+          ]
+        },
+        { status: 400 }
+      );
     }
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
