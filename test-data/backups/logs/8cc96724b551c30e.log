@@ -1,0 +1,2 @@
+[2025-09-21T17:58:54.847Z] RUN: pg_dump "postgresql://postgres.yyfyieqfuwwyqrlewswu:yjzyjz925151560@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres" -F c -t public.profiles -t public.vocab_entries | zstd -19 -T0 > "/data/backups/db/db_2025-09-21-17-58-54.dump.zst"
+[2025-09-21T17:58:57.337Z] JOB OK

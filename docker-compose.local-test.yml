@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  backup-worker:
+    build: ./backup-worker
+    container_name: backup-worker-local
+    restart: unless-stopped
+    environment:
+      # 使用本地测试的 API Key
+      - API_KEY=local-test-api-key-12345
+      # 本地备份目录
+      - BACKUP_ROOT=/data/backups
+      # 允许的路径（本地测试）
+      - ALLOW_PATHS=/data/backups:/tmp/test-data
+      - TZ=Asia/Shanghai
+    volumes:
+      # 映射到本地目录
+      - ./test-data/backups:/data/backups
+      - ./test-data/tmp:/tmp/test-data
+    ports:
+      # 使用不同的端口避免冲突
+      - "7789:7788"
+    networks:
+      - backup-network
+
+networks:
+  backup-network:
+    driver: bridge

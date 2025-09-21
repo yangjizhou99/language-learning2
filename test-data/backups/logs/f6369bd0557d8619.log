@@ -1,0 +1,4 @@
+[2025-09-21T17:48:10.549Z] RUN: psql "postgres://postgres:postgres@127.0.0.1:54322/postgres" -Atc "SELECT table_schema||'.'||table_name FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog','information_schema') ORDER BY 1"
+[2025-09-21T17:48:10.588Z] psql: error: connection to server at "127.0.0.1", port 54322 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+[2025-09-21T17:48:10.593Z] JOB FAILED

@@ -1,0 +1,2 @@
+[2025-09-21T17:59:14.279Z] RUN: pg_dump "postgresql://postgres.yyfyieqfuwwyqrlewswu:yjzyjz925151560@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres" -F c -t public.shadowing_items | zstd -19 -T0 > "/data/backups/tmp/db_2025-09-21-17-59-14.dump.zst"
+[2025-09-21T17:59:16.596Z] JOB OK

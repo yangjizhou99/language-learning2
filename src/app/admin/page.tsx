@@ -147,6 +147,13 @@ export default function AdminDashboard() {
             <h3 className="font-medium text-gray-900">🔄 数据库同步</h3>
             <p className="text-sm text-gray-600 mt-1">将本地数据库数据覆盖到云端</p>
           </Link>
+          <Link
+            href="/admin/backup"
+            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <h3 className="font-medium text-gray-900">💾 备份中心</h3>
+            <p className="text-sm text-gray-600 mt-1">数据库备份、恢复、文件管理</p>
+          </Link>
         </div>
       </div>
     </div>

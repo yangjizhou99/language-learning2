@@ -1,0 +1,4 @@
+[2025-09-21T17:57:29.686Z] RUN: pg_dump "postgresql://postgres.yyfyieqfuwwyqrlewswu:yjzyjz925151560@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres" -F c -t public.profiles -t public.vocab_entries | zstd -19 -T0 > "/data/backups/db/db_2025-09-21-17-57-29.dump.zst"
+[2025-09-21T17:57:30.008Z] pg_dump: error: aborting because of server version mismatch
+pg_dump: detail: server version: 17.4; pg_dump version: 15.14 (Debian 15.14-0+deb12u1)
+[2025-09-21T17:57:30.014Z] JOB OK

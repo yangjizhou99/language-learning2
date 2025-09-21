@@ -1,0 +1,3 @@
+[2025-09-21T17:54:13.829Z] RUN: pg_dump "postgres://postgres:postgres@host.docker.internal:54340/postgres" -F c -j 4 -t public.shadowing_items -t public.vocab_entries | zstd -19 -T0 > "/data/backups/db/db_2025-09-21-17-54-13.dump.zst"
+[2025-09-21T17:54:13.877Z] pg_dump: error: parallel backup only supported by the directory format
+[2025-09-21T17:54:13.880Z] JOB OK
