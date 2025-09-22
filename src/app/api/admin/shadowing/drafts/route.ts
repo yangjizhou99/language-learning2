@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       theme_id,
       subtopic_id,
       shadowing_themes!theme_id(title),
-      shadowing_subtopics!subtopic_id(title_cn)
+      shadowing_subtopics!subtopic_id(title)
     `,
       { count: 'exact' },
     )
