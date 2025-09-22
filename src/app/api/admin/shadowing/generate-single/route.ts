@@ -71,14 +71,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 构建提示词
+    // 构建提示词（使用统一字段）
     const prompt = buildShadowPrompt({
       lang: subtopic.lang,
       level: subtopic.level,
       genre: subtopic.genre,
-      title_cn: subtopic.title_cn,
-      seed_en: subtopic.seed_en,
-      one_line_cn: subtopic.one_line_cn,
+      title: subtopic.title,
+      seed: subtopic.seed,
+      one_line: subtopic.one_line,
     });
 
     // 调用AI生成
@@ -119,9 +119,9 @@ export async function POST(req: NextRequest) {
     const { error: saveError } = await supabase.from('shadowing_drafts').insert({
       lang: subtopic.lang,
       level: subtopic.level,
-      topic: subtopic.title_cn,
+      topic: subtopic.title,
       genre: subtopic.genre,
-      title: parsed.title || subtopic.title_cn,
+      title: parsed.title || subtopic.title,
       text: parsed.passage || content,
       theme_id: themeData?.theme_id || null,
       subtopic_id: subtopic_id,
@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
     const { error: itemsError } = await supabase.from('shadowing_items').insert({
       lang: subtopic.lang,
       level: subtopic.level,
-      title: parsed.title || subtopic.title_cn,
+      title: parsed.title || subtopic.title,
       text: parsed.passage || content,
       audio_url: '', // 稍后生成音频
       translations: {},
@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
         success: true,
         message: 'Shadowing content generated successfully',
         subtopic_id,
-        title: parsed.title || subtopic.title_cn,
+        title: parsed.title || subtopic.title,
         usage: result.usage || {},
       },
       {

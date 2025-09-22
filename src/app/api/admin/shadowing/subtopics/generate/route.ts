@@ -11,42 +11,57 @@ const SUBTOPIC_SYS = `You expand a macro theme into concrete, classroom-ready SU
 - Keep subtopic titles concise and non-overlapping.
 - Return STRICT JSON only.`;
 
-// 小主题生成的用户提示词模板
+// 小主题生成的用户提示词模板（按语言输出标题/一句话）
 function buildSubtopicPrompt({
   lang,
   level,
   genre,
-  themeTitleCn,
+  themeTitle,
   count,
 }: {
   lang: string;
   level: number;
   genre: string;
-  themeTitleCn: string;
+  themeTitle: string;
   count: number;
 }) {
-  const langMap = { en: 'English', ja: '日本語', zh: '简体中文' };
+  const langMap = { en: 'English', ja: '日本語', zh: '简体中文' } as const;
   const L = langMap[lang as keyof typeof langMap] || 'English';
+
+  const titleGuidance =
+    lang === 'en'
+      ? 'Subtopic titles should be concise in English (≤ 8 words).'
+      : lang === 'ja'
+        ? 'サブトピックのタイトルは日本語で簡潔に（全角16字以内）。'
+        : '小主题标题用简体中文，简洁清晰（≤ 16 个汉字）。';
+  const oneLineGuidance =
+    lang === 'en'
+      ? 'Provide a one-line intent/scene in English (12–30 words).'
+      : lang === 'ja'
+        ? '1行の意図・場面説明を日本語で（全角12–30字）。'
+        : '给出12–30字的一句话意图/场景说明（中文）。';
 
   return `LANG=${L}
 LEVEL=L${level}
 GENRE=${genre}
-THEME_TITLE_CN=${themeTitleCn}
+THEME_TITLE=${themeTitle}
 COUNT=${count}
 
 Requirements:
 - Subtopics must be specific and generative (each can yield a short script).
 - Difficulty/lexicon scale with LEVEL (L1 基础词，L5+ 可含抽象概念/数据点)。
 - 不得重复或仅做表述改写；覆盖 THEME 的不同切面（流程、角色、情绪/冲突、数据/时间等）。
+- ${titleGuidance}
+- ${oneLineGuidance}
 
 Output JSON ONLY:
 {
-  "theme": { "title_cn": "${themeTitleCn}", "level": "L${level}", "genre": "${genre}" },
+  "theme": { "title": "${themeTitle}", "level": "L${level}", "genre": "${genre}" },
   "subtopics": [
     {
-      "title_cn": "……",          // 小主题中文标题（≤ 16 汉字）
-      "seed_en": "keyword, keyword, …",   // 英文关键词 2–6 个，逗号分隔（用于约束生成）
-      "one_line_cn": "……"         // 12–30 字的一句话意图/场景说明
+      "title": "……",          // 标题：按 LANG 输出
+      "seed": "keyword, keyword, …",   // 关键词 2–6 个
+      "one_line": "……"         // 一句话意图/场景说明
     }
   ]
 }
@@ -64,6 +79,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       theme_id,
+      theme_title,
       theme_title_cn,
       lang,
       level,
@@ -74,14 +90,15 @@ export async function POST(req: NextRequest) {
       temperature = 0.7,
     } = body;
 
-    if (!theme_id || !theme_title_cn || !lang || !level || !genre) {
+    const themeTitle = theme_title || theme_title_cn;
+    if (!theme_id || !themeTitle || !lang || !level || !genre) {
       return NextResponse.json(
         {
           error: 'Missing required parameters',
-          received: { theme_id, theme_title_cn, lang, level, genre },
+          received: { theme_id, theme_title, theme_title_cn, lang, level, genre },
           missing: {
             theme_id: !theme_id,
-            theme_title_cn: !theme_title_cn,
+            theme_title: !themeTitle,
             lang: !lang,
             level: !level,
             genre: !genre,
@@ -94,20 +111,20 @@ export async function POST(req: NextRequest) {
     // 获取现有小主题信息
     const { data: existingSubtopics } = await supabase
       .from('shadowing_subtopics')
-      .select('title_cn, one_line_cn')
+      .select('title, one_line')
       .eq('theme_id', theme_id);
 
-    const existingSubtopicTitles = existingSubtopics?.map((s) => s.title_cn) || [];
+    const existingSubtopicTitles = existingSubtopics?.map((s) => s.title) || [];
 
     // 构建包含现有小主题信息的提示词（一次性生成所有小主题）
     const enhancedPrompt =
-      buildSubtopicPrompt({
-        lang,
-        level,
-        genre,
-        themeTitleCn: theme_title_cn,
-        count,
-      }) +
+            buildSubtopicPrompt({
+              lang,
+              level,
+              genre,
+              themeTitle,
+              count,
+            }) +
       `\n\n现有小主题列表（请避免重复）：\n${existingSubtopicTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n\n请生成与上述小主题不同的新小主题。`;
 
     // 只调用一次 AI 生成，设置90秒超时
@@ -146,9 +163,9 @@ export async function POST(req: NextRequest) {
       lang,
       level,
       genre,
-      title_cn: subtopic.title_cn,
-      seed_en: subtopic.seed_en || '',
-      one_line_cn: subtopic.one_line_cn || '',
+      title: subtopic.title,
+      seed: subtopic.seed || '',
+      one_line: subtopic.one_line || '',
       ai_provider: provider,
       ai_model: model,
       ai_usage: result.usage || {},
@@ -160,7 +177,7 @@ export async function POST(req: NextRequest) {
       const { data, error } = await supabase
         .from('shadowing_subtopics')
         .insert(subtopicsToProcess)
-        .select('id, title_cn');
+        .select('id, title');
 
       if (error) {
         throw new Error(

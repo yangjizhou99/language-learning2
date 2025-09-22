@@ -125,9 +125,9 @@ export async function POST(request: NextRequest) {
 
         const prompt = `请为以下小主题生成一篇${actualLang}语言、${actualLevel}级、${actualGenre}类型的影子跟读文章：
 
-小主题：${subtopic.title_cn}
-英文种子：${subtopic.seed_en}
-一句话描述：${subtopic.one_line_cn}
+小主题：${subtopic.title}
+关键词：${subtopic.seed}
+一句话描述：${subtopic.one_line}
 标签：${subtopic.tags?.join(', ') || ''}
 
 要求：

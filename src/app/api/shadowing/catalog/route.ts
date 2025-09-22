@@ -175,7 +175,7 @@ export async function GET(req: NextRequest) {
       if (subtopicIds.length > 0) {
         const { data: subtopicsData } = await supabase
           .from('shadowing_subtopics')
-          .select('id, title_cn, one_line_cn')
+          .select('id, title, one_line')
           .in('id', subtopicIds);
         subtopics = subtopicsData || [];
       }

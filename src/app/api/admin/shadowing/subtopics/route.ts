@@ -39,7 +39,7 @@ async function handleRequest(supabase: any, req: NextRequest) {
   if (level) query = query.eq('level', parseInt(level));
   if (genre) query = query.eq('genre', genre);
   if (theme_id) query = query.eq('theme_id', theme_id);
-  if (q) query = query.ilike('title_cn', `%${q}%`);
+  if (q) query = query.ilike('title', `%${q}%`);
 
   // 处理文章状态筛选
   if (has_article === 'yes') {
@@ -102,7 +102,7 @@ async function handleRequest(supabase: any, req: NextRequest) {
   if (level) countQuery.eq('level', parseInt(level));
   if (genre) countQuery.eq('genre', genre);
   if (theme_id) countQuery.eq('theme_id', theme_id);
-  if (q) countQuery.ilike('title_cn', `%${q}%`);
+  if (q) countQuery.ilike('title', `%${q}%`);
 
   // 处理文章状态筛选 - count查询使用相同的逻辑
   if (has_article === 'yes' || has_article === 'no') {
@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
   const { action, item } = body;
 
   if (action === 'upsert') {
-    if (!item.title_cn?.trim()) {
+    if (!item.title?.trim()) {
       return NextResponse.json({ error: '小主题标题不能为空' }, { status: 400 });
     }
 
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
       ...item,
       updated_at: now,
       created_by: item.created_by || user?.id,
-    };
+    } as any;
 
     if (!item.id) {
       data.created_at = now;

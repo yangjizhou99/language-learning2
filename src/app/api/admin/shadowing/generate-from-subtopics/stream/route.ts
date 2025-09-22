@@ -84,20 +84,20 @@ export async function POST(req: NextRequest) {
                   send({
                     type: 'skip',
                     id: subtopic.id,
-                    title: subtopic.title_cn,
+                    title: subtopic.title,
                     reason: 'already exists',
                   });
                   return;
                 }
 
-                // 构建提示词
+                // 构建提示词（使用统一字段）
                 const prompt = buildShadowPrompt({
                   lang: subtopic.lang,
                   level: subtopic.level,
                   genre: subtopic.genre,
-                  title_cn: subtopic.title_cn,
-                  seed_en: subtopic.seed_en,
-                  one_line_cn: subtopic.one_line_cn,
+                  title: subtopic.title,
+                  seed: subtopic.seed,
+                  one_line: subtopic.one_line,
                 });
 
                 // 调用AI生成
@@ -139,9 +139,9 @@ export async function POST(req: NextRequest) {
                 const { error: saveError } = await supabase.from('shadowing_drafts').insert({
                   lang: subtopic.lang,
                   level: subtopic.level,
-                  topic: subtopic.title_cn,
+                  topic: subtopic.title,
                   genre: subtopic.genre,
-                  title: parsed.title || subtopic.title_cn,
+                  title: parsed.title || subtopic.title,
                   text: parsed.passage || content,
                   theme_id: themeData?.theme_id || null,
                   subtopic_id: subtopic.id,
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
                 const { error: itemsError } = await supabase.from('shadowing_items').insert({
                   lang: subtopic.lang,
                   level: subtopic.level,
-                  title: parsed.title || subtopic.title_cn,
+                  title: parsed.title || subtopic.title,
                   text: parsed.passage || content,
                   audio_url: '', // 稍后生成音频
                   translations: {},
@@ -203,7 +203,7 @@ export async function POST(req: NextRequest) {
                 send({
                   type: 'progress',
                   id: subtopic.id,
-                  title: subtopic.title_cn,
+                  title: subtopic.title,
                   done: completed + 1,
                   total: subtopics.length,
                   saved,
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest) {
                   send({
                     type: 'error',
                     id: subtopic.id,
-                    title: subtopic.title_cn,
+                    title: subtopic.title,
                     error: `${error instanceof Error ? error.message : String(error)} (重试${maxRetries}次后失败)`,
                     done: completed + 1,
                     total: subtopics.length,
