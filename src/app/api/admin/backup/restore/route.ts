@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
+import { createDatabaseConnection, DatabaseType } from '@/lib/backup-db';
 import fs from 'fs/promises';
 import path from 'path';
 import { createWriteStream } from 'fs';
@@ -15,17 +16,29 @@ export async function POST(req: NextRequest) {
     let restoreType: string;
     let file: File | null = null;
     let backupPath: string | null = null;
+    let databaseType: DatabaseType = 'supabase';
 
     if (contentType?.includes('multipart/form-data')) {
       // 上传文件方式
       const formData = await req.formData();
       file = formData.get('file') as File;
-      restoreType = formData.get('restoreType') as string || 'upload';
+      restoreType = (formData.get('restoreType') as string) || 'upload';
+      const dt = formData.get('databaseType') as string | null;
+      if (dt && (['local','prod','supabase'] as const).includes(dt as DatabaseType)) {
+        databaseType = dt as DatabaseType;
+      }
     } else {
       // JSON方式（历史备份或增量恢复）
       const body = await req.json();
       restoreType = body.restoreType || 'history';
       backupPath = body.backupPath;
+      if (body.databaseType && (['local','prod','supabase'] as const).includes(body.databaseType)) {
+        databaseType = body.databaseType as DatabaseType;
+      }
+    }
+    // 校验数据库类型
+    if (!(['local','prod','supabase'] as const).includes(databaseType)) {
+      return NextResponse.json({ error: '无效的数据库类型' }, { status: 400 });
     }
 
     if (restoreType === 'upload' && !file) {
@@ -67,7 +80,7 @@ export async function POST(req: NextRequest) {
       
       if (sqlFiles.length > 0) {
         console.log('开始恢复数据库...');
-        await restoreDatabase(sqlFiles[0]);
+        await restoreDatabase(sqlFiles[0], databaseType);
         console.log('数据库恢复完成');
       } else {
         console.log('未找到SQL文件，跳过数据库恢复');
@@ -79,7 +92,7 @@ export async function POST(req: NextRequest) {
         await fs.access(storageDir);
         console.log('开始恢复存储桶文件...');
         const isIncremental = restoreType === 'incremental';
-        await restoreStorage(storageDir, isIncremental);
+        await restoreStorage(storageDir, isIncremental, databaseType);
         console.log(`存储桶恢复完成 (${isIncremental ? '增量' : '完整'}模式)`);
       } catch {
         console.log('存储目录不存在，跳过存储桶恢复');
@@ -93,7 +106,8 @@ export async function POST(req: NextRequest) {
           restoreType: restoreType,
           mode: restoreType === 'incremental' ? '增量模式（只恢复数据库中缺失的文件）' : '完整模式（恢复所有备份文件）',
           parallelProcessing: true,
-          performance: '使用并行处理提高恢复速度'
+          performance: '使用并行处理提高恢复速度',
+          databaseType
         },
       });
     } finally {
@@ -228,8 +242,8 @@ async function findSqlFiles(dir: string): Promise<string[]> {
   return files;
 }
 
-async function restoreDatabase(sqlFilePath: string): Promise<void> {
-  const supabase = getServiceSupabase();
+async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType): Promise<void> {
+  const supabase = databaseType === 'supabase' ? getServiceSupabase() : null;
   
   try {
     console.log('开始恢复数据库，SQL文件:', sqlFilePath);
@@ -244,10 +258,13 @@ async function restoreDatabase(sqlFilePath: string): Promise<void> {
 
     console.log('找到', statements.length, '个SQL语句');
 
-    // 并行执行SQL语句（分批处理）
-    const BATCH_SIZE = 5; // 每批处理5个SQL语句
+    // 高性能并行执行SQL语句 - 优化批处理
+    const BATCH_SIZE = databaseType === 'supabase' ? 10 : 20; // Supabase RPC限制较严，PostgreSQL直连可以更高并发
     let successCount = 0;
     let errorCount = 0;
+    let skippedCount = 0;
+    
+    console.log(`开始批处理执行 ${statements.length} 个SQL语句，批处理大小: ${BATCH_SIZE}`);
     
     for (let i = 0; i < statements.length; i += BATCH_SIZE) {
       const batch = statements.slice(i, i + BATCH_SIZE);
@@ -259,22 +276,52 @@ async function restoreDatabase(sqlFilePath: string): Promise<void> {
         try {
           console.log(`执行SQL语句 ${globalIndex + 1}/${statements.length}:`, statement.substring(0, 100) + '...');
           
-          // 直接执行SQL语句
-          const { error } = await supabase.rpc('exec_sql', { sql: statement });
-          if (error) {
-            console.error('执行SQL语句失败:', error, 'Statement:', statement);
-            // 对于某些错误（如表已存在），我们继续执行
-            if (!error.message.includes('already exists') && 
+          if (databaseType === 'supabase') {
+            // 使用 Supabase RPC 执行
+            const { error } = await (supabase as any).rpc('exec_sql', { sql: statement });
+            if (error) {
+              console.error('执行SQL语句失败:', error, 'Statement:', statement);
+              if (
+                !error.message.includes('already exists') &&
                 !error.message.includes('does not exist') &&
-                !error.message.includes('duplicate key')) {
-              throw error;
+                !error.message.includes('duplicate key')
+              ) {
+                throw error;
+              } else {
+                console.log('跳过非致命错误:', error.message);
+                return { success: true, index: globalIndex, skipped: true };
+              }
             } else {
-              console.log('跳过非致命错误:', error.message);
-              return { success: true, index: globalIndex, skipped: true };
+              console.log(`SQL语句 ${globalIndex + 1} 执行成功`);
+              return { success: true, index: globalIndex };
             }
           } else {
-            console.log(`SQL语句 ${globalIndex + 1} 执行成功`);
-            return { success: true, index: globalIndex };
+            // 使用 pg 客户端执行（local/prod）- 优化连接复用
+            const { client } = createDatabaseConnection(databaseType);
+            let retries = 0;
+            const maxRetries = 3;
+            
+            while (retries < maxRetries) {
+              try {
+                await (client as any).connect();
+                try {
+                  await (client as any).query(statement);
+                  console.log(`SQL语句 ${globalIndex + 1} 执行成功 (尝试 ${retries + 1})`);
+                  return { success: true, index: globalIndex };
+                } finally {
+                  await (client as any).end();
+                }
+                break; // 成功执行，跳出重试循环
+              } catch (retryErr) {
+                retries++;
+                if (retries >= maxRetries) {
+                  throw retryErr;
+                }
+                console.warn(`SQL语句 ${globalIndex + 1} 执行失败，重试 ${retries}/${maxRetries}:`, retryErr);
+                // 短暂延迟后重试
+                await new Promise(resolve => setTimeout(resolve, 100 * retries));
+              }
+            }
           }
         } catch (err) {
           console.error('执行SQL语句时出错:', err, 'Statement:', statement);
@@ -296,24 +343,30 @@ async function restoreDatabase(sqlFilePath: string): Promise<void> {
       // 统计批次结果
       batchResults.forEach(result => {
         if (result.success) {
-          successCount++;
+          if (result.skipped) {
+            skippedCount++;
+          } else {
+            successCount++;
+          }
         } else {
           errorCount++;
         }
       });
       
-      console.log(`批次 ${Math.floor(i / BATCH_SIZE) + 1} 完成: 成功 ${batchResults.filter(r => r.success).length} 个，失败 ${batchResults.filter(r => !r.success).length} 个`);
+      const progress = Math.round(((i + batch.length) / statements.length) * 100);
+      console.log(`批次 ${Math.floor(i / BATCH_SIZE) + 1} 完成 (${progress}%): 成功 ${batchResults.filter(r => r.success && !r.skipped).length}，跳过 ${batchResults.filter(r => r.skipped).length}，失败 ${batchResults.filter(r => !r.success).length}`);
     }
     
-    console.log(`数据库恢复完成: 成功 ${successCount} 个，失败 ${errorCount} 个`);
+    console.log(`数据库恢复完成: 成功 ${successCount} 个，跳过 ${skippedCount} 个，失败 ${errorCount} 个语句`);
   } catch (err) {
     console.error('恢复数据库失败:', err);
     throw err;
   }
 }
 
-async function restoreStorage(storageDir: string, incrementalMode: boolean = false): Promise<void> {
-  const supabase = getServiceSupabase();
+async function restoreStorage(storageDir: string, incrementalMode: boolean = false, databaseType: DatabaseType = 'supabase'): Promise<void> {
+  const { getSupabaseFor } = await import('@/lib/supabaseEnv');
+  const supabase = getSupabaseFor(databaseType);
   
   try {
     const items = await fs.readdir(storageDir);
@@ -492,34 +545,58 @@ async function uploadDirectoryToBucket(
       return;
     }
     
-    // 并行上传文件
-    const CONCURRENT_UPLOADS = 20; // 并发上传数量，可以根据服务器性能调整
+    // 高性能并行上传文件 - 优化
+    const CONCURRENT_UPLOADS = 30; // 提高并发上传数量
     let uploadedCount = 0;
     let skippedCount = 0;
     let errorCount = 0;
+    
+    console.log(`开始批量上传 ${filesToUpload.length} 个文件，并发数: ${CONCURRENT_UPLOADS}`);
     
     for (let i = 0; i < filesToUpload.length; i += CONCURRENT_UPLOADS) {
       const batch = filesToUpload.slice(i, i + CONCURRENT_UPLOADS);
       
       const uploadPromises = batch.map(async (fileInfo) => {
-        try {
-          const fileBuffer = await fs.readFile(fileInfo.filePath);
-          
-          const { error } = await supabase.storage
-            .from(bucketName)
-            .upload(fileInfo.relativePath, fileBuffer);
-          
-          if (error) {
-            console.error(`上传文件 ${fileInfo.relativePath} 失败:`, error);
-            return { success: false, file: fileInfo.relativePath };
-          } else {
-            console.log(`上传文件成功: ${fileInfo.relativePath}`);
-            return { success: true, file: fileInfo.relativePath };
+        const maxRetries = 3;
+        let retries = 0;
+        
+        while (retries < maxRetries) {
+          try {
+            const fileBuffer = await fs.readFile(fileInfo.filePath);
+            
+            const { error } = await supabase.storage
+              .from(bucketName)
+              .upload(fileInfo.relativePath, fileBuffer, {
+                upsert: !incrementalMode // 非增量模式覆盖现有文件
+              });
+            
+            if (error) {
+              if (retries < maxRetries - 1) {
+                retries++;
+                console.warn(`上传文件 ${fileInfo.relativePath} 失败，重试 ${retries}/${maxRetries}:`, error.message);
+                await new Promise(resolve => setTimeout(resolve, 200 * retries)); // 递增延迟
+                continue;
+              } else {
+                console.error(`上传文件 ${fileInfo.relativePath} 最终失败:`, error);
+                return { success: false, file: fileInfo.relativePath, error: error.message };
+              }
+            } else {
+              return { success: true, file: fileInfo.relativePath, retries };
+            }
+          } catch (err) {
+            if (retries < maxRetries - 1) {
+              retries++;
+              console.warn(`处理文件 ${fileInfo.relativePath} 失败，重试 ${retries}/${maxRetries}:`, err);
+              await new Promise(resolve => setTimeout(resolve, 200 * retries));
+              continue;
+            } else {
+              console.error(`处理文件 ${fileInfo.relativePath} 最终失败:`, err);
+              return { success: false, file: fileInfo.relativePath, error: err instanceof Error ? err.message : '未知错误' };
+            }
           }
-        } catch (err) {
-          console.error(`处理文件 ${fileInfo.relativePath} 失败:`, err);
-          return { success: false, file: fileInfo.relativePath };
         }
+        
+        return { success: false, file: fileInfo.relativePath, error: '达到最大重试次数' };
       });
       
       const results = await Promise.all(uploadPromises);

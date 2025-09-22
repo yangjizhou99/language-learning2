@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
-import { getServiceSupabase } from '@/lib/supabaseAdmin';
+import { getSupabaseFor, DatabaseType } from '@/lib/supabaseEnv';
 
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin(req);
 
-    const supabase = getServiceSupabase();
-    const diagnostics = [];
+    const { searchParams } = new URL(req.url);
+    const databaseType = (searchParams.get('databaseType') || 'supabase') as DatabaseType;
+    if (!(['local','prod','supabase'] as const).includes(databaseType)) {
+      return NextResponse.json({ error: '无效的数据库类型' }, { status: 400 });
+    }
+
+    const diagnostics: any[] = [];
+
+    const supabase = getSupabaseFor(databaseType);
 
     // 1. 检查 Supabase 连接
     try {

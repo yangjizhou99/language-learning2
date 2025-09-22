@@ -24,10 +24,12 @@ interface BackupStatus {
 }
 
 type BackupType = 'all' | 'database' | 'storage';
+type DatabaseType = 'local' | 'prod' | 'supabase';
 
 export default function AdminBackupPage() {
   const [backupPath, setBackupPath] = useState('');
   const [backupType, setBackupType] = useState<BackupType>('all');
+  const [databaseType, setDatabaseType] = useState<DatabaseType>('supabase');
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [backupStatus, setBackupStatus] = useState<BackupStatus[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -47,12 +49,26 @@ export default function AdminBackupPage() {
   const [isRestoringBackup, setIsRestoringBackup] = useState(false);
   const [restoreProgress, setRestoreProgress] = useState(0);
   const [restoreMessage, setRestoreMessage] = useState('');
-  const [testResult, setTestResult] = useState<{ error?: string; tableCount?: number; tables?: { table_name: string }[]; details?: unknown } | null>(null);
+  const [testResult, setTestResult] = useState<{ error?: string; tableCount?: number; tables?: string[]; details?: unknown; message?: string; databaseType?: string } | null>(null);
   const [functionCheck, setFunctionCheck] = useState<{ error?: string; hasGetTableList?: boolean; functionTest?: unknown; details?: unknown } | null>(null);
   const [diagnostics, setDiagnostics] = useState<{ error?: string; success?: boolean; summary?: { passed: number; total: number }; diagnostics?: { status: string; test: string; message: string; details?: unknown }[] } | null>(null);
   const [storageTest, setStorageTest] = useState<{ error?: string; success?: boolean; totalBuckets?: number; summary?: { totalFiles: number }; buckets?: { name: string; error?: string; simpleFileCount?: number; recursiveFileCount?: number; allFiles?: string[] }[] } | null>(null);
   const [backupHistory, setBackupHistory] = useState<{ error?: string; total?: number; totalSize?: number; backups?: { name: string; type: string; backupType?: string; size: number; createdAt: string; path: string }[] } | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [envConfig, setEnvConfig] = useState<{
+    success?: boolean;
+    config?: {
+      local: { available: boolean; url: string | null; name: string };
+      prod: { available: boolean; url: string | null; name: string };
+      supabase: { available: boolean; url: string | null; name: string };
+    };
+    summary?: {
+      localAvailable: boolean;
+      prodAvailable: boolean;
+      supabaseAvailable: boolean;
+      totalAvailable: number;
+    };
+  } | null>(null);
   const [incrementalPreview, setIncrementalPreview] = useState<{
     compareBackupInfo?: { filename: string; size: number; createdAt: Date };
     totalFiles: number;
@@ -182,10 +198,25 @@ export default function AdminBackupPage() {
     }
   }, [backupPath, backupType]);
 
+  const loadEnvConfig = async () => {
+    try {
+      const response = await fetch('/api/admin/backup/env-config');
+      if (response.ok) {
+        const data = await response.json();
+        setEnvConfig(data);
+      }
+    } catch (err) {
+      console.error('加载环境配置失败:', err);
+    }
+  };
+
   useEffect(() => {
     // 设置默认备份路径
     const defaultPath = 'D:\\backups\\language-learning';
     setBackupPath(defaultPath);
+    
+    // 加载环境配置
+    loadEnvConfig();
   }, []);
 
   // 当备份路径或类型变化时，获取对比选项
@@ -216,6 +247,7 @@ export default function AdminBackupPage() {
           incremental: incremental,
           overwriteExisting: overwriteExisting,
           compareWith: compareWith === 'auto' ? null : compareWith,
+          databaseType: databaseType,
         }),
       });
 
@@ -306,7 +338,7 @@ export default function AdminBackupPage() {
             return; // 找到可用路径，退出
           }
         }
-      } catch (err) {
+      } catch {
         // 继续尝试下一个路径
         continue;
       }
@@ -359,6 +391,7 @@ export default function AdminBackupPage() {
         const formData = new FormData();
         formData.append('file', restoreFile!);
         formData.append('restoreType', 'upload');
+        formData.append('databaseType', databaseType);
 
         response = await fetch('/api/admin/backup/restore', {
           method: 'POST',
@@ -373,6 +406,7 @@ export default function AdminBackupPage() {
           body: JSON.stringify({
             restoreType: 'history',
             backupPath: selectedBackup,
+            databaseType,
           }),
         });
       }
@@ -409,7 +443,7 @@ export default function AdminBackupPage() {
 
   const testBackupConnection = async () => {
     try {
-      const response = await fetch('/api/admin/backup/test');
+      const response = await fetch(`/api/admin/backup/test?databaseType=${databaseType}`);
       const data = await response.json();
       setTestResult(data);
     } catch {
@@ -419,7 +453,7 @@ export default function AdminBackupPage() {
 
   const checkFunctions = async () => {
     try {
-      const response = await fetch('/api/admin/backup/check-functions');
+      const response = await fetch(`/api/admin/backup/check-functions?databaseType=${databaseType}`);
       const data = await response.json();
       setFunctionCheck(data);
     } catch {
@@ -429,7 +463,7 @@ export default function AdminBackupPage() {
 
   const runDiagnostics = async () => {
     try {
-      const response = await fetch('/api/admin/backup/diagnose');
+      const response = await fetch(`/api/admin/backup/diagnose?databaseType=${databaseType}`);
       const data = await response.json();
       setDiagnostics(data);
     } catch {
@@ -439,7 +473,7 @@ export default function AdminBackupPage() {
 
   const testStorage = async () => {
     try {
-      const response = await fetch('/api/admin/backup/test-storage');
+      const response = await fetch(`/api/admin/backup/test-storage?databaseType=${databaseType}`);
       const data = await response.json();
       setStorageTest(data);
     } catch {
@@ -772,13 +806,13 @@ export default function AdminBackupPage() {
                 </div>
               ) : (
                 <div>
-                  <p>测试成功！找到 {testResult.tableCount} 个表</p>
+                  <p>测试成功！{testResult.message || `找到 ${testResult.tableCount} 个表`}</p>
                   {testResult.tables && (
                     <div className="mt-2">
                       <p className="text-sm font-medium">表列表:</p>
                       <ul className="text-sm text-gray-600 mt-1">
-                        {testResult.tables.map((table: { table_name: string }, index: number) => (
-                          <li key={index}>• {table.table_name}</li>
+                        {testResult.tables.map((table: string, index: number) => (
+                          <li key={index}>• {table}</li>
                         ))}
                       </ul>
                     </div>
@@ -1296,6 +1330,56 @@ export default function AdminBackupPage() {
               </div>
 
               <div className="space-y-3">
+                <Label>数据库类型</Label>
+                <Select
+                  value={databaseType}
+                  onValueChange={(value: DatabaseType) => setDatabaseType(value)}
+                  disabled={isBackingUp}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择数据库类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="supabase" disabled={!envConfig?.config?.supabase?.available}>
+                      <div className="flex items-center space-x-2">
+                        <Database className="h-4 w-4" />
+                        <span>Supabase 数据库</span>
+                        {!envConfig?.config?.supabase?.available && (
+                          <span className="text-red-500 text-xs">(不可用)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="local" disabled={!envConfig?.config?.local?.available}>
+                      <div className="flex items-center space-x-2">
+                        <Database className="h-4 w-4" />
+                        <span>本地数据库</span>
+                        {!envConfig?.config?.local?.available && (
+                          <span className="text-red-500 text-xs">(不可用)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="prod" disabled={!envConfig?.config?.prod?.available}>
+                      <div className="flex items-center space-x-2">
+                        <Database className="h-4 w-4" />
+                        <span>生产环境数据库</span>
+                        {!envConfig?.config?.prod?.available && (
+                          <span className="text-red-500 text-xs">(不可用)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-500">
+                  选择要备份的数据库类型
+                  {envConfig?.summary && (
+                    <span className="ml-2">
+                      (可用: {envConfig.summary.totalAvailable}/3)
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="space-y-3">
                 <Label>备份选项</Label>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
@@ -1410,18 +1494,19 @@ export default function AdminBackupPage() {
                 )}
                 <div className="grid grid-cols-2 gap-2">
                   <Button
+                    onClick={testBackupConnection}
+                    variant="outline"
+                    className="w-full"
+                    disabled={isBackingUp}
+                  >
+                    测试数据库连接
+                  </Button>
+                  <Button
                     onClick={autoSetBackupPath}
                     variant="outline"
                     className="w-full"
                   >
                     一键设置路径
-                  </Button>
-                  <Button
-                    onClick={testBackupConnection}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    测试连接
                   </Button>
                 </div>
                 <div className="grid grid-cols-2 gap-2">

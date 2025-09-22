@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
-import { getServiceSupabase } from '@/lib/supabaseAdmin';
+import { getSupabaseFor, DatabaseType } from '@/lib/supabaseEnv';
 
 async function getAllFilesFromBucket(supabase: any, bucketName: string, prefix: string = ''): Promise<string[]> {
   const allFiles: string[] = [];
@@ -44,7 +44,9 @@ export async function GET(req: NextRequest) {
   try {
     await requireAdmin(req);
 
-    const supabase = getServiceSupabase();
+    const { searchParams } = new URL(req.url);
+    const databaseType = (searchParams.get('databaseType') || 'supabase') as DatabaseType;
+    const supabase = getSupabaseFor(databaseType);
 
     // 获取所有存储桶
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();

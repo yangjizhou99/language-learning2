@@ -1,50 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
-import { getServiceSupabase } from '@/lib/supabaseAdmin';
+import { testDatabaseConnection, DatabaseType } from '@/lib/backup-db';
 
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin(req);
 
-    const supabase = getServiceSupabase();
+    const { searchParams } = new URL(req.url);
+    const databaseType = (searchParams.get('databaseType') || 'supabase') as DatabaseType;
 
-    // 测试获取表列表
-    const { data: tables, error: tablesError } = await supabase.rpc('get_table_list');
-
-    if (tablesError) {
-      return NextResponse.json({ 
-        error: '获取表列表失败', 
-        details: tablesError 
-      }, { status: 500 });
+    if (!['local', 'prod', 'supabase'].includes(databaseType)) {
+      return NextResponse.json({ error: '无效的数据库类型' }, { status: 400 });
     }
 
-    // 测试获取第一个表的列信息
-    if (tables && tables.length > 0) {
-      const firstTable = tables[0].table_name;
-      const { data: columns, error: columnsError } = await supabase.rpc('get_table_columns', {
-        table_name_param: firstTable
-      });
+    // 测试数据库连接
+    const result = await testDatabaseConnection(databaseType);
 
+    if (result.success) {
       return NextResponse.json({
         success: true,
-        tableCount: tables.length,
-        tables: tables.slice(0, 5), // 只返回前5个表
-        firstTableColumns: columnsError ? { error: columnsError } : columns?.slice(0, 3), // 只返回前3列
+        databaseType,
+        tableCount: result.tableCount,
+        tables: result.tables,
+        message: `成功连接到${databaseType === 'local' ? '本地' : databaseType === 'prod' ? '生产环境' : 'Supabase'}数据库，找到 ${result.tableCount} 个表`
+      });
+    } else {
+      return NextResponse.json({
+        success: false,
+        databaseType,
+        error: result.error,
+        message: `连接${databaseType === 'local' ? '本地' : databaseType === 'prod' ? '生产环境' : 'Supabase'}数据库失败: ${result.error}`
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      tableCount: 0,
-      message: '没有找到表'
-    });
-
   } catch (error) {
-    console.error('测试备份功能失败:', error);
+    console.error('数据库连接测试失败:', error);
     return NextResponse.json(
-      { error: '测试失败' },
+      { 
+        success: false,
+        error: '数据库连接测试失败',
+        message: error instanceof Error ? error.message : '未知错误'
+      },
       { status: 500 }
     );
   }
 }
-
