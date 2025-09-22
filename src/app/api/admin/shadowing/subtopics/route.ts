@@ -41,110 +41,57 @@ async function handleRequest(supabase: any, req: NextRequest) {
   if (theme_id) query = query.eq('theme_id', theme_id);
   if (q) query = query.ilike('title', `%${q}%`);
 
-  // 处理文章状态筛选
-  if (has_article === 'yes') {
-    // 只显示有文章的小主题（在drafts或items中有记录）
-    const { data: draftsData } = await supabase
-      .from('shadowing_drafts')
-      .select('subtopic_id')
-      .not('subtopic_id', 'is', null);
-
-    const { data: itemsData } = await supabase
-      .from('shadowing_items')
-      .select('subtopic_id')
-      .not('subtopic_id', 'is', null);
-
-    const hasArticleIds = new Set([
-      ...(draftsData?.map((d: any) => d.subtopic_id) || []),
-      ...(itemsData?.map((i: any) => i.subtopic_id) || []),
-    ]);
-
-    if (hasArticleIds.size > 0) {
-      query = query.in('id', Array.from(hasArticleIds));
-    } else {
-      // 如果没有找到任何有文章的小主题，返回空结果
-      query = query.eq('id', '00000000-0000-0000-0000-000000000000');
-    }
-  } else if (has_article === 'no') {
-    // 只显示没有文章的小主题（在drafts和items中都没有记录）
-    const { data: draftsData } = await supabase
-      .from('shadowing_drafts')
-      .select('subtopic_id')
-      .not('subtopic_id', 'is', null);
-
-    const { data: itemsData } = await supabase
-      .from('shadowing_items')
-      .select('subtopic_id')
-      .not('subtopic_id', 'is', null);
-
-    const hasArticleIds = new Set([
-      ...(draftsData?.map((d: any) => d.subtopic_id) || []),
-      ...(itemsData?.map((i: any) => i.subtopic_id) || []),
-    ]);
-
-    if (hasArticleIds.size > 0) {
-      query = query.not('id', 'in', `(${Array.from(hasArticleIds).join(',')})`);
-    }
-  }
-
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
   const { data, error } = await query.range(from, to).order('created_at', { ascending: false });
+  if (error) {
+    return NextResponse.json({ error: error.message || String(error) }, { status: 400 });
+  }
+
+  let items = data || [];
+
+  // 计算 has_article 集合并进行内存过滤，避免长URL问题
+  if (has_article === 'yes' || has_article === 'no') {
+    const [{ data: draftsData }, { data: itemsData }] = await Promise.all([
+      supabase.from('shadowing_drafts').select('subtopic_id').not('subtopic_id', 'is', null),
+      supabase.from('shadowing_items').select('subtopic_id').not('subtopic_id', 'is', null),
+    ]);
+    const hasArticleIds = new Set([
+      ...(draftsData?.map((d: any) => d.subtopic_id) || []),
+      ...(itemsData?.map((i: any) => i.subtopic_id) || []),
+    ]);
+    items = items
+      .map((row: any) => ({ ...row, has_article: hasArticleIds.has(row.id) }))
+      .filter((row: any) => (has_article === 'yes' ? row.has_article : !row.has_article));
+
+    // 返回当前页的大小作为 total，避免昂贵的全量统计
+    return NextResponse.json({
+      items,
+      total: items.length,
+      page,
+      limit,
+      totalPages: 1,
+    });
+  }
 
   // 获取总数（不应用分页限制）
   const countQuery = supabase
     .from('shadowing_subtopics')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'active');
-
   if (lang) countQuery.eq('lang', lang);
   if (level) countQuery.eq('level', parseInt(level));
   if (genre) countQuery.eq('genre', genre);
   if (theme_id) countQuery.eq('theme_id', theme_id);
   if (q) countQuery.ilike('title', `%${q}%`);
-
-  // 处理文章状态筛选 - count查询使用相同的逻辑
-  if (has_article === 'yes' || has_article === 'no') {
-    const { data: draftsData } = await supabase
-      .from('shadowing_drafts')
-      .select('subtopic_id')
-      .not('subtopic_id', 'is', null);
-
-    const { data: itemsData } = await supabase
-      .from('shadowing_items')
-      .select('subtopic_id')
-      .not('subtopic_id', 'is', null);
-
-    const hasArticleIds = new Set([
-      ...(draftsData?.map((d: any) => d.subtopic_id) || []),
-      ...(itemsData?.map((i: any) => i.subtopic_id) || []),
-    ]);
-
-    if (has_article === 'yes') {
-      if (hasArticleIds.size > 0) {
-        countQuery.in('id', Array.from(hasArticleIds));
-      } else {
-        countQuery.eq('id', '00000000-0000-0000-0000-000000000000');
-      }
-    } else if (has_article === 'no') {
-      if (hasArticleIds.size > 0) {
-        countQuery.not('id', 'in', `(${Array.from(hasArticleIds).join(',')})`);
-      }
-    }
-  }
-
-  const { count } = await countQuery;
-
-  if (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : String(error) },
-      { status: 400 },
-    );
+  const { count, error: countError } = await countQuery;
+  if (countError) {
+    return NextResponse.json({ error: countError.message || String(countError) }, { status: 400 });
   }
 
   return NextResponse.json({
-    items: data || [],
+    items,
     total: count || 0,
     page,
     limit,
