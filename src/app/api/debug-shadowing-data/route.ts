@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     // 检查 shadowing_subtopics 表
     const { data: subtopics, error: subtopicsError } = await supabase
       .from('shadowing_subtopics')
-      .select('id, title_cn, theme_id')
+      .select('id, title, theme_id')
       .limit(10);
 
     return NextResponse.json({

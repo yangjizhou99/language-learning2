@@ -4,8 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
-import { CacheManager } from '@/lib/cache';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import {
   getUserPermissions,
   checkLevelPermission,
@@ -21,13 +20,13 @@ export async function GET(req: NextRequest) {
     // Bearer 优先，其次 Cookie 方式
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: any;
+    let supabase: SupabaseClient;
 
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
         global: { headers: { Authorization: authHeader } },
-      });
+      }) as unknown as SupabaseClient;
     } else {
       const cookieStore = await cookies();
       supabase = createServerClient(supabaseUrl, supabaseAnon, {
@@ -38,7 +37,7 @@ export async function GET(req: NextRequest) {
           set() {},
           remove() {},
         },
-      });
+      }) as unknown as SupabaseClient;
     }
 
     // Check authentication
@@ -79,6 +78,9 @@ export async function GET(req: NextRequest) {
           title,
           text,
           audio_url,
+          audio_url_proxy,
+          audio_bucket,
+          audio_path,
           topic,
           genre,
           register,
@@ -156,13 +158,13 @@ export async function GET(req: NextRequest) {
       }
 
       // Get theme and subtopic data separately
-      const themeIds = [...new Set(items?.map((item: any) => item.theme_id).filter(Boolean) || [])];
+      const themeIds = [...new Set((items || []).map((item: { theme_id?: string | null }) => item.theme_id).filter(Boolean))];
       const subtopicIds = [
-        ...new Set(items?.map((item: any) => item.subtopic_id).filter(Boolean) || []),
+        ...new Set((items || []).map((item: { subtopic_id?: string | null }) => item.subtopic_id).filter(Boolean)),
       ];
 
-      let themes: any[] = [];
-      let subtopics: any[] = [];
+      let themes: Array<{ id: string; title: string; desc?: string } > = [];
+      let subtopics: Array<{ id: string; title: string; one_line?: string } > = [];
 
       if (themeIds.length > 0) {
         const { data: themesData } = await supabase
@@ -181,8 +183,8 @@ export async function GET(req: NextRequest) {
       }
 
       // Get session data separately
-      const itemIds = items?.map((item: any) => item.id) || [];
-      let sessions: any[] = [];
+      const itemIds = (items || []).map((item: { id: string }) => item.id);
+      let sessions: Array<{ item_id: string; status: 'draft' | 'completed' | null; recordings?: Array<{ duration?: number }>; picked_preview?: unknown[]; created_at?: string | null }> = [];
 
       if (itemIds.length > 0 && user) {
         const { data: sessionsData } = await supabase
@@ -194,19 +196,20 @@ export async function GET(req: NextRequest) {
       }
 
       // Process items with session data
+      type ItemRow = { id: string; lang: string; level: number; title: string; text: string; audio_url?: string | null; audio_url_proxy?: string | null; audio_bucket?: string | null; audio_path?: string | null; notes?: { audio_url?: string | null } | null; theme_id?: string | null; subtopic_id?: string | null };
       const processedItems =
-        items?.map((item: any) => {
+        (items || []).map((item: ItemRow) => {
           // Find the user's session for this item
-          const userSession = sessions.find((session: any) => session.item_id === item.id);
+          const userSession = sessions.find((session) => session.item_id === item.id);
 
           const isPracticed = userSession?.status === 'completed';
-          const recordings = userSession?.recordings || [];
+          const recordings = (userSession?.recordings || []) as Array<{ duration?: number }>;
           const selectedWords = userSession?.picked_preview || [];
 
           // Calculate practice time from recordings (duration is already in milliseconds)
           let practiceTime = 0;
           if (recordings && recordings.length > 0) {
-            practiceTime = recordings.reduce((total: number, recording: any) => {
+            practiceTime = recordings.reduce((total: number, recording: { duration?: number }) => {
               console.log('录音时长:', recording.duration, '毫秒');
               return total + (recording.duration || 0);
             }, 0);
@@ -225,7 +228,13 @@ export async function GET(req: NextRequest) {
 
           return {
             ...item,
-            audio_url: item.audio_url || item.notes?.audio_url || null, // 优先使用直接字段，回退到notes
+            audio_url:
+              item.audio_url_proxy ||
+              item.audio_url ||
+              (item.notes && item.notes.audio_url) ||
+              (item.audio_bucket && item.audio_path
+                ? `/api/storage-proxy?path=${item.audio_path}&bucket=${item.audio_bucket}`
+                : null),
             theme,
             subtopic,
             isPracticed,
@@ -240,17 +249,17 @@ export async function GET(req: NextRequest) {
         }) || [];
 
       // Filter by practice status if specified
-      let filteredItems = processedItems;
+      let filteredItems = processedItems as Array<{ isPracticed: boolean; level: number; lang: string }>;
       if (practiced === 'true') {
-        filteredItems = processedItems.filter((item: any) => item.isPracticed);
+        filteredItems = processedItems.filter((item) => item.isPracticed);
       } else if (practiced === 'false') {
-        filteredItems = processedItems.filter((item: any) => !item.isPracticed);
+        filteredItems = processedItems.filter((item) => !item.isPracticed);
       }
 
       // 如果没有指定等级，过滤掉用户没有权限的等级
       if (!level) {
         console.log('Filtering by level permissions, allowed levels:', permissions.allowed_levels);
-        filteredItems = filteredItems.filter((item: any) => {
+        filteredItems = filteredItems.filter((item) => {
           const hasPermission = checkLevelPermission(permissions, item.level);
           if (!hasPermission) {
             console.log('Filtering out item with level:', item.level);
@@ -265,7 +274,7 @@ export async function GET(req: NextRequest) {
           'Filtering by language permissions, allowed languages:',
           permissions.allowed_languages,
         );
-        filteredItems = filteredItems.filter((item: any) => {
+        filteredItems = filteredItems.filter((item) => {
           const hasPermission = checkLanguagePermission(permissions, item.lang);
           if (!hasPermission) {
             console.log('Filtering out item with language:', item.lang);

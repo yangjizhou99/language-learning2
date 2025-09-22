@@ -67,8 +67,8 @@ interface ShadowingItem {
   };
   subtopic?: {
     id: string;
-    title_cn: string;
-    one_line_cn?: string;
+    title: string;
+    one_line?: string;
   };
   stats: {
     recordingCount: number;
@@ -120,7 +120,7 @@ export default function ShadowingPage() {
 
   // 过滤和筛选状态
   const [lang, setLang] = useState<'ja' | 'en' | 'zh'>('ja');
-  const [level, setLevel] = useState<number | null>(null);
+  const [level, setLevel] = useState<number | null>(1);
   const [practiced, setPracticed] = useState<'all' | 'practiced' | 'unpracticed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [theme, setTheme] = useState<string>('all');
@@ -145,7 +145,7 @@ export default function ShadowingPage() {
   // 主题数据状态
   const [themes, setThemes] = useState<Array<{ id: string; title: string; desc?: string }>>([]);
   const [subtopics, setSubtopics] = useState<
-    Array<{ id: string; title_cn: string; one_line_cn?: string }>
+    Array<{ id: string; title: string; one_line?: string }>
   >([]);
 
   // 练习相关状态
@@ -2502,7 +2502,7 @@ export default function ShadowingPage() {
                               value={subtopic.id}
                               className="rounded-lg"
                             >
-                              {subtopic.title_cn}
+                              {subtopic.title}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -2657,7 +2657,7 @@ export default function ShadowingPage() {
                                     </span>
                                   </div>
                                   <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 flex-1">
-                                    {item.subtopic ? item.subtopic.title_cn : item.title}
+                                    {item.subtopic ? item.subtopic.title : item.title}
                                   </h4>
                                 </div>
 
@@ -3931,7 +3931,7 @@ export default function ShadowingPage() {
                                 value={subtopic.id}
                                 className="rounded-lg"
                               >
-                                {subtopic.title_cn}
+                                {subtopic.title}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -4065,7 +4065,7 @@ export default function ShadowingPage() {
                                       {index + 1}.
                                     </span>
                                     <span className="text-sm font-medium truncate">
-                                      {item.subtopic ? item.subtopic.title_cn : item.title}
+                                      {item.subtopic ? item.subtopic.title : item.title}
                                       {item.isPracticed && (
                                         <span className="ml-1 text-green-600">✓</span>
                                       )}

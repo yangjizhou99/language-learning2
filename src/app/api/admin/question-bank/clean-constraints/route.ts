@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     // 1. 查找引用了不存在主题的子主题
     const { data: allSubtopics } = await supabase
       .from('shadowing_subtopics')
-      .select('id, theme_id, title_cn')
+      .select('id, theme_id, title')
       .not('theme_id', 'is', null);
 
     const { data: allThemes } = await supabase
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     if (invalidSubtopics.length > 0) {
       console.log('无效的子主题:');
       invalidSubtopics.forEach((subtopic, index) => {
-        console.log(`  ${index + 1}. ${subtopic.title_cn} (ID: ${subtopic.id}, 引用的主题ID: ${subtopic.theme_id})`);
+        console.log(`  ${index + 1}. ${subtopic.title} (ID: ${subtopic.id}, 引用的主题ID: ${subtopic.theme_id})`);
       });
 
       // 2. 清理无效的子主题引用（将 theme_id 设为 NULL）
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
         details: {
           invalidSubtopics: invalidSubtopics.map(s => ({
             id: s.id,
-            title_cn: s.title_cn,
+            title: s.title,
             theme_id: s.theme_id
           }))
         }

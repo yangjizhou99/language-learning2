@@ -633,9 +633,7 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
     }
 
     // 并行下载所有文件
-    let downloadedFiles = 0;
-    let skippedFiles = 0;
-    let totalDownloadTasks = allDownloadTasks.length;
+    const totalDownloadTasks = allDownloadTasks.length;
     
     console.log(`开始并行下载 ${totalDownloadTasks} 个文件，并发数: ${CONCURRENT_DOWNLOADS}`);
     
