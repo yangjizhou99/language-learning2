@@ -99,16 +99,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '无效的数据库类型' }, { status: 400 });
     }
 
+    // 检测部署环境并优化备份路径
+    const isDeployment = process.env.VERCEL || process.env.NODE_ENV === 'production';
+    let effectiveBackupPath = backupPath;
+    
+    // 在部署环境中，优先使用临时目录
+    if (isDeployment) {
+      if (backupPath === '/tmp/backups' || backupPath.includes('/tmp/')) {
+        // 使用系统临时目录
+        const os = await import('os');
+        effectiveBackupPath = path.join(os.tmpdir(), 'backups', 'language-learning');
+        console.log(`部署环境：使用优化路径 ${effectiveBackupPath}`);
+      }
+    }
+
     // 检查备份路径是否存在和可写
     try {
-      await fsPromises.access(backupPath);
+      await fsPromises.access(effectiveBackupPath);
       // 检查是否为目录
-      const stats = await fsPromises.stat(backupPath);
+      const stats = await fsPromises.stat(effectiveBackupPath);
       if (!stats.isDirectory()) {
         return NextResponse.json(
           { 
             error: '备份路径不是目录',
-            details: `路径 ${backupPath} 存在但不是目录`,
+            details: `路径 ${effectiveBackupPath} 存在但不是目录`,
             suggestions: ['请提供目录路径而不是文件路径']
           },
           { status: 400 }
@@ -117,11 +131,11 @@ export async function POST(req: NextRequest) {
     } catch {
       // 尝试创建目录
       try {
-        await fsPromises.mkdir(backupPath, { recursive: true });
-        console.log(`成功创建备份目录: ${backupPath}`);
+        await fsPromises.mkdir(effectiveBackupPath, { recursive: true });
+        console.log(`成功创建备份目录: ${effectiveBackupPath}`);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : '未知错误';
-        console.error(`创建备份目录失败: ${backupPath}`, errorMessage);
+        console.error(`创建备份目录失败: ${effectiveBackupPath}`, errorMessage);
         
         return NextResponse.json(
           { 
@@ -147,13 +161,13 @@ export async function POST(req: NextRequest) {
 
     // 验证目录写入权限
     try {
-      const testFile = path.join(backupPath, '.backup-test-' + Date.now());
+      const testFile = path.join(effectiveBackupPath, '.backup-test-' + Date.now());
       await fsPromises.writeFile(testFile, 'test');
       await fsPromises.unlink(testFile);
-      console.log(`备份目录写入权限验证成功: ${backupPath}`);
+      console.log(`备份目录写入权限验证成功: ${effectiveBackupPath}`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '未知错误';
-      console.error(`备份目录写入权限验证失败: ${backupPath}`, errorMessage);
+      console.error(`备份目录写入权限验证失败: ${effectiveBackupPath}`, errorMessage);
       
       return NextResponse.json(
         { 
@@ -204,7 +218,7 @@ export async function POST(req: NextRequest) {
     tasks.forEach((task) => {
       setBackupTask(task.id, { 
         ...task, 
-        backupPath,
+        backupPath: effectiveBackupPath,
         incremental,
         overwriteExisting,
         compareWith,
@@ -214,7 +228,7 @@ export async function POST(req: NextRequest) {
     });
 
     // 异步执行备份任务
-    executeBackupTasks(tasks, backupPath, incremental, overwriteExisting, compareWith, databaseType, backupType, tables);
+    executeBackupTasks(tasks, effectiveBackupPath, incremental, overwriteExisting, compareWith, databaseType, backupType, tables);
 
     return NextResponse.json({ 
       tasks,
