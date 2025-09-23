@@ -78,7 +78,6 @@ export async function GET(req: NextRequest) {
           title,
           text,
           audio_url,
-          audio_url_proxy,
           audio_bucket,
           audio_path,
           topic,

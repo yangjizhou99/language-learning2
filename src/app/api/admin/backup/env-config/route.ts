@@ -6,7 +6,10 @@ export async function GET(req: NextRequest) {
     await requireAdmin(req);
 
     // 检查环境变量
-    const localDbUrl = process.env.LOCAL_DB_URL;
+    const localDbUrlForce = process.env.LOCAL_DB_URL_FORCE;
+    const localDbUrl = localDbUrlForce || process.env.LOCAL_DB_URL;
+    const localSource = localDbUrlForce ? 'LOCAL_DB_URL_FORCE' : 'LOCAL_DB_URL';
+    const localParsed = safeParseConn(localDbUrl);
     const prodDbUrl = process.env.PROD_DB_URL;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -15,7 +18,11 @@ export async function GET(req: NextRequest) {
       local: {
         available: !!localDbUrl,
         url: localDbUrl ? maskConnectionString(localDbUrl) : null,
-        name: '本地数据库'
+        name: '本地数据库',
+        // 便于排查环境变量来源与端口
+        source: localSource,
+        host: localParsed?.host || null,
+        port: localParsed?.port || null
       },
       prod: {
         available: !!prodDbUrl,
@@ -69,5 +76,15 @@ function maskUrl(url: string): string {
     return `${urlObj.protocol}//${urlObj.hostname}`;
   } catch {
     return url;
+  }
+}
+
+function safeParseConn(conn?: string) {
+  if (!conn) return null;
+  try {
+    const u = new URL(conn);
+    return { host: u.hostname, port: u.port || '5432' };
+  } catch {
+    return null;
   }
 }

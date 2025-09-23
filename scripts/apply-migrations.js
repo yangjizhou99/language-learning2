@@ -90,6 +90,8 @@ async function main() {
     'supabase/migrations/20250918100000_add_vocab_srs.sql',
     'supabase/migrations/20250922000000_rename_subtopic_fields.sql',
     'supabase/migrations/20250922001000_audio_url_normalization.sql',
+    'supabase/migrations/20250923000100_fix_shadowing_items_columns.sql',
+    'supabase/migrations/20250923000200_align_shadowing_items_schema.sql',
   ].filter((p) => fs.existsSync(p));
 
   const results = [];

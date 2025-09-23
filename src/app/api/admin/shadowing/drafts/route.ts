@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const supabase = auth.supabase;
 
   const sp = new URL(req.url).searchParams;
-  const status = sp.get('status') || 'draft'; // draft|approved
+  const status = sp.get('status'); // 可为空或 'draft' | 'approved'
   const lang = sp.get('lang') as 'en' | 'ja' | 'zh' | null;
   const level = sp.get('level');
   const genre = sp.get('genre');
@@ -21,21 +21,22 @@ export async function GET(req: NextRequest) {
   const pageSize = parseInt(sp.get('pageSize') || '10');
   const offset = (page - 1) * pageSize;
 
-  // 构建基础查询
+  // 构建基础查询（避免依赖关系推断导致 400）
   let query = supabase
     .from('shadowing_drafts')
     .select(
       `
       id, lang, level, genre, title, text, status, created_at, notes, translations, trans_updated_at,
-      theme_id,
-      subtopic_id,
-      shadowing_themes!theme_id(title),
-      shadowing_subtopics!subtopic_id(title)
+      theme_id, subtopic_id
     `,
       { count: 'exact' },
     )
-    .eq('status', status)
     .order('title', { ascending: true });
+
+  // 状态筛选：仅当提供且不为 all 时生效
+  if (status && status !== 'all') {
+    query = query.eq('status', status);
+  }
 
   if (lang) query = query.eq('lang', lang);
   if (level) query = query.eq('level', Number(level));

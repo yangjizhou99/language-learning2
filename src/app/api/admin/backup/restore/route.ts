@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
-import { createDatabaseConnection, DatabaseType } from '@/lib/backup-db';
+import { createDatabaseConnection, DatabaseType, connectPostgresWithFallback } from '@/lib/backup-db';
 import fs from 'fs/promises';
 import path from 'path';
 import { createWriteStream } from 'fs';
@@ -578,19 +578,24 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType):
     const sqlContent = await fs.readFile(sqlFilePath, 'utf8');
     console.log('SQL文件大小:', sqlContent.length, '字符');
 
-    // 对于本地/生产直连：一次性执行整份 SQL，避免按分号拆分导致的字符串/数组内分隔问题
+    // 对于本地/生产直连：分句执行 + 会话级强化设置
     if (databaseType !== 'supabase') {
-      // 安全分句 + 内联修复后逐条执行（避免 ARRAY/JSON 在整包里残留语法问题）
       const repairedWhole = ensureArrayColumnDDLFixes(sanitizeLeakedConversation(wrapBareJsonObjectsGeneric(ensureJsonCastsInline(robustReplaceArrayLiterals(sqlContent)))));
       const stmts = splitSqlStatements(repairedWhole);
-      const { client } = createDatabaseConnection(databaseType);
-      await (client as import('pg').Client).connect();
+      const conn = createDatabaseConnection(databaseType);
+      const { client } = await connectPostgresWithFallback(conn.connectionString!);
       let ok = 0, skip = 0;
       try {
+        // 会话级强化设置（尽量不失败；失败忽略继续）
+        try { await client.query('BEGIN'); } catch {}
+        try { await client.query('SET LOCAL row_security = off'); } catch {}
+        try { await client.query('SET CONSTRAINTS ALL DEFERRED'); } catch {}
+        try { await client.query('SET LOCAL search_path = public'); } catch {}
+
         for (const statement of stmts) {
           if (!statement.trim()) { skip++; continue; }
           try {
-            await (client as import('pg').Client).query(statement);
+            await client.query(statement);
             ok++;
           } catch (e) {
             // 对已存在/不存在/重复键等非致命错误跳过
@@ -600,7 +605,7 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType):
             if (/invalid input syntax for type json/i.test(msg) || /JSON data/i.test(msg)) {
               const jsonStringified = replaceBareJsonWithToJsonbInStatement(statement);
               try {
-                await (client as import('pg').Client).query(jsonStringified);
+                await client.query(jsonStringified);
                 ok++;
                 continue;
               } catch {/* 继续后续回退 */}
@@ -609,7 +614,7 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType):
             if (/syntax error/i.test(msg)) {
               const retryStmt = ensureJsonCastsInline(robustReplaceArrayLiterals(statement));
               try {
-                await (client as import('pg').Client).query(retryStmt);
+                await client.query(retryStmt);
                 ok++;
                 continue;
               } catch {
@@ -633,7 +638,8 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType):
           }
         }
       } finally {
-        await (client as import('pg').Client).end();
+        try { await client.query('COMMIT'); } catch { try { await client.query('ROLLBACK'); } catch {} }
+        try { await (client as import('pg').Client).end(); } catch {}
       }
       console.log(`数据库分句恢复完成: 成功 ${ok} 跳过 ${skip}`);
       return { total: stmts.length, success: ok, skipped: skip, failed: stmts.length - ok - skip };
@@ -1186,41 +1192,51 @@ async function insertNdjsonBatch(
     
     // 执行插入
     if (databaseType === 'local' || databaseType === 'prod') {
-      const { Pool } = await import('pg');
       const connectionString = databaseType === 'local' 
-        ? process.env.LOCAL_DB_URL 
-        : process.env.DATABASE_URL;
+        ? (process.env.LOCAL_DB_URL_FORCE || process.env.LOCAL_DB_URL)
+        : (process.env.PROD_DB_URL || process.env.DATABASE_URL);
       
       if (!connectionString) {
-        throw new Error(`缺少${databaseType === 'local' ? 'LOCAL_DB_URL' : 'DATABASE_URL'}环境变量`);
+        throw new Error(`缺少${databaseType === 'local' ? 'LOCAL_DB_URL' : 'PROD_DB_URL / DATABASE_URL'}环境变量`);
       }
-      
-      const pool = new Pool({ connectionString });
+
+      // 使用端口回退逻辑，使用单连接以应用会话级设置
+      const { client } = await connectPostgresWithFallback(connectionString);
       try {
-        await pool.query(insertSql);
-        result.success = rows.length;
-      } catch (err) {
-        console.error(`PostgreSQL插入失败，尝试逐行插入:`, err);
-        // 逐行插入（宽松模式）
-        for (const row of rows) {
-          try {
-            const singleValues = columns.map(col => convertValueForInsert(row[col]));
-            const singleSql = `INSERT INTO "${tableName}" (${quotedColumns}) VALUES (${singleValues.join(', ')});`;
-            await pool.query(singleSql);
-            result.success++;
-          } catch (rowErr) {
-            console.warn(`行插入失败:`, row, rowErr);
-            result.failed++;
+        // 会话级强化设置（尽量不失败；失败则忽略）
+        try { await client.query('BEGIN'); } catch {}
+        try { await client.query('SET LOCAL row_security = off'); } catch {}
+        try { await client.query('SET CONSTRAINTS ALL DEFERRED'); } catch {}
+        try { await client.query("SET LOCAL search_path = public"); } catch {}
+
+        try {
+          await client.query(insertSql);
+          result.success = rows.length;
+        } catch (err) {
+          console.error(`PostgreSQL插入失败，尝试逐行插入:`, err);
+          // 逐行插入（宽松模式）
+          for (const row of rows) {
+            try {
+              const singleValues = columns.map(col => convertValueForInsert(row[col]));
+              const singleSql = `INSERT INTO "${tableName}" (${quotedColumns}) VALUES (${singleValues.join(', ')});`;
+              await client.query(singleSql);
+              result.success++;
+            } catch (rowErr) {
+              console.warn(`行插入失败:`, row, rowErr);
+              result.failed++;
+            }
           }
         }
+
+        try { await client.query('COMMIT'); } catch { try { await client.query('ROLLBACK'); } catch {} }
       } finally {
-        await pool.end();
+        try { await client.end(); } catch {}
       }
     } else {
       // Supabase
       const supabase = getServiceSupabase();
       try {
-        const { error } = await supabase.rpc('exec_sql', { query: insertSql });
+        const { error } = await supabase.rpc('exec_sql', { sql: insertSql });
         if (error) throw error;
         result.success = rows.length;
       } catch (err) {
@@ -1230,7 +1246,7 @@ async function insertNdjsonBatch(
           try {
             const singleValues = columns.map(col => convertValueForInsert(row[col]));
             const singleSql = `INSERT INTO "${tableName}" (${quotedColumns}) VALUES (${singleValues.join(', ')});`;
-            const { error: rowError } = await supabase.rpc('exec_sql', { query: singleSql });
+            const { error: rowError } = await supabase.rpc('exec_sql', { sql: singleSql });
             if (rowError) throw rowError;
             result.success++;
           } catch (rowErr) {
@@ -1264,17 +1280,12 @@ function convertValueForInsert(value: unknown): string {
   }
   
   if (Array.isArray(value)) {
+    // 优先使用 JSONB 表达数组，避免与 jsonb 列发生 text[] 类型不匹配
     try {
-      // 尝试将数组转换为PostgreSQL数组格式
-      const items = value.map(item => {
-        if (item === null || item === undefined) return 'NULL';
-        const str = String(item).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-        return `"${str}"`;
-      });
-      return `'{${items.join(',')}}'::text[]`;
+      return `'${JSON.stringify(value).replace(/'/g, "''")}'::jsonb`;
     } catch (err) {
-      console.warn('数组转换失败，使用空数组:', err);
-      return "'{}'::text[]";
+      console.warn('数组转 JSON 失败，使用空 JSON 数组:', err);
+      return "'[]'::jsonb";
     }
   }
   

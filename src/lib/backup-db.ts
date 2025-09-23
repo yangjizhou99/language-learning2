@@ -12,6 +12,28 @@ export interface DatabaseConnection {
 
 // 创建PostgreSQL客户端连接
 export function createPostgresClient(connectionString: string): Client {
+  try {
+    const url = new URL(connectionString);
+    const hostname = url.hostname;
+    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || url.port === '54322';
+
+    if (isLocalHost) {
+      // 归一化为 IPv4，避免在 Windows 上解析为 ::1 导致连接失败
+      if (hostname === 'localhost' || hostname === '::1') {
+        url.hostname = '127.0.0.1';
+      }
+      // 本地未显式指定端口时，默认使用 Supabase 本地端口 54322（不再读取 PGPORT 以避免误导）
+      if (!url.port || url.port === '') {
+        url.port = '54322';
+      }
+      // 移除可能强制 SSL 的参数
+      url.searchParams.delete('sslmode');
+
+      return new Client({ connectionString: url.toString(), ssl: false });
+    }
+  } catch {
+    // ignore URL parse error and fallback below
+  }
   return new Client({ connectionString });
 }
 
@@ -33,9 +55,9 @@ export function createSupabaseClient() {
 export function createDatabaseConnection(type: DatabaseType): DatabaseConnection {
   switch (type) {
     case 'local':
-      const localUrl = process.env.LOCAL_DB_URL;
+      const localUrl = process.env.LOCAL_DB_URL_FORCE || process.env.LOCAL_DB_URL;
       if (!localUrl) {
-        throw new Error('本地数据库配置未找到: 请设置 LOCAL_DB_URL 环境变量');
+        throw new Error('本地数据库配置未找到: 请设置 LOCAL_DB_URL 或 LOCAL_DB_URL_FORCE 环境变量');
       }
       return {
         type: 'local',
@@ -68,6 +90,53 @@ export function createDatabaseConnection(type: DatabaseType): DatabaseConnection
   }
 }
 
+// 尝试以多端口回退方式建立本地连接（优先用于开发场景）
+export async function connectPostgresWithFallback(connectionString: string): Promise<{ client: Client; effective: string }>
+{
+  // 优先使用传入端口；若为本地且端口为 5432/未写，则尝试 54340、54322
+  let candidates: string[] = [];
+  try {
+    const url = new URL(connectionString);
+    const isLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1';
+    const currentPort = url.port || '';
+    const normalizedHost = (url.hostname === 'localhost' || url.hostname === '::1') ? '127.0.0.1' : url.hostname;
+
+    if (isLocal) {
+      if (!currentPort) {
+        candidates = ['54340', '54322', '5432'];
+      } else if (currentPort === '5432') {
+        candidates = ['5432', '54340', '54322'];
+      } else {
+        candidates = [currentPort, '54340', '54322', '5432'];
+      }
+
+      let lastErr: unknown = null;
+      for (const port of candidates) {
+        try {
+          const u = new URL(connectionString);
+          u.hostname = normalizedHost;
+          u.port = port;
+          u.searchParams.delete('sslmode');
+          const client = new Client({ connectionString: u.toString(), ssl: false });
+          await client.connect();
+          console.log(`本地连接成功: ${u.hostname}:${port}`);
+          return { client, effective: u.toString() };
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      throw lastErr instanceof Error ? lastErr : new Error('本地连接失败');
+    }
+  } catch {
+    // 不是合法URL或非本地，走默认单次连接
+  }
+
+  // 非本地或解析失败，按原样连接一次
+  const client = new Client({ connectionString, ssl: undefined as any });
+  await client.connect();
+  return { client, effective: connectionString };
+}
+
 // 测试数据库连接
 export async function testDatabaseConnection(type: DatabaseType): Promise<{
   success: boolean;
@@ -96,9 +165,8 @@ export async function testDatabaseConnection(type: DatabaseType): Promise<{
         tables: tables?.map((t: any) => t.table_name) || []
       };
     } else {
-      // 测试PostgreSQL连接
-      const client = connection.client as Client;
-      await client.connect();
+      // 测试PostgreSQL连接（带端口回退）
+      const { client } = await connectPostgresWithFallback(connection.connectionString!);
       
       // 获取表列表
       const result = await client.query(`
@@ -142,8 +210,11 @@ export async function getTableList(type: DatabaseType): Promise<string[]> {
       
       return tables?.map((t: any) => t.table_name) || [];
     } else {
-      const client = connection.client as Client;
-      await client.connect();
+      const { client, effective } = await connectPostgresWithFallback(connection.connectionString!);
+      try {
+        const u = new URL(effective);
+        console.log(`正在连接 Postgres: ${u.hostname}:${u.port || '5432'} (${type})`);
+      } catch {}
       
       const result = await client.query(`
         SELECT table_name 
@@ -179,8 +250,11 @@ export async function getTableColumns(type: DatabaseType, tableName: string): Pr
       
       return columns || [];
     } else {
-      const client = connection.client as Client;
-      await client.connect();
+      const { client, effective } = await connectPostgresWithFallback(connection.connectionString!);
+      try {
+        const u = new URL(effective);
+        console.log(`正在连接 Postgres: ${u.hostname}:${u.port || '5432'} (${type})`);
+      } catch {}
       
       const result = await client.query(`
         SELECT column_name, data_type, is_nullable, column_default
@@ -221,8 +295,11 @@ export async function getTableData(type: DatabaseType, tableName: string): Promi
       
       return rows || [];
     } else {
-      const client = connection.client as Client;
-      await client.connect();
+      const { client, effective } = await connectPostgresWithFallback(connection.connectionString!);
+      try {
+        const u = new URL(effective);
+        console.log(`正在连接 Postgres: ${u.hostname}:${u.port || '5432'} (${type})`);
+      } catch {}
       
       const result = await client.query(`SELECT * FROM "${tableName}"`);
       

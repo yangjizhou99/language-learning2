@@ -89,10 +89,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // 放开备份页面访问权限
-  const isBackupPage = pathname?.startsWith('/admin/backup');
-
-  if (!isAdmin && !isSetupPage && !isBackupPage) {
+  if (!isAdmin && !isSetupPage) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

@@ -20,15 +20,8 @@ async function handleRequest(supabase: any, req: NextRequest) {
   const level = searchParams.get('level');
   const genre = searchParams.get('genre');
 
-  let query = supabase
-    .from('shadowing_themes')
-    .select(
-      `
-      *,
-      subtopics:shadowing_subtopics(count)
-    `,
-    )
-    .eq('status', 'active');
+  // 不依赖 PostgREST 的关系推断，避免因为缺少/未识别 FK 导致整查询失败
+  let query = supabase.from('shadowing_themes').select('*').eq('status', 'active');
 
   if (lang) query = query.eq('lang', lang);
   if (level) query = query.eq('level', parseInt(level));
@@ -36,8 +29,8 @@ async function handleRequest(supabase: any, req: NextRequest) {
 
   const { data, error } = await query.order('created_at', { ascending: false });
 
-  // 如果选择了全部等级，需要重新计算每个主题的小主题数量
-  if (!level && data) {
+  // 统一计算每个主题的小主题数量（避免依赖关系嵌套计数）
+  if (data && data.length) {
     for (const theme of data) {
       const subtopicQuery = supabase
         .from('shadowing_subtopics')
@@ -47,9 +40,10 @@ async function handleRequest(supabase: any, req: NextRequest) {
 
       if (lang) subtopicQuery.eq('lang', lang);
       if (genre) subtopicQuery.eq('genre', genre);
+      if (level) subtopicQuery.eq('level', parseInt(level));
 
       const { count } = await subtopicQuery;
-      theme.subtopics = [{ count: count || 0 }];
+      (theme as any).subtopic_count = count || 0;
     }
   }
 
@@ -64,7 +58,7 @@ async function handleRequest(supabase: any, req: NextRequest) {
     items:
       data?.map((item: any) => ({
         ...item,
-        subtopic_count: item.subtopics?.[0]?.count || 0,
+        subtopic_count: typeof item.subtopic_count === 'number' ? item.subtopic_count : 0,
       })) || [],
   });
 }
