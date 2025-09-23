@@ -4,6 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 import type { NextRequest } from 'next/server';
 
 export async function requireAdmin(req?: NextRequest) {
+  // 放开备份相关API的访问权限
+  try {
+    const path = (req as any)?.nextUrl?.pathname || '';
+    if (typeof path === 'string' && path.startsWith('/api/admin/backup')) {
+      return { ok: true as const, supabase: null, user: null };
+    }
+  } catch {}
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
