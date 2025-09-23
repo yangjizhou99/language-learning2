@@ -470,16 +470,19 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
                   const dataType = (col.data_type || '').toLowerCase();
                   if (raw === null || raw === undefined) return 'NULL';
 
-                  // 数组类型处理：优先检测值本身是否为数组
-                  if (Array.isArray(raw)) {
-                    const items = raw.map((it) => {
-                      if (it === null || it === undefined) return 'NULL';
-                      const s = String(it).replace(/\\/g, "\\\\").replace(/\"/g, '\\"');
-                      return `\"${s}\"`;
-                    });
-                    // 默认按 text[] 处理，适配项目常见数组列（如 text[]）
-                    return `'[{${items.join(',')}}]'::text[]`.replace('[','').replace(']','');
-                  }
+                // 数组类型处理：优先检测值本身是否为数组
+                if (Array.isArray(raw)) {
+                  // 使用 PostgreSQL 的 ARRAY 构造器，避免花括号与转义混乱
+                  const items = raw.map((it) => {
+                    if (it === null || it === undefined) return 'NULL';
+                    if (typeof it === 'boolean') return it ? 'TRUE' : 'FALSE';
+                    const num = Number(it);
+                    if (Number.isFinite(num) && typeof it !== 'string') return String(num);
+                    const s = String(it).replace(/'/g, "''");
+                    return `'${s}'`;
+                  });
+                  return items.length > 0 ? `ARRAY[${items.join(', ')}]::text[]` : `ARRAY[]::text[]`;
+                }
 
                   // JSON/JSONB
                   if (dataType.includes('json')) {
