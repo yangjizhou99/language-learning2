@@ -73,9 +73,8 @@ export async function uploadWithCache(
       data: { publicUrl },
     } = supabase.storage.from(options.bucket).getPublicUrl(options.path);
 
-    // 生成代理路由URL（推荐使用）
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const proxyUrl = `${baseUrl}/api/storage-proxy?path=${options.path}&bucket=${options.bucket}`;
+    // 生成代理路由URL（推荐使用）：改为“相对路径”，避免环境耦合
+    const proxyUrl = `/api/storage-proxy?path=${options.path}&bucket=${options.bucket}`;
 
     return {
       success: true,

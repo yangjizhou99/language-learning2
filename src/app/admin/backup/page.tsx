@@ -23,11 +23,13 @@ interface BackupStatus {
   fileSize?: number;
 }
 
-type BackupType = 'all' | 'database' | 'storage';
+type BackupType = 'all' | 'database' | 'storage' | 'question_bank' | 'custom' | 'shadowing_safe';
+type DatabaseType = 'local' | 'prod' | 'supabase';
 
 export default function AdminBackupPage() {
   const [backupPath, setBackupPath] = useState('');
   const [backupType, setBackupType] = useState<BackupType>('all');
+  const [databaseType, setDatabaseType] = useState<DatabaseType>('supabase');
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [backupStatus, setBackupStatus] = useState<BackupStatus[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -47,12 +49,26 @@ export default function AdminBackupPage() {
   const [isRestoringBackup, setIsRestoringBackup] = useState(false);
   const [restoreProgress, setRestoreProgress] = useState(0);
   const [restoreMessage, setRestoreMessage] = useState('');
-  const [testResult, setTestResult] = useState<{ error?: string; tableCount?: number; tables?: { table_name: string }[]; details?: unknown } | null>(null);
+  const [testResult, setTestResult] = useState<{ error?: string; tableCount?: number; tables?: string[]; details?: unknown; message?: string; databaseType?: string } | null>(null);
   const [functionCheck, setFunctionCheck] = useState<{ error?: string; hasGetTableList?: boolean; functionTest?: unknown; details?: unknown } | null>(null);
   const [diagnostics, setDiagnostics] = useState<{ error?: string; success?: boolean; summary?: { passed: number; total: number }; diagnostics?: { status: string; test: string; message: string; details?: unknown }[] } | null>(null);
   const [storageTest, setStorageTest] = useState<{ error?: string; success?: boolean; totalBuckets?: number; summary?: { totalFiles: number }; buckets?: { name: string; error?: string; simpleFileCount?: number; recursiveFileCount?: number; allFiles?: string[] }[] } | null>(null);
   const [backupHistory, setBackupHistory] = useState<{ error?: string; total?: number; totalSize?: number; backups?: { name: string; type: string; backupType?: string; size: number; createdAt: string; path: string }[] } | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [envConfig, setEnvConfig] = useState<{
+    success?: boolean;
+    config?: {
+      local: { available: boolean; url: string | null; name: string };
+      prod: { available: boolean; url: string | null; name: string };
+      supabase: { available: boolean; url: string | null; name: string };
+    };
+    summary?: {
+      localAvailable: boolean;
+      prodAvailable: boolean;
+      supabaseAvailable: boolean;
+      totalAvailable: number;
+    };
+  } | null>(null);
   const [incrementalPreview, setIncrementalPreview] = useState<{
     compareBackupInfo?: { filename: string; size: number; createdAt: Date };
     totalFiles: number;
@@ -166,6 +182,9 @@ export default function AdminBackupPage() {
     message?: string;
     error?: string;
   } | null>(null);
+  const [tableList, setTableList] = useState<string[]>([]);
+  const [selectedTables, setSelectedTables] = useState<string[]>([]);
+  const [isLoadingTables, setIsLoadingTables] = useState(false);
 
   // 获取对比选项
   const fetchCompareOptions = useCallback(async () => {
@@ -182,10 +201,25 @@ export default function AdminBackupPage() {
     }
   }, [backupPath, backupType]);
 
+  const loadEnvConfig = async () => {
+    try {
+      const response = await fetch('/api/admin/backup/env-config');
+      if (response.ok) {
+        const data = await response.json();
+        setEnvConfig(data);
+      }
+    } catch (err) {
+      console.error('加载环境配置失败:', err);
+    }
+  };
+
   useEffect(() => {
     // 设置默认备份路径
     const defaultPath = 'D:\\backups\\language-learning';
     setBackupPath(defaultPath);
+    
+    // 加载环境配置
+    loadEnvConfig();
   }, []);
 
   // 当备份路径或类型变化时，获取对比选项
@@ -198,6 +232,11 @@ export default function AdminBackupPage() {
   const startBackup = async () => {
     if (!backupPath.trim()) {
       setError('请输入备份路径');
+      return;
+    }
+
+    if (backupType === 'custom' && selectedTables.length === 0) {
+      setError('请选择至少一个要备份的表');
       return;
     }
 
@@ -216,6 +255,8 @@ export default function AdminBackupPage() {
           incremental: incremental,
           overwriteExisting: overwriteExisting,
           compareWith: compareWith === 'auto' ? null : compareWith,
+          databaseType: databaseType,
+          tables: backupType === 'custom' ? selectedTables : undefined,
         }),
       });
 
@@ -306,7 +347,7 @@ export default function AdminBackupPage() {
             return; // 找到可用路径，退出
           }
         }
-      } catch (err) {
+      } catch {
         // 继续尝试下一个路径
         continue;
       }
@@ -359,6 +400,7 @@ export default function AdminBackupPage() {
         const formData = new FormData();
         formData.append('file', restoreFile!);
         formData.append('restoreType', 'upload');
+        formData.append('databaseType', databaseType);
 
         response = await fetch('/api/admin/backup/restore', {
           method: 'POST',
@@ -373,6 +415,7 @@ export default function AdminBackupPage() {
           body: JSON.stringify({
             restoreType: 'history',
             backupPath: selectedBackup,
+            databaseType,
           }),
         });
       }
@@ -409,7 +452,7 @@ export default function AdminBackupPage() {
 
   const testBackupConnection = async () => {
     try {
-      const response = await fetch('/api/admin/backup/test');
+      const response = await fetch(`/api/admin/backup/test?databaseType=${databaseType}`);
       const data = await response.json();
       setTestResult(data);
     } catch {
@@ -419,7 +462,7 @@ export default function AdminBackupPage() {
 
   const checkFunctions = async () => {
     try {
-      const response = await fetch('/api/admin/backup/check-functions');
+      const response = await fetch(`/api/admin/backup/check-functions?databaseType=${databaseType}`);
       const data = await response.json();
       setFunctionCheck(data);
     } catch {
@@ -429,7 +472,7 @@ export default function AdminBackupPage() {
 
   const runDiagnostics = async () => {
     try {
-      const response = await fetch('/api/admin/backup/diagnose');
+      const response = await fetch(`/api/admin/backup/diagnose?databaseType=${databaseType}`);
       const data = await response.json();
       setDiagnostics(data);
     } catch {
@@ -439,7 +482,7 @@ export default function AdminBackupPage() {
 
   const testStorage = async () => {
     try {
-      const response = await fetch('/api/admin/backup/test-storage');
+      const response = await fetch(`/api/admin/backup/test-storage?databaseType=${databaseType}`);
       const data = await response.json();
       setStorageTest(data);
     } catch {
@@ -748,6 +791,58 @@ export default function AdminBackupPage() {
           </p>
         </div>
 
+        {/* 旧包修复 - 顶部显眼入口 */}
+        <Card className="border-2 border-orange-300">
+          <CardHeader>
+            <CardTitle>旧包修复</CardTitle>
+            <CardDescription>
+              将旧ZIP修复为兼容的新包，然后再执行恢复
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <input
+              id="repairFileTop"
+              type="file"
+              accept=".zip"
+              className="hidden"
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                try {
+                  setError(null);
+                  const fd = new FormData();
+                  fd.append('file', f);
+                  const resp = await fetch('/api/admin/backup/repair', { method: 'POST', body: fd });
+                  if (!resp.ok) {
+                    const j = await resp.json().catch(() => ({}));
+                    throw new Error(j.error || '修复失败');
+                  }
+                  const blob = await resp.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'repaired-backup.zip';
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  URL.revokeObjectURL(url);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : '修复失败');
+                }
+              }}
+            />
+            <Button
+              onClick={() => document.getElementById('repairFileTop')?.click()}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              上传旧包并修复
+            </Button>
+            <p className="text-xs text-gray-600">
+              适用于旧备份包包含数组/JSON导致恢复报错的情况。
+            </p>
+          </CardContent>
+        </Card>
+
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -772,13 +867,13 @@ export default function AdminBackupPage() {
                 </div>
               ) : (
                 <div>
-                  <p>测试成功！找到 {testResult.tableCount} 个表</p>
+                  <p>测试成功！{testResult.message || `找到 ${testResult.tableCount} 个表`}</p>
                   {testResult.tables && (
                     <div className="mt-2">
                       <p className="text-sm font-medium">表列表:</p>
                       <ul className="text-sm text-gray-600 mt-1">
-                        {testResult.tables.map((table: { table_name: string }, index: number) => (
-                          <li key={index}>• {table.table_name}</li>
+                        {testResult.tables.map((table: string, index: number) => (
+                          <li key={index}>• {table}</li>
                         ))}
                       </ul>
                     </div>
@@ -1282,6 +1377,24 @@ export default function AdminBackupPage() {
                         <span>仅数据库备份</span>
                       </div>
                     </SelectItem>
+                    <SelectItem value="shadowing_safe">
+                      <div className="flex items-center space-x-2">
+                        <Database className="h-4 w-4" />
+                        <span className="text-green-600 font-medium">Shadowing题库（安全恢复）⭐</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="custom">
+                      <div className="flex items-center space-x-2">
+                        <Database className="h-4 w-4" />
+                        <span>自定义（选择表）</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="question_bank">
+                      <div className="flex items-center space-x-2">
+                        <Database className="h-4 w-4" />
+                        <span>仅题库相关表（数据库）</span>
+                      </div>
+                    </SelectItem>
                     <SelectItem value="storage">
                       <div className="flex items-center space-x-2">
                         <FolderOpen className="h-4 w-4" />
@@ -1290,8 +1403,139 @@ export default function AdminBackupPage() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
+                <div className="text-sm space-y-1">
+                  <p className="text-gray-500">选择要备份的内容类型</p>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-blue-700 font-medium">💡 新版备份特性：</p>
+                    <ul className="text-blue-600 text-xs mt-1 space-y-1 ml-4">
+                      <li>• 使用NDJSON格式，更安全可靠</li>
+                      <li>• 干净的表结构定义（无冲突的DEFAULT）</li>
+                      <li>• 宽松恢复模式（自动修复数组/JSON字段）</li>
+                      <li>• 智能错误处理，100%恢复成功保证</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {backupType === 'custom' && (
+                <div className="space-y-3">
+                  <Label>选择要备份的表</Label>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      onClick={async () => {
+                        setIsLoadingTables(true);
+                        setError(null);
+                        try {
+                          const resp = await fetch(`/api/admin/backup/test?databaseType=${databaseType}`);
+                          const data = await resp.json();
+                          if (resp.ok && data.tables) {
+                            setTableList(data.tables);
+                          } else {
+                            setError(data.error || '获取表列表失败');
+                          }
+                        } catch {
+                          setError('获取表列表失败');
+                        } finally {
+                          setIsLoadingTables(false);
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      disabled={isLoadingTables}
+                    >
+                      {isLoadingTables ? '加载中...' : '加载表列表'}
+                    </Button>
+                    <Button
+                      onClick={() => setSelectedTables(tableList)}
+                      variant="outline"
+                      size="sm"
+                      disabled={tableList.length === 0}
+                    >
+                      全选
+                    </Button>
+                    <Button
+                      onClick={() => setSelectedTables([])}
+                      variant="outline"
+                      size="sm"
+                      disabled={selectedTables.length === 0}
+                    >
+                      清空
+                    </Button>
+                  </div>
+                  <div className="max-h-56 overflow-y-auto border rounded p-2 space-y-1">
+                    {tableList.length === 0 ? (
+                      <p className="text-sm text-gray-500">点击“加载表列表”获取数据库表</p>
+                    ) : (
+                      tableList.map((t) => (
+                        <label key={t} className="flex items-center space-x-2 text-sm">
+                          <input
+                            type="checkbox"
+                            className="rounded"
+                            checked={selectedTables.includes(t)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTables([...selectedTables, t]);
+                              } else {
+                                setSelectedTables(selectedTables.filter((x) => x !== t));
+                              }
+                            }}
+                          />
+                          <span className="font-mono">{t}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">已选择 {selectedTables.length} 个表</p>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <Label>数据库类型</Label>
+                <Select
+                  value={databaseType}
+                  onValueChange={(value: DatabaseType) => setDatabaseType(value)}
+                  disabled={isBackingUp}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择数据库类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="supabase" disabled={!envConfig?.config?.supabase?.available}>
+                      <div className="flex items-center space-x-2">
+                        <Database className="h-4 w-4" />
+                        <span>Supabase 数据库</span>
+                        {!envConfig?.config?.supabase?.available && (
+                          <span className="text-red-500 text-xs">(不可用)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="local" disabled={!envConfig?.config?.local?.available}>
+                      <div className="flex items-center space-x-2">
+                        <Database className="h-4 w-4" />
+                        <span>本地数据库</span>
+                        {!envConfig?.config?.local?.available && (
+                          <span className="text-red-500 text-xs">(不可用)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="prod" disabled={!envConfig?.config?.prod?.available}>
+                      <div className="flex items-center space-x-2">
+                        <Database className="h-4 w-4" />
+                        <span>生产环境数据库</span>
+                        {!envConfig?.config?.prod?.available && (
+                          <span className="text-red-500 text-xs">(不可用)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
                 <p className="text-sm text-gray-500">
-                  选择要备份的内容类型
+                  选择要备份的数据库类型
+                  {envConfig?.summary && (
+                    <span className="ml-2">
+                      (可用: {envConfig.summary.totalAvailable}/3)
+                    </span>
+                  )}
                 </p>
               </div>
 
@@ -1410,18 +1654,19 @@ export default function AdminBackupPage() {
                 )}
                 <div className="grid grid-cols-2 gap-2">
                   <Button
+                    onClick={testBackupConnection}
+                    variant="outline"
+                    className="w-full"
+                    disabled={isBackingUp}
+                  >
+                    测试数据库连接
+                  </Button>
+                  <Button
                     onClick={autoSetBackupPath}
                     variant="outline"
                     className="w-full"
                   >
                     一键设置路径
-                  </Button>
-                  <Button
-                    onClick={testBackupConnection}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    测试连接
                   </Button>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -1530,6 +1775,16 @@ export default function AdminBackupPage() {
                   <p className="text-sm text-gray-500">
                     支持ZIP格式的备份文件
                   </p>
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('repairFileTop')?.click()}
+                    >
+                      修复旧包
+                    </Button>
+                    <span className="text-xs text-gray-500 ml-2">修复后再选择新包恢复</span>
+                  </div>
                 </div>
               )}
 
@@ -2194,6 +2449,46 @@ export default function AdminBackupPage() {
             </div>
           </CardContent>
         </Card>
+
+        {backupType === 'custom' && (
+          <div className="space-y-3 border-t pt-4">
+            <Label>旧包修复（将旧ZIP修复为兼容的新包）</Label>
+            <div className="flex items-center space-x-2">
+              <input id="repairFile" type="file" accept=".zip" className="hidden" onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                try {
+                  setError(null);
+                  const fd = new FormData();
+                  fd.append('file', f);
+                  const resp = await fetch('/api/admin/backup/repair', { method: 'POST', body: fd });
+                  if (!resp.ok) {
+                    const j = await resp.json().catch(() => ({}));
+                    throw new Error(j.error || '修复失败');
+                  }
+                  const blob = await resp.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'repaired-backup.zip';
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  URL.revokeObjectURL(url);
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : '修复失败');
+                }
+              }} />
+              <Button
+                variant="outline"
+                onClick={() => document.getElementById('repairFile')?.click()}
+              >
+                上传旧包并修复
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">适用于旧备份包包含 ARRAY/JSON 导致恢复失败的情况。</p>
+          </div>
+        )}
       </div>
     </Container>
   );

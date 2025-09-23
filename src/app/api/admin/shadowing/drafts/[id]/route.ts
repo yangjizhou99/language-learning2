@@ -58,16 +58,45 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (e0 || !d) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
     // 获取音频URL，如果为空则使用空字符串
-    const audioUrl =
-      typeof d?.notes?.audio_url === 'string' && d.notes.audio_url.trim() ? d.notes.audio_url : ''; // 允许空字符串
+    const rawAudioUrl =
+      typeof d?.notes?.audio_url === 'string' && d.notes.audio_url.trim() ? d.notes.audio_url : '';
+
+    // 解析 bucket/path 并归一化为相对代理链接
+    let audio_bucket: string | null = null;
+    let audio_path: string | null = null;
+    let normalizedAudioUrl = rawAudioUrl;
+
+    try {
+      if (rawAudioUrl) {
+        if (rawAudioUrl.includes('/api/storage-proxy')) {
+          const u = new URL(rawAudioUrl, 'http://local');
+          const b = u.searchParams.get('bucket');
+          const p = u.searchParams.get('path');
+          if (b) audio_bucket = b;
+          if (p) audio_path = decodeURIComponent(p);
+        } else if (rawAudioUrl.includes('/storage/v1/object/')) {
+          const m1 = rawAudioUrl.match(/\/storage\/v1\/object\/(?:sign|public)\/([^/]+)\//);
+          const m2 = rawAudioUrl.match(/\/storage\/v1\/object\/(?:sign|public)\/[^/]+\/([^?]+)/);
+          if (m1 && m1[1]) audio_bucket = m1[1];
+          if (m2 && m2[1]) audio_path = m2[1];
+        }
+
+        if (!audio_bucket) audio_bucket = 'tts';
+        if (audio_bucket && audio_path) {
+          normalizedAudioUrl = `/api/storage-proxy?path=${audio_path}&bucket=${audio_bucket}`;
+        }
+      }
+    } catch (e) {
+      // 忽略解析错误，保留原始URL
+    }
 
     // 准备插入数据
-    const insertData = {
+    const insertData: any = {
       lang: d.lang,
       level: d.level,
       title: d.title,
       text: d.text,
-      audio_url: audioUrl,
+      audio_url: normalizedAudioUrl,
       topic: d.topic || '',
       genre: d.genre || 'monologue',
       register: d.register || 'neutral',
@@ -83,6 +112,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       trans_updated_at: d.trans_updated_at,
       meta: { from_draft: d.id, notes: d.notes, published_at: new Date().toISOString() },
     };
+
+    if (audio_bucket) insertData.audio_bucket = audio_bucket;
+    if (audio_path) insertData.audio_path = audio_path;
 
     console.log('准备插入的数据:', JSON.stringify(insertData, null, 2));
 

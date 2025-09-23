@@ -13,7 +13,7 @@ Produce CEFR-appropriate, teachable and diverse THEMES.
 - Return STRICT JSON only. No extra text.
 - Avoid duplicates; avoid niche proper nouns unless L5+.`;
 
-// 大主题生成的用户提示词模板
+// 大主题生成的用户提示词模板（按语言输出标题/说明）
 function buildThemePrompt({
   lang,
   level,
@@ -25,8 +25,25 @@ function buildThemePrompt({
   genre: string;
   count: number;
 }) {
-  const langMap = { en: 'English', ja: '日本語', zh: '简体中文' };
-  const L = langMap[lang as keyof typeof langMap] || 'English';
+  const langNameMap = { en: 'English', ja: '日本語', zh: '简体中文' } as const;
+  const L = langNameMap[lang as keyof typeof langNameMap] || 'English';
+
+  // 针对不同学习语言，要求主题标题与说明用对应语言输出
+  const titleGuidance =
+    lang === 'en'
+      ? 'Each theme title should be concise in English (≤ 8 words).'
+      : lang === 'ja'
+        ? '各テーマのタイトルは日本語で簡潔に（全角14字以内）。'
+        : '每个主题标题使用简体中文，简洁清晰（≤ 14 个汉字）。';
+  const rationaleGuidance =
+    lang === 'en'
+      ? 'Provide 1–2 sentences of rationale in English.'
+      : lang === 'ja'
+        ? '適合レベル／ジャンルの理由を日本語で1–2文記述。'
+        : '用中文写1–2句说明其为何适配该等级和体裁。';
+  const coverageLabel1 = lang === 'ja' ? '要点1' : lang === 'en' ? 'Point 1' : '要点1';
+  const coverageLabel2 = lang === 'ja' ? '要点2' : lang === 'en' ? 'Point 2' : '要点2';
+  const coverageLabel3 = lang === 'ja' ? '要点3' : lang === 'en' ? 'Point 3' : '要点3';
 
   return `LANG=${L}
 LEVEL=L${level}
@@ -36,16 +53,17 @@ COUNT=${count}
 Constraints:
 - Themes must match the GENRE use-cases and the LEVEL difficulty.
 - Prefer everyday domains for L1–L2; allow abstract/specialized for L5–L6.
-- Each theme title_cn ≤ 14 个汉字，清晰可读；给出英文 seed 关键词引导后续生成。
+- ${titleGuidance}
+- ${rationaleGuidance}
 
 Return JSON ONLY:
 {
   "themes": [
     {
-      "title_cn": "……",          // 中文大主题（用于后台显示/筛选）
-      "title_en": "……",          // 英文对译（便于多语言展示，可留空）
-      "rationale": "……",         // 为什么适配该 Level & Genre（1–2 句）
-      "coverage": ["要点1","要点2","要点3"],  // 该主题可覆盖的子话题面
+      "title_cn": "……",          // 标题：按 LANG 输出；字段名保持不变供后端使用
+      "title_en": "……",          // 对译（可留空）；若 LANG=en 可与标题相同
+      "rationale": "……",         // 1–2句：按 LANG 输出
+      "coverage": ["${coverageLabel1}","${coverageLabel2}","${coverageLabel3}"],
       "level": "L${level}",
       "genre": "${genre}"
     }

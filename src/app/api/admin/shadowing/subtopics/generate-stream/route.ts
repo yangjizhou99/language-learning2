@@ -31,7 +31,7 @@ function buildSubtopicPrompt({
   return `LANG=${L}
 LEVEL=L${level}
 GENRE=${genre}
-THEME_TITLE_CN=${themeTitleCn}
+THEME_TITLE=${themeTitleCn}
 COUNT=${count}
 
 Requirements:
@@ -41,12 +41,12 @@ Requirements:
 
 Output JSON ONLY:
 {
-  "theme": { "title_cn": "${themeTitleCn}", "level": "L${level}", "genre": "${genre}" },
+  "theme": { "title": "${themeTitleCn}", "level": "L${level}", "genre": "${genre}" },
   "subtopics": [
     {
-      "title_cn": "……",          // 小主题中文标题（≤ 16 汉字）
-      "seed_en": "keyword, keyword, …",   // 英文关键词 2–6 个，逗号分隔（用于约束生成）
-      "one_line_cn": "……"         // 12–30 字的一句话意图/场景说明
+      "title": "……",
+      "seed": "keyword, keyword, …",
+      "one_line": "……"
     }
   ]
 }
@@ -107,10 +107,10 @@ export async function POST(req: NextRequest) {
           // 获取现有小主题信息
           const { data: existingSubtopics } = await supabase
             .from('shadowing_subtopics')
-            .select('title_cn, one_line_cn')
+            .select('title, one_line')
             .eq('theme_id', theme_id);
 
-          const existingSubtopicTitles = existingSubtopics?.map((s) => s.title_cn) || [];
+          const existingSubtopicTitles = existingSubtopics?.map((s) => s.title) || [];
 
           // 构建包含现有小主题信息的提示词
           const enhancedPrompt =
@@ -121,7 +121,9 @@ export async function POST(req: NextRequest) {
               themeTitleCn: theme_title_cn,
               count,
             }) +
-            `\n\n现有小主题列表（请避免重复）：\n${existingSubtopicTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n\n请生成与上述小主题不同的新小主题。`;
+            `\n\n现有小主题列表（请避免重复）：\n${existingSubtopicTitles
+              .map((title, index) => `${index + 1}. ${title}`)
+              .join('\n')}\n\n请生成与上述小主题不同的新小主题。`;
 
           // 发送AI调用开始信号
           controller.enqueue(
@@ -180,9 +182,9 @@ export async function POST(req: NextRequest) {
             lang,
             level,
             genre,
-            title_cn: subtopic.title_cn,
-            seed_en: subtopic.seed_en || '',
-            one_line_cn: subtopic.one_line_cn || '',
+            title: subtopic.title,
+            seed: subtopic.seed || '',
+            one_line: subtopic.one_line || '',
             ai_provider: provider,
             ai_model: model,
             ai_usage: result.usage || {},
@@ -194,7 +196,7 @@ export async function POST(req: NextRequest) {
             const { data, error } = await supabase
               .from('shadowing_subtopics')
               .insert(subtopicsToProcess)
-              .select('id, title_cn');
+              .select('id, title');
 
             if (error) {
               throw new Error(

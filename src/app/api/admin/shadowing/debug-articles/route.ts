@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     // 获取没有文章的小主题
     const { data: noArticleData } = await supabase
       .from('shadowing_subtopics')
-      .select('id, title_cn')
+      .select('id, title')
       .eq('status', 'active')
       .not('id', 'in', `(${Array.from(hasArticleSubtopics).join(',')})`);
 

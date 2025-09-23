@@ -160,6 +160,27 @@ export default function SubtopicsPage() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // 任务队列（借鉴主题管理）
+  const [taskQueue, setTaskQueue] = useState<
+    Array<{
+      id: string;
+      status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+      progress: number; // 0-100
+      title: string;
+      params: any;
+      result?: any;
+      abortController?: AbortController;
+      startedAt?: Date;
+      completedAt?: Date;
+      pausedAt?: Date;
+      error?: string;
+    }>
+  >([]);
+  const [runningTasks, setRunningTasks] = useState(0);
+  const [queuePaused, setQueuePaused] = useState(false);
+  const [autoStart, setAutoStart] = useState(true);
+  const [drainOnce, setDrainOnce] = useState(false);
+
   // 获取认证头信息
   const getAuthHeaders = async (): Promise<Record<string, string>> => {
     const {
@@ -198,7 +219,7 @@ export default function SubtopicsPage() {
       if (r.ok) {
         try {
           const j = JSON.parse(responseText);
-          setThemes(j.themes || []);
+          setThemes(j.items || []);
         } catch (jsonError) {
           console.error('Parse themes response failed:', responseText);
         }
@@ -329,16 +350,15 @@ export default function SubtopicsPage() {
       alert('请先选择具体的大主题（不能选择"全部大主题"）');
       return;
     }
-    const theme = themes.find((t) => t.id === themeId);
     setEditing({
       id: undefined,
       theme_id: themeId,
       lang: lang === 'all' ? 'ja' : lang,
       level: level === 'all' ? 3 : level,
       genre: genre === 'all' ? 'monologue' : genre,
-      title_cn: '',
-      seed_en: '',
-      one_line_cn: '',
+      title: '',
+      seed: '',
+      one_line: '',
       tags: [],
       status: 'active',
     });
@@ -369,7 +389,7 @@ export default function SubtopicsPage() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(editing),
+        body: JSON.stringify({ action: 'upsert', item: editing }),
       });
       const responseText = await r.text();
       if (!r.ok) {
@@ -508,83 +528,51 @@ export default function SubtopicsPage() {
     );
   }
 
-  async function startGeneration() {
-    const selectedIds = Object.keys(selected).filter((id) => selected[id]);
-    if (!selectedIds.length) {
-      alert('请先选择要生成的小主题');
-      return;
-    }
+  // 添加任务到队列
+  function addTaskToQueue(params: any) {
+    const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const task = {
+      id: taskId,
+      status: 'pending' as const,
+      progress: 0,
+      title: `批量生成小主题 (${params.subtopic_ids?.length || 0} 项)`,
+      params,
+      createdAt: new Date(),
+    } as any;
+    setTaskQueue((prev) => [...prev, task]);
+    return taskId;
+  }
 
-    setGenerating(true);
-    setProgress({ done: 0, total: selectedIds.length, saved: 0, errors: 0, tokens: 0 });
-    setLogs([]);
+  // 执行任务（使用流式接口逐步更新进度）
+  async function executeTask(taskId: string) {
+    const task = taskQueue.find((t) => t.id === taskId);
+    if (!task) return;
 
-    // 创建超时控制器
     const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-    const timeoutId = setTimeout(() => {
-      abortController.abort();
-      setLogs((prev) => [
-        ...prev,
-        {
-          type: 'error',
-          message: '请求超时，请检查网络连接或重试',
-        },
-      ]);
-      setGenerating(false);
-    }, 300000); // 5分钟超时
+    setTaskQueue((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? { ...t, status: 'running', startedAt: new Date(), progress: 5, abortController }
+          : t,
+      ),
+    );
+    setRunningTasks((prev) => prev + 1);
 
-    let progressInterval: NodeJS.Timeout | null = null;
+    // 同步到页面顶层进度显示
+    setGenerating(true);
+    setProgress({ done: 0, total: task.params.subtopic_ids?.length || 0, saved: 0, errors: 0, tokens: 0 });
+    setLogs([{ type: 'info', message: task.title }]);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(await getAuthHeaders()),
+      } as Record<string, string>;
 
-      // 显示开始进度
-      setProgress((prev) => ({ ...prev, done: 0, total: selectedIds.length }));
-      setLogs([
-        {
-          type: 'info',
-          message: `开始批量生成 ${selectedIds.length} 个小主题...`,
-        },
-      ]);
-
-      // 调试信息
-      console.log('Generation parameters:', {
-        selectedIds,
-        lang: lang === 'all' ? 'all' : lang,
-        level: level === 'all' ? 'all' : level,
-        genre: genre === 'all' ? 'all' : genre,
-      });
-
-      // 模拟进度更新
-      progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev.done < prev.total) {
-            return { ...prev, done: Math.min(prev.done + 1, prev.total) };
-          }
-          return prev;
-        });
-      }, 1000);
-
-      const response = await fetch('/api/admin/shadowing/generate-batch', {
+      const response = await fetch('/api/admin/shadowing/generate-from-subtopics/stream', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          subtopic_ids: selectedIds,
-          lang: lang === 'all' ? 'all' : lang,
-          level: level === 'all' ? 'all' : level,
-          genre: genre === 'all' ? 'all' : genre,
-          provider,
-          model,
-          temperature,
-          concurrency: maxConcurrent,
-        }),
+        headers,
+        body: JSON.stringify(task.params),
         signal: abortController.signal,
       });
 
@@ -593,65 +581,162 @@ export default function SubtopicsPage() {
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      // 清理进度定时器
-      if (progressInterval) {
-        clearInterval(progressInterval);
+      // 处理SSE流
+      if (response.headers.get('content-type')?.includes('text/event-stream')) {
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        if (!reader) throw new Error('No response body');
+
+        let saved = 0;
+        let errors = 0;
+        let done = 0;
+        let total = task.params.subtopic_ids?.length || 0;
+        let tokens = 0;
+
+        while (true) {
+          const { done: streamDone, value } = await reader.read();
+          if (streamDone) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.type === 'start') {
+                total = data.total || total;
+                setTaskQueue((prev) => prev.map((t) => (t.id === taskId ? { ...t, progress: 10 } : t)));
+                setProgress((p) => ({ ...p, total }));
+              } else if (data.type === 'progress') {
+                done = data.done ?? done + 1;
+                saved = data.saved ?? saved;
+                errors = data.errors ?? errors;
+                tokens = data.tokens ?? tokens;
+                // 将完成度映射到 10-99 之间，保留最后完成设置为100
+                const pct = total > 0 ? Math.min(99, Math.max(10, Math.round((done / total) * 100))) : 50;
+                setTaskQueue((prev) => prev.map((t) => (t.id === taskId ? { ...t, progress: pct } : t)));
+                setProgress({ done, total, saved, errors, tokens });
+              } else if (data.type === 'skip') {
+                done += 1;
+                const pct = total > 0 ? Math.min(99, Math.max(10, Math.round((done / total) * 100))) : 50;
+                setTaskQueue((prev) => prev.map((t) => (t.id === taskId ? { ...t, progress: pct } : t)));
+                setProgress((p) => ({ ...p, done }));
+                setLogs((prev) => [...prev, { type: 'info', message: `跳过：${data.title}` }]);
+              } else if (data.type === 'error') {
+                errors += 1;
+                done = Math.min(done + 1, total);
+                const pct = total > 0 ? Math.min(99, Math.max(10, Math.round((done / total) * 100))) : 50;
+                setTaskQueue((prev) => prev.map((t) => (t.id === taskId ? { ...t, progress: pct } : t)));
+                setProgress({ done, total, saved, errors, tokens });
+                if (data.error) setLogs((prev) => [...prev, { type: 'error', message: String(data.error) }]);
+              } else if (data.type === 'complete') {
+                saved = data.saved ?? saved;
+                errors = data.errors ?? errors;
+                tokens = data.tokens ?? tokens;
+                setTaskQueue((prev) =>
+                  prev.map((t) => (t.id === taskId ? { ...t, progress: 100 } : t)),
+                );
+                setProgress({ done: total, total, saved, errors, tokens });
+              }
+            } catch (e) {
+              console.error('Parse SSE data failed:', e);
+            }
+          }
+        }
+
+        // 标记完成
+        setTaskQueue((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? { ...t, status: 'completed', progress: 100, completedAt: new Date(), abortController: undefined }
+              : t,
+          ),
+        );
+      } else {
+        // 回退：非流式响应，直接按完成处理
+        const text = await response.text();
+        let j: any;
+        try {
+          j = JSON.parse(text);
+        } catch {
+          throw new Error(`Invalid response: ${text}`);
+        }
+        const total = j.total || (task.params.subtopic_ids?.length || 0);
+        setProgress({ done: total, total, saved: j.success_count || 0, errors: j.error_count || 0, tokens: 0 });
+        setTaskQueue((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? { ...t, status: 'completed', progress: 100, result: j, completedAt: new Date(), abortController: undefined }
+              : t,
+          ),
+        );
       }
 
-      // 显示处理中进度
-      setProgress((prev) => ({ ...prev, done: selectedIds.length }));
-      setLogs((prev) => [
-        ...prev,
-        {
-          type: 'info',
-          message: '正在处理生成结果...',
-        },
-      ]);
-
-      const result = await response.json();
-
-      setProgress({
-        done: result.total,
-        total: result.total,
-        saved: result.success_count,
-        errors: result.error_count,
-        tokens: 0,
-      });
-
-      setLogs((prev) => [
-        ...prev,
-        {
-          type: 'success',
-          message: `批量生成完成：成功 ${result.success_count}，跳过 ${result.skipped_count}，失败 ${result.error_count}`,
-        },
-      ]);
-
-      // 重新加载数据
+      // 刷新列表
       loadSubtopics();
     } catch (error: any) {
-      console.error('Batch generation error:', error);
-      if (progressInterval) {
-        clearInterval(progressInterval);
+      if (error?.name === 'AbortError') {
+        setTaskQueue((prev) =>
+          prev.map((t) => (t.id === taskId ? { ...t, status: 'cancelled', abortController: undefined } : t)),
+        );
+      } else {
+        setTaskQueue((prev) =>
+          prev.map((t) =>
+            t.id === taskId
+              ? { ...t, status: 'failed', error: String(error?.message || error), abortController: undefined }
+              : t,
+          ),
+        );
+        setLogs((prev) => [...prev, { type: 'error', message: `批量生成失败：${String(error?.message || error)}` }]);
       }
-      setLogs([
-        {
-          type: 'error',
-          message: `批量生成失败：${error.message}`,
-        },
-      ]);
     } finally {
+      setRunningTasks((prev) => Math.max(0, prev - 1));
       setGenerating(false);
-      clearTimeout(timeoutId);
     }
   }
 
+  // 队列处理器
+  useEffect(() => {
+    const processQueue = async () => {
+      if (queuePaused || (!autoStart && !drainOnce)) return;
+      const pending = taskQueue.filter((t) => t.status === 'pending');
+      const canStart = Math.min(pending.length, maxConcurrent - runningTasks);
+      for (let i = 0; i < canStart; i++) {
+        executeTask(pending[i].id);
+      }
+      if (drainOnce) setDrainOnce(false);
+    };
+    processQueue();
+  }, [taskQueue, maxConcurrent, runningTasks, queuePaused, autoStart, drainOnce]);
+
+  async function startGeneration() {
+    const selectedIds = Object.keys(selected).filter((id) => selected[id]);
+    if (!selectedIds.length) {
+      alert('请先选择要生成的小主题');
+      return;
+    }
+    // 将任务添加到队列，并自动开始
+    const params = {
+      subtopic_ids: selectedIds,
+      // lang/level/genre 可选，后端会以每条记录为准，这里仅用于日志
+      lang: lang === 'all' ? 'all' : lang,
+      level: level === 'all' ? 'all' : level,
+      genre: genre === 'all' ? 'all' : genre,
+      provider,
+      model,
+      temperature,
+      concurrency: maxConcurrent,
+    };
+    const taskId = addTaskToQueue(params);
+    setDrainOnce(true); // 触发队列启动一次
+    setLogs([{ type: 'info', message: `已加入队列：${selectedIds.length} 个小主题` }]);
+  }
+
   function stopGeneration() {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
+    // 取消所有运行中的任务
+    setTaskQueue((prev) => {
+      prev.forEach((t) => t.abortController?.abort());
+      return prev.map((t) => (t.status === 'running' ? { ...t, status: 'cancelled', abortController: undefined } : t));
+    });
     setGenerating(false);
   }
 
@@ -747,7 +832,7 @@ export default function SubtopicsPage() {
                   <SelectItem value="all">全部大主题</SelectItem>
                   {themes.map((theme) => (
                     <SelectItem key={theme.id} value={theme.id}>
-                      {theme.title_cn} ({theme.subtopic_count})
+                      {theme.title} ({theme.subtopic_count})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -807,8 +892,7 @@ export default function SubtopicsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
-                  进度: {progress.done}/{progress.total} (完成: {progress.saved}, 失败:{' '}
-                  {progress.errors})
+                  进度: {progress.done}/{progress.total} (完成: {progress.saved}, 失败: {progress.errors})
                 </div>
                 <Button onClick={stopGeneration} size="sm" variant="destructive">
                   停止
@@ -850,34 +934,18 @@ export default function SubtopicsPage() {
                 checked={selectedCount === items.length && items.length > 0}
                 onCheckedChange={(checked) => toggleAll(checked as boolean)}
               />
-              <span className="text-sm">
-                全选 ({selectedCount}/{items.length})
-              </span>
+              <span className="text-sm">全选 ({selectedCount}/{items.length})</span>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <Button
-                onClick={startGeneration}
-                disabled={generating || selectedCount === 0}
-                size="sm"
-              >
+              <Button onClick={startGeneration} disabled={generating || selectedCount === 0} size="sm">
                 <Play className="w-4 h-4 mr-1" />
                 批量生成 ({selectedCount})
               </Button>
-              <Button
-                onClick={archiveSelected}
-                disabled={selectedCount === 0}
-                size="sm"
-                variant="outline"
-              >
+              <Button onClick={archiveSelected} disabled={selectedCount === 0} size="sm" variant="outline">
                 <Archive className="w-4 h-4 mr-1" />
                 归档选中
               </Button>
-              <Button
-                onClick={deleteSelected}
-                disabled={selectedCount === 0}
-                size="sm"
-                variant="destructive"
-              >
+              <Button onClick={deleteSelected} disabled={selectedCount === 0} size="sm" variant="destructive">
                 <Trash2 className="w-4 h-4 mr-1" />
                 删除选中
               </Button>
@@ -966,23 +1034,16 @@ export default function SubtopicsPage() {
             <div className="space-y-2">
               {items.map((item) => (
                 <div key={item.id} className="flex items-center gap-2 p-2 border rounded">
-                  <Checkbox
-                    checked={selected[item.id] || false}
-                    onCheckedChange={() => toggleOne(item.id)}
-                  />
+                  <Checkbox checked={selected[item.id] || false} onCheckedChange={() => toggleOne(item.id)} />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{item.title_cn}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {item.seed_en} • {item.one_line_cn}
-                    </div>
+                    <div className="font-medium truncate">{item.title}</div>
+                    <div className="text-sm text-muted-foreground">{item.seed} • {item.one_line}</div>
                     <div className="flex gap-1 mt-1">
                       <Badge variant="outline">{item.lang}</Badge>
                       <Badge variant="outline">L{item.level}</Badge>
                       <Badge variant="outline">{item.genre}</Badge>
                       {item.tags?.map((tag: string, index: number) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
+                        <Badge key={index} variant="secondary" className="text-xs">{tag}</Badge>
                       ))}
                     </div>
                   </div>
@@ -999,9 +1060,7 @@ export default function SubtopicsPage() {
           {/* 分页 */}
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-4">
-              <div className="text-sm text-muted-foreground">
-                共 {pagination.total} 条记录，第 {pagination.page} / {pagination.totalPages} 页
-              </div>
+              <div className="text-sm text-muted-foreground">共 {pagination.total} 条记录，第 {pagination.page} / {pagination.totalPages} 页</div>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">每页显示:</span>
                 <Select
@@ -1030,20 +1089,10 @@ export default function SubtopicsPage() {
             </div>
             {pagination.totalPages > 1 && (
               <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={pagination.page <= 1}
-                  onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
-                >
+                <Button size="sm" variant="outline" disabled={pagination.page <= 1} onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}>
                   上一页
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={pagination.page >= pagination.totalPages}
-                  onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
-                >
+                <Button size="sm" variant="outline" disabled={pagination.page >= pagination.totalPages} onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}>
                   下一页
                 </Button>
               </div>
@@ -1063,10 +1112,7 @@ export default function SubtopicsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>语言</Label>
-                  <Select
-                    value={editing.lang}
-                    onValueChange={(v) => setEditing({ ...editing, lang: v })}
-                  >
+                  <Select value={editing.lang} onValueChange={(v) => setEditing({ ...editing, lang: v })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -1079,10 +1125,7 @@ export default function SubtopicsPage() {
                 </div>
                 <div>
                   <Label>等级</Label>
-                  <Select
-                    value={String(editing.level)}
-                    onValueChange={(v) => setEditing({ ...editing, level: parseInt(v) })}
-                  >
+                  <Select value={String(editing.level)} onValueChange={(v) => setEditing({ ...editing, level: parseInt(v) })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -1098,10 +1141,7 @@ export default function SubtopicsPage() {
               </div>
               <div>
                 <Label>体裁</Label>
-                <Select
-                  value={editing.genre}
-                  onValueChange={(v) => setEditing({ ...editing, genre: v })}
-                >
+                <Select value={editing.genre} onValueChange={(v) => setEditing({ ...editing, genre: v })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -1114,25 +1154,16 @@ export default function SubtopicsPage() {
                 </Select>
               </div>
               <div>
-                <Label>中文标题</Label>
-                <Input
-                  value={editing.title_cn}
-                  onChange={(e) => setEditing({ ...editing, title_cn: e.target.value })}
-                />
+                <Label>标题</Label>
+                <Input value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
               </div>
               <div>
-                <Label>英文种子</Label>
-                <Input
-                  value={editing.seed_en}
-                  onChange={(e) => setEditing({ ...editing, seed_en: e.target.value })}
-                />
+                <Label>关键词（逗号分隔）</Label>
+                <Input value={editing.seed} onChange={(e) => setEditing({ ...editing, seed: e.target.value })} />
               </div>
               <div>
                 <Label>一句话描述</Label>
-                <Textarea
-                  value={editing.one_line_cn}
-                  onChange={(e) => setEditing({ ...editing, one_line_cn: e.target.value })}
-                />
+                <Textarea value={editing.one_line} onChange={(e) => setEditing({ ...editing, one_line: e.target.value })} />
               </div>
               <div>
                 <Label>标签 (用逗号分隔)</Label>
@@ -1162,3 +1193,4 @@ export default function SubtopicsPage() {
     </div>
   );
 }
+

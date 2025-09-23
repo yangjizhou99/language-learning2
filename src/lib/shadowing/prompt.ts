@@ -31,16 +31,16 @@ export function buildShadowPrompt({
   lang,
   level,
   genre,
-  title_cn,
-  seed_en,
-  one_line_cn,
+  title,
+  seed,
+  one_line,
 }: {
   lang: Lang;
   level: 1 | 2 | 3 | 4 | 5 | 6;
   genre: Genre;
-  title_cn: string;
-  seed_en?: string;
-  one_line_cn?: string;
+  title: string;
+  seed?: string;
+  one_line?: string;
 }) {
   const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : '简体中文';
   const p = shadowingLevelPresets(lang, level, genre);
@@ -61,13 +61,13 @@ export function buildShadowPrompt({
           ? `Academic tone; clear structure; examples and explanations.`
           : `Narrative flow; engaging content; varied sentence structures.`;
 
-  const seedHint = seed_en ? `\nSEED_KEYWORDS=${seed_en}` : '';
-  const summaryHint = one_line_cn ? `\nINTENT_HINT=${one_line_cn}` : '';
+  const seedHint = seed ? `\nSEED_KEYWORDS=${seed}` : '';
+  const summaryHint = one_line ? `\nINTENT_HINT=${one_line}` : '';
 
   return `LANG=${L}
 LEVEL=L${level}
 GENRE=${genre}
-TOPIC=${title_cn}${seedHint}${summaryHint}
+TOPIC=${title}${seedHint}${summaryHint}
 
 SENTENCES=${p.sentRange[0]}–${p.sentRange[1]}
 REGISTER=${p.register}

@@ -151,7 +151,7 @@ export class ShadowingPacker {
              si.subtopic_id,
              st.title as theme_title,
              st.genre as theme_genre,
-             ss.title_cn as subtopic_title
+             ss.title as subtopic_title
       FROM shadowing_items si
       LEFT JOIN shadowing_themes st ON si.theme_id = st.id
       LEFT JOIN shadowing_subtopics ss ON si.subtopic_id = ss.id
@@ -202,7 +202,7 @@ export class ShadowingPacker {
              sd.subtopic_id,
              st.title as theme_title,
              st.genre as theme_genre,
-             ss.title_cn as subtopic_title
+             ss.title as subtopic_title
       FROM shadowing_drafts sd
       LEFT JOIN shadowing_themes st ON sd.theme_id = st.id
       LEFT JOIN shadowing_subtopics ss ON sd.subtopic_id = ss.id
@@ -430,7 +430,7 @@ export class ShadowingPacker {
         subtopics.rows.forEach(subtopic => {
           if (subtopic.theme_id) {
             allThemeIds.add(subtopic.theme_id);
-            console.log(`子主题 ${subtopic.title_cn} 引用主题: ${subtopic.theme_id}`);
+            console.log(`子主题 ${subtopic.title} 引用主题: ${subtopic.theme_id}`);
           }
         });
         console.log(`从子主题中收集到 ${subtopics.rows.length} 个子主题，引用了 ${allThemeIds.size} 个主题`);
@@ -579,9 +579,9 @@ export class ShadowingPacker {
       'lang',
       'level',
       'genre',
-      'title_cn',
-      'seed_en',
-      'one_line_cn',
+      'title',
+      'seed',
+      'one_line',
       'tags',
       'status',
       'created_by',

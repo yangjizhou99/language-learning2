@@ -39,18 +39,20 @@ import {
   X,
 } from 'lucide-react';
 
-type Lang = 'en' | 'ja' | 'zh';
-type Genre = 'dialogue' | 'monologue' | 'news' | 'lecture';
+type Lang = 'all' | 'en' | 'ja' | 'zh';
+type Genre = 'all' | 'dialogue' | 'monologue' | 'news' | 'lecture';
 
 const LANG_OPTIONS = [
+  { value: 'all', label: '全部' },
   { value: 'ja', label: '日语' },
   { value: 'en', label: '英语' },
   { value: 'zh', label: '中文' },
 ];
 
-const LEVEL_OPTIONS = [1, 2, 3, 4, 5, 6];
+const LEVEL_OPTIONS = ['all', 1, 2, 3, 4, 5, 6] as const;
 
 const GENRE_OPTIONS = [
+  { value: 'all', label: '全部' },
   { value: 'dialogue', label: '对话' },
   { value: 'monologue', label: '独白' },
   { value: 'news', label: '新闻' },
@@ -68,8 +70,9 @@ const LEVEL_GENRE_RESTRICTIONS: Record<number, Genre[]> = {
 };
 
 // 根据等级获取可用的体裁选项
-const getAvailableGenres = (level: number): Genre[] => {
-  return LEVEL_GENRE_RESTRICTIONS[level] || [];
+const getAvailableGenres = (level: number | 'all'): Genre[] => {
+  if (level === 'all') return ['all', 'dialogue', 'monologue', 'news', 'lecture'];
+  return (LEVEL_GENRE_RESTRICTIONS[level] || []) as Genre[];
 };
 
 // 等级详细配置（基于6级难度设计）
@@ -160,9 +163,9 @@ const LEVEL_CONFIG: Record<
 };
 
 export default function ThemesPage() {
-  const [lang, setLang] = useState<Lang>('ja');
-  const [level, setLevel] = useState<1 | 2 | 3 | 4 | 5 | 6>(3);
-  const [genre, setGenre] = useState<Genre>('monologue');
+  const [lang, setLang] = useState<Lang>('all');
+  const [level, setLevel] = useState<'all' | 1 | 2 | 3 | 4 | 5 | 6>('all');
+  const [genre, setGenre] = useState<Genre>('all');
   const [q, setQ] = useState('');
 
   const [items, setItems] = useState<any[]>([]);
@@ -205,6 +208,7 @@ export default function ThemesPage() {
   const [runningTasks, setRunningTasks] = useState(0);
   const [queuePaused, setQueuePaused] = useState(false);
   const [autoStart, setAutoStart] = useState(false);
+  const [drainOnce, setDrainOnce] = useState(false);
 
   // 获取认证头信息
   const getAuthHeaders = async (): Promise<Record<string, string>> => {
@@ -218,7 +222,10 @@ export default function ThemesPage() {
   async function load() {
     setLoading(true);
     try {
-      const qs = new URLSearchParams({ lang, level: String(level), genre });
+      const qs = new URLSearchParams();
+      if (lang !== 'all') qs.set('lang', lang);
+      if (level !== 'all') qs.set('level', String(level));
+      if (genre !== 'all') qs.set('genre', genre);
       const r = await fetch(`/api/admin/shadowing/themes?${qs.toString()}`, {
         headers: await getAuthHeaders(),
       });
@@ -292,10 +299,10 @@ export default function ThemesPage() {
   useEffect(() => {
     const availableGenres = getAvailableGenres(level);
     if (!availableGenres.includes(genre)) {
-      // 如果当前体裁不可用，自动选择第一个可用的体裁
+      // 当等级为全部时，允许体裁选择全部
       setGenre(availableGenres[0]);
     }
-  }, [level, genre]);
+  }, [level]);
 
   function toggleAll(v: boolean) {
     const m: Record<string, boolean> = {};
@@ -308,11 +315,17 @@ export default function ThemesPage() {
   }
 
   function openNew() {
+    const defaultLevel: 1 | 2 | 3 | 4 | 5 | 6 = (level === 'all' ? 1 : level);
+    const defaultLang: Exclude<Lang, 'all'> = (lang === 'all' ? 'ja' : lang);
+    const defaultGenre: Exclude<Genre, 'all'> = (genre === 'all'
+      ? (getAvailableGenres(defaultLevel).find((g) => g !== 'all') as Exclude<Genre, 'all'>)
+      : genre);
+
     setEditing({
       id: undefined,
-      lang,
-      level,
-      genre,
+      lang: defaultLang,
+      level: defaultLevel,
+      genre: defaultGenre,
       title: '',
       desc: '',
       status: 'active',
@@ -544,7 +557,7 @@ export default function ThemesPage() {
       const endpoint =
         task.type === 'themes'
           ? '/api/admin/shadowing/themes/generate'
-          : '/api/admin/shadowing/subtopics/generate-stream';
+          : '/api/admin/shadowing/subtopics/generate';
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -706,7 +719,7 @@ export default function ThemesPage() {
   // 处理任务队列
   useEffect(() => {
     const processQueue = async () => {
-      if (queuePaused || !autoStart) return; // 如果队列暂停或未开启自动开始，不处理新任务
+      if (queuePaused || (!autoStart && !drainOnce)) return;
 
       const pendingTasks = taskQueue.filter((t) => t.status === 'pending');
       const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
@@ -715,19 +728,22 @@ export default function ThemesPage() {
         const task = pendingTasks[i];
         executeTask(task.id);
       }
+
+      if (pendingTasks.length === 0 && runningTasks === 0 && drainOnce) {
+        setDrainOnce(false);
+      }
     };
 
     processQueue();
-  }, [taskQueue, maxConcurrent, runningTasks, queuePaused, autoStart]);
+  }, [taskQueue, maxConcurrent, runningTasks, queuePaused, autoStart, drainOnce]);
 
   // 当运行中的任务数量变化时，自动处理队列
   useEffect(() => {
-    if (autoStart && !queuePaused) {
+    if ((autoStart || drainOnce) && !queuePaused) {
       const pendingTasks = taskQueue.filter((t) => t.status === 'pending');
       const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
 
       if (canStart > 0) {
-        // 延迟一点时间再处理，避免状态更新冲突
         const timer = setTimeout(() => {
           pendingTasks.slice(0, canStart).forEach((task) => {
             executeTask(task.id);
@@ -736,8 +752,12 @@ export default function ThemesPage() {
 
         return () => clearTimeout(timer);
       }
+
+      if (pendingTasks.length === 0 && runningTasks === 0 && drainOnce) {
+        setDrainOnce(false);
+      }
     }
-  }, [runningTasks, autoStart, queuePaused, maxConcurrent, taskQueue]);
+  }, [runningTasks, autoStart, drainOnce, queuePaused, maxConcurrent, taskQueue]);
 
   // 任务控制函数
   function pauseTask(taskId: string) {
@@ -828,6 +848,7 @@ export default function ThemesPage() {
   }
 
   function startAllPendingTasks() {
+    setDrainOnce(true);
     const pendingTasks = taskQueue.filter((t) => t.status === 'pending');
     const canStart = Math.min(pendingTasks.length, maxConcurrent - runningTasks);
 
@@ -857,28 +878,49 @@ export default function ThemesPage() {
       return;
     }
 
+    let added = 0;
+    let skipped = 0;
     // 为每个选中的主题添加生成小主题的任务
     selectedThemes.forEach((theme) => {
+      const effectiveLang = (lang !== 'all' ? lang : (theme.lang as Exclude<Lang, 'all'>));
+      const effectiveLevel = (level !== 'all' ? level : (theme.level as 1 | 2 | 3 | 4 | 5 | 6));
+      const effectiveGenre = (genre !== 'all' ? genre : (theme.genre as Exclude<Genre, 'all'>));
+
+      if (!effectiveLang || !effectiveLevel || !effectiveGenre) {
+        skipped += 1;
+        return;
+      }
+
       addTaskToQueue('subtopics', {
         theme_id: theme.id,
         theme_title_cn: theme.title,
-        lang,
-        level,
-        genre,
+        lang: effectiveLang,
+        level: effectiveLevel,
+        genre: effectiveGenre,
         count: aiGenerationCount,
         provider: aiProvider,
         model: aiModel,
         temperature: aiTemperature,
       });
+      added += 1;
     });
 
-    alert(`已为 ${selectedThemes.length} 个主题添加生成小主题任务到队列`);
+    if (added > 0) {
+      alert(`已为 ${added} 个主题添加生成小主题任务到队列${skipped > 0 ? `，另有 ${skipped} 个因缺少信息被跳过` : ''}`);
+    } else {
+      alert('所选主题缺少语言/等级/体裁信息，无法添加到队列');
+    }
   }
 
   // AI 生成大主题（添加到队列）
   function generateThemes() {
     if (!aiModel) {
       alert('请选择 AI 模型');
+      return;
+    }
+
+    if (lang === 'all' || level === 'all' || genre === 'all') {
+      alert('请先在筛选中选择具体的语言、等级和体裁（不能为“全部”）');
       return;
     }
 
@@ -902,12 +944,21 @@ export default function ThemesPage() {
       return;
     }
 
+    const effectiveLang = (lang !== 'all' ? lang : (theme.lang as Exclude<Lang, 'all'>));
+    const effectiveLevel = (level !== 'all' ? level : (theme.level as 1 | 2 | 3 | 4 | 5 | 6));
+    const effectiveGenre = (genre !== 'all' ? genre : (theme.genre as Exclude<Genre, 'all'>));
+
+    if (!effectiveLang || !effectiveLevel || !effectiveGenre) {
+      alert('该主题缺少语言/等级/体裁信息，无法添加到队列');
+      return;
+    }
+
     addTaskToQueue('subtopics', {
       theme_id: theme.id,
       theme_title_cn: theme.title,
-      lang,
-      level,
-      genre,
+      lang: effectiveLang,
+      level: effectiveLevel,
+      genre: effectiveGenre,
       count: aiGenerationCount,
       provider: aiProvider,
       model: aiModel,
@@ -1025,13 +1076,10 @@ export default function ThemesPage() {
               <Select
                 value={String(level)}
                 onValueChange={(v) => {
-                  const newLevel = parseInt(v) as 1 | 2 | 3 | 4 | 5 | 6;
+                  const newLevel = (v === 'all' ? 'all' : (parseInt(v) as 1 | 2 | 3 | 4 | 5 | 6));
                   setLevel(newLevel);
-
-                  // 检查当前体裁是否在新等级中可用
                   const availableGenres = getAvailableGenres(newLevel);
                   if (!availableGenres.includes(genre)) {
-                    // 如果当前体裁不可用，自动选择第一个可用的体裁
                     setGenre(availableGenres[0]);
                   }
                 }}
@@ -1041,8 +1089,8 @@ export default function ThemesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {LEVEL_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={String(opt)}>
-                      L{opt}
+                    <SelectItem key={String(opt)} value={String(opt)}>
+                      {opt === 'all' ? '全部' : `L${opt}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1067,13 +1115,17 @@ export default function ThemesPage() {
               </Select>
               <div className="text-xs text-muted-foreground mt-1 space-y-1">
                 <p>
-                  <strong>等级 L{level}</strong> 可用体裁:{' '}
+                  <strong>{level === 'all' ? '全部等级' : `等级 L${level}`}</strong> 可用体裁:{' '}
                   {getAvailableGenres(level)
                     .map((g) => GENRE_OPTIONS.find((opt) => opt.value === g)?.label)
                     .join('、')}
                 </p>
-                <p>体裁优先: {LEVEL_CONFIG[level]?.genrePriority}</p>
-                <p>主题带宽: {LEVEL_CONFIG[level]?.themeBandwidth}</p>
+                {level !== 'all' && (
+                  <>
+                    <p>体裁优先: {LEVEL_CONFIG[level]?.genrePriority}</p>
+                    <p>主题带宽: {LEVEL_CONFIG[level]?.themeBandwidth}</p>
+                  </>
+                )}
               </div>
             </div>
 

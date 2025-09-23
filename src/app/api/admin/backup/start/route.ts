@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
+import { getSupabaseFor } from '@/lib/supabaseEnv';
 import { getBackupTasks, setBackupTask } from '@/lib/backup-tasks';
+import { createDatabaseConnection, testDatabaseConnection, getTableList, getTableColumns, getTableData, DatabaseType } from '@/lib/backup-db';
 import fsPromises from 'fs/promises';
 import path from 'path';
 
@@ -136,41 +138,54 @@ export async function POST(req: NextRequest) {
       backupType = 'all',
       incremental = false,
       overwriteExisting = false,
-      compareWith = null
+      compareWith = null,
+      databaseType = 'supabase',
+      exportFormat = 'sql',
+      tables
     } = await req.json();
 
     if (!backupPath) {
       return NextResponse.json({ error: '备份路径不能为空' }, { status: 400 });
     }
 
-    if (!['all', 'database', 'storage'].includes(backupType)) {
+    if (!['all', 'database', 'storage', 'question_bank', 'custom', 'shadowing_safe'].includes(backupType)) {
       return NextResponse.json({ error: '无效的备份类型' }, { status: 400 });
+    }
+    // 自定义类型校验
+    if (backupType === 'custom') {
+      if (!Array.isArray(tables) || tables.length === 0 || !tables.every((t: any) => typeof t === 'string')) {
+        return NextResponse.json({ error: '自定义备份需要提供非空的表名数组' }, { status: 400 });
+      }
+    }
+
+    if (!['local', 'prod', 'supabase'].includes(databaseType)) {
+      return NextResponse.json({ error: '无效的数据库类型' }, { status: 400 });
     }
 
     // 检测部署环境并优化备份路径
     const isDeployment = process.env.VERCEL || process.env.NODE_ENV === 'production';
-    let optimizedBackupPath = backupPath;
+    let effectiveBackupPath = backupPath;
     
     // 在部署环境中，优先使用临时目录
     if (isDeployment) {
       if (backupPath === '/tmp/backups' || backupPath.includes('/tmp/')) {
         // 使用系统临时目录
         const os = await import('os');
-        optimizedBackupPath = path.join(os.tmpdir(), 'backups', 'language-learning');
-        console.log(`部署环境：使用优化路径 ${optimizedBackupPath}`);
+        effectiveBackupPath = path.join(os.tmpdir(), 'backups', 'language-learning');
+        console.log(`部署环境：使用优化路径 ${effectiveBackupPath}`);
       }
     }
 
     // 检查备份路径是否存在和可写
     try {
-      await fsPromises.access(optimizedBackupPath);
+      await fsPromises.access(effectiveBackupPath);
       // 检查是否为目录
-      const stats = await fsPromises.stat(optimizedBackupPath);
+      const stats = await fsPromises.stat(effectiveBackupPath);
       if (!stats.isDirectory()) {
         return NextResponse.json(
           { 
             error: '备份路径不是目录',
-            details: `路径 ${optimizedBackupPath} 存在但不是目录`,
+            details: `路径 ${effectiveBackupPath} 存在但不是目录`,
             suggestions: ['请提供目录路径而不是文件路径']
           },
           { status: 400 }
@@ -179,11 +194,11 @@ export async function POST(req: NextRequest) {
     } catch {
       // 尝试创建目录
       try {
-        await fsPromises.mkdir(optimizedBackupPath, { recursive: true });
-        console.log(`成功创建备份目录: ${optimizedBackupPath}`);
+        await fsPromises.mkdir(effectiveBackupPath, { recursive: true });
+        console.log(`成功创建备份目录: ${effectiveBackupPath}`);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : '未知错误';
-        console.error(`创建备份目录失败: ${optimizedBackupPath}`, errorMessage);
+        console.error(`创建备份目录失败: ${effectiveBackupPath}`, errorMessage);
         
         // 在部署环境中提供更多建议
         const suggestions = isDeployment ? [
@@ -221,13 +236,13 @@ export async function POST(req: NextRequest) {
 
     // 验证目录写入权限
     try {
-      const testFile = path.join(optimizedBackupPath, '.backup-test-' + Date.now());
+      const testFile = path.join(effectiveBackupPath, '.backup-test-' + Date.now());
       await fsPromises.writeFile(testFile, 'test');
       await fsPromises.unlink(testFile);
-      console.log(`备份目录写入权限验证成功: ${optimizedBackupPath}`);
+      console.log(`备份目录写入权限验证成功: ${effectiveBackupPath}`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '未知错误';
-      console.error(`备份目录写入权限验证失败: ${optimizedBackupPath}`, errorMessage);
+      console.error(`备份目录写入权限验证失败: ${effectiveBackupPath}`, errorMessage);
       
       return NextResponse.json(
         { 
@@ -239,7 +254,7 @@ export async function POST(req: NextRequest) {
             '考虑使用云存储服务'
           ] : [
             '请检查目录写入权限',
-            '在 Linux/Mac 上尝试: chmod 755 ' + optimizedBackupPath,
+            '在 Linux/Mac 上尝试: chmod 755 ' + effectiveBackupPath,
             '在 Windows 上更改文件夹权限',
             '确保应用有写入权限'
           ],
@@ -253,14 +268,17 @@ export async function POST(req: NextRequest) {
     const tasks = [];
 
     // 根据备份类型创建任务
-    if (backupType === 'all' || backupType === 'database') {
+    if (backupType === 'all' || backupType === 'database' || backupType === 'question_bank' || backupType === 'custom' || backupType === 'shadowing_safe') {
       tasks.push({
         id: `db-${timestamp}`,
         type: 'database',
+        databaseType,
         status: 'pending',
         progress: 0,
         message: '等待开始',
         createdAt: new Date().toISOString(),
+        tables: backupType === 'custom' ? tables : undefined,
+        exportFormat: 'ndjson'  // 默认使用NDJSON格式
       });
     }
 
@@ -280,15 +298,17 @@ export async function POST(req: NextRequest) {
     tasks.forEach((task) => {
       setBackupTask(task.id, { 
         ...task, 
-        backupPath,
+        backupPath: effectiveBackupPath,
         incremental,
         overwriteExisting,
-        compareWith
+        compareWith,
+        databaseType,
+        tables: backupType === 'custom' ? tables : undefined
       });
     });
 
     // 异步执行备份任务
-    executeBackupTasks(tasks, optimizedBackupPath, incremental, overwriteExisting, compareWith);
+    executeBackupTasks(tasks, effectiveBackupPath, incremental, overwriteExisting, compareWith, databaseType, backupType, tables);
 
     return NextResponse.json({ 
       tasks,
@@ -304,21 +324,21 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function executeBackupTasks(tasks: any[], backupPath: string, incremental: boolean, overwriteExisting: boolean, compareWith: string | null = null) {
+async function executeBackupTasks(tasks: any[], backupPath: string, incremental: boolean, overwriteExisting: boolean, compareWith: string | null = null, databaseType: DatabaseType = 'supabase', backupType: 'all' | 'database' | 'storage' | 'question_bank' | 'custom' | 'shadowing_safe' = 'all', tables: string[] | undefined = undefined) {
   // 执行数据库备份
   const dbTask = tasks.find((t) => t.type === 'database');
   if (dbTask) {
-    await executeDatabaseBackup(dbTask.id, backupPath, incremental, overwriteExisting, compareWith);
+    await executeDatabaseBackup(dbTask.id, backupPath, incremental, overwriteExisting, compareWith, databaseType, backupType, tables);
   }
 
   // 执行存储桶备份
   const storageTask = tasks.find((t) => t.type === 'storage');
   if (storageTask) {
-    await executeStorageBackup(storageTask.id, backupPath, incremental, overwriteExisting, compareWith);
+    await executeStorageBackup(storageTask.id, backupPath, incremental, overwriteExisting, compareWith, databaseType);
   }
 }
 
-async function executeDatabaseBackup(taskId: string, backupPath: string, incremental: boolean = false, overwriteExisting: boolean = false, compareWith: string | null = null) {
+async function executeDatabaseBackup(taskId: string, backupPath: string, incremental: boolean = false, overwriteExisting: boolean = false, compareWith: string | null = null, databaseType: DatabaseType = 'supabase', backupType: 'all' | 'database' | 'storage' | 'question_bank' | 'custom' | 'shadowing_safe' = 'all', customTables: string[] | undefined = undefined) {
   const backupTasks = getBackupTasks();
   const task = backupTasks.get(taskId);
   if (!task) return;
@@ -326,18 +346,50 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
   try {
     // 更新状态为运行中
     task.status = 'running';
-    task.message = '正在连接数据库...';
+    task.message = `正在连接${databaseType === 'local' ? '本地' : databaseType === 'prod' ? '生产环境' : 'Supabase'}数据库...`;
     backupTasks.set(taskId, task);
 
-    const supabase = getServiceSupabase();
+    // 根据数据库类型获取表列表
+    console.log(`开始获取${databaseType}数据库表列表...`);
+    let tables = await getTableList(databaseType);
 
-    // 获取所有表名 - 使用 RPC 函数查询
-    console.log('开始获取表列表...');
-    const { data: tables, error: tablesError } = await supabase.rpc('get_table_list');
+    // 如果仅备份题库相关表，则过滤表列表
+    if (backupType === 'question_bank') {
+      const qbTables = new Set<string>([
+        'shadowing_items',
+        'cloze_items',
+        'alignment_packs',
+        // 若题库依赖主题/子主题等外键关系，可一并包含
+        'shadowing_themes',
+        'shadowing_subtopics'
+      ]);
+      tables = tables.filter((t) => qbTables.has(t));
+      console.log('题库相关表过滤后列表:', tables);
+    }
 
-    if (tablesError) {
-      console.error('获取表列表失败:', tablesError);
-      throw new Error(`获取表列表失败: ${tablesError.message}`);
+    if (backupType === 'custom') {
+      const desired = new Set<string>((customTables || []).map((t) => t.trim()).filter(Boolean));
+      tables = tables.filter((t) => desired.has(t));
+      if (tables.length === 0) {
+        throw new Error('自定义备份：未匹配到任何有效表，请检查所选表名');
+      }
+      console.log('自定义选择表过滤后列表:', tables);
+    }
+
+    if (backupType === 'shadowing_safe') {
+      // 固定顺序，减少外键/引用依赖问题
+      const order = [
+        'shadowing_themes',
+        'shadowing_subtopics',
+        'shadowing_drafts',
+        'shadowing_items',
+        'shadowing_sessions',
+        'shadowing_attempts'
+      ];
+      const set = new Set(order);
+      tables = order.filter((t) => tables.includes(t));
+      // 明确只导出这6张表
+      console.log('Shadowing安全备份表顺序:', tables);
     }
 
     console.log('获取到表列表:', tables);
@@ -345,6 +397,9 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
     task.message = `找到 ${tables.length} 个表，开始导出...`;
     task.progress = 10;
     backupTasks.set(taskId, task);
+
+    // 默认使用NDJSON导出格式
+    const isNdjsonExport = true;
 
     const sqlContent = [];
     sqlContent.push('-- 数据库备份');
@@ -354,6 +409,136 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
     let totalRows = 0;
     let totalColumns = 0;
 
+<<<<<<< HEAD
+    // 并行导出表 - 对于shadowing_safe改为小并发
+    const CONCURRENT_TABLES = backupType === 'shadowing_safe' ? 2 : 5; // 同时处理的表数量
+    const tableChunks = [];
+    for (let i = 0; i < tables.length; i += CONCURRENT_TABLES) {
+      tableChunks.push(tables.slice(i, i + CONCURRENT_TABLES));
+    }
+
+    const allTableResults = [];
+    let processedTables = 0;
+
+    for (const tableChunk of tableChunks) {
+      // 并行处理每个表
+      const chunkPromises = tableChunk.map(async (tableName) => {
+        try {
+          console.log(`开始并行处理表: ${tableName}`);
+          
+          // 并行获取表结构和数据
+          const [columns, rows] = await Promise.all([
+            getTableColumns(databaseType, tableName),
+            getTableData(databaseType, tableName)
+          ]);
+
+          totalColumns += columns.length;
+          totalRows += rows ? rows.length : 0;
+
+          // 生成表的SQL内容
+          const tableSQL = [];
+          
+          // 生成CREATE TABLE语句（干净版本，无DEFAULT）
+          tableSQL.push(`-- 表: ${tableName}`);
+          tableSQL.push(`DROP TABLE IF EXISTS "${tableName}" CASCADE;`);
+          tableSQL.push(`CREATE TABLE "${tableName}" (`);
+
+          const columnDefs = columns.map((col: any) => {
+            let def = `  "${col.column_name}" ${col.data_type}`;
+            if (col.is_nullable === false || col.is_nullable === 'NO') def += ' NOT NULL';
+            // 为提高恢复兼容性，跳过 DEFAULT（常见为 ARRAY[...] 或复杂表达式），避免目标库解析差异导致失败
+            return def;
+          });
+
+          tableSQL.push(columnDefs.join(',\n'));
+          tableSQL.push(');');
+          tableSQL.push('');
+
+          if (rows && rows.length > 0) {
+            tableSQL.push(`-- 数据: ${tableName} (${rows.length} 行)`);
+            
+            // 优化批处理大小 - 对shadowing_safe使用更小批次，降低失败概率
+            const defaultBatch = Math.max(500, Math.min(2000, Math.floor(10000 / columns.length)));
+            const batchSize = backupType === 'shadowing_safe' ? Math.min(500, defaultBatch) : defaultBatch;
+            
+            for (let j = 0; j < rows.length; j += batchSize) {
+              const batch = rows.slice(j, j + batchSize);
+              
+              // 并行处理数据行
+              const values = await Promise.all(batch.map(async (row) => {
+                const rowValues = columns.map((col: any) => {
+                  const raw = row[col.column_name];
+                  const dataType = (col.data_type || '').toLowerCase();
+                  if (raw === null || raw === undefined) return 'NULL';
+
+                  // 数组类型处理：优先检测值本身是否为数组
+                  if (Array.isArray(raw)) {
+                    const items = raw.map((it) => {
+                      if (it === null || it === undefined) return 'NULL';
+                      const s = String(it).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+                      return `"${s}"`;
+                    });
+                    // 默认按 text[] 处理，适配项目常见数组列（如 text[]）
+                    return `'{${items.join(',')}}'::text[]`;
+                  }
+
+                  // JSON/JSONB
+                  if (dataType.includes('json')) {
+                    return `'${JSON.stringify(raw).replace(/'/g, "''")}'::jsonb`;
+                  }
+
+                  // 布尔
+                  if (dataType === 'boolean') {
+                    return raw ? 'TRUE' : 'FALSE';
+                  }
+
+                  // 数字类型
+                  if (/(integer|bigint|smallint|numeric|real|double precision|decimal)/.test(dataType)) {
+                    const num = Number(raw);
+                    return Number.isFinite(num) ? String(num) : 'NULL';
+                  }
+
+                  // 其它统一本为字符串
+                  return `'${String(raw).replace(/'/g, "''")}'`;
+                });
+                return `(${rowValues.join(', ')})`;
+              }));
+
+              tableSQL.push(`INSERT INTO "${tableName}" (${columns.map((c: any) => `"${c.column_name}"`).join(', ')}) VALUES`);
+              tableSQL.push(values.join(',\n') + ';');
+              tableSQL.push('');
+            }
+          }
+
+          console.log(`完成处理表: ${tableName}, 行数: ${rows ? rows.length : 0}`);
+          return { 
+            tableName, 
+            sql: tableSQL.join('\n'), 
+            rowCount: rows ? rows.length : 0,
+            rows: isNdjsonExport ? rows : undefined,
+            columns: isNdjsonExport ? columns : undefined
+          };
+        } catch (err) {
+          console.error(`处理表 ${tableName} 时出错:`, err);
+          return { 
+            tableName, 
+            sql: `-- 错误: 无法导出表 ${tableName}\n-- ${err instanceof Error ? err.message : '未知错误'}\n`, 
+            rowCount: 0,
+            error: true 
+          };
+        }
+      });
+
+      // 等待当前批次完成
+      const chunkResults = await Promise.all(chunkPromises);
+      allTableResults.push(...chunkResults);
+      
+      processedTables += tableChunk.length;
+      const progressPercent = Math.round(10 + (processedTables / tables.length) * 70);
+      task.message = `并行导出完成 ${processedTables}/${tables.length} 个表 (已导出 ${allTableResults.reduce((sum, r) => sum + r.rowCount, 0)} 行)`;
+      task.progress = progressPercent;
+      backupTasks.set(taskId, task);
+=======
     // 并行处理表结构查询（优化性能）
     console.log('并行获取表结构...');
     task.message = '正在并行获取表结构...';
@@ -503,35 +688,134 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
           sqlContent.push('');
         }
       }
+>>>>>>> origin/main
     }
+
+    // 合并所有表的SQL
+    allTableResults.forEach(result => {
+      sqlContent.push(result.sql);
+    });
+
+    const successTables = allTableResults.filter(r => !r.error).length;
+    const errorTables = allTableResults.filter(r => r.error).length;
+    console.log(`表导出完成: 成功 ${successTables} 个，失败 ${errorTables} 个`);
 
     // 创建ZIP压缩文件
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T').join('_');
-    const zipFilePath = path.join(backupPath, `database-backup-${timestamp}.zip`);
+    const dbTypePrefix = databaseType === 'local' ? 'local' : databaseType === 'prod' ? 'prod' : 'supabase';
+    let scopePrefix = 'database-ndjson';
+    if (backupType === 'question_bank') scopePrefix = 'question-bank-ndjson';
+    else if (backupType === 'custom') scopePrefix = 'custom-database-ndjson';
+    else if (backupType === 'shadowing_safe') scopePrefix = 'shadowing-safe-ndjson';
     
-    // 创建临时SQL文件
-    task.message = '正在写入SQL文件...';
+    const zipFilePath = path.join(backupPath, `${scopePrefix}-backup-${dbTypePrefix}-${timestamp}.zip`);
+    
+    // NDJSON导出格式（默认）
+    task.message = '正在创建NDJSON格式文件...';
     task.progress = 80;
     backupTasks.set(taskId, task);
     
-    const tempSqlFilePath = path.join(backupPath, `temp-database-${timestamp}.sql`);
-    await fsPromises.writeFile(tempSqlFilePath, sqlContent.join('\n'), 'utf8');
-
-    // 创建ZIP文件
+    // 创建临时目录
+    const tempDir = path.join(backupPath, `temp-ndjson-${timestamp}`);
+    await fsPromises.mkdir(tempDir, { recursive: true });
+    
+    // 1. 创建schema.clean.sql (只包含DDL，无DEFAULT)
+    const cleanSchemaContent = [];
+    cleanSchemaContent.push('-- 数据库schema备份 (Clean版本)');
+    cleanSchemaContent.push(`-- 创建时间: ${new Date().toISOString()}`);
+    cleanSchemaContent.push('-- 此文件仅包含表结构定义，无数据和DEFAULT表达式');
+    cleanSchemaContent.push('');
+    
+    allTableResults.forEach(result => {
+      if (!result.error) {
+        const lines = result.sql.split('\n');
+        const schemaLines = [];
+        let inCreateTable = false;
+        
+        for (const line of lines) {
+          if (line.includes('CREATE TABLE')) {
+            inCreateTable = true;
+          }
+          if (inCreateTable) {
+            schemaLines.push(line);
+            if (line.includes(');')) {
+              inCreateTable = false;
+              schemaLines.push('');
+            }
+          } else if (line.includes('DROP TABLE') || line.startsWith('-- 表:')) {
+            schemaLines.push(line);
+          }
+        }
+        cleanSchemaContent.push(schemaLines.join('\n'));
+      }
+    });
+    
+    const schemaFilePath = path.join(tempDir, 'schema.clean.sql');
+    await fsPromises.writeFile(schemaFilePath, cleanSchemaContent.join('\n'), 'utf8');
+    
+    // 2. 创建data目录和每表的NDJSON文件
+    const dataDir = path.join(tempDir, 'data');
+    await fsPromises.mkdir(dataDir, { recursive: true });
+    
+    const manifest = {
+      version: '1.0',
+      format: 'ndjson',
+      export_type: backupType,
+      database_type: databaseType,
+      created_at: new Date().toISOString(),
+      tables: [] as any[],
+      total_rows: totalRows,
+      total_tables: successTables
+    };
+    
+    for (const result of allTableResults) {
+      if (!result.error && result.rows && result.columns) {
+        const ndjsonFilePath = path.join(dataDir, `${result.tableName}.ndjson`);
+        const ndjsonLines = [];
+        
+        // 将每行转换为JSON对象并写入NDJSON
+        for (const row of result.rows) {
+          const jsonRow: any = {};
+          result.columns.forEach((col: any) => {
+            jsonRow[col.column_name] = row[col.column_name];
+          });
+          ndjsonLines.push(JSON.stringify(jsonRow));
+        }
+        
+        await fsPromises.writeFile(ndjsonFilePath, ndjsonLines.join('\n'), 'utf8');
+        
+        manifest.tables.push({
+          name: result.tableName,
+          rows: result.rowCount,
+          columns: result.columns.length,
+          data_file: `data/${result.tableName}.ndjson`
+        });
+        
+        console.log(`创建NDJSON文件: ${result.tableName}.ndjson (${result.rowCount} 行)`);
+      }
+    }
+    
+    // 3. 创建manifest.json
+    const manifestPath = path.join(tempDir, 'manifest.json');
+    await fsPromises.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
+    
+    // 4. 收集所有文件并创建ZIP
     task.message = '正在创建ZIP压缩文件...';
     task.progress = 90;
     backupTasks.set(taskId, task);
     
-    await createZipFile([{ path: tempSqlFilePath, name: `database-backup-${timestamp}.sql` }], zipFilePath);
+    const files = await collectFilesFromDirectory(tempDir);
+    await createZipFile(files, zipFilePath);
     
-    // 删除临时SQL文件
-    await fsPromises.unlink(tempSqlFilePath);
+    // 5. 清理临时目录
+    await fsPromises.rm(tempDir, { recursive: true, force: true });
 
     const stats = await fsPromises.stat(zipFilePath);
 
     // 更新任务状态
+    const dbTypeName = databaseType === 'local' ? '本地' : databaseType === 'prod' ? '生产环境' : 'Supabase';
     task.status = 'completed';
-    task.message = `数据库备份完成！共导出 ${tables.length} 个表，${totalColumns} 个字段，${totalRows} 行数据，文件大小: ${(stats.size / 1024 / 1024).toFixed(2)} MB`;
+    task.message = `${dbTypeName}${backupType === 'question_bank' ? '题库相关表' : '数据库'}备份完成！共导出 ${tables.length} 个表，${totalColumns} 个字段，${totalRows} 行数据，文件大小: ${(stats.size / 1024 / 1024).toFixed(2)} MB`;
     task.progress = 100;
     task.filePath = zipFilePath;
     task.fileSize = stats.size;
@@ -550,7 +834,7 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
   }
 }
 
-async function executeStorageBackup(taskId: string, backupPath: string, incremental: boolean = false, overwriteExisting: boolean = false, compareWith: string | null = null) {
+async function executeStorageBackup(taskId: string, backupPath: string, incremental: boolean = false, overwriteExisting: boolean = false, compareWith: string | null = null, databaseType: DatabaseType = 'supabase') {
   const backupTasks = getBackupTasks();
   const task = backupTasks.get(taskId);
   if (!task) return;
@@ -558,10 +842,10 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
   try {
     // 更新状态为运行中
     task.status = 'running';
-    task.message = '正在连接存储服务...';
+    task.message = `正在连接${databaseType === 'prod' ? '生产' : databaseType === 'local' ? '本地' : '默认'}存储服务...`;
     backupTasks.set(taskId, task);
 
-    const supabase = getServiceSupabase();
+    const supabase = getSupabaseFor(databaseType);
 
     // 获取所有存储桶
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
@@ -710,6 +994,66 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
     task.progress = 10;
     backupTasks.set(taskId, task);
 
+<<<<<<< HEAD
+    // 并行下载存储桶文件 - 高性能优化
+    const CONCURRENT_BUCKETS = 2; // 同时处理的存储桶数量（降低以避免API限制）
+    const bucketChunks = [];
+    for (let i = 0; i < buckets.length; i += CONCURRENT_BUCKETS) {
+      bucketChunks.push(buckets.slice(i, i + CONCURRENT_BUCKETS));
+    }
+
+    let processedBuckets = 0;
+    let bucketResults = [];
+
+    for (const bucketChunk of bucketChunks) {
+      // 并行处理存储桶
+      const bucketPromises = bucketChunk.map(async (bucket) => {
+        const bucketDir = path.join(tempStorageDir, bucket.name);
+        await fsPromises.mkdir(bucketDir, { recursive: true });
+
+        try {
+          console.log(`开始并行处理存储桶: ${bucket.name}`);
+          
+          // 递归获取所有文件（包括子目录）
+          const allFiles = await getAllFilesFromBucket(supabase, bucket.name, '');
+          console.log(`存储桶 ${bucket.name} 中找到 ${allFiles.length} 个文件`);
+          
+          return { bucket, bucketDir, allFiles, error: null };
+        } catch (err) {
+          console.error(`获取存储桶 ${bucket.name} 文件列表失败:`, err);
+          return { bucket, bucketDir: null, allFiles: [], error: err };
+        }
+      });
+
+      // 等待当前批次完成
+      const chunkResults = await Promise.all(bucketPromises);
+      bucketResults.push(...chunkResults);
+      
+      processedBuckets += bucketChunk.length;
+      task.message = `已获取 ${processedBuckets}/${buckets.length} 个存储桶的文件列表`;
+      task.progress = 10 + (processedBuckets / buckets.length) * 20;
+      backupTasks.set(taskId, task);
+    }
+
+    // 现在并行下载所有文件
+    const CONCURRENT_DOWNLOADS = 10; // 同时下载的文件数量
+    const allDownloadTasks = [];
+    
+    for (const bucketResult of bucketResults) {
+      if (bucketResult.error || !bucketResult.bucketDir) continue;
+      
+      const { bucket, bucketDir, allFiles } = bucketResult;
+      
+      // 为当前存储桶创建下载任务
+      for (const filePath of allFiles) {
+        allDownloadTasks.push({
+          bucket,
+          bucketDir,
+          filePath,
+          localPath: path.join(bucketDir, filePath)
+        });
+      }
+=======
     // 并行处理存储桶文件下载（优化性能）
     console.log('开始并行下载存储桶文件...');
     task.message = '正在并行下载存储桶文件...';
@@ -842,12 +1186,96 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
       task.message = `正在处理存储桶: ${Math.min(i + concurrencyLimit, buckets.length)}/${buckets.length}`;
       task.progress = bucketProgress;
       backupTasks.set(taskId, task);
+>>>>>>> origin/main
     }
+
+    // 并行下载所有文件
+    const totalDownloadTasks = allDownloadTasks.length;
+    
+    console.log(`开始并行下载 ${totalDownloadTasks} 个文件，并发数: ${CONCURRENT_DOWNLOADS}`);
+    
+    // 分批并行下载
+    for (let i = 0; i < allDownloadTasks.length; i += CONCURRENT_DOWNLOADS) {
+      const batch = allDownloadTasks.slice(i, i + CONCURRENT_DOWNLOADS);
+      
+      const downloadPromises = batch.map(async (downloadTask) => {
+        const { bucket, bucketDir, filePath, localPath } = downloadTask;
+        
+        try {
+          // 如果是增量备份，检查文件是否已存在
+          if (incremental) {
+            const normalizedPath = normalizeFilePath(filePath);
+            let isFound = false;
+            
+            // 多种方式检查文件是否存在
+            if (existingBackupFiles.has(normalizedPath) ||
+                existingBackupFiles.has(`${bucket.name}/${normalizedPath}`)) {
+              isFound = true;
+            }
+            
+            if (!isFound) {
+              for (const existingFile of existingBackupFiles) {
+                if (existingFile.endsWith(`/${normalizedPath}`) || existingFile === normalizedPath) {
+                  isFound = true;
+                  break;
+                }
+              }
+            }
+            
+            if (isFound) {
+              return { success: true, skipped: true, filePath };
+            }
+          }
+
+          // 下载文件
+          const { data, error: downloadError } = await supabase.storage
+            .from(bucket.name)
+            .download(filePath);
+
+          if (downloadError) {
+            throw new Error(`下载失败: ${downloadError.message}`);
+          }
+
+          // 确保目录存在
+          await fsPromises.mkdir(path.dirname(localPath), { recursive: true });
+          
+          // 写入文件
+          const arrayBuffer = await (data as Blob).arrayBuffer();
+          await fsPromises.writeFile(localPath, Buffer.from(arrayBuffer));
+          
+          return { success: true, skipped: false, filePath };
+        } catch (err) {
+          console.error(`下载文件 ${filePath} 失败:`, err);
+          return { success: false, skipped: false, filePath, error: err };
+        }
+      });
+
+      // 等待当前批次完成
+      const batchResults = await Promise.all(downloadPromises);
+      
+      // 统计结果
+      batchResults.forEach(result => {
+        if (result.success) {
+          if (result.skipped) {
+            skippedFiles++;
+          } else {
+            downloadedFiles++;
+          }
+        }
+      });
+
+      const progress = Math.round(30 + ((i + batch.length) / totalDownloadTasks) * 50);
+      task.message = `并行下载进度: ${downloadedFiles}/${totalDownloadTasks} (跳过 ${skippedFiles})`;
+      task.progress = progress;
+      backupTasks.set(taskId, task);
+    }
+
+    console.log(`文件下载完成: 成功 ${downloadedFiles} 个，跳过 ${skippedFiles} 个`);
 
     // 增量备份只保存新文件，不需要合并现有文件
     if (incremental) {
       task.message = '增量备份：只保存新下载的文件...';
-      task.progress = downloadProgressMax + 5;
+      task.progress = 85;
       backupTasks.set(taskId, task);
       console.log(`增量备份：只保存 ${downloadedFiles} 个新文件，跳过 ${skippedFiles} 个现有文件`);
     }

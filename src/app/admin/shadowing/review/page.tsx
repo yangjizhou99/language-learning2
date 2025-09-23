@@ -1485,6 +1485,66 @@ export default function ShadowingReviewList() {
           <span>对话: {stats.dialogueCount}</span>
           <span>•</span>
           <span>独白: {stats.monologueCount}</span>
+          <span>•</span>
+          <button
+            className="px-2 py-1 border rounded hover:bg-gray-50"
+            onClick={async () => {
+              try {
+                // 1) 先 dry-run 预演
+                const {
+                  data: { session },
+                } = await supabase.auth.getSession();
+                const token = session?.access_token;
+
+                const res = await fetch('/api/admin/shadowing/cleanup-orphan-tts', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                  },
+                  body: JSON.stringify({ dryRun: true }),
+                });
+                const j = await res.json();
+                if (!res.ok) throw new Error(j?.error || '清理失败');
+
+                const dryMsg = `预演完成：引用${j.referencedCount} 个，扫描${j.scannedCount} 个，孤儿${j.orphanCount} 个。` +
+                  (j.sampleOrphans?.length ? `\n示例：\n` + j.sampleOrphans.join('\n') : '');
+                alert(dryMsg);
+
+                if (!j.orphanCount || j.orphanCount === 0) {
+                  return;
+                }
+
+                // 2) 二次确认是否删除
+                const ok = window.confirm('是否删除上述孤儿文件？此操作不可撤销。');
+                if (!ok) return;
+
+                // 3) 可选输入最大删除数量
+                const input = window.prompt('请输入最大删除数量（默认1000）：', '1000');
+                let maxDelete = 1000;
+                if (input && /^\d+$/.test(input)) {
+                  maxDelete = Math.max(1, Math.min(100000, parseInt(input, 10)));
+                }
+
+                const delRes = await fetch('/api/admin/shadowing/cleanup-orphan-tts', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                  },
+                  body: JSON.stringify({ dryRun: false, maxDelete }),
+                });
+                const dj = await delRes.json();
+                if (!delRes.ok) throw new Error(dj?.error || '删除失败');
+                alert(`清理完成：删除 ${dj.deletedCount} / 孤儿 ${dj.orphanCount}。`);
+              } catch (e: any) {
+                alert(`清理失败：${e.message}`);
+              }
+            }}
+            title="清理未被引用的 tts 音频文件（默认仅预演）"
+          >
+            清理未引用音频
+          </button>
         </div>
       </div>
 
