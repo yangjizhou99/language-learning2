@@ -193,9 +193,14 @@ export async function POST(req: NextRequest) {
     } catch {}
 
     await createZipFile(files, outZip);
-    const data = await fs.readFile(outZip);
+    const fileBuffer = await fs.readFile(outZip);
+    const arrayBuffer = fileBuffer.buffer.slice(
+      fileBuffer.byteOffset,
+      fileBuffer.byteOffset + fileBuffer.byteLength,
+    ) as ArrayBuffer;
+    const body = new Blob([arrayBuffer], { type: 'application/zip' });
 
-    return new NextResponse(data, {
+    return new NextResponse(body, {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',

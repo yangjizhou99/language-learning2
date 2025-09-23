@@ -85,8 +85,13 @@ async function main() {
   const supabase = getClient();
   // 按顺序执行核心迁移
   const files = [
-    'supabase/migrations/20250918041810_remote_public_schema.sql',
+    // 先确保 exec_sql 等函数存在
     'supabase/migrations/20250120000009_backup_restore_function.sql',
+    // 清空 public 内的表/视图/序列/自定义类型（不删除函数与 schema）
+    'supabase/migrations/20250923000300_wipe_public_objects.sql',
+    // 重建完整远端 schema
+    'supabase/migrations/20250918041810_remote_public_schema.sql',
+    // 后续增量修复/对齐
     'supabase/migrations/20250918100000_add_vocab_srs.sql',
     'supabase/migrations/20250922000000_rename_subtopic_fields.sql',
     'supabase/migrations/20250922001000_audio_url_normalization.sql',
