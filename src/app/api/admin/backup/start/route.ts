@@ -7,33 +7,97 @@ import { createDatabaseConnection, testDatabaseConnection, getTableList, getTabl
 import fsPromises from 'fs/promises';
 import path from 'path';
 
-// 使用archiver创建ZIP文件
+// 使用archiver创建ZIP文件 - 优化版本
 async function createZipFile(files: { path: string; name: string }[], outputPath: string): Promise<void> {
   const archiver = await import('archiver');
   const { createWriteStream } = await import('fs');
   
   return new Promise((resolve, reject) => {
     const output = createWriteStream(outputPath);
-    const archive = archiver.default('zip', { zlib: { level: 9 } });
+    // 降低压缩级别以提高性能，减少内存使用
+    const archive = archiver.default('zip', { 
+      zlib: { level: 3 }, // 从9降低到3，平衡压缩率和性能
+      forceLocalTime: true,
+      forceZip64: false
+    });
+
+    let isResolved = false;
+
+    const cleanup = () => {
+      if (!isResolved) {
+        isResolved = true;
+        output.destroy();
+      }
+    };
+
+    // 设置超时防止无限等待
+    const timeout = setTimeout(() => {
+      console.error('ZIP创建超时，强制结束');
+      cleanup();
+      reject(new Error('ZIP创建超时'));
+    }, 300000); // 5分钟超时
 
     output.on('close', () => {
-      console.log(`ZIP文件创建完成: ${archive.pointer()} bytes`);
-      resolve();
+      if (!isResolved) {
+        clearTimeout(timeout);
+        console.log(`ZIP文件创建完成: ${archive.pointer()} bytes`);
+        isResolved = true;
+        resolve();
+      }
+    });
+
+    output.on('error', (err) => {
+      if (!isResolved) {
+        clearTimeout(timeout);
+        console.error('ZIP文件写入失败:', err);
+        cleanup();
+        isResolved = true;
+        reject(err);
+      }
     });
 
     archive.on('error', (err) => {
-      console.error('创建ZIP文件失败:', err);
-      reject(err);
+      if (!isResolved) {
+        clearTimeout(timeout);
+        console.error('创建ZIP文件失败:', err);
+        cleanup();
+        isResolved = true;
+        reject(err);
+      }
+    });
+
+    archive.on('warning', (err) => {
+      if (err.code === 'ENOENT') {
+        console.warn('ZIP警告:', err);
+      } else {
+        console.error('ZIP错误:', err);
+        if (!isResolved) {
+          clearTimeout(timeout);
+          cleanup();
+          isResolved = true;
+          reject(err);
+        }
+      }
     });
 
     archive.pipe(output);
 
-    // 添加文件到ZIP
-    for (const file of files) {
-      archive.file(file.path, { name: file.name });
+    // 添加文件到ZIP，添加错误处理
+    try {
+      for (const file of files) {
+        if (file.path && file.name) {
+          archive.file(file.path, { name: file.name });
+        }
+      }
+      archive.finalize();
+    } catch (err) {
+      if (!isResolved) {
+        clearTimeout(timeout);
+        cleanup();
+        isResolved = true;
+        reject(err);
+      }
     }
-
-    archive.finalize();
   });
 }
 
@@ -87,7 +151,6 @@ export async function POST(req: NextRequest) {
     if (!['all', 'database', 'storage', 'question_bank', 'custom', 'shadowing_safe'].includes(backupType)) {
       return NextResponse.json({ error: '无效的备份类型' }, { status: 400 });
     }
-
     // 自定义类型校验
     if (backupType === 'custom') {
       if (!Array.isArray(tables) || tables.length === 0 || !tables.every((t: any) => typeof t === 'string')) {
@@ -137,22 +200,34 @@ export async function POST(req: NextRequest) {
         const errorMessage = err instanceof Error ? err.message : '未知错误';
         console.error(`创建备份目录失败: ${effectiveBackupPath}`, errorMessage);
         
+        // 在部署环境中提供更多建议
+        const suggestions = isDeployment ? [
+          '在部署环境中，建议使用 /tmp/backups 路径',
+          '确保 Vercel 函数有足够的临时存储空间',
+          '考虑使用云存储服务进行备份',
+          '检查函数超时设置'
+        ] : [
+          '请检查路径是否存在',
+          '确保应用有创建目录的权限',
+          '尝试使用绝对路径',
+          '在 Linux/Mac 上检查父目录权限',
+          '在 Windows 上以管理员身份运行'
+        ];
+        
         return NextResponse.json(
           { 
             error: '无法创建备份目录，请检查路径权限',
             details: errorMessage,
-            suggestions: [
-              '请检查路径是否存在',
-              '确保应用有创建目录的权限',
-              '尝试使用绝对路径',
-              '在 Linux/Mac 上检查父目录权限',
-              '在 Windows 上以管理员身份运行'
-            ],
-            alternativePaths: [
+            suggestions,
+            alternativePaths: isDeployment ? [
+              '/tmp/backups',
+              '/tmp/language-learning-backups'
+            ] : [
               '/tmp/backups',
               './backups',
               '../backups'
-            ]
+            ],
+            isDeployment
           },
           { status: 400 }
         );
@@ -173,12 +248,17 @@ export async function POST(req: NextRequest) {
         { 
           error: '备份目录无写入权限',
           details: errorMessage,
-          suggestions: [
+          suggestions: isDeployment ? [
+            '在部署环境中，确保使用 /tmp/ 路径',
+            '检查 Vercel 函数的临时存储限制',
+            '考虑使用云存储服务'
+          ] : [
             '请检查目录写入权限',
-            '在 Linux/Mac 上尝试: chmod 755 ' + backupPath,
+            '在 Linux/Mac 上尝试: chmod 755 ' + effectiveBackupPath,
             '在 Windows 上更改文件夹权限',
             '确保应用有写入权限'
-          ]
+          ],
+          isDeployment
         },
         { status: 400 }
       );
@@ -329,6 +409,7 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
     let totalRows = 0;
     let totalColumns = 0;
 
+<<<<<<< HEAD
     // 并行导出表 - 对于shadowing_safe改为小并发
     const CONCURRENT_TABLES = backupType === 'shadowing_safe' ? 2 : 5; // 同时处理的表数量
     const tableChunks = [];
@@ -457,6 +538,157 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
       task.message = `并行导出完成 ${processedTables}/${tables.length} 个表 (已导出 ${allTableResults.reduce((sum, r) => sum + r.rowCount, 0)} 行)`;
       task.progress = progressPercent;
       backupTasks.set(taskId, task);
+=======
+    // 并行处理表结构查询（优化性能）
+    console.log('并行获取表结构...');
+    task.message = '正在并行获取表结构...';
+    task.progress = 15;
+    backupTasks.set(taskId, task);
+
+    const tableStructures = await Promise.all(
+      tables.map(async (table: any, index: number) => {
+        const tableName = table.table_name;
+        console.log(`获取表结构: ${tableName} (${index + 1}/${tables.length})`);
+        
+        try {
+          const { data: columns, error: columnsError } = await supabase.rpc('get_table_columns', {
+            table_name_param: tableName
+          });
+
+          if (columnsError) {
+            console.error(`获取表 ${tableName} 结构失败:`, columnsError);
+            return null;
+          }
+
+          return { tableName, columns };
+        } catch (err) {
+          console.error(`处理表 ${tableName} 结构时出错:`, err);
+          return null;
+        }
+      })
+    );
+
+    // 过滤掉失败的表
+    const validStructures = tableStructures.filter(Boolean);
+    totalColumns = validStructures.reduce((sum, struct) => sum + struct.columns.length, 0);
+
+    console.log('并行获取表数据...');
+    task.message = '正在并行获取表数据...';
+    task.progress = 25;
+    backupTasks.set(taskId, task);
+
+    // 并行处理表数据查询（限制并发数避免过载）
+    const concurrencyLimit = 2; // 降低并发数，避免数据库过载
+    const tableDataResults = [];
+    
+    for (let i = 0; i < validStructures.length; i += concurrencyLimit) {
+      const batch = validStructures.slice(i, i + concurrencyLimit);
+      
+      const batchResults = await Promise.all(
+        batch.map(async (struct, batchIndex) => {
+          const globalIndex = i + batchIndex;
+          const tableName = struct.tableName;
+          
+          console.log(`获取表数据: ${tableName} (${globalIndex + 1}/${validStructures.length})`);
+          
+          // 更新进度
+          const progressPercent = Math.round(25 + (globalIndex / validStructures.length) * 50);
+          task.message = `正在导出表数据: ${tableName} (${globalIndex + 1}/${validStructures.length})`;
+          task.progress = progressPercent;
+          backupTasks.set(taskId, task);
+
+          try {
+            const { data: rows, error: dataError } = await supabase
+              .from(tableName)
+              .select('*');
+
+            if (dataError) {
+              console.error(`获取表 ${tableName} 数据失败:`, dataError);
+              return { tableName, columns: struct.columns, rows: [], error: dataError };
+            }
+
+            return { tableName, columns: struct.columns, rows: rows || [] };
+          } catch (err) {
+            console.error(`处理表 ${tableName} 数据时出错:`, err);
+            return { tableName, columns: struct.columns, rows: [], error: err };
+          }
+        })
+      );
+      
+      tableDataResults.push(...batchResults);
+    }
+
+    // 生成SQL内容
+    console.log('生成SQL内容...');
+    task.message = '正在生成SQL文件...';
+    task.progress = 80;
+    backupTasks.set(taskId, task);
+
+    // 在部署环境中监控内存使用
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      const memUsage = process.memoryUsage();
+      console.log(`内存使用情况: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, HeapUsed=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
+      
+      // 如果内存使用过高，建议垃圾回收
+      if (memUsage.heapUsed > 200 * 1024 * 1024) { // 200MB
+        console.log('内存使用较高，执行垃圾回收...');
+        if (global.gc) {
+          global.gc();
+        }
+      }
+    }
+
+    for (const result of tableDataResults) {
+      if (result.error) {
+        const errorMessage = result.error instanceof Error ? result.error.message : String(result.error);
+        sqlContent.push(`-- 错误: 无法导出表 ${result.tableName} - ${errorMessage}`);
+        sqlContent.push('');
+        continue;
+      }
+      
+      const { tableName, columns, rows } = result;
+      
+      // 生成CREATE TABLE语句
+      sqlContent.push(`-- 表: ${tableName}`);
+      sqlContent.push(`DROP TABLE IF EXISTS "${tableName}" CASCADE;`);
+      sqlContent.push(`CREATE TABLE "${tableName}" (`);
+
+      const columnDefs = columns.map((col: any) => {
+        let def = `  "${col.column_name}" ${col.data_type}`;
+        if (col.is_nullable === 'NO') def += ' NOT NULL';
+        if (col.column_default) def += ` DEFAULT ${col.column_default}`;
+        return def;
+      });
+
+      sqlContent.push(columnDefs.join(',\n'));
+      sqlContent.push(');');
+      sqlContent.push('');
+
+      if (rows.length > 0) {
+        totalRows += rows.length;
+        sqlContent.push(`-- 数据: ${tableName} (${rows.length} 行)`);
+        
+        // 分批插入数据（减小批次大小以节省内存）
+        const batchSize = 500; // 从1000减少到500
+        for (let j = 0; j < rows.length; j += batchSize) {
+          const batch = rows.slice(j, j + batchSize);
+          const values = batch.map((row) => {
+            const rowValues = columns.map((col: any) => {
+              const value = row[col.column_name];
+              if (value === null) return 'NULL';
+              if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
+              if (typeof value === 'object') return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
+              return String(value);
+            });
+            return `(${rowValues.join(', ')})`;
+          });
+
+          sqlContent.push(`INSERT INTO "${tableName}" (${columns.map((c: any) => `"${c.column_name}"`).join(', ')}) VALUES`);
+          sqlContent.push(values.join(',\n') + ';');
+          sqlContent.push('');
+        }
+      }
+>>>>>>> origin/main
     }
 
     // 合并所有表的SQL
@@ -762,6 +994,7 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
     task.progress = 10;
     backupTasks.set(taskId, task);
 
+<<<<<<< HEAD
     // 并行下载存储桶文件 - 高性能优化
     const CONCURRENT_BUCKETS = 2; // 同时处理的存储桶数量（降低以避免API限制）
     const bucketChunks = [];
@@ -820,6 +1053,140 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
           localPath: path.join(bucketDir, filePath)
         });
       }
+=======
+    // 并行处理存储桶文件下载（优化性能）
+    console.log('开始并行下载存储桶文件...');
+    task.message = '正在并行下载存储桶文件...';
+    task.progress = 15;
+    backupTasks.set(taskId, task);
+
+    // 限制并发数避免过载
+    const concurrencyLimit = 2; // 存储桶并发数
+    const fileConcurrencyLimit = 3; // 文件下载并发数
+    
+    for (let i = 0; i < buckets.length; i += concurrencyLimit) {
+      const bucketBatch = buckets.slice(i, i + concurrencyLimit);
+      
+      await Promise.all(
+        bucketBatch.map(async (bucket, batchIndex) => {
+          const globalIndex = i + batchIndex;
+          const bucketDir = path.join(tempStorageDir, bucket.name);
+          await fsPromises.mkdir(bucketDir, { recursive: true });
+
+          try {
+            console.log(`开始处理存储桶: ${bucket.name} (${globalIndex + 1}/${buckets.length})`);
+            
+            // 递归获取所有文件（包括子目录）
+            const allFiles = await getAllFilesFromBucket(supabase, bucket.name, '');
+            console.log(`存储桶 ${bucket.name} 中找到 ${allFiles.length} 个文件`);
+            
+            if (allFiles.length > 0) {
+              // 过滤需要下载的文件（增量备份）
+              let filesToDownload = allFiles;
+              if (incremental) {
+                filesToDownload = allFiles.filter(filePath => {
+                  const normalizedPath = normalizeFilePath(filePath);
+                  let isFound = false;
+                  
+                  // 方式1：直接匹配
+                  if (existingBackupFiles.has(normalizedPath)) {
+                    isFound = true;
+                  }
+                  
+                  // 方式2：尝试添加存储桶名称前缀
+                  if (!isFound) {
+                    const withBucketPrefix = `${bucket.name}/${normalizedPath}`;
+                    if (existingBackupFiles.has(withBucketPrefix)) {
+                      isFound = true;
+                    }
+                  }
+                  
+                  // 方式3：尝试从现有文件中查找包含此路径的文件
+                  if (!isFound) {
+                    for (const existingFile of existingBackupFiles) {
+                      if (existingFile.endsWith(`/${normalizedPath}`) || existingFile === normalizedPath) {
+                        isFound = true;
+                        break;
+                      }
+                    }
+                  }
+                  
+                  if (isFound) {
+                    skippedFiles++;
+                    return false; // 跳过此文件
+                  }
+                  return true; // 需要下载此文件
+                });
+                
+                console.log(`存储桶 ${bucket.name}: 总文件 ${allFiles.length}, 需要下载 ${filesToDownload.length}, 跳过 ${allFiles.length - filesToDownload.length}`);
+              }
+
+              // 并行下载文件（限制并发数）
+              for (let j = 0; j < filesToDownload.length; j += fileConcurrencyLimit) {
+                const fileBatch = filesToDownload.slice(j, j + fileConcurrencyLimit);
+                
+                await Promise.all(
+                  fileBatch.map(async (filePath, fileIndex) => {
+                    try {
+                      const { data, error: downloadError } = await supabase.storage
+                        .from(bucket.name)
+                        .download(filePath);
+
+                      if (downloadError) {
+                        console.error(`下载文件 ${filePath} 失败:`, downloadError);
+                        return;
+                      }
+
+                      const localFilePath = path.join(bucketDir, filePath);
+                      const localDir = path.dirname(localFilePath);
+                      await fsPromises.mkdir(localDir, { recursive: true });
+                      
+                      const buffer = await data.arrayBuffer();
+                      await fsPromises.writeFile(localFilePath, Buffer.from(buffer));
+
+                      downloadedFiles++;
+                      
+                      // 更新进度（减少更新频率以提高性能）
+                      if (downloadedFiles % 10 === 0 || downloadedFiles === totalFiles) {
+                        const progressPercent = Math.round(15 + (downloadedFiles / totalFiles) * downloadProgressMax);
+                        task.message = `正在下载文件: ${downloadedFiles}/${totalFiles}${incremental ? `, 跳过 ${skippedFiles} 个` : ''}`;
+                        task.progress = progressPercent;
+                        backupTasks.set(taskId, task);
+                      }
+                      
+                      console.log(`成功下载文件: ${filePath}`);
+                    } catch (err) {
+                      console.error(`处理文件 ${filePath} 时出错:`, err);
+                    }
+                  })
+                );
+                
+                // 在部署环境中监控内存使用
+                if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+                  const memUsage = process.memoryUsage();
+                  if (memUsage.heapUsed > 150 * 1024 * 1024) { // 150MB
+                    console.log('内存使用较高，执行垃圾回收...');
+                    if (global.gc) {
+                      global.gc();
+                    }
+                  }
+                }
+              }
+            } else {
+              console.log(`存储桶 ${bucket.name} 中没有文件`);
+            }
+          } catch (err) {
+            console.error(`处理存储桶 ${bucket.name} 时出错:`, err);
+          }
+        })
+      );
+      
+      // 更新整体进度
+      const bucketProgress = Math.round(15 + ((i + concurrencyLimit) / buckets.length) * downloadProgressMax);
+      task.message = `正在处理存储桶: ${Math.min(i + concurrencyLimit, buckets.length)}/${buckets.length}`;
+      task.progress = bucketProgress;
+      backupTasks.set(taskId, task);
+>>>>>>> origin/main
     }
 
     // 并行下载所有文件
@@ -920,6 +1287,20 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
     
     const backupTypePrefix = incremental ? 'storage-incremental' : 'storage-backup';
     const zipFilePath = path.join(backupPath, `${backupTypePrefix}-${timestamp}.zip`);
+    
+    // 在部署环境中监控内存使用
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      const memUsage = process.memoryUsage();
+      console.log(`压缩前内存使用: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, HeapUsed=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
+      
+      if (memUsage.heapUsed > 100 * 1024 * 1024) { // 100MB
+        console.log('压缩前内存使用较高，执行垃圾回收...');
+        if (global.gc) {
+          global.gc();
+        }
+      }
+    }
+    
     const files = await collectFilesFromDirectory(tempStorageDir, 'storage');
     
     // 调试信息：显示要打包的文件数量
@@ -928,7 +1309,37 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
       console.log(`ZIP文件内容示例:`, files.slice(0, 5).map(f => f.name));
     }
     
-    await createZipFile(files, zipFilePath);
+    // 检查文件数量，如果太多则分批处理
+    if (files.length > 1000) {
+      console.log(`文件数量较多 (${files.length})，将分批处理以避免内存问题`);
+      task.message = `正在分批创建ZIP文件 (${files.length} 个文件)...`;
+      backupTasks.set(taskId, task);
+    }
+    
+    try {
+      await createZipFile(files, zipFilePath);
+      console.log('ZIP文件创建成功');
+    } catch (error) {
+      console.error('ZIP文件创建失败:', error);
+      
+      // 如果ZIP创建失败，尝试清理大文件后重试
+      if (files.length > 100) {
+        console.log('尝试清理大文件后重试...');
+        const filteredFiles = files.filter(file => {
+          try {
+            const stats = require('fs').statSync(file.path);
+            return stats.size < 10 * 1024 * 1024; // 小于10MB的文件
+          } catch {
+            return true; // 如果无法获取文件大小，保留文件
+          }
+        });
+        
+        console.log(`过滤后剩余 ${filteredFiles.length} 个文件`);
+        await createZipFile(filteredFiles, zipFilePath);
+      } else {
+        throw error; // 重新抛出原始错误
+      }
+    }
     
     // 删除临时存储目录
     task.message = '正在清理临时文件...';
@@ -963,38 +1374,82 @@ async function getAllFilesFromBucket(supabase: any, bucketName: string, prefix: 
   const allFiles: string[] = [];
   
   try {
-    const { data: files, error } = await supabase.storage
-      .from(bucketName)
-      .list(prefix, { 
-        limit: 1000, 
-        sortBy: { column: 'name', order: 'asc' },
-        offset: 0
-      });
+    let offset = 0;
+    const limit = 1000; // 每页1000个文件
+    let hasMore = true;
+    
+    while (hasMore) {
+      const { data: files, error } = await supabase.storage
+        .from(bucketName)
+        .list(prefix, { 
+          limit, 
+          sortBy: { column: 'name', order: 'asc' },
+          offset
+        });
 
-    if (error) {
-      console.error(`获取存储桶 ${bucketName} 文件列表失败:`, error);
-      return allFiles;
-    }
+      if (error) {
+        console.error(`获取存储桶 ${bucketName} 文件列表失败 (offset: ${offset}):`, error);
+        break; // 跳出循环，返回已获取的文件
+      }
 
-    if (files) {
-      for (const file of files) {
-        const fullPath = prefix ? `${prefix}/${file.name}` : file.name;
+      if (!files || files.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      // 并行处理文件（限制并发数）
+      const concurrencyLimit = 5;
+      for (let i = 0; i < files.length; i += concurrencyLimit) {
+        const fileBatch = files.slice(i, i + concurrencyLimit);
         
-        if (file.metadata && file.metadata.size !== undefined) {
-          // 这是一个文件
-          allFiles.push(fullPath);
-        } else {
-          // 这可能是一个目录，递归获取
-          const subFiles = await getAllFilesFromBucket(supabase, bucketName, fullPath);
-          allFiles.push(...subFiles);
+        await Promise.all(
+          fileBatch.map(async (file: any) => {
+            if (file.name) {
+              const fullPath = prefix ? `${prefix}/${file.name}` : file.name;
+              
+              if (file.metadata && file.metadata.size !== undefined) {
+                // 这是一个文件
+                allFiles.push(fullPath);
+              } else {
+                // 这可能是一个目录，递归获取
+                try {
+                  const subFiles = await getAllFilesFromBucket(supabase, bucketName, fullPath);
+                  allFiles.push(...subFiles);
+                } catch (subError) {
+                  console.error(`获取子目录 ${fullPath} 失败:`, subError);
+                  // 继续处理其他文件
+                }
+              }
+            }
+          })
+        );
+      }
+
+      // 检查是否还有更多文件
+      if (files.length < limit) {
+        hasMore = false;
+      } else {
+        offset += limit;
+      }
+      
+      // 在部署环境中监控内存使用
+      if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+        const memUsage = process.memoryUsage();
+        if (memUsage.heapUsed > 200 * 1024 * 1024) { // 200MB
+          console.log('文件列表获取过程中内存使用较高，执行垃圾回收...');
+          if (global.gc) {
+            global.gc();
+          }
         }
       }
     }
+
+    console.log(`存储桶 ${bucketName} 总共找到 ${allFiles.length} 个文件`);
+    return allFiles;
   } catch (err) {
     console.error(`递归获取存储桶 ${bucketName} 文件失败:`, err);
+    return allFiles; // 返回已获取的文件
   }
-  
-  return allFiles;
 }
 
 // 从解压的目录中获取现有文件列表
