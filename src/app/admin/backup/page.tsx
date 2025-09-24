@@ -46,6 +46,7 @@ export default function AdminBackupPage() {
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
   const [selectedBackup, setSelectedBackup] = useState<string | null>(null);
   const [restoreType, setRestoreType] = useState<'upload' | 'history'>('upload');
+  const [writeMode, setWriteMode] = useState<'append' | 'overwrite'>('append');
   const [isRestoringBackup, setIsRestoringBackup] = useState(false);
   const [restoreProgress, setRestoreProgress] = useState(0);
   const [restoreMessage, setRestoreMessage] = useState('');
@@ -401,6 +402,7 @@ export default function AdminBackupPage() {
         formData.append('file', restoreFile!);
         formData.append('restoreType', 'upload');
         formData.append('databaseType', databaseType);
+        formData.append('restoreMode', writeMode);
 
         response = await fetch('/api/admin/backup/restore', {
           method: 'POST',
@@ -416,6 +418,7 @@ export default function AdminBackupPage() {
             restoreType: 'history',
             backupPath: selectedBackup,
             databaseType,
+            restoreMode: writeMode,
           }),
         });
       }
@@ -1762,6 +1765,37 @@ export default function AdminBackupPage() {
                 </Select>
               </div>
 
+            {/* 恢复模式选择（追加/覆盖） */}
+            <div className="space-y-2">
+              <Label>恢复模式</Label>
+              <div className="flex flex-col md:flex-row md:space-x-6 space-y-2 md:space-y-0">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="restoreWriteMode"
+                    value="append"
+                    checked={writeMode === 'append'}
+                    onChange={() => setWriteMode('append')}
+                    disabled={isRestoringBackup}
+                    className="rounded"
+                  />
+                  <span className="text-sm">追加（不覆盖现有数据/文件）</span>
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="restoreWriteMode"
+                    value="overwrite"
+                    checked={writeMode === 'overwrite'}
+                    onChange={() => setWriteMode('overwrite')}
+                    disabled={isRestoringBackup}
+                    className="rounded"
+                  />
+                  <span className="text-sm">覆盖（清空相关表并覆盖同名文件）</span>
+                </label>
+              </div>
+            </div>
+
               {restoreType === 'upload' && (
                 <div className="space-y-2">
                   <Label htmlFor="restoreFile">选择备份文件</Label>
@@ -2248,25 +2282,28 @@ export default function AdminBackupPage() {
                   {/* 恢复模式选择 */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">恢复模式</label>
-                    <div className="flex space-x-4">
+                    <div className="flex flex-col md:flex-row md:space-x-6 space-y-2 md:space-y-0">
                       <label className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          name="restoreMode"
-                          value="incremental"
-                          defaultChecked
+                          name="writeMode"
+                          value="append"
+                          checked={writeMode === 'append'}
+                          onChange={() => setWriteMode('append')}
                           className="rounded"
                         />
-                        <span className="text-sm">增量恢复（只恢复数据库中缺失的文件）</span>
+                        <span className="text-sm">追加（不覆盖现有数据/文件）</span>
                       </label>
                       <label className="flex items-center space-x-2">
                         <input
                           type="radio"
-                          name="restoreMode"
-                          value="full"
+                          name="writeMode"
+                          value="overwrite"
+                          checked={writeMode === 'overwrite'}
+                          onChange={() => setWriteMode('overwrite')}
                           className="rounded"
                         />
-                        <span className="text-sm">完整恢复（恢复所有备份文件）</span>
+                        <span className="text-sm">覆盖（清空相关表并覆盖同名文件）</span>
                       </label>
                     </div>
                   </div>

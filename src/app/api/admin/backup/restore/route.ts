@@ -320,6 +320,7 @@ export async function POST(req: NextRequest) {
     let file: File | null = null;
     let backupPath: string | null = null;
     let databaseType: DatabaseType = 'supabase';
+    let restoreMode: 'append' | 'overwrite' = 'append';
 
     if (contentType?.includes('multipart/form-data')) {
       // 上传文件方式
@@ -330,6 +331,8 @@ export async function POST(req: NextRequest) {
       if (dt && (['local','prod','supabase'] as const).includes(dt as DatabaseType)) {
         databaseType = dt as DatabaseType;
       }
+      const rm = (formData.get('restoreMode') as string | null)?.toLowerCase();
+      if (rm === 'overwrite' || rm === 'append') restoreMode = rm;
     } else {
       // JSON方式（历史备份或增量恢复）
       const body = await req.json();
@@ -337,6 +340,10 @@ export async function POST(req: NextRequest) {
       backupPath = body.backupPath;
       if (body.databaseType && (['local','prod','supabase'] as const).includes(body.databaseType)) {
         databaseType = body.databaseType as DatabaseType;
+      }
+      if (typeof body.restoreMode === 'string') {
+        const rm = (body.restoreMode as string).toLowerCase();
+        if (rm === 'overwrite' || rm === 'append') restoreMode = rm;
       }
     }
     // 校验数据库类型
@@ -397,7 +404,7 @@ export async function POST(req: NextRequest) {
       
       if (isNdjsonBackup && manifest) {
         console.log('开始NDJSON格式数据库恢复...');
-        dbRestoreSummary = await restoreNdjsonDatabase(tempDir, manifest, databaseType);
+        dbRestoreSummary = await restoreNdjsonDatabase(tempDir, manifest, databaseType, restoreMode);
         console.log('NDJSON数据库恢复完成');
       } else {
         // 传统SQL恢复
@@ -406,7 +413,7 @@ export async function POST(req: NextRequest) {
         
         if (sqlFiles.length > 0) {
           console.log('开始恢复数据库...');
-          dbRestoreSummary = await restoreDatabase(sqlFiles[0], databaseType);
+          dbRestoreSummary = await restoreDatabase(sqlFiles[0], databaseType, restoreMode);
           console.log('数据库恢复完成');
         } else {
           console.log('未找到SQL文件，跳过数据库恢复');
@@ -419,7 +426,7 @@ export async function POST(req: NextRequest) {
         await fs.access(storageDir);
         console.log('开始恢复存储桶文件...');
         const isIncremental = restoreType === 'incremental';
-        await restoreStorage(storageDir, isIncremental, databaseType);
+        await restoreStorage(storageDir, isIncremental, databaseType, restoreMode === 'overwrite');
         console.log(`存储桶恢复完成 (${isIncremental ? '增量' : '完整'}模式)`);
       } catch {
         console.log('存储目录不存在，跳过存储桶恢复');
@@ -431,17 +438,18 @@ export async function POST(req: NextRequest) {
           databaseFiles: isNdjsonBackup ? (manifest?.tables?.length || 0) : 0,
           storageRestored: true,
           restoreType: restoreType,
-          mode: restoreType === 'incremental' ? '增量模式（只恢复数据库中缺失的文件）' : '完整模式（恢复所有备份文件）',
+          mode: restoreType === 'incremental' ? '增量模式（只恢复数据库中缺失的文件）' : (restoreMode === 'overwrite' ? '完整覆盖模式（覆盖现有数据/文件）' : '完整追加模式（仅新增，不覆盖）'),
           parallelProcessing: true,
           performance: '使用并行处理提高恢复速度',
           databaseType,
-          databaseRestore: dbRestoreSummary
+          databaseRestore: dbRestoreSummary,
+          restoreMode
         },
       });
     } finally {
-      // 清理临时文件
+      // 清理临时文件（Windows 上可能被占用，增加重试）
       try {
-        await fs.rm(tempDir, { recursive: true, force: true });
+        await safeRemoveDirWithRetry(tempDir, 5, 200);
       } catch (err) {
         console.error('清理临时文件失败:', err);
       }
@@ -535,6 +543,7 @@ async function extractZip(zipPath: string, extractDir: string): Promise<void> {
 
       zipfile.on('end', () => {
         console.log(`ZIP解压完成，共处理 ${entryCount} 个条目`);
+        try { zipfile.close(); } catch {}
         resolve();
       });
 
@@ -544,6 +553,19 @@ async function extractZip(zipPath: string, extractDir: string): Promise<void> {
       });
     });
   });
+}
+
+async function safeRemoveDirWithRetry(dirPath: string, retries: number = 5, baseDelayMs: number = 200): Promise<void> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      await fs.rm(dirPath, { recursive: true, force: true });
+      return;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      const delay = baseDelayMs * Math.pow(2, attempt);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
 }
 
 async function findSqlFiles(dir: string): Promise<string[]> {
@@ -570,7 +592,7 @@ async function findSqlFiles(dir: string): Promise<string[]> {
   return files;
 }
 
-async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType): Promise<{ total: number; success: number; skipped: number; failed: number; firstErrors?: Array<{ index: number; message: string }> }> {
+async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType, restoreMode: 'append' | 'overwrite' = 'append'): Promise<{ total: number; success: number; skipped: number; failed: number; firstErrors?: Array<{ index: number; message: string }> }> {
   const supabase = databaseType === 'supabase' ? getServiceSupabase() : null;
   
   try {
@@ -580,6 +602,33 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType):
 
     // 对于本地/生产直连：分句执行 + 会话级强化设置
     if (databaseType !== 'supabase') {
+      // 覆盖模式：在执行前 TRUNCATE public 下所有表（安全起见加 CASCADE 和 RESTART IDENTITY）
+      if (restoreMode === 'overwrite') {
+        try {
+          const conn = createDatabaseConnection(databaseType);
+          const { client } = await connectPostgresWithFallback(conn.connectionString!);
+          try {
+            await client.query('BEGIN');
+            await client.query('SET LOCAL row_security = off');
+            await client.query("SET LOCAL search_path = public");
+            const res = await client.query(`select table_name from information_schema.tables where table_schema='public' and table_type='BASE TABLE'`);
+            const tables = (res.rows as Array<{ table_name: string }>).map(r => `"${r.table_name}"`);
+            if (tables.length > 0) {
+              const truncateSql = `TRUNCATE ${tables.join(', ')} RESTART IDENTITY CASCADE;`;
+              await client.query(truncateSql);
+              console.log('覆盖模式：已清空 public 表，共', tables.length, '张');
+            }
+            await client.query('COMMIT');
+          } catch (e) {
+            try { await client.query('ROLLBACK'); } catch {}
+            throw e;
+          } finally {
+            try { await (client as import('pg').Client).end(); } catch {}
+          }
+        } catch (e) {
+          console.warn('覆盖模式 TRUNCATE public 表失败，将继续执行恢复:', e);
+        }
+      }
       const repairedWhole = ensureArrayColumnDDLFixes(sanitizeLeakedConversation(wrapBareJsonObjectsGeneric(ensureJsonCastsInline(robustReplaceArrayLiterals(sqlContent)))));
       const stmts = splitSqlStatements(repairedWhole);
       const conn = createDatabaseConnection(databaseType);
@@ -646,6 +695,24 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType):
     }
 
     // Supabase 路径：需要逐条执行，保留原有批处理（存在语句内分号风险，但 exec_sql 仅支持单语句）
+    // Supabase 路径：需要逐条执行
+    // 覆盖模式：尝试先 TRUNCATE public 所有表
+    if (restoreMode === 'overwrite') {
+      try {
+        const listSql = `select '"' || table_name || '"' as q from information_schema.tables where table_schema='public' and table_type='BASE TABLE';`;
+        const { data: listData, error: listErr } = await (supabase as ReturnType<typeof getServiceSupabase>).rpc('exec_sql', { sql: listSql });
+        if (!listErr && Array.isArray(listData) && listData.length > 0) {
+          const names: string[] = (listData as Array<{ q: string }>).map((r: { q: string }) => r.q);
+          const truncateSql = `TRUNCATE ${names.join(', ')} RESTART IDENTITY CASCADE;`;
+          const { error: truncErr } = await (supabase as ReturnType<typeof getServiceSupabase>).rpc('exec_sql', { sql: truncateSql });
+          if (truncErr) console.warn('Supabase 覆盖模式 TRUNCATE 失败:', truncErr.message);
+          else console.log('Supabase 覆盖模式：已清空 public 表，共', names.length, '张');
+        }
+      } catch (e) {
+        console.warn('Supabase 覆盖模式 TRUNCATE public 表异常:', e);
+      }
+    }
+
     const statements = sqlContent
       .split(';')
       .map(stmt => stmt.trim())
@@ -706,7 +773,7 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType):
   }
 }
 
-async function restoreStorage(storageDir: string, incrementalMode: boolean = false, databaseType: DatabaseType = 'supabase'): Promise<void> {
+async function restoreStorage(storageDir: string, incrementalMode: boolean = false, databaseType: DatabaseType = 'supabase', overwriteFiles: boolean = false): Promise<void> {
   const { getSupabaseFor } = await import('@/lib/supabaseEnv');
   const supabase = getSupabaseFor(databaseType);
   
@@ -752,7 +819,7 @@ async function restoreStorage(storageDir: string, incrementalMode: boolean = fal
         }
         
         // 上传文件
-        await uploadDirectoryToBucket(supabase, bucketDir.path, bucketName, '', incrementalMode);
+        await uploadDirectoryToBucket(supabase, bucketDir.path, bucketName, '', incrementalMode, overwriteFiles);
         
         return { bucketName, success: true };
       } catch (err) {
@@ -866,7 +933,8 @@ async function uploadDirectoryToBucket(
   dirPath: string,
   bucketName: string,
   prefix: string = '',
-  incrementalMode: boolean = false
+  incrementalMode: boolean = false,
+  overwriteFiles: boolean = false
 ): Promise<void> {
   try {
     console.log(`开始批量检查存储桶 ${bucketName} 中的现有文件...`);
@@ -878,7 +946,7 @@ async function uploadDirectoryToBucket(
     console.log(`存储桶 ${bucketName} 中现有文件数量: ${existingFiles.length}`);
     
     // 收集所有需要上传的文件
-    const filesToUpload = await collectFilesToUpload(dirPath, prefix, existingFileSet, incrementalMode);
+    const filesToUpload = await collectFilesToUpload(dirPath, prefix, existingFileSet, incrementalMode, overwriteFiles);
     
     console.log(`存储桶 ${bucketName} 需要上传 ${filesToUpload.length} 个文件`);
     
@@ -909,7 +977,7 @@ async function uploadDirectoryToBucket(
             const { error } = await supabase.storage
               .from(bucketName)
               .upload(fileInfo.relativePath, fileBuffer, {
-                upsert: !incrementalMode // 非增量模式覆盖现有文件
+                upsert: overwriteFiles || !incrementalMode
               });
             
             if (error) {
@@ -971,7 +1039,8 @@ async function collectFilesToUpload(
   dirPath: string,
   prefix: string,
   existingFileSet: Set<string>,
-  incrementalMode: boolean
+  incrementalMode: boolean,
+  overwriteFiles: boolean
 ): Promise<Array<{ filePath: string; relativePath: string }>> {
   const filesToUpload: Array<{ filePath: string; relativePath: string }> = [];
   
@@ -983,22 +1052,20 @@ async function collectFilesToUpload(
     
     if (stats.isDirectory()) {
       // 递归处理子目录
-      const subFiles = await collectFilesToUpload(itemPath, `${prefix}${item}/`, existingFileSet, incrementalMode);
+      const subFiles = await collectFilesToUpload(itemPath, `${prefix}${item}/`, existingFileSet, incrementalMode, overwriteFiles);
       filesToUpload.push(...subFiles);
     } else {
       // 检查文件是否已存在
       const filePath = `${prefix}${item}`;
       
-      if (incrementalMode) {
+      if (incrementalMode && !overwriteFiles) {
         // 增量模式：只上传数据库中不存在的文件
         if (existingFileSet.has(filePath)) {
           continue; // 跳过已存在的文件
         }
-      } else {
-        // 完整模式：检查文件是否已存在
-        if (existingFileSet.has(filePath)) {
-          continue; // 跳过已存在的文件
-        }
+      } else if (!overwriteFiles) {
+        // 完整追加模式：仍跳过已存在的文件
+        if (existingFileSet.has(filePath)) continue;
       }
       
       // 添加到上传列表
@@ -1054,7 +1121,8 @@ async function getAllFilesFromBucket(
 async function restoreNdjsonDatabase(
   backupDir: string, 
   manifest: { version: string; tables: Array<{ name: string; data_file: string; rows: number; columns: number }> }, 
-  databaseType: DatabaseType
+  databaseType: DatabaseType,
+  restoreMode: 'append' | 'overwrite' = 'append'
 ): Promise<{ total: number; success: number; skipped: number; failed: number; firstErrors?: Array<{ index: number; message: string }> }> {
   const summary = { total: 0, success: 0, skipped: 0, failed: 0, firstErrors: [] as Array<{ index: number; message: string }> };
   
@@ -1079,6 +1147,40 @@ async function restoreNdjsonDatabase(
       return summary;
     }
     
+    // 覆盖模式：先按 manifest 顺序 TRUNCATE 这些表
+    if (restoreMode === 'overwrite') {
+      try {
+        if (databaseType === 'local' || databaseType === 'prod') {
+          const connectionString = databaseType === 'local' 
+            ? (process.env.LOCAL_DB_URL_FORCE || process.env.LOCAL_DB_URL)
+            : (process.env.PROD_DB_URL || process.env.DATABASE_URL);
+          const { client } = await connectPostgresWithFallback(connectionString!);
+          try {
+            try { await client.query('BEGIN'); } catch {}
+            try { await client.query('SET LOCAL row_security = off'); } catch {}
+            try { await client.query("SET LOCAL search_path = public"); } catch {}
+            const tableNames = manifest.tables.map(t => `"${t.name}"`).join(', ');
+            if (tableNames.length > 0) {
+              await client.query(`TRUNCATE ${tableNames} RESTART IDENTITY CASCADE;`);
+              console.log('NDJSON 覆盖模式：已 TRUNCATE 表：', tableNames);
+            }
+            try { await client.query('COMMIT'); } catch { try { await client.query('ROLLBACK'); } catch {} }
+          } finally {
+            try { await (client as import('pg').Client).end(); } catch {}
+          }
+        } else {
+          const supabase = getServiceSupabase();
+          const tableNames = manifest.tables.map(t => `"${t.name}"`).join(', ');
+          if (tableNames.length > 0) {
+            const { error } = await supabase.rpc('exec_sql', { sql: `TRUNCATE ${tableNames} RESTART IDENTITY CASCADE;` });
+            if (error) console.warn('NDJSON 覆盖模式 TRUNCATE 失败:', error.message);
+          }
+        }
+      } catch (e) {
+        console.warn('NDJSON 覆盖模式 TRUNCATE 异常，将继续追加插入:', e);
+      }
+    }
+
     // 2. 遍历每个表的NDJSON文件并插入数据
     
     for (const tableInfo of manifest.tables) {
