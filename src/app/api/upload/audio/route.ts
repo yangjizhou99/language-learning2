@@ -94,21 +94,14 @@ export async function POST(req: NextRequest) {
 
     console.log('上传成功:', uploadData);
 
-    // Get signed URL (for private bucket access)
-    const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-      .from('recordings')
-      .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
-
-    if (signedUrlError) {
-      console.error('Error creating signed URL:', signedUrlError);
-      return NextResponse.json({ error: signedUrlError.message }, { status: 500 });
-    }
+    // 构造代理 URL（统一经由 storage-proxy，避免暴露 Supabase 直链/签名链）
+    const proxyUrl = `/api/storage-proxy?path=${encodeURIComponent(fileName)}&bucket=recordings`;
 
     // Use provided duration or fallback to estimate
     const recordingDuration = duration ? parseInt(duration) : Math.round(audioFile.size / 16000);
 
     const audioData = {
-      url: signedUrlData.signedUrl,
+      url: proxyUrl,
       fileName: uploadData.path,
       size: audioFile.size,
       type: audioFile.type,

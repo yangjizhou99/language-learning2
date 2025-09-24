@@ -50,6 +50,7 @@ async function main() {
   } catch {}
 
   const ins = {
+    id: crypto.randomUUID(),
     lang: d.lang,
     level: d.level,
     title: d.title,

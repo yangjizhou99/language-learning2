@@ -53,13 +53,23 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
     }
 
     if (userPermissions) {
+      // 规范化权限字段，避免类型不一致导致过滤全空
+      const normalizedAllowedLanguages = Array.isArray(userPermissions.allowed_languages)
+        ? userPermissions.allowed_languages.map((l: any) => String(l)).filter(Boolean)
+        : ['en', 'ja', 'zh'];
+      const normalizedAllowedLevels = Array.isArray(userPermissions.allowed_levels)
+        ? userPermissions.allowed_levels
+            .map((lv: any) => (typeof lv === 'number' ? lv : parseInt(String(lv), 10)))
+            .filter((n: any) => Number.isFinite(n))
+        : [1, 2, 3, 4, 5];
+
       return {
         can_access_shadowing: userPermissions.can_access_shadowing ?? true,
         can_access_cloze: userPermissions.can_access_cloze ?? true,
         can_access_alignment: userPermissions.can_access_alignment ?? true,
         can_access_articles: userPermissions.can_access_articles ?? true,
-        allowed_languages: userPermissions.allowed_languages ?? ['en', 'ja', 'zh'],
-        allowed_levels: userPermissions.allowed_levels ?? [1, 2, 3, 4, 5],
+        allowed_languages: normalizedAllowedLanguages,
+        allowed_levels: normalizedAllowedLevels,
         max_daily_attempts: userPermissions.max_daily_attempts ?? 50,
         model_permissions: userPermissions.model_permissions ?? [],
         api_keys: userPermissions.api_keys ?? defaultPermissions.api_keys,

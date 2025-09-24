@@ -278,6 +278,32 @@ export async function synthesizeTTS({
   const name = localeMismatch ? DEFAULTS[lang as keyof typeof DEFAULTS] : selectedName;
   if (localeMismatch) languageCode = toLocaleCode(lang);
 
+  // 基于音色名推断所需的模型与能力（对齐试听实现）
+  function inferModelFromVoice(name: string | undefined): string | undefined {
+    if (!name) return undefined;
+    const n = name.toLowerCase();
+    if (n.includes('chirp3-hd')) return 'models/chirp3-hd';
+    if (n.includes('chirp-hd')) return 'models/chirp-hd';
+    if (n.includes('neural2')) return 'models/neural2';
+    if (n.includes('wavenet')) return 'models/wavenet';
+    if (n.includes('standard')) return 'models/standard';
+    // 其他系列（Studio/News/Polyglot/Casual）Google v1 可能存在差异，这里不强制设置
+    return undefined;
+  }
+
+  const model = inferModelFromVoice(selectedName);
+
+  // 部分模型/音色不支持 pitch，避免 INVALID_ARGUMENT
+  function supportsPitchForVoice(name: string | undefined): boolean {
+    if (!name) return true;
+    const n = name.toLowerCase();
+    if (n.includes('chirp3') || n.includes('chirp-hd') || n.includes('chirp3-hd')) return false;
+    // 如需更严格可将 Studio/News/Polyglot 也关闭
+    return true;
+  }
+
+  const canUsePitch = supportsPitchForVoice(selectedName);
+
   // 调试信息
   console.log('synthesizeTTS 调试信息:');
   console.log('- 输入参数:', {
@@ -296,6 +322,7 @@ export async function synthesizeTTS({
   console.log('- localeMismatch:', localeMismatch);
   console.log('- 最终音色名称:', name);
   console.log('- DEFAULTS[lang]:', DEFAULTS[lang as keyof typeof DEFAULTS]);
+  if (model) console.log('- 使用模型:', model);
 
   // 检查音色是否支持SSML
   const supportsSSML =
@@ -320,15 +347,19 @@ export async function synthesizeTTS({
   console.log('Google TTS 输入类型:', supportsSSML ? 'SSML' : 'Text');
   console.log('Google TTS 输入内容:', supportsSSML ? 'SSML格式' : clean.substring(0, 100) + '...');
 
-  const [resp] = await client.synthesizeSpeech({
+  const request: any = {
     input,
     voice: { languageCode, name },
     audioConfig: {
       audioEncoding: 'MP3',
       speakingRate: Number.isFinite(speakingRate) ? speakingRate : 1.0,
-      pitch: Number.isFinite(pitch) ? pitch : 0,
+      ...(canUsePitch && Number.isFinite(pitch) ? { pitch } : {}),
     },
-  });
+  };
+
+  if (model) (request as any).model = model;
+
+  const [resp] = await client.synthesizeSpeech(request);
 
   const audio = resp.audioContent ? Buffer.from(resp.audioContent as Uint8Array) : undefined;
   if (!audio) throw new Error('no audio');

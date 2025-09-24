@@ -90,13 +90,23 @@ export default function useUserPermissions() {
         }
 
         if (userPermissions) {
+          // 规范化权限，避免字符串等级导致 includes(数字) 失败
+          const normalizedAllowedLanguages = Array.isArray(userPermissions.allowed_languages)
+            ? userPermissions.allowed_languages.map((l: any) => String(l)).filter(Boolean)
+            : ['en', 'ja', 'zh'];
+          const normalizedAllowedLevels = Array.isArray(userPermissions.allowed_levels)
+            ? userPermissions.allowed_levels
+                .map((lv: any) => (typeof lv === 'number' ? lv : parseInt(String(lv), 10)))
+                .filter((n: any) => Number.isFinite(n))
+            : [1, 2, 3, 4, 5];
+
           setPermissions({
             can_access_shadowing: userPermissions.can_access_shadowing ?? true,
             can_access_cloze: userPermissions.can_access_cloze ?? true,
             can_access_alignment: userPermissions.can_access_alignment ?? true,
             can_access_articles: userPermissions.can_access_articles ?? true,
-            allowed_languages: userPermissions.allowed_languages ?? ['en', 'ja', 'zh'],
-            allowed_levels: userPermissions.allowed_levels ?? [1, 2, 3, 4, 5],
+            allowed_languages: normalizedAllowedLanguages,
+            allowed_levels: normalizedAllowedLevels,
             max_daily_attempts: userPermissions.max_daily_attempts ?? 50,
             model_permissions:
               userPermissions.model_permissions ?? defaultPermissions.model_permissions,
