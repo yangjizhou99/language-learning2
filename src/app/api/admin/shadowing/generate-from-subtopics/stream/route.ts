@@ -164,38 +164,7 @@ export async function POST(req: NextRequest) {
                   throw new Error(`Save failed: ${saveError.message}`);
                 }
 
-                // 同时保存到 shadowing_items 表
-                const { error: itemsError } = await supabase.from('shadowing_items').insert({
-                  lang: subtopic.lang,
-                  level: subtopic.level,
-                  title: parsed.title || subtopic.title,
-                  text: parsed.passage || content,
-                  audio_url: '', // 稍后生成音频
-                  translations: {},
-                  meta: {
-                    from_draft: true,
-                    theme_id: themeData?.theme_id || null,
-                    subtopic_id: subtopic.id,
-                    genre: subtopic.genre,
-                    notes: {
-                      ...parsed.notes,
-                      violations: parsed.violations || [],
-                      source: {
-                        kind: 'subtopic',
-                        subtopic_id: subtopic.id,
-                      },
-                      meta: parsed.meta || {},
-                    },
-                    ai_provider: provider,
-                    ai_model: model,
-                    ai_usage: result.usage || {},
-                    published_at: new Date().toISOString(),
-                  },
-                });
-
-                if (itemsError) {
-                  console.warn(`Failed to save to shadowing_items: ${itemsError.message}`);
-                }
+                // 发布时再写入 shadowing_items，此处不插入
 
                 saved++;
                 totalTokens += result.usage?.total_tokens || 0;

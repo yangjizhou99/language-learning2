@@ -38,7 +38,15 @@ export async function POST(req: NextRequest) {
       pitch,
     });
 
-    const audioBuffer = await synthesizeTTS({ text, lang, voiceName: voice, speakingRate, pitch });
+    // 在单声道合成中，移除说话者标识（A:/B:/全角/前置空白或符号）避免读出
+    // 兼容 CRLF、前导不可见空白(\uFEFF/\u00A0/\u3000)、引号/点/项目符号等
+    const speakerPrefix = /^[\s\uFEFF\u00A0\u3000"'“”‘’·•\-–—]*([A-Za-z\uFF21-\uFF3A])\s*[\:\uFF1A]\s*/i;
+    const cleanedText = String(text)
+      .split(/\r?\n/)
+      .map((line) => line.replace(speakerPrefix, '').trim())
+      .join('\n');
+
+    const audioBuffer = await synthesizeTTS({ text: cleanedText, lang, voiceName: voice, speakingRate, pitch });
 
     // 上传到 Supabase Storage（使用新的上传函数）
     const bucket = process.env.NEXT_PUBLIC_SHADOWING_AUDIO_BUCKET || 'tts';

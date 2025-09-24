@@ -7,89 +7,145 @@ import { synthesizeTTS } from '@/lib/tts';
 import { uploadAudioFile } from '@/lib/storage-upload';
 
 // 解析对话文本，分离不同角色的内容
-function parseDialogue(text: string): { speaker: string; content: string }[] {
-  const lines = text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  const dialogue: { speaker: string; content: string }[] = [];
+function toAsciiUpperLetter(ch: string): string {
+  // 全角Ａ(FF21)-Ｚ(FF3A) 转半角 A-Z
+  const code = ch.codePointAt(0) || 0;
+  if (code >= 0xff21 && code <= 0xff3a) {
+    return String.fromCharCode(0x41 + (code - 0xff21));
+  }
+  return ch.toUpperCase();
+}
 
-  for (const line of lines) {
-    // 匹配 A: 或 B: 格式
-    const match = line.match(/^([A-Z]):\s*(.+)$/);
-    if (match) {
-      dialogue.push({
-        speaker: match[1],
-        content: match[2].trim(),
-      });
+function parseDialogue(text: string): { speaker: string; content: string }[] {
+  const src = String(text).replace(/\r\n?/g, '\n');
+  const labelRE = /[\s\uFEFF\u00A0\u3000"'“”‘’·•\-–—]*([A-Z\uFF21-\uFF3A])\s*[\:\uFF1A]\s*/gi;
+  const matches: Array<{ speaker: string; start: number }> = [];
+
+  let m: RegExpExecArray | null;
+  while ((m = labelRE.exec(src)) !== null) {
+    const speaker = toAsciiUpperLetter(m[1]);
+    const start = (m.index || 0) + (m[0]?.length || 0);
+    matches.push({ speaker, start });
+  }
+
+  const out: { speaker: string; content: string }[] = [];
+  for (let i = 0; i < matches.length; i++) {
+    const cur = matches[i];
+    const next = matches[i + 1];
+    const end = next ? next.start : src.length;
+    const segment = src.slice(cur.start, end).trim();
+    if (segment) {
+      out.push({ speaker: cur.speaker, content: segment });
     }
   }
 
-  return dialogue;
+  return out;
 }
 
-// 合并音频缓冲区（优化版本，减少临时文件使用）
+// 合并音频缓冲区（优先使用 ffmpeg-static；不可用时回退简单拼接并插入静音）
 async function mergeAudioBuffers(buffers: Buffer[]): Promise<Buffer> {
   if (buffers.length === 0) throw new Error('No audio buffers to merge');
   if (buffers.length === 1) return buffers[0];
 
   try {
-    // 尝试使用 ffmpeg 进行音频合并（如果可用）
-    const { exec } = require('child_process');
-    const { promisify } = require('util');
-    const execAsync = promisify(exec);
-    const fs = require('fs');
-    const path = require('path');
-    const os = require('os');
+    const fs = await import('fs');
+    const path = await import('path');
+    const os = await import('os');
+    const { spawn } = await import('child_process');
 
-    // 创建临时目录
+    // 解析 ffmpeg 可执行路径（优先 ffmpeg-static）
+    let ffmpegPath: string | null = null;
+    try {
+      type FfmpegStaticModule = { default?: string } | string;
+      const ffm = (await import('ffmpeg-static')) as unknown as FfmpegStaticModule;
+      const v = (typeof ffm === 'string' ? ffm : ffm.default) as string | undefined;
+      if (v) ffmpegPath = String(v).replace(/^"+|"+$/g, '');
+    } catch {}
+
+    // 候选路径（兼容 Windows/Linux）
+    const candidates = [
+      ffmpegPath,
+      process.env.FFMPEG_PATH,
+      path.join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg.exe'),
+      path.join(process.cwd(), 'node_modules', 'ffmpeg-static', 'ffmpeg'),
+    ].filter(Boolean) as string[];
+
+    let resolvedFfmpeg = '';
+    for (const p of candidates) {
+      try {
+        const abs = path.resolve(p);
+        if (fs.existsSync(abs)) {
+          resolvedFfmpeg = abs;
+          break;
+        }
+      } catch {}
+    }
+
+    if (!resolvedFfmpeg) {
+      // 最后尝试系统路径
+      resolvedFfmpeg = 'ffmpeg';
+    }
+
+    // 创建临时目录与输入清单
     const tempDir = os.tmpdir();
     const inputFiles: string[] = [];
     const outputFile = path.join(tempDir, `merged-${Date.now()}.mp3`);
 
     try {
-      // 保存每个音频片段到临时文件
+      // 写入片段为临时文件
       for (let i = 0; i < buffers.length; i++) {
         const inputFile = path.join(tempDir, `input-${i}-${Date.now()}.mp3`);
         fs.writeFileSync(inputFile, buffers[i]);
         inputFiles.push(inputFile);
       }
 
-      // 创建 ffmpeg 命令来合并音频，添加自然间隔
-      const inputList = inputFiles.map((file) => `file '${file}'`).join('\n');
+      // 生成输入列表（统一正斜杠路径，避免 Windows 反斜杠转义问题）
       const listFile = path.join(tempDir, `list-${Date.now()}.txt`);
-      fs.writeFileSync(listFile, inputList);
+      const inputList = inputFiles
+        .map((file) => `file '${path.resolve(file).replace(/\\/g, '/')}'`)
+        .join('\n');
+      fs.writeFileSync(listFile, inputList, 'utf8');
 
-      // 执行 ffmpeg 合并，添加自然间隔
-      const ffmpegCmd = `ffmpeg -f concat -safe 0 -i "${listFile}" -af "apad=pad_len=22050" "${outputFile}" -y`;
-      await execAsync(ffmpegCmd);
+      // 统一重编码为 MP3，避免 concat copy 因参数不一致失败
+      const args = [
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', listFile,
+        '-c:a', 'libmp3lame',
+        '-b:a', '128k',
+        outputFile,
+      ];
 
-      // 读取合并后的音频
+      await new Promise<void>((resolve, reject) => {
+        const proc = spawn(resolvedFfmpeg, args, { stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000 });
+        let stderr = '';
+        proc.stderr?.on('data', (d: Buffer) => { stderr += d.toString(); });
+        proc.on('error', (err: unknown) => reject(err));
+        proc.on('exit', (code: number) => (code === 0 ? resolve() : reject(new Error(`ffmpeg concat failed (${code})\n${stderr}`))));
+      });
+
       const mergedBuffer = fs.readFileSync(outputFile);
 
-      // 立即清理临时文件
-      [...inputFiles, listFile, outputFile].forEach((file) => {
-        try {
-          fs.unlinkSync(file);
-        } catch {}
-      });
+      // 清理临时文件
+      try {
+        [...inputFiles, listFile, outputFile].forEach((f) => {
+          try { fs.unlinkSync(f); } catch {}
+        });
+      } catch {}
 
       return mergedBuffer;
     } catch (ffmpegError) {
-      console.warn('FFmpeg 合并失败，使用简单拼接:', ffmpegError);
-
-      // 清理临时文件
-      [...inputFiles, outputFile].forEach((file) => {
-        try {
-          fs.unlinkSync(file);
-        } catch {}
-      });
-
-      // 回退到简单拼接
+      console.error('FFmpeg 合并失败，回退简单拼接:', ffmpegError);
+      try {
+        [...inputFiles, outputFile].forEach((f) => {
+          try { fs.unlinkSync(f); } catch {}
+        });
+      } catch {}
       return simpleMerge(buffers);
     }
   } catch (error) {
-    console.warn('音频合并失败，使用简单拼接:', error);
+    console.warn('音频合并失败（外层），回退简单拼接:', error);
     return simpleMerge(buffers);
   }
 }
@@ -159,7 +215,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { text, lang, speakingRate = 1.0, pitch = 0, volumeGainDb = 0 } = body;
+    const { text, lang, speakingRate = 1.0, pitch = 0, volumeGainDb = 0, speakerVoices } = body as {
+      text: string;
+      lang: string;
+      speakingRate?: number;
+      pitch?: number;
+      volumeGainDb?: number;
+      speakerVoices?: Record<string, string> | null;
+    };
 
     if (!text || !lang) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -176,15 +239,21 @@ export async function POST(req: NextRequest) {
     // 为每个角色分别合成音频（只在内存中处理，不上传独立音频）
     const audioBuffers: Buffer[] = [];
 
+    // 二次清洗规则：移除片段内部残留的说话者标识（如同一行混入下一位标识）
+    const innerLabelRE = /[\s\uFEFF\u00A0\u3000"'“”‘’·•\-–—]*([A-Z\uFF21-\uFF3A])\s*[\:\uFF1A]\s*/g;
+
     for (const { speaker, content } of dialogue) {
-      const voice = getVoiceForSpeaker(speaker, lang);
+      // 优先使用传入的音色映射，其次回退到默认映射
+      const sKey = toAsciiUpperLetter(speaker);
+      const preferred = (speakerVoices && (speakerVoices[sKey] || speakerVoices[String(sKey).toUpperCase()] || speakerVoices[String(sKey).toLowerCase()])) || null;
+      const voice = preferred || getVoiceForSpeaker(speaker, lang);
       console.log(`为角色 ${speaker} 合成音频，使用音色: ${voice}`);
 
       // 为不同角色调整音色参数
       const voiceParams = getVoiceParamsForSpeaker(speaker, lang);
 
       const audioBuffer = await synthesizeTTS({
-        text: content,
+        text: content.replace(innerLabelRE, ' ').trim(),
         lang,
         voiceName: voice,
         speakingRate: speakingRate * voiceParams.speakingRate,

@@ -951,53 +951,63 @@ export default function ShadowingReviewList() {
 
   // 获取说话者音色分配
   const getSpeakerVoices = (text: string) => {
-    // 分析说话者标识符
+    // 提取说话者（A/B/C...）
     const speakerPattern = /^[A-Z]:/gm;
     const matches = text.match(speakerPattern);
     if (!matches) return null;
-
     const speakers = Array.from(new Set(matches.map((m) => m.replace(':', ''))));
-    const speakerVoices: Record<string, string> = {};
-    const usedVoices = new Set<string>();
 
-    // 按规则分配音色，确保每个说话者使用不同的音色
-    for (const speaker of speakers) {
-      let selectedVoice = '';
+    const mapping: Record<string, string> = {};
 
-      if (speaker === 'A') {
-        // A说话者：选择男声
-        const maleVoice = getRandomMaleVoice();
-        if (!maleVoice) {
-          throw new Error('无法分配A说话者的男声音色');
-        }
-        selectedVoice = maleVoice;
-      } else if (speaker === 'B') {
-        // B说话者：选择女声
-        const femaleVoice = getRandomFemaleVoice();
-        if (!femaleVoice) {
-          throw new Error('无法分配B说话者的女声音色');
-        }
-        selectedVoice = femaleVoice;
-      } else {
-        // C、D等：随机选择
-        const randomVoice = getRandomVoice();
-        if (!randomVoice) {
-          throw new Error(`无法分配${speaker}说话者的音色`);
-        }
-        selectedVoice = randomVoice;
-      }
+    // 基于“备选音色”随机按性别分配（优先）：A=男声、B=女声
+    const maleVoices = (candidateVoices || []).filter((v: any) => {
+      const g = (v.ssml_gender || v.ssmlGender || '').toLowerCase();
+      return g === 'male' || g.includes('男');
+    });
+    const femaleVoices = (candidateVoices || []).filter((v: any) => {
+      const g = (v.ssml_gender || v.ssmlGender || '').toLowerCase();
+      return g === 'female' || g.includes('女');
+    });
 
-      // 检查是否重复使用音色
-      if (usedVoices.has(selectedVoice)) {
-        throw new Error(`音色 ${selectedVoice} 已被其他说话者使用`);
-      }
+    const pickRandomName = (arr: any[]) => arr.length ? arr[Math.floor(Math.random() * arr.length)].name : '';
 
-      speakerVoices[speaker] = selectedVoice;
-      usedVoices.add(selectedVoice);
+    if (maleVoices.length > 0 && femaleVoices.length > 0) {
+      mapping['A'] = pickRandomName(maleVoices);
+      mapping['B'] = pickRandomName(femaleVoices);
+    } else if ((candidateVoices || []).length >= 2) {
+      // 若备选没有覆盖到双性别，则从备选中随机两条不同音色
+      const idxA = Math.floor(Math.random() * candidateVoices.length);
+      let idxB = Math.floor(Math.random() * candidateVoices.length);
+      if (idxB === idxA && candidateVoices.length > 1) idxB = (idxA + 1) % candidateVoices.length;
+      mapping['A'] = candidateVoices[idxA].name;
+      mapping['B'] = candidateVoices[idxB].name;
+    } else if ((candidateVoices || []).length === 1) {
+      // 只有一个备选则 A/B 使用同一音色
+      mapping['A'] = candidateVoices[0].name;
+      mapping['B'] = candidateVoices[0].name;
+    } else {
+      // 无备选则回退到旧策略（性别推断/随机）
+      const a = getRandomMaleVoice();
+      const b = getRandomFemaleVoice();
+      mapping['A'] = a || getRandomVoice() || '';
+      mapping['B'] = b || getRandomVoice() || mapping['A'] || '';
     }
 
-    console.log('getSpeakerVoices - 最终音色分配:', speakerVoices);
-    return speakerVoices;
+    // 其余说话者（C/D...）随机从备选中分配，避免与 A/B 重复尽量优先
+    for (const s of speakers) {
+      if (s === 'A' || s === 'B') continue;
+      let name = '';
+      if ((candidateVoices || []).length) {
+        const pool = candidateVoices
+          .map((v: any) => v.name)
+          .filter((n: string) => n !== mapping['A'] && n !== mapping['B']);
+        name = pool.length ? pool[Math.floor(Math.random() * pool.length)] : (candidateVoices[0].name || '');
+      }
+      mapping[s] = name || getRandomVoice() || mapping['A'] || mapping['B'] || '';
+    }
+
+    console.log('getSpeakerVoices - 最终音色分配(随机性别优先):', mapping);
+    return mapping;
   };
 
   // 获取随机音色
@@ -1144,6 +1154,7 @@ export default function ShadowingReviewList() {
           lang: lang,
           speakingRate: speakingRate,
           pitch: pitch,
+          speakerVoices: speakerVoices,
         }),
       });
 

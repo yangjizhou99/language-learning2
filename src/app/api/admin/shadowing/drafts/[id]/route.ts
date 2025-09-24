@@ -90,8 +90,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // 忽略解析错误，保留原始URL
     }
 
-    // 准备插入数据
+    // 准备插入数据（显式生成 id，避免依赖数据库默认值缺失）
     const insertData: any = {
+      id: crypto.randomUUID(),
       lang: d.lang,
       level: d.level,
       title: d.title,

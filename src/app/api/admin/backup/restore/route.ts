@@ -1178,18 +1178,6 @@ async function insertNdjsonBatch(
   const result = { success: 0, failed: 0 };
   
   try {
-    // 构建INSERT语句
-    const quotedColumns = columns.map(col => `"${col}"`).join(', ');
-    const values = rows.map(row => {
-      const rowValues = columns.map(col => {
-        const value = row[col];
-        return convertValueForInsert(value);
-      });
-      return `(${rowValues.join(', ')})`;
-    });
-    
-    const insertSql = `INSERT INTO "${tableName}" (${quotedColumns}) VALUES ${values.join(', ')};`;
-    
     // 执行插入
     if (databaseType === 'local' || databaseType === 'prod') {
       const connectionString = databaseType === 'local' 
@@ -1209,15 +1197,39 @@ async function insertNdjsonBatch(
         try { await client.query('SET CONSTRAINTS ALL DEFERRED'); } catch {}
         try { await client.query("SET LOCAL search_path = public"); } catch {}
 
+        // 读取列类型映射，便于为数组/JSON列做正确转换
+        const columnTypeMap = await getColumnTypeMap(client as import('pg').Client, tableName);
+
+        // 构建INSERT语句（按列类型转换值）
+        const quotedColumns = columns.map(col => `"${col}"`).join(', ');
+        const values = rows.map(row => {
+          const rowValues = columns.map(col => {
+            const value = row[col];
+            const targetType = columnTypeMap[col];
+            return convertValueForInsertByType(value, targetType);
+          });
+          return `(${rowValues.join(', ')})`;
+        });
+        const insertSql = `INSERT INTO "${tableName}" (${quotedColumns}) VALUES ${values.join(', ')};`;
+
         try {
           await client.query(insertSql);
           result.success = rows.length;
         } catch (err) {
           console.error(`PostgreSQL插入失败，尝试逐行插入:`, err);
+          // 回滚并开启新事务，避免处于 aborted 状态
+          try { await client.query('ROLLBACK'); } catch {}
+          try { await client.query('BEGIN'); } catch {}
+          try { await client.query('SET LOCAL row_security = off'); } catch {}
+          try { await client.query('SET CONSTRAINTS ALL DEFERRED'); } catch {}
+          try { await client.query("SET LOCAL search_path = public"); } catch {}
           // 逐行插入（宽松模式）
           for (const row of rows) {
             try {
-              const singleValues = columns.map(col => convertValueForInsert(row[col]));
+              const singleValues = columns.map(col => {
+                const targetType = columnTypeMap[col];
+                return convertValueForInsertByType(row[col], targetType);
+              });
               const singleSql = `INSERT INTO "${tableName}" (${quotedColumns}) VALUES (${singleValues.join(', ')});`;
               await client.query(singleSql);
               result.success++;
@@ -1235,6 +1247,16 @@ async function insertNdjsonBatch(
     } else {
       // Supabase
       const supabase = getServiceSupabase();
+      // 无法可靠读取列类型（exec_sql 多用于执行），仍使用通用转换作为兜底
+      const quotedColumns = columns.map(col => `"${col}"`).join(', ');
+      const values = rows.map(row => {
+        const rowValues = columns.map(col => {
+          const value = row[col];
+          return convertValueForInsert(value);
+        });
+        return `(${rowValues.join(', ')})`;
+      });
+      const insertSql = `INSERT INTO "${tableName}" (${quotedColumns}) VALUES ${values.join(', ')};`;
       try {
         const { error } = await supabase.rpc('exec_sql', { sql: insertSql });
         if (error) throw error;
@@ -1265,7 +1287,7 @@ async function insertNdjsonBatch(
   return result;
 }
 
-// 将值转换为SQL插入格式（宽松模式）
+// 将值转换为SQL插入格式（宽松模式，未知列类型）
 function convertValueForInsert(value: unknown): string {
   if (value === null || value === undefined) {
     return 'NULL';
@@ -1301,5 +1323,196 @@ function convertValueForInsert(value: unknown): string {
   
   // 字符串和其他类型
   return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+// 读取指定表的列类型映射（public schema）。返回如：{ target_langs: 'text[]', allowed_levels: 'integer[]', bio: 'text', ... }
+async function getColumnTypeMap(client: import('pg').Client, tableName: string): Promise<Record<string, string>> {
+  const map: Record<string, string> = {};
+  try {
+    const res = await client.query(
+      `select column_name, data_type, udt_name from information_schema.columns where table_schema = 'public' and table_name = $1`,
+      [tableName]
+    );
+    for (const row of res.rows as Array<{ column_name: string; data_type: string; udt_name: string }>) {
+      const c = row.column_name;
+      const dt = (row.data_type || '').toLowerCase();
+      const udt = (row.udt_name || '').toLowerCase();
+      if (dt === 'array') {
+        const base = mapUdtArrayToBaseType(udt);
+        map[c] = `${base}[]`;
+      } else if (dt === 'user-defined' && udt === 'jsonb') {
+        map[c] = 'jsonb';
+      } else if (udt === 'jsonb') {
+        map[c] = 'jsonb';
+      } else {
+        map[c] = normalizeScalarType(dt);
+      }
+    }
+  } catch (e) {
+    console.warn('读取列类型失败，回退到通用转换:', e);
+  }
+  return map;
+}
+
+function mapUdtArrayToBaseType(udt: string): string {
+  // 常见：_text/_varchar/_int4/_int8/_bool/_uuid/_numeric/_jsonb 等
+  switch (udt) {
+    case '_text':
+    case '_varchar':
+    case '_bpchar':
+      return 'text';
+    case '_int2':
+      return 'smallint';
+    case '_int4':
+      return 'integer';
+    case '_int8':
+      return 'bigint';
+    case '_bool':
+      return 'boolean';
+    case '_uuid':
+      return 'uuid';
+    case '_numeric':
+      return 'numeric';
+    case '_float4':
+      return 'real';
+    case '_float8':
+      return 'double precision';
+    case '_jsonb':
+      return 'jsonb';
+    default:
+      return 'text';
+  }
+}
+
+function normalizeScalarType(dt: string): string {
+  // 简化映射到常见标识
+  switch (dt) {
+    case 'character varying':
+    case 'varchar':
+    case 'bpchar':
+    case 'character':
+      return 'text';
+    case 'integer':
+    case 'int4':
+      return 'integer';
+    case 'bigint':
+    case 'int8':
+      return 'bigint';
+    case 'smallint':
+    case 'int2':
+      return 'smallint';
+    case 'boolean':
+      return 'boolean';
+    case 'uuid':
+      return 'uuid';
+    case 'jsonb':
+      return 'jsonb';
+    case 'numeric':
+      return 'numeric';
+    case 'real':
+      return 'real';
+    case 'double precision':
+      return 'double precision';
+    case 'timestamp with time zone':
+      return 'timestamptz';
+    case 'timestamp without time zone':
+      return 'timestamp';
+    default:
+      return dt || 'text';
+  }
+}
+
+// 按列类型进行值转换（优先匹配数组与 jsonb）
+function convertValueForInsertByType(value: unknown, columnType?: string): string {
+  if (!columnType) return convertValueForInsert(value);
+  if (value === null || value === undefined) return 'NULL';
+
+  // 数组列
+  if (columnType.endsWith('[]')) {
+    const base = columnType.slice(0, -2);
+    const arr = Array.isArray(value)
+      ? value as unknown[]
+      : (typeof value === 'string' && value.trim().startsWith('[')
+        ? safelyParseJsonArray(value as string)
+        : []);
+    return toPostgresArrayLiteral(arr, base);
+  }
+
+  // jsonb 列
+  if (columnType === 'jsonb') {
+    try {
+      return `'${JSON.stringify(value).replace(/'/g, "''")}'::jsonb`;
+    } catch {
+      return "'{}'::jsonb";
+    }
+  }
+
+  // 其余标量：根据类型简单格式化
+  switch (columnType) {
+    case 'boolean':
+      return typeof value === 'boolean' ? (value ? 'TRUE' : 'FALSE') : (String(value).toLowerCase() === 'true' ? 'TRUE' : 'FALSE');
+    case 'integer':
+    case 'bigint':
+    case 'smallint':
+    case 'numeric':
+    case 'real':
+    case 'double precision':
+      return isFinite(Number(value as unknown as number)) ? String(Number(value as unknown as number)) : 'NULL';
+    case 'uuid':
+    case 'timestamptz':
+    case 'timestamp':
+    case 'text':
+    default: {
+      // 将对象/数组序列化为字符串
+      if (typeof value === 'object') {
+        try { return `'${JSON.stringify(value).replace(/'/g, "''")}'`; } catch { return "'{}'"; }
+      }
+      return `'${String(value).replace(/'/g, "''")}'`;
+    }
+  }
+}
+
+function safelyParseJsonArray(s: string): unknown[] {
+  try { const v = JSON.parse(s); return Array.isArray(v) ? v : []; } catch { return []; }
+}
+
+function toPostgresArrayLiteral(arr: unknown[], baseType: string): string {
+  // 空数组
+  if (!arr || arr.length === 0) return `'{}'::${baseType}[]`;
+  const elems = arr.map(v => formatArrayElement(v, baseType));
+  return `'{${elems.join(',')}}'::${baseType}[]`;
+}
+
+function formatArrayElement(v: unknown, baseType: string): string {
+  switch (baseType) {
+    case 'integer':
+    case 'bigint':
+    case 'smallint':
+    case 'numeric':
+    case 'real':
+    case 'double precision': {
+      const n = Number(v as unknown as number);
+      return isFinite(n) ? String(n) : 'NULL';
+    }
+    case 'boolean':
+      return (typeof v === 'boolean' ? v : String(v).toLowerCase() === 'true') ? 'true' : 'false';
+    case 'uuid':
+    case 'text':
+    default: {
+      // 作为字符串元素进行转义并包裹双引号（Postgres 数组字面量规则）
+      const s = String(v ?? '');
+      const escaped = s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      return `"${escaped}"`;
+    }
+    case 'jsonb': {
+      try {
+        const s = JSON.stringify(v);
+        const escaped = s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return `"${escaped}"`;
+      } catch {
+        return '"{}"';
+      }
+    }
+  }
 }
 

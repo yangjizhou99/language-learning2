@@ -79,6 +79,8 @@ export default function ShadowingItemsAdmin() {
       const j = await r.json();
       if (Array.isArray(j)) {
         setItems(j);
+      } else if (Array.isArray(j?.items)) {
+        setItems(j.items);
       } else {
         console.error('加载数据失败:', j);
         toast.error('加载数据失败');
