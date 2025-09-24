@@ -435,26 +435,10 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
         throw new Error(`上传合并音频失败: ${uploadError.message}`);
       }
 
-      // 获取带签名的URL（7天有效期）
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from('tts')
-        .createSignedUrl(`${langPath}/${fileName}`, 7 * 24 * 60 * 60); // 7天有效期
+      // 统一返回代理URL，避免暴露 Supabase 直链/签名链
+      const proxyUrl = `/api/storage-proxy?path=${encodeURIComponent(`${langPath}/${fileName}`)}&bucket=tts`;
 
-      if (urlError) {
-        console.error('生成签名URL失败:', urlError);
-        // 如果签名URL失败，尝试公开URL
-        const { data: publicUrlData } = supabase.storage
-          .from('tts')
-          .getPublicUrl(`${langPath}/${fileName}`);
-        console.log('使用公开URL:', publicUrlData.publicUrl);
-        return NextResponse.json({
-          success: true,
-          mergedAudioUrl: publicUrlData.publicUrl,
-          message: '音频合并成功（使用公开URL）',
-        });
-      }
-
-      console.log('音频合并完成:', urlData.signedUrl);
+      console.log('音频合并完成，代理URL:', proxyUrl);
       console.log('上传数据:', uploadData);
 
       // 清理临时文件
@@ -468,7 +452,7 @@ async function processMergeRequest(request: NextRequest): Promise<Response> {
 
       return NextResponse.json({
         success: true,
-        mergedAudioUrl: urlData.signedUrl,
+        mergedAudioUrl: proxyUrl,
         message: '音频合并成功',
       });
     } catch (error) {

@@ -62,6 +62,7 @@ export async function uploadWithCache(
       .upload(options.path, options.file, {
         contentType: options.contentType || 'audio/mpeg',
         upsert: options.upsert || false,
+        cacheControl: options.cacheControl || defaultCacheControl,
       });
 
     if (error) {

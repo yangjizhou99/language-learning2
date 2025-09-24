@@ -54,18 +54,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 生成访问URL
-    const { data: urlData } = await supabaseAdmin.storage
-      .from('tts-audio')
-      .createSignedUrl(fileName, 7 * 24 * 60 * 60); // 7天有效期
-
-    if (!urlData?.signedUrl) {
-      return NextResponse.json({ success: false, error: '生成访问URL失败' }, { status: 500 });
-    }
+    // 统一返回代理URL，避免暴露 Supabase 直链/签名链
+    const proxyUrl = `/api/storage-proxy?path=${encodeURIComponent(fileName)}&bucket=tts-audio`;
 
     return NextResponse.json({
       success: true,
-      audioUrl: urlData.signedUrl,
+      audioUrl: proxyUrl,
       fileName,
       provider: 'xunfei',
       voiceId,
