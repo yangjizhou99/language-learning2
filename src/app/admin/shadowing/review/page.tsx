@@ -2264,9 +2264,9 @@ export default function ShadowingReviewList() {
                           <div className="text-xs text-gray-500 mb-2">🎵 音频播放:</div>
                           <div className="flex items-center gap-2">
                             <audio
-                              key={`${it.notes.audio_url}-${Date.now()}`}
                               controls
-                              src={`${it.notes.audio_url}${it.notes.audio_url.includes('?') ? '&' : '?'}t=${Date.now()}`}
+                              preload="metadata"
+                              src={it.notes.audio_url}
                               className="h-8 w-full max-w-md"
                             />
                             <Button
