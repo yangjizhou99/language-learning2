@@ -313,7 +313,8 @@ async function runOne(
     });
 
     if (rows.length) {
-      const { error } = await supabase.from('shadowing_drafts').insert(rows);
+      const rowsWithId = rows.map((r: any) => ({ id: r.id || crypto.randomUUID(), ...r }));
+      const { error } = await supabase.from('shadowing_drafts').insert(rowsWithId);
       if (error) throw new Error(error instanceof Error ? error.message : String(error));
       savedTable = 'shadowing_drafts';
       savedCount = rows.length;

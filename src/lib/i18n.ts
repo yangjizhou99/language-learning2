@@ -25,6 +25,57 @@ export interface Translations {
     language: string;
     checking_login: string;
     login_required: string;
+    close: string;
+    expand: string;
+    collapse: string;
+  };
+
+  // 个人资料页面
+  profile: {
+    title: string;
+    subtitle: string;
+    section_basic: string;
+    section_preferences: string;
+    username: string;
+    username_placeholder: string;
+    native_language: string;
+    native_language_placeholder: string;
+    bio: string;
+    bio_placeholder: string;
+    goals: string;
+    goals_placeholder: string;
+    target_languages: string;
+    preferred_tone: string;
+    preferred_tone_placeholder: string;
+    interested_domains: string;
+    saving: string;
+    save: string;
+    save_success: string;
+    save_failed: string;
+    load_failed: string;
+    loading: string;
+    registered_at: string; // e.g. 注册时间 / Registered at / 登録日時
+    tones: {
+      formal: string;
+      casual: string;
+      professional: string;
+      friendly: string;
+      academic: string;
+    };
+    domains: {
+      business: string;
+      technology: string;
+      education: string;
+      healthcare: string;
+      finance: string;
+      travel: string;
+      entertainment: string;
+      sports: string;
+      news: string;
+      lifestyle: string;
+    };
+    language_labels: Record<string, string>; // 动态语言列表显示名
+    date_locales: Record<'zh' | 'en' | 'ja', string>; // 用于 toLocaleDateString
   };
 
   // 导航
@@ -226,6 +277,16 @@ export interface Translations {
     saving_modal_description: string;
     // 功能说明
     functionality_guide: string;
+    // 分步骤引导与完成卡片
+    step1_tip: string;
+    step2_tip: string;
+    step3_tip: string;
+    step4_tip: string;
+    step5_tip: string;
+    practice_done_title: string;
+    practice_done_desc: string;
+    practice_again: string;
+    back_to_catalog: string;
   };
 
   // 词汇页面
@@ -395,6 +456,66 @@ const zh: Translations = {
     language: '语言',
     checking_login: '检查登录状态...',
     login_required: '需要登录',
+    close: '关闭',
+    expand: '展开',
+    collapse: '折叠',
+  },
+  profile: {
+    title: '个人资料',
+    subtitle: '管理您的个人信息和学习偏好',
+    section_basic: '基本信息',
+    section_preferences: '学习偏好',
+    username: '用户名',
+    username_placeholder: '输入您的用户名',
+    native_language: '母语',
+    native_language_placeholder: '选择您的母语',
+    bio: '个人简介',
+    bio_placeholder: '介绍一下自己...',
+    goals: '学习目标',
+    goals_placeholder: '描述您的学习目标...',
+    target_languages: '目标语言',
+    preferred_tone: '偏好的语调',
+    preferred_tone_placeholder: '选择您偏好的语调',
+    interested_domains: '感兴趣的领域',
+    saving: '保存中...',
+    save: '保存资料',
+    save_success: '个人资料保存成功',
+    save_failed: '保存个人资料失败',
+    load_failed: '加载个人资料失败',
+    loading: '加载中...',
+    registered_at: '注册时间',
+    tones: {
+      formal: '正式',
+      casual: '随意',
+      professional: '专业',
+      friendly: '友好',
+      academic: '学术',
+    },
+    domains: {
+      business: '商务',
+      technology: '科技',
+      education: '教育',
+      healthcare: '医疗',
+      finance: '金融',
+      travel: '旅游',
+      entertainment: '娱乐',
+      sports: '体育',
+      news: '新闻',
+      lifestyle: '生活',
+    },
+    language_labels: {
+      zh: '中文',
+      en: 'English',
+      ja: '日本語',
+      ko: '한국어',
+      fr: 'Français',
+      de: 'Deutsch',
+      es: 'Español',
+      it: 'Italiano',
+      pt: 'Português',
+      ru: 'Русский',
+    },
+    date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP' },
   },
   nav: {
     home: '首页',
@@ -402,7 +523,7 @@ const zh: Translations = {
     alignment_practice: '对齐练习',
     wide_reading: '广读',
     shadowing: '跟读练习',
-    vocabulary: '生词本',
+    vocabulary: '题库',
     admin: '管理员',
   },
   practice: {
@@ -585,6 +706,16 @@ const zh: Translations = {
     // 功能说明
     functionality_guide:
       '📚 题目选择：支持日英中三语，L1-L5难度等级，智能筛选\n🎤 录音练习：音频播放、实时录音、发音对比\n🎯 智能评分：语音识别、5级评分体系\n📖 生词管理：拖拽选择生词，自动保存到生词本\n💾 进度跟踪：练习状态管理，支持草稿保存',
+    // 分步骤引导与完成卡片
+    step1_tip: 'Step 1 · 盲听：先完整听一遍，不看原文。准备好后点击“下一步”。',
+    step2_tip: 'Step 2 · 看原文跟读：现在可以看原文，再听一遍并跟读。',
+    step3_tip: 'Step 3 · 生词选择：开启生词模式，点击原文选取生词，并点击 AI 解释。',
+    step4_tip: 'Step 4 · 查看翻译：优先显示你的母语翻译，一边看翻译一边播放理解含义。',
+    step5_tip: 'Step 5 · 录音评分：开始录音并评分，此时仅保留原文，其它模块隐藏。',
+    practice_done_title: '练习已完成',
+    practice_done_desc: '成绩与生词已保存，你可以选择继续提升',
+    practice_again: '再练一次',
+    back_to_catalog: '返回题库',
   },
   vocabulary: {
     title: '生词本',
@@ -752,6 +883,66 @@ const en: Translations = {
     language: 'Language',
     checking_login: 'Checking login status...',
     login_required: 'Login Required',
+    close: 'Close',
+    expand: 'Expand',
+    collapse: 'Collapse',
+  },
+  profile: {
+    title: 'Profile',
+    subtitle: 'Manage your personal info and learning preferences',
+    section_basic: 'Basic Info',
+    section_preferences: 'Learning Preferences',
+    username: 'Username',
+    username_placeholder: 'Enter your username',
+    native_language: 'Native Language',
+    native_language_placeholder: 'Select your native language',
+    bio: 'Bio',
+    bio_placeholder: 'Tell us about yourself...',
+    goals: 'Learning Goals',
+    goals_placeholder: 'Describe your learning goals...',
+    target_languages: 'Target Languages',
+    preferred_tone: 'Preferred Tone',
+    preferred_tone_placeholder: 'Select your preferred tone',
+    interested_domains: 'Interested Domains',
+    saving: 'Saving...',
+    save: 'Save Profile',
+    save_success: 'Profile saved successfully',
+    save_failed: 'Failed to save profile',
+    load_failed: 'Failed to load profile',
+    loading: 'Loading...',
+    registered_at: 'Registered at',
+    tones: {
+      formal: 'Formal',
+      casual: 'Casual',
+      professional: 'Professional',
+      friendly: 'Friendly',
+      academic: 'Academic',
+    },
+    domains: {
+      business: 'Business',
+      technology: 'Technology',
+      education: 'Education',
+      healthcare: 'Healthcare',
+      finance: 'Finance',
+      travel: 'Travel',
+      entertainment: 'Entertainment',
+      sports: 'Sports',
+      news: 'News',
+      lifestyle: 'Lifestyle',
+    },
+    language_labels: {
+      zh: 'Chinese',
+      en: 'English',
+      ja: 'Japanese',
+      ko: 'Korean',
+      fr: 'French',
+      de: 'German',
+      es: 'Spanish',
+      it: 'Italian',
+      pt: 'Portuguese',
+      ru: 'Russian',
+    },
+    date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP' },
   },
   nav: {
     home: 'Home',
@@ -898,11 +1089,11 @@ const en: Translations = {
     // 新增的按钮和界面文本翻译
     refresh_vocabulary: 'Refresh Vocabulary',
     select_question_to_start: 'Select a question to start practice',
-    click_vocabulary_button: 'Click the "Vocabulary" button above to select a question',
+    click_vocabulary_button: 'Click the "Catalog" button above to select a question',
     select_from_left_vocabulary:
       'Select a question from the left vocabulary to start Shadowing practice',
     shadowing_practice: 'Shadowing Practice',
-    shadowing_vocabulary: 'Shadowing Vocabulary',
+    shadowing_vocabulary: 'Shadowing Catalog',
     no_questions_found: 'No questions found',
     // 生词解释相关
     no_explanation: 'No explanation available',
@@ -945,6 +1136,16 @@ const en: Translations = {
     // 功能说明
     functionality_guide:
       '📚 Question Selection: Japanese/English/Chinese, L1-L5 levels, smart filtering\n🎤 Recording Practice: Audio playback, real-time recording, pronunciation comparison\n🎯 Smart Scoring: Speech recognition, 5-level scoring system\n📖 Vocabulary Management: Drag to select words, auto-save to vocabulary\n💾 Progress Tracking: Practice status management, draft saving support',
+    // Step tips and done card
+    step1_tip: 'Step 1 · Blind listen: play once without reading. Click Next when ready.',
+    step2_tip: 'Step 2 · Read + shadow: view the text and read along with playback.',
+    step3_tip: 'Step 3 · Pick words: enable vocab mode, tap words, and generate AI explanations.',
+    step4_tip: 'Step 4 · View translation: show your native translation and listen while reading.',
+    step5_tip: 'Step 5 · Record & score: record and score; only original text is shown.',
+    practice_done_title: 'Practice Completed',
+    practice_done_desc: 'Scores and words saved. You can continue improving.',
+    practice_again: 'Practice Again',
+    back_to_catalog: 'Back to Catalog',
   },
   vocabulary: {
     title: 'Vocabulary',
@@ -1113,6 +1314,66 @@ const ja: Translations = {
     language: '言語',
     checking_login: 'ログイン状態を確認中...',
     login_required: 'ログインが必要です',
+    close: '閉じる',
+    expand: '展開',
+    collapse: '折りたたむ',
+  },
+  profile: {
+    title: 'プロフィール',
+    subtitle: '個人情報と言語学習の設定を管理する',
+    section_basic: '基本情報',
+    section_preferences: '学習設定',
+    username: 'ユーザー名',
+    username_placeholder: 'ユーザー名を入力',
+    native_language: '母語',
+    native_language_placeholder: '母語を選択',
+    bio: '自己紹介',
+    bio_placeholder: '自己紹介を書いてください...',
+    goals: '学習目標',
+    goals_placeholder: '学習目標を記入してください...',
+    target_languages: '目標言語',
+    preferred_tone: '好みの文体',
+    preferred_tone_placeholder: '好みの文体を選択',
+    interested_domains: '興味のある分野',
+    saving: '保存中...',
+    save: 'プロフィールを保存',
+    save_success: 'プロフィールを保存しました',
+    save_failed: 'プロフィールの保存に失敗しました',
+    load_failed: 'プロフィールの読み込みに失敗しました',
+    loading: '読み込み中...',
+    registered_at: '登録日時',
+    tones: {
+      formal: 'フォーマル',
+      casual: 'カジュアル',
+      professional: 'プロフェッショナル',
+      friendly: 'フレンドリー',
+      academic: 'アカデミック',
+    },
+    domains: {
+      business: 'ビジネス',
+      technology: 'テクノロジー',
+      education: '教育',
+      healthcare: '医療',
+      finance: '金融',
+      travel: '旅行',
+      entertainment: 'エンタメ',
+      sports: 'スポーツ',
+      news: 'ニュース',
+      lifestyle: 'ライフスタイル',
+    },
+    language_labels: {
+      zh: '中国語',
+      en: '英語',
+      ja: '日本語',
+      ko: '韓国語',
+      fr: 'フランス語',
+      de: 'ドイツ語',
+      es: 'スペイン語',
+      it: 'イタリア語',
+      pt: 'ポルトガル語',
+      ru: 'ロシア語',
+    },
+    date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP' },
   },
   nav: {
     home: 'ホーム',
@@ -1120,7 +1381,7 @@ const ja: Translations = {
     alignment_practice: 'アライメント練習',
     wide_reading: '多読',
     shadowing: 'シャドーイング',
-    vocabulary: '単語帳',
+    vocabulary: '題庫',
     admin: '管理者',
   },
   practice: {
@@ -1305,6 +1566,16 @@ const ja: Translations = {
     // 功能说明
     functionality_guide:
       '📚 問題選択：日英中三言語、L1-L5レベル、スマートフィルタリング\n🎤 録音練習：音声再生、リアルタイム録音、発音比較\n🎯 スマート採点：音声認識、5段階採点システム\n📖 単語管理：ドラッグで単語選択、自動保存\n💾 進捗追跡：練習状況管理、下書き保存対応',
+    // ステップのヒントと完了カード
+    step1_tip: 'Step 1 · 盲聴：まず原文を見ずに一度通して聞く。準備できたら「次へ」。',
+    step2_tip: 'Step 2 · 原文を見てシャドーイング：原文を見ながらもう一度再生して追い読み。',
+    step3_tip: 'Step 3 · 単語選択：単語モードを有効化し、本文の単語をタップしてAI説明を生成。',
+    step4_tip: 'Step 4 · 翻訳表示：母語の翻訳を表示し、意味を確認しながら再生。',
+    step5_tip: 'Step 5 · 録音と採点：録音して採点。原文のみ表示、他モジュールは非表示。',
+    practice_done_title: '練習完了',
+    practice_done_desc: 'スコアと単語は保存されました。さらに上達を目指しましょう。',
+    practice_again: 'もう一度練習',
+    back_to_catalog: '題庫に戻る',
   },
   vocabulary: {
     title: '単語帳',

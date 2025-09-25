@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { requireAdmin } from '@/lib/admin';
 import { chatJSON } from '@/lib/ai/client';
 
@@ -157,35 +158,104 @@ export async function POST(req: NextRequest) {
       throw new Error('Invalid response format');
     }
 
-    // 处理生成的小主题
-    const subtopicsToProcess = parsed.subtopics.map((subtopic: any) => ({
-      theme_id,
-      lang,
-      level,
-      genre,
-      title: subtopic.title,
-      seed: subtopic.seed || '',
-      one_line: subtopic.one_line || '',
-      ai_provider: provider,
-      ai_model: model,
-      ai_usage: result.usage || {},
-      status: 'active',
-    }));
+    // 处理生成的小主题（去重 + 显式主键/时间，兼容无默认值环境）
+    type SubtopicInsert = {
+      id: string;
+      created_at: string;
+      theme_id: string;
+      lang: string;
+      level: number;
+      genre: string;
+      title: string;
+      seed: string;
+      one_line: string;
+      ai_provider: string;
+      ai_model: string;
+      ai_usage: Record<string, unknown>;
+      status: string;
+      created_by?: string | null;
+    };
+    const nowIso = new Date().toISOString();
+    const seenTitles = new Set<string>();
+    const subtopicsToProcess: SubtopicInsert[] = parsed.subtopics
+      .filter((s: any) => {
+        const key = String(s?.title || '').trim();
+        if (!key || seenTitles.has(key) || existingSubtopicTitles.includes(key)) return false;
+        seenTitles.add(key);
+        return true;
+      })
+      .map((subtopic: any): SubtopicInsert => ({
+        id: randomUUID(),
+        created_at: nowIso,
+        theme_id,
+        lang,
+        level,
+        genre,
+        title: subtopic.title,
+        seed: subtopic.seed || '',
+        one_line: subtopic.one_line || '',
+        ai_provider: provider,
+        ai_model: model,
+        ai_usage: result.usage || {},
+        status: 'active',
+        created_by: auth.user?.id,
+      }));
 
-    let insertedData: any[] = [];
+    let insertedData: Array<Pick<SubtopicInsert, 'id' | 'title'>> = [];
     if (subtopicsToProcess.length > 0) {
-      const { data, error } = await supabase
-        .from('shadowing_subtopics')
-        .insert(subtopicsToProcess)
-        .select('id, title');
+      const attemptInsert = async (rows: Array<Partial<SubtopicInsert>>) =>
+        await supabase.from('shadowing_subtopics').insert(rows).select('id, title');
 
+      const { data, error } = await attemptInsert(subtopicsToProcess);
       if (error) {
-        throw new Error(
-          `Database error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
+        console.error('shadowing_subtopics insert error:', error);
+        const errMsg = (error as any)?.message || '';
+        const errCode = (error as any)?.code || '';
+        const likelyUnknownColumn = /column .* does not exist/i.test(errMsg) || errCode === '42703';
 
-      insertedData = data || [];
+        if (likelyUnknownColumn) {
+          const minimalRows = subtopicsToProcess.map((t: SubtopicInsert) => ({
+            id: t.id,
+            created_at: t.created_at,
+            theme_id: t.theme_id,
+            lang: t.lang,
+            level: t.level,
+            genre: t.genre,
+            title: t.title,
+            one_line: t.one_line,
+            status: t.status,
+            created_by: t.created_by,
+          }));
+          const { data: data2, error: error2 } = await attemptInsert(minimalRows);
+          if (error2) {
+            console.error('shadowing_subtopics minimal insert error:', error2);
+            const formatted = {
+              message: (error2 as any)?.message || String(error2),
+              details: (error2 as any)?.details,
+              hint: (error2 as any)?.hint,
+              code: (error2 as any)?.code,
+            };
+            return NextResponse.json(
+              { error: `Database error: ${formatted.message}`, error_detail: formatted },
+              { status: 500 },
+            );
+          }
+          insertedData = data2 || [];
+        } else {
+          const formatted = {
+            message: (error as any)?.message || String(error),
+            details: (error as any)?.details,
+            hint: (error as any)?.hint,
+            code: (error as any)?.code,
+          };
+          return NextResponse.json(
+            { error: `Database error: ${formatted.message}`, error_detail: formatted },
+            { status: 500 },
+          );
+        }
+      } else {
+        insertedData = data || [];
+      }
     }
 
     return NextResponse.json({
@@ -196,15 +266,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Subtopic generation error:', error);
+    const errObj: any = error as any;
+    const formatted = {
+      message: errObj?.message || String(error),
+      details: errObj?.details,
+      hint: errObj?.hint,
+      code: errObj?.code,
+    };
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error instanceof Error
-              ? error.message
-              : String(error)
-            : 'Generation failed',
-      },
+      { error: formatted.message, error_detail: formatted },
       { status: 500 },
     );
   }

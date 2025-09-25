@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 
 const CreateVocabEntrySchema = z.object({
   term: z.string().min(1).max(500), // 增加长度限制到500字符
@@ -98,15 +99,16 @@ export async function POST(request: NextRequest) {
 
     const { entries } = BulkCreateSchema.parse(body);
 
-    // 批量插入生词
+    // 批量插入生词（确保每条记录有 id）
+    const rowsToInsert = entries.map((entry) => ({
+      id: randomUUID(),
+      ...entry,
+      user_id: user.id,
+    }));
+
     const { data, error } = await supabase
       .from('vocab_entries')
-      .insert(
-        entries.map((entry) => ({
-          ...entry,
-          user_id: user.id,
-        })),
-      )
+      .insert(rowsToInsert)
       .select();
 
     if (error) {

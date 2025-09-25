@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
+import PracticeStepper from './PracticeStepper';
 import SelectablePassage from '@/components/SelectablePassage';
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
@@ -2132,6 +2133,12 @@ export default function JapaneseShadowingPage() {
 
   // 移动端检测
   const { actualIsMobile } = useMobile();
+  // デスクトップ/モバイル共に未完了時は段階的フローを適用
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [highlightPlay, setHighlightPlay] = useState(false);
+  const [highlightVocab, setHighlightVocab] = useState(false);
+  const [highlightScore, setHighlightScore] = useState(false);
+  const gatingActive = !practiceComplete;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // 如果正在检查认证或用户未登录，显示相应提示
@@ -2201,9 +2208,10 @@ export default function JapaneseShadowingPage() {
                 size="sm"
                 onClick={() => setMobileSidebarOpen(true)}
                 className="flex items-center gap-2 bg-white/50 hover:bg-white/80 border-white/30 shadow-md"
+                aria-label={t.shadowing.shadowing_vocabulary}
               >
                 <Menu className="w-4 h-4" />
-                {t.nav.vocabulary}
+                {t.shadowing.shadowing_vocabulary}
               </Button>
             </div>
 
@@ -2238,6 +2246,7 @@ export default function JapaneseShadowingPage() {
                         onClick={() => fetchItems()}
                         className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/20 transition-colors"
                         title={t.shadowing.refresh_vocabulary || '刷新题库'}
+                        aria-label={t.shadowing.refresh_vocabulary || '刷新题库'}
                         disabled={loading}
                       >
                         <div className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}>🔄</div>
@@ -2247,6 +2256,7 @@ export default function JapaneseShadowingPage() {
                         size="sm"
                         onClick={() => setMobileSidebarOpen(false)}
                         className="text-white hover:bg-white/20"
+                        aria-label={t.common.close || '关闭'}
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -2683,6 +2693,31 @@ export default function JapaneseShadowingPage() {
                 </Card>
               ) : (
                 <div className="space-y-4">
+                  {/* モバイルのステップナビとヒント（未完了時） */}
+                  {gatingActive && (
+                    <Card className="p-4 bg-white border-0 shadow-sm">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <PracticeStepper
+                          size="sm"
+                          currentStep={step}
+                          onStepChange={(s)=> setStep(s)}
+                          maxStepAllowed={step}
+                          labels={[t.shadowing.step1_tip, t.shadowing.step2_tip, t.shadowing.step3_tip, t.shadowing.step4_tip, t.shadowing.step5_tip].map(x=> String(x || 'Step'))}
+                        />
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} disabled={step===1} aria-label={t.common.back}>{t.common.back}</Button>
+                          <Button size="sm" onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} disabled={step===5} aria-label={t.common.next}>{t.common.next}</Button>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-xs text-gray-700">
+                        {step===1 && t.shadowing.step1_tip}
+                        {step===2 && t.shadowing.step2_tip}
+                        {step===3 && t.shadowing.step3_tip}
+                        {step===4 && t.shadowing.step4_tip}
+                        {step===5 && t.shadowing.step5_tip}
+                      </div>
+                    </Card>
+                  )}
                   {/* 题目信息 - 手机端优化 */}
                   <Card className="p-6 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg rounded-2xl">
                     <div className="mb-6">
@@ -2761,13 +2796,14 @@ export default function JapaneseShadowingPage() {
                       </div>
                     </div>
 
-                    {/* 生词选择模式切换 */}
+                    {/* 生词选择模式切换（仅步骤3または完了後） */}
+                    {(!gatingActive || step === 3) && (
                     <div className="mb-4">
                       <Button
                         variant={isVocabMode ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setIsVocabMode(!isVocabMode)}
-                        className="w-full"
+                        className={`w-full ${highlightVocab ? 'animate-pulse ring-2 ring-amber-400' : ''}`}
                       >
                         {isVocabMode ? t.shadowing.vocab_mode_on : t.shadowing.vocab_mode_off}
                       </Button>
@@ -2822,8 +2858,10 @@ export default function JapaneseShadowingPage() {
                         </div>
                       )}
                     </div>
+                    )}
 
-                    {/* 文本内容 */}
+                    {/* 文本内容（ステップ>=2または完了後） */}
+                    {(!gatingActive || step >= 2) && (
                     <div className="p-4 bg-gray-50 rounded-lg">
                       {isVocabMode ? (
                         <SelectablePassage
@@ -2992,9 +3030,10 @@ export default function JapaneseShadowingPage() {
                         </div>
                       )}
                     </div>
+                    )}
 
-                    {/* 音频播放器 */}
-                    {currentItem.audio_url && (
+                    {/* 音频播放器（ステップ5は非表示） */}
+                    {currentItem.audio_url && (!gatingActive || step !== 5) && (
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-sm font-medium text-blue-700">
@@ -3205,8 +3244,8 @@ export default function JapaneseShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 翻译模块 - 移动端 */}
-                  {currentItem && (
+                  {/* 翻译模块 - 移动端（ステップ4または完了後） */}
+                  {currentItem && (!gatingActive || step === 4) && (
                     <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
@@ -3281,7 +3320,8 @@ export default function JapaneseShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 录音练习区域 */}
+                  {/* 録音練習（ステップ5または完了後） */}
+                  {(!gatingActive || step >= 5) && (
                   <Card className="p-4">
                     <AudioRecorder
                       ref={audioRecorderRef}
@@ -3295,9 +3335,10 @@ export default function JapaneseShadowingPage() {
                       language={currentItem?.lang || 'ja'}
                     />
                   </Card>
+                  )}
 
-                  {/* 评分区域 */}
-                  {!scoringResult && (
+                  {/* 採点（ステップ5または完了後） */}
+                  {!scoringResult && (!gatingActive || step >= 5) && (
                     <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
@@ -3358,7 +3399,7 @@ export default function JapaneseShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 评分结果区域 */}
+                  {/* 採点結果と完了カード */}
                   {scoringResult && (
                     <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center justify-between mb-6">
@@ -3649,12 +3690,49 @@ export default function JapaneseShadowingPage() {
                       )}
                     </Card>
                   )}
+
+                  {/* 完了カード（デスクトップのみ） */}
+                  {practiceComplete && !actualIsMobile && (
+                    <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                          <span className="text-white text-lg">✅</span>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{t.shadowing.practice_done_title}</h3>
+                          <p className="text-sm text-gray-600">{t.shadowing.practice_done_desc}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 flex-wrap">
+                        <Button
+                          onClick={() => {
+                            setPracticeComplete(false);
+                            setStep(1);
+                            setScoringResult(null);
+                            setIsVocabMode(false);
+                            setShowTranslation(false);
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {t.shadowing.practice_again}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setCurrentItem(null);
+                          }}
+                        >
+                          {t.shadowing.back_to_catalog}
+                        </Button>
+                      </div>
+                    </Card>
+                  )}
                 </div>
               )}
             </div>
           </div>
         ) : (
-          /* 桌面端布局 - 优化滚动体验 */
+          /* デスクトップレイアウト */
           <div className="flex gap-6 min-h-[700px]">
             {/* 左侧题库列表 */}
             <div
@@ -3691,6 +3769,7 @@ export default function JapaneseShadowingPage() {
                       size="sm"
                       onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                       className="text-white hover:bg-white/20"
+                      aria-label={sidebarCollapsed ? (t.common.expand || '展开') : (t.common.collapse || '折叠')}
                     >
                       {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
                     </Button>
@@ -4121,6 +4200,31 @@ export default function JapaneseShadowingPage() {
                 </Card>
               ) : (
                 <div className="space-y-6">
+                  {/* デスクトップのステップナビとヒント（未完了時） */}
+                  {gatingActive && (
+                    <Card className="p-4 bg-white border-0 shadow-sm">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <span className={`px-2 py-1 rounded ${step===1?'bg-blue-600 text-white':'bg-gray-100'}`}>1</span>
+                          <span className={`px-2 py-1 rounded ${step===2?'bg-blue-600 text-white':'bg-gray-100'}`}>2</span>
+                          <span className={`px-2 py-1 rounded ${step===3?'bg-blue-600 text-white':'bg-gray-100'}`}>3</span>
+                          <span className={`px-2 py-1 rounded ${step===4?'bg-blue-600 text-white':'bg-gray-100'}`}>4</span>
+                          <span className={`px-2 py-1 rounded ${step===5?'bg-blue-600 text-white':'bg-gray-100'}`}>5</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} disabled={step===1}>{t.common.back}</Button>
+                          <Button size="sm" onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} disabled={step===5}>{t.common.next}</Button>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-sm text-gray-700">
+                        {step===1 && t.shadowing.step1_tip}
+                        {step===2 && t.shadowing.step2_tip}
+                        {step===3 && t.shadowing.step3_tip}
+                        {step===4 && t.shadowing.step4_tip}
+                        {step===5 && t.shadowing.step5_tip}
+                      </div>
+                    </Card>
+                  )}
                   {/* 题目信息 */}
                   <Card className="p-8 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl">
                     <div className="flex items-start justify-between mb-6">
@@ -4169,7 +4273,7 @@ export default function JapaneseShadowingPage() {
                           onClick={playAudio}
                           variant="outline"
                           size="sm"
-                          className="h-11 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                          className={`h-11 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all ${highlightPlay ? 'animate-pulse ring-2 ring-blue-400' : ''}`}
                         >
                           {isPlaying ? (
                             <Pause className="w-5 h-5 mr-2" />
@@ -4200,25 +4304,20 @@ export default function JapaneseShadowingPage() {
                           {saving ? t.common.loading : t.shadowing.complete_and_save}
                         </Button>
 
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={debugVocabData}
-                          className="h-11 bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200 text-gray-700 hover:from-gray-100 hover:to-gray-200 hover:border-gray-300 rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                          {t.shadowing.debug_vocab}
-                        </Button>
+                        
                       </div>
                     </div>
 
-                    {/* 生词选择模式切换 */}
+                    {/* 生词选择模式切换（ステップ3または完了後） */}
+                    {(!gatingActive || step === 3) && (
                     <div className="mb-4">
                       <Button
                         variant={isVocabMode ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setIsVocabMode(!isVocabMode)}
+                        className={highlightVocab ? 'animate-pulse ring-2 ring-amber-400' : ''}
                       >
-                        {isVocabMode ? '退出生词模式' : '生词选择模式'}
+                        {isVocabMode ? t.shadowing.vocab_mode_on : t.shadowing.vocab_mode_off}
                       </Button>
                       {isVocabMode && (
                         <div className="mt-2 space-y-2">
@@ -4265,8 +4364,10 @@ export default function JapaneseShadowingPage() {
                         </div>
                       )}
                     </div>
+                    )}
 
-                    {/* 文本内容 */}
+                    {/* 文本内容（ステップ>=2または完了後） */}
+                    {(!gatingActive || step >= 2) && (
                     <div className="p-4 bg-gray-50 rounded-lg">
                       {isVocabMode ? (
                         <SelectablePassage
@@ -4423,9 +4524,10 @@ export default function JapaneseShadowingPage() {
                         </div>
                       )}
                     </div>
+                    )}
 
-                    {/* 音频播放器 */}
-                    {currentItem.audio_url && (
+                    {/* 音频播放器（ステップ5は非表示） */}
+                    {currentItem.audio_url && (!gatingActive || step !== 5) && (
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-sm font-medium text-blue-700">原文音频</span>
@@ -4445,8 +4547,8 @@ export default function JapaneseShadowingPage() {
                     )}
                   </Card>
 
-                  {/* 翻译模块 */}
-                  {currentItem && (
+                  {/* 翻译模块（ステップ4または完了後） */}
+                  {currentItem && (!gatingActive || step === 4) && (
                     <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
@@ -4517,8 +4619,8 @@ export default function JapaneseShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 之前的生词 */}
-                  {previousWords.length > 0 && (
+                  {/* 之前的生词（ステップ3または完了後） */}
+                  {previousWords.length > 0 && (!gatingActive || step === 3) && (
                     <Card className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-600">
@@ -4592,8 +4694,8 @@ export default function JapaneseShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 本次选中的生词 */}
-                  {selectedWords.length > 0 && (
+                  {/* 本次选中的生词（ステップ3または完了後） */}
+                  {selectedWords.length > 0 && (!gatingActive || step === 3) && (
                     <Card className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-blue-600">
@@ -4709,7 +4811,8 @@ export default function JapaneseShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 录音练习区域 */}
+                  {/* 録音練習（ステップ5または完了後） */}
+                  {(!gatingActive || step >= 5) && (
                   <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-green-50 to-emerald-50">
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -4729,9 +4832,10 @@ export default function JapaneseShadowingPage() {
                       language={currentItem?.lang || 'ja'}
                     />
                   </Card>
+                  )}
 
-                  {/* 评分区域 */}
-                  {!scoringResult && (
+                  {/* 採点（ステップ5または完了後） */}
+                  {!scoringResult && (!gatingActive || step >= 5) && (
                     <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">

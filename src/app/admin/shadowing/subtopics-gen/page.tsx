@@ -159,6 +159,8 @@ export default function SubtopicsPage() {
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // 列表加载请求竞态防护
+  const listRequestIdRef = useRef(0);
 
   // 任务队列（借鉴主题管理）
   const [taskQueue, setTaskQueue] = useState<
@@ -234,6 +236,7 @@ export default function SubtopicsPage() {
   // 加载小主题列表
   async function loadSubtopics() {
     setLoading(true);
+    const requestId = ++listRequestIdRef.current;
     try {
       const {
         data: { session },
@@ -243,6 +246,9 @@ export default function SubtopicsPage() {
         limit: pagination.limit.toString(),
         page: pagination.page.toString(),
       });
+      // 包含归档与草稿，用于准确统计“暂无文章”=无已发布且无草稿
+      qs.set('include_archived', '1');
+      qs.set('include_drafts', '1');
       if (lang !== 'all') qs.set('lang', lang);
       if (level !== 'all') qs.set('level', String(level));
       if (genre !== 'all') qs.set('genre', genre);
@@ -257,13 +263,15 @@ export default function SubtopicsPage() {
       if (r.ok) {
         try {
           const j = JSON.parse(responseText);
-          setItems(j.items || []);
-          setSelected({});
-          setPagination((prev) => ({
-            ...prev,
-            total: j.total || 0,
-            totalPages: j.totalPages || 0,
-          }));
+          if (requestId === listRequestIdRef.current) {
+            setItems(j.items || []);
+            setSelected({});
+            setPagination((prev) => ({
+              ...prev,
+              total: j.total || 0,
+              totalPages: j.totalPages || 0,
+            }));
+          }
         } catch (jsonError) {
           console.error('Parse subtopics response failed:', responseText);
         }
@@ -273,7 +281,9 @@ export default function SubtopicsPage() {
     } catch (error) {
       console.error('Load failed:', error);
     } finally {
-      setLoading(false);
+      if (requestId === listRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -284,6 +294,11 @@ export default function SubtopicsPage() {
   useEffect(() => {
     loadSubtopics();
   }, [lang, level, genre, themeId, hasArticle, q, pagination.page, pagination.limit]);
+
+  // 当筛选条件变化时，重置到第一页，避免高页码下看起来“无数据”
+  useEffect(() => {
+    setPagination((prev) => (prev.page === 1 ? prev : { ...prev, page: 1 }));
+  }, [lang, level, genre, themeId, hasArticle, q]);
 
   // 加载模型列表
   useEffect(() => {
