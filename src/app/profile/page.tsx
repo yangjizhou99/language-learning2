@@ -17,7 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { useTranslation } from '@/contexts/LanguageContext';
+import { useLanguage, useTranslation } from '@/contexts/LanguageContext';
 import { User, Save, Loader2 } from 'lucide-react';
 
 interface UserProfile {
@@ -72,6 +72,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [user, setUser] = useState<any>(null);
   const t = useTranslation();
+  const { language } = useLanguage();
 
   // 表单状态
   const [formData, setFormData] = useState({
@@ -122,7 +123,7 @@ export default function ProfilePage() {
       });
     } catch (error) {
       console.error('加载资料失败:', error);
-      toast.error('加载个人资料失败');
+      toast.error(t.profile.load_failed || t.common.error);
     } finally {
       setLoading(false);
     }
@@ -147,11 +148,11 @@ export default function ProfilePage() {
 
       if (error) throw error;
 
-      toast.success('个人资料保存成功');
+      toast.success(t.profile.save_success || t.common.success);
       await loadProfile(); // 重新加载数据
     } catch (error) {
       console.error('保存失败:', error);
-      toast.error('保存个人资料失败');
+      toast.error(t.profile.save_failed || t.common.error);
     } finally {
       setSaving(false);
     }
@@ -180,7 +181,7 @@ export default function ProfilePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span>加载中...</span>
+          <span>{t.profile.loading}</span>
         </div>
       </div>
     );
@@ -192,16 +193,16 @@ export default function ProfilePage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <User className="h-8 w-8" />
-            个人资料
+            {t.profile.title}
           </h1>
-          <p className="text-muted-foreground mt-2">管理您的个人信息和学习偏好</p>
+          <p className="text-muted-foreground mt-2">{t.profile.subtitle}</p>
         </div>
 
         <div className="grid gap-6">
           {/* 基本信息 */}
           <Card>
             <CardHeader>
-              <CardTitle>基本信息</CardTitle>
+              <CardTitle>{t.profile.section_basic}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
@@ -216,23 +217,23 @@ export default function ProfilePage() {
                 <div>
                   <p className="font-medium">{user?.email}</p>
                   <p className="text-sm text-muted-foreground">
-                    注册时间: {new Date(profile?.created_at || '').toLocaleDateString('zh-CN')}
+                    {t.profile.registered_at}: {new Date(profile?.created_at || '').toLocaleDateString(t.profile.date_locales[language])}
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="username">用户名</Label>
+                  <Label htmlFor="username">{t.profile.username}</Label>
                   <Input
                     id="username"
                     value={formData.username}
                     onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
-                    placeholder="输入您的用户名"
+                    placeholder={t.profile.username_placeholder}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="native_lang">母语</Label>
+                  <Label htmlFor="native_lang">{t.profile.native_language}</Label>
                   <Select
                     value={formData.native_lang}
                     onValueChange={(value) =>
@@ -240,12 +241,12 @@ export default function ProfilePage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="选择您的母语" />
+                      <SelectValue placeholder={t.profile.native_language_placeholder} />
                     </SelectTrigger>
                     <SelectContent>
                       {LANGUAGES.map((lang) => (
                         <SelectItem key={lang.value} value={lang.value}>
-                          {lang.label}
+                          {t.profile.language_labels[lang.value] ?? lang.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -254,23 +255,23 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <Label htmlFor="bio">个人简介</Label>
+                <Label htmlFor="bio">{t.profile.bio}</Label>
                 <Textarea
                   id="bio"
                   value={formData.bio}
                   onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
-                  placeholder="介绍一下自己..."
+                  placeholder={t.profile.bio_placeholder}
                   rows={3}
                 />
               </div>
 
               <div>
-                <Label htmlFor="goals">学习目标</Label>
+                <Label htmlFor="goals">{t.profile.goals}</Label>
                 <Textarea
                   id="goals"
                   value={formData.goals}
                   onChange={(e) => setFormData((prev) => ({ ...prev, goals: e.target.value }))}
-                  placeholder="描述您的学习目标..."
+                  placeholder={t.profile.goals_placeholder}
                   rows={3}
                 />
               </div>
@@ -280,11 +281,11 @@ export default function ProfilePage() {
           {/* 学习偏好 */}
           <Card>
             <CardHeader>
-              <CardTitle>学习偏好</CardTitle>
+              <CardTitle>{t.profile.section_preferences}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label>目标语言</Label>
+                <Label>{t.profile.target_languages}</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {LANGUAGES.map((lang) => (
                     <Badge
@@ -293,14 +294,14 @@ export default function ProfilePage() {
                       className="cursor-pointer"
                       onClick={() => handleTargetLangToggle(lang.value)}
                     >
-                      {lang.label}
+                      {t.profile.language_labels[lang.value] ?? lang.label}
                     </Badge>
                   ))}
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="preferred_tone">偏好的语调</Label>
+                <Label htmlFor="preferred_tone">{t.profile.preferred_tone}</Label>
                 <Select
                   value={formData.preferred_tone}
                   onValueChange={(value) =>
@@ -308,12 +309,12 @@ export default function ProfilePage() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="选择您偏好的语调" />
+                    <SelectValue placeholder={t.profile.preferred_tone_placeholder} />
                   </SelectTrigger>
                   <SelectContent>
                     {TONE_OPTIONS.map((tone) => (
                       <SelectItem key={tone.value} value={tone.value}>
-                        {tone.label}
+                        {t.profile.tones[tone.value as keyof typeof t.profile.tones] ?? tone.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -321,7 +322,7 @@ export default function ProfilePage() {
               </div>
 
               <div>
-                <Label>感兴趣的领域</Label>
+                <Label>{t.profile.interested_domains}</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {DOMAIN_OPTIONS.map((domain) => (
                     <Badge
@@ -330,7 +331,7 @@ export default function ProfilePage() {
                       className="cursor-pointer"
                       onClick={() => handleDomainToggle(domain.value)}
                     >
-                      {domain.label}
+                      {t.profile.domains[domain.value as keyof typeof t.profile.domains] ?? domain.label}
                     </Badge>
                   ))}
                 </div>
@@ -344,12 +345,12 @@ export default function ProfilePage() {
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  保存中...
+                  {t.profile.saving}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  保存资料
+                  {t.profile.save}
                 </>
               )}
             </Button>

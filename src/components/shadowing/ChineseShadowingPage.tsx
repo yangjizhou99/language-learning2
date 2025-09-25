@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import SelectablePassage from '@/components/SelectablePassage';
@@ -21,6 +22,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { LANG_LABEL } from '@/types/lang';
 import { useMobile } from '@/contexts/MobileContext';
 import FilterLanguageSelector from './FilterLanguageSelector';
+import PracticeStepper from './PracticeStepper';
 import { speakText as speakTextUtil } from '@/lib/speechUtils';
 // import { getAuthHeaders } from "@/lib/supabase";
 import {
@@ -32,6 +34,7 @@ import {
   CheckCircle,
   Circle,
   ArrowRight,
+  ArrowLeft,
   Save,
   FileText,
   Play,
@@ -2322,9 +2325,10 @@ export default function ShadowingPage() {
                 size="sm"
                 onClick={() => setMobileSidebarOpen(true)}
                 className="flex items-center gap-2 bg-white/50 hover:bg-white/80 border-white/30 shadow-md"
+                aria-label={t.shadowing.shadowing_vocabulary}
               >
                 <Menu className="w-4 h-4" />
-                {t.nav.vocabulary}
+                {t.shadowing.shadowing_vocabulary}
               </Button>
             </div>
 
@@ -2359,6 +2363,7 @@ export default function ShadowingPage() {
                         onClick={() => fetchItems()}
                         className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/20 transition-colors"
                         title={t.shadowing.refresh_vocabulary || '刷新题库'}
+                        aria-label={t.shadowing.refresh_vocabulary || '刷新题库'}
                         disabled={loading}
                       >
                         <div className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}>🔄</div>
@@ -2368,6 +2373,7 @@ export default function ShadowingPage() {
                         size="sm"
                         onClick={() => setMobileSidebarOpen(false)}
                         className="text-white hover:bg-white/20"
+                        aria-label="关闭侧边栏"
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -2672,9 +2678,19 @@ export default function ShadowingPage() {
                   {/* 题目列表 */}
                   <div className="flex-1 overflow-y-auto">
                     {loading ? (
-                      <div className="p-6 text-center">
-                        <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-3"></div>
-                        <p className="text-gray-500 font-medium">加载中...</p>
+                      <div className="space-y-3 p-4">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                          <div key={i} className="p-4 rounded-2xl border border-gray-200 bg-white">
+                            <Skeleton className="h-6 w-48 mb-3" />
+                            <Skeleton className="h-4 w-full mb-2" />
+                            <Skeleton className="h-4 w-5/6 mb-2" />
+                            <div className="flex gap-2">
+                              <Skeleton className="h-6 w-16 rounded-full" />
+                              <Skeleton className="h-6 w-12 rounded-full" />
+                              <Skeleton className="h-6 w-20 rounded-full" />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ) : filteredItems.length === 0 ? (
                       <div className="p-6 text-center">
@@ -3824,6 +3840,55 @@ export default function ShadowingPage() {
                 </div>
               )}
             </div>
+            {/* 底部悬浮迷你控制条（移动端；步骤<5显示） */}
+            {currentItem && gatingActive && step < 5 && (
+              <>
+                <div className="h-16" />
+                <div className="fixed bottom-3 left-0 right-0 z-40 px-4">
+                  <div className="mx-auto max-w-[680px]">
+                    <div className="bg-white/90 backdrop-blur border border-gray-200 shadow-lg rounded-2xl p-2 flex items-center justify-between">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setStep((s) => (Math.max(1, (s as number) - 1) as 1 | 2 | 3 | 4 | 5))}
+                        disabled={step === 1}
+                        className="flex items-center gap-2"
+                        aria-label="上一步"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        上一步
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={playAudio}
+                        className="px-6"
+                        aria-label={isPlaying ? '暂停' : '播放'}
+                      >
+                        {isPlaying ? (
+                          <>
+                            <Pause className="w-4 h-4 mr-2" /> 暂停
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4 mr-2" /> 播放
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setStep((s) => (Math.min(5, (s as number) + 1) as 1 | 2 | 3 | 4 | 5))}
+                        disabled={step === 5}
+                        className="flex items-center gap-2"
+                        aria-label="下一步"
+                      >
+                        下一步
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           /* 桌面端布局 - 优化滚动体验 */
@@ -4297,24 +4362,26 @@ export default function ShadowingPage() {
                   {gatingActive && (
                     <Card className="p-4 bg-white border-0 shadow-sm">
                       <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <span className={`px-2 py-1 rounded ${step===1?'bg-blue-600 text-white':'bg-gray-100'}`}>1 盲听</span>
-                          <span className={`px-2 py-1 rounded ${step===2?'bg-blue-600 text-white':'bg-gray-100'}`}>2 看原文</span>
-                          <span className={`px-2 py-1 rounded ${step===3?'bg-blue-600 text-white':'bg-gray-100'}`}>3 选生词</span>
-                          <span className={`px-2 py-1 rounded ${step===4?'bg-blue-600 text-white':'bg-gray-100'}`}>4 看翻译</span>
-                          <span className={`px-2 py-1 rounded ${step===5?'bg-blue-600 text-white':'bg-gray-100'}`}>5 录音评分</span>
-                        </div>
+                        <PracticeStepper
+                          size="md"
+                          currentStep={step}
+                          onStepChange={(s)=> setStep(s)}
+                          maxStepAllowed={step}
+                          labels={["盲听","看原文","选生词","看翻译","录音评分"]}
+                        />
                         <div className="flex items-center gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))}
                             disabled={step===1}
+                            aria-label="上一步"
                           >上一步</Button>
                           <Button
                             size="sm"
                             onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))}
                             disabled={step===5}
+                            aria-label="下一步"
                           >下一步</Button>
                         </div>
                       </div>

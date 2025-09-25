@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
+import PracticeStepper from './PracticeStepper';
 import SelectablePassage from '@/components/SelectablePassage';
 import useUserPermissions from '@/hooks/useUserPermissions';
 import AudioRecorder from '@/components/AudioRecorder';
@@ -2259,9 +2260,10 @@ export default function JapaneseShadowingPage() {
                 size="sm"
                 onClick={() => setMobileSidebarOpen(true)}
                 className="flex items-center gap-2 bg-white/50 hover:bg-white/80 border-white/30 shadow-md"
+                aria-label={t.shadowing.shadowing_vocabulary}
               >
                 <Menu className="w-4 h-4" />
-                {t.nav.vocabulary}
+                {t.shadowing.shadowing_vocabulary}
               </Button>
             </div>
 
@@ -2296,6 +2298,7 @@ export default function JapaneseShadowingPage() {
                         onClick={() => fetchItems()}
                         className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/20 transition-colors"
                         title={t.shadowing.refresh_vocabulary || '刷新题库'}
+                        aria-label={t.shadowing.refresh_vocabulary || '刷新题库'}
                         disabled={loading}
                       >
                         <div className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}>🔄</div>
@@ -2305,6 +2308,7 @@ export default function JapaneseShadowingPage() {
                         size="sm"
                         onClick={() => setMobileSidebarOpen(false)}
                         className="text-white hover:bg-white/20"
+                        aria-label={t.common.close || '关闭'}
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -2745,16 +2749,16 @@ export default function JapaneseShadowingPage() {
                   {gatingActive && (
                     <Card className="p-4 bg-white border-0 shadow-sm">
                       <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <span className={`px-2 py-1 rounded ${step===1?'bg-blue-600 text-white':'bg-gray-100'}`}>1</span>
-                          <span className={`px-2 py-1 rounded ${step===2?'bg-blue-600 text-white':'bg-gray-100'}`}>2</span>
-                          <span className={`px-2 py-1 rounded ${step===3?'bg-blue-600 text-white':'bg-gray-100'}`}>3</span>
-                          <span className={`px-2 py-1 rounded ${step===4?'bg-blue-600 text-white':'bg-gray-100'}`}>4</span>
-                          <span className={`px-2 py-1 rounded ${step===5?'bg-blue-600 text-white':'bg-gray-100'}`}>5</span>
-                        </div>
+                        <PracticeStepper
+                          size="sm"
+                          currentStep={step}
+                          onStepChange={(s)=> setStep(s)}
+                          maxStepAllowed={step}
+                          labels={[t.shadowing.step1_tip, t.shadowing.step2_tip, t.shadowing.step3_tip, t.shadowing.step4_tip, t.shadowing.step5_tip].map(x=> String(x || 'Step'))}
+                        />
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} disabled={step===1}>{t.common.back}</Button>
-                          <Button size="sm" onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} disabled={step===5}>{t.common.next}</Button>
+                          <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} disabled={step===1} aria-label={t.common.back}>{t.common.back}</Button>
+                          <Button size="sm" onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} disabled={step===5} aria-label={t.common.next}>{t.common.next}</Button>
                         </div>
                       </div>
                       <div className="mt-3 text-xs text-gray-700">
@@ -3806,6 +3810,7 @@ export default function JapaneseShadowingPage() {
                       size="sm"
                       onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                       className="text-white hover:bg-white/20"
+                      aria-label={sidebarCollapsed ? (t.common.expand || '展开') : (t.common.collapse || '折叠')}
                     >
                       {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
                     </Button>
