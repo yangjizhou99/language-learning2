@@ -226,6 +226,16 @@ export interface Translations {
     saving_modal_description: string;
     // 功能说明
     functionality_guide: string;
+    // 分步骤引导与完成卡片
+    step1_tip: string;
+    step2_tip: string;
+    step3_tip: string;
+    step4_tip: string;
+    step5_tip: string;
+    practice_done_title: string;
+    practice_done_desc: string;
+    practice_again: string;
+    back_to_catalog: string;
   };
 
   // 词汇页面
@@ -585,6 +595,16 @@ const zh: Translations = {
     // 功能说明
     functionality_guide:
       '📚 题目选择：支持日英中三语，L1-L5难度等级，智能筛选\n🎤 录音练习：音频播放、实时录音、发音对比\n🎯 智能评分：语音识别、5级评分体系\n📖 生词管理：拖拽选择生词，自动保存到生词本\n💾 进度跟踪：练习状态管理，支持草稿保存',
+    // 分步骤引导与完成卡片
+    step1_tip: 'Step 1 · 盲听：先完整听一遍，不看原文。准备好后点击“下一步”。',
+    step2_tip: 'Step 2 · 看原文跟读：现在可以看原文，再听一遍并跟读。',
+    step3_tip: 'Step 3 · 生词选择：开启生词模式，点击原文选取生词，并点击 AI 解释。',
+    step4_tip: 'Step 4 · 查看翻译：优先显示你的母语翻译，一边看翻译一边播放理解含义。',
+    step5_tip: 'Step 5 · 录音评分：开始录音并评分，此时仅保留原文，其它模块隐藏。',
+    practice_done_title: '练习已完成',
+    practice_done_desc: '成绩与生词已保存，你可以选择继续提升',
+    practice_again: '再练一次',
+    back_to_catalog: '返回题库',
   },
   vocabulary: {
     title: '生词本',
@@ -945,6 +965,16 @@ const en: Translations = {
     // 功能说明
     functionality_guide:
       '📚 Question Selection: Japanese/English/Chinese, L1-L5 levels, smart filtering\n🎤 Recording Practice: Audio playback, real-time recording, pronunciation comparison\n🎯 Smart Scoring: Speech recognition, 5-level scoring system\n📖 Vocabulary Management: Drag to select words, auto-save to vocabulary\n💾 Progress Tracking: Practice status management, draft saving support',
+    // Step tips and done card
+    step1_tip: 'Step 1 · Blind listen: play once without reading. Click Next when ready.',
+    step2_tip: 'Step 2 · Read + shadow: view the text and read along with playback.',
+    step3_tip: 'Step 3 · Pick words: enable vocab mode, tap words, and generate AI explanations.',
+    step4_tip: 'Step 4 · View translation: show your native translation and listen while reading.',
+    step5_tip: 'Step 5 · Record & score: record and score; only original text is shown.',
+    practice_done_title: 'Practice Completed',
+    practice_done_desc: 'Scores and words saved. You can continue improving.',
+    practice_again: 'Practice Again',
+    back_to_catalog: 'Back to Catalog',
   },
   vocabulary: {
     title: 'Vocabulary',
@@ -1305,6 +1335,16 @@ const ja: Translations = {
     // 功能说明
     functionality_guide:
       '📚 問題選択：日英中三言語、L1-L5レベル、スマートフィルタリング\n🎤 録音練習：音声再生、リアルタイム録音、発音比較\n🎯 スマート採点：音声認識、5段階採点システム\n📖 単語管理：ドラッグで単語選択、自動保存\n💾 進捗追跡：練習状況管理、下書き保存対応',
+    // ステップのヒントと完了カード
+    step1_tip: 'Step 1 · 盲聴：まず原文を見ずに一度通して聞く。準備できたら「次へ」。',
+    step2_tip: 'Step 2 · 原文を見てシャドーイング：原文を見ながらもう一度再生して追い読み。',
+    step3_tip: 'Step 3 · 単語選択：単語モードを有効化し、本文の単語をタップしてAI説明を生成。',
+    step4_tip: 'Step 4 · 翻訳表示：母語の翻訳を表示し、意味を確認しながら再生。',
+    step5_tip: 'Step 5 · 録音と採点：録音して採点。原文のみ表示、他モジュールは非表示。',
+    practice_done_title: '練習完了',
+    practice_done_desc: 'スコアと単語は保存されました。さらに上達を目指しましょう。',
+    practice_again: 'もう一度練習',
+    back_to_catalog: '題庫に戻る',
   },
   vocabulary: {
     title: '単語帳',

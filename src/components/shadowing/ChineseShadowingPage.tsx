@@ -578,6 +578,68 @@ export default function ShadowingPage() {
   const [isScoring, setIsScoring] = useState(false);
   const [currentTranscription, setCurrentTranscription] = useState<string>('');
 
+  // 桌面端分步骤练习（仅在未完成状态下启用）
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [highlightPlay, setHighlightPlay] = useState(false);
+  const [highlightVocab, setHighlightVocab] = useState(false);
+  const [highlightScore, setHighlightScore] = useState(false);
+
+
+  const stepTips: Record<number, string> = {
+    1: 'Step 1 · 盲听：先完整听一遍，不看原文。准备好后点击"下一步"。',
+    2: 'Step 2 · 看原文跟读：现在可以看原文，再听一遍并跟读。',
+    3: 'Step 3 · 生词选择：开启生词模式，点击原文选取生词，并点击 AI 解释。',
+    4: 'Step 4 · 查看翻译：优先显示你的母语翻译，一边看翻译一边播放理解含义。',
+    5: 'Step 5 · 录音评分：开始录音并评分，此时仅保留原文，其它模块隐藏。',
+  };
+
+  // 步骤切换时的联动：自动开/关生词模式与翻译偏好
+  useEffect(() => {
+    if (!currentItem) return;
+    if (step === 2) {
+      setIsVocabMode(false);
+    }
+    if (step === 3) {
+      setIsVocabMode(true);
+    }
+    if (step === 4) {
+      setShowTranslation(true);
+      const pref = (userProfile?.native_lang as 'en' | 'ja' | 'zh' | undefined) || undefined;
+      const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
+      if (pref && available.includes(pref)) {
+        setTranslationLang(pref);
+      } else {
+        const targets = getTargetLanguages(currentItem.lang);
+        if (targets.length > 0) {
+          setTranslationLang(targets[0] as 'en' | 'ja' | 'zh');
+        }
+      }
+    }
+    if (step === 5) {
+      setIsVocabMode(false);
+      setShowTranslation(false);
+    }
+  }, [step, currentItem, userProfile]);
+
+  // 关键按钮短暂高亮引导
+  useEffect(() => {
+    if (practiceComplete) return;
+    let timeoutId: number | undefined;
+    if (step === 1) {
+      setHighlightPlay(true);
+      timeoutId = window.setTimeout(() => setHighlightPlay(false), 2000);
+    } else if (step === 3) {
+      setHighlightVocab(true);
+      timeoutId = window.setTimeout(() => setHighlightVocab(false), 2000);
+    } else if (step === 5) {
+      setHighlightScore(true);
+      timeoutId = window.setTimeout(() => setHighlightScore(false), 2000);
+    }
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [step, practiceComplete]);
+
   // 获取认证头
   const getAuthHeaders = async () => {
     try {
@@ -902,7 +964,9 @@ export default function ShadowingPage() {
     setPreviousWords([]);
     setCurrentRecordings([]);
     setPracticeStartTime(new Date());
-    setPracticeComplete(false);
+    // 如果该题已完成，刷新加载时直接解除门控显示全部模块
+    setPracticeComplete(!!item.isPracticed);
+    setStep(1);
     setScoringResult(null);
     setShowSentenceComparison(false);
 
@@ -916,6 +980,9 @@ export default function ShadowingPage() {
           console.log('加载到之前的会话数据:', data.session);
           console.log('还原的生词:', data.session.picked_preview);
           setCurrentSession(data.session);
+          if (data.session.status === 'completed') {
+            setPracticeComplete(true);
+          }
 
           // 将之前的生词设置为 previousWords
           setPreviousWords(data.session.picked_preview || []);
@@ -1287,7 +1354,7 @@ export default function ShadowingPage() {
           status: 'draft',
           recordings: currentRecordings,
           picked_preview: [...previousWords, ...selectedWords],
-          notes: '',
+          notes: {},
         }),
       });
 
@@ -2018,7 +2085,7 @@ export default function ShadowingPage() {
           status: 'completed',
           recordings: finalRecordings,
           picked_preview: allWords,
-          notes: '',
+          notes: {},
         }),
       });
 
@@ -2184,6 +2251,8 @@ export default function ShadowingPage() {
 
   // 移动端检测
   const { actualIsMobile } = useMobile();
+  // 移动端也启用步骤门控：仅在未完成时生效
+  const gatingActive = !practiceComplete;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // 如果正在检查认证或用户未登录，显示相应提示
@@ -2735,6 +2804,25 @@ export default function ShadowingPage() {
                 </Card>
               ) : (
                 <div className="space-y-4">
+                  {/* 手机端步骤导航与提示（未完成时显示） */}
+                  {gatingActive && (
+                    <Card className="p-4 bg-white border-0 shadow-sm">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <span className={`px-2 py-1 rounded ${step===1?'bg-blue-600 text-white':'bg-gray-100'}`}>1 盲听</span>
+                          <span className={`px-2 py-1 rounded ${step===2?'bg-blue-600 text-white':'bg-gray-100'}`}>2 看原文</span>
+                          <span className={`px-2 py-1 rounded ${step===3?'bg-blue-600 text-white':'bg-gray-100'}`}>3 选生词</span>
+                          <span className={`px-2 py-1 rounded ${step===4?'bg-blue-600 text-white':'bg-gray-100'}`}>4 看翻译</span>
+                          <span className={`px-2 py-1 rounded ${step===5?'bg-blue-600 text-white':'bg-gray-100'}`}>5 录音评分</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} disabled={step===1}>上一步</Button>
+                          <Button size="sm" onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} disabled={step===5}>下一步</Button>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-xs text-gray-700">{stepTips[step]}</div>
+                    </Card>
+                  )}
                   {/* 题目信息 - 手机端优化 */}
                   <Card className="p-6 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg rounded-2xl">
                     <div className="mb-6">
@@ -2778,7 +2866,7 @@ export default function ShadowingPage() {
                           onClick={playAudio}
                           variant="outline"
                           size="sm"
-                          className="h-12 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                          className={`h-12 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all ${highlightPlay ? 'animate-pulse ring-2 ring-blue-400' : ''}`}
                         >
                           {isPlaying ? (
                             <Pause className="w-5 h-5 mr-2" />
@@ -2813,13 +2901,14 @@ export default function ShadowingPage() {
                       </div>
                     </div>
 
-                    {/* 生词选择模式切换 */}
+                    {/* 生词选择模式切换（仅步骤3显示或完成后） */}
+                    {(!gatingActive || step === 3) && (
                     <div className="mb-4">
                       <Button
                         variant={isVocabMode ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setIsVocabMode(!isVocabMode)}
-                        className="w-full"
+                        className={`w-full ${highlightVocab ? 'animate-pulse ring-2 ring-amber-400' : ''}`}
                       >
                         {isVocabMode ? t.shadowing.vocab_mode_on : t.shadowing.vocab_mode_off}
                       </Button>
@@ -2874,8 +2963,10 @@ export default function ShadowingPage() {
                         </div>
                       )}
                     </div>
+                    )}
 
-                    {/* 文本内容 */}
+                    {/* 文本内容（步骤>=2显示；步骤5也需显示原文） */}
+                    {(!gatingActive || step >= 2) && (
                     <div className="p-4 bg-gray-50 rounded-lg">
                       {isVocabMode ? (
                         <SelectablePassage
@@ -3033,9 +3124,10 @@ export default function ShadowingPage() {
                         </div>
                       )}
                     </div>
+                    )}
 
-                    {/* 音频播放器 */}
-                    {currentItem.audio_url && (
+                    {/* 音频播放器（步骤5隐藏） */}
+                    {currentItem.audio_url && (!gatingActive || step !== 5) && (
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-sm font-medium text-blue-700">
@@ -3246,8 +3338,8 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 翻译模块 - 移动端 */}
-                  {currentItem && (
+                  {/* 翻译模块 - 移动端（仅步骤4显示或完成后） */}
+                  {currentItem && (!gatingActive || step === 4) && (
                     <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
@@ -3322,7 +3414,8 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 录音练习区域 */}
+                  {/* 录音练习区域（仅步骤5显示或完成后） */}
+                  {(!gatingActive || step >= 5) && (
                   <Card className="p-4">
                     <AudioRecorder
                       ref={audioRecorderRef}
@@ -3336,9 +3429,10 @@ export default function ShadowingPage() {
                       language={currentItem?.lang || 'ja'}
                     />
                   </Card>
+                  )}
 
-                  {/* 评分区域 */}
-                  {!scoringResult && (
+                  {/* 评分区域（仅步骤5显示或完成后） */}
+                  {!scoringResult && (!gatingActive || step >= 5) && (
                     <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
@@ -3368,7 +3462,7 @@ export default function ShadowingPage() {
                           <Button
                             onClick={() => performScoring()}
                             disabled={isScoring}
-                            className="h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all w-full"
+                            className={`h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all w-full ${highlightScore ? 'animate-pulse ring-2 ring-purple-400' : ''}`}
                           >
                             {isScoring ? (
                               <>
@@ -3688,6 +3782,43 @@ export default function ShadowingPage() {
                           {t.shadowing.complete_and_save}
                         </Button>
                       )}
+                    </Card>
+                  )}
+
+                  {/* 完成后成功状态卡片：再练一次 / 返回题库（仅桌面端） */}
+                  {practiceComplete && !actualIsMobile && (
+                    <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                          <span className="text-white text-lg">✅</span>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">练习已完成</h3>
+                          <p className="text-sm text-gray-600">成绩与生词已保存，你可以选择继续提升</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 flex-wrap">
+                        <Button
+                          onClick={() => {
+                            setPracticeComplete(false);
+                            setStep(1);
+                            setScoringResult(null);
+                            setIsVocabMode(false);
+                            setShowTranslation(false);
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          再练一次
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setCurrentItem(null);
+                          }}
+                        >
+                          返回题库
+                        </Button>
+                      </div>
                     </Card>
                   )}
                 </div>
@@ -4162,6 +4293,90 @@ export default function ShadowingPage() {
                 </Card>
               ) : (
                 <div className="space-y-6">
+                  {/* 步骤导航与提示（仅桌面端未完成时显示） */}
+                  {gatingActive && (
+                    <Card className="p-4 bg-white border-0 shadow-sm">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <span className={`px-2 py-1 rounded ${step===1?'bg-blue-600 text-white':'bg-gray-100'}`}>1 盲听</span>
+                          <span className={`px-2 py-1 rounded ${step===2?'bg-blue-600 text-white':'bg-gray-100'}`}>2 看原文</span>
+                          <span className={`px-2 py-1 rounded ${step===3?'bg-blue-600 text-white':'bg-gray-100'}`}>3 选生词</span>
+                          <span className={`px-2 py-1 rounded ${step===4?'bg-blue-600 text-white':'bg-gray-100'}`}>4 看翻译</span>
+                          <span className={`px-2 py-1 rounded ${step===5?'bg-blue-600 text-white':'bg-gray-100'}`}>5 录音评分</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))}
+                            disabled={step===1}
+                          >上一步</Button>
+                          <Button
+                            size="sm"
+                            onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))}
+                            disabled={step===5}
+                          >下一步</Button>
+                        </div>
+                      </div>
+                      <div className="mt-3 text-sm text-gray-700">{stepTips[step]}</div>
+                    </Card>
+                  )}
+
+                  {/* 步骤详细引导（仅桌面端未完成时显示） */}
+                  {gatingActive && (
+                    <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-0 shadow-sm">
+                      {step === 1 && (
+                        <div className="text-sm text-gray-700 space-y-2">
+                          <div className="font-medium">如何高效盲听：</div>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li>放松不要急，先整体感知节奏与停顿</li>
+                            <li>不要看原文，尝试抓关键词与语气</li>
+                            <li>准备好后点击“下一步”，再看原文跟读</li>
+                          </ul>
+                        </div>
+                      )}
+                      {step === 2 && (
+                        <div className="text-sm text-gray-700 space-y-2">
+                          <div className="font-medium">看原文 + 跟读建议：</div>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li>先快速浏览一遍原文结构与段落</li>
+                            <li>再次播放音频，对照原文跟读（注意连读/重音）</li>
+                            <li>跟读时轻声起步，逐步提升音量与流畅度</li>
+                          </ul>
+                        </div>
+                      )}
+                      {step === 3 && (
+                        <div className="text-sm text-gray-700 space-y-2">
+                          <div className="font-medium">选生词 + AI 解释：</div>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li>点击原文中的词语即可加入生词</li>
+                            <li>点击“AI解释”为生词生成本地化释义与例句</li>
+                            <li>建议聚焦于影响理解的关键词汇，避免一次选太多</li>
+                          </ul>
+                        </div>
+                      )}
+                      {step === 4 && (
+                        <div className="text-sm text-gray-700 space-y-2">
+                          <div className="font-medium">查看翻译：</div>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li>优先显示你的母语翻译，理解语义与细节</li>
+                            <li>遇到不通顺的地方，回放原文定位比对</li>
+                            <li>理解后可返回原文再跟读一遍，强化记忆</li>
+                          </ul>
+                        </div>
+                      )}
+                      {step === 5 && (
+                        <div className="text-sm text-gray-700 space-y-2">
+                          <div className="font-medium">录音与评分：</div>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li>对照原文逐句录音，尽量贴合节奏与停顿</li>
+                            <li>录完保存后点击评分，查看整体与逐句分析</li>
+                            <li>根据问题提示再次练习可显著提升分数</li>
+                          </ul>
+                        </div>
+                      )}
+                    </Card>
+                  )}
                   {/* 题目信息 */}
                   <Card className="p-8 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl">
                     <div className="flex items-start justify-between mb-6">
@@ -4206,19 +4421,21 @@ export default function ShadowingPage() {
                         )}
                       </div>
                       <div className="flex gap-3 flex-wrap">
-                        <Button
-                          onClick={playAudio}
-                          variant="outline"
-                          size="sm"
-                          className="h-11 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                          {isPlaying ? (
-                            <Pause className="w-5 h-5 mr-2" />
-                          ) : (
-                            <Play className="w-5 h-5 mr-2" />
-                          )}
-                          {isPlaying ? '暂停' : '播放音频'}
-                        </Button>
+                        {!(gatingActive && step === 5) && (
+                          <Button
+                            onClick={playAudio}
+                            variant="outline"
+                            size="sm"
+                            className={`h-11 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all ${highlightPlay ? 'animate-pulse ring-2 ring-blue-400' : ''}`}
+                          >
+                            {isPlaying ? (
+                              <Pause className="w-5 h-5 mr-2" />
+                            ) : (
+                              <Play className="w-5 h-5 mr-2" />
+                            )}
+                            {isPlaying ? '暂停' : '播放音频'}
+                          </Button>
+                        )}
 
                         <Button
                           variant="outline"
@@ -4241,74 +4458,71 @@ export default function ShadowingPage() {
                           {saving ? t.common.loading : t.shadowing.complete_and_save}
                         </Button>
 
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={debugVocabData}
-                          className="h-11 bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200 text-gray-700 hover:from-gray-100 hover:to-gray-200 hover:border-gray-300 rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                          {t.shadowing.debug_vocab}
-                        </Button>
+                        
                       </div>
                     </div>
 
-                    {/* 生词选择模式切换 */}
-                    <div className="mb-4">
-                      <Button
-                        variant={isVocabMode ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setIsVocabMode(!isVocabMode)}
-                      >
-                        {isVocabMode ? '退出生词模式' : '生词选择模式'}
-                      </Button>
-                      {isVocabMode && (
-                        <div className="mt-2 space-y-2">
-                          <p className="text-sm text-blue-600">点击文本中的单词来选择生词</p>
-                          {selectedText && (
-                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                              <div className="text-sm">
-                                <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
-                                <div className="text-blue-600 font-semibold mb-1">
-                                  {selectedText.word}
-                                </div>
-                                <div className="text-xs text-gray-600 mb-2">
-                                  {selectedText.context}
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={confirmAddToVocab}
-                                    disabled={isAddingToVocab}
-                                    className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {isAddingToVocab ? (
-                                      <>
-                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                                        添加中...
-                                      </>
-                                    ) : (
-                                      '确认添加到生词本'
-                                    )}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={cancelSelection}
-                                    disabled={isAddingToVocab}
-                                    className="disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    取消
-                                  </Button>
+                    {/* 生词选择模式切换（仅步骤3显示；完成或移动端保持原样） */}
+                    {(!gatingActive || step === 3) && (
+                      <div className="mb-4">
+                        <Button
+                          variant={isVocabMode ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setIsVocabMode(!isVocabMode)}
+                          className={highlightVocab ? 'animate-pulse ring-2 ring-amber-400' : ''}
+                        >
+                          {isVocabMode ? '退出生词模式' : '生词选择模式'}
+                        </Button>
+                        {isVocabMode && (
+                          <div className="mt-2 space-y-2">
+                            <p className="text-sm text-blue-600">点击文本中的单词来选择生词</p>
+                            {selectedText && (
+                              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <div className="text-sm">
+                                  <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
+                                  <div className="text-blue-600 font-semibold mb-1">
+                                    {selectedText.word}
+                                  </div>
+                                  <div className="text-xs text-gray-600 mb-2">
+                                    {selectedText.context}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={confirmAddToVocab}
+                                      disabled={isAddingToVocab}
+                                      className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {isAddingToVocab ? (
+                                        <>
+                                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                                          添加中...
+                                        </>
+                                      ) : (
+                                        '确认添加到生词本'
+                                      )}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={cancelSelection}
+                                      disabled={isAddingToVocab}
+                                      className="disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      取消
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                    {/* 文本内容 */}
-                    <div className="p-4 bg-gray-50 rounded-lg">
+                    {/* 文本内容（步骤>=2显示；完成或移动端保持原样；步骤5也需显示原文以便录音评分） */}
+                    {(!gatingActive || step >= 2) && (
+                      <div className="p-4 bg-gray-50 rounded-lg">
                       {isVocabMode ? (
                         <SelectablePassage
                           text={currentItem.text}
@@ -4463,10 +4677,11 @@ export default function ShadowingPage() {
                           })()}
                         </div>
                       )}
-                    </div>
+                      </div>
+                    )}
 
-                    {/* 音频播放器 */}
-                    {currentItem.audio_url && (
+                    {/* 音频播放器（步骤5隐藏；完成或移动端保持原样） */}
+                    {currentItem.audio_url && (!gatingActive || step !== 5) && (
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-sm font-medium text-blue-700">原文音频</span>
@@ -4486,8 +4701,8 @@ export default function ShadowingPage() {
                     )}
                   </Card>
 
-                  {/* 翻译模块 */}
-                  {currentItem && (
+                  {/* 翻译模块（仅步骤4显示；完成或移动端保持原样） */}
+                  {currentItem && (!gatingActive || step === 4) && (
                     <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
@@ -4558,8 +4773,8 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 之前的生词 */}
-                  {previousWords.length > 0 && (
+                  {/* 之前的生词（仅步骤3显示；完成或移动端保持原样） */}
+                  {previousWords.length > 0 && (!gatingActive || step === 3) && (
                     <Card className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-600">
@@ -4633,8 +4848,8 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 本次选中的生词 */}
-                  {selectedWords.length > 0 && (
+                  {/* 本次选中的生词（仅步骤3显示；完成或移动端保持原样） */}
+                  {selectedWords.length > 0 && (!gatingActive || step === 3) && (
                     <Card className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-blue-600">
@@ -4750,7 +4965,8 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 录音练习区域 */}
+                  {/* 录音练习区域（仅步骤5显示；完成或移动端保持原样） */}
+                  {(!gatingActive || step >= 5) && (
                   <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-green-50 to-emerald-50">
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -4770,9 +4986,10 @@ export default function ShadowingPage() {
                       language={currentItem?.lang || 'ja'}
                     />
                   </Card>
+                  )}
 
-                  {/* 评分区域 */}
-                  {!scoringResult && (
+                  {/* 评分区域（仅步骤5显示；完成或移动端保持原样） */}
+                  {!scoringResult && (!gatingActive || step >= 5) && (
                     <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
