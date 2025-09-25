@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 
 interface SelectablePassageProps {
   text: string;
@@ -22,6 +22,43 @@ export default function SelectablePassage({
   const [isMobile, setIsMobile] = useState(false);
   const [isProcessingSelection, setIsProcessingSelection] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
+
+  // 规范化显示文本：统一各种换行表示为真实换行
+  const normalizedText = useMemo(() => {
+    if (!text) return '';
+    let formatted = text
+      .replace(/\r\n/g, '\n') // Windows 换行
+      .replace(/\r/g, '\n'); // 仅 \r 的情况
+    // 处理 HTML <br> 标签
+    formatted = formatted.replace(/<br\s*\/?\s*>/gi, '\n');
+    // 处理常见换行实体
+    formatted = formatted.replace(/&#10;|&#13;/g, '\n');
+    // 处理字面量的 "\\n"（可能多层转义）
+    for (let i = 0; i < 3 && /\\n/.test(formatted); i += 1) {
+      formatted = formatted.replace(/\\n/g, '\n');
+    }
+
+    // 如果是英文且原文本没有换行，则按发言人 A:/B: 自动分行
+    if (lang === 'en' && !formatted.includes('\n')) {
+      const speakerPattern = /([A-Z]):\s*/g;
+      const parts = formatted.split(speakerPattern);
+      if (parts.length > 1) {
+        let result = '';
+        for (let i = 1; i < parts.length; i += 2) {
+          const speaker = (parts[i] || '').trim();
+          const content = (parts[i + 1] || '').trim();
+          if (speaker && content) {
+            result += `${speaker}: ${content}\n`;
+          }
+        }
+        if (result.trim()) {
+          formatted = result.trim();
+        }
+      }
+    }
+
+    return formatted;
+  }, [text, lang]);
 
   // 检测是否为手机端
   useEffect(() => {
@@ -202,10 +239,10 @@ export default function SelectablePassage({
     // 获取选中文本的上下文 - 返回包含选中文本的完整句子
     const getContext = (startIndex: number, endIndex: number): string => {
       // 找到选中文本在原文中的位置
-      const selectedText = text.substring(startIndex, endIndex);
+      const selectedText = normalizedText.substring(startIndex, endIndex);
 
       // 按句子分割（支持中英文标点符号）
-      const sentences = text.split(/[.!?。！？；;]/);
+      const sentences = normalizedText.split(/[.!?。！？；;]/);
 
       // 找到包含选中文本的句子
       for (const sentence of sentences) {
@@ -216,7 +253,7 @@ export default function SelectablePassage({
       }
 
       // 如果没找到完整句子，则按逗号分割
-      const clauses = text.split(/[,，]/);
+      const clauses = normalizedText.split(/[,，]/);
       for (const clause of clauses) {
         if (clause.includes(selectedText)) {
           return clause.trim();
@@ -331,16 +368,16 @@ export default function SelectablePassage({
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('selectstart', handleSelectStart);
     };
-  }, [isMobile, isProcessingSelection, text, onSelectionChange, lang]);
+  }, [isMobile, isProcessingSelection, normalizedText, onSelectionChange, lang]);
 
   // 渲染文本，支持拖拽选择或手机端点击选择
   const renderText = () => {
     if (disabled) {
-      return <span className="select-none whitespace-pre-wrap">{text}</span>;
+      return <span className="select-none whitespace-pre-wrap">{normalizedText}</span>;
     }
 
     // 手机端和桌面端都使用相同的文本渲染方式
-    return <span className="whitespace-pre-wrap">{text}</span>;
+    return <span className="whitespace-pre-wrap">{normalizedText}</span>;
   };
 
   return (

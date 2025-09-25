@@ -1,10 +1,23 @@
 'use client';
 import React, { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import ChineseShadowingPage from '@/components/shadowing/ChineseShadowingPage';
-import JapaneseShadowingPage from '@/components/shadowing/JapaneseShadowingPage';
-import EnglishShadowingPage from '@/components/shadowing/EnglishShadowingPage';
+import dynamic from 'next/dynamic';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+const ChineseShadowingPage = dynamic(
+  () => import('@/components/shadowing/ChineseShadowingPage'),
+  { ssr: false }
+);
+
+const JapaneseShadowingPage = dynamic(
+  () => import('@/components/shadowing/JapaneseShadowingPage'),
+  { ssr: false }
+);
+
+const EnglishShadowingPage = dynamic(
+  () => import('@/components/shadowing/EnglishShadowingPage'),
+  { ssr: false }
+);
 
 export default function ShadowingPage() {
   const searchParams = useSearchParams();

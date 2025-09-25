@@ -5,6 +5,7 @@ import AuthGate from '@/components/AuthGate';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { MobileProvider } from '@/contexts/MobileContext';
 
 const geistSans = Geist({
@@ -48,9 +49,11 @@ export default function RootLayout({
         <LanguageProvider>
           <ThemeProvider>
             <MobileProvider>
-              <AuthGate />
-              {children}
-              <Toaster richColors position="top-center" />
+              <AuthProvider>
+                <AuthGate />
+                {children}
+                <Toaster richColors position="top-center" />
+              </AuthProvider>
             </MobileProvider>
           </ThemeProvider>
         </LanguageProvider>

@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo, useDeferredValue } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,7 +16,8 @@ import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import SelectablePassage from '@/components/SelectablePassage';
 import useUserPermissions from '@/hooks/useUserPermissions';
-import AudioRecorder from '@/components/AudioRecorder';
+import dynamic from 'next/dynamic';
+const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
 import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LANG_LABEL } from '@/types/lang';
@@ -42,6 +43,8 @@ import {
   Menu,
   X,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getCached, setCached } from '@/lib/clientCache';
 
 // 题目数据类型
 interface ShadowingItem {
@@ -120,9 +123,10 @@ interface AudioRecording {
 export default function ShadowingPage() {
   const { t, language, setLanguageFromUserProfile } = useLanguage();
   const { permissions } = useUserPermissions();
+  const { user, authLoading, getAuthHeaders, profile } = useAuth();
 
   // 过滤和筛选状态
-  const [lang, setLang] = useState<'ja' | 'en' | 'zh'>('ja');
+  const [lang, setLang] = useState<'ja' | 'en' | 'zh'>('zh');
   const [level, setLevel] = useState<number | null>(1);
   const [practiced, setPracticed] = useState<'all' | 'practiced' | 'unpracticed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -559,8 +563,6 @@ export default function ShadowingPage() {
 
   // UI 状态
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
@@ -581,6 +583,7 @@ export default function ShadowingPage() {
   const [isScoring, setIsScoring] = useState(false);
   const [currentTranscription, setCurrentTranscription] = useState<string>('');
 
+  // 桌面端分步骤练习（仅在未完成状态下启用）
   // 桌面端分步骤练习（仅在未完成状态下启用）
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [highlightPlay, setHighlightPlay] = useState(false);
@@ -643,95 +646,23 @@ export default function ShadowingPage() {
     };
   }, [step, practiceComplete]);
 
-  // 获取认证头
-  const getAuthHeaders = async () => {
-    try {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-      console.log('getAuthHeaders - session:', session ? 'exists' : 'null');
-      console.log('getAuthHeaders - access_token:', session?.access_token ? 'exists' : 'null');
-      console.log('getAuthHeaders - error:', error);
+  // 认证头由 useAuth 提供的 getAuthHeaders 统一处理
 
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-        console.log('getAuthHeaders - Authorization header set');
-      } else {
-        console.log('getAuthHeaders - No access token, using cookie auth');
-        // 尝试刷新session
-        if (session?.refresh_token) {
-          console.log('getAuthHeaders - Attempting to refresh session...');
-          const {
-            data: { session: refreshedSession },
-            error: refreshError,
-          } = await supabase.auth.refreshSession();
-          if (refreshedSession?.access_token) {
-            headers['Authorization'] = `Bearer ${refreshedSession.access_token}`;
-            console.log('getAuthHeaders - Session refreshed, Authorization header set');
-          } else {
-            console.log('getAuthHeaders - Session refresh failed:', refreshError);
-          }
-        }
-      }
-
-      return headers;
-    } catch (error) {
-      console.error('getAuthHeaders error:', error);
-      return {
-        'Content-Type': 'application/json',
-      };
-    }
-  };
-
-  // 加载主题数据
-  const loadThemes = useCallback(async () => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(
-        `/api/admin/shadowing/themes?lang=${lang}&level=${level || ''}`,
-        { headers },
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setThemes(data.items || []);
-      }
-    } catch (error) {
-      console.error('Failed to load themes:', error);
-    }
-  }, [lang, level]);
-
-  // 加载子主题数据
-  const loadSubtopics = useCallback(async (themeId: string) => {
-    if (themeId === 'all') {
-      setSubtopics([]);
-      return;
-    }
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/admin/shadowing/subtopics?theme_id=${themeId}`, {
-        headers,
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSubtopics(data.items || []);
-      }
-    } catch (error) {
-      console.error('Failed to load subtopics:', error);
-    }
-  }, []);
-
+  // 重复定义的 loadThemes/loadSubtopics 已移除（保留下方新版本）
   // 获取推荐等级
   const fetchRecommendedLevel = useCallback(async () => {
     if (!user) return;
 
     try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/shadowing/recommended?lang=${lang}`, { headers });
+      let headers = await getAuthHeaders();
+      let response = await fetch(`/api/shadowing/recommended?lang=${lang}`, { headers });
+      if (response.status === 401) {
+        try {
+          await supabase.auth.refreshSession();
+          headers = await getAuthHeaders();
+          response = await fetch(`/api/shadowing/recommended?lang=${lang}`, { headers });
+        } catch {}
+      }
       if (response.ok) {
         const data = await response.json();
         setRecommendedLevel(data.recommended);
@@ -748,17 +679,30 @@ export default function ShadowingPage() {
       const params = new URLSearchParams();
       if (lang) params.set('lang', lang);
       if (level) params.set('level', level.toString());
-      if (practiced !== 'all')
-        params.set('practiced', practiced === 'practiced' ? 'true' : 'false');
+      if (practiced !== 'all') params.set('practiced', practiced === 'practiced' ? 'true' : 'false');
+      params.set('limit', '100');
 
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/shadowing/catalog?${params.toString()}`, { headers });
-      if (response.ok) {
-        const data = await response.json();
-        const newItems = data.items || [];
-        setItems(newItems);
+      const key = `shadowing_catalog:${params.toString()}`;
+      const cached = getCached<any>(key);
+      if (cached) {
+        setItems(cached.items || []);
       } else {
-        console.error('Failed to fetch items:', response.status, await response.text());
+        let headers = await getAuthHeaders();
+        let response = await fetch(`/api/shadowing/catalog?${params.toString()}`, { headers, credentials: 'include' });
+        if (response.status === 401) {
+          try {
+            await supabase.auth.refreshSession();
+            headers = await getAuthHeaders();
+            response = await fetch(`/api/shadowing/catalog?${params.toString()}`, { headers, credentials: 'include' });
+          } catch {}
+        }
+        if (response.ok) {
+          const data = await response.json();
+          setCached(key, data, 30_000);
+          setItems(data.items || []);
+        } else {
+          console.error('Failed to fetch items:', response.status, await response.text());
+        }
       }
     } catch (error) {
       console.error('Failed to fetch items:', error);
@@ -767,60 +711,56 @@ export default function ShadowingPage() {
     }
   }, [lang, level, practiced]);
 
-  // 检查用户认证状态
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        setUser(session?.user || null);
-        setAuthLoading(false);
-
-        // 如果用户已登录，获取用户个人资料
-        if (session?.user) {
-          await fetchUserProfile();
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        setAuthLoading(false);
+  // 加载主题列表
+  const loadThemes = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (lang) params.set('lang', lang);
+      if (level) params.set('level', level?.toString() || '');
+      const response = await fetch(`/api/admin/shadowing/themes?${params.toString()}`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setThemes((data.items || data.themes) ?? []);
       }
-    };
+    } catch (error) {
+      console.error('Failed to load themes:', error);
+    }
+  }, [lang, level]);
 
-    // 初始检查
-    checkAuth();
-
-    // 监听认证状态变化
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed in shadowing:', event, session?.user?.email);
-      setUser(session?.user || null);
-
-      // 如果用户登录了，获取用户个人资料
-      if (session?.user) {
-        await fetchUserProfile();
+  // 加载某主题下的小主题
+  const loadSubtopics = useCallback(async (themeId: string) => {
+    try {
+      const params = new URLSearchParams();
+      params.set('theme_id', themeId);
+      const response = await fetch(`/api/admin/shadowing/subtopics?${params.toString()}`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setSubtopics((data.items || data.subtopics) ?? []);
       }
-    });
+    } catch (error) {
+      console.error('Failed to load subtopics:', error);
+    }
+  }, []);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [fetchUserProfile]);
+  // 鉴权由 AuthContext 统一处理
 
   // 初始加载题库（仅在用户已登录时）
   useEffect(() => {
-    if (!authLoading && user) {
-      fetchItems();
-      fetchRecommendedLevel();
-    }
+    if (authLoading) return;
+    const t = setTimeout(() => {
+      if (user) {
+        fetchItems();
+        fetchRecommendedLevel();
+      }
+    }, 50);
+    return () => clearTimeout(t);
   }, [fetchItems, fetchRecommendedLevel, authLoading, user]);
 
   // 筛选条件变化时立即刷新题库
   useEffect(() => {
-    if (!authLoading && user) {
-      fetchItems();
-    }
+    if (authLoading || !user) return;
+    const t = setTimeout(() => fetchItems(), 50);
+    return () => clearTimeout(t);
   }, [lang, level, practiced, authLoading, user, fetchItems]);
 
   // 加载主题数据
@@ -840,104 +780,111 @@ export default function ShadowingPage() {
     }
   }, [selectedThemeId, loadSubtopics]);
 
-  // 过滤显示的题目
-  const filteredItems = items
-    .filter((item) => {
-      // 搜索筛选
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesSearch =
-          item.title.toLowerCase().includes(query) || item.text.toLowerCase().includes(query);
-        if (!matchesSearch) return false;
-      }
+  // 搜索值延迟，降低频繁输入导致的重算
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
-      // 体裁筛选（基于 genre 字段或等级推断的体裁筛选）
-      if (theme !== 'all') {
-        let itemGenre =
-          item.genre ||
-          item.meta?.genre ||
-          item.meta?.theme ||
-          (item.meta?.tags && Array.isArray(item.meta.tags) ? item.meta.tags[0] : null);
+  // 过滤显示的题目（记忆化）
+  const filteredItems = useMemo(() => {
+    const list = items
+      .filter((item) => {
+        // 搜索筛选
+        if (deferredSearchQuery) {
+          const query = deferredSearchQuery.toLowerCase();
+          const matchesSearch =
+            item.title.toLowerCase().includes(query) || item.text.toLowerCase().includes(query);
+          if (!matchesSearch) return false;
+        }
 
-        // 如果没有体裁信息，根据等级和内容特征推断
-        if (!itemGenre) {
-          // 根据6级难度设计的体裁分配规则
-          const levelGenreMap: Record<number, string[]> = {
-            1: ['dialogue'],
-            2: ['dialogue', 'monologue'],
-            3: ['monologue', 'news'],
-            4: ['news', 'dialogue'],
-            5: ['lecture', 'news'],
-            6: ['lecture', 'news'],
-          };
+        // 体裁筛选（基于 genre 字段或等级推断的体裁筛选）
+        if (theme !== 'all') {
+          let itemGenre =
+            item.genre ||
+            item.meta?.genre ||
+            item.meta?.theme ||
+            (item.meta?.tags && Array.isArray(item.meta.tags) ? item.meta.tags[0] : null);
 
-          const possibleGenres = levelGenreMap[item.level] || [];
-          // 如果等级对应的体裁包含当前筛选的体裁，则通过
-          if (possibleGenres.includes(theme)) {
-            itemGenre = theme;
+          // 如果没有体裁信息，根据等级和内容特征推断
+          if (!itemGenre) {
+            // 根据6级难度设计的体裁分配规则
+            const levelGenreMap: Record<number, string[]> = {
+              1: ['dialogue'],
+              2: ['dialogue', 'monologue'],
+              3: ['monologue', 'news'],
+              4: ['news', 'dialogue'],
+              5: ['lecture', 'news'],
+              6: ['lecture', 'news'],
+            };
+
+            const possibleGenres = levelGenreMap[item.level] || [];
+            // 如果等级对应的体裁包含当前筛选的体裁，则通过
+            if (possibleGenres.includes(theme)) {
+              itemGenre = theme;
+            }
+          }
+
+          if (!itemGenre || !itemGenre.toLowerCase().includes(theme.toLowerCase())) {
+            return false;
           }
         }
 
-        if (!itemGenre || !itemGenre.toLowerCase().includes(theme.toLowerCase())) {
-          return false;
+        // 大主题筛选（精确匹配）
+        if (selectedThemeId !== 'all') {
+          // 调试日志
+          console.log('大主题筛选:', {
+            selectedThemeId,
+            itemThemeId: item.theme_id,
+            itemTitle: item.title,
+            match: item.theme_id === selectedThemeId,
+          });
+
+          if (!item.theme_id || item.theme_id !== selectedThemeId) {
+            return false;
+          }
         }
-      }
 
-      // 大主题筛选（精确匹配）
-      if (selectedThemeId !== 'all') {
-        // 调试日志
-        console.log('大主题筛选:', {
-          selectedThemeId,
-          itemThemeId: item.theme_id,
-          itemTitle: item.title,
-          match: item.theme_id === selectedThemeId,
-        });
-
-        if (!item.theme_id || item.theme_id !== selectedThemeId) {
-          return false;
+        // 小主题筛选（小主题和标题是一对一关系）
+        if (selectedSubtopicId !== 'all') {
+          if (!item.subtopic_id || item.subtopic_id !== selectedSubtopicId) {
+            return false;
+          }
         }
-      }
 
-      // 小主题筛选（小主题和标题是一对一关系）
-      if (selectedSubtopicId !== 'all') {
-        if (!item.subtopic_id || item.subtopic_id !== selectedSubtopicId) {
-          return false;
+        return true;
+      })
+      .sort((a, b) => {
+        // 排序规则：已完成 > 草稿中 > 未开始
+        const getStatusOrder = (item: ShadowingItem) => {
+          if (item.isPracticed) return 0; // 已完成
+          if (item.status === 'draft') return 1; // 草稿中
+          return 2; // 未开始
+        };
+
+        const orderA = getStatusOrder(a);
+        const orderB = getStatusOrder(b);
+
+        if (orderA !== orderB) {
+          return orderA - orderB;
         }
-      }
 
-      return true;
-    })
-    .sort((a, b) => {
-      // 排序规则：已完成 > 草稿中 > 未开始
-      const getStatusOrder = (item: ShadowingItem) => {
-        if (item.isPracticed) return 0; // 已完成
-        if (item.status === 'draft') return 1; // 草稿中
-        return 2; // 未开始
-      };
+        // 相同状态按数字顺序排序
+        const getNumberFromTitle = (title: string) => {
+          const match = title.match(/^(\d+)\./);
+          return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
+        };
 
-      const orderA = getStatusOrder(a);
-      const orderB = getStatusOrder(b);
+        const numA = getNumberFromTitle(a.title);
+        const numB = getNumberFromTitle(b.title);
 
-      if (orderA !== orderB) {
-        return orderA - orderB;
-      }
+        if (numA !== numB) {
+          return numA - numB;
+        }
 
-      // 相同状态按数字顺序排序
-      const getNumberFromTitle = (title: string) => {
-        const match = title.match(/^(\d+)\./);
-        return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
-      };
+        // 如果数字相同，按标题排序
+        return a.title.localeCompare(b.title);
+      });
 
-      const numA = getNumberFromTitle(a.title);
-      const numB = getNumberFromTitle(b.title);
-
-      if (numA !== numB) {
-        return numA - numB;
-      }
-
-      // 如果数字相同，按标题排序
-      return a.title.localeCompare(b.title);
-    });
+    return list;
+  }, [items, deferredSearchQuery, theme, selectedThemeId, selectedSubtopicId]);
 
   // 随机选择未练习的题目
   const getRandomUnpracticed = () => {
@@ -962,6 +909,11 @@ export default function ShadowingPage() {
 
   // 加载题目
   const loadItem = async (item: ShadowingItem) => {
+    // 切题前停止录音组件的播放，避免串音
+    try {
+      // @ts-ignore
+      audioRecorderRef.current?.stopPlayback?.();
+    } catch {}
     setCurrentItem(item);
     setSelectedWords([]);
     setPreviousWords([]);
@@ -2986,7 +2938,18 @@ export default function ShadowingPage() {
                     <div className="p-4 bg-gray-50 rounded-lg">
                       {isVocabMode ? (
                         <SelectablePassage
-                          text={currentItem.text}
+                          text={(() => {
+                            const normalize = (t: string) => {
+                              let s = (t || '')
+                                .replace(/\r\n/g, '\n')
+                                .replace(/\r/g, '\n')
+                                .replace(/<br\s*\/?\s*>/gi, '\n')
+                                .replace(/&#10;|&#13;/g, '\n');
+                              for (let i = 0; i < 3 && /\\\n/.test(s); i += 1) s = s.replace(/\\\n/g, '\n');
+                              return s;
+                            };
+                            return normalize(currentItem.text);
+                          })()}
                           lang="zh"
                           onSelectionChange={handleTextSelection}
                           clearSelection={clearSelection}
@@ -3158,7 +3121,7 @@ export default function ShadowingPage() {
                         <audio
                           controls
                           src={currentItem.audio_url}
-                          preload="metadata"
+                          preload="none"
                           className="w-full"
                         />
                       </div>
@@ -4761,7 +4724,7 @@ export default function ShadowingPage() {
                         <audio
                           controls
                           src={currentItem.audio_url}
-                          preload="metadata"
+                          preload="none"
                           className="w-full"
                         />
                       </div>

@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
   try {
     // Bearer 优先，其次 Cookie 方式
     const authHeader = req.headers.get('authorization') || '';
+    const cookieHeader = req.headers.get('cookie') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
     let supabase: SupabaseClient;
 
@@ -28,16 +29,36 @@ export async function GET(req: NextRequest) {
         global: { headers: { Authorization: authHeader } },
       }) as unknown as SupabaseClient;
     } else {
-      const cookieStore = await cookies();
-      supabase = createServerClient(supabaseUrl, supabaseAnon, {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
+      // 优先从请求头的 cookie 解析（客户端 fetch 转发 cookie 时更直接），退回到 cookies() API
+      if (cookieHeader) {
+        const cookieMap = new Map<string, string>();
+        cookieHeader.split(';').forEach((pair) => {
+          const [k, ...rest] = pair.split('=');
+          const key = k.trim();
+          const value = rest.join('=').trim();
+          if (key) cookieMap.set(key, value);
+        });
+        supabase = createServerClient(supabaseUrl, supabaseAnon, {
+          cookies: {
+            get(name: string) {
+              return cookieMap.get(name);
+            },
+            set() {},
+            remove() {},
           },
-          set() {},
-          remove() {},
-        },
-      }) as unknown as SupabaseClient;
+        }) as unknown as SupabaseClient;
+      } else {
+        const cookieStore = await cookies();
+        supabase = createServerClient(supabaseUrl, supabaseAnon, {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value;
+            },
+            set() {},
+            remove() {},
+          },
+        }) as unknown as SupabaseClient;
+      }
     }
 
     // Check authentication
@@ -45,19 +66,27 @@ export async function GET(req: NextRequest) {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
-    console.log('Auth check:', { user: user?.id, error: authError?.message, hasBearer });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Auth check:', { user: user?.id, error: authError?.message, hasBearer });
+    }
     if (authError || !user) {
-      console.log('Authentication failed:', authError);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Authentication failed:', authError);
+      }
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // 获取用户权限
     const permissions = await getUserPermissions(user.id);
-    console.log('User permissions:', permissions);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('User permissions:', permissions);
+    }
 
     // 检查是否有访问Shadowing的权限
     if (!checkAccessPermission(permissions, 'can_access_shadowing')) {
-      console.log('User does not have shadowing access permission, permissions:', permissions);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('User does not have shadowing access permission, permissions:', permissions);
+      }
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -67,6 +96,10 @@ export async function GET(req: NextRequest) {
     const level = url.searchParams.get('level');
     const practiced = url.searchParams.get('practiced'); // 'true', 'false', or null (all)
     const since = url.searchParams.get('since');
+    const limitParam = url.searchParams.get('limit');
+    const offsetParam = url.searchParams.get('offset');
+    const limit = limitParam ? Math.max(1, Math.min(200, parseInt(limitParam))) : null; // 缺省不分页
+    const offset = offsetParam ? Math.max(0, parseInt(offsetParam)) : 0;
 
     // 直接查询，不使用缓存
     const result = await (async () => {
@@ -100,12 +133,14 @@ export async function GET(req: NextRequest) {
       if (lang) {
         // 检查语言权限
         if (!checkLanguagePermission(permissions, lang)) {
-          console.log(
-            'User does not have permission for language:',
-            lang,
-            'allowed languages:',
-            permissions.allowed_languages,
-          );
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(
+              'User does not have permission for language:',
+              lang,
+              'allowed languages:',
+              permissions.allowed_languages,
+            );
+          }
           return {
             success: true,
             items: [],
@@ -118,12 +153,14 @@ export async function GET(req: NextRequest) {
         const levelNum = parseInt(level);
         // 检查等级权限
         if (!checkLevelPermission(permissions, levelNum)) {
-          console.log(
-            'User does not have permission for level:',
-            levelNum,
-            'allowed levels:',
-            permissions.allowed_levels,
-          );
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(
+              'User does not have permission for level:',
+              levelNum,
+              'allowed levels:',
+              permissions.allowed_levels,
+            );
+          }
           return {
             success: true,
             items: [],
@@ -143,11 +180,13 @@ export async function GET(req: NextRequest) {
 
       const { data: items, error } = await query;
 
-      console.log('Database query result:', {
-        itemsCount: items?.length || 0,
-        error: error?.message,
-        queryParams: { lang, level, status: 'approved' },
-      });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Database query result:', {
+          itemsCount: items?.length || 0,
+          error: error?.message,
+          queryParams: { lang, level, status: 'approved' },
+        });
+      }
 
       if (error) {
         console.error('Database query error:', error);
@@ -209,16 +248,20 @@ export async function GET(req: NextRequest) {
           let practiceTime = 0;
           if (recordings && recordings.length > 0) {
             practiceTime = recordings.reduce((total: number, recording: { duration?: number }) => {
+            if (process.env.NODE_ENV !== 'production') {
               console.log('录音时长:', recording.duration, '毫秒');
+            }
               return total + (recording.duration || 0);
             }, 0);
-            console.log(
-              '总练习时长:',
-              practiceTime,
-              '毫秒 =',
-              Math.floor(practiceTime / 1000),
-              '秒',
-            );
+            if (process.env.NODE_ENV !== 'production') {
+              console.log(
+                '总练习时长:',
+                practiceTime,
+                '毫秒 =',
+                Math.floor(practiceTime / 1000),
+                '秒',
+              );
+            }
           }
 
           // Find theme and subtopic data
@@ -257,11 +300,15 @@ export async function GET(req: NextRequest) {
 
       // 如果没有指定等级，过滤掉用户没有权限的等级
       if (!level) {
-        console.log('Filtering by level permissions, allowed levels:', permissions.allowed_levels);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Filtering by level permissions, allowed levels:', permissions.allowed_levels);
+        }
         filteredItems = filteredItems.filter((item) => {
           const hasPermission = checkLevelPermission(permissions, item.level);
           if (!hasPermission) {
-            console.log('Filtering out item with level:', item.level);
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('Filtering out item with level:', item.level);
+            }
           }
           return hasPermission;
         });
@@ -269,34 +316,48 @@ export async function GET(req: NextRequest) {
 
       // 如果没有指定语言，过滤掉用户没有权限的语言
       if (!lang) {
-        console.log(
-          'Filtering by language permissions, allowed languages:',
-          permissions.allowed_languages,
-        );
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(
+            'Filtering by language permissions, allowed languages:',
+            permissions.allowed_languages,
+          );
+        }
         filteredItems = filteredItems.filter((item) => {
           const hasPermission = checkLanguagePermission(permissions, item.lang);
           if (!hasPermission) {
-            console.log('Filtering out item with language:', item.lang);
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('Filtering out item with language:', item.lang);
+            }
           }
           return hasPermission;
         });
       }
 
+      // 分页切片（默认不分页，保持向后兼容）
+      const pagedItems =
+        limit != null ? filteredItems.slice(offset, offset + limit) : filteredItems;
+
       const result = {
         success: true,
-        items: filteredItems,
+        items: pagedItems,
         total: filteredItems.length,
-      };
+        limit: limit ?? undefined,
+        offset: limit != null ? offset : undefined,
+      } as const;
 
-      console.log('Final result:', {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Final result:', {
         originalItemsCount: items?.length || 0,
         filteredItemsCount: filteredItems.length,
+        returnedItemsCount: pagedItems.length,
         permissions: {
           can_access_shadowing: permissions.can_access_shadowing,
           allowed_languages: permissions.allowed_languages,
           allowed_levels: permissions.allowed_levels,
         },
-      });
+        pagination: { limit, offset },
+        });
+      }
 
       return result;
     })();
