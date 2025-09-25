@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
   try {
     // Bearer 优先，其次 Cookie 方式
     const authHeader = req.headers.get('authorization') || '';
+    const cookieHeader = req.headers.get('cookie') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
     let supabase: any;
 
@@ -43,16 +44,35 @@ export async function GET(req: NextRequest) {
         global: { headers: { Authorization: authHeader } },
       });
     } else {
-      const cookieStore = await cookies();
-      supabase = createServerClient(supabaseUrl, supabaseAnon, {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
+      if (cookieHeader) {
+        const cookieMap = new Map<string, string>();
+        cookieHeader.split(';').forEach((pair) => {
+          const [k, ...rest] = pair.split('=');
+          const key = k.trim();
+          const value = rest.join('=').trim();
+          if (key) cookieMap.set(key, value);
+        });
+        supabase = createServerClient(supabaseUrl, supabaseAnon, {
+          cookies: {
+            get(name: string) {
+              return cookieMap.get(name);
+            },
+            set() {},
+            remove() {},
           },
-          set() {},
-          remove() {},
-        },
-      });
+        });
+      } else {
+        const cookieStore = await cookies();
+        supabase = createServerClient(supabaseUrl, supabaseAnon, {
+          cookies: {
+            get(name: string) {
+              return cookieStore.get(name)?.value;
+            },
+            set() {},
+            remove() {},
+          },
+        });
+      }
     }
     const searchParams = new URL(req.url).searchParams;
     const lang = (searchParams.get('lang') || 'en').toLowerCase();

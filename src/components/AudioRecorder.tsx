@@ -387,6 +387,20 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
       () => ({
         uploadCurrentRecording,
         hasUnsavedRecording: () => currentRecordingUrl && audioChunksRef.current.length > 0,
+        stopPlayback: () => {
+          if (audioRef.current) {
+            try {
+              audioRef.current.pause();
+              audioRef.current.currentTime = 0;
+            } catch {}
+            audioRef.current = null;
+          }
+          if (recognitionRef.current) {
+            try {
+              recognitionRef.current.stop();
+            } catch {}
+          }
+        },
       }),
       [uploadCurrentRecording, currentRecordingUrl],
     );
@@ -465,6 +479,45 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
       if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
       return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     };
+
+    // 组件卸载清理，防止内存与设备资源泄漏
+    useEffect(() => {
+      return () => {
+        // 停止播放
+        if (audioRef.current) {
+          try {
+            audioRef.current.pause();
+          } catch {}
+          audioRef.current = null;
+        }
+
+        // 停止录音
+        if (mediaRecorderRef.current) {
+          try {
+            if ((mediaRecorderRef.current as any).state === 'recording') {
+              mediaRecorderRef.current.stop();
+            }
+          } catch {}
+        }
+
+        // 停止语音识别
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+          } catch {}
+        }
+
+        // 回收未清理的对象URL
+        if (currentRecordingUrl) {
+          try {
+            URL.revokeObjectURL(currentRecordingUrl);
+          } catch {}
+        }
+
+        // 清空缓冲
+        audioChunksRef.current = [];
+      };
+    }, [currentRecordingUrl]);
 
     // 检查转录质量
     const checkTranscriptionQuality = (transcription: string, originalText?: string) => {
