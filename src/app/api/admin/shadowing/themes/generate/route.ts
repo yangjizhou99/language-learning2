@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { requireAdmin } from '@/lib/admin';
 import { chatJSON } from '@/lib/ai/client';
 
@@ -141,7 +142,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 处理生成的主题
+    const nowIso = new Date().toISOString();
     const themesToProcess = parsed.themes.map((theme: any) => ({
+      id: randomUUID(), // 兼容数据库未设置默认值的环境
+      created_at: nowIso, // 兼容数据库未设置默认值的环境
       lang,
       level,
       genre,
@@ -153,22 +157,69 @@ export async function POST(req: NextRequest) {
       ai_model: model,
       ai_usage: result.usage || {},
       status: 'active',
+      created_by: auth.user?.id,
     }));
 
     let insertedData: any[] = [];
     if (themesToProcess.length > 0) {
-      const { data, error } = await supabase
-        .from('shadowing_themes')
-        .insert(themesToProcess)
-        .select('id, title');
+      // 优先尝试插入完整字段集合
+      const attemptInsert = async (rows: any[]) =>
+        await supabase.from('shadowing_themes').insert(rows).select('id, title');
+
+      const { data, error } = await attemptInsert(themesToProcess);
 
       if (error) {
-        throw new Error(
-          `Database error: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
+        // 记录详细错误，便于排查
+        console.error('shadowing_themes insert error:', error);
 
-      insertedData = data || [];
+        // 如果是列不存在（数据库未升级到最新结构），降级仅插入基础字段
+        const errMsg = (error as any)?.message || '';
+        const errCode = (error as any)?.code || '';
+        const likelyUnknownColumn = /column .* does not exist/i.test(errMsg) || errCode === '42703';
+
+        if (likelyUnknownColumn) {
+          const minimalRows = themesToProcess.map((t) => ({
+            id: t.id,
+            created_at: t.created_at,
+            lang: t.lang,
+            level: t.level,
+            genre: t.genre,
+            title: t.title,
+            desc: t.desc,
+            status: t.status,
+            created_by: t.created_by,
+          }));
+
+          const { data: data2, error: error2 } = await attemptInsert(minimalRows);
+          if (error2) {
+            console.error('shadowing_themes minimal insert error:', error2);
+            const formatted = {
+              message: (error2 as any)?.message || String(error2),
+              details: (error2 as any)?.details,
+              hint: (error2 as any)?.hint,
+              code: (error2 as any)?.code,
+            };
+            return NextResponse.json(
+              { error: `Database error: ${formatted.message}`, error_detail: formatted },
+              { status: 500 },
+            );
+          }
+          insertedData = data2 || [];
+        } else {
+          const formatted = {
+            message: (error as any)?.message || String(error),
+            details: (error as any)?.details,
+            hint: (error as any)?.hint,
+            code: (error as any)?.code,
+          };
+          return NextResponse.json(
+            { error: `Database error: ${formatted.message}`, error_detail: formatted },
+            { status: 500 },
+          );
+        }
+      } else {
+        insertedData = data || [];
+      }
     }
 
     return NextResponse.json({
@@ -179,15 +230,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Theme generation error:', error);
+    const errObj: any = error as any;
+    const formatted = {
+      message: errObj?.message || String(error),
+      details: errObj?.details,
+      hint: errObj?.hint,
+      code: errObj?.code,
+    };
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error instanceof Error
-              ? error.message
-              : String(error)
-            : 'Generation failed',
-      },
+      { error: formatted.message, error_detail: formatted },
       { status: 500 },
     );
   }
