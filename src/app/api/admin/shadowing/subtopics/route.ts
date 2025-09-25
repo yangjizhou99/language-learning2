@@ -34,15 +34,7 @@ async function handleRequest(supabase: SupabaseClient, req: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
 
-  let query = supabase
-    .from('shadowing_subtopics')
-    .select(
-      `
-      *,
-      theme:shadowing_themes(title)
-    `,
-    )
-    .eq('status', 'active');
+  let query = supabase.from('shadowing_subtopics').select('*').eq('status', 'active');
 
   if (lang) query = query.eq('lang', lang);
   if (level) query = query.eq('level', parseInt(level));
@@ -125,12 +117,7 @@ async function handleRequest(supabase: SupabaseClient, req: NextRequest) {
     // 拉取当前页的完整记录，并与主题标题进行联结，且保持按 created_at 倒序
     const pageQuery = supabase
       .from('shadowing_subtopics')
-      .select(
-        `
-        *,
-        theme:shadowing_themes(title)
-      `,
-      )
+      .select('*')
       .in('id', pageIds)
       .order('created_at', { ascending: false });
     const { data: pageItems, error: pageError } = await pageQuery;
@@ -139,7 +126,7 @@ async function handleRequest(supabase: SupabaseClient, req: NextRequest) {
     }
 
     // 标注 has_article 字段（可选）
-    const finalItems = (pageItems as SubtopicRow[] | null || []).map((row: SubtopicRow) => ({
+    const finalItems = ((pageItems as SubtopicRow[] | null) || []).map((row: SubtopicRow) => ({
       ...row,
       has_article: hasArticleIds.has(row.id),
     }));
@@ -208,12 +195,7 @@ export async function POST(req: NextRequest) {
     const { data: result, error } = await supabase
       .from('shadowing_subtopics')
       .upsert(data, { onConflict: 'id' })
-      .select(
-        `
-        *,
-        theme:shadowing_themes(title)
-      `,
-      )
+      .select('*')
       .single();
 
     if (error) {
