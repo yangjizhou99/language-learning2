@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
 
                 // 保存到数据库
                 const { error: saveError } = await supabase.from('shadowing_drafts').insert({
+                  id: crypto.randomUUID(),
                   lang: subtopic.lang,
                   level: subtopic.level,
                   topic: subtopic.title,

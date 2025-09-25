@@ -33,8 +33,15 @@ async function handleRequest(supabase: SupabaseClient, req: NextRequest) {
   const q = searchParams.get('q');
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '50');
+  const include_archived =
+    (searchParams.get('include_archived') || '').toLowerCase() === 'true' ||
+    searchParams.get('include_archived') === '1';
+  const include_drafts =
+    (searchParams.get('include_drafts') || '').toLowerCase() === 'true' ||
+    searchParams.get('include_drafts') === '1';
 
-  let query = supabase.from('shadowing_subtopics').select('*').eq('status', 'active');
+  let query = supabase.from('shadowing_subtopics').select('*');
+  if (!include_archived) query = query.eq('status', 'active');
 
   if (lang) query = query.eq('lang', lang);
   if (level) query = query.eq('level', parseInt(level));
@@ -59,43 +66,53 @@ async function handleRequest(supabase: SupabaseClient, req: NextRequest) {
       { data: itemsData, error: itemsError },
       { data: baseListData, error: baseListError },
     ] = await Promise.all([
-      supabase
-        .from('shadowing_drafts')
-        .select('subtopic_id')
-        .not('subtopic_id', 'is', null),
+      include_drafts
+        ? supabase
+            .from('shadowing_drafts')
+            .select('subtopic_id, source, status')
+            .eq('status', 'draft')
+        : Promise.resolve({ data: null as DraftOrItemRef[] | null, error: null as Error | null }),
       supabase
         .from('shadowing_items')
         .select('subtopic_id')
         .not('subtopic_id', 'is', null),
       // 获取满足基础过滤条件的所有子主题的 id 和 created_at，并按时间倒序排序
       (() => {
-        let q = supabase
+        let qb = supabase
           .from('shadowing_subtopics')
-          .select('id, created_at')
-          .eq('status', 'active')
-          .order('created_at', { ascending: false });
-        if (lang) q = q.eq('lang', lang);
-        if (level) q = q.eq('level', parseInt(level));
-        if (genre) q = q.eq('genre', genre);
-        if (theme_id) q = q.eq('theme_id', theme_id);
-        if (q) q = q.ilike('title', `%${q}%`);
-        return q;
+          .select('id, created_at');
+        if (!include_archived) qb = qb.eq('status', 'active');
+        qb = qb.order('created_at', { ascending: false });
+        if (lang) qb = qb.eq('lang', lang);
+        if (level) qb = qb.eq('level', parseInt(level));
+        if (genre) qb = qb.eq('genre', genre);
+        if (theme_id) qb = qb.eq('theme_id', theme_id);
+        if (q) qb = qb.ilike('title', `%${q}%`);
+        return qb;
       })(),
     ]);
 
-    if (draftsError || itemsError || baseListError) {
+    if (itemsError || baseListError || draftsError) {
       const err = draftsError || itemsError || baseListError;
       return NextResponse.json({ error: err?.message || String(err) }, { status: 400 });
     }
 
-    const hasArticleIds = new Set([
-      ...((draftsData as DraftOrItemRef[] | null)?.map((d: DraftOrItemRef) => d.subtopic_id) || []),
-      ...((itemsData as DraftOrItemRef[] | null)?.map((i: DraftOrItemRef) => i.subtopic_id) || []),
-    ]);
+    const itemIds = new Set(
+      ((itemsData as DraftOrItemRef[] | null)?.map((i: DraftOrItemRef) => i.subtopic_id) || []) as string[],
+    );
+    type DraftRow = { subtopic_id: string | null; source?: { subtopic_id?: string | null } | null; status?: string };
+    const draftIds = new Set(
+      (((draftsData as DraftRow[] | null) || [])
+        .map((d) => d.subtopic_id || d.source?.subtopic_id || null)
+        .filter(Boolean)) as string[],
+    );
+    // yes: 仅已发布；no: 排除（已发布 ∪ 草稿）
+    const hasArticleIds = itemIds;
+    const noneAllowedIds = new Set<string>([...itemIds, ...(include_drafts ? [...draftIds] : [])]);
 
     const allRows = (baseListData as SubtopicIdRow[] | null) || [];
     const filteredRows = allRows.filter((row: SubtopicIdRow) =>
-      has_article === 'yes' ? hasArticleIds.has(row.id) : !hasArticleIds.has(row.id),
+      has_article === 'yes' ? hasArticleIds.has(row.id) : !noneAllowedIds.has(row.id),
     );
 
     const totalFiltered = filteredRows.length;
@@ -143,8 +160,8 @@ async function handleRequest(supabase: SupabaseClient, req: NextRequest) {
   // 获取总数（不应用分页限制）
   const countQuery = supabase
     .from('shadowing_subtopics')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'active');
+    .select('*', { count: 'exact', head: true });
+  if (!include_archived) countQuery.eq('status', 'active');
   if (lang) countQuery.eq('lang', lang);
   if (level) countQuery.eq('level', parseInt(level));
   if (genre) countQuery.eq('genre', genre);

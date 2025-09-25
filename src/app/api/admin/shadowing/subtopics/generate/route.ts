@@ -159,16 +159,32 @@ export async function POST(req: NextRequest) {
     }
 
     // 处理生成的小主题（去重 + 显式主键/时间，兼容无默认值环境）
+    type SubtopicInsert = {
+      id: string;
+      created_at: string;
+      theme_id: string;
+      lang: string;
+      level: number;
+      genre: string;
+      title: string;
+      seed: string;
+      one_line: string;
+      ai_provider: string;
+      ai_model: string;
+      ai_usage: Record<string, unknown>;
+      status: string;
+      created_by?: string | null;
+    };
     const nowIso = new Date().toISOString();
     const seenTitles = new Set<string>();
-    const subtopicsToProcess = parsed.subtopics
+    const subtopicsToProcess: SubtopicInsert[] = parsed.subtopics
       .filter((s: any) => {
         const key = String(s?.title || '').trim();
         if (!key || seenTitles.has(key) || existingSubtopicTitles.includes(key)) return false;
         seenTitles.add(key);
         return true;
       })
-      .map((subtopic: any) => ({
+      .map((subtopic: any): SubtopicInsert => ({
         id: randomUUID(),
         created_at: nowIso,
         theme_id,
@@ -185,9 +201,9 @@ export async function POST(req: NextRequest) {
         created_by: auth.user?.id,
       }));
 
-    let insertedData: any[] = [];
+    let insertedData: Array<Pick<SubtopicInsert, 'id' | 'title'>> = [];
     if (subtopicsToProcess.length > 0) {
-      const attemptInsert = async (rows: any[]) =>
+      const attemptInsert = async (rows: Array<Partial<SubtopicInsert>>) =>
         await supabase.from('shadowing_subtopics').insert(rows).select('id, title');
 
       const { data, error } = await attemptInsert(subtopicsToProcess);
@@ -198,7 +214,7 @@ export async function POST(req: NextRequest) {
         const likelyUnknownColumn = /column .* does not exist/i.test(errMsg) || errCode === '42703';
 
         if (likelyUnknownColumn) {
-          const minimalRows = subtopicsToProcess.map((t) => ({
+          const minimalRows = subtopicsToProcess.map((t: SubtopicInsert) => ({
             id: t.id,
             created_at: t.created_at,
             theme_id: t.theme_id,

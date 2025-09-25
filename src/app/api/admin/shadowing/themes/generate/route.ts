@@ -143,7 +143,24 @@ export async function POST(req: NextRequest) {
 
     // 处理生成的主题
     const nowIso = new Date().toISOString();
-    const themesToProcess = parsed.themes.map((theme: any) => ({
+    type ThemeInsert = {
+      id: string;
+      created_at: string;
+      lang: string;
+      level: number;
+      genre: string;
+      title: string;
+      title_en: string;
+      desc: string;
+      coverage: unknown[];
+      ai_provider: string;
+      ai_model: string;
+      ai_usage: Record<string, unknown>;
+      status: string;
+      created_by?: string | null;
+    };
+
+    const themesToProcess: ThemeInsert[] = parsed.themes.map((theme: any): ThemeInsert => ({
       id: randomUUID(), // 兼容数据库未设置默认值的环境
       created_at: nowIso, // 兼容数据库未设置默认值的环境
       lang,
@@ -160,10 +177,10 @@ export async function POST(req: NextRequest) {
       created_by: auth.user?.id,
     }));
 
-    let insertedData: any[] = [];
+    let insertedData: Array<Pick<ThemeInsert, 'id' | 'title'>> = [];
     if (themesToProcess.length > 0) {
       // 优先尝试插入完整字段集合
-      const attemptInsert = async (rows: any[]) =>
+      const attemptInsert = async (rows: Array<Partial<ThemeInsert>>) =>
         await supabase.from('shadowing_themes').insert(rows).select('id, title');
 
       const { data, error } = await attemptInsert(themesToProcess);
@@ -178,7 +195,7 @@ export async function POST(req: NextRequest) {
         const likelyUnknownColumn = /column .* does not exist/i.test(errMsg) || errCode === '42703';
 
         if (likelyUnknownColumn) {
-          const minimalRows = themesToProcess.map((t) => ({
+          const minimalRows = themesToProcess.map((t: ThemeInsert) => ({
             id: t.id,
             created_at: t.created_at,
             lang: t.lang,
