@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCached, setCached } from '@/lib/clientCache';
+import { useSearchParams } from 'next/navigation';
 
 // 题目数据类型
 interface ShadowingItem {
@@ -565,7 +566,8 @@ export default function EnglishShadowingPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
+  const [playbackRate, setPlaybackRate] = useState<number>(1);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [practiceComplete, setPracticeComplete] = useState(false);
   const [showSentenceComparison, setShowSentenceComparison] = useState(false);
   const [scoringResult, setScoringResult] = useState<{
@@ -617,7 +619,7 @@ export default function EnglishShadowingPage() {
       params.set('limit', '100');
 
       const key = `shadowing_catalog:${params.toString()}`;
-      const cached = getCached<any>(key);
+      const cached = getCached<{ items: ShadowingItem[] }>(key);
       if (cached) {
         setItems(cached.items || []);
       } else {
@@ -845,8 +847,16 @@ export default function EnglishShadowingPage() {
   const loadItem = async (item: ShadowingItem) => {
     // 切题前停止录音组件的播放，避免串音
     try {
-      // @ts-ignore
+      // @ts-expect-error - 可选链调用录音组件的内部停止播放方法
       audioRecorderRef.current?.stopPlayback?.();
+    } catch {}
+    // 停止页面音频播放并复位
+    try {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.playbackRate = playbackRate;
+      }
     } catch {}
     setCurrentItem(item);
     setSelectedWords([]);
@@ -925,6 +935,58 @@ export default function EnglishShadowingPage() {
       setCurrentSession(null);
     }
   };
+
+  // 深链支持：?item=&autostart=1 直接加载题目
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!user) return;
+        const itemId = searchParams?.get('item');
+        const auto = searchParams?.get('autostart') === '1';
+        if (!itemId || !auto) return;
+        let target = items.find((x) => x.id === itemId) || null;
+        if (!target) {
+          const headers = await getAuthHeaders();
+          let resp = await fetch(`/api/shadowing/item?id=${itemId}`, { headers, credentials: 'include' });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data?.item) {
+              target = {
+                ...data.item,
+                isPracticed: false,
+                stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+              } as ShadowingItem;
+              setItems((prev) => {
+                const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                return exists ? prev : [target as ShadowingItem, ...prev];
+              });
+            }
+          } else if (resp.status === 404) {
+            resp = await fetch(`/api/shadowing/daily?lang=${lang}`, { headers, credentials: 'include' });
+            if (resp.ok) {
+              const data = await resp.json();
+              if (data?.item) {
+                target = {
+                  ...data.item,
+                  isPracticed: false,
+                  stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+                } as ShadowingItem;
+                setItems((prev) => {
+                  const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                  return exists ? prev : [target as ShadowingItem, ...prev];
+                });
+              }
+            }
+          }
+        }
+        if (target) {
+          await loadItem(target);
+        }
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // 处理文本选择（当用户选择文本时）
   const handleTextSelection = (word: string, context: string) => {
@@ -1592,39 +1654,16 @@ export default function EnglishShadowingPage() {
     }
   };
 
-  // 播放/暂停音频
+  // 播放/暂停音频（统一控制页面 <audio> 元素）
   const playAudio = () => {
     if (!currentItem?.audio_url) return;
-
-    // 如果当前有音频在播放，则暂停
-    if (audioRef && !audioRef.paused) {
-      audioRef.pause();
-      setIsPlaying(false);
-      return;
+    const el = audioRef.current;
+    if (!el) return;
+    if (el.paused) {
+      el.play();
+    } else {
+      el.pause();
     }
-
-    // 如果当前音频已暂停，则恢复播放
-    if (audioRef && audioRef.paused) {
-      audioRef.play();
-      setIsPlaying(true);
-      return;
-    }
-
-    // 创建新的音频对象
-    const audio = new Audio(currentItem.audio_url);
-    setAudioRef(audio);
-
-    audio.onplay = () => setIsPlaying(true);
-    audio.onended = () => {
-      setIsPlaying(false);
-      setAudioRef(null);
-    };
-    audio.onerror = () => {
-      setIsPlaying(false);
-      setAudioRef(null);
-      alert('音频播放失败');
-    };
-    audio.play();
   };
 
   // 评分功能（支持转录文字和逐句对比）
@@ -2137,6 +2176,15 @@ export default function EnglishShadowingPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Ensure speaker A:/B: starts on a new line if missing
+  const formatSpeakerBreaks = (text: string): string => {
+    if (!text) return '';
+    let out = text;
+    out = out.replace(/([^\n])\s*(A\s*[:：])/g, '$1\n$2');
+    out = out.replace(/([^\n])\s*(B\s*[:：])/g, '$1\n$2');
+    return out;
+  };
+
   // 移动端检测
   const { actualIsMobile } = useMobile();
   // Enable step gating on both desktop and mobile when not completed
@@ -2146,15 +2194,11 @@ export default function EnglishShadowingPage() {
   const [highlightScore, setHighlightScore] = useState(false);
   const gatingActive = !practiceComplete;
 
-  // Step side effects: vocab/translation toggles similar to Chinese page
+  // Step side effects: only enable vocab mode on step 3; auto-disable otherwise
   useEffect(() => {
     if (!currentItem) return;
-    if (step === 2) {
-      setIsVocabMode(false);
-    }
-    if (step === 3) {
-      setIsVocabMode(true);
-    }
+    setIsVocabMode(step === 3);
+
     if (step === 4) {
       setShowTranslation(true);
       const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
@@ -2168,9 +2212,7 @@ export default function EnglishShadowingPage() {
         const targets = getTargetLanguages(currentItem.lang);
         if (targets.length > 0) setTranslationLang(targets[0] as 'en' | 'ja' | 'zh');
       }
-    }
-    if (step === 5) {
-      setIsVocabMode(false);
+    } else {
       setShowTranslation(false);
     }
   }, [step, currentItem, userProfile, language]);
@@ -2244,6 +2286,31 @@ export default function EnglishShadowingPage() {
         {/* 移动端布局 */}
         {actualIsMobile ? (
           <div className="space-y-6">
+            {/* 手机端顶部工具栏 - 美化 */}
+            <div className="flex items-center justify之间 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                    {t.shadowing.shadowing_practice || 'Shadowing 练习'}
+                  </h1>
+                  <p className="text-xs text-gray-500">跟读练习，提升口语能力</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMobileSidebarOpen(true)}
+                className="flex items-center gap-2 bg-white/50 hover:bg-white/80 border-white/30 shadow-md"
+                aria-label={t.shadowing.shadowing_vocabulary}
+              >
+                <Menu className="w-4 h-4" />
+                {t.shadowing.shadowing_vocabulary}
+              </Button>
+            </div>
+
             {/* Mobile stepper and tips */}
             {gatingActive && (
               <Card className="p-4 bg-white border-0 shadow-sm">
@@ -2269,30 +2336,6 @@ export default function EnglishShadowingPage() {
                 </div>
               </Card>
             )}
-            {/* 手机端顶部工具栏 - 美化 */}
-            <div className="flex items-center justify-between bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                    {t.shadowing.shadowing_practice || 'Shadowing 练习'}
-                  </h1>
-                  <p className="text-xs text-gray-500">跟读练习，提升口语能力</p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setMobileSidebarOpen(true)}
-                className="flex items-center gap-2 bg-white/50 hover:bg-white/80 border-white/30 shadow-md"
-                aria-label={t.shadowing.shadowing_vocabulary}
-              >
-                <Menu className="w-4 h-4" />
-                {t.shadowing.shadowing_vocabulary}
-              </Button>
-            </div>
 
             {/* 手机端侧边栏遮罩 */}
             {mobileSidebarOpen && (
@@ -2930,15 +2973,74 @@ export default function EnglishShadowingPage() {
                     </div>
                     )}
 
+                    {/* 桌面端第4步翻译外置卡片移除，改为内嵌到正文模块顶部的黄色框 */}
+                    {!actualIsMobile && step === 4 && currentItem && (
+                      <Card className="hidden">
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span className="text-white text-lg">🌐</span>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900">{t.shadowing.translation || '翻译'}</h3>
+                            <p className="text-sm text-gray-600">多语言翻译支持</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-4">
+                            <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg白 transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={showTranslation}
+                                onChange={(e) => setShowTranslation(e.target.checked)}
+                                className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                              />
+                              <span className="font-medium">{t.shadowing.show_translation || '显示翻译'}</span>
+                            </label>
+                            {showTranslation && (
+                              <select
+                                className="h-11 px-4 py-2 bg白 border border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium"
+                                value={translationLang}
+                                onChange={(e) => setTranslationLang(e.target.value as 'en' | 'ja' | 'zh')}
+                              >
+                                {getTargetLanguages(currentItem.lang).map((lang) => (
+                                  <option key={lang} value={lang}>
+                                    {getLangName(lang)}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
+
+                          {showTranslation && currentItem.translations && currentItem.translations[translationLang] ? (
+                            <div className="p-4 bg-white rounded-xl border border-indigo-200 shadow-sm">
+                              <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
+                                {formatSpeakerBreaks(currentItem.translations[translationLang])}
+                              </div>
+                            </div>
+                          ) : showTranslation ? (
+                            <div className="text-center py-8">
+                              <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-2xl">📝</span>
+                              </div>
+                              <h3 className="text-lg font-semibold text-gray-700 mb-2">暂无翻译</h3>
+                              <p className="text-gray-500">可能尚未生成翻译内容</p>
+                            </div>
+                          ) : null}
+                        </div>
+                      </Card>
+                    )}
+
                     {/* 文本内容（步骤>=2或完成后） */}
                     {(!gatingActive || step >= 2) && (
                     <div className="p-4 bg-gray-50 rounded-lg">
-                      {step === 4 && currentItem.translations && currentItem.translations[translationLang] && (
-                        <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                          <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
-                          <div className="whitespace-pre-wrap text-base text-gray-800">{currentItem.translations[translationLang]}</div>
-                        </div>
-                      )}
+                    {/* 第4步：在正文模块内部顶部显示黄色翻译框（与中文一致，无设备与 showTranslation 限制） */}
+                    {step === 4 && currentItem && currentItem.translations && currentItem.translations[translationLang] && (
+                      <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                        <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
+                        <div className="whitespace-pre-wrap text-base text-gray-800">{formatSpeakerBreaks(currentItem.translations[translationLang])}</div>
+                      </div>
+                    )}
                       {isVocabMode ? (
                         <SelectablePassage
                           text={(() => {
@@ -3045,9 +3147,6 @@ export default function EnglishShadowingPage() {
 
                             // 获取所有Selected vocabulary（包括之前的和本次的）
                             const allSelectedWords = [...previousWords, ...selectedWords];
-                            const selectedWordSet = new Set(
-                              allSelectedWords.map((item) => item.word),
-                            );
 
                             // 检查是否为中文文本
                             const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
@@ -3109,36 +3208,52 @@ export default function EnglishShadowingPage() {
                                 );
                               });
                             } else {
-                              // 英文处理：先按行分割，再按单词分割
+                              // 英文处理：支持多词/整句短语高亮（按字符滑窗匹配所选词组）
                               const lines = formattedText.split('\n');
 
-                              return lines.map((line, lineIndex) => (
-                                <div key={lineIndex} className="mb-2">
-                                  {line.split(/(\s+|[。！？、，.!?,])/).map((word, wordIndex) => {
-                                    const cleanWord = word.replace(/[。！？、，.!?,\s]/g, '');
-                                    const isSelected = cleanWord && selectedWordSet.has(cleanWord);
+                              return lines.map((line, lineIndex) => {
+                                const chars = line.split('');
+                                const result = [] as React.ReactNode[];
 
-                                    if (isSelected) {
-                                      const wordData = allSelectedWords.find(
-                                        (item) => item.word === cleanWord,
-                                      );
-                                      const explanation = wordData?.explanation;
+                                for (let i = 0; i < chars.length; i++) {
+                                  let isHighlighted = false;
+                                  let highlightLength = 0;
 
-                                      return (
-                                        <HoverExplanation
-                                          key={`${lineIndex}-${wordIndex}`}
-                                          word={word}
-                                          explanation={explanation}
-                                        >
-                                          {word}
-                                        </HoverExplanation>
-                                      );
-                                    } else {
-                                      return <span key={`${lineIndex}-${wordIndex}`}>{word}</span>;
+                                  for (const selectedWord of allSelectedWords) {
+                                    const w = selectedWord.word;
+                                    if (!w) continue;
+                                    if (i + w.length <= chars.length) {
+                                      const substring = chars.slice(i, i + w.length).join('');
+                                      if (substring === w) {
+                                        isHighlighted = true;
+                                        highlightLength = w.length;
+                                        break;
+                                      }
                                     }
-                                  })}
-                                </div>
-                              ));
+                                  }
+
+                                  if (isHighlighted && highlightLength > 0) {
+                                    const word = chars.slice(i, i + highlightLength).join('');
+                                    const wordData = allSelectedWords.find((item) => item.word === word);
+                                    const explanation = wordData?.explanation;
+
+                                    result.push(
+                                      <HoverExplanation key={`${lineIndex}-${i}`} word={word} explanation={explanation}>
+                                        {word}
+                                      </HoverExplanation>,
+                                    );
+                                    i += highlightLength - 1;
+                                  } else {
+                                    result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                  }
+                                }
+
+                                return (
+                                  <div key={lineIndex} className="mb-2">
+                                    {result}
+                                  </div>
+                                );
+                              });
                             }
                           })()}
                         </div>
@@ -3158,12 +3273,40 @@ export default function EnglishShadowingPage() {
                               时长: {Math.round(currentItem.duration_ms / 1000)}秒
                             </span>
                           )}
+                          <div className="ml-auto flex items-center gap-2">
+                            <span className="text-xs text-blue-700">Speed</span>
+                            <div className="flex flex-wrap gap-1">
+                              {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3].map((r) => (
+                                <button
+                                  key={r}
+                                  onClick={() => {
+                                    setPlaybackRate(r);
+                                    if (audioRef.current) audioRef.current.playbackRate = r;
+                                  }}
+                                  className={`px-2 py-0.5 rounded text-xs border ${
+                                    playbackRate === r
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                                  }`}
+                                >
+                                  {r}x
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                         <audio
                           controls
                           src={currentItem.audio_url}
                           preload="none"
                           className="w-full"
+                          ref={audioRef}
+                          onPlay={() => {
+                            if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+                            setIsPlaying(true);
+                          }}
+                          onPause={() => setIsPlaying(false)}
+                          onEnded={() => setIsPlaying(false)}
                         />
                       </div>
                     )}
@@ -3410,7 +3553,7 @@ export default function EnglishShadowingPage() {
                         currentItem.translations[translationLang] ? (
                           <div className="p-4 bg-white rounded-xl border border-indigo-200 shadow-sm">
                             <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
-                              {currentItem.translations[translationLang]}
+                              {formatSpeakerBreaks(currentItem.translations[translationLang])}
                             </div>
                           </div>
                         ) : showTranslation ? (
@@ -4568,9 +4711,6 @@ export default function EnglishShadowingPage() {
 
                             // 获取所有Selected vocabulary（包括之前的和本次的）
                             const allSelectedWords = [...previousWords, ...selectedWords];
-                            const selectedWordSet = new Set(
-                              allSelectedWords.map((item) => item.word),
-                            );
 
                             // 检查是否为中文文本
                             const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
@@ -4632,36 +4772,52 @@ export default function EnglishShadowingPage() {
                                 );
                               });
                             } else {
-                              // 英文处理：先按行分割，再按单词分割
+                              // 英文处理：支持多词/整句短语高亮（按字符滑窗匹配所选词组）
                               const lines = formattedText.split('\n');
 
-                              return lines.map((line, lineIndex) => (
-                                <div key={lineIndex} className="mb-2">
-                                  {line.split(/(\s+|[。！？、，.!?,])/).map((word, wordIndex) => {
-                                    const cleanWord = word.replace(/[。！？、，.!?,\s]/g, '');
-                                    const isSelected = cleanWord && selectedWordSet.has(cleanWord);
+                              return lines.map((line, lineIndex) => {
+                                const chars = line.split('');
+                                const result = [] as React.ReactNode[];
 
-                                    if (isSelected) {
-                                      const wordData = allSelectedWords.find(
-                                        (item) => item.word === cleanWord,
-                                      );
-                                      const explanation = wordData?.explanation;
+                                for (let i = 0; i < chars.length; i++) {
+                                  let isHighlighted = false;
+                                  let highlightLength = 0;
 
-                                      return (
-                                        <HoverExplanation
-                                          key={`${lineIndex}-${wordIndex}`}
-                                          word={word}
-                                          explanation={explanation}
-                                        >
-                                          {word}
-                                        </HoverExplanation>
-                                      );
-                                    } else {
-                                      return <span key={`${lineIndex}-${wordIndex}`}>{word}</span>;
+                                  for (const selectedWord of allSelectedWords) {
+                                    const w = selectedWord.word;
+                                    if (!w) continue;
+                                    if (i + w.length <= chars.length) {
+                                      const substring = chars.slice(i, i + w.length).join('');
+                                      if (substring === w) {
+                                        isHighlighted = true;
+                                        highlightLength = w.length;
+                                        break;
+                                      }
                                     }
-                                  })}
-                                </div>
-                              ));
+                                  }
+
+                                  if (isHighlighted && highlightLength > 0) {
+                                    const word = chars.slice(i, i + highlightLength).join('');
+                                    const wordData = allSelectedWords.find((item) => item.word === word);
+                                    const explanation = wordData?.explanation;
+
+                                    result.push(
+                                      <HoverExplanation key={`${lineIndex}-${i}`} word={word} explanation={explanation}>
+                                        {word}
+                                      </HoverExplanation>,
+                                    );
+                                    i += highlightLength - 1;
+                                  } else {
+                                    result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                  }
+                                }
+
+                                return (
+                                  <div key={lineIndex} className="mb-2">
+                                    {result}
+                                  </div>
+                                );
+                              });
                             }
                           })()}
                         </div>
@@ -4679,12 +4835,40 @@ export default function EnglishShadowingPage() {
                               时长: {Math.round(currentItem.duration_ms / 1000)}秒
                             </span>
                           )}
+                          <div className="ml-auto flex items-center gap-2">
+                            <span className="text-xs text-blue-700">Speed</span>
+                            <div className="flex flex-wrap gap-1">
+                              {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3].map((r) => (
+                                <button
+                                  key={r}
+                                  onClick={() => {
+                                    setPlaybackRate(r);
+                                    if (audioRef.current) audioRef.current.playbackRate = r;
+                                  }}
+                                  className={`px-2 py-0.5 rounded text-xs border ${
+                                    playbackRate === r
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                                  }`}
+                                >
+                                  {r}x
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                         <audio
                           controls
                           src={currentItem.audio_url}
                           preload="none"
                           className="w-full"
+                          ref={audioRef}
+                          onPlay={() => {
+                            if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+                            setIsPlaying(true);
+                          }}
+                          onPause={() => setIsPlaying(false)}
+                          onEnded={() => setIsPlaying(false)}
                         />
                       </div>
                     )}

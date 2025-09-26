@@ -30,6 +30,49 @@ export interface Translations {
     collapse: string;
   };
 
+  // 首页
+  home: {
+    brand: string;
+    hero_title: string;
+    hero_subtitle: string;
+    welcome_title: string;
+    welcome_desc: string;
+    complete_profile: string;
+    cta_signup: string;
+    cta_start_learning: string;
+    cta_browse_features: string;
+    daily_title: string;
+    daily_desc: string;
+    daily_language: string;
+    daily_duration: string;
+    daily_length: string;
+    daily_cefr: string;
+    daily_last_unfinished: string;
+    daily_main_theme: string;
+    daily_sub_theme: string;
+    daily_open_practice: string;
+    daily_quick_start: string;
+    daily_fetching: string;
+    daily_cleared: string;
+    set_target_language: string;
+    go_set_target_language: string;
+    learn_overview: string;
+    learn_overview_desc: string;
+    quick_start: string;
+    quick_start_desc: string;
+    why_choose: string;
+    why_lead: string;
+    smart_learning: string;
+    smart_learning_desc: string;
+    progress_tracking: string;
+    progress_tracking_desc: string;
+    multi_mode: string;
+    multi_mode_desc: string;
+    ready_to_start: string;
+    ready_desc: string;
+    learn_more: string;
+  };
+
   // 个人资料页面
   profile: {
     title: string;
@@ -460,6 +503,47 @@ const zh: Translations = {
     expand: '展开',
     collapse: '折叠',
   },
+  home: {
+    brand: 'Lang Trainer',
+    hero_title: 'Lang Trainer',
+    hero_subtitle: '智能语言学习平台，通过多种练习模式帮助您快速提升语言能力',
+    welcome_title: '欢迎使用 Lang Trainer！',
+    welcome_desc: '完善您的个人资料，获得更好的学习体验',
+    complete_profile: '完善个人资料',
+    cta_signup: '立即注册',
+    cta_start_learning: '开始学习',
+    cta_browse_features: '浏览功能',
+    daily_title: '每日一题（Shadowing）',
+    daily_desc: '根据您的目标语言与水平，每天固定一道题进行练习',
+    daily_language: '语言：',
+    daily_duration: '时长：{seconds} 秒',
+    daily_length: '长度：{tokens} tokens',
+    daily_cefr: 'CEFR：{level}',
+    daily_last_unfinished: '上次未完成',
+    daily_main_theme: '大主题：{title}',
+    daily_sub_theme: '小主题：{title}',
+    daily_open_practice: '打开练习',
+    daily_quick_start: '一键开练习',
+    daily_fetching: '正在获取今日推荐{hint}',
+    daily_cleared: '恭喜清空题库！可进入练习页随机练习',
+    set_target_language: '尚未设置目标语言，请先',
+    go_set_target_language: '去设置目标语言',
+    learn_overview: '学习概览',
+    learn_overview_desc: '您的学习进度和成就',
+    quick_start: '快速开始',
+    quick_start_desc: '选择您想要练习的内容，开始您的语言学习之旅',
+    why_choose: '为什么选择 Lang Trainer？',
+    why_lead: '我们提供最先进的语言学习工具和方法',
+    smart_learning: '智能学习',
+    smart_learning_desc: 'AI驱动的个性化学习路径，根据您的进度调整难度',
+    progress_tracking: '进度跟踪',
+    progress_tracking_desc: '详细的学习统计和进度分析，让您清楚了解学习效果',
+    multi_mode: '多模式练习',
+    multi_mode_desc: '跟读、完形填空、对齐练习等多种学习模式',
+    ready_to_start: '准备开始学习了吗？',
+    ready_desc: '选择您感兴趣的学习模式，立即开始您的语言学习之旅',
+    learn_more: '了解更多',
+  },
   profile: {
     title: '个人资料',
     subtitle: '管理您的个人信息和学习偏好',
@@ -886,6 +970,51 @@ const en: Translations = {
     close: 'Close',
     expand: 'Expand',
     collapse: 'Collapse',
+  },
+  home: {
+    brand: 'Lang Trainer',
+    hero_title: 'Lang Trainer',
+    hero_subtitle:
+      'An intelligent language learning platform with multiple practice modes to help you improve quickly',
+    welcome_title: 'Welcome to Lang Trainer!',
+    welcome_desc: 'Complete your profile to get a better learning experience',
+    complete_profile: 'Complete Profile',
+    cta_signup: 'Sign Up',
+    cta_start_learning: 'Start Learning',
+    cta_browse_features: 'Browse Features',
+    daily_title: 'Daily Question (Shadowing)',
+    daily_desc: 'One fixed practice per day based on your target language and level',
+    daily_language: 'Language: ',
+    daily_duration: 'Duration: {seconds} sec',
+    daily_length: 'Length: {tokens} tokens',
+    daily_cefr: 'CEFR: {level}',
+    daily_last_unfinished: 'Last unfinished',
+    daily_main_theme: 'Major theme: {title}',
+    daily_sub_theme: 'Minor theme: {title}',
+    daily_open_practice: 'Open Practice',
+    daily_quick_start: 'Quick Start',
+    daily_fetching: 'Fetching today\'s recommendation{hint}',
+    daily_cleared: 'Congrats! Catalog cleared. Go to practice for random exercises.',
+    set_target_language: 'Target language not set, please',
+    go_set_target_language: 'Set target language',
+    learn_overview: 'Learning Overview',
+    learn_overview_desc: 'Your learning progress and achievements',
+    quick_start: 'Quick Start',
+    quick_start_desc: 'Pick what you want to practice to start your journey',
+    why_choose: 'Why choose Lang Trainer?',
+    why_lead: 'We provide state-of-the-art tools and methods',
+    smart_learning: 'Smart Learning',
+    smart_learning_desc:
+      'AI-powered personalized path that adapts difficulty based on your progress',
+    progress_tracking: 'Progress Tracking',
+    progress_tracking_desc:
+      'Detailed study statistics and analysis so you clearly see results',
+    multi_mode: 'Multi-mode Practice',
+    multi_mode_desc: 'Shadowing, Cloze, Alignment and more',
+    ready_to_start: 'Ready to start learning?',
+    ready_desc:
+      'Choose a practice mode you are interested in and start your journey now',
+    learn_more: 'Learn More',
   },
   profile: {
     title: 'Profile',
@@ -1317,6 +1446,48 @@ const ja: Translations = {
     close: '閉じる',
     expand: '展開',
     collapse: '折りたたむ',
+  },
+  home: {
+    brand: 'Lang Trainer',
+    hero_title: 'Lang Trainer',
+    hero_subtitle:
+      '多様な練習モードで素早く上達を支援するスマート学習プラットフォーム',
+    welcome_title: 'Lang Trainer へようこそ！',
+    welcome_desc: 'より良い体験のため、プロフィールを完成させましょう',
+    complete_profile: 'プロフィールを完成',
+    cta_signup: '今すぐ登録',
+    cta_start_learning: '学習を開始',
+    cta_browse_features: '機能を見る',
+    daily_title: '毎日一題（シャドーイング）',
+    daily_desc: '目標言語とレベルに応じて、毎日1問を出題',
+    daily_language: '言語：',
+    daily_duration: '所要時間：{seconds} 秒',
+    daily_length: '長さ：{tokens} tokens',
+    daily_cefr: 'CEFR：{level}',
+    daily_last_unfinished: '前回未完了',
+    daily_main_theme: '大テーマ：{title}',
+    daily_sub_theme: '小テーマ：{title}',
+    daily_open_practice: '練習を開く',
+    daily_quick_start: 'ワンクリック開始',
+    daily_fetching: '本日のおすすめを取得中{hint}',
+    daily_cleared: 'おめでとうございます！題庫をクリアしました。ランダム練習へ',
+    set_target_language: '目標言語が未設定、まずは',
+    go_set_target_language: '目標言語を設定',
+    learn_overview: '学習概要',
+    learn_overview_desc: 'あなたの学習進捗と実績',
+    quick_start: 'クイックスタート',
+    quick_start_desc: '練習内容を選び、学習の旅を始めましょう',
+    why_choose: 'なぜ Lang Trainer？',
+    why_lead: '最先端の学習ツールと方法を提供します',
+    smart_learning: 'スマート学習',
+    smart_learning_desc: 'AIが進捗に応じて難易度を調整',
+    progress_tracking: '進捗トラッキング',
+    progress_tracking_desc: '詳細な統計と分析で効果を可視化',
+    multi_mode: '多様な練習',
+    multi_mode_desc: 'シャドーイング、穴埋め、アライメントなど',
+    ready_to_start: '学習を始めますか？',
+    ready_desc: '興味のあるモードを選んで今すぐ開始',
+    learn_more: '詳細を見る',
   },
   profile: {
     title: 'プロフィール',
