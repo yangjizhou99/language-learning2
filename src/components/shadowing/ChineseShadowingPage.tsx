@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCached, setCached } from '@/lib/clientCache';
+import { useSearchParams } from 'next/navigation';
 
 // 题目数据类型
 interface ShadowingItem {
@@ -567,7 +568,8 @@ export default function ShadowingPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
+  const [playbackRate, setPlaybackRate] = useState<number>(1);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [practiceComplete, setPracticeComplete] = useState(false);
   const [showSentenceComparison, setShowSentenceComparison] = useState(false);
   const [scoringResult, setScoringResult] = useState<{
@@ -604,12 +606,9 @@ export default function ShadowingPage() {
   // 步骤切换时的联动：自动开/关生词模式与翻译偏好
   useEffect(() => {
     if (!currentItem) return;
-    if (step === 2) {
-      setIsVocabMode(false);
-    }
-    if (step === 3) {
-      setIsVocabMode(true);
-    }
+    // 仅在第3步开启生词模式，其余步骤一律关闭
+    setIsVocabMode(step === 3);
+
     if (step === 4) {
       setShowTranslation(true);
       const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
@@ -625,9 +624,8 @@ export default function ShadowingPage() {
           setTranslationLang(targets[0] as 'en' | 'ja' | 'zh');
         }
       }
-    }
-    if (step === 5) {
-      setIsVocabMode(false);
+    } else {
+      // 非第4步隐藏翻译
       setShowTranslation(false);
     }
   }, [step, currentItem, userProfile, language]);
@@ -919,6 +917,14 @@ export default function ShadowingPage() {
       // @ts-ignore
       audioRecorderRef.current?.stopPlayback?.();
     } catch {}
+    // 停止页面音频播放并复位
+    try {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.playbackRate = playbackRate;
+      }
+    } catch {}
     setCurrentItem(item);
     setSelectedWords([]);
     setPreviousWords([]);
@@ -997,6 +1003,59 @@ export default function ShadowingPage() {
       setCurrentSession(null);
     }
   };
+
+  // 深链支持：?item=&autostart=1 直接加载题目
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!user) return;
+        const itemId = searchParams?.get('item');
+        const auto = searchParams?.get('autostart') === '1';
+        if (!itemId || !auto) return;
+        let target = items.find((x) => x.id === itemId) || null;
+        if (!target) {
+          const headers = await getAuthHeaders();
+          let resp = await fetch(`/api/shadowing/item?id=${itemId}`, { headers, credentials: 'include' });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data?.item) {
+              target = {
+                ...data.item,
+                isPracticed: false,
+                stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+              } as ShadowingItem;
+              setItems((prev) => {
+                const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                return exists ? prev : [target as ShadowingItem, ...prev];
+              });
+            }
+          } else if (resp.status === 404) {
+            // 回退到每日一题接口，保证能打开今日题
+            resp = await fetch(`/api/shadowing/daily?lang=${lang}`, { headers, credentials: 'include' });
+            if (resp.ok) {
+              const data = await resp.json();
+              if (data?.item) {
+                target = {
+                  ...data.item,
+                  isPracticed: false,
+                  stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+                } as ShadowingItem;
+                setItems((prev) => {
+                  const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                  return exists ? prev : [target as ShadowingItem, ...prev];
+                });
+              }
+            }
+          }
+        }
+        if (target) {
+          await loadItem(target);
+        }
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // 处理文本选择（当用户选择文本时）
   const handleTextSelection = (word: string, context: string) => {
@@ -1664,39 +1723,16 @@ export default function ShadowingPage() {
     }
   };
 
-  // 播放/暂停音频
+  // 播放/暂停音频（统一控制页面 <audio> 元素）
   const playAudio = () => {
     if (!currentItem?.audio_url) return;
-
-    // 如果当前有音频在播放，则暂停
-    if (audioRef && !audioRef.paused) {
-      audioRef.pause();
-      setIsPlaying(false);
-      return;
+    const el = audioRef.current;
+    if (!el) return;
+    if (el.paused) {
+      el.play();
+    } else {
+      el.pause();
     }
-
-    // 如果当前音频已暂停，则恢复播放
-    if (audioRef && audioRef.paused) {
-      audioRef.play();
-      setIsPlaying(true);
-      return;
-    }
-
-    // 创建新的音频对象
-    const audio = new Audio(currentItem.audio_url);
-    setAudioRef(audio);
-
-    audio.onplay = () => setIsPlaying(true);
-    audio.onended = () => {
-      setIsPlaying(false);
-      setAudioRef(null);
-    };
-    audio.onerror = () => {
-      setIsPlaying(false);
-      setAudioRef(null);
-      alert('音频播放失败');
-    };
-    audio.play();
   };
 
   // 评分功能（支持转录文字和逐句对比）
@@ -2209,6 +2245,15 @@ export default function ShadowingPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // 确保对话角色 A:/B: 前自动换行（若未换行）
+  const formatSpeakerBreaks = (text: string): string => {
+    if (!text) return '';
+    let out = text;
+    out = out.replace(/([^\n])\s*(A\s*[:：])/g, '$1\n$2');
+    out = out.replace(/([^\n])\s*(B\s*[:：])/g, '$1\n$2');
+    return out;
+  };
+
   // 移动端检测
   const { actualIsMobile } = useMobile();
   // 移动端也启用步骤门控：仅在未完成时生效
@@ -2288,6 +2333,32 @@ export default function ShadowingPage() {
                 {t.shadowing.shadowing_vocabulary}
               </Button>
             </div>
+
+            {/* 移动端步骤栏与提示（置于标题下方） */}
+            {gatingActive && (
+              <Card className="p-4 bg-white border-0 shadow-sm">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <PracticeStepper
+                    size="sm"
+                    currentStep={step}
+                    onStepChange={(s)=> setStep(s)}
+                    maxStepAllowed={step}
+                    labels={[t.shadowing.step1_tip, t.shadowing.step2_tip, t.shadowing.step3_tip, t.shadowing.step4_tip, t.shadowing.step5_tip].map(x=> String(x || 'Step'))}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} disabled={step===1}>Back</Button>
+                    <Button size="sm" onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} disabled={step===5}>Next</Button>
+                  </div>
+                </div>
+                <div className="mt-3 text-xs text-gray-700">
+                  {step===1 && t.shadowing.step1_tip}
+                  {step===2 && t.shadowing.step2_tip}
+                  {step===3 && t.shadowing.step3_tip}
+                  {step===4 && t.shadowing.step4_tip}
+                  {step===5 && t.shadowing.step5_tip}
+                </div>
+              </Card>
+            )}
 
             {/* 手机端侧边栏遮罩 */}
             {mobileSidebarOpen && (
@@ -3079,36 +3150,52 @@ export default function ShadowingPage() {
                                 );
                               });
                             } else {
-                              // 英文处理：先按行分割，再按单词分割
+                              // 英文文本也支持多词/整句短语高亮（按字符滑窗匹配）
                               const lines = formattedText.split('\n');
 
-                              return lines.map((line, lineIndex) => (
-                                <div key={lineIndex} className="mb-2">
-                                  {line.split(/(\s+|[。！？、，.!?,])/).map((word, wordIndex) => {
-                                    const cleanWord = word.replace(/[。！？、，.!?,\s]/g, '');
-                                    const isSelected = cleanWord && selectedWordSet.has(cleanWord);
+                              return lines.map((line, lineIndex) => {
+                                const chars = line.split('');
+                                const result = [] as React.ReactNode[];
 
-                                    if (isSelected) {
-                                      const wordData = allSelectedWords.find(
-                                        (item) => item.word === cleanWord,
-                                      );
-                                      const explanation = wordData?.explanation;
+                                for (let i = 0; i < chars.length; i++) {
+                                  let isHighlighted = false;
+                                  let highlightLength = 0;
 
-                                      return (
-                                        <HoverExplanation
-                                          key={`${lineIndex}-${wordIndex}`}
-                                          word={word}
-                                          explanation={explanation}
-                                        >
-                                          {word}
-                                        </HoverExplanation>
-                                      );
-                                    } else {
-                                      return <span key={`${lineIndex}-${wordIndex}`}>{word}</span>;
+                                  for (const selectedWord of allSelectedWords) {
+                                    const w = selectedWord.word;
+                                    if (!w) continue;
+                                    if (i + w.length <= chars.length) {
+                                      const substring = chars.slice(i, i + w.length).join('');
+                                      if (substring === w) {
+                                        isHighlighted = true;
+                                        highlightLength = w.length;
+                                        break;
+                                      }
                                     }
-                                  })}
-                                </div>
-                              ));
+                                  }
+
+                                  if (isHighlighted && highlightLength > 0) {
+                                    const word = chars.slice(i, i + highlightLength).join('');
+                                    const wordData = allSelectedWords.find((item) => item.word === word);
+                                    const explanation = wordData?.explanation;
+
+                                    result.push(
+                                      <HoverExplanation key={`${lineIndex}-${i}`} word={word} explanation={explanation}>
+                                        {word}
+                                      </HoverExplanation>,
+                                    );
+                                    i += highlightLength - 1;
+                                  } else {
+                                    result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                  }
+                                }
+
+                                return (
+                                  <div key={lineIndex} className="mb-2">
+                                    {result}
+                                  </div>
+                                );
+                              });
                             }
                           })()}
                         </div>
@@ -3128,12 +3215,40 @@ export default function ShadowingPage() {
                               时长: {Math.round(currentItem.duration_ms / 1000)}秒
                             </span>
                           )}
+                          <div className="ml-auto flex items-center gap-2">
+                            <span className="text-xs text-blue-700">倍速</span>
+                            <div className="flex flex-wrap gap-1">
+                              {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3].map((r) => (
+                                <button
+                                  key={r}
+                                  onClick={() => {
+                                    setPlaybackRate(r);
+                                    if (audioRef.current) audioRef.current.playbackRate = r;
+                                  }}
+                                  className={`px-2 py-0.5 rounded text-xs border ${
+                                    playbackRate === r
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                                  }`}
+                                >
+                                  {r}x
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                         <audio
                           controls
                           src={currentItem.audio_url}
                           preload="none"
                           className="w-full"
+                          ref={audioRef}
+                          onPlay={() => {
+                            if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+                            setIsPlaying(true);
+                          }}
+                          onPause={() => setIsPlaying(false)}
+                          onEnded={() => setIsPlaying(false)}
                         />
                       </div>
                     )}
@@ -3378,7 +3493,7 @@ export default function ShadowingPage() {
                         currentItem.translations[translationLang] ? (
                           <div className="p-4 bg-white rounded-xl border border-indigo-200 shadow-sm">
                             <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
-                              {currentItem.translations[translationLang]}
+                              {formatSpeakerBreaks(currentItem.translations[translationLang])}
                             </div>
                           </div>
                         ) : showTranslation ? (
@@ -4589,9 +4704,20 @@ export default function ShadowingPage() {
                       </div>
                     )}
 
+                    {/* 桌面端第4步翻译外置卡片移除，改为内嵌到正文模块顶部的黄色框 */}
+
                     {/* 文本内容（步骤>=2显示；完成或移动端保持原样；步骤5也需显示原文以便录音评分） */}
                     {(!gatingActive || step >= 2) && (
                       <div className="p-4 bg-gray-50 rounded-lg">
+                        {/* 桌面端第4步：在正文模块内部顶部显示黄色翻译框 */}
+                        {!actualIsMobile && step === 4 && showTranslation && currentItem && currentItem.translations && currentItem.translations[translationLang] && (
+                          <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                            <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
+                            <div className="whitespace-pre-wrap text-base text-gray-800">
+                              {formatSpeakerBreaks(currentItem.translations[translationLang])}
+                            </div>
+                          </div>
+                        )}
                       {isVocabMode ? (
                         <SelectablePassage
                           text={currentItem.text}
@@ -4715,33 +4841,49 @@ export default function ShadowingPage() {
                               // 英文处理：先按行分割，再按单词分割
                               const lines = formattedText.split('\n');
 
-                              return lines.map((line, lineIndex) => (
-                                <div key={lineIndex} className="mb-2">
-                                  {line.split(/(\s+|[。！？、，.!?,])/).map((word, wordIndex) => {
-                                    const cleanWord = word.replace(/[。！？、，.!?,\s]/g, '');
-                                    const isSelected = cleanWord && selectedWordSet.has(cleanWord);
+                              return lines.map((line, lineIndex) => {
+                                const chars = line.split('');
+                                const result = [] as React.ReactNode[];
 
-                                    if (isSelected) {
-                                      const wordData = allSelectedWords.find(
-                                        (item) => item.word === cleanWord,
-                                      );
-                                      const explanation = wordData?.explanation;
+                                for (let i = 0; i < chars.length; i++) {
+                                  let isHighlighted = false;
+                                  let highlightLength = 0;
 
-                                      return (
-                                        <HoverExplanation
-                                          key={`${lineIndex}-${wordIndex}`}
-                                          word={word}
-                                          explanation={explanation}
-                                        >
-                                          {word}
-                                        </HoverExplanation>
-                                      );
-                                    } else {
-                                      return <span key={`${lineIndex}-${wordIndex}`}>{word}</span>;
+                                  for (const selectedWord of allSelectedWords) {
+                                    const w = selectedWord.word;
+                                    if (!w) continue;
+                                    if (i + w.length <= chars.length) {
+                                      const substring = chars.slice(i, i + w.length).join('');
+                                      if (substring === w) {
+                                        isHighlighted = true;
+        								highlightLength = w.length;
+                                        break;
+                                      }
                                     }
-                                  })}
-                                </div>
-                              ));
+                                  }
+
+                                  if (isHighlighted && highlightLength > 0) {
+                                    const word = chars.slice(i, i + highlightLength).join('');
+                                    const wordData = allSelectedWords.find((item) => item.word === word);
+                                    const explanation = wordData?.explanation;
+
+                                    result.push(
+                                      <HoverExplanation key={`${lineIndex}-${i}`} word={word} explanation={explanation}>
+                                        {word}
+                                      </HoverExplanation>,
+                                    );
+                                    i += highlightLength - 1;
+                                  } else {
+                                    result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                  }
+                                }
+
+                                return (
+                                  <div key={lineIndex} className="mb-2">
+                                    {result}
+                                  </div>
+                                );
+                              });
                             }
                           })()}
                         </div>
@@ -4759,12 +4901,40 @@ export default function ShadowingPage() {
                               时长: {Math.round(currentItem.duration_ms / 1000)}秒
                             </span>
                           )}
+                          <div className="ml-auto flex items-center gap-2">
+                            <span className="text-xs text-blue-700">倍速</span>
+                            <div className="flex flex-wrap gap-1">
+                              {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3].map((r) => (
+                                <button
+                                  key={r}
+                                  onClick={() => {
+                                    setPlaybackRate(r);
+                                    if (audioRef.current) audioRef.current.playbackRate = r;
+                                  }}
+                                  className={`px-2 py-0.5 rounded text-xs border ${
+                                    playbackRate === r
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                                  }`}
+                                >
+                                  {r}x
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                         <audio
                           controls
                           src={currentItem.audio_url}
                           preload="none"
                           className="w-full"
+                          ref={audioRef}
+                          onPlay={() => {
+                            if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+                            setIsPlaying(true);
+                          }}
+                          onPause={() => setIsPlaying(false)}
+                          onEnded={() => setIsPlaying(false)}
                         />
                       </div>
                     )}

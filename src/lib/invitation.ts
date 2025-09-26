@@ -132,12 +132,19 @@ export async function createInvitationCode(
       return { success: false, error: '无法生成唯一邀请码' };
     }
 
+    // 兜底：显式生成UUID，避免目标库缺少默认值时 id 为 NULL
     const { data, error } = await client
       .from('invitation_codes')
       .insert({
+        // 使用数据库默认值时可省略 id；但若目标库未设置默认值，则需要显式提供
+        id: (globalThis as any).crypto?.randomUUID
+          ? (globalThis as any).crypto.randomUUID()
+          : require('crypto').randomUUID(),
         code,
         created_by: createdBy,
         max_uses: request.max_uses || 1,
+        used_count: 0,
+        is_active: true,
         expires_at: request.expires_at,
         permissions: request.permissions || {},
         description: request.description,
