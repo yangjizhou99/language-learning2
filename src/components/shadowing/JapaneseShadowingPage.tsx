@@ -851,7 +851,7 @@ export default function JapaneseShadowingPage() {
     setPreviousWords([]);
     setCurrentRecordings([]);
     setPracticeStartTime(new Date());
-    setPracticeComplete(false);
+    setPracticeComplete(!!item.isPracticed);
     setScoringResult(null);
     setShowSentenceComparison(false);
 
@@ -865,6 +865,9 @@ export default function JapaneseShadowingPage() {
           console.log('加载到之前的会话数据:', data.session);
           console.log('还原的生词:', data.session.picked_preview);
           setCurrentSession(data.session);
+          if (data.session.status === 'completed') {
+            setPracticeComplete(true);
+          }
 
           // 将之前的生词设置为 previousWords
           setPreviousWords(data.session.picked_preview || []);
@@ -2141,6 +2144,31 @@ export default function JapaneseShadowingPage() {
   const gatingActive = !practiceComplete;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  // ステップ切替時の連動：第3步で生词選択モードを自動ON、第2步/第5步でOFF（中/英と一致）
+  useEffect(() => {
+    if (!currentItem) return;
+    if (step === 2) {
+      setIsVocabMode(false);
+    }
+    if (step === 3) {
+      setIsVocabMode(true);
+    }
+    if (step === 4) {
+      setShowTranslation(true);
+      const pref = (userProfile?.native_lang as 'en' | 'ja' | 'zh' | undefined) || undefined;
+      if (pref) {
+        setTranslationLang(pref);
+      } else if (currentItem) {
+        const targets = getTargetLanguages(currentItem.lang);
+        if (targets.length > 0) setTranslationLang(targets[0] as 'en' | 'ja' | 'zh');
+      }
+    }
+    if (step === 5) {
+      setIsVocabMode(false);
+      setShowTranslation(false);
+    }
+  }, [step, currentItem, userProfile]);
+
   // 如果正在检查认证或用户未登录，显示相应提示
   if (authLoading) {
     return (
@@ -2863,6 +2891,12 @@ export default function JapaneseShadowingPage() {
                     {/* 文本内容（ステップ>=2または完了後） */}
                     {(!gatingActive || step >= 2) && (
                     <div className="p-4 bg-gray-50 rounded-lg">
+                      {step === 4 && currentItem.translations && currentItem.translations[translationLang] && (
+                        <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                          <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻訳'}</div>
+                          <div className="whitespace-pre-wrap text-base text-gray-800">{currentItem.translations[translationLang]}</div>
+                        </div>
+                      )}
                       {isVocabMode ? (
                         <SelectablePassage
                           text={(() => {

@@ -523,7 +523,7 @@ const zh: Translations = {
     alignment_practice: '对齐练习',
     wide_reading: '广读',
     shadowing: '跟读练习',
-    vocabulary: '题库',
+    vocabulary: '单词本',
     admin: '管理员',
   },
   practice: {
