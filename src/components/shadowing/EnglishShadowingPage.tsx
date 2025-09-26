@@ -303,6 +303,8 @@ export default function EnglishShadowingPage() {
     }
   }, [currentItem]);
 
+  // （移除重复母语加载副作用，统一由步骤联动副作用处理）
+  
   // 发音功能
   const speakWord = (word: string, lang: string) => {
     speakTextUtil(word, lang, {
@@ -602,7 +604,7 @@ export default function EnglishShadowingPage() {
     } catch (error) {
       console.error('Failed to fetch recommended level:', error);
     }
-  }, [lang, user]);
+  }, [lang, user, getAuthHeaders]);
 
   // 获取题库列表
   const fetchItems = useCallback(async () => {
@@ -2155,20 +2157,23 @@ export default function EnglishShadowingPage() {
     }
     if (step === 4) {
       setShowTranslation(true);
-      const pref = (userProfile?.native_lang as 'en' | 'ja' | 'zh' | undefined) || undefined;
       const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
-      if (pref && available.includes(pref)) {
-        setTranslationLang(pref as any);
+      const uiLang = (language as 'en' | 'ja' | 'zh');
+      const pref = (userProfile?.native_lang as 'en' | 'ja' | 'zh' | undefined) || undefined;
+      if (available.includes(uiLang)) {
+        setTranslationLang(uiLang);
+      } else if (pref && available.includes(pref)) {
+        setTranslationLang(pref);
       } else {
         const targets = getTargetLanguages(currentItem.lang);
-        if (targets.length > 0) setTranslationLang(targets[0] as any);
+        if (targets.length > 0) setTranslationLang(targets[0] as 'en' | 'ja' | 'zh');
       }
     }
     if (step === 5) {
       setIsVocabMode(false);
       setShowTranslation(false);
     }
-  }, [step, currentItem, userProfile]);
+  }, [step, currentItem, userProfile, language]);
 
   // Button highlight cues per step
   useEffect(() => {
@@ -2832,15 +2837,31 @@ export default function EnglishShadowingPage() {
                             {saving ? t.common.loading : t.shadowing.save_draft}
                           </Button>
 
-                          <Button
-                            size="sm"
-                            onClick={unifiedCompleteAndSave}
-                            disabled={saving}
-                            className="h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                          >
-                            <CheckCircle className="w-5 h-5 mr-2" />
-                            {saving ? '保存中...' : '完成'}
-                          </Button>
+                          <div className="flex items-center gap-2 w-full">
+                            <Button
+                              size="sm"
+                              onClick={unifiedCompleteAndSave}
+                              disabled={saving}
+                              className="flex-1 h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                            >
+                              <CheckCircle className="w-5 h-5 mr-2" />
+                              {saving ? '保存中...' : '完成'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 h-12"
+                              onClick={() => {
+                                setPracticeComplete(false);
+                                setStep(1);
+                                setScoringResult(null);
+                                setIsVocabMode(false);
+                                setShowTranslation(false);
+                              }}
+                            >
+                              {t.shadowing.practice_again}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -4389,15 +4410,30 @@ export default function EnglishShadowingPage() {
                           {saving ? '保存中...' : '保存草稿'}
                         </Button>
 
-                        <Button
-                          size="sm"
-                          onClick={unifiedCompleteAndSave}
-                          disabled={saving}
-                          className="h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                          <CheckCircle className="w-5 h-5 mr-2" />
-                          {saving ? t.common.loading : t.shadowing.complete_and_save}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={unifiedCompleteAndSave}
+                            disabled={saving}
+                            className="h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                          >
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            {saving ? t.common.loading : t.shadowing.complete_and_save}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setPracticeComplete(false);
+                              setStep(1);
+                              setScoringResult(null);
+                              setIsVocabMode(false);
+                              setShowTranslation(false);
+                            }}
+                          >
+                            {t.shadowing.practice_again}
+                          </Button>
+                        </div>
 
                         
                       </div>

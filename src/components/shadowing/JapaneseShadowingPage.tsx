@@ -303,6 +303,8 @@ export default function JapaneseShadowingPage() {
     }
   }, [currentItem]);
 
+  // （移除重复母语加载副作用，统一由“步骤切换时的联动”处理翻译语言）
+
   // 发音功能
   const speakWord = (word: string, lang: string) => {
     speakTextUtil(word, lang, {
@@ -2155,10 +2157,14 @@ export default function JapaneseShadowingPage() {
     }
     if (step === 4) {
       setShowTranslation(true);
+      const uiLang = (language as 'en' | 'ja' | 'zh');
       const pref = (userProfile?.native_lang as 'en' | 'ja' | 'zh' | undefined) || undefined;
-      if (pref) {
+      const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
+      if (available.includes(uiLang)) {
+        setTranslationLang(uiLang);
+      } else if (pref && available.includes(pref)) {
         setTranslationLang(pref);
-      } else if (currentItem) {
+      } else {
         const targets = getTargetLanguages(currentItem.lang);
         if (targets.length > 0) setTranslationLang(targets[0] as 'en' | 'ja' | 'zh');
       }
@@ -2167,7 +2173,7 @@ export default function JapaneseShadowingPage() {
       setIsVocabMode(false);
       setShowTranslation(false);
     }
-  }, [step, currentItem, userProfile]);
+  }, [step, currentItem, userProfile, language]);
 
   // 如果正在检查认证或用户未登录，显示相应提示
   if (authLoading) {
@@ -2811,15 +2817,31 @@ export default function JapaneseShadowingPage() {
                             {saving ? t.common.loading : t.shadowing.save_draft}
                           </Button>
 
-                          <Button
-                            size="sm"
-                            onClick={unifiedCompleteAndSave}
-                            disabled={saving}
-                            className="h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                          >
-                            <CheckCircle className="w-5 h-5 mr-2" />
-                            {saving ? '保存中...' : '完成'}
-                          </Button>
+                          <div className="flex items-center gap-2 w-full">
+                            <Button
+                              size="sm"
+                              onClick={unifiedCompleteAndSave}
+                              disabled={saving}
+                              className="flex-1 h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                            >
+                              <CheckCircle className="w-5 h-5 mr-2" />
+                              {saving ? '保存中...' : '完成'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 h-12"
+                              onClick={() => {
+                                setPracticeComplete(false);
+                                setStep(1);
+                                setScoringResult(null);
+                                setIsVocabMode(false);
+                                setShowTranslation(false);
+                              }}
+                            >
+                              {t.shadowing.practice_again}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -3714,13 +3736,28 @@ export default function JapaneseShadowingPage() {
                       )}
 
                       {!practiceComplete && (
-                        <Button
-                          onClick={unifiedCompleteAndSave}
-                          className="bg-green-600 hover:bg-green-700 w-full mt-4"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          {t.shadowing.complete_and_save}
-                        </Button>
+                        <div className="flex items-center gap-2 w-full mt-2">
+                          <Button
+                            onClick={unifiedCompleteAndSave}
+                            className="flex-1 h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            {t.shadowing.complete_and_save}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="flex-1 h-11"
+                            onClick={() => {
+                              setPracticeComplete(false);
+                              setStep(1);
+                              setScoringResult(null);
+                              setIsVocabMode(false);
+                              setShowTranslation(false);
+                            }}
+                          >
+                            {t.shadowing.practice_again}
+                          </Button>
+                        </div>
                       )}
                     </Card>
                   )}
@@ -4328,17 +4365,30 @@ export default function JapaneseShadowingPage() {
                           {saving ? '保存中...' : '保存草稿'}
                         </Button>
 
-                        <Button
-                          size="sm"
-                          onClick={unifiedCompleteAndSave}
-                          disabled={saving}
-                          className="h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                          <CheckCircle className="w-5 h-5 mr-2" />
-                          {saving ? t.common.loading : t.shadowing.complete_and_save}
-                        </Button>
-
-                        
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={unifiedCompleteAndSave}
+                            disabled={saving}
+                            className="h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                          >
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            {saving ? t.common.loading : t.shadowing.complete_and_save}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setPracticeComplete(false);
+                              setStep(1);
+                              setScoringResult(null);
+                              setIsVocabMode(false);
+                              setShowTranslation(false);
+                            }}
+                          >
+                            {t.shadowing.practice_again}
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
