@@ -305,6 +305,8 @@ export default function ShadowingPage() {
     }
   }, [currentItem]);
 
+  // （移除重复母语加载副作用，统一由“步骤切换时的联动”处理翻译语言）
+
   // 发音功能
   const speakWord = (word: string, lang: string) => {
     speakTextUtil(word, lang, {
@@ -610,9 +612,12 @@ export default function ShadowingPage() {
     }
     if (step === 4) {
       setShowTranslation(true);
-      const pref = (userProfile?.native_lang as 'en' | 'ja' | 'zh' | undefined) || undefined;
       const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
-      if (pref && available.includes(pref)) {
+      const uiLang = (language as 'en' | 'ja' | 'zh');
+      const pref = (userProfile?.native_lang as 'en' | 'ja' | 'zh' | undefined) || undefined;
+      if (available.includes(uiLang)) {
+        setTranslationLang(uiLang);
+      } else if (pref && available.includes(pref)) {
         setTranslationLang(pref);
       } else {
         const targets = getTargetLanguages(currentItem.lang);
@@ -625,7 +630,7 @@ export default function ShadowingPage() {
       setIsVocabMode(false);
       setShowTranslation(false);
     }
-  }, [step, currentItem, userProfile]);
+  }, [step, currentItem, userProfile, language]);
 
   // 关键按钮短暂高亮引导
   useEffect(() => {
@@ -2936,6 +2941,12 @@ export default function ShadowingPage() {
                     {/* 文本内容（步骤>=2显示；步骤5也需显示原文） */}
                     {(!gatingActive || step >= 2) && (
                     <div className="p-4 bg-gray-50 rounded-lg">
+                      {step === 4 && currentItem.translations && currentItem.translations[translationLang] && (
+                        <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                          <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
+                          <div className="whitespace-pre-wrap text-base text-gray-800">{currentItem.translations[translationLang]}</div>
+                        </div>
+                      )}
                       {isVocabMode ? (
                         <SelectablePassage
                           text={(() => {
@@ -3753,13 +3764,28 @@ export default function ShadowingPage() {
                       )}
 
                       {!practiceComplete && (
-                        <Button
-                          onClick={unifiedCompleteAndSave}
-                          className="bg-green-600 hover:bg-green-700 w-full mt-4"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          {t.shadowing.complete_and_save}
-                        </Button>
+                        <div className="flex items-center gap-2 w-full mt-2">
+                          <Button
+                            onClick={unifiedCompleteAndSave}
+                            className="flex-1 h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            {t.shadowing.complete_and_save}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="flex-1 h-11"
+                            onClick={() => {
+                              setPracticeComplete(false);
+                              setStep(1);
+                              setScoringResult(null);
+                              setIsVocabMode(false);
+                              setShowTranslation(false);
+                            }}
+                          >
+                            {t.shadowing.practice_again}
+                          </Button>
+                        </div>
                       )}
                     </Card>
                   )}
@@ -4478,17 +4504,30 @@ export default function ShadowingPage() {
                           {saving ? '保存中...' : '保存草稿'}
                         </Button>
 
-                        <Button
-                          size="sm"
-                          onClick={unifiedCompleteAndSave}
-                          disabled={saving}
-                          className="h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                          <CheckCircle className="w-5 h-5 mr-2" />
-                          {saving ? t.common.loading : t.shadowing.complete_and_save}
-                        </Button>
-
-                        
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={unifiedCompleteAndSave}
+                            disabled={saving}
+                            className="h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                          >
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            {saving ? t.common.loading : t.shadowing.complete_and_save}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setPracticeComplete(false);
+                              setStep(1);
+                              setScoringResult(null);
+                              setIsVocabMode(false);
+                              setShowTranslation(false);
+                            }}
+                          >
+                            {t.shadowing.practice_again}
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
