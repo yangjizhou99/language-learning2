@@ -214,10 +214,15 @@ drop function if exists public.set_updated_at();
 drop index if exists public.idx_vocab_entries_user_due;
 
 -- 7.4) Columns to drop/rename on shadowing tables per baseline
+-- Drop dependent column first to avoid dependency errors
 alter table if exists public.shadowing_items
-  drop column if exists audio_bucket,
-  drop column if exists audio_path,
   drop column if exists audio_url_proxy;
+
+alter table if exists public.shadowing_items
+  drop column if exists audio_path;
+
+alter table if exists public.shadowing_items
+  drop column if exists audio_bucket;
 
 alter table if exists public.shadowing_subtopics
   drop column if exists one_line,
