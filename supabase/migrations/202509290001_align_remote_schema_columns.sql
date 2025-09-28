@@ -61,7 +61,38 @@ create trigger update_voices_updated_at
 before update on public.voices
 for each row execute function public.update_updated_at_column();
 
--- 3) Ensure article_batch_items has expected columns
+-- 3) Ensure article_batch_items table exists before altering columns
+create table if not exists public.article_batch_items (
+  id uuid default gen_random_uuid() not null,
+  batch_id uuid not null,
+  topic text,
+  difficulty integer not null,
+  status text default 'pending' not null,
+  result_draft_id uuid,
+  error text,
+  usage jsonb default '{}'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Ensure primary key exists
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'article_batch_items_pkey' and conrelid = 'public.article_batch_items'::regclass
+  ) then
+    if not exists (
+      select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where c.relname = 'article_batch_items_id_unique_idx' and n.nspname = 'public'
+    ) then
+      create unique index article_batch_items_id_unique_idx on public.article_batch_items (id);
+    end if;
+    alter table public.article_batch_items add constraint article_batch_items_pkey primary key using index article_batch_items_id_unique_idx;
+  end if;
+end $$;
+
+-- Ensure article_batch_items has expected columns
 alter table if exists public.article_batch_items
   add column if not exists topic text,
   add column if not exists difficulty integer,
