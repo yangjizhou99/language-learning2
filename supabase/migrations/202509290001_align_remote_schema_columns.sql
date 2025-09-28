@@ -10,7 +10,52 @@ begin
 end;
 $$ language plpgsql;
 
--- 2) Recreate voices updated_at trigger (idempotent)
+-- 2) Ensure voices table exists before trigger operations (in case it was wiped)
+create table if not exists public.voices (
+  id uuid default gen_random_uuid() not null,
+  name text not null,
+  language_code text not null,
+  ssml_gender text,
+  natural_sample_rate_hertz integer,
+  pricing jsonb default '{}'::jsonb not null,
+  characteristics jsonb default '{}'::jsonb not null,
+  display_name text,
+  category text not null,
+  is_active boolean default true,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  provider text default 'google',
+  usecase text,
+  is_news_voice boolean default false,
+  use_case text,
+  constraint voices_provider_check check (provider = any (array['google','gemini','xunfei']))
+);
+
+-- Ensure primary key and unique(name)
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'voices_pkey' and conrelid = 'public.voices'::regclass
+  ) then
+    if not exists (
+      select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where c.relname = 'voices_id_unique_idx' and n.nspname = 'public'
+    ) then
+      create unique index voices_id_unique_idx on public.voices (id);
+    end if;
+    alter table public.voices add constraint voices_pkey primary key using index voices_id_unique_idx;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'voices_name_key' and conrelid = 'public.voices'::regclass
+  ) then
+    alter table public.voices add constraint voices_name_key unique (name);
+  end if;
+end $$;
+
+-- Recreate voices updated_at trigger (idempotent)
 drop trigger if exists update_voices_updated_at on public.voices;
 create trigger update_voices_updated_at
 before update on public.voices
