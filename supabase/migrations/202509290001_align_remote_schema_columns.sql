@@ -203,6 +203,8 @@ create policy user_permissions_combined on public.user_permissions
   with check ((public.is_admin()) or (auth.uid() = user_id));
 
 -- 7.2) Helper functions (remove if present, baseline does not include)
+-- Drop dependent trigger before dropping function to avoid dependency errors
+drop trigger if exists shadowing_items_set_updated_at on public.shadowing_items;
 drop function if exists public.exec_sql(text);
 drop function if exists public.get_table_columns(text);
 drop function if exists public.get_table_list();
