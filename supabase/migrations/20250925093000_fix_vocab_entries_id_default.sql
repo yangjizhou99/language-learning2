@@ -6,6 +6,23 @@ BEGIN;
 -- Enable pgcrypto for gen_random_uuid()
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- Ensure the table exists before altering it (handles cases where a prior wipe removed it)
+CREATE TABLE IF NOT EXISTS public.vocab_entries (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  term text NOT NULL,
+  lang text NOT NULL,
+  native_lang text NOT NULL,
+  source text NOT NULL,
+  source_id uuid,
+  context text,
+  tags text[],
+  status text DEFAULT 'new',
+  explanation jsonb,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
 -- Ensure id column is uuid type (convert from text if needed)
 DO $$
 BEGIN
