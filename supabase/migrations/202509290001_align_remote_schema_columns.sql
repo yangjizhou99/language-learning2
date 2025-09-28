@@ -72,12 +72,50 @@ alter table if exists public.article_batch_items
   add column if not exists created_at timestamptz default now(),
   add column if not exists updated_at timestamptz default now();
 
--- Optional strictness: backfill and enforce NOT NULL where required by baseline
--- update public.article_batch_items set difficulty = coalesce(difficulty, 1) where difficulty is null;
--- alter table public.article_batch_items alter column difficulty set not null;
--- alter table public.article_batch_items alter column status set not null;
+-- Backfill and enforce NOT NULL where required by baseline
+update public.article_batch_items set difficulty = coalesce(difficulty, 1) where difficulty is null;
+update public.article_batch_items set status = coalesce(status, 'pending') where status is null;
+alter table public.article_batch_items alter column difficulty set not null;
+alter table public.article_batch_items alter column status set not null;
 
--- 4) Example: ensure other tables commonly drifting have expected columns
+-- Ensure difficulty check constraint exists (1..5)
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'article_batch_items_difficulty_check'
+      and conrelid = 'public.article_batch_items'::regclass
+  ) then
+    alter table public.article_batch_items
+      add constraint article_batch_items_difficulty_check
+      check ((difficulty >= 1 and difficulty <= 5));
+  end if;
+end $$;
+
+-- 4) Ensure vocab_entries trigger exists (in case it was wiped)
+--    Also guard table existence for safety
+create table if not exists public.vocab_entries (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid not null,
+  term text not null,
+  lang text not null,
+  native_lang text not null,
+  source text not null,
+  source_id uuid,
+  context text,
+  tags text[],
+  status text default 'new',
+  explanation jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+drop trigger if exists update_vocab_entries_updated_at on public.vocab_entries;
+create trigger update_vocab_entries_updated_at
+before update on public.vocab_entries
+for each row execute function public.update_updated_at_column();
+
+-- 5) Example: ensure other tables commonly drifting have expected columns
 -- (Add more sections here as drift reports surface)
 -- alter table if exists public.article_drafts
 --   add column if not exists status text default 'pending',
