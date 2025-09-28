@@ -2,7 +2,8 @@
 import Link from 'next/link';
 import AdminQuickAccess from '@/components/AdminQuickAccess';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/contexts/LanguageContext';
+import { useLanguage, useTranslation } from '@/contexts/LanguageContext';
+import { Lang } from '@/types/lang';
 import useUserPermissions from '@/hooks/useUserPermissions';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -25,14 +26,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import ParticleCanvas from '@/components/ParticleCanvas';
+import { isProfileCompleteStrict } from '@/utils/profile';
 
 export default function Home() {
   const t = useTranslation();
+  const { setLanguage } = useLanguage();
   const { permissions } = useUserPermissions();
-  const { getAuthHeaders } = useAuth();
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
+  const { getAuthHeaders, user: authUser } = useAuth();
   const [profile, setProfile] = useState<{
     username?: string;
+    preferred_tone?: string;
     bio?: string;
     goals?: string;
     native_lang?: string;
@@ -64,31 +67,35 @@ export default function Home() {
   } | null>(null);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setUser(user);
-        // 获取用户资料
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('username, bio, goals, native_lang, target_langs, domains')
-          .eq('id', user.id)
-          .single();
-        setProfile(profileData);
-
-        // 获取用户统计数据
-        fetchUserStats(user.id);
+    const loadForUser = async () => {
+      if (!authUser) {
+        setProfile(null);
+        return;
       }
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username, bio, goals, preferred_tone, native_lang, target_langs, domains')
+        .eq('id', authUser.id)
+        .single();
+      setProfile(profileData || null);
+      await fetchUserStats(authUser.id);
     };
-    checkUser();
-  }, []);
+    loadForUser();
+  }, [authUser]);
+
+  // 进入首页后，根据用户母语自动调整界面语言（每次进入都检查）
+  useEffect(() => {
+    if (!authUser) return;
+    const native = profile?.native_lang;
+    if (!native) return;
+    const mapped = native === 'zh' ? 'zh' : native === 'ja' ? 'ja' : native === 'en' ? 'en' : null;
+    if (mapped) setLanguage(mapped as Lang);
+  }, [authUser, profile?.native_lang, setLanguage]);
 
   // 资料或权限准备好后再拉取每日一题，避免早期为空
   useEffect(() => {
     (async () => {
-      if (!user || !permissions.can_access_shadowing) return;
+      if (!authUser || !permissions.can_access_shadowing) return;
       const preferred = (profile?.target_langs?.[0] as 'zh' | 'ja' | 'en') || null;
       if (!preferred) { setDaily(null); return; }
       try {
@@ -101,13 +108,13 @@ export default function Home() {
         setDaily({ lang: preferred, level: 2, error: 'network' });
       }
     })();
-  }, [user, permissions.can_access_shadowing, profile?.target_langs, getAuthHeaders]);
+  }, [authUser, permissions.can_access_shadowing, profile?.target_langs, getAuthHeaders]);
 
   const fetchUserStats = async (userId: string) => {
     try {
       // 获取生词数量
       const { count: vocabCount } = await supabase
-        .from('user_vocab')
+        .from('vocab_entries')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId);
 
@@ -121,14 +128,7 @@ export default function Home() {
     }
   };
 
-  const isProfileComplete =
-    profile &&
-    (profile.username ||
-      profile.bio ||
-      profile.goals ||
-      profile.native_lang ||
-      (profile.target_langs && profile.target_langs.length > 0) ||
-      (profile.domains && profile.domains.length > 0));
+  const isProfileComplete = isProfileCompleteStrict(profile);
 
   // 快速入口配置
   const quickAccessItems = [
@@ -178,7 +178,7 @@ export default function Home() {
       icon: User,
       href: '/profile',
       color: 'bg-pink-500',
-      show: !!user,
+      show: !!authUser,
     },
   ];
 
@@ -228,27 +228,37 @@ export default function Home() {
               {t.home.hero_subtitle}
             </p>
 
-            {/* 个人资料提示 */}
-            {user && !isProfileComplete && (
-              <div className="rounded-xl p-6 max-w-md mx-auto mb-8 bg-white/70 dark:bg-slate-900/60 backdrop-blur border border-blue-200/60 dark:border-blue-900/30">
-                <div className="flex items-center justify-center mb-3">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">👋</span>
+            {/* 顶部横幅：引导完善资料（不可关闭） */}
+            {authUser && !isProfileComplete && (
+              <div className="w-full mb-8">
+                <div className="mx-auto max-w-7xl">
+                  <div className="relative rounded-xl border border-blue-200/70 bg-blue-50/80 dark:bg-blue-900/20 dark:border-blue-800/50 backdrop-blur p-4 sm:p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-sm">
+                        <User className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm sm:text-base font-semibold text-blue-800 dark:text-blue-200 truncate">
+                          {t.home.welcome_title}
+                        </div>
+                        <div className="text-xs sm:text-sm text-blue-700/90 dark:text-blue-300/90">
+                          {t.home.welcome_desc}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 ml-4">
+                      <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
+                        <Link href="/profile">{t.home.complete_profile}</Link>
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 mb-2">
-                  {t.home.welcome_title}
-                </h3>
-                <p className="text-blue-600 dark:text-blue-300/90 text-sm mb-4">{t.home.welcome_desc}</p>
-                <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                  <Link href="/profile">{t.home.complete_profile}</Link>
-                </Button>
               </div>
             )}
 
             {/* Hero CTA */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-2">
-              {!user ? (
+              {!authUser ? (
                 <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3 shadow-sm">
                   <Link href="/auth">{t.home.cta_signup}</Link>
                 </Button>
@@ -269,7 +279,7 @@ export default function Home() {
       </section>
 
       {/* 每日一题（登录且有Shadowing权限才显示） */}
-      {user && permissions.can_access_shadowing && (
+      {authUser && permissions.can_access_shadowing && (
         <section className="py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 shadow-lg backdrop-blur">
@@ -360,7 +370,7 @@ export default function Home() {
       )}
 
       {/* 学习统计 */}
-      {user && (
+      {authUser && (
         <section className="py-12 bg-white/50 dark:bg-white/0">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-8">
@@ -487,7 +497,7 @@ export default function Home() {
             {t.home.ready_desc}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {!user ? (
+            {!authUser ? (
               <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
                 <Link href="/auth">{t.home.cta_signup}</Link>
               </Button>

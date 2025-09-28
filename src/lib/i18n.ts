@@ -119,6 +119,18 @@ export interface Translations {
     };
     language_labels: Record<string, string>; // 动态语言列表显示名
     date_locales: Record<'zh' | 'en' | 'ja', string>; // 用于 toLocaleDateString
+    // 新增：资料完成度与字段提示
+    progress_title: string;
+    progress_tip_prefix: string; // e.g. 完善以下字段可达100%：
+    hints: {
+      username: string;
+      native_lang: string;
+      bio: string;
+      goals: string;
+      target_langs: string;
+      preferred_tone: string;
+      domains: string;
+    };
   };
 
   // 导航
@@ -600,6 +612,17 @@ const zh: Translations = {
       ru: 'Русский',
     },
     date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP' },
+    progress_title: '资料完成度',
+    progress_tip_prefix: '完善以下字段可达 100%：',
+    hints: {
+      username: '填写用户名可提升资料完成度',
+      native_lang: '请选择母语',
+      bio: '填写个人简介有助于生成更贴合的学习内容',
+      goals: '描述你的学习目标，系统将更好地推荐练习',
+      target_langs: '请选择至少一个目标语言',
+      preferred_tone: '选择偏好语气，便于生成合适的内容风格',
+      domains: '选择兴趣领域，系统将更懂你的偏好',
+    },
   },
   nav: {
     home: '首页',
@@ -1072,6 +1095,17 @@ const en: Translations = {
       ru: 'Russian',
     },
     date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP' },
+    progress_title: 'Profile completeness',
+    progress_tip_prefix: 'Complete the following to reach 100%: ',
+    hints: {
+      username: 'Filling in a username improves your profile completeness',
+      native_lang: 'Please select your native language',
+      bio: 'Add a bio to help personalize your learning content',
+      goals: 'Describe your learning goals to improve recommendations',
+      target_langs: 'Select at least one target language',
+      preferred_tone: 'Choose a preferred tone to match content style',
+      domains: 'Pick interests so the system understands your preferences',
+    },
   },
   nav: {
     home: 'Home',
@@ -1545,6 +1579,17 @@ const ja: Translations = {
       ru: 'ロシア語',
     },
     date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP' },
+    progress_title: 'プロフィール完成度',
+    progress_tip_prefix: '以下を入力すると 100% に到達：',
+    hints: {
+      username: 'ユーザー名を入力するとプロフィール完成度が上がります',
+      native_lang: '母語を選択してください',
+      bio: '自己紹介を書くと学習内容のパーソナライズに役立ちます',
+      goals: '学習目標を記入すると推薦が改善されます',
+      target_langs: '目標言語を少なくとも一つ選択してください',
+      preferred_tone: '好みの文体を選ぶと内容スタイルが合います',
+      domains: '興味分野を選ぶと好みをより理解できます',
+    },
   },
   nav: {
     home: 'ホーム',

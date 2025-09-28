@@ -151,7 +151,7 @@ export async function applyDefaultPermissionsToUser(userId: string): Promise<boo
       .from('user_permissions')
       .select('id')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle?.();
 
     // 如果已有权限记录，不覆盖
     if (existingPermissions) {
@@ -181,7 +181,10 @@ export async function applyDefaultPermissionsToUser(userId: string): Promise<boo
     };
 
     // 创建用户权限记录
-    const { error } = await supabase.from('user_permissions').insert(permissionsData);
+    const { error } = await supabase.from('user_permissions').insert({
+      id: (globalThis as any)?.crypto?.randomUUID?.() || undefined,
+      ...permissionsData,
+    });
 
     if (error) {
       console.error(`为用户 ${userId} 应用默认权限失败:`, error);

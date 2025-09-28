@@ -27,7 +27,15 @@ jobs:
           supabase db reset
 
           echo "Verifying migrations applied successfully..."
-          supabase db diff --schema public
+          # Generate diff; expect no drift after a clean reset
+          supabase db diff --schema public > schema_diff.sql || true
+          if [ -s schema_diff.sql ]; then
+            echo "Schema drift detected after reset (should be empty):";
+            cat schema_diff.sql;
+            exit 1;
+          else
+            echo "No schema drift detected (OK).";
+          fi
 
       - name: Stop local stack
         if: always()

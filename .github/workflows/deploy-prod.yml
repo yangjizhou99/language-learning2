@@ -1,0 +1,54 @@
+name: Deploy to PRODUCTION
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.PROD_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link remote (production)
+        run: |
+          echo "Linking to production project..."
+          supabase link --project-ref $SUPABASE_PROJECT_ID --password $SUPABASE_DB_PASSWORD
+
+      - name: Push migrations
+        run: |
+          echo "Pushing migrations to production..."
+          supabase db push
+
+      - name: Verify zero drift (production)
+        run: |
+          echo "Checking schema drift on production..."
+          supabase db diff --schema public > schema_diff_prod.sql || true
+          if [ -s schema_diff_prod.sql ]; then
+            echo "Schema drift detected on production:";
+            cat schema_diff_prod.sql;
+            exit 1;
+          else
+            echo "No schema drift on production (OK).";
+          fi
+
+      - name: Verify deployment
+        run: |
+          echo "Verifying production deployment..."
+          supabase projects list
+          echo "Production deployment completed successfully!"
+
+
