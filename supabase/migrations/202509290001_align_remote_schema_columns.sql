@@ -146,7 +146,45 @@ create trigger update_vocab_entries_updated_at
 before update on public.vocab_entries
 for each row execute function public.update_updated_at_column();
 
--- 5) Example: ensure other tables commonly drifting have expected columns
+-- 5) Ensure user_permissions trigger exists and is idempotent
+create or replace function public.update_user_permissions_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+create table if not exists public.user_permissions (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid not null,
+  can_access_shadowing boolean default true not null,
+  can_access_cloze boolean default true not null,
+  can_access_alignment boolean default true not null,
+  can_access_articles boolean default true not null,
+  allowed_languages text[] default array['en','ja','zh']::text[] not null,
+  allowed_levels integer[] default array[1,2,3,4,5] not null,
+  max_daily_attempts integer default 50 not null,
+  custom_restrictions jsonb default '{}'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  api_keys jsonb default '{}'::jsonb,
+  ai_enabled boolean default false,
+  model_permissions jsonb default '[]'::jsonb
+);
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'user_permissions'
+  ) then
+    execute 'drop trigger if exists update_user_permissions_updated_at on public.user_permissions';
+    execute 'create trigger update_user_permissions_updated_at before update on public.user_permissions for each row execute function public.update_user_permissions_updated_at()';
+  end if;
+end $$;
+
+-- 6) Example: ensure other tables commonly drifting have expected columns
 -- (Add more sections here as drift reports surface)
 -- alter table if exists public.article_drafts
 --   add column if not exists status text default 'pending',
