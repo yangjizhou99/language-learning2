@@ -189,3 +189,50 @@ end $$;
 -- alter table if exists public.article_drafts
 --   add column if not exists status text default 'pending',
 --   add column if not exists created_at timestamptz default now();
+
+-- 7) Reduce drift per CI: align policies/functions/index/columns to baseline
+
+-- 7.1) Policies
+drop policy if exists default_user_permissions_select_all on public.default_user_permissions;
+
+-- Ensure user_permissions_combined exactly matches baseline
+drop policy if exists user_permissions_combined on public.user_permissions;
+create policy user_permissions_combined on public.user_permissions
+  for all to authenticated
+  using ((public.is_admin()) or (auth.uid() = user_id))
+  with check ((public.is_admin()) or (auth.uid() = user_id));
+
+-- 7.2) Helper functions (remove if present, baseline does not include)
+drop function if exists public.exec_sql(text);
+drop function if exists public.get_table_columns(text);
+drop function if exists public.get_table_list();
+drop function if exists public.set_updated_at();
+
+-- 7.3) Indexes suggested to drop in drift
+drop index if exists public.idx_vocab_entries_user_due;
+
+-- 7.4) Columns to drop/rename on shadowing tables per baseline
+alter table if exists public.shadowing_items
+  drop column if exists audio_bucket,
+  drop column if exists audio_path,
+  drop column if exists audio_url_proxy;
+
+alter table if exists public.shadowing_subtopics
+  drop column if exists one_line,
+  drop column if exists seed,
+  drop column if exists title;
+
+alter table if exists public.shadowing_subtopics
+  add column if not exists one_line_cn text,
+  add column if not exists seed_en text,
+  add column if not exists title_cn text;
+
+-- 7.5) Remove SRS fields on vocab_entries to match baseline
+alter table if exists public.vocab_entries
+  drop column if exists srs_due,
+  drop column if exists srs_ease,
+  drop column if exists srs_interval,
+  drop column if exists srs_lapses,
+  drop column if exists srs_last,
+  drop column if exists srs_reps,
+  drop column if exists srs_state;
