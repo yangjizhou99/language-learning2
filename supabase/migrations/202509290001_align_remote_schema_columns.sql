@@ -197,10 +197,13 @@ drop policy if exists default_user_permissions_select_all on public.default_user
 
 -- Ensure user_permissions_combined exactly matches baseline
 drop policy if exists user_permissions_combined on public.user_permissions;
-create policy user_permissions_combined on public.user_permissions
-  for all to authenticated
-  using ((public.is_admin()) or (auth.uid() = user_id))
-  with check ((public.is_admin()) or (auth.uid() = user_id));
+create policy user_permissions_combined
+on public.user_permissions
+as permissive
+for all
+to authenticated
+using ((( select is_admin() as is_admin) or (( select auth.uid() as uid) = user_id)))
+with check ((( select is_admin() as is_admin) or (( select auth.uid() as uid) = user_id)));
 
 -- 7.2) Helper functions (remove if present, baseline does not include)
 -- Drop dependent trigger before dropping function to avoid dependency errors
@@ -233,6 +236,10 @@ alter table if exists public.shadowing_subtopics
   add column if not exists one_line_cn text,
   add column if not exists seed_en text,
   add column if not exists title_cn text;
+
+-- Ensure title_cn is NOT NULL per baseline (backfill empties first)
+update public.shadowing_subtopics set title_cn = coalesce(title_cn, '') where title_cn is null;
+alter table if exists public.shadowing_subtopics alter column title_cn set not null;
 
 -- 7.5) Remove SRS fields on vocab_entries to match baseline
 alter table if exists public.vocab_entries
