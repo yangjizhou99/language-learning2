@@ -14,7 +14,15 @@ export default function AuthCallbackPage() {
         // 确保 profiles 行
         const { data: u } = await supabase.auth.getUser();
         if (u?.user?.id) {
-          await supabase.from('profiles').upsert({ id: u.user.id }, { onConflict: 'id' });
+          const userId = u.user.id;
+          const { data: existing } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', userId)
+            .maybeSingle?.();
+          if (!existing) {
+            await supabase.from('profiles').insert({ id: userId });
+          }
 
           // 为新用户应用默认权限
           try {

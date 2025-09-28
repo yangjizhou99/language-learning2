@@ -162,3 +162,4 @@ export default function ParticleCanvas({ className, density = 0.6, maxParticles 
 }
 
 
+

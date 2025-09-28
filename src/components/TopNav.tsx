@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { isProfileCompleteStrict } from '@/utils/profile';
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ import {
 
 export default function TopNav() {
   const [email, setEmail] = useState<string | undefined>();
+  const [profileIncomplete, setProfileIncomplete] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isAdmin = useIsAdmin();
@@ -61,6 +63,23 @@ export default function TopNav() {
       } = await supabase.auth.getSession();
       if (error) console.error('Session error:', error);
       setEmail(session?.user?.email || undefined);
+
+      // 获取资料并计算完整度（实时计算）
+      try {
+        const userId = session?.user?.id;
+        if (userId) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, bio, goals, preferred_tone, native_lang, target_langs, domains')
+            .eq('id', userId)
+            .single();
+          setProfileIncomplete(!isProfileCompleteStrict(profile as any));
+        } else {
+          setProfileIncomplete(false);
+        }
+      } catch {
+        setProfileIncomplete(false);
+      }
     };
 
     // Initial check
@@ -78,9 +97,16 @@ export default function TopNav() {
         await checkSession();
       }
 
-      // Ensure profiles exists
+      // Ensure profiles exists（避免 upsert 依赖主键时失败）
       if (session?.user?.id) {
-        await supabase.from('profiles').upsert({ id: session.user.id }, { onConflict: 'id' });
+        const { data: existing, error: selErr } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+        if (selErr && (selErr as any).code === 'PGRST116') {
+          await supabase.from('profiles').insert({ id: session.user.id });
+        }
 
         // 为新用户应用默认权限
         try {
@@ -89,6 +115,23 @@ export default function TopNav() {
           console.error('应用默认权限失败:', error);
           // 不阻止登录流程，只记录错误
         }
+      }
+
+      // 会话变化时同步资料完整度状态
+      try {
+        const userId = session?.user?.id;
+        if (userId) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('username, bio, goals, preferred_tone, native_lang, target_langs, domains')
+            .eq('id', userId)
+            .single();
+          setProfileIncomplete(!isProfileCompleteStrict(profile as any));
+        } else {
+          setProfileIncomplete(false);
+        }
+      } catch {
+        setProfileIncomplete(false);
       }
     });
 
@@ -224,7 +267,7 @@ export default function TopNav() {
                 {/* 桌面端用户菜单 */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="rounded-full border-2 border-gray-200 hover:border-blue-300 transition-colors p-0.5">
+                    <button className="relative rounded-full border-2 border-gray-200 hover:border-blue-300 transition-colors p-0.5">
                       <Avatar className="w-8 h-8">
                         <AvatarImage
                           src={`https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(email)}`}
@@ -233,6 +276,9 @@ export default function TopNav() {
                           {email.substring(0, 1).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
+                      {profileIncomplete && (
+                        <span className="absolute -top-0.5 -right-0.5 inline-flex h-3 w-3 rounded-full bg-orange-500 ring-2 ring-white animate-pulse" />
+                      )}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useLanguage, useTranslation } from '@/contexts/LanguageContext';
 import { User, Save, Loader2 } from 'lucide-react';
@@ -85,8 +86,50 @@ export default function ProfilePage() {
     target_langs: [] as string[],
   });
 
+  const fieldLabels: Record<string, string> = {
+    username: '用户名',
+    bio: '个人简介',
+    goals: '学习目标',
+    preferred_tone: '偏好语气',
+    domains: '兴趣领域',
+    native_lang: '母语',
+    target_langs: '目标语言',
+  };
+
+  function isFilled(key: string, data: any) {
+    const v = data?.[key];
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === 'string') return v.trim().length > 0;
+    return !!v;
+  }
+
+  function calcCompletion(data: any) {
+    const keys = ['username', 'bio', 'goals', 'preferred_tone', 'domains', 'native_lang', 'target_langs'];
+    const done = keys.reduce((acc, k) => acc + (isFilled(k, data) ? 1 : 0), 0);
+    return Math.round((done / keys.length) * 100);
+  }
+
+  function getMissingFields(data: any) {
+    const keys = ['username', 'bio', 'goals', 'preferred_tone', 'domains', 'native_lang', 'target_langs'];
+    return keys.filter((k) => !isFilled(k, data)).map((k) => fieldLabels[k]);
+  }
+
+  const completion = calcCompletion(formData);
+  const missingFields = getMissingFields(formData);
+  const isFieldMissing = (key: string) => !isFilled(key, formData);
+
   useEffect(() => {
     loadProfile();
+  }, []);
+
+  // 当认证状态变化时，尝试重新加载资料
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user?.id) {
+        loadProfile();
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const loadProfile = async () => {
@@ -99,7 +142,20 @@ export default function ProfilePage() {
         error: userError,
       } = await supabase.auth.getUser();
       if (userError) throw userError;
-
+      if (!user) {
+        // 未登录：无需抛错，显示登录提示或静默等待上面的 onAuthStateChange 触发
+        setProfile(null);
+        setFormData({
+          username: '',
+          bio: '',
+          goals: '',
+          preferred_tone: '',
+          domains: [],
+          native_lang: '',
+          target_langs: [],
+        });
+        return;
+      }
       setUser(user);
 
       // 获取用户资料
@@ -109,18 +165,47 @@ export default function ProfilePage() {
         .eq('id', user?.id)
         .single();
 
-      if (profileError) throw profileError;
-
-      setProfile(profileData);
-      setFormData({
-        username: profileData.username || '',
-        bio: profileData.bio || '',
-        goals: profileData.goals || '',
-        preferred_tone: profileData.preferred_tone || '',
-        domains: profileData.domains || [],
-        native_lang: profileData.native_lang || '',
-        target_langs: profileData.target_langs || [],
-      });
+      if (profileError) {
+        // 若不存在则自动创建一行
+        // PGRST116: row not found
+        if ((profileError as any).code === 'PGRST116') {
+          const { error: insertErr } = await supabase
+            .from('profiles')
+            .insert({ id: user.id });
+          if (insertErr) throw insertErr;
+          // 再次获取
+          const { data: created } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          if (created) {
+            setProfile(created as any);
+            setFormData({
+              username: created.username || '',
+              bio: created.bio || '',
+              goals: created.goals || '',
+              preferred_tone: created.preferred_tone || '',
+              domains: created.domains || [],
+              native_lang: created.native_lang || '',
+              target_langs: created.target_langs || [],
+            });
+          }
+        } else {
+          throw profileError;
+        }
+      } else {
+        setProfile(profileData);
+        setFormData({
+          username: profileData.username || '',
+          bio: profileData.bio || '',
+          goals: profileData.goals || '',
+          preferred_tone: profileData.preferred_tone || '',
+          domains: profileData.domains || [],
+          native_lang: profileData.native_lang || '',
+          target_langs: profileData.target_langs || [],
+        });
+      }
     } catch (error) {
       console.error('加载资料失败:', error);
       toast.error(t.profile.load_failed || t.common.error);
@@ -133,9 +218,18 @@ export default function ProfilePage() {
     try {
       setSaving(true);
 
+      // 使用 upsert(id) 确保存在即更新，不存在即插入（已为 profiles.id 添加主键）
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+      if (!currentUser) {
+        throw new Error('No user session');
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: currentUser.id,
           username: formData.username || null,
           bio: formData.bio || null,
           goals: formData.goals || null,
@@ -143,8 +237,7 @@ export default function ProfilePage() {
           domains: formData.domains,
           native_lang: formData.native_lang || null,
           target_langs: formData.target_langs,
-        })
-        .eq('id', user.id);
+        }, { onConflict: 'id' });
 
       if (error) throw error;
 
@@ -199,6 +292,22 @@ export default function ProfilePage() {
         </div>
 
         <div className="grid gap-6">
+          {/* 资料完成度 */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">{t.profile.progress_title}</span>
+                <span className="text-sm font-medium">{completion}%</span>
+              </div>
+              <Progress value={completion} className="h-2" />
+              {missingFields.length > 0 && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {t.profile.progress_tip_prefix}{missingFields.join('、')}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* 基本信息 */}
           <Card>
             <CardHeader>
@@ -230,7 +339,11 @@ export default function ProfilePage() {
                     value={formData.username}
                     onChange={(e) => setFormData((prev) => ({ ...prev, username: e.target.value }))}
                     placeholder={t.profile.username_placeholder}
+                    className={isFieldMissing('username') ? 'border-amber-300 focus-visible:ring-amber-300' : undefined}
                   />
+                  {isFieldMissing('username') && (
+                    <p className="mt-1 text-xs text-amber-600">{t.profile.hints.username}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="native_lang">{t.profile.native_language}</Label>
@@ -240,7 +353,7 @@ export default function ProfilePage() {
                       setFormData((prev) => ({ ...prev, native_lang: value }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={isFieldMissing('native_lang') ? 'border-amber-300 focus:ring-amber-300' : undefined}>
                       <SelectValue placeholder={t.profile.native_language_placeholder} />
                     </SelectTrigger>
                     <SelectContent>
@@ -251,6 +364,9 @@ export default function ProfilePage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {isFieldMissing('native_lang') && (
+                    <p className="mt-1 text-xs text-amber-600">{t.profile.hints.native_lang}</p>
+                  )}
                 </div>
               </div>
 
@@ -262,7 +378,11 @@ export default function ProfilePage() {
                   onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
                   placeholder={t.profile.bio_placeholder}
                   rows={3}
+                  className={isFieldMissing('bio') ? 'border-amber-300 focus-visible:ring-amber-300' : undefined}
                 />
+                {isFieldMissing('bio') && (
+                  <p className="mt-1 text-xs text-amber-600">{t.profile.hints.bio}</p>
+                )}
               </div>
 
               <div>
@@ -273,7 +393,11 @@ export default function ProfilePage() {
                   onChange={(e) => setFormData((prev) => ({ ...prev, goals: e.target.value }))}
                   placeholder={t.profile.goals_placeholder}
                   rows={3}
+                  className={isFieldMissing('goals') ? 'border-amber-300 focus-visible:ring-amber-300' : undefined}
                 />
+                {isFieldMissing('goals') && (
+                  <p className="mt-1 text-xs text-amber-600">{t.profile.hints.goals}</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -291,13 +415,16 @@ export default function ProfilePage() {
                     <Badge
                       key={lang.value}
                       variant={formData.target_langs.includes(lang.value) ? 'default' : 'outline'}
-                      className="cursor-pointer"
+                      className={`cursor-pointer ${isFieldMissing('target_langs') ? 'ring-1 ring-amber-300' : ''}`}
                       onClick={() => handleTargetLangToggle(lang.value)}
                     >
                       {t.profile.language_labels[lang.value] ?? lang.label}
                     </Badge>
                   ))}
                 </div>
+                {isFieldMissing('target_langs') && (
+                  <p className="mt-1 text-xs text-amber-600">{t.profile.hints.target_langs}</p>
+                )}
               </div>
 
               <div>
@@ -308,7 +435,7 @@ export default function ProfilePage() {
                     setFormData((prev) => ({ ...prev, preferred_tone: value }))
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={isFieldMissing('preferred_tone') ? 'border-amber-300 focus:ring-amber-300' : undefined}>
                     <SelectValue placeholder={t.profile.preferred_tone_placeholder} />
                   </SelectTrigger>
                   <SelectContent>
@@ -319,6 +446,9 @@ export default function ProfilePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {isFieldMissing('preferred_tone') && (
+                  <p className="mt-1 text-xs text-amber-600">{t.profile.hints.preferred_tone}</p>
+                )}
               </div>
 
               <div>
@@ -328,13 +458,16 @@ export default function ProfilePage() {
                     <Badge
                       key={domain.value}
                       variant={formData.domains.includes(domain.value) ? 'default' : 'outline'}
-                      className="cursor-pointer"
+                      className={`cursor-pointer ${isFieldMissing('domains') ? 'ring-1 ring-amber-300' : ''}`}
                       onClick={() => handleDomainToggle(domain.value)}
                     >
                       {t.profile.domains[domain.value as keyof typeof t.profile.domains] ?? domain.label}
                     </Badge>
                   ))}
                 </div>
+                {isFieldMissing('domains') && (
+                  <p className="mt-1 text-xs text-amber-600">{t.profile.hints.domains}</p>
+                )}
               </div>
             </CardContent>
           </Card>
