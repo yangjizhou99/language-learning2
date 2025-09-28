@@ -4,6 +4,61 @@
 -- 1) Ensure pgcrypto for gen_random_uuid()
 create extension if not exists pgcrypto;
 
+-- 1.1) Ensure required core tables exist (in case they were wiped earlier)
+-- profiles
+create table if not exists public.profiles (
+  id uuid not null,
+  username text,
+  native_lang text,
+  target_langs text[] default '{}'::text[],
+  created_at timestamptz default now(),
+  bio text,
+  goals text,
+  preferred_tone text,
+  domains text[] default '{}'::text[],
+  role text default 'user',
+  invited_by uuid,
+  invitation_code_id uuid,
+  invitation_used_at timestamptz
+);
+
+-- default_user_permissions
+create table if not exists public.default_user_permissions (
+  id text default 'default'::text not null,
+  can_access_shadowing boolean default true not null,
+  can_access_cloze boolean default true not null,
+  can_access_alignment boolean default true not null,
+  can_access_articles boolean default true not null,
+  allowed_languages text[] default array['en','ja','zh']::text[] not null,
+  allowed_levels integer[] default array[1,2,3,4,5] not null,
+  max_daily_attempts integer default 50 not null,
+  ai_enabled boolean default false not null,
+  api_keys jsonb default '{}'::jsonb,
+  model_permissions jsonb default '[]'::jsonb,
+  custom_restrictions jsonb default '{}'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- user_permissions
+create table if not exists public.user_permissions (
+  id uuid default gen_random_uuid() not null,
+  user_id uuid not null,
+  can_access_shadowing boolean default true not null,
+  can_access_cloze boolean default true not null,
+  can_access_alignment boolean default true not null,
+  can_access_articles boolean default true not null,
+  allowed_languages text[] default array['en','ja','zh']::text[] not null,
+  allowed_levels integer[] default array[1,2,3,4,5] not null,
+  max_daily_attempts integer default 50 not null,
+  custom_restrictions jsonb default '{}'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  api_keys jsonb default '{}'::jsonb,
+  ai_enabled boolean default false,
+  model_permissions jsonb default '[]'::jsonb
+);
+
 -- 2) Ensure profiles.id has a primary key (required for future upserts and integrity)
 do $$
 begin
