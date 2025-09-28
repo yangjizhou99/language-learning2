@@ -33,6 +33,18 @@ jobs:
           echo "Pushing migrations to staging..."
           supabase db push
 
+      - name: Verify zero drift (staging)
+        run: |
+          echo "Checking schema drift on staging..."
+          supabase db diff --schema public > schema_diff_staging.sql || true
+          if [ -s schema_diff_staging.sql ]; then
+            echo "Schema drift detected on staging:";
+            cat schema_diff_staging.sql;
+            exit 1;
+          else
+            echo "No schema drift on staging (OK).";
+          fi
+
       - name: Verify deployment
         run: |
           echo "Verifying staging deployment..."

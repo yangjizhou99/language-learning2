@@ -33,6 +33,18 @@ jobs:
           echo "Pushing migrations to production..."
           supabase db push
 
+      - name: Verify zero drift (production)
+        run: |
+          echo "Checking schema drift on production..."
+          supabase db diff --schema public > schema_diff_prod.sql || true
+          if [ -s schema_diff_prod.sql ]; then
+            echo "Schema drift detected on production:";
+            cat schema_diff_prod.sql;
+            exit 1;
+          else
+            echo "No schema drift on production (OK).";
+          fi
+
       - name: Verify deployment
         run: |
           echo "Verifying production deployment..."
