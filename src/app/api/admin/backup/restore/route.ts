@@ -4,7 +4,7 @@ import { getServiceSupabase } from '@/lib/supabaseAdmin';
 import { createDatabaseConnection, DatabaseType, connectPostgresWithFallback } from '@/lib/backup-db';
 import fs from 'fs/promises';
 import path from 'path';
-import { createWriteStream } from 'fs';
+import { createWriteStream, Dirent } from 'fs';
 import { pipeline } from 'stream/promises';
 import yauzl from 'yauzl';
 
@@ -883,9 +883,14 @@ async function copyBackupFromHistory(backupPath: string, tempDir: string): Promi
         console.log('非ZIP文件，跳过解压');
       }
     } else if (stats.isDirectory()) {
-      // 如果是目录，复制整个目录
-      console.log('检测到目录，开始复制整个目录...');
-      await copyDirectory(backupPath, tempDir);
+      // 如果是目录，先做有效性校验（避免误选项目根目录等非备份目录）
+      const valid = await isValidBackupDirectory(backupPath);
+      if (!valid) {
+        throw new Error('无效的备份目录：未检测到 manifest.json / *.sql / storage 等备份标识');
+      }
+
+      console.log('检测到目录，开始复制整个目录（将跳过临时/构建目录与临时文件）...');
+      await copyDirectory(backupPath, tempDir, shouldSkipEphemeral);
       console.log('目录复制完成');
     } else {
       throw new Error('不支持的备份文件类型');
@@ -905,7 +910,11 @@ async function copyBackupFromHistory(backupPath: string, tempDir: string): Promi
   }
 }
 
-async function copyDirectory(src: string, dest: string): Promise<void> {
+async function copyDirectory(
+  src: string,
+  dest: string,
+  filter?: (name: string, fullPath: string, isDir: boolean) => boolean
+): Promise<void> {
   try {
     await fs.mkdir(dest, { recursive: true });
     
@@ -916,15 +925,72 @@ async function copyDirectory(src: string, dest: string): Promise<void> {
       const destPath = path.join(dest, item);
       const stats = await fs.stat(srcPath);
       
+      if (filter && filter(item, srcPath, stats.isDirectory())) {
+        continue;
+      }
+
       if (stats.isDirectory()) {
-        await copyDirectory(srcPath, destPath);
+        await copyDirectory(srcPath, destPath, filter);
       } else {
-        await fs.copyFile(srcPath, destPath);
+        try {
+          await fs.copyFile(srcPath, destPath);
+        } catch (err: unknown) {
+          // 避免复制过程中源文件被构建进程删除导致的 ENOENT/EBUSY 打断整个流程
+          const e = err as NodeJS.ErrnoException;
+          if (e && (e.code === 'ENOENT' || e.code === 'EBUSY')) {
+            console.warn('跳过无法复制的文件:', srcPath, e.code);
+            continue;
+          }
+          throw err;
+        }
       }
     }
   } catch (err) {
     console.error('复制目录失败:', err);
     throw err;
+  }
+}
+
+// 判断是否应跳过临时/构建目录与临时文件
+function shouldSkipEphemeral(name: string, fullPath: string, isDir: boolean): boolean {
+  const lower = name.toLowerCase();
+  // 目录黑名单（构建、缓存、版本控制等）
+  const blockedDirs = new Set([
+    '.next', 'node_modules', '.git', '.turbo', '.vercel', '.cache', 'dist', 'build',
+    '.expo', '.nuxt', 'coverage', '.idea', '.vscode', '.husky'
+  ]);
+  if (isDir && blockedDirs.has(lower)) return true;
+
+  // 临时文件：Next 开发时的 *.tmp.*、*.tmp、~ 开头等
+  if (!isDir) {
+    if (/\.tmp(\.|$)/i.test(name)) return true;
+    if (/^~/.test(name)) return true;
+  }
+
+  return false;
+}
+
+// 基础有效性校验：至少包含 manifest.json 或任一 .sql 文件或 storage 目录
+async function isValidBackupDirectory(dir: string): Promise<boolean> {
+  try {
+    const entries: Dirent[] = await fs.readdir(dir, { withFileTypes: true });
+    let hasManifest = false;
+    let hasSql = false;
+    let hasStorage = false;
+
+    for (const ent of entries) {
+      const name = ent.name.toLowerCase();
+      if (ent.isFile()) {
+        if (name === 'manifest.json') hasManifest = true;
+        if (name.endsWith('.sql')) hasSql = true;
+      } else if (ent.isDirectory()) {
+        if (name === 'storage') hasStorage = true;
+      }
+    }
+
+    return hasManifest || hasSql || hasStorage;
+  } catch {
+    return false;
   }
 }
 
