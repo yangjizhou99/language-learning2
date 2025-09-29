@@ -207,39 +207,46 @@ with check ((( select is_admin() as is_admin) or (( select auth.uid() as uid) = 
 
 -- 7.2) Helper functions (remove if present, baseline does not include)
 -- Drop dependent trigger before dropping function to avoid dependency errors
-drop trigger if exists shadowing_items_set_updated_at on public.shadowing_items;
-drop function if exists public.exec_sql(text);
-drop function if exists public.get_table_columns(text);
-drop function if exists public.get_table_list();
-drop function if exists public.set_updated_at();
+-- DISABLED: keep helper functions/triggers required by app/scripts
+-- drop trigger if exists shadowing_items_set_updated_at on public.shadowing_items;
+-- drop function if exists public.exec_sql(text);
+-- drop function if exists public.get_table_columns(text);
+-- drop function if exists public.get_table_list();
+-- drop function if exists public.set_updated_at();
 
 -- 7.3) Indexes suggested to drop in drift
 drop index if exists public.idx_vocab_entries_user_due;
 
 -- 7.4) Columns to drop/rename on shadowing tables per baseline
 -- Drop dependent column first to avoid dependency errors
-alter table if exists public.shadowing_items
-  drop column if exists audio_url_proxy;
+-- DISABLED: do not drop audio proxy column used by API
+-- alter table if exists public.shadowing_items
+--   drop column if exists audio_url_proxy;
 
-alter table if exists public.shadowing_items
-  drop column if exists audio_path;
+-- DISABLED: do not drop audio_path (required by storage-proxy)
+-- alter table if exists public.shadowing_items
+--   drop column if exists audio_path;
 
-alter table if exists public.shadowing_items
-  drop column if exists audio_bucket;
+-- DISABLED: do not drop audio_bucket (required by storage-proxy)
+-- alter table if exists public.shadowing_items
+--   drop column if exists audio_bucket;
 
-alter table if exists public.shadowing_subtopics
-  drop column if exists one_line,
-  drop column if exists seed,
-  drop column if exists title;
+-- DISABLED: keep existing shadowing_subtopics columns used by app
+-- alter table if exists public.shadowing_subtopics
+--   drop column if exists one_line,
+--   drop column if exists seed,
+--   drop column if exists title;
 
-alter table if exists public.shadowing_subtopics
-  add column if not exists one_line_cn text,
-  add column if not exists seed_en text,
-  add column if not exists title_cn text;
+-- DISABLED: avoid renaming/adding *_cn columns that conflict with app expectations
+-- alter table if exists public.shadowing_subtopics
+--   add column if not exists one_line_cn text,
+--   add column if not exists seed_en text,
+--   add column if not exists title_cn text;
 
 -- Ensure title_cn is NOT NULL per baseline (backfill empties first)
-update public.shadowing_subtopics set title_cn = coalesce(title_cn, '') where title_cn is null;
-alter table if exists public.shadowing_subtopics alter column title_cn set not null;
+-- DISABLED: skip enforcing NOT NULL on title_cn (column not used by app)
+-- update public.shadowing_subtopics set title_cn = coalesce(title_cn, '') where title_cn is null;
+-- alter table if exists public.shadowing_subtopics alter column title_cn set not null;
 
 -- 7.5) Remove SRS fields on vocab_entries to match baseline
 alter table if exists public.vocab_entries

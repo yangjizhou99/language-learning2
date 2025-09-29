@@ -65,7 +65,6 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
   {
     title: '系统',
     items: [
-      { href: '/admin/setup', label: '系统设置', icon: '⚙️' },
       { href: '/admin/backup', label: '数据备份', icon: '💾' },
       { href: '/admin/migrate', label: '数据迁移', icon: '🔄' },
       { href: '/admin/performance', label: '性能监控', icon: '📊' },

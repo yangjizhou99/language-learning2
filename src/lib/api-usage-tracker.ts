@@ -1,4 +1,5 @@
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
+import { randomUUID } from 'crypto';
 
 export interface APIUsageLog {
   user_id: string;
@@ -52,6 +53,7 @@ export async function logAPIUsage(log: APIUsageLog): Promise<void> {
     const supabase = getServiceSupabase();
 
     const { error } = await supabase.from('api_usage_logs').insert({
+      id: randomUUID(),
       user_id: log.user_id,
       provider: log.provider,
       model: log.model,
@@ -59,6 +61,7 @@ export async function logAPIUsage(log: APIUsageLog): Promise<void> {
       cost: log.cost,
       request_data: log.request_data,
       response_data: log.response_data,
+      created_at: new Date().toISOString(),
     });
 
     if (error) {

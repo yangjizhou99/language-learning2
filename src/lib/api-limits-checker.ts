@@ -93,14 +93,19 @@ export async function checkAPILimits(
     }
 
     // 获取用户今日和本月的使用情况
-    const today = new Date().toISOString().split('T')[0];
-    const thisMonth = new Date().toISOString().substring(0, 7); // YYYY-MM
+    const now = new Date();
+    const yyyy = now.getUTCFullYear();
+    const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(now.getUTCDate()).padStart(2, '0');
+    const todayStart = `${yyyy}-${mm}-${dd}T00:00:00Z`;
+    const monthStart = `${yyyy}-${mm}-01T00:00:00Z`;
 
     const { data: usageData, error: usageError } = await supabase
       .from('api_usage_logs')
       .select('tokens_used, cost, created_at')
       .eq('user_id', userId)
-      .eq('provider', provider);
+      .eq('provider', provider)
+      .gte('created_at', monthStart);
 
     if (usageError) {
       console.error('Error fetching usage data:', usageError);
@@ -118,22 +123,16 @@ export async function checkAPILimits(
     };
 
     usageData?.forEach((record) => {
-      const recordDate = new Date(record.created_at);
-      const recordMonth = recordDate.toISOString().substring(0, 7);
-
-      // 今日统计
-      if (recordDate.toISOString().split('T')[0] === today) {
+      const ts = new Date(record.created_at).toISOString();
+      if (ts >= todayStart) {
         usage.daily_calls++;
         usage.daily_tokens += record.tokens_used || 0;
         usage.daily_cost += record.cost || 0;
       }
-
-      // 本月统计
-      if (recordMonth === thisMonth) {
-        usage.monthly_calls++;
-        usage.monthly_tokens += record.tokens_used || 0;
-        usage.monthly_cost += record.cost || 0;
-      }
+      // 月统计已使用查询条件限定 >= 月初，因此直接累计
+      usage.monthly_calls++;
+      usage.monthly_tokens += record.tokens_used || 0;
+      usage.monthly_cost += record.cost || 0;
     });
 
     // 检查日限制

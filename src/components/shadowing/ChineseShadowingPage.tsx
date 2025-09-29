@@ -45,7 +45,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCached, setCached } from '@/lib/clientCache';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { loadFilters as loadShadowingFilters, saveFilters as saveShadowingFilters } from '@/lib/shadowingFilterStorage';
 
 // 题目数据类型
 interface ShadowingItem {
@@ -128,12 +129,87 @@ export default function ShadowingPage() {
 
   // 过滤和筛选状态
   const [lang, setLang] = useState<'ja' | 'en' | 'zh'>('zh');
-  const [level, setLevel] = useState<number | null>(1);
+  const [level, setLevel] = useState<number | null>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const urlLevel = params.get('level');
+        if (urlLevel !== null && urlLevel !== undefined && urlLevel !== '') {
+          const parsed = Number(urlLevel);
+          if (!Number.isNaN(parsed)) return parsed;
+        }
+        const persisted = loadShadowingFilters();
+        if (persisted && typeof persisted.level !== 'undefined') {
+          return persisted.level ?? null;
+        }
+      }
+    } catch {}
+    return 1;
+  });
   const [practiced, setPracticed] = useState<'all' | 'practiced' | 'unpracticed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [theme, setTheme] = useState<string>('all');
   const [selectedThemeId, setSelectedThemeId] = useState<string>('all');
   const [selectedSubtopicId, setSelectedSubtopicId] = useState<string>('all');
+
+  // 本地持久化 + URL 同步（仅语言、等级、练习情况）
+  const navSearchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const filtersReadyRef = useRef(false);
+
+  // 初始化：URL 优先，其次本地存储；不区分语言分桶；跳转（带参）为准
+  useEffect(() => {
+    const params = new URLSearchParams(navSearchParams?.toString() || '');
+
+    const urlLang = params.get('lang') as 'ja' | 'en' | 'zh' | null;
+    if (urlLang && ['ja', 'en', 'zh'].includes(urlLang)) {
+      if (urlLang !== lang) setLang(urlLang);
+    }
+
+    const urlLevel = params.get('level');
+    if (urlLevel !== null && urlLevel !== undefined && urlLevel !== '') {
+      const parsed = Number(urlLevel);
+      if (!Number.isNaN(parsed)) setLevel(parsed);
+    }
+
+    const urlPracticed = params.get('practiced') as 'all' | 'practiced' | 'unpracticed' | null;
+    if (urlPracticed && ['all', 'practiced', 'unpracticed'].includes(urlPracticed)) {
+      if (urlPracticed !== practiced) setPracticed(urlPracticed);
+    }
+
+    // 如果 URL 未提供，则尝试本地持久化
+    const persisted = loadShadowingFilters();
+    if (persisted) {
+      if (!urlLang && persisted.lang && persisted.lang !== lang) setLang(persisted.lang);
+      if (!urlLevel && typeof persisted.level !== 'undefined') setLevel(persisted.level ?? null);
+      if (!urlPracticed && persisted.practiced) setPracticed(persisted.practiced);
+    }
+    // 标记初始化完成，后续变更才能写回本地/URL，避免用默认值覆盖持久化
+    filtersReadyRef.current = true;
+    // 仅初始化一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 状态变化时：写回本地 + 合并更新URL（保留其他参数，例如 item）
+  useEffect(() => {
+    if (!filtersReadyRef.current) return;
+    // 本地保存（3天 TTL 在工具内默认）
+    saveShadowingFilters({ lang, level, practiced });
+
+    const params = new URLSearchParams(navSearchParams?.toString() || '');
+    params.set('lang', lang);
+    if (level !== null && level !== undefined) params.set('level', String(level)); else params.delete('level');
+    params.set('practiced', practiced);
+
+    const next = `${pathname}?${params.toString()}`;
+    const current = `${pathname}?${navSearchParams?.toString() || ''}`;
+    if (next !== current) {
+      router.replace(next, { scroll: false });
+    }
+    // 不依赖 searchParams，避免自身 replace 触发循环
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang, level, practiced, pathname, router]);
 
   // 体裁选项（基于6级难度设计）
   const GENRE_OPTIONS = [
@@ -1469,7 +1545,7 @@ export default function ShadowingPage() {
     try {
       const headers = await getAuthHeaders();
 
-      // 并发处理：为每个生词单独调用API
+      // 并发处理：为每个生词单独调用API（优先使用 entry_ids，回退到 word_info）
       const explanationPromises = wordsNeedingExplanation.map(async (item, index) => {
         try {
           setBatchExplanationProgress((prev) => ({
@@ -1478,31 +1554,68 @@ export default function ShadowingPage() {
             status: `正在为 "${item.word}" 生成AI解释...`,
           }));
 
+          // 尝试查找已存在的生词条目
+          let entryId: string | null = null;
+          try {
+            const searchRes = await fetch(
+              `/api/vocab/search?term=${encodeURIComponent(item.word)}`,
+              { headers },
+            );
+            if (searchRes.ok) {
+              const data = await searchRes.json();
+              const entries = Array.isArray(data?.entries) ? data.entries : [];
+              const matched = entries.find(
+                (e: any) => e && e.id && e.term === item.word && (!item.lang || e.lang === item.lang),
+              );
+              if (matched?.id) entryId = matched.id as string;
+            }
+          } catch (e) {
+            console.warn('批量搜索生词本条目失败，回退到 word_info 模式:', e);
+          }
+
+          const payload: any = {
+            native_lang: userProfile?.native_lang || language,
+            provider: 'deepseek',
+            model: 'deepseek-chat',
+            temperature: 0.7,
+          };
+          if (entryId) {
+            payload.entry_ids = [entryId];
+          } else {
+            payload.entry_ids = [];
+            payload.word_info = { term: item.word, lang: item.lang, context: item.context };
+          }
+
+          // 预检：AI权限 + API限额
+          try {
+            const authHeaders = await getAuthHeaders();
+            const precheckRes = await fetch('/api/ai/precheck', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...authHeaders },
+              body: JSON.stringify({ provider: payload.provider, model: payload.model }),
+            });
+            if (!precheckRes.ok) {
+              const j = await precheckRes.json().catch(() => ({} as any));
+              const msg = j?.reason || (precheckRes.status === 429 ? 'API 使用已达上限' : '无权限使用所选模型');
+              alert(msg);
+              return null;
+            }
+          } catch (e) {
+            console.error('预检失败', e);
+            alert('暂时无法进行AI生成，请稍后再试');
+            return null;
+          }
+
           const response = await fetch('/api/vocab/explain', {
             method: 'POST',
             headers,
-            body: JSON.stringify({
-              entry_ids: [],
-              native_lang: userProfile?.native_lang || language, // 优先使用用户母语，否则使用界面语言
-              provider: 'deepseek',
-              model: 'deepseek-chat',
-              temperature: 0.7,
-              word_info: {
-                term: item.word,
-                lang: item.lang,
-                context: item.context,
-              },
-            }),
+            body: JSON.stringify(payload),
           });
 
           if (response.ok) {
             const data = await response.json();
-
             if (data.explanations && data.explanations.length > 0) {
-              return {
-                word: item.word,
-                explanation: data.explanations[0],
-              };
+              return { word: item.word, explanation: data.explanations[0] };
             }
           }
 
@@ -1635,22 +1748,42 @@ export default function ShadowingPage() {
     try {
       const headers = await getAuthHeaders();
 
+      // 优先使用 entry_ids（写回生词本），找不到再回退到 word_info
+      let entryId: string | null = null;
+      try {
+        const searchRes = await fetch(`/api/vocab/search?term=${encodeURIComponent(word)}`, {
+          headers,
+        });
+        if (searchRes.ok) {
+          const data = await searchRes.json();
+          const entries = Array.isArray(data?.entries) ? data.entries : [];
+          const matched = entries.find(
+            (e: { id?: string; term?: string; lang?: string }) =>
+              e && e.id && e.term === word && (!wordLang || e.lang === wordLang),
+          );
+          if (matched?.id) entryId = matched.id as string;
+        }
+      } catch (e) {
+        console.warn('搜索生词本条目失败，回退到 word_info 模式:', e);
+      }
+
+      const payload: any = {
+        native_lang: userProfile?.native_lang || language,
+        provider: 'deepseek',
+        model: 'deepseek-chat',
+        temperature: 0.7,
+      };
+      if (entryId) {
+        payload.entry_ids = [entryId];
+      } else {
+        payload.entry_ids = [];
+        payload.word_info = { term: word, lang: wordLang, context };
+      }
+
       const response = await fetch('/api/vocab/explain', {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          entry_ids: [], // 空数组，因为我们直接传递单词信息
-          native_lang: userProfile?.native_lang || language, // 优先使用用户母语，否则使用界面语言
-          provider: 'deepseek',
-          model: 'deepseek-chat',
-          temperature: 0.7,
-          // 直接传递单词信息
-          word_info: {
-            term: word,
-            lang: wordLang, // 学习语言
-            context: context,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {

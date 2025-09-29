@@ -52,8 +52,8 @@ export async function GET(req: NextRequest) {
     console.log('Searching for term:', term, 'user_id:', user.id);
 
     // Search for vocabulary entries - first try exact match, then fuzzy match
-    // 只选择必要字段减少数据传输
-    const selectFields = 'id,term,definition,pronunciation,examples,lang,created_at,updated_at';
+    // 只选择存在于表中的必要字段，避免无效列导致500
+    const selectFields = 'id,term,lang,context,explanation,created_at,updated_at';
 
     let { data: entries, error } = await supabase
       .from('vocab_entries')

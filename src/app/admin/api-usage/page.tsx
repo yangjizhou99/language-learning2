@@ -119,6 +119,12 @@ export default function APIUsageStatsPage() {
       if (data.success) {
         setStats(data.stats || []);
         setTimeSeries(data.timeSeries || []);
+
+        // 若当前时间范围无数据，且不是“全部时间”，自动回退到“全部时间”再试（避免空白）
+        if ((data.stats?.length || 0) === 0 && timeRange !== 'all' && !searchTerm) {
+          setTimeRange('all');
+          return;
+        }
       }
     } catch (error) {
       console.error('Failed to fetch usage stats:', error);

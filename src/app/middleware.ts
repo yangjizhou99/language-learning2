@@ -7,8 +7,7 @@ export function middleware(req: NextRequest) {
   // 只处理管理员路由
   if (!pathname.startsWith('/admin')) return NextResponse.next();
 
-  // 放行管理员开通页面
-  if (pathname === '/admin/setup') return NextResponse.next();
+  // 不再放行任何自助管理员开通页面
 
   // 检查认证状态
   const hasAuthHeader = !!req.headers.get('authorization');

@@ -123,9 +123,7 @@ export default function ClozeDraftsPage() {
               <Link href="/admin/cloze/drafts" className="text-primary font-medium">
                 Cloze 草稿箱
               </Link>
-              <Link href="/admin/setup" className="hover:underline">
-                权限设置
-              </Link>
+              {/* 权限设置入口已移除 */}
             </div>
           </div>
           <div className="flex items-center space-x-4">
