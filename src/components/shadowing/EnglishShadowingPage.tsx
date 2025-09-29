@@ -645,7 +645,7 @@ export default function EnglishShadowingPage() {
     } finally {
       setLoading(false);
     }
-  }, [lang, level, practiced]);
+  }, [lang, level, practiced, getAuthHeaders]);
 
   // 加载主题列表
   const loadThemes = useCallback(async () => {
@@ -653,7 +653,21 @@ export default function EnglishShadowingPage() {
       const params = new URLSearchParams();
       if (lang) params.set('lang', lang);
       if (level) params.set('level', level?.toString() || '');
-      const response = await fetch(`/api/admin/shadowing/themes?${params.toString()}`, { credentials: 'include' });
+      let headers = await getAuthHeaders();
+      let response = await fetch(`/api/shadowing/themes?${params.toString()}`, {
+        headers,
+        credentials: 'include',
+      });
+      if (response.status === 401) {
+        try {
+          await supabase.auth.refreshSession();
+          headers = await getAuthHeaders();
+          response = await fetch(`/api/shadowing/themes?${params.toString()}`, {
+            headers,
+            credentials: 'include',
+          });
+        } catch {}
+      }
       if (response.ok) {
         const data = await response.json();
         setThemes((data.items || data.themes) ?? []);
@@ -661,14 +675,28 @@ export default function EnglishShadowingPage() {
     } catch (error) {
       console.error('Failed to load themes:', error);
     }
-  }, [lang, level]);
+  }, [lang, level, getAuthHeaders]);
 
   // 加载某主题下的小主题
   const loadSubtopics = useCallback(async (themeId: string) => {
     try {
       const params = new URLSearchParams();
       params.set('theme_id', themeId);
-      const response = await fetch(`/api/admin/shadowing/subtopics?${params.toString()}`, { credentials: 'include' });
+      let headers = await getAuthHeaders();
+      let response = await fetch(`/api/shadowing/subtopics?${params.toString()}`, {
+        headers,
+        credentials: 'include',
+      });
+      if (response.status === 401) {
+        try {
+          await supabase.auth.refreshSession();
+          headers = await getAuthHeaders();
+          response = await fetch(`/api/shadowing/subtopics?${params.toString()}`, {
+            headers,
+            credentials: 'include',
+          });
+        } catch {}
+      }
       if (response.ok) {
         const data = await response.json();
         setSubtopics((data.items || data.subtopics) ?? []);
@@ -676,7 +704,7 @@ export default function EnglishShadowingPage() {
     } catch (error) {
       console.error('Failed to load subtopics:', error);
     }
-  }, []);
+  }, [getAuthHeaders]);
 
   // 鉴权由 AuthContext 统一处理
 
