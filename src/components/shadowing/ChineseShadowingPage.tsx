@@ -45,7 +45,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCached, setCached } from '@/lib/clientCache';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { loadFilters as loadShadowingFilters, saveFilters as saveShadowingFilters } from '@/lib/shadowingFilterStorage';
 
 // 题目数据类型
 interface ShadowingItem {
@@ -128,12 +129,87 @@ export default function ShadowingPage() {
 
   // 过滤和筛选状态
   const [lang, setLang] = useState<'ja' | 'en' | 'zh'>('zh');
-  const [level, setLevel] = useState<number | null>(1);
+  const [level, setLevel] = useState<number | null>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const urlLevel = params.get('level');
+        if (urlLevel !== null && urlLevel !== undefined && urlLevel !== '') {
+          const parsed = Number(urlLevel);
+          if (!Number.isNaN(parsed)) return parsed;
+        }
+        const persisted = loadShadowingFilters();
+        if (persisted && typeof persisted.level !== 'undefined') {
+          return persisted.level ?? null;
+        }
+      }
+    } catch {}
+    return 1;
+  });
   const [practiced, setPracticed] = useState<'all' | 'practiced' | 'unpracticed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [theme, setTheme] = useState<string>('all');
   const [selectedThemeId, setSelectedThemeId] = useState<string>('all');
   const [selectedSubtopicId, setSelectedSubtopicId] = useState<string>('all');
+
+  // 本地持久化 + URL 同步（仅语言、等级、练习情况）
+  const navSearchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const filtersReadyRef = useRef(false);
+
+  // 初始化：URL 优先，其次本地存储；不区分语言分桶；跳转（带参）为准
+  useEffect(() => {
+    const params = new URLSearchParams(navSearchParams?.toString() || '');
+
+    const urlLang = params.get('lang') as 'ja' | 'en' | 'zh' | null;
+    if (urlLang && ['ja', 'en', 'zh'].includes(urlLang)) {
+      if (urlLang !== lang) setLang(urlLang);
+    }
+
+    const urlLevel = params.get('level');
+    if (urlLevel !== null && urlLevel !== undefined && urlLevel !== '') {
+      const parsed = Number(urlLevel);
+      if (!Number.isNaN(parsed)) setLevel(parsed);
+    }
+
+    const urlPracticed = params.get('practiced') as 'all' | 'practiced' | 'unpracticed' | null;
+    if (urlPracticed && ['all', 'practiced', 'unpracticed'].includes(urlPracticed)) {
+      if (urlPracticed !== practiced) setPracticed(urlPracticed);
+    }
+
+    // 如果 URL 未提供，则尝试本地持久化
+    const persisted = loadShadowingFilters();
+    if (persisted) {
+      if (!urlLang && persisted.lang && persisted.lang !== lang) setLang(persisted.lang);
+      if (!urlLevel && typeof persisted.level !== 'undefined') setLevel(persisted.level ?? null);
+      if (!urlPracticed && persisted.practiced) setPracticed(persisted.practiced);
+    }
+    // 标记初始化完成，后续变更才能写回本地/URL，避免用默认值覆盖持久化
+    filtersReadyRef.current = true;
+    // 仅初始化一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 状态变化时：写回本地 + 合并更新URL（保留其他参数，例如 item）
+  useEffect(() => {
+    if (!filtersReadyRef.current) return;
+    // 本地保存（3天 TTL 在工具内默认）
+    saveShadowingFilters({ lang, level, practiced });
+
+    const params = new URLSearchParams(navSearchParams?.toString() || '');
+    params.set('lang', lang);
+    if (level !== null && level !== undefined) params.set('level', String(level)); else params.delete('level');
+    params.set('practiced', practiced);
+
+    const next = `${pathname}?${params.toString()}`;
+    const current = `${pathname}?${navSearchParams?.toString() || ''}`;
+    if (next !== current) {
+      router.replace(next, { scroll: false });
+    }
+    // 不依赖 searchParams，避免自身 replace 触发循环
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang, level, practiced, pathname, router]);
 
   // 体裁选项（基于6级难度设计）
   const GENRE_OPTIONS = [

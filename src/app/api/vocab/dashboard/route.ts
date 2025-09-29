@@ -66,24 +66,55 @@ export async function GET(request: NextRequest) {
 
     const nowIso = new Date().toISOString();
 
-    // 并行执行多个查询
-    const [
-      // 生词列表查询
-      { data: entries, error: entriesError, count: entriesCount },
-      // 到期数量查询
-      { count: dueCount, error: dueCountError },
-      // 统计信息查询
-      { data: stats, error: statsError }
-    ] = await Promise.all([
-      // 生词列表
-      (() => {
+    type VocabEntryBase = {
+      id: string;
+      term: string;
+      lang: string;
+      native_lang: string | null;
+      source: string | null;
+      context: string | null;
+      tags: string[] | null;
+      status: string;
+      explanation: string | null;
+      created_at: string;
+      updated_at: string;
+    };
+
+    type VocabEntrySrs = VocabEntryBase & {
+      srs_due: string | null;
+      srs_interval: number | null;
+      srs_ease: number | null;
+      srs_reps: number | null;
+      srs_lapses: number | null;
+      srs_last: string | null;
+      srs_state: string | null;
+    };
+
+    type QueryError = { code?: string; message?: string } | null;
+    type EntriesResult<T> = { data: T[] | null; error: QueryError; count: number | null };
+    type DueCountResult = { count: number | null; error: QueryError };
+    type StatsRow = { lang: string; status: string; explanation: unknown };
+    type StatsResult = { data: StatsRow[] | null; error: QueryError };
+
+    // 抽取查询逻辑，支持在缺少 SRS 列时降级
+    const runQueries = async (
+      includeSrs: boolean,
+    ): Promise<[
+      EntriesResult<VocabEntryBase | VocabEntrySrs>,
+      DueCountResult,
+      StatsResult,
+    ]> => {
+      const selectFields = includeSrs
+        ? 'id,term,lang,native_lang,source,context,tags,status,explanation,created_at,updated_at,srs_due,srs_interval,srs_ease,srs_reps,srs_lapses,srs_last,srs_state'
+        : 'id,term,lang,native_lang,source,context,tags,status,explanation,created_at,updated_at';
+
+      const entriesPromise = ((): Promise<EntriesResult<VocabEntryBase | VocabEntrySrs>> => {
         let query = supabase
           .from('vocab_entries')
-          .select('id,term,lang,native_lang,source,context,tags,status,explanation,created_at,updated_at,srs_due,srs_interval,srs_ease,srs_reps,srs_lapses,srs_last,srs_state', { count: 'exact' })
+          .select(selectFields, { count: 'exact' })
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        // 添加过滤条件
         if (lang) query = query.eq('lang', lang);
         if (status) query = query.eq('status', status);
         if (explanation) {
@@ -96,27 +127,48 @@ export async function GET(request: NextRequest) {
         if (search) {
           query = query.or(`term.ilike.%${search}%,context.ilike.%${search}%`);
         }
-
-        // 应用分页
         query = query.range(offset, offset + limit - 1);
-
         return query;
-      })(),
-      
-      // 到期数量
-      supabase
-        .from('vocab_entries')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .neq('status', 'archived')
-        .lte('srs_due', nowIso),
-      
-      // 统计信息
-      supabase
+      })();
+
+      const dueCountPromise = includeSrs
+        ? supabase
+            .from('vocab_entries')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .neq('status', 'archived')
+            .lte('srs_due', nowIso)
+        : Promise.resolve({ count: 0, error: null as QueryError });
+
+      const statsPromise = supabase
         .from('vocab_entries')
         .select('lang,status,explanation')
-        .eq('user_id', user.id)
-    ]);
+        .eq('user_id', user.id);
+
+      return Promise.all([
+        entriesPromise,
+        dueCountPromise,
+        statsPromise as Promise<StatsResult>,
+      ]);
+    };
+
+    // 先尝试包含 SRS 列的查询
+    let [
+      { data: entries, error: entriesError, count: entriesCount },
+      { count: dueCount, error: dueCountError },
+      { data: stats, error: statsError }
+    ] = await runQueries(true);
+
+    // 如果因缺少列报错，则降级重试（去掉 SRS 列）
+    const isUndefinedColumn = (err: unknown) => !!(err && typeof err === 'object' && (err as { code?: string }).code === '42703');
+    if (isUndefinedColumn(entriesError) || isUndefinedColumn(dueCountError)) {
+      console.warn('检测到缺少 SRS 列，降级为无 SRS 查询');
+      [
+        { data: entries, error: entriesError, count: entriesCount },
+        { count: dueCount, error: dueCountError },
+        { data: stats, error: statsError }
+      ] = await runQueries(false);
+    }
 
     if (entriesError) {
       console.error('查询生词列表失败:', entriesError);
@@ -144,8 +196,8 @@ export async function GET(request: NextRequest) {
     };
 
     if (stats) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      stats.forEach((entry: { lang: string; status: string; explanation: any }) => {
+      const statsArray = (stats ?? []) as StatsRow[];
+      statsArray.forEach((entry: StatsRow) => {
         // 按语言统计
         statsData.byLanguage[entry.lang] = (statsData.byLanguage[entry.lang] || 0) + 1;
         
@@ -173,12 +225,13 @@ export async function GET(request: NextRequest) {
       now: nowIso,
     };
 
-    console.log('API返回数据:', { 
-      entriesCount: entries?.length || 0, 
+    const entriesArray = (entries ?? []) as Array<{ term?: string }>;
+    console.log('API返回数据:', {
+      entriesCount: entriesArray.length || 0,
       totalCount: entriesCount || 0,
       pagination: responseData.pagination,
-      firstEntry: entries?.[0]?.term || 'none',
-      lastEntry: entries?.[entries.length - 1]?.term || 'none'
+      firstEntry: entriesArray[0]?.term || 'none',
+      lastEntry: entriesArray[entriesArray.length - 1]?.term || 'none',
     });
 
     return NextResponse.json(responseData);
