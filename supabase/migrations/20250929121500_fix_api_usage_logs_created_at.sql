@@ -13,3 +13,4 @@ alter table if exists public.api_usage_logs
 create index if not exists idx_api_usage_logs_created_at on public.api_usage_logs(created_at);
 
 
+
