@@ -22,6 +22,18 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 
+CREATE OR REPLACE FUNCTION "public"."exec_sql"("sql" "text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  EXECUTE sql;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."exec_sql"("sql" "text") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."generate_invitation_code"() RETURNS "text"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public'
@@ -40,6 +52,46 @@ CREATE OR REPLACE FUNCTION "public"."generate_invitation_code"() RETURNS "text"
 
 
 ALTER FUNCTION "public"."generate_invitation_code"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_table_columns"("table_name_param" "text") RETURNS TABLE("column_name" "text", "data_type" "text", "is_nullable" "text", "column_default" "text", "ordinal_position" integer)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    c.column_name::text,
+    c.data_type::text,
+    c.is_nullable::text,
+    c.column_default::text,
+    c.ordinal_position::integer
+  FROM information_schema.columns c
+  WHERE c.table_schema = 'public'
+    AND c.table_name = table_name_param
+  ORDER BY c.ordinal_position;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_table_columns"("table_name_param" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_table_list"() RETURNS TABLE("table_name" "text")
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  RETURN QUERY
+  SELECT t.table_name::text
+  FROM information_schema.tables t
+  WHERE t.table_schema = 'public'
+    AND t.table_name != 'spatial_ref_sys'
+    AND t.table_type = 'BASE TABLE'
+  ORDER BY t.table_name;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_table_list"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."insert_shadowing_item"("p_lang" "text", "p_level" integer, "p_title" "text", "p_text" "text", "p_audio_url" "text", "p_duration_ms" integer DEFAULT NULL::integer, "p_tokens" integer DEFAULT NULL::integer) RETURNS "uuid"
@@ -96,6 +148,19 @@ ALTER FUNCTION "public"."is_admin"() OWNER TO "postgres";
 
 COMMENT ON FUNCTION "public"."is_admin"() IS '检查当前用户是否是管理员';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."set_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."set_updated_at"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."shadowing_items_audio_sync"() RETURNS "trigger"
@@ -673,7 +738,7 @@ ALTER TABLE "public"."shadowing_drafts" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."shadowing_items" (
-    "id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "lang" "text" NOT NULL,
     "level" integer NOT NULL,
     "title" "text" NOT NULL,
@@ -683,7 +748,7 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_items" (
     "tokens" integer,
     "cefr" "text",
     "meta" "jsonb",
-    "created_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"(),
     "translations" "jsonb",
     "trans_updated_at" timestamp with time zone,
     "theme_id" "uuid",
@@ -737,9 +802,9 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_subtopics" (
     "ai_provider" "text",
     "ai_model" "text",
     "ai_usage" "jsonb",
-    "one_line_cn" "text",
-    "seed_en" "text",
-    "title_cn" "text" NOT NULL
+    "one_line" "text",
+    "seed" "text",
+    "title" "text" NOT NULL
 );
 
 
@@ -898,6 +963,11 @@ ALTER TABLE ONLY "public"."profiles"
 
 
 
+ALTER TABLE ONLY "public"."shadowing_items"
+    ADD CONSTRAINT "shadowing_items_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."user_permissions"
     ADD CONSTRAINT "user_permissions_user_id_key" UNIQUE ("user_id");
 
@@ -923,6 +993,10 @@ CREATE INDEX "idx_api_usage_logs_created_at" ON "public"."api_usage_logs" USING 
 
 
 CREATE UNIQUE INDEX "user_api_limits_user_id_key" ON "public"."user_api_limits" USING "btree" ("user_id");
+
+
+
+CREATE OR REPLACE TRIGGER "shadowing_items_set_updated_at" BEFORE UPDATE ON "public"."shadowing_items" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
@@ -959,9 +1033,27 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."exec_sql"("sql" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."exec_sql"("sql" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."exec_sql"("sql" "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."generate_invitation_code"() TO "anon";
 GRANT ALL ON FUNCTION "public"."generate_invitation_code"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."generate_invitation_code"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_table_columns"("table_name_param" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_table_columns"("table_name_param" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_table_columns"("table_name_param" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_table_list"() TO "anon";
+GRANT ALL ON FUNCTION "public"."get_table_list"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_table_list"() TO "service_role";
 
 
 
@@ -980,6 +1072,12 @@ GRANT ALL ON FUNCTION "public"."insert_shadowing_item"("p_lang" "text", "p_level
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "anon";
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."is_admin"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "service_role";
 
 
 
