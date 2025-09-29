@@ -928,7 +928,7 @@ export default function VocabPage() {
         setGenerationProgress((prev) => ({
           ...prev,
           current: step3Progress,
-          status: t.vocabulary.messages.generation_ai_processing,
+          status: t.vocabulary.messages.generation_processing.replace('{count}', total.toString()),
         }));
 
         await new Promise((resolve) => setTimeout(resolve, 800)); // 让用户看到进度变化
