@@ -110,8 +110,51 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: '创建用户资料失败' }, { status: 500 });
       }
 
-      // 记录邀请码使用
-      const useResult = await useInvitationCode(validationResult.code_id!, userId, supabase);
+      // 记录邀请码使用（服务端兜底获取并校验 codeId，确保写入和计数更新）
+      let codeId = validationResult.code_id;
+      if (!codeId) {
+        const { data: codeRow, error: codeFetchErr } = await supabase
+          .from('invitation_codes')
+          .select('id, used_count, max_uses, is_active, expires_at')
+          .eq('code', invitation_code)
+          .single();
+
+        if (codeFetchErr || !codeRow) {
+          console.error('获取邀请码信息失败:', codeFetchErr);
+          return NextResponse.json(
+            {
+              success: false,
+              error: '无法获取邀请码信息',
+            },
+            { status: 500 },
+          );
+        }
+
+        if (codeRow.is_active === false) {
+          return NextResponse.json(
+            { success: false, error: '邀请码已被禁用' },
+            { status: 400 },
+          );
+        }
+
+        if (codeRow.expires_at && new Date(codeRow.expires_at) < new Date()) {
+          return NextResponse.json(
+            { success: false, error: '邀请码已过期' },
+            { status: 400 },
+          );
+        }
+
+        if ((codeRow.used_count || 0) >= (codeRow.max_uses || 1)) {
+          return NextResponse.json(
+            { success: false, error: '邀请码已被使用完' },
+            { status: 400 },
+          );
+        }
+
+        codeId = codeRow.id;
+      }
+
+      const useResult = await useInvitationCode(codeId!, userId, supabase);
       if (!useResult.success) {
         console.error('记录邀请码使用失败:', useResult.error);
         return NextResponse.json(
@@ -144,16 +187,30 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        // 应用API使用限制
-        if (validationResult.permissions.api_limits) {
-          const apiLimitsResult = await applyInvitationApiLimits(
-            userId,
-            validationResult.permissions.api_limits,
-          );
-          if (!apiLimitsResult.success) {
-            console.error('应用邀请码API限制失败:', apiLimitsResult.error);
-            // 不阻止注册流程，只记录错误
-          }
+        // 应用API使用限制：即使未提供也写入默认禁用配置，保证产生记录
+        const defaultApiLimits = {
+          enabled: false,
+          daily_calls_limit: 0,
+          daily_tokens_limit: 0,
+          daily_cost_limit: 0,
+          monthly_calls_limit: 0,
+          monthly_tokens_limit: 0,
+          monthly_cost_limit: 0,
+        } as const;
+
+        const apiLimitsPayload = {
+          ...defaultApiLimits,
+          ...(validationResult.permissions.api_limits || {}),
+        };
+
+        const apiLimitsResult = await applyInvitationApiLimits(
+          userId,
+          apiLimitsPayload,
+          supabase,
+        );
+        if (!apiLimitsResult.success) {
+          console.error('应用邀请码API限制失败:', apiLimitsResult.error);
+          // 不阻止注册流程，只记录错误
         }
       } else {
         console.error('邀请码没有权限设置');

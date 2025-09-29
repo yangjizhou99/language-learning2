@@ -48,45 +48,9 @@ export default function AdminSetupPage() {
     }
   };
 
+  // 禁止自我提升为管理员
   const makeAdmin = async () => {
-    if (!user) return;
-
-    setLoading(true);
-    setMessage('设置管理员权限中...');
-
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const response = await fetch('/api/admin/setup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ action: 'make_admin' }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error);
-      }
-
-      setMessage('✅ 成功设置为管理员！现在你可以使用 AI 生成草稿功能了。');
-
-      // 重新检查状态
-      setTimeout(() => {
-        checkStatus();
-      }, 1000);
-    } catch (error) {
-      console.error('Make admin error:', error);
-      setMessage(`❌ 设置失败: ${error}`);
-    } finally {
-      setLoading(false);
-    }
+    setMessage('❌ 出于安全考虑，已禁用自助设置管理员。请联系后台由管理员授予权限。');
   };
 
   const runDebugCheck = async () => {
@@ -318,15 +282,14 @@ export default function AdminSetupPage() {
       {!isAdmin && (
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
           <h3 className="font-medium text-yellow-800 mb-2">需要管理员权限</h3>
-          <p className="text-yellow-700 text-sm mb-4">
-            要使用 AI 生成草稿功能，你需要管理员权限。点击下面的按钮将当前账户设置为管理员。
+          <p className="text-yellow-700 text-sm mb-2">
+            出于安全考虑，已移除自助提权功能。请联系现有管理员在后台为你的账户授予管理员权限。
           </p>
           <button
             onClick={makeAdmin}
-            disabled={loading}
-            className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50"
+            className="px-4 py-2 bg-gray-300 text-gray-700 rounded cursor-not-allowed"
           >
-            {loading ? '设置中...' : '设置为管理员'}
+            已禁用自助设置管理员
           </button>
         </div>
       )}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/lib/admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -74,6 +75,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // 强制仅管理员可调用此接口（后续不再支持 make_admin 动作）
+    const auth = await requireAdmin(req);
+    if (!auth.ok) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
@@ -95,27 +101,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-
     if (body.action === 'make_admin') {
-      // 设置为管理员
-      const { error } = await supabase.from('profiles').upsert(
-        {
-          id: user.id,
-          role: 'admin',
-        },
-        {
-          onConflict: 'id',
-        },
-      );
-
-      if (error) {
-        return NextResponse.json(
-          { error: error instanceof Error ? error.message : String(error) },
-          { status: 400 },
-        );
-      }
-
-      return NextResponse.json({ success: true, message: '已设置为管理员' });
+      return NextResponse.json({ error: 'action_disabled' }, { status: 400 });
     }
 
     if (body.action === 'create_table') {

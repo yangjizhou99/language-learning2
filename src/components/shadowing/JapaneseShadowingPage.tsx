@@ -1484,6 +1484,26 @@ export default function JapaneseShadowingPage() {
             status: `正在为 "${item.word}" 生成AI翻訳...`,
           }));
 
+          // 预检：AI权限 + API限额
+          try {
+            const authHeaders = await getAuthHeaders();
+            const precheckRes = await fetch('/api/ai/precheck', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', ...authHeaders },
+              body: JSON.stringify({ provider: 'deepseek', model: 'deepseek-chat' }),
+            });
+            if (!precheckRes.ok) {
+              const j = await precheckRes.json().catch(() => ({} as any));
+              const msg = j?.reason || (precheckRes.status === 429 ? 'API 使用已达上限' : '无权限使用所选模型');
+              alert(msg);
+              return null;
+            }
+          } catch (e) {
+            console.error('预检失败', e);
+            alert('暂时无法进行AI生成，请稍后再试');
+            return null;
+          }
+
           const response = await fetch('/api/vocab/explain', {
             method: 'POST',
             headers,
@@ -1641,22 +1661,62 @@ export default function JapaneseShadowingPage() {
     try {
       const headers = await getAuthHeaders();
 
+      // 优先使用 entry_ids（写回生词本），找不到再回退到 word_info
+      let entryId: string | null = null;
+      try {
+        const searchRes = await fetch(`/api/vocab/search?term=${encodeURIComponent(word)}`, {
+          headers,
+        });
+        if (searchRes.ok) {
+          const data = await searchRes.json();
+          const entries = Array.isArray(data?.entries) ? data.entries : [];
+          const matched = entries.find(
+            (e: { id?: string; term?: string; lang?: string }) =>
+              e && e.id && e.term === word && (!wordLang || e.lang === wordLang),
+          );
+          if (matched?.id) entryId = matched.id as string;
+        }
+      } catch (e) {
+        console.warn('搜索生词本条目失败，回退到 word_info 模式:', e);
+      }
+
+      const payload: any = {
+        native_lang: userProfile?.native_lang || language,
+        provider: 'deepseek',
+        model: 'deepseek-chat',
+        temperature: 0.7,
+      };
+      if (entryId) {
+        payload.entry_ids = [entryId];
+      } else {
+        payload.entry_ids = [];
+        payload.word_info = { term: word, lang: wordLang, context };
+      }
+
+      // 预检：AI权限 + API限额
+      try {
+        const authHeaders = await getAuthHeaders();
+        const precheckRes = await fetch('/api/ai/precheck', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders },
+          body: JSON.stringify({ provider: payload.provider, model: payload.model }),
+        });
+        if (!precheckRes.ok) {
+          const j = await precheckRes.json().catch(() => ({} as any));
+          const msg = j?.reason || (precheckRes.status === 429 ? 'API 使用已达上限' : '无权限使用所选模型');
+          alert(msg);
+          return;
+        }
+      } catch (e) {
+        console.error('预检失败', e);
+        alert('暂时无法进行AI生成，请稍后再试');
+        return;
+      }
+
       const response = await fetch('/api/vocab/explain', {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          entry_ids: [], // 空数组，因为我们直接传递单词信息
-          native_lang: userProfile?.native_lang || language, // 优先使用用户母语，否则使用界面语言
-          provider: 'deepseek',
-          model: 'deepseek-chat',
-          temperature: 0.7,
-          // 直接传递单词信息
-          word_info: {
-            term: word,
-            lang: wordLang, // 学习语言
-            context: context,
-          },
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {

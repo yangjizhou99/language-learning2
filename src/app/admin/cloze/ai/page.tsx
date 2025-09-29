@@ -254,9 +254,7 @@ export default function ClozeAIPage() {
               <Link href="/admin/cloze/ai" className="text-blue-600 font-medium">
                 Cloze 管理
               </Link>
-              <Link href="/admin/setup" className="text-gray-700 hover:text-gray-900">
-                权限设置
-              </Link>
+              {/* 权限设置入口已移除 */}
             </div>
           </div>
           <div className="flex items-center space-x-4">

@@ -861,6 +861,41 @@ export default function VocabPage() {
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }
 
+      // 预检：AI权限 + API限额
+      try {
+        const precheckRes = await fetch('/api/ai/precheck', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider: generationSettings.provider, model: generationSettings.model }),
+        });
+        if (!precheckRes.ok) {
+          const j = await precheckRes.json().catch(() => ({} as any));
+          const msg = j?.reason || (precheckRes.status === 429 ? 'API 使用已达上限' : '无权限使用所选模型');
+          alert(msg);
+          setIsGenerating(false);
+          setGenerationProgress({
+            current: 0,
+            total: 0,
+            status: '',
+            startTime: null,
+            estimatedTime: 0,
+          });
+          return;
+        }
+      } catch (e) {
+        console.error('预检失败', e);
+        alert('暂时无法进行AI生成，请稍后再试');
+        setIsGenerating(false);
+        setGenerationProgress({
+          current: 0,
+          total: 0,
+          status: '',
+          startTime: null,
+          estimatedTime: 0,
+        });
+        return;
+      }
+
       // 步骤1: 开始生成
       setGenerationProgress((prev) => ({
         ...prev,
@@ -893,7 +928,7 @@ export default function VocabPage() {
         setGenerationProgress((prev) => ({
           ...prev,
           current: step3Progress,
-          status: t.vocabulary.messages.generation_processing.replace('{count}', total.toString()),
+          status: t.vocabulary.messages.generation_ai_processing,
         }));
 
         await new Promise((resolve) => setTimeout(resolve, 800)); // 让用户看到进度变化

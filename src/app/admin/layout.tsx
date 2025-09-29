@@ -40,7 +40,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }, []);
 
   const isAdmin = profile?.role === 'admin';
-  const isSetupPage = pathname === '/admin/setup';
 
   const isActive = (item: AdminNavItem) => {
     if (!pathname) return false;
@@ -89,18 +88,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!isAdmin && !isSetupPage) {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-semibold mb-4">需要管理员权限</h1>
-          <p className="text-gray-600 mb-4">您当前没有管理员权限</p>
-          <Link
-            href="/admin/setup"
-            className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            设置管理员权限
-          </Link>
+          <p className="text-gray-600 mb-2">您当前没有管理员权限</p>
+          <p className="text-gray-500 text-sm">请联系后台管理员为您的账户授予管理员权限</p>
         </div>
       </div>
     );

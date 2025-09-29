@@ -272,6 +272,10 @@ export async function useInvitationCode(
 
     // 创建使用记录
     const { error: useError } = await client.from('invitation_uses').insert({
+      // 兜底提供主键，避免目标库未设置默认值时 id 为空
+      id: (globalThis as any).crypto?.randomUUID
+        ? (globalThis as any).crypto.randomUUID()
+        : require('crypto').randomUUID(),
       code_id: codeId,
       used_by: userId,
     });
@@ -415,31 +419,94 @@ export async function applyInvitationPermissions(
 export async function applyInvitationApiLimits(
   userId: string,
   apiLimits: InvitationPermissions['api_limits'],
+  supabaseClient?: any,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     if (!apiLimits) {
       return { success: true };
     }
 
-    const limitsData = {
-      user_id: userId,
-      enabled: apiLimits.enabled ?? false,
-      daily_calls_limit: apiLimits.daily_calls_limit ?? 0,
-      daily_tokens_limit: apiLimits.daily_tokens_limit ?? 0,
-      daily_cost_limit: apiLimits.daily_cost_limit ?? 0,
-      monthly_calls_limit: apiLimits.monthly_calls_limit ?? 0,
-      monthly_tokens_limit: apiLimits.monthly_tokens_limit ?? 0,
-      monthly_cost_limit: apiLimits.monthly_cost_limit ?? 0,
+    const client = supabaseClient || supabase;
+
+    // 统一数值类型，避免字符串导致写入失败
+    const toInt = (value: unknown): number => {
+      const n = typeof value === 'string' ? parseInt(value, 10) : (value as number);
+      return Number.isFinite(n as number) ? Math.max(0, Number(n)) : 0;
     };
 
-    // 使用 upsert 更新或创建用户API限制
-    const { error } = await supabase.from('user_api_limits').upsert(limitsData, {
+    const toFloat = (value: unknown): number => {
+      const n = typeof value === 'string' ? parseFloat(value) : (value as number);
+      return Number.isFinite(n as number) ? Math.max(0, Number(n)) : 0;
+    };
+
+    const limitsData = {
+      user_id: userId,
+      enabled: Boolean(apiLimits.enabled ?? false),
+      daily_calls_limit: toInt(apiLimits.daily_calls_limit ?? 0),
+      daily_tokens_limit: toInt(apiLimits.daily_tokens_limit ?? 0),
+      daily_cost_limit: toFloat(apiLimits.daily_cost_limit ?? 0),
+      monthly_calls_limit: toInt(apiLimits.monthly_calls_limit ?? 0),
+      monthly_tokens_limit: toInt(apiLimits.monthly_tokens_limit ?? 0),
+      monthly_cost_limit: toFloat(apiLimits.monthly_cost_limit ?? 0),
+    };
+
+    // 优先尝试 upsert（期望存在 UNIQUE(user_id)）
+    const { error } = await client.from('user_api_limits').upsert(limitsData, {
       onConflict: 'user_id',
     });
 
     if (error) {
-      console.error('应用邀请码API限制失败:', error);
-      return { success: false, error: error.message };
+      // 兼容性回退：若库里缺少 UNIQUE(user_id) 导致 42P10，则改为先查后插/改
+      const pgCode = (error as any)?.code;
+      if (pgCode === '42P10' || /no unique|ON CONFLICT/i.test(String(error.message))) {
+        // 先查是否存在
+        const { data: existing, error: qErr } = await client
+          .from('user_api_limits')
+          .select('id')
+          .eq('user_id', userId)
+          .single();
+
+        if (qErr && qErr.code !== 'PGRST116') {
+          console.error('查询 user_api_limits 失败:', qErr);
+          return { success: false, error: qErr.message };
+        }
+
+        if (existing) {
+          const { error: updErr } = await client
+            .from('user_api_limits')
+            .update({
+              enabled: limitsData.enabled,
+              daily_calls_limit: limitsData.daily_calls_limit,
+              daily_tokens_limit: limitsData.daily_tokens_limit,
+              daily_cost_limit: limitsData.daily_cost_limit,
+              monthly_calls_limit: limitsData.monthly_calls_limit,
+              monthly_tokens_limit: limitsData.monthly_tokens_limit,
+              monthly_cost_limit: limitsData.monthly_cost_limit,
+            })
+            .eq('user_id', userId);
+
+          if (updErr) {
+            console.error('更新 user_api_limits 失败:', updErr);
+            return { success: false, error: updErr.message };
+          }
+        } else {
+          const withId = {
+            id:
+              (globalThis as any).crypto?.randomUUID
+                ? (globalThis as any).crypto.randomUUID()
+                : require('crypto').randomUUID(),
+            ...limitsData,
+          };
+          const { error: insErr } = await client.from('user_api_limits').insert(withId);
+          if (insErr) {
+            console.error('插入 user_api_limits 失败:', insErr);
+            return { success: false, error: insErr.message };
+          }
+        }
+      } else {
+        console.error('应用邀请码API限制失败:', error);
+        return { success: false, error: error.message };
+      }
     }
 
     return { success: true };
