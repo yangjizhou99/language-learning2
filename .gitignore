@@ -44,3 +44,7 @@ service-account.json
 *.tsbuildinfo
 next-env.d.ts
 pnpm-lock.yaml
+
+# backups & temp
+*.sql.bak
+NUL
