@@ -26,6 +26,12 @@ export const dynamic = 'force-dynamic'; // 强制动态渲染
 export const metadata: Metadata = {
   title: 'Lang Trainer - 语言学习平台',
   description: '专业的语言学习平台，支持多种练习模式',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Lang Trainer',
+  },
 };
 
 export const viewport = {
@@ -33,6 +39,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#2563eb',
 };
 
 export default function RootLayout({

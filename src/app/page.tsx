@@ -26,6 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import ParticleCanvas from '@/components/ParticleCanvas';
+import AddToHomePrompt from '@/components/AddToHomePrompt';
 import { isProfileCompleteStrict } from '@/utils/profile';
 
 export default function Home() {
@@ -192,6 +193,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 antialiased">
       <AdminQuickAccess />
+
+      {/* 顶部横幅：添加到主屏幕（仅首页展示） */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-3">
+        <AddToHomePrompt />
+      </div>
 
       {/* 英雄区域 */}
       <section className="relative overflow-hidden">
