@@ -39,7 +39,8 @@ jobs:
       - name: Push migrations
         run: |
           echo "Pushing migrations to production..."
-          supabase db push
+          # 允许将本地存在但时间早于远端最后一次的迁移一并应用
+          supabase db push --include-all
 
       - name: Verify zero drift (production)
         run: |
