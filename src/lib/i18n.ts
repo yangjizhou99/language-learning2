@@ -138,6 +138,17 @@ export interface Translations {
       preferred_tone: string;
       domains: string;
     };
+    smart_hint: {
+      title: string;
+      desc: string;
+      s: string;
+      m: string;
+      a: string;
+      r: string;
+      t: string;
+      example_label: string;
+      example_text: string;
+    };
   };
 
   // 导航
