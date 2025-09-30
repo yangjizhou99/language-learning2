@@ -398,6 +398,22 @@ export default function ProfilePage() {
                 {isFieldMissing('goals') && (
                   <p className="mt-1 text-xs text-amber-600">{t.profile.hints.goals}</p>
                 )}
+                {/* SMART 提示 */}
+                <div className="mt-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/30 p-3">
+                  <div className="text-sm font-medium text-slate-800 dark:text-slate-200">{t.profile.smart_hint?.title}</div>
+                  <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t.profile.smart_hint?.desc}</div>
+                  <ul className="mt-2 text-xs text-slate-600 dark:text-slate-400 space-y-1 list-disc pl-5">
+                    <li>{t.profile.smart_hint?.s}</li>
+                    <li>{t.profile.smart_hint?.m}</li>
+                    <li>{t.profile.smart_hint?.a}</li>
+                    <li>{t.profile.smart_hint?.r}</li>
+                    <li>{t.profile.smart_hint?.t}</li>
+                  </ul>
+                  <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">
+                    <span className="font-medium mr-1">{t.profile.smart_hint?.example_label}:</span>
+                    {t.profile.smart_hint?.example_text}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
