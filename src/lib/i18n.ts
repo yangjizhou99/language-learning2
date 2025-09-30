@@ -71,6 +71,13 @@ export interface Translations {
     ready_to_start: string;
     ready_desc: string;
     learn_more: string;
+    // 学习目标模块
+    goals_title: string;
+    goals_edit: string;
+    goals_empty_title: string;
+    goals_empty_desc: string;
+    goals_fill_button: string;
+    goals_char_limit_hint: string;
   };
 
   // 个人资料页面
@@ -130,6 +137,17 @@ export interface Translations {
       target_langs: string;
       preferred_tone: string;
       domains: string;
+    };
+    smart_hint: {
+      title: string;
+      desc: string;
+      s: string;
+      m: string;
+      a: string;
+      r: string;
+      t: string;
+      example_label: string;
+      example_text: string;
     };
   };
 
@@ -555,6 +573,13 @@ const zh: Translations = {
     ready_to_start: '准备开始学习了吗？',
     ready_desc: '选择您感兴趣的学习模式，立即开始您的语言学习之旅',
     learn_more: '了解更多',
+    // 学习目标模块
+    goals_title: '每天一点点，离目标更近一步',
+    goals_edit: '编辑',
+    goals_empty_title: '写下你的学习目标',
+    goals_empty_desc: '为自己设定一个清晰的目标，每天前进一小步。',
+    goals_fill_button: '去填写目标',
+    goals_char_limit_hint: '最多500字，超出将折叠显示',
   },
   profile: {
     title: '个人资料',
@@ -622,6 +647,17 @@ const zh: Translations = {
       target_langs: '请选择至少一个目标语言',
       preferred_tone: '选择偏好语气，便于生成合适的内容风格',
       domains: '选择兴趣领域，系统将更懂你的偏好',
+    },
+    smart_hint: {
+      title: '用 SMART 法则来描述目标',
+      desc: '让目标更清晰、更可执行：',
+      s: 'S（具体 Specific）：明确你要达成的内容',
+      m: 'M（可衡量 Measurable）：量化标准，如次数或分数',
+      a: 'A（可实现 Achievable）：结合当前水平与时间设定',
+      r: 'R（相关 Relevant）：与你的长期方向一致',
+      t: 'T（时限 Time-bound）：设定完成的时间范围',
+      example_label: '示例',
+      example_text: '例如：在2个月内完成40次跟读练习，并通过L2难度评分≥80分。',
     },
   },
   nav: {
@@ -1038,6 +1074,13 @@ const en: Translations = {
     ready_desc:
       'Choose a practice mode you are interested in and start your journey now',
     learn_more: 'Learn More',
+    // Goals module
+    goals_title: 'Small steps daily, big goals achieved',
+    goals_edit: 'Edit',
+    goals_empty_title: 'Write down your learning goals',
+    goals_empty_desc: 'Set a clear goal and make small progress every day.',
+    goals_fill_button: 'Go fill goals',
+    goals_char_limit_hint: 'Up to 500 chars, overflow will be collapsed',
   },
   profile: {
     title: 'Profile',
@@ -1105,6 +1148,17 @@ const en: Translations = {
       target_langs: 'Select at least one target language',
       preferred_tone: 'Choose a preferred tone to match content style',
       domains: 'Pick interests so the system understands your preferences',
+    },
+    smart_hint: {
+      title: 'Use the SMART framework for goals',
+      desc: 'Make your goals clear and actionable:',
+      s: 'S (Specific): Clearly define what to achieve',
+      m: 'M (Measurable): Quantify with counts or scores',
+      a: 'A (Achievable): Fit your current level and time',
+      r: 'R (Relevant): Align with your long-term direction',
+      t: 'T (Time-bound): Set a time frame',
+      example_label: 'Example',
+      example_text: 'E.g., finish 40 shadowing sessions in 2 months and score ≥80 at L2.',
     },
   },
   nav: {
@@ -1522,6 +1576,13 @@ const ja: Translations = {
     ready_to_start: '学習を始めますか？',
     ready_desc: '興味のあるモードを選んで今すぐ開始',
     learn_more: '詳細を見る',
+    // 目標モジュール
+    goals_title: '毎日少しずつ、目標に近づこう',
+    goals_edit: '編集',
+    goals_empty_title: '学習目標を書きましょう',
+    goals_empty_desc: '明確な目標を設定し、毎日少しずつ前進。',
+    goals_fill_button: '目標を記入',
+    goals_char_limit_hint: '最大500文字、超過分は折りたたみ表示',
   },
   profile: {
     title: 'プロフィール',
@@ -1589,6 +1650,17 @@ const ja: Translations = {
       target_langs: '目標言語を少なくとも一つ選択してください',
       preferred_tone: '好みの文体を選ぶと内容スタイルが合います',
       domains: '興味分野を選ぶと好みをより理解できます',
+    },
+    smart_hint: {
+      title: 'SMART で目標を書こう',
+      desc: '目標を明確かつ実行可能に：',
+      s: 'S（具体的 Specific）：達成内容を明確に',
+      m: 'M（測定可能 Measurable）：回数やスコアで定量化',
+      a: 'A（達成可能 Achievable）：現在のレベルと時間に合わせる',
+      r: 'R（関連性 Relevant）：長期目標と一致させる',
+      t: 'T（期限 Time-bound）：期限を設定する',
+      example_label: '例',
+      example_text: '例：2ヶ月で40回のシャドーイングを完了し、L2で80点以上を達成。',
     },
   },
   nav: {

@@ -23,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import GoalCard from '@/components/GoalCard';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import ParticleCanvas from '@/components/ParticleCanvas';
@@ -280,6 +281,13 @@ export default function Home() {
                 <Link href="#quick-start">{t.home.cta_browse_features}</Link>
               </Button>
             </div>
+
+            {/* 学习目标卡片（靠上、醒目显示，仅登录用户可见） */}
+            {authUser && (
+              <div className="mt-8">
+                <GoalCard goals={profile?.goals} maxChars={500} variant="hero" />
+              </div>
+            )}
           </div>
         </div>
       </section>
