@@ -131,14 +131,32 @@ export async function GET(request: NextRequest) {
         return query;
       })();
 
+      // 统计到期：
+      // - 若存在 SRS 列：到期 = srs_due <= now 或 srs_due is null（从未安排复习）
+      // - 若缺少 SRS 列：退化为统计当前筛选下的所有未归档条目数量
       const dueCountPromise = includeSrs
         ? supabase
             .from('vocab_entries')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id)
-            .neq('status', 'archived')
-            .lte('srs_due', nowIso)
-        : Promise.resolve({ count: 0, error: null as QueryError });
+            .or('status.neq.archived,status.is.null')
+            .or(`srs_due.lte.${nowIso},srs_due.is.null`)
+        : (async () => {
+            let q = supabase
+              .from('vocab_entries')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', user.id)
+              .or('status.neq.archived,status.is.null');
+            if (lang) q = q.eq('lang', lang);
+            if (status) q = q.eq('status', status);
+            if (explanation) {
+              if (explanation === 'has') q = q.not('explanation', 'is', null);
+              else if (explanation === 'missing') q = q.is('explanation', null);
+            }
+            if (search) q = q.or(`term.ilike.%${search}%,context.ilike.%${search}%`);
+            const { count, error } = await q;
+            return { count: count ?? 0, error: error as QueryError };
+          })();
 
       const statsPromise = supabase
         .from('vocab_entries')

@@ -55,12 +55,27 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { id, rating } = BodySchema.parse(body);
 
-    const { data: entry, error: fetchErr } = await supabase
+    // 先尝试选择包含 SRS 列
+    let { data: entry, error: fetchErr } = await supabase
       .from('vocab_entries')
       .select('id,srs_due,srs_interval,srs_ease,srs_reps,srs_lapses,status')
       .eq('id', id)
       .eq('user_id', user.id)
       .single();
+
+    // 若列不存在，降级只取基础列
+    if (fetchErr && (fetchErr as any)?.code === '42703') {
+      const fb = await supabase
+        .from('vocab_entries')
+        .select('id,status')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single();
+      if (fb.error) {
+        return NextResponse.json({ error: '未找到生词' }, { status: 404 });
+      }
+      entry = { ...fb.data } as any;
+    }
 
     if (fetchErr || !entry) {
       return NextResponse.json({ error: '未找到生词' }, { status: 404 });
@@ -96,22 +111,45 @@ export async function POST(req: NextRequest) {
 
     const due = addDays(now, interval);
 
-    const { data: updated, error: updErr } = await supabase
-      .from('vocab_entries')
-      .update({
-        srs_reps: reps,
-        srs_lapses: lapses,
-        srs_interval: interval,
-        srs_ease: ease,
-        srs_due: due.toISOString(),
-        srs_last: now.toISOString(),
-        srs_state: 'review',
-        updated_at: now.toISOString(),
-      })
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select()
-      .single();
+    // 若缺少 SRS 列，降级仅更新 updated_at
+    let updated: any = null;
+    let updErr: any = null;
+    const doUpdate = async (useDegrade: boolean) => {
+      if (useDegrade) {
+        return supabase
+          .from('vocab_entries')
+          .update({ updated_at: now.toISOString() })
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .select()
+          .single();
+      }
+      return supabase
+        .from('vocab_entries')
+        .update({
+          srs_reps: reps,
+          srs_lapses: lapses,
+          srs_interval: interval,
+          srs_ease: ease,
+          srs_due: due.toISOString(),
+          srs_last: now.toISOString(),
+          srs_state: 'review',
+          updated_at: now.toISOString(),
+        })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+    };
+
+    let res = await doUpdate(false);
+    updated = res.data;
+    updErr = res.error;
+    if (updErr && (updErr as any)?.code === '42703') {
+      const fbRes = await doUpdate(true);
+      updated = fbRes.data;
+      updErr = fbRes.error;
+    }
 
     if (updErr) {
       console.error('更新复习结果失败:', updErr);

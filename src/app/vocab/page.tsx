@@ -346,8 +346,10 @@ export default function VocabPage() {
       const headers: HeadersInit = {};
       if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
 
-      // 确定本次复习数量：全部则取 dueCount，否则取所选数字
-      const selectedLimit = reviewAmount === 'all' ? Math.max(dueCount, 1) : parseInt(reviewAmount || '20', 10);
+      // 确定本次复习数量：全部则严格按到期数(dueCount)，手动选择则按选择值
+      const selectedLimit = reviewAmount === 'all'
+        ? Math.max(dueCount, 1)
+        : parseInt(reviewAmount || '20', 10);
       const res = await fetch(`/api/vocab/review/due?limit=${encodeURIComponent(String(selectedLimit))}&page=1`, { headers });
       if (!res.ok) {
         alert(t.vocabulary.messages.review_failed);
@@ -1195,7 +1197,9 @@ export default function VocabPage() {
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                   <span className="px-2 py-1 rounded-full text-xs bg-white/20 text-center sm:text-left">
-                    {t.vocabulary.messages.review_progress.replace('{current}', dueCount.toString()).replace('{total}', dueCount.toString())}
+                    {t.vocabulary.messages.review_progress
+                      .replace('{current}', dueCount.toString())
+                      .replace('{total}', pagination.total.toString())}
                   </span>
                   <div className="flex gap-2">
                     <Select value={reviewAmount} onValueChange={(v) => setReviewAmount(v)}>

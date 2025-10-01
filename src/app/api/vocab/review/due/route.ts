@@ -47,16 +47,47 @@ export async function GET(req: NextRequest) {
 
     const nowIso = new Date().toISOString();
 
+    // 首选包含 SRS 的查询
     let query = supabase
       .from('vocab_entries')
       .select('*', { count: 'exact' })
       .eq('user_id', user.id)
-      .neq('status', 'archived')
+      .or('status.neq.archived,status.is.null')
       .lte('srs_due', nowIso)
       .order('srs_due', { ascending: true })
       .range(offset, offset + limit - 1);
 
-    const { data, error, count } = await query;
+    let { data, error, count } = await query;
+
+    // 若 srs_due 列不存在，则降级为按 created_at 查询
+    // Postgres 错误码 42703: undefined_column
+    if (error && (error as any)?.code === '42703') {
+      const fallbackSelect = 'id,term,lang,native_lang,source,context,tags,status,explanation,created_at,updated_at';
+      const fallback = await supabase
+        .from('vocab_entries')
+        .select(fallbackSelect, { count: 'exact' })
+        .eq('user_id', user.id)
+        .or('status.neq.archived,status.is.null')
+        .order('created_at', { ascending: true })
+        .range(offset, offset + limit - 1);
+
+      if (fallback.error) {
+        console.error('获取到期生词失败(降级查询失败):', fallback.error);
+        return NextResponse.json({ error: '查询失败' }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        entries: fallback.data || [],
+        pagination: {
+          page,
+          limit,
+          total: fallback.count || 0,
+          totalPages: Math.ceil((fallback.count || 0) / limit),
+        },
+        now: nowIso,
+        degraded: true,
+      });
+    }
 
     if (error) {
       console.error('获取到期生词失败:', error);
