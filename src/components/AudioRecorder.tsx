@@ -25,6 +25,7 @@ interface AudioRecorderProps {
   originalText?: string; // 添加原文用于生成相关转录
   language?: string; // 添加语言参数
   className?: string;
+  scrollTargetId?: string; // 开始录音后滚动的目标元素 id
 }
 
 const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
@@ -39,9 +40,11 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
       originalText,
       language = 'ja',
       className = '',
+      scrollTargetId: _scrollTargetId,
     },
     ref,
   ) => {
+    const rootElRef = useRef<HTMLDivElement | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState<string | null>(null);
     const [recordings, setRecordings] = useState<AudioRecording[]>(existingRecordings);
@@ -52,6 +55,8 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
     const [isRealTimeTranscribing, setIsRealTimeTranscribing] = useState(false);
     const [realTimeTranscription, setRealTimeTranscription] = useState<string>('');
     const realTimeTranscriptionRef = useRef<string>('');
+    // 用于录音中的合成显示（最终+临时）
+    const [displayTranscription, setDisplayTranscription] = useState<string>('');
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
@@ -86,6 +91,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
             setIsRealTimeTranscribing(true);
             setRealTimeTranscription('');
             realTimeTranscriptionRef.current = '';
+            setDisplayTranscription('');
           };
 
           recognitionRef.current.onresult = (event: any) => {
@@ -112,8 +118,10 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
               return prev;
             });
 
-            // 显示当前实时转录（包含临时结果）
-            const currentDisplay = (finalTranscript + interimTranscript).trim();
+            // 实时显示（最终+临时）
+            const accumulatedFinal = realTimeTranscriptionRef.current || '';
+            const combined = `${accumulatedFinal}${accumulatedFinal && interimTranscript ? ' ' : ''}${interimTranscript}`.trim();
+            setDisplayTranscription(combined);
           };
 
           recognitionRef.current.onerror = (event: any) => {
@@ -123,6 +131,8 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
 
           recognitionRef.current.onend = () => {
             setIsRealTimeTranscribing(false);
+            // 结束时将显示文本收敛为最终累积
+            setDisplayTranscription(realTimeTranscriptionRef.current || '');
           };
         }
       }
@@ -220,6 +230,64 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
         mediaRecorder.start();
         setIsRecording(true);
         recordingStartTimeRef.current = Date.now();
+
+        // 优先：滚动到本组件所在的滚动容器顶部（桌面端右侧列）
+        const getScrollableAncestor = (start: Element | null): Element | null => {
+          let el: Element | null = start ? start.parentElement : null;
+          const maxHops = 20;
+          let hops = 0;
+          while (el && hops < maxHops) {
+            try {
+              const style = window.getComputedStyle(el as Element);
+              const overflowY = style.overflowY;
+              const canScroll = (overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight;
+              if (canScroll) return el;
+            } catch {}
+            el = el.parentElement;
+            hops += 1;
+          }
+          return null;
+        };
+
+        const scrollEl = getScrollableAncestor(rootElRef.current);
+        const scrollToTop = (node: Element | null) => {
+          if (!node) return false;
+          try {
+            const anyEl = node as unknown as { scrollTo?: (opts: ScrollToOptions) => void; scrollTop?: number };
+            if (typeof anyEl.scrollTo === 'function') {
+              anyEl.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (typeof anyEl.scrollTop === 'number') {
+              anyEl.scrollTop = 0;
+            } else {
+              return false;
+            }
+            return true;
+          } catch {
+            return false;
+          }
+        };
+
+        const didScroll = scrollToTop(scrollEl);
+        if (!didScroll) {
+          // 回退：页面级滚动
+          try {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } catch {
+            window.scrollTo(0, 0);
+          }
+        }
+
+        // 延迟重试，确保布局稳定后滚动生效
+        setTimeout(() => {
+          const againEl = getScrollableAncestor(rootElRef.current);
+          if (!scrollToTop(againEl)) {
+            try {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch {
+              window.scrollTo(0, 0);
+            }
+          }
+        }, 60);
 
         // 开始实时语音识别
         if (recognitionRef.current) {
@@ -548,9 +616,14 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
     };
 
     return (
-      <Card
-        className={`p-6 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl space-y-6 ${className}`}
+      <div
+        ref={(el) => {
+          rootElRef.current = el;
+        }}
       >
+        <Card
+          className={`p-6 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl space-y-6 ${className}`}
+        >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl flex items-center justify-center">
@@ -617,6 +690,19 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
           </div>
         </div>
 
+        {/* 实时转写显示：录音中（或识别中）直接展示在控制区下方 */}
+        {(isRecording || isRealTimeTranscribing) && displayTranscription && (
+          <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-medium text-green-700">实时转录：</span>
+            </div>
+            <div className="text-sm text-green-800 max-h-32 overflow-y-auto whitespace-pre-wrap break-words leading-relaxed">
+              {displayTranscription}
+            </div>
+          </div>
+        )}
+
         {/* Current Recording Preview */}
         {currentRecordingUrl && (
           <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
@@ -657,18 +743,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
               </div>
             </div>
 
-            {/* 实时转录显示 */}
-            {isRealTimeTranscribing && realTimeTranscription && (
-              <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs font-medium text-green-700">实时转录：</span>
-                </div>
-                <div className="text-sm text-green-800 max-h-32 overflow-y-auto whitespace-pre-wrap break-words leading-relaxed">
-                  {realTimeTranscription}
-                </div>
-              </div>
-            )}
+            {/* 实时转录显示（旧位置）移除，避免重复 */}
 
             {/* 转录文字显示 */}
             {currentTranscription && (
@@ -772,7 +847,8 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
             <p className="text-gray-500 leading-relaxed">点击"开始录音"开始练习</p>
           </div>
         )}
-      </Card>
+        </Card>
+      </div>
     );
   },
 );

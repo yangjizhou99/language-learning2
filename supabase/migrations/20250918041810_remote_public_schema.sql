@@ -925,6 +925,17 @@ CREATE TABLE IF NOT EXISTS "public"."vocab_entries" (
 ALTER TABLE "public"."vocab_entries" OWNER TO "postgres";
 
 
+-- Ensure SRS columns exist for spaced-repetition (kept here to reflect current canonical schema)
+ALTER TABLE public.vocab_entries
+  ADD COLUMN IF NOT EXISTS srs_due timestamptz NULL,
+  ADD COLUMN IF NOT EXISTS srs_interval integer NULL,
+  ADD COLUMN IF NOT EXISTS srs_ease double precision NULL,
+  ADD COLUMN IF NOT EXISTS srs_reps integer NULL,
+  ADD COLUMN IF NOT EXISTS srs_lapses integer NULL,
+  ADD COLUMN IF NOT EXISTS srs_last timestamptz NULL,
+  ADD COLUMN IF NOT EXISTS srs_state text NULL;
+
+
 CREATE TABLE IF NOT EXISTS "public"."voices" (
     "id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
@@ -991,6 +1002,11 @@ ALTER TABLE ONLY "public"."voices"
 CREATE INDEX "idx_api_usage_logs_created_at" ON "public"."api_usage_logs" USING "btree" ("created_at");
 
 
+
+-- Performance index for vocab due queries (align with runtime schema)
+CREATE INDEX IF NOT EXISTS idx_vocab_entries_user_due
+  ON public.vocab_entries (user_id, srs_due)
+  WHERE status <> 'archived';
 
 CREATE UNIQUE INDEX "user_api_limits_user_id_key" ON "public"."user_api_limits" USING "btree" ("user_id");
 

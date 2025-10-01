@@ -3098,8 +3098,43 @@ export default function ShadowingPage() {
                           <p className="text-sm text-blue-600">
                             {t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}
                           </p>
+                        </div>
+                      )}
+                    </div>
+                    )}
+
+                    {/* 文本内容（步骤>=2显示；步骤5也需显示原文） */}
+                    {(!gatingActive || step >= 2) && (
+                    <div id="shadowing-text" className="p-4 bg-gray-50 rounded-lg">
+                      {step === 4 && currentItem.translations && currentItem.translations[translationLang] && (
+                        <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                          <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
+                          <div className="whitespace-pre-wrap text-base text-gray-800">{currentItem.translations[translationLang]}</div>
+                        </div>
+                      )}
+                      {isVocabMode ? (
+                        <>
+                          <SelectablePassage
+                            text={(() => {
+                              const normalize = (t: string) => {
+                                let s = (t || '')
+                                  .replace(/\r\n/g, '\n')
+                                  .replace(/\r/g, '\n')
+                                  .replace(/<br\s*\/?\s*>/gi, '\n')
+                                  .replace(/&#10;|&#13;/g, '\n');
+                                for (let i = 0; i < 3 && /\\\n/.test(s); i += 1) s = s.replace(/\\\n/g, '\n');
+                                return s;
+                              };
+                              return normalize(currentItem.text);
+                            })()}
+                            lang="zh"
+                            onSelectionChange={handleTextSelection}
+                            clearSelection={clearSelection}
+                            disabled={false}
+                            className="text-base leading-relaxed"
+                          />
                           {selectedText && (
-                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                               <div className="text-sm">
                                 <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
                                 <div className="text-blue-600 font-semibold mb-1">
@@ -3137,40 +3172,7 @@ export default function ShadowingPage() {
                               </div>
                             </div>
                           )}
-                        </div>
-                      )}
-                    </div>
-                    )}
-
-                    {/* 文本内容（步骤>=2显示；步骤5也需显示原文） */}
-                    {(!gatingActive || step >= 2) && (
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      {step === 4 && currentItem.translations && currentItem.translations[translationLang] && (
-                        <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                          <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
-                          <div className="whitespace-pre-wrap text-base text-gray-800">{currentItem.translations[translationLang]}</div>
-                        </div>
-                      )}
-                      {isVocabMode ? (
-                        <SelectablePassage
-                          text={(() => {
-                            const normalize = (t: string) => {
-                              let s = (t || '')
-                                .replace(/\r\n/g, '\n')
-                                .replace(/\r/g, '\n')
-                                .replace(/<br\s*\/?\s*>/gi, '\n')
-                                .replace(/&#10;|&#13;/g, '\n');
-                              for (let i = 0; i < 3 && /\\\n/.test(s); i += 1) s = s.replace(/\\\n/g, '\n');
-                              return s;
-                            };
-                            return normalize(currentItem.text);
-                          })()}
-                          lang="zh"
-                          onSelectionChange={handleTextSelection}
-                          clearSelection={clearSelection}
-                          disabled={false}
-                          className="text-base leading-relaxed"
-                        />
+                        </>
                       ) : (
                         <div className="text-base leading-relaxed">
                           {/* 文本渲染逻辑保持不变 */}
@@ -3665,6 +3667,7 @@ export default function ShadowingPage() {
                       onRecordingSelected={handleRecordingSelected}
                       originalText={currentItem?.text}
                       language={currentItem?.lang || 'ja'}
+                      scrollTargetId="shadowing-text"
                     />
                   </Card>
                   )}
@@ -4793,45 +4796,6 @@ export default function ShadowingPage() {
                         {isVocabMode && (
                           <div className="mt-2 space-y-2">
                             <p className="text-sm text-blue-600">点击文本中的单词来选择生词</p>
-                            {selectedText && (
-                              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                <div className="text-sm">
-                                  <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
-                                  <div className="text-blue-600 font-semibold mb-1">
-                                    {selectedText.word}
-                                  </div>
-                                  <div className="text-xs text-gray-600 mb-2">
-                                    {selectedText.context}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      size="sm"
-                                      onClick={confirmAddToVocab}
-                                      disabled={isAddingToVocab}
-                                      className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      {isAddingToVocab ? (
-                                        <>
-                                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                                          添加中...
-                                        </>
-                                      ) : (
-                                        '确认添加到生词本'
-                                      )}
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={cancelSelection}
-                                      disabled={isAddingToVocab}
-                                      className="disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                      取消
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         )}
                       </div>
@@ -4852,14 +4816,55 @@ export default function ShadowingPage() {
                           </div>
                         )}
                       {isVocabMode ? (
-                        <SelectablePassage
-                          text={currentItem.text}
-                          lang={currentItem.lang}
-                          onSelectionChange={handleTextSelection}
-                          clearSelection={clearSelection}
-                          disabled={false}
-                          className="text-lg leading-relaxed"
-                        />
+                        <>
+                          <SelectablePassage
+                            text={currentItem.text}
+                            lang={currentItem.lang}
+                            onSelectionChange={handleTextSelection}
+                            clearSelection={clearSelection}
+                            disabled={false}
+                            className="text-lg leading-relaxed"
+                          />
+                          {selectedText && (
+                            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                              <div className="text-sm">
+                                <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
+                                <div className="text-blue-600 font-semibold mb-1">
+                                  {selectedText.word}
+                                </div>
+                                <div className="text-xs text-gray-600 mb-2">
+                                  {selectedText.context}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={confirmAddToVocab}
+                                    disabled={isAddingToVocab}
+                                    className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {isAddingToVocab ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                                        添加中...
+                                      </>
+                                    ) : (
+                                      '确认添加到生词本'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={cancelSelection}
+                                    disabled={isAddingToVocab}
+                                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    取消
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <div className="text-lg leading-relaxed">
                           {(() => {

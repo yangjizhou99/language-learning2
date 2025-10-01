@@ -9,6 +9,18 @@ import { z } from 'zod';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+type VocabUpdate = {
+  id: string;
+  srs_reps: number;
+  srs_lapses: number;
+  srs_interval: number;
+  srs_ease: number;
+  srs_due: string;
+  srs_last: string;
+  srs_state: 'review';
+  updated_at: string;
+};
+
 const ReviewSchema = z.object({
   id: z.string().uuid(),
   rating: z.enum(['again', 'hard', 'good', 'easy']),
@@ -65,11 +77,26 @@ export async function POST(req: NextRequest) {
 
     // 获取所有需要更新的生词
     const entryIds = reviews.map(r => r.id);
-    const { data: entries, error: fetchErr } = await supabase
+    // 先尝试包含 SRS 列
+    let { data: entries, error: fetchErr } = await supabase
       .from('vocab_entries')
       .select('id,srs_due,srs_interval,srs_ease,srs_reps,srs_lapses,status')
       .in('id', entryIds)
       .eq('user_id', user.id);
+
+    // 若列不存在，降级只取基础列
+    if (fetchErr && (fetchErr as any)?.code === '42703') {
+      const fb = await supabase
+        .from('vocab_entries')
+        .select('id,status')
+        .in('id', entryIds)
+        .eq('user_id', user.id);
+      if (fb.error) {
+        return NextResponse.json({ error: '获取生词失败' }, { status: 500 });
+      }
+      entries = fb.data as any[];
+      fetchErr = null as any;
+    }
 
     if (fetchErr || !entries) {
       return NextResponse.json({ error: '获取生词失败' }, { status: 500 });
@@ -78,7 +105,7 @@ export async function POST(req: NextRequest) {
     // 创建更新数据映射
     const entryMap = new Map(entries.map((entry: any) => [entry.id, entry]));
     const now = new Date();
-    const updates = [];
+  const updates: VocabUpdate[] = [];
 
     for (const review of reviews) {
       const entry: any = entryMap.get(review.id);
@@ -126,13 +153,32 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 批量更新
-    const { error: updateErr } = await supabase
-      .from('vocab_entries')
-      .upsert(updates, { 
-        onConflict: 'id',
-        ignoreDuplicates: false 
-      });
+    // 批量更新：若缺少 SRS 列则降级仅更新 updated_at
+    let updateErr: any = null;
+    const doUpsert = async (useDegrade: boolean) => {
+      if (useDegrade) {
+        const minimal = updates.map(u => ({ id: u.id, updated_at: u.updated_at }));
+        return supabase
+          .from('vocab_entries')
+          .upsert(minimal, {
+            onConflict: 'id',
+            ignoreDuplicates: false,
+          });
+      }
+      return supabase
+        .from('vocab_entries')
+        .upsert(updates, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
+        });
+    };
+
+    let upRes = await doUpsert(false);
+    updateErr = upRes.error;
+    if (updateErr && (updateErr as any)?.code === '42703') {
+      const fbUp = await doUpsert(true);
+      updateErr = fbUp.error;
+    }
 
     if (updateErr) {
       console.error('批量更新复习结果失败:', updateErr);
