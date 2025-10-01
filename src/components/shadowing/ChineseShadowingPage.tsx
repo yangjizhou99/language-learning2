@@ -3144,7 +3144,7 @@ export default function ShadowingPage() {
 
                     {/* 文本内容（步骤>=2显示；步骤5也需显示原文） */}
                     {(!gatingActive || step >= 2) && (
-                    <div className="p-4 bg-gray-50 rounded-lg">
+                    <div id="shadowing-text" className="p-4 bg-gray-50 rounded-lg">
                       {step === 4 && currentItem.translations && currentItem.translations[translationLang] && (
                         <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                           <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
@@ -3665,6 +3665,7 @@ export default function ShadowingPage() {
                       onRecordingSelected={handleRecordingSelected}
                       originalText={currentItem?.text}
                       language={currentItem?.lang || 'ja'}
+                      scrollTargetId="shadowing-text"
                     />
                   </Card>
                   )}

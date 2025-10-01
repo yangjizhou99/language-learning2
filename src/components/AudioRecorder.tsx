@@ -25,6 +25,7 @@ interface AudioRecorderProps {
   originalText?: string; // 添加原文用于生成相关转录
   language?: string; // 添加语言参数
   className?: string;
+  scrollTargetId?: string; // 开始录音后滚动的目标元素 id
 }
 
 const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
@@ -39,9 +40,11 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
       originalText,
       language = 'ja',
       className = '',
+      scrollTargetId: _scrollTargetId,
     },
     ref,
   ) => {
+    const rootElRef = useRef<HTMLDivElement | null>(null);
     const [isRecording, setIsRecording] = useState(false);
     const [isPlaying, setIsPlaying] = useState<string | null>(null);
     const [recordings, setRecordings] = useState<AudioRecording[]>(existingRecordings);
@@ -227,6 +230,64 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
         mediaRecorder.start();
         setIsRecording(true);
         recordingStartTimeRef.current = Date.now();
+
+        // 优先：滚动到本组件所在的滚动容器顶部（桌面端右侧列）
+        const getScrollableAncestor = (start: Element | null): Element | null => {
+          let el: Element | null = start ? start.parentElement : null;
+          const maxHops = 20;
+          let hops = 0;
+          while (el && hops < maxHops) {
+            try {
+              const style = window.getComputedStyle(el as Element);
+              const overflowY = style.overflowY;
+              const canScroll = (overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight;
+              if (canScroll) return el;
+            } catch {}
+            el = el.parentElement;
+            hops += 1;
+          }
+          return null;
+        };
+
+        const scrollEl = getScrollableAncestor(rootElRef.current);
+        const scrollToTop = (node: Element | null) => {
+          if (!node) return false;
+          try {
+            const anyEl = node as unknown as { scrollTo?: (opts: ScrollToOptions) => void; scrollTop?: number };
+            if (typeof anyEl.scrollTo === 'function') {
+              anyEl.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (typeof anyEl.scrollTop === 'number') {
+              anyEl.scrollTop = 0;
+            } else {
+              return false;
+            }
+            return true;
+          } catch {
+            return false;
+          }
+        };
+
+        const didScroll = scrollToTop(scrollEl);
+        if (!didScroll) {
+          // 回退：页面级滚动
+          try {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } catch {
+            window.scrollTo(0, 0);
+          }
+        }
+
+        // 延迟重试，确保布局稳定后滚动生效
+        setTimeout(() => {
+          const againEl = getScrollableAncestor(rootElRef.current);
+          if (!scrollToTop(againEl)) {
+            try {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch {
+              window.scrollTo(0, 0);
+            }
+          }
+        }, 60);
 
         // 开始实时语音识别
         if (recognitionRef.current) {
@@ -556,6 +617,9 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
 
     return (
       <Card
+        ref={(el) => {
+          rootElRef.current = el as unknown as HTMLDivElement | null;
+        }}
         className={`p-6 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl space-y-6 ${className}`}
       >
         <div className="flex items-center justify-between">

@@ -3204,7 +3204,7 @@ export default function EnglishShadowingPage() {
 
                     {/* 文本内容（步骤>=2或完成后） */}
                     {(!gatingActive || step >= 2) && (
-                    <div className="p-4 bg-gray-50 rounded-lg">
+                    <div id="shadowing-text" className="p-4 bg-gray-50 rounded-lg">
                     {/* 第4步：在正文模块内部顶部显示黄色翻译框（与中文一致，无设备与 showTranslation 限制） */}
                     {step === 4 && currentItem && currentItem.translations && currentItem.translations[translationLang] && (
                       <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
@@ -3763,6 +3763,7 @@ export default function EnglishShadowingPage() {
                       onRecordingSelected={handleRecordingSelected}
                       originalText={currentItem?.text}
                       language={currentItem?.lang || 'ja'}
+                      scrollTargetId="shadowing-text"
                     />
                   </Card>
                   )}

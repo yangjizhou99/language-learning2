@@ -3148,7 +3148,7 @@ export default function JapaneseShadowingPage() {
 
                     {/* 文本内容（ステップ>=2または完了後） */}
                     {(!gatingActive || step >= 2) && (
-                    <div className="p-4 bg-gray-50 rounded-lg">
+                    <div id="shadowing-text" className="p-4 bg-gray-50 rounded-lg">
                       {/* 第4步：本文内部の上部に黄色の翻訳ボックス（中文と一致、端末・showTranslation制限なし） */}
                       {step === 4 && currentItem && currentItem.translations && currentItem.translations[translationLang] && (
                         <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
@@ -3671,6 +3671,7 @@ export default function JapaneseShadowingPage() {
                       onRecordingSelected={handleRecordingSelected}
                       originalText={currentItem?.text}
                       language={currentItem?.lang || 'ja'}
+                      scrollTargetId="shadowing-text"
                     />
                   </Card>
                   )}
