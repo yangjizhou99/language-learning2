@@ -9,6 +9,18 @@ import { z } from 'zod';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+type VocabUpdate = {
+  id: string;
+  srs_reps: number;
+  srs_lapses: number;
+  srs_interval: number;
+  srs_ease: number;
+  srs_due: string;
+  srs_last: string;
+  srs_state: 'review';
+  updated_at: string;
+};
+
 const ReviewSchema = z.object({
   id: z.string().uuid(),
   rating: z.enum(['again', 'hard', 'good', 'easy']),
@@ -93,7 +105,7 @@ export async function POST(req: NextRequest) {
     // 创建更新数据映射
     const entryMap = new Map(entries.map((entry: any) => [entry.id, entry]));
     const now = new Date();
-    const updates = [];
+  const updates: VocabUpdate[] = [];
 
     for (const review of reviews) {
       const entry: any = entryMap.get(review.id);
@@ -145,7 +157,7 @@ export async function POST(req: NextRequest) {
     let updateErr: any = null;
     const doUpsert = async (useDegrade: boolean) => {
       if (useDegrade) {
-        const minimal = updates.map(u => ({ id: u.id, updated_at: (u as any).updated_at }));
+        const minimal = updates.map(u => ({ id: u.id, updated_at: u.updated_at }));
         return supabase
           .from('vocab_entries')
           .upsert(minimal, {

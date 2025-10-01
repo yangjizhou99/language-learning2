@@ -616,12 +616,14 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
     };
 
     return (
-      <Card
+      <div
         ref={(el) => {
-          rootElRef.current = el as unknown as HTMLDivElement | null;
+          rootElRef.current = el;
         }}
-        className={`p-6 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl space-y-6 ${className}`}
       >
+        <Card
+          className={`p-6 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl space-y-6 ${className}`}
+        >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl flex items-center justify-center">
@@ -845,7 +847,8 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
             <p className="text-gray-500 leading-relaxed">点击"开始录音"开始练习</p>
           </div>
         )}
-      </Card>
+        </Card>
+      </div>
     );
   },
 );
