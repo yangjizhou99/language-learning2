@@ -3100,45 +3100,7 @@ export default function EnglishShadowingPage() {
                           <p className="text-sm text-blue-600">
                             {t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}
                           </p>
-                          {selectedText && (
-                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                              <div className="text-sm">
-                                <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
-                                <div className="text-blue-600 font-semibold mb-1">
-                                  {selectedText.word}
-                                </div>
-                                <div className="text-xs text-gray-600 mb-2">
-                                  {selectedText.context}
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={confirmAddToVocab}
-                                    disabled={isAddingToVocab}
-                                    className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {isAddingToVocab ? (
-                                      <>
-                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                                        添加中...
-                                      </>
-                                    ) : (
-                                      '确认添加到生词本'
-                                    )}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={cancelSelection}
-                                    disabled={isAddingToVocab}
-                                    className="disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    取消
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                          {/* 确认面板已移动到正文下方 */}
                         </div>
                       )}
                     </div>
@@ -3213,63 +3175,104 @@ export default function EnglishShadowingPage() {
                       </div>
                     )}
                       {isVocabMode ? (
-                        <SelectablePassage
-                          text={(() => {
-                            // 与普通模式一致的文本格式化：处理 \n 和按说话者分行
-                            const formatDialogueText = (text: string): string => {
-                              if (!text) return '';
+                        <>
+                          <SelectablePassage
+                            text={(() => {
+                              // 与普通模式一致的文本格式化：处理 \n 和按说话者分行
+                              const formatDialogueText = (text: string): string => {
+                                if (!text) return '';
 
-                              // 统一各种换行表示
-                              let formatted = text
-                                .replace(/\r\n/g, '\n')
-                                .replace(/\r/g, '\n')
-                                .replace(/<br\s*\/?\s*>/gi, '\n')
-                                .replace(/&#10;|&#13;/g, '\n');
-                              for (let i = 0; i < 3 && /\\\n/.test(formatted); i += 1) {
-                                formatted = formatted.replace(/\\\n/g, '\n');
-                              }
+                                // 统一各种换行表示
+                                let formatted = text
+                                  .replace(/\r\n/g, '\n')
+                                  .replace(/\r/g, '\n')
+                                  .replace(/<br\s*\/?\s*>/gi, '\n')
+                                  .replace(/&#10;|&#13;/g, '\n');
+                                for (let i = 0; i < 3 && /\\\n/.test(formatted); i += 1) {
+                                  formatted = formatted.replace(/\\\n/g, '\n');
+                                }
 
-                              // 如果包含换行符，则清理并保持换行
-                              if (formatted.includes('\n')) {
-                                return formatted
-                                  .split('\n')
-                                  .map((line) => line.trim())
-                                  .filter((line) => line.length > 0)
-                                  .join('\n');
-                              }
+                                // 如果包含换行符，则清理并保持换行
+                                if (formatted.includes('\n')) {
+                                  return formatted
+                                    .split('\n')
+                                    .map((line) => line.trim())
+                                    .filter((line) => line.length > 0)
+                                    .join('\n');
+                                }
 
-                              // 按说话者分割（A: / B: ...）
-                              const speakerPattern = /([A-Z]):\s*/g;
-                              const parts = formatted.split(speakerPattern);
+                                // 按说话者分割（A: / B: ...）
+                                const speakerPattern = /([A-Z]):\s*/g;
+                                const parts = formatted.split(speakerPattern);
 
-                              if (parts.length > 1) {
-                                let result = '';
-                                for (let i = 1; i < parts.length; i += 2) {
-                                  if (parts[i] && parts[i + 1]) {
-                                    const speaker = parts[i].trim();
-                                    const content = parts[i + 1].trim();
-                                    if (speaker && content) {
-                                      result += `${speaker}: ${content}\n`;
+                                if (parts.length > 1) {
+                                  let result = '';
+                                  for (let i = 1; i < parts.length; i += 2) {
+                                    if (parts[i] && parts[i + 1]) {
+                                      const speaker = parts[i].trim();
+                                      const content = parts[i + 1].trim();
+                                      if (speaker && content) {
+                                        result += `${speaker}: ${content}\n`;
+                                      }
                                     }
                                   }
+                                  if (result.trim()) {
+                                    return result.trim();
+                                  }
                                 }
-                                if (result.trim()) {
-                                  return result.trim();
-                                }
-                              }
 
-                              // 默认返回原文本
-                              return formatted;
-                            };
+                                // 默认返回原文本
+                                return formatted;
+                              };
 
-                            return formatDialogueText(currentItem.text);
-                          })()}
-                          lang="en"
-                          onSelectionChange={handleTextSelection}
-                          clearSelection={clearSelection}
-                          disabled={false}
-                          className="text-base leading-relaxed"
-                        />
+                              return formatDialogueText(currentItem.text);
+                            })()}
+                            lang="en"
+                            onSelectionChange={handleTextSelection}
+                            clearSelection={clearSelection}
+                            disabled={false}
+                            className="text-base leading-relaxed"
+                          />
+                          {selectedText && (
+                            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                              <div className="text-sm">
+                                <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
+                                <div className="text-blue-600 font-semibold mb-1">
+                                  {selectedText.word}
+                                </div>
+                                <div className="text-xs text-gray-600 mb-2">
+                                  {selectedText.context}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={confirmAddToVocab}
+                                    disabled={isAddingToVocab}
+                                    className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {isAddingToVocab ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                                        添加中...
+                                      </>
+                                    ) : (
+                                      '确认添加到生词本'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={cancelSelection}
+                                    disabled={isAddingToVocab}
+                                    className="disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    取消
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <div className="text-base leading-relaxed">
                           {/* 文本渲染逻辑保持不变 */}
@@ -4768,8 +4771,38 @@ export default function EnglishShadowingPage() {
                       {isVocabMode && (
                         <div className="mt-2 space-y-2">
                           <p className="text-sm text-blue-600">点击文本中的单词来选择生词</p>
+                          {/* 确认面板已移动到正文下方 */}
+                        </div>
+                      )}
+                    </div>
+                    )}
+
+                    {/* 文本内容（步骤>=2或完成后） */}
+                    {(!gatingActive || step >= 2) && (
+                    <div className="p-4 bg-gray-50 rounded-lg">
+                      {isVocabMode ? (
+                        <>
+                          <SelectablePassage
+                            text={(() => {
+                              const normalize = (t: string) => {
+                                let s = (t || '')
+                                  .replace(/\r\n/g, '\n')
+                                  .replace(/\r/g, '\n')
+                                  .replace(/<br\s*\/?\s*>/gi, '\n')
+                                  .replace(/&#10;|&#13;/g, '\n');
+                                for (let i = 0; i < 3 && /\\\n/.test(s); i += 1) s = s.replace(/\\\n/g, '\n');
+                                return s;
+                              };
+                              return normalize(currentItem.text);
+                            })()}
+                            lang={currentItem.lang || 'en'}
+                            onSelectionChange={handleTextSelection}
+                            clearSelection={clearSelection}
+                            disabled={false}
+                            className="text-lg leading-relaxed"
+                          />
                           {selectedText && (
-                            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                               <div className="text-sm">
                                 <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
                                 <div className="text-blue-600 font-semibold mb-1">
@@ -4807,35 +4840,7 @@ export default function EnglishShadowingPage() {
                               </div>
                             </div>
                           )}
-                        </div>
-                      )}
-                    </div>
-                    )}
-
-                    {/* 文本内容（步骤>=2或完成后） */}
-                    {(!gatingActive || step >= 2) && (
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      {isVocabMode ? (
-                        <SelectablePassage
-                          text={(() => {
-                            // 与普通模式一致：统一换行表示
-                            const normalize = (t: string) => {
-                              let s = (t || '')
-                                .replace(/\r\n/g, '\n')
-                                .replace(/\r/g, '\n')
-                                .replace(/<br\s*\/?\s*>/gi, '\n')
-                                .replace(/&#10;|&#13;/g, '\n');
-                              for (let i = 0; i < 3 && /\\\n/.test(s); i += 1) s = s.replace(/\\\n/g, '\n');
-                              return s;
-                            };
-                            return normalize(currentItem.text);
-                          })()}
-                          lang={currentItem.lang || 'en'}
-                          onSelectionChange={handleTextSelection}
-                          clearSelection={clearSelection}
-                          disabled={false}
-                          className="text-lg leading-relaxed"
-                        />
+                        </>
                       ) : (
                         <div className="text-lg leading-relaxed">
                           {(() => {

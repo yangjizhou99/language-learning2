@@ -380,7 +380,7 @@ export default function JapaneseShadowingPage() {
     }
   }, [currentItem]);
 
-  // （移除重复母语加载副作用，统一由“步骤切换时的联动”处理翻译语言）
+  // （移除重复母语加载副作用，统一由"步骤切换时的联动"处理翻译语言）
 
   // 发音功能
   const speakWord = (word: string, lang: string) => {
