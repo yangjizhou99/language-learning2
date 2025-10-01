@@ -52,6 +52,8 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
     const [isRealTimeTranscribing, setIsRealTimeTranscribing] = useState(false);
     const [realTimeTranscription, setRealTimeTranscription] = useState<string>('');
     const realTimeTranscriptionRef = useRef<string>('');
+    // 用于录音中的合成显示（最终+临时）
+    const [displayTranscription, setDisplayTranscription] = useState<string>('');
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
@@ -86,6 +88,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
             setIsRealTimeTranscribing(true);
             setRealTimeTranscription('');
             realTimeTranscriptionRef.current = '';
+            setDisplayTranscription('');
           };
 
           recognitionRef.current.onresult = (event: any) => {
@@ -112,8 +115,10 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
               return prev;
             });
 
-            // 显示当前实时转录（包含临时结果）
-            const currentDisplay = (finalTranscript + interimTranscript).trim();
+            // 实时显示（最终+临时）
+            const accumulatedFinal = realTimeTranscriptionRef.current || '';
+            const combined = `${accumulatedFinal}${accumulatedFinal && interimTranscript ? ' ' : ''}${interimTranscript}`.trim();
+            setDisplayTranscription(combined);
           };
 
           recognitionRef.current.onerror = (event: any) => {
@@ -123,6 +128,8 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
 
           recognitionRef.current.onend = () => {
             setIsRealTimeTranscribing(false);
+            // 结束时将显示文本收敛为最终累积
+            setDisplayTranscription(realTimeTranscriptionRef.current || '');
           };
         }
       }
@@ -617,6 +624,19 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
           </div>
         </div>
 
+        {/* 实时转写显示：录音中（或识别中）直接展示在控制区下方 */}
+        {(isRecording || isRealTimeTranscribing) && displayTranscription && (
+          <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-medium text-green-700">实时转录：</span>
+            </div>
+            <div className="text-sm text-green-800 max-h-32 overflow-y-auto whitespace-pre-wrap break-words leading-relaxed">
+              {displayTranscription}
+            </div>
+          </div>
+        )}
+
         {/* Current Recording Preview */}
         {currentRecordingUrl && (
           <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl shadow-sm">
@@ -657,18 +677,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
               </div>
             </div>
 
-            {/* 实时转录显示 */}
-            {isRealTimeTranscribing && realTimeTranscription && (
-              <div className="mt-3 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs font-medium text-green-700">实时转录：</span>
-                </div>
-                <div className="text-sm text-green-800 max-h-32 overflow-y-auto whitespace-pre-wrap break-words leading-relaxed">
-                  {realTimeTranscription}
-                </div>
-              </div>
-            )}
+            {/* 实时转录显示（旧位置）移除，避免重复 */}
 
             {/* 转录文字显示 */}
             {currentTranscription && (
