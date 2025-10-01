@@ -865,7 +865,7 @@ export default function VocabPage() {
       try {
         const precheckRes = await fetch('/api/ai/precheck', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ provider: generationSettings.provider, model: generationSettings.model }),
         });
         if (!precheckRes.ok) {
