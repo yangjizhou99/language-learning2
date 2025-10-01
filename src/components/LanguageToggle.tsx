@@ -23,12 +23,15 @@ export default function LanguageToggle() {
   const handleLanguageChange = (newLang: Lang) => {
     setLanguage(newLang);
 
-    // 如果在shadowing页面，同步更新URL参数
+    // 避免在 shadowing 页面联动题库筛选语言与界面语言
     if (pathname && pathname.startsWith('/practice/shadowing')) {
-      const currentUrl = new URL(window.location.href);
-      currentUrl.searchParams.set('lang', newLang);
-      router.push(currentUrl.pathname + currentUrl.search, { scroll: false });
+      return;
     }
+
+    // 其它页面可按需更新 URL 语言参数（保留原逻辑）
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('lang', newLang);
+    router.push(currentUrl.pathname + currentUrl.search, { scroll: false });
   };
 
   return (
