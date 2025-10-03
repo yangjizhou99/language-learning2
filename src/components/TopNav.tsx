@@ -185,6 +185,12 @@ export default function TopNav() {
       show: permissions.can_access_cloze,
     },
     {
+      href: '/practice/cloze-shadowing',
+      label: 'Cloze-Shadowing',
+      icon: Target,
+      show: permissions.can_access_cloze,
+    },
+    {
       href: '/practice/alignment',
       label: t.nav.alignment_practice,
       icon: AlignCenter,

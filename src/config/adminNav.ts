@@ -39,6 +39,7 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
     items: [
       { href: '/admin/batch-gen', label: '批量生成中心', icon: '⚡' },
       { href: '/admin/cloze/ai', label: 'Cloze 生成/审核', icon: '🎯', match: 'startsWith' },
+      { href: '/admin/cloze-shadowing/generate', label: 'Cloze-Shadowing 生成', icon: '🧩', match: 'startsWith' },
       { href: '/admin/cloze/drafts', label: 'Cloze 草稿箱', icon: '🗂️', match: 'startsWith' },
       { href: '/admin/alignment/ai', label: '对齐练习生成', icon: '🤝', match: 'startsWith' },
       {
@@ -60,6 +61,7 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
         icon: '🧾',
         match: 'startsWith',
       },
+      { href: '/admin/cloze-shadowing/review', label: 'Cloze-Shadowing 审阅', icon: '🔍', match: 'startsWith' },
     ],
   },
   {
