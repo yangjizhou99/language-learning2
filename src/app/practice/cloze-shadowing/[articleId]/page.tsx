@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,8 @@ export default function ClozeShadowingPracticePage() {
   const [accHistory, setAccHistory] = useState<boolean[]>([]);
   const [showSolution, setShowSolution] = useState(false);
   const [solution, setSolution] = useState<null | { text: string; audio_url: string | null; translations: Record<string, string> | null; sentences: Array<{ index: number; text: string; blank_start: number; blank_length: number; correct_options: string[] }> }>(null);
+  const [completedSaved, setCompletedSaved] = useState(false);
+  const [totalSentences, setTotalSentences] = useState<number | null>(null);
 
   const accuracy = useMemo(() => {
     if (accHistory.length === 0) return 0;
@@ -62,6 +64,7 @@ export default function ClozeShadowingPracticePage() {
         setArticle(data.article);
         setSentence(data.sentence);
         setSelected({});
+        if (typeof data.total_sentences === 'number') setTotalSentences(data.total_sentences);
       }
     } catch (e: any) {
       setError(e?.message || '网络错误');
@@ -110,6 +113,27 @@ export default function ClozeShadowingPracticePage() {
     await loadCursor(next);
   };
 
+  // 键盘快捷键：1-9 勾选/取消，Enter 提交
+  const handleKey = useCallback((e: KeyboardEvent) => {
+    if (!sentence) return;
+    const k = e.key;
+    if (k === 'Enter') {
+      e.preventDefault();
+      submitCurrent();
+      return;
+    }
+    const num = parseInt(k, 10);
+    if (!Number.isNaN(num) && num >= 1 && num <= Math.min(9, sentence.options.length)) {
+      const opt = sentence.options[num - 1];
+      setSelected((prev) => ({ ...prev, [opt]: !prev[opt] }));
+    }
+  }, [sentence]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [handleKey]);
+
   const finishAndShowSolution = async () => {
     const {
       data: { session },
@@ -145,6 +169,29 @@ export default function ClozeShadowingPracticePage() {
     }
   };
 
+  const markSessionCompleted = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return;
+    try {
+      const resp = await fetch('/api/shadowing/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ item_id: articleId, status: 'completed' }),
+      });
+      const data = await resp.json();
+      if (resp.ok && data?.success) {
+        setCompletedSaved(true);
+      }
+    } catch (e) {
+      // 忽略错误，避免打断用户流程
+    }
+  };
+
   const renderSentence = () => {
     if (!sentence) return null;
     const before = sentence.text.slice(0, sentence.blank.start);
@@ -173,6 +220,14 @@ export default function ClozeShadowingPracticePage() {
               {article ? `语言: ${article.lang.toUpperCase()} | 难度: L${article.level}` : ''}
             </div>
             <div className="mt-2 text-sm">累计正确率：{accuracy}%（{accHistory.filter(Boolean).length}/{accHistory.length}）</div>
+            {totalSentences != null && (
+              <div className="mt-2">
+                <div className="h-2 bg-muted rounded">
+                  <div className="h-2 bg-primary rounded" style={{ width: `${Math.min(100, Math.round(((sentence?.index ?? 0) / Math.max(1, totalSentences)) * 100))}%` }} />
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">进度：{(sentence?.index ?? Math.max(0, totalSentences - 1)) + 1}/{totalSentences}</div>
+              </div>
+            )}
           </div>
 
           {error && (
@@ -207,7 +262,12 @@ export default function ClozeShadowingPracticePage() {
             <div className="rounded-lg border bg-card text-card-foreground p-6 text-center">
               <div className="text-xl font-semibold mb-2">本篇已完成</div>
               <div className="text-muted-foreground mb-4">点击下方按钮查看参考答案与原文音频</div>
-              <Button onClick={finishAndShowSolution}>查看参考答案</Button>
+              <div className="flex items-center justify-center gap-3">
+                <Button onClick={markSessionCompleted} variant={completedSaved ? 'secondary' : 'default'}>
+                  {completedSaved ? '已标记完成' : '完成练习'}
+                </Button>
+                <Button onClick={finishAndShowSolution}>查看参考答案</Button>
+              </div>
             </div>
           )}
 
