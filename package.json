@@ -10,7 +10,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "lint:fix": "next lint --fix"
+    "lint:fix": "next lint --fix",
+    "db:dump": "supabase db dump --local --schema public -f supabase/migrations/20250918041810_remote_public_schema.sql",
+    "db:push": "supabase db push && npm run db:dump",
+    "db:reset": "supabase db reset && npm run db:dump"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.3.0",

@@ -561,6 +561,60 @@ CREATE TABLE IF NOT EXISTS "public"."cloze_items" (
 ALTER TABLE "public"."cloze_items" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."cloze_shadowing_attempts_article" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "source_item_id" "uuid" NOT NULL,
+    "total_sentences" integer NOT NULL,
+    "correct_sentences" integer NOT NULL,
+    "accuracy" numeric NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "cloze_shadowing_attempts_article_accuracy_check" CHECK ((("accuracy" >= (0)::numeric) AND ("accuracy" <= (1)::numeric)))
+);
+
+
+ALTER TABLE "public"."cloze_shadowing_attempts_article" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."cloze_shadowing_attempts_sentence" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "source_item_id" "uuid" NOT NULL,
+    "cloze_item_id" "uuid" NOT NULL,
+    "sentence_index" integer NOT NULL,
+    "selected_options" "text"[] NOT NULL,
+    "is_correct" boolean NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."cloze_shadowing_attempts_sentence" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."cloze_shadowing_items" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "source_item_id" "uuid" NOT NULL,
+    "theme_id" "uuid",
+    "subtopic_id" "uuid",
+    "lang" "text" NOT NULL,
+    "level" integer NOT NULL,
+    "sentence_index" integer NOT NULL,
+    "sentence_text" "text" NOT NULL,
+    "blank_start" integer NOT NULL,
+    "blank_length" integer NOT NULL,
+    "correct_options" "text"[] NOT NULL,
+    "distractor_options" "text"[] NOT NULL,
+    "gen_seed" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "is_published" boolean DEFAULT false NOT NULL,
+    CONSTRAINT "cloze_shadowing_items_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text"]))),
+    CONSTRAINT "cloze_shadowing_items_level_check" CHECK ((("level" >= 1) AND ("level" <= 5)))
+);
+
+
+ALTER TABLE "public"."cloze_shadowing_items" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."default_user_permissions" (
     "id" "text" NOT NULL,
     "can_access_shadowing" boolean DEFAULT true NOT NULL,
@@ -738,7 +792,7 @@ ALTER TABLE "public"."shadowing_drafts" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."shadowing_items" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "id" "uuid" NOT NULL,
     "lang" "text" NOT NULL,
     "level" integer NOT NULL,
     "title" "text" NOT NULL,
@@ -748,7 +802,7 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_items" (
     "tokens" integer,
     "cefr" "text",
     "meta" "jsonb",
-    "created_at" timestamp with time zone DEFAULT "now"(),
+    "created_at" timestamp with time zone,
     "translations" "jsonb",
     "trans_updated_at" timestamp with time zone,
     "theme_id" "uuid",
@@ -764,8 +818,7 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_items" (
     "created_by" "uuid",
     "updated_at" timestamp with time zone,
     "audio_bucket" "text",
-    "audio_path" "text",
-    "audio_url_proxy" "text" GENERATED ALWAYS AS (((('/api/storage-proxy?path='::"text" || COALESCE("audio_path", ''::"text")) || '&bucket='::"text") || COALESCE("audio_bucket", 'tts'::"text"))) STORED
+    "audio_path" "text"
 );
 
 
@@ -773,7 +826,7 @@ ALTER TABLE "public"."shadowing_items" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."shadowing_sessions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "id" "uuid" NOT NULL,
     "user_id" "uuid" NOT NULL,
     "item_id" "uuid" NOT NULL,
     "status" "text" NOT NULL,
@@ -794,6 +847,9 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_subtopics" (
     "lang" "text" NOT NULL,
     "level" integer NOT NULL,
     "genre" "text" NOT NULL,
+    "title" "text" NOT NULL,
+    "seed" "text",
+    "one_line" "text",
     "tags" "text"[],
     "status" "text" NOT NULL,
     "created_by" "uuid",
@@ -801,10 +857,7 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_subtopics" (
     "updated_at" timestamp with time zone,
     "ai_provider" "text",
     "ai_model" "text",
-    "ai_usage" "jsonb",
-    "one_line" "text",
-    "seed" "text",
-    "title" "text" NOT NULL
+    "ai_usage" "jsonb"
 );
 
 
@@ -918,22 +971,18 @@ CREATE TABLE IF NOT EXISTS "public"."vocab_entries" (
     "status" "text",
     "explanation" "jsonb",
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "srs_due" timestamp with time zone,
+    "srs_interval" integer,
+    "srs_ease" double precision,
+    "srs_reps" integer,
+    "srs_lapses" integer,
+    "srs_last" timestamp with time zone,
+    "srs_state" "text"
 );
 
 
 ALTER TABLE "public"."vocab_entries" OWNER TO "postgres";
-
-
--- Ensure SRS columns exist for spaced-repetition (kept here to reflect current canonical schema)
-ALTER TABLE public.vocab_entries
-  ADD COLUMN IF NOT EXISTS srs_due timestamptz NULL,
-  ADD COLUMN IF NOT EXISTS srs_interval integer NULL,
-  ADD COLUMN IF NOT EXISTS srs_ease double precision NULL,
-  ADD COLUMN IF NOT EXISTS srs_reps integer NULL,
-  ADD COLUMN IF NOT EXISTS srs_lapses integer NULL,
-  ADD COLUMN IF NOT EXISTS srs_last timestamptz NULL,
-  ADD COLUMN IF NOT EXISTS srs_state text NULL;
 
 
 CREATE TABLE IF NOT EXISTS "public"."voices" (
@@ -964,6 +1013,26 @@ ALTER TABLE ONLY "public"."article_batch_items"
 
 
 
+ALTER TABLE ONLY "public"."cloze_shadowing_attempts_article"
+    ADD CONSTRAINT "cloze_shadowing_attempts_article_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."cloze_shadowing_attempts_sentence"
+    ADD CONSTRAINT "cloze_shadowing_attempts_sentence_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."cloze_shadowing_items"
+    ADD CONSTRAINT "cloze_shadowing_items_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."cloze_shadowing_items"
+    ADD CONSTRAINT "cloze_shadowing_items_source_item_id_sentence_index_key" UNIQUE ("source_item_id", "sentence_index");
+
+
+
 ALTER TABLE ONLY "public"."default_user_permissions"
     ADD CONSTRAINT "default_user_permissions_pkey" PRIMARY KEY ("id");
 
@@ -975,7 +1044,17 @@ ALTER TABLE ONLY "public"."profiles"
 
 
 ALTER TABLE ONLY "public"."shadowing_items"
-    ADD CONSTRAINT "shadowing_items_pkey" PRIMARY KEY ("id");
+    ADD CONSTRAINT "shadowing_items_id_unique" UNIQUE ("id");
+
+
+
+ALTER TABLE ONLY "public"."shadowing_subtopics"
+    ADD CONSTRAINT "shadowing_subtopics_id_unique" UNIQUE ("id");
+
+
+
+ALTER TABLE ONLY "public"."shadowing_themes"
+    ADD CONSTRAINT "shadowing_themes_id_unique" UNIQUE ("id");
 
 
 
@@ -989,30 +1068,19 @@ ALTER TABLE ONLY "public"."vocab_entries"
 
 
 
-ALTER TABLE ONLY "public"."voices"
-    ADD CONSTRAINT "voices_name_key" UNIQUE ("name");
-
-
-
-ALTER TABLE ONLY "public"."voices"
-    ADD CONSTRAINT "voices_pkey" PRIMARY KEY ("id");
-
-
-
 CREATE INDEX "idx_api_usage_logs_created_at" ON "public"."api_usage_logs" USING "btree" ("created_at");
 
 
 
--- Performance index for vocab due queries (align with runtime schema)
-CREATE INDEX IF NOT EXISTS idx_vocab_entries_user_due
-  ON public.vocab_entries (user_id, srs_due)
-  WHERE status <> 'archived';
+CREATE INDEX "idx_cloze_shadowing_items_published" ON "public"."cloze_shadowing_items" USING "btree" ("source_item_id", "is_published");
+
+
+
+CREATE INDEX "idx_vocab_entries_user_due" ON "public"."vocab_entries" USING "btree" ("user_id", "srs_due") WHERE ("status" <> 'archived'::"text");
+
+
 
 CREATE UNIQUE INDEX "user_api_limits_user_id_key" ON "public"."user_api_limits" USING "btree" ("user_id");
-
-
-
-CREATE OR REPLACE TRIGGER "shadowing_items_set_updated_at" BEFORE UPDATE ON "public"."shadowing_items" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
@@ -1028,7 +1096,76 @@ CREATE OR REPLACE TRIGGER "update_vocab_entries_updated_at" BEFORE UPDATE ON "pu
 
 
 
-CREATE OR REPLACE TRIGGER "update_voices_updated_at" BEFORE UPDATE ON "public"."voices" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+ALTER TABLE ONLY "public"."cloze_shadowing_attempts_article"
+    ADD CONSTRAINT "cloze_shadowing_attempts_article_source_item_id_fkey" FOREIGN KEY ("source_item_id") REFERENCES "public"."shadowing_items"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."cloze_shadowing_attempts_article"
+    ADD CONSTRAINT "cloze_shadowing_attempts_article_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."cloze_shadowing_attempts_sentence"
+    ADD CONSTRAINT "cloze_shadowing_attempts_sentence_cloze_item_id_fkey" FOREIGN KEY ("cloze_item_id") REFERENCES "public"."cloze_shadowing_items"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."cloze_shadowing_attempts_sentence"
+    ADD CONSTRAINT "cloze_shadowing_attempts_sentence_source_item_id_fkey" FOREIGN KEY ("source_item_id") REFERENCES "public"."shadowing_items"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."cloze_shadowing_attempts_sentence"
+    ADD CONSTRAINT "cloze_shadowing_attempts_sentence_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."cloze_shadowing_items"
+    ADD CONSTRAINT "cloze_shadowing_items_source_item_id_fkey" FOREIGN KEY ("source_item_id") REFERENCES "public"."shadowing_items"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."cloze_shadowing_items"
+    ADD CONSTRAINT "cloze_shadowing_items_subtopic_id_fkey" FOREIGN KEY ("subtopic_id") REFERENCES "public"."shadowing_subtopics"("id");
+
+
+
+ALTER TABLE ONLY "public"."cloze_shadowing_items"
+    ADD CONSTRAINT "cloze_shadowing_items_theme_id_fkey" FOREIGN KEY ("theme_id") REFERENCES "public"."shadowing_themes"("id");
+
+
+
+ALTER TABLE "public"."cloze_shadowing_attempts_article" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "cloze_shadowing_attempts_article_own_insert" ON "public"."cloze_shadowing_attempts_article" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "cloze_shadowing_attempts_article_own_select" ON "public"."cloze_shadowing_attempts_article" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."cloze_shadowing_attempts_sentence" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "cloze_shadowing_attempts_sentence_own_insert" ON "public"."cloze_shadowing_attempts_sentence" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "cloze_shadowing_attempts_sentence_own_select" ON "public"."cloze_shadowing_attempts_sentence" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."cloze_shadowing_items" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "cloze_shadowing_items_select_all" ON "public"."cloze_shadowing_items" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "cloze_shadowing_items_service_write" ON "public"."cloze_shadowing_items" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
 
 
 
@@ -1220,6 +1357,24 @@ GRANT ALL ON TABLE "public"."cloze_drafts" TO "service_role";
 GRANT ALL ON TABLE "public"."cloze_items" TO "anon";
 GRANT ALL ON TABLE "public"."cloze_items" TO "authenticated";
 GRANT ALL ON TABLE "public"."cloze_items" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_article" TO "anon";
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_article" TO "authenticated";
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_article" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "anon";
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "authenticated";
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."cloze_shadowing_items" TO "anon";
+GRANT ALL ON TABLE "public"."cloze_shadowing_items" TO "authenticated";
+GRANT ALL ON TABLE "public"."cloze_shadowing_items" TO "service_role";
 
 
 
