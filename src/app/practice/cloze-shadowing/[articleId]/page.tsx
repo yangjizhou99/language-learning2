@@ -14,6 +14,7 @@ type SentencePayload = {
   blank: { start: number; length: number };
   options: string[];
   num_correct: number;
+  is_placeholder?: boolean;
 };
 
 export default function ClozeShadowingPracticePage() {
@@ -35,10 +36,11 @@ export default function ClozeShadowingPracticePage() {
   const [feedbackByIndex, setFeedbackByIndex] = useState<Record<number, 'correct' | 'wrong' | null>>({});
 
   const totalSentences = useMemo(() => sentences.length, [sentences]);
+  const needCountForSentence = (s: SentencePayload) => (s.is_placeholder ? 0 : Math.max(1, s.num_correct || 1));
   const completedCount = useMemo(() => {
     return sentences.reduce((acc, s) => {
       const arr = answersByIndex[s.index] || [];
-      const need = Math.max(1, s.num_correct || 1);
+      const need = needCountForSentence(s);
       return acc + (arr.length >= need ? 1 : 0);
     }, 0);
   }, [sentences, answersByIndex]);
@@ -46,7 +48,7 @@ export default function ClozeShadowingPracticePage() {
   const firstIncompleteIndex = useMemo(() => {
     for (const s of sentences) {
       const arr = answersByIndex[s.index] || [];
-      const need = Math.max(1, s.num_correct || 1);
+      const need = needCountForSentence(s);
       if (arr.length < need) return s.index;
     }
     return null;
@@ -77,7 +79,7 @@ export default function ClozeShadowingPracticePage() {
     if (!showOnlyIncomplete) return sentences;
     return sentences.filter((s) => {
       const arr = answersByIndex[s.index] || [];
-      const need = Math.max(1, s.num_correct || 1);
+      const need = needCountForSentence(s);
       return arr.length < need;
     });
   }, [sentences, answersByIndex, showOnlyIncomplete]);
@@ -101,7 +103,14 @@ export default function ClozeShadowingPracticePage() {
       const data = await res.json();
       if (!data?.success) throw new Error(data?.error || '加载失败');
       setArticle(data.article);
-      setSentences(data.sentences || []);
+      setSentences((data.sentences || []).map((s: any) => ({
+        index: s.index,
+        text: s.text,
+        blank: s.blank,
+        options: s.options || [],
+        num_correct: s.num_correct || 0,
+        is_placeholder: s.is_placeholder || ((s.blank?.length || 0) === 0 || (s.num_correct || 0) === 0),
+      })));
       setAnswersByIndex({});
       setShowSolution(false);
       setSolution(null);
@@ -121,39 +130,28 @@ export default function ClozeShadowingPracticePage() {
     setAnswersByIndex((prev) => {
       const current = prev[sIndex] || [];
       const need = Math.max(1, (sentences.find((s) => s.index === sIndex)?.num_correct || 1));
+      // 已选满或点击已选项时，不允许重选/更改
+      if (current.length >= need || current.includes(opt)) {
+        return prev;
+      }
       let next: string[];
-      const isAdding = !current.includes(opt);
-      if (!isAdding) {
-        next = current.filter((o) => o !== opt);
+      // 仅允许追加，直到达到需要的数量
+      if (need === 1) {
+        next = [opt];
       } else {
-        if (need === 1) {
-          next = [opt];
-        } else {
-          if (current.length < need) next = [...current, opt];
-          else next = [...current.slice(0, need - 1), opt];
-        }
+        if (current.length < need) next = [...current, opt];
+        else next = current;
       }
       // 选中时触发一次性弹跳动画；取消选中时触发一次性淡出缩放
-      if (isAdding) {
-        const key = `${sIndex}__${opt}`;
-        setAnimating((prevAnim) => ({ ...prevAnim, [key]: false }));
-        // 强制重置后再开启，确保重复点击也能触发
-        requestAnimationFrame(() => {
-          setAnimating((prevAnim) => ({ ...prevAnim, [key]: true }));
-          setTimeout(() => {
-            setAnimating((prevAnim) => ({ ...prevAnim, [key]: false }));
-          }, 160);
-        });
-      } else {
-        const key = `${sIndex}__${opt}`;
-        setAnimatingOut((prevAnim) => ({ ...prevAnim, [key]: false }));
-        requestAnimationFrame(() => {
-          setAnimatingOut((prevAnim) => ({ ...prevAnim, [key]: true }));
-          setTimeout(() => {
-            setAnimatingOut((prevAnim) => ({ ...prevAnim, [key]: false }));
-          }, 140);
-        });
-      }
+      const key = `${sIndex}__${opt}`;
+      setAnimating((prevAnim) => ({ ...prevAnim, [key]: false }));
+      // 强制重置后再开启，确保重复点击也能触发
+      requestAnimationFrame(() => {
+        setAnimating((prevAnim) => ({ ...prevAnim, [key]: true }));
+        setTimeout(() => {
+          setAnimating((prevAnim) => ({ ...prevAnim, [key]: false }));
+        }, 160);
+      });
 
       // 达到需选数量时触发即时判定；否则清除反馈
       const reachNeed = (next.length >= need && need > 0);
@@ -193,6 +191,14 @@ export default function ClozeShadowingPracticePage() {
   };
 
   const renderSentenceInline = (s: SentencePayload) => {
+    if (s.is_placeholder || (s.blank.length || 0) === 0 || (s.num_correct || 0) === 0) {
+      return (
+        <div className="leading-7 text-base">
+          <span>{s.text}</span>
+          <span className="ml-2 px-1.5 py-0.5 text-[10px] rounded bg-amber-50 text-amber-700 align-middle">无挖空，跳过</span>
+        </div>
+      );
+    }
     const before = s.text.slice(0, s.blank.start);
     const after = s.text.slice(s.blank.start + s.blank.length);
     const selected = answersByIndex[s.index] || [];
@@ -217,8 +223,9 @@ export default function ClozeShadowingPracticePage() {
   };
 
   const renderOptions = (s: SentencePayload) => {
+    if (s.is_placeholder || (s.blank.length || 0) === 0 || (s.num_correct || 0) === 0) return null;
     const selected = answersByIndex[s.index] || [];
-    const need = Math.max(1, s.num_correct || 1);
+    const need = needCountForSentence(s);
     const completed = selected.length >= need;
     if (completed) return null;
     return (
@@ -243,7 +250,7 @@ export default function ClozeShadowingPracticePage() {
 
   const submitAll = async () => {
     if (!articleId || sentences.length === 0) return;
-    const allDone = sentences.every((s) => (answersByIndex[s.index] || []).length >= Math.max(1, s.num_correct || 1));
+    const allDone = sentences.every((s) => (answersByIndex[s.index] || []).length >= needCountForSentence(s));
     if (!allDone) {
       setError('请先完成所有题目再提交');
       return;
@@ -259,22 +266,25 @@ export default function ClozeShadowingPracticePage() {
         return;
       }
 
+      // 统一写入：仅对需要作答的句子批量提交
       await Promise.all(
-        sentences.map((s) => {
-          const picked = answersByIndex[s.index] || [];
-          return fetch('/api/cloze-shadowing/attempt', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              article_id: articleId,
-              sentence_index: s.index,
-              selected_options: picked,
-            }),
-          }).then((r) => r.json());
-        }),
+        sentences
+          .filter((s) => needCountForSentence(s) > 0)
+          .map((s) => {
+            const picked = answersByIndex[s.index] || [];
+            return fetch('/api/cloze-shadowing/attempt', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                article_id: articleId,
+                sentence_index: s.index,
+                selected_options: picked,
+              }),
+            }).then((r) => r.json());
+          }),
       );
 
       const sumResp = await fetch('/api/cloze-shadowing/finish', {
@@ -357,7 +367,7 @@ export default function ClozeShadowingPracticePage() {
                 <div className="flex items-center justify-center gap-2 min-w-max px-1">
                   {sentences.map((s) => {
                     const arr = answersByIndex[s.index] || [];
-                    const need = Math.max(1, s.num_correct || 1);
+                    const need = needCountForSentence(s);
                     const done = arr.length >= need;
                     return (
                       <button
@@ -386,31 +396,22 @@ export default function ClozeShadowingPracticePage() {
                   <div
                     key={s.index}
                     ref={(el) => { sentenceRefs.current[s.index] = el; }}
-                    className={`rounded-lg border bg-card text-card-foreground p-4 transition-shadow hover:shadow-md ${((answersByIndex[s.index] || []).length >= Math.max(1, s.num_correct || 1)) ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-muted'} ${shaking[s.index] ? 'animate-card-shake' : ''}`}
+                    className={`rounded-lg border bg-card text-card-foreground p-4 transition-shadow hover:shadow-md ${((answersByIndex[s.index] || []).length >= needCountForSentence(s)) ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-muted'} ${shaking[s.index] ? 'animate-card-shake' : ''}`}
                   >
                     <div className="p-3 bg-muted rounded mb-2">{renderSentenceInline(s)}</div>
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-[11px] text-muted-foreground">
-                        {feedbackByIndex[s.index] === 'correct' ? '正确' : feedbackByIndex[s.index] === 'wrong' ? '再试一次' : ((answersByIndex[s.index] || []).length >= Math.max(1, s.num_correct || 1)) ? '已完成' : `选择 ${Math.max(1, s.num_correct || 1)} 项`}
+                        {s.is_placeholder || (s.blank.length || 0) === 0 || (s.num_correct || 0) === 0
+                          ? '无需作答'
+                          : (feedbackByIndex[s.index] === 'correct'
+                              ? '正确'
+                              : feedbackByIndex[s.index] === 'wrong'
+                                ? '再试一次'
+                                : ((answersByIndex[s.index] || []).length >= needCountForSentence(s))
+                                  ? '已完成'
+                                  : `选择 ${needCountForSentence(s)} 项`)}
                       </div>
-                      {(answersByIndex[s.index] || []).length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAnswersByIndex((prev) => ({ ...prev, [s.index]: [] }));
-                            setShaking((prev) => ({ ...prev, [s.index]: false }));
-                            requestAnimationFrame(() => {
-                              setShaking((prev) => ({ ...prev, [s.index]: true }));
-                              setTimeout(() => {
-                                setShaking((prev) => ({ ...prev, [s.index]: false }));
-                              }, 220);
-                            });
-                          }}
-                          className="text-[11px] text-muted-foreground hover:text-foreground underline"
-                        >
-                          重选
-                        </button>
-                      )}
+                      {/* 取消“重选”功能：不提供清空/重选入口 */}
                     </div>
                     {renderOptions(s)}
                   </div>

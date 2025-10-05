@@ -117,21 +117,31 @@ export default function ClozeShadowingReviewArticlePage() {
             </div>
           </div>
           {rows.map((r) => {
+            const isBlanked = (r.blank_length || 0) > 0 && (r.correct_options || []).length > 0;
             const before = r.sentence_text.slice(0, r.blank_start);
             const blank = r.sentence_text.slice(r.blank_start, r.blank_start + r.blank_length);
             const after = r.sentence_text.slice(r.blank_start + r.blank_length);
             return (
               <div key={r.sentence_index} className="p-3 border rounded">
                 <div className="text-sm text-gray-500 mb-1">第 {r.sentence_index + 1} 句</div>
-                <div className="mb-2 leading-8">
-                  <span>{before}</span>
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">{blank}</span>
-                  <span>{after}</span>
-                </div>
-                <div className="text-sm">
-                  <div className="mb-1">正确项：{(r.correct_options || []).join(' / ')}</div>
-                  <div className="text-gray-500">干扰项：{(r.distractor_options || []).join(' / ')}</div>
-                </div>
+                {isBlanked ? (
+                  <>
+                    <div className="mb-2 leading-8">
+                      <span>{before}</span>
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">{blank}</span>
+                      <span>{after}</span>
+                    </div>
+                    <div className="text-sm">
+                      <div className="mb-1">正确项：{(r.correct_options || []).join(' / ')}</div>
+                      <div className="text-gray-500">干扰项：{(r.distractor_options || []).join(' / ')}</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-2 leading-8">{r.sentence_text}</div>
+                    <div className="text-xs text-orange-600">未挖空（占位）</div>
+                  </>
+                )}
                 <div className={`mt-2 text-xs ${r.is_published ? 'text-green-600' : 'text-gray-500'}`}>{r.is_published ? '已发布' : '未发布'}</div>
               </div>
             );

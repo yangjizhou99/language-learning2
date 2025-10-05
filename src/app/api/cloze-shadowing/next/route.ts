@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
 
     // 组装 options（打乱，但不改变可复现性：按固定排序即可，前端可随机本地打乱）
     const options = [...(item.correct_options || []), ...(item.distractor_options || [])];
+    const isPlaceholder = (Number(item.blank_length) || 0) === 0;
 
     return NextResponse.json({
       success: true,
@@ -91,7 +92,9 @@ export async function GET(req: NextRequest) {
         blank: { start: item.blank_start, length: item.blank_length },
         options,
         num_correct: (item.correct_options || []).length,
+        is_placeholder: isPlaceholder,
       },
+      skip: isPlaceholder,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'internal error' }, { status: 500 });

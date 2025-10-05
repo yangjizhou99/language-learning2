@@ -43,12 +43,22 @@ export async function GET(req: NextRequest) {
       .single();
     if (!article) return NextResponse.json({ error: 'article not found' }, { status: 404 });
 
-    // 获取全部句子的 cloze 数据
+    // 获取全部句子的 cloze 数据（仅已发布）
     const { data: sentences } = await supabase
       .from('cloze_shadowing_items')
-      .select('sentence_index, sentence_text, blank_start, blank_length, correct_options')
+      .select('sentence_index, sentence_text, blank_start, blank_length, correct_options, is_published')
       .eq('source_item_id', articleId)
+      .eq('is_published', true)
       .order('sentence_index', { ascending: true });
+
+    const mapped = (sentences || []).map((s: any) => ({
+      sentence_index: s.sentence_index,
+      sentence_text: s.sentence_text,
+      blank_start: s.blank_start,
+      blank_length: s.blank_length,
+      correct_options: Array.isArray(s.correct_options) ? s.correct_options : [],
+      is_placeholder: (Number(s.blank_length) || 0) === 0 || !(Array.isArray(s.correct_options) && s.correct_options.length > 0),
+    }));
 
     return NextResponse.json({
       success: true,
@@ -61,12 +71,13 @@ export async function GET(req: NextRequest) {
         audio_url: article.audio_url,
         translations: article.translations || {},
       },
-      sentences: sentences || [],
+      sentences: mapped,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'internal error' }, { status: 500 });
   }
 }
+
 
 
 

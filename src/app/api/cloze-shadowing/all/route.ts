@@ -62,16 +62,45 @@ export async function GET(req: NextRequest) {
       .eq('is_published', true)
       .order('sentence_index', { ascending: true });
 
+    // 稳定随机：基于用户+文章+句序的种子打乱选项顺序，避免正确项总是第一个
+    const stringHash = (str: string) => {
+      let h = 2166136261 >>> 0;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    };
+    const mulberry32 = (a: number) => {
+      return function() {
+        let t = (a += 0x6D2B79F5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    };
+    const shuffleWithSeed = (arr: string[], seed: number) => {
+      const a = arr.slice();
+      const rand = mulberry32(seed);
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+
     const sentences = (rows || []).map((r: any) => {
       const correct = Array.isArray(r.correct_options) ? r.correct_options : [];
       const distractors = Array.isArray(r.distractor_options) ? r.distractor_options : [];
-      const options = [...correct, ...distractors];
+      const seedStr = `${user.id}|${article.id}|${r.sentence_index}`;
+      const options = shuffleWithSeed([...correct, ...distractors], stringHash(seedStr));
       return {
         index: r.sentence_index,
         text: r.sentence_text,
         blank: { start: r.blank_start, length: r.blank_length },
         options,
         num_correct: correct.length,
+        is_placeholder: (Number(r.blank_length) || 0) === 0,
       };
     });
 
@@ -89,5 +118,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error?.message || 'internal error' }, { status: 500 });
   }
 }
+
 
 
