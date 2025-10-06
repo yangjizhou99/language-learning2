@@ -31,6 +31,8 @@ interface SentencePracticeProps {
   originalText: string | undefined | null;
   language: Lang;
   className?: string;
+  audioUrl?: string | null;
+  sentenceTimeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }>;
 }
 
 function splitSentences(text: string, language: Lang): string[] {
@@ -120,7 +122,7 @@ const EN_STOPWORDS = new Set([
   'the','a','an','and','or','but','if','then','else','when','at','by','for','in','of','on','to','with','as','is','are','was','were','be','been','being','do','does','did','have','has','had','i','you','he','she','it','we','they','them','me','my','your','his','her','its','our','their','this','that','these','those','from'
 ]);
 
-export default function SentencePractice({ originalText, language, className = '' }: SentencePracticeProps) {
+export default function SentencePractice({ originalText, language, className = '', audioUrl, sentenceTimeline }: SentencePracticeProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [displayText, setDisplayText] = useState('');
@@ -128,6 +130,9 @@ export default function SentencePractice({ originalText, language, className = '
   const recognitionRef = useRef<WebSpeechRecognition | null>(null);
   const silenceTimerRef = useRef<number | null>(null);
   const lastResultAtRef = useRef<number>(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const stopAtRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const sentences = useMemo(() => splitSentences(originalText || '', language), [originalText, language]);
   const total = sentences.length;
@@ -138,6 +143,32 @@ export default function SentencePractice({ originalText, language, className = '
     const t = originalText || '';
     return /(?:^|\n)\s*[ABＡＢ][：:]/.test(t);
   }, [originalText]);
+
+  // 初始化音频用于基于时间轴播放
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!audioUrl || !sentenceTimeline || sentenceTimeline.length === 0) return;
+    if (!audioRef.current) {
+      audioRef.current = new Audio(audioUrl);
+      audioRef.current.preload = 'auto';
+      audioRef.current.addEventListener('timeupdate', () => {
+        const stopAt = stopAtRef.current;
+        if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
+          audioRef.current.pause();
+          stopAtRef.current = null;
+        }
+      });
+      // 当暂停时，停止 raf 轮询
+      audioRef.current.addEventListener('pause', () => {
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+      });
+    } else {
+      audioRef.current.src = audioUrl;
+    }
+  }, [audioUrl, sentenceTimeline]);
 
   // metrics
   const { coverage, similarity, missing, extra } = useMemo(() => {
@@ -245,17 +276,72 @@ export default function SentencePractice({ originalText, language, className = '
     } catch {}
   }, []);
 
-  const speak = useCallback(() => {
-    try {
-      // 忽略对话角色标签（A: / B: / A： / B：）
-      const sentenceForTts = currentSentence.replace(/^\s*[ABＡＢ]\s*[：:]\s*/, '');
-      const utter = new SpeechSynthesisUtterance(sentenceForTts);
-      const langMap: Record<string, string> = { ja: 'ja-JP', zh: 'zh-CN', en: 'en-US' };
-      utter.lang = langMap[language] || 'en-US';
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utter);
-    } catch {}
-  }, [currentSentence, language]);
+  const speak = useCallback(async () => {
+    // 优先使用时间轴 + 整段音频精确播放
+    if (audioUrl && sentenceTimeline && sentenceTimeline.length > 0) {
+      // 确保第一次点击也有音频实例
+      if (!audioRef.current) {
+        try {
+          audioRef.current = new Audio(audioUrl);
+          audioRef.current.preload = 'auto';
+          audioRef.current.addEventListener('timeupdate', () => {
+            const stopAt = stopAtRef.current;
+            if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
+              audioRef.current.pause();
+              stopAtRef.current = null;
+            }
+          });
+        } catch {}
+      } else if (audioRef.current.src !== audioUrl) {
+        audioRef.current.src = audioUrl;
+      }
+
+      const seg = sentenceTimeline.find((s) => s.index === activeIndex) || sentenceTimeline[activeIndex];
+      if (seg && audioRef.current) {
+        try {
+          // 确保已加载元数据再跳转时间
+          const ensureReady = () =>
+            new Promise<void>((resolve) => {
+              const a = audioRef.current!;
+              if (a.readyState >= 1) return resolve();
+              const onLoaded = () => {
+                a.removeEventListener('loadedmetadata', onLoaded);
+                a.removeEventListener('canplay', onLoaded);
+                resolve();
+              };
+              a.addEventListener('loadedmetadata', onLoaded, { once: true });
+              a.addEventListener('canplay', onLoaded, { once: true });
+              try { a.load(); } catch {}
+            });
+          await ensureReady();
+          // 为了避免卡口噪声，轻微前移起点；为防止串到下一句，提前 STOP_EPS 停止
+          const START_EPS = 0.005; // 5ms
+          const STOP_EPS = 0.08;   // 80ms 安全边距
+          audioRef.current.currentTime = Math.max(0, seg.start + START_EPS);
+          stopAtRef.current = Math.max(seg.start, seg.end - STOP_EPS);
+          // 停止浏览器自身 TTS，避免重叠
+          try { window.speechSynthesis.cancel(); } catch {}
+          await audioRef.current.play();
+          // 采用 rAF 高频检测，规避 timeupdate 触发频率过低造成的越界
+          const tick = () => {
+            const stopAt = stopAtRef.current;
+            if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
+              audioRef.current.pause();
+              stopAtRef.current = null;
+              rafRef.current = null;
+              return;
+            }
+            rafRef.current = requestAnimationFrame(tick);
+          };
+          if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
+          return;
+        } catch {}
+      }
+    }
+    // 禁用浏览器 TTS 回退：若无法使用生成音频与时间轴，则直接返回
+    alert('未找到可用的生成音频或时间轴，无法播放该句。');
+    return;
+  }, [currentSentence, language, audioUrl, sentenceTimeline, activeIndex]);
 
   const next = useCallback(() => {
     window.speechSynthesis.cancel();

@@ -114,6 +114,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       meta: { from_draft: d.id, notes: d.notes, published_at: new Date().toISOString() },
     };
 
+    // 若草稿 notes 中带有句级时间轴/时长，发布时落入目标表字段
+    if (d?.notes?.sentence_timeline) {
+      insertData.sentence_timeline = d.notes.sentence_timeline;
+    }
+    if (typeof d?.notes?.duration_ms === 'number') {
+      insertData.duration_ms = d.notes.duration_ms;
+    }
+
     if (audio_bucket) insertData.audio_bucket = audio_bucket;
     if (audio_path) insertData.audio_path = audio_path;
 

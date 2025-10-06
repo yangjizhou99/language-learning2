@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
       const { data: items, error } = await supabase
         .from('shadowing_items')
         .select(
-          'id, lang, level, title, text, audio_url, duration_ms, tokens, cefr, meta, translations, trans_updated_at, created_at',
+          'id, lang, level, title, text, audio_url, duration_ms, tokens, cefr, meta, translations, trans_updated_at, created_at, sentence_timeline',
         )
         .eq('lang', lang)
         .eq('level', level)
@@ -108,6 +108,7 @@ export async function GET(req: NextRequest) {
           tokens: selectedItem.tokens,
           cefr: selectedItem.cefr,
           meta: selectedItem.meta,
+          sentence_timeline: (selectedItem as unknown as { sentence_timeline?: unknown }).sentence_timeline || null,
         },
       };
     });

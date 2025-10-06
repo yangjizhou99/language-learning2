@@ -3665,6 +3665,10 @@ export default function JapaneseShadowingPage() {
                     <SentencePractice
                       originalText={currentItem?.text}
                       language={currentItem?.lang || 'ja'}
+                      audioUrl={currentItem?.audio_url || null}
+                      sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
+                        ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
+                        : undefined}
                     />
                   )}
 
@@ -5277,9 +5281,34 @@ export default function JapaneseShadowingPage() {
 
                   {/* 逐句练习（仅步骤5，正式录音前；不保存，仅实时反馈） */}
                   {(!gatingActive || step >= 5) && (
+                    (() => {
+                      try {
+                        if (currentItem && (!currentItem.audio_url || !(currentItem as unknown as { sentence_timeline?: unknown }).sentence_timeline)) {
+                          (async () => {
+                            try {
+                              const headers = await getAuthHeaders();
+                              const r = await fetch(`/api/shadowing/item?id=${currentItem!.id}`, { headers, credentials: 'include' });
+                              if (r.ok) {
+                                const data = await r.json();
+                                if (data?.item && data.item.id === currentItem!.id) {
+                                  setCurrentItem((prev) => (prev && prev.id === data.item.id ? { ...prev, ...data.item } as any : prev));
+                                }
+                              }
+                            } catch {}
+                          })();
+                        }
+                      } catch {}
+                      return null;
+                    })()
+                  )}
+                  {(!gatingActive || step >= 5) && (
                     <SentencePractice
                       originalText={currentItem?.text}
                       language={currentItem?.lang || 'ja'}
+                      audioUrl={currentItem?.audio_url || null}
+                      sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
+                        ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
+                        : undefined}
                     />
                   )}
 

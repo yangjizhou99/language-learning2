@@ -384,7 +384,7 @@ export default function ShadowingPage() {
     }
   }, [currentItem]);
 
-  // （移除重复母语加载副作用，统一由“步骤切换时的联动”处理翻译语言）
+  // （移除重复母语加载副作用，统一由"步骤切换时的联动"处理翻译语言）
 
   // 发音功能
   const speakWord = (word: string, lang: string) => {
@@ -3661,6 +3661,10 @@ export default function ShadowingPage() {
                     <SentencePractice
                       originalText={currentItem?.text}
                       language={currentItem?.lang || 'ja'}
+                      audioUrl={currentItem?.audio_url || null}
+                      sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
+                        ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
+                        : undefined}
                     />
                   )}
 
@@ -4648,7 +4652,7 @@ export default function ShadowingPage() {
                           <ul className="list-disc pl-5 space-y-1">
                             <li>放松不要急，先整体感知节奏与停顿</li>
                             <li>不要看原文，尝试抓关键词与语气</li>
-                            <li>准备好后点击“下一步”，再看原文跟读</li>
+                            <li>准备好后点击"下一步"，再看原文跟读</li>
                           </ul>
                         </div>
                       )}
@@ -4667,7 +4671,7 @@ export default function ShadowingPage() {
                           <div className="font-medium">选生词 + AI 解释：</div>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>点击原文中的词语即可加入生词</li>
-                            <li>点击“AI解释”为生词生成本地化释义与例句</li>
+                            <li>点击"AI解释"为生词生成本地化释义与例句</li>
                             <li>建议聚焦于影响理解的关键词汇，避免一次选太多</li>
                           </ul>
                         </div>
@@ -5356,9 +5360,34 @@ export default function ShadowingPage() {
 
                   {/* 逐句练习（仅步骤5，正式录音前；不保存，仅实时反馈） */}
                   {(!gatingActive || step >= 5) && (
+                    (() => {
+                      try {
+                        if (currentItem && (!currentItem.audio_url || !(currentItem as unknown as { sentence_timeline?: unknown }).sentence_timeline)) {
+                          (async () => {
+                            try {
+                              const headers = await getAuthHeaders();
+                              const r = await fetch(`/api/shadowing/item?id=${currentItem!.id}`, { headers, credentials: 'include' });
+                              if (r.ok) {
+                                const data = await r.json();
+                                if (data?.item && data.item.id === currentItem!.id) {
+                                  setCurrentItem((prev) => (prev && prev.id === data.item.id ? { ...prev, ...data.item } as any : prev));
+                                }
+                              }
+                            } catch {}
+                          })();
+                        }
+                      } catch {}
+                      return null;
+                    })()
+                  )}
+                  {(!gatingActive || step >= 5) && (
                     <SentencePractice
                       originalText={currentItem?.text}
                       language={currentItem?.lang || 'ja'}
+                      audioUrl={currentItem?.audio_url || null}
+                      sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
+                        ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
+                        : undefined}
                     />
                   )}
 

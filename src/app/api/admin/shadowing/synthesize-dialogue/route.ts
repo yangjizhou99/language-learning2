@@ -238,6 +238,8 @@ export async function POST(req: NextRequest) {
 
     // 为每个角色分别合成音频（只在内存中处理，不上传独立音频）
     const audioBuffers: Buffer[] = [];
+    const segmentTexts: string[] = [];
+    const segmentSpeakers: string[] = [];
 
     // 二次清洗规则：移除片段内部残留的说话者标识（如同一行混入下一位标识）
     const innerLabelRE = /[\s\uFEFF\u00A0\u3000"'“”‘’·•\-–—]*([A-Z\uFF21-\uFF3A])\s*[\:\uFF1A]\s*/g;
@@ -252,8 +254,9 @@ export async function POST(req: NextRequest) {
       // 为不同角色调整音色参数
       const voiceParams = getVoiceParamsForSpeaker(speaker, lang);
 
+      const cleaned = content.replace(innerLabelRE, ' ').trim();
       const audioBuffer = await synthesizeTTS({
-        text: content.replace(innerLabelRE, ' ').trim(),
+        text: cleaned,
         lang,
         voiceName: voice,
         speakingRate: speakingRate * voiceParams.speakingRate,
@@ -261,11 +264,32 @@ export async function POST(req: NextRequest) {
       });
 
       audioBuffers.push(audioBuffer);
+      segmentTexts.push(cleaned);
+      segmentSpeakers.push(sKey);
     }
 
     // 合并音频（在内存中完成，不保存独立音频）
     console.log(`合并 ${audioBuffers.length} 个音频片段`);
     const mergedAudio = await mergeAudioBuffers(audioBuffers);
+
+    // 使用 ffprobe 获取精确时长，回退轻量估计
+    const { getMp3DurationSeconds } = await import('@/lib/media-probe');
+    const durations: number[] = [];
+    for (const b of audioBuffers) {
+      try {
+        const d = await getMp3DurationSeconds(b);
+        durations.push(Number.isFinite(d) && d > 0 ? d : Math.max(0.2, b.length / 16000));
+      } catch {
+        durations.push(Math.max(0.2, b.length / 16000));
+      }
+    }
+    const sentenceTimeline = durations.map((d, i) => ({
+      index: i,
+      text: segmentTexts[i] || '',
+      start: durations.slice(0, i).reduce((a, b) => a + b, 0),
+      end: durations.slice(0, i + 1).reduce((a, b) => a + b, 0),
+      speaker: segmentSpeakers[i] || undefined,
+    }));
 
     // 上传到 Supabase Storage
     const bucket = process.env.NEXT_PUBLIC_SHADOWING_AUDIO_BUCKET || 'tts';
@@ -290,6 +314,8 @@ export async function POST(req: NextRequest) {
       direct_url: uploadResult.url,
       dialogue_count: dialogue.length,
       speakers: [...new Set(dialogue.map((d) => d.speaker))],
+      sentence_timeline: sentenceTimeline,
+      duration_ms: Math.round((durations.reduce((a, b) => a + b, 0)) * 1000),
     });
   } catch (error: unknown) {
     console.error('对话音频合成失败:', error);
