@@ -41,6 +41,7 @@
     "dotenv": "^17.2.2",
     "edge-tts": "^1.0.1",
     "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0",
     "google-auth-library": "^10.3.0",
     "html-to-text": "^9.0.5",
     "lucide-react": "^0.542.0",
@@ -63,6 +64,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.13",
+    "@types/ffprobe-static": "^2.0.3",
     "@types/html-to-text": "^9.0.4",
     "@types/node": "^20",
     "@types/pg": "^8.15.5",
