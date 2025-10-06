@@ -113,6 +113,7 @@ export async function GET(req: NextRequest) {
           audio_url,
           audio_bucket,
           audio_path,
+          sentence_timeline,
           topic,
           genre,
           register,
@@ -270,6 +271,7 @@ export async function GET(req: NextRequest) {
 
           return {
             ...item,
+            sentence_timeline: (item as unknown as { sentence_timeline?: unknown }).sentence_timeline || null,
             audio_url:
               item.audio_url_proxy ||
               item.audio_url ||

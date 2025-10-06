@@ -22,13 +22,40 @@ interface AudioRecorderProps {
   onRecordingDeleted?: (recording: AudioRecording) => void;
   onTranscriptionReady?: (transcription: string) => void; // 添加转录回调
   onRecordingSelected?: (recording: AudioRecording) => void; // 添加录音选择回调
-  originalText?: string; // 添加原文用于生成相关转录
+  originalText?: string; // 添加原文用于生成相关转录（不再用于兜底，仅保留兼容）
   language?: string; // 添加语言参数
   className?: string;
   scrollTargetId?: string; // 开始录音后滚动的目标元素 id
 }
 
-const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
+// 极简 Web Speech API 类型，避免 any
+type WebSpeechRecognitionEvent = {
+  resultIndex: number;
+  results: Array<{
+    0: { transcript: string };
+    isFinal: boolean;
+  }>;
+};
+
+type WebSpeechRecognition = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onstart?: () => void;
+  onresult?: (event: WebSpeechRecognitionEvent) => void;
+  onerror?: (event: { error?: string }) => void;
+  onend?: () => void;
+  start: () => void;
+  stop: () => void;
+};
+
+interface AudioRecorderHandle {
+  uploadCurrentRecording: () => Promise<void>;
+  hasUnsavedRecording: () => boolean | string | null;
+  stopPlayback: () => void;
+}
+
+const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
   (
     {
       sessionId,
@@ -37,10 +64,8 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
       onRecordingDeleted,
       onTranscriptionReady,
       onRecordingSelected,
-      originalText,
       language = 'ja',
       className = '',
-      scrollTargetId: _scrollTargetId,
     },
     ref,
   ) => {
@@ -50,7 +75,6 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
     const [recordings, setRecordings] = useState<AudioRecording[]>(existingRecordings);
     const [currentRecordingUrl, setCurrentRecordingUrl] = useState<string | null>(null);
     const [uploadingRecording, setUploadingRecording] = useState(false);
-    const [isTranscribing, setIsTranscribing] = useState(false);
     const [currentTranscription, setCurrentTranscription] = useState<string>('');
     const [isRealTimeTranscribing, setIsRealTimeTranscribing] = useState(false);
     const [realTimeTranscription, setRealTimeTranscription] = useState<string>('');
@@ -61,7 +85,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const recognitionRef = useRef<any>(null);
+    const recognitionRef = useRef<WebSpeechRecognition | null>(null);
     const recordingStartTimeRef = useRef<number>(0);
 
     // 同步外部录音列表的变化
@@ -73,7 +97,8 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
     useEffect(() => {
       if (typeof window !== 'undefined') {
         const SpeechRecognition =
-          (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+          (window as unknown as { SpeechRecognition?: new () => WebSpeechRecognition; webkitSpeechRecognition?: new () => WebSpeechRecognition }).SpeechRecognition ||
+          (window as unknown as { SpeechRecognition?: new () => WebSpeechRecognition; webkitSpeechRecognition?: new () => WebSpeechRecognition }).webkitSpeechRecognition;
         if (SpeechRecognition) {
           recognitionRef.current = new SpeechRecognition();
           recognitionRef.current.continuous = true;
@@ -94,7 +119,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
             setDisplayTranscription('');
           };
 
-          recognitionRef.current.onresult = (event: any) => {
+          recognitionRef.current.onresult = (event: WebSpeechRecognitionEvent) => {
             let finalTranscript = '';
             let interimTranscript = '';
 
@@ -124,7 +149,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
             setDisplayTranscription(combined);
           };
 
-          recognitionRef.current.onerror = (event: any) => {
+          recognitionRef.current.onerror = (event: { error?: string }) => {
             console.error('实时语音识别错误:', event.error);
             setIsRealTimeTranscribing(false);
           };
@@ -142,67 +167,18 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
           recognitionRef.current.stop();
         }
       };
-    }, []);
+    }, [language]);
 
     // 语音转文字功能
-    const transcribeAudio = useCallback(
-      async (audioBlob: Blob) => {
-        setIsTranscribing(true);
-        try {
-          // 优先使用实时转录的结果
-          const latestTranscription = realTimeTranscriptionRef.current;
-          if (latestTranscription && latestTranscription.trim().length > 0) {
-            setCurrentTranscription(latestTranscription);
-            return latestTranscription;
-          }
-
-          // 如果没有实时转录结果，使用当前转录
-          if (currentTranscription && currentTranscription.trim().length > 0) {
-            return currentTranscription;
-          }
-
-          // 如果都没有，则使用转录API作为备选
-
-          const formData = new FormData();
-          formData.append('audio', audioBlob, 'recording.webm');
-          if (originalText) {
-            formData.append('originalText', originalText);
-          }
-          formData.append('language', language); // 传递语言参数
-
-          const response = await fetch('/api/transcribe', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!response.ok) {
-            throw new Error('转录API请求失败');
-          }
-
-          const data = await response.json();
-
-          if (data.success && data.transcription) {
-            setCurrentTranscription(data.transcription);
-            return data.transcription;
-          } else {
-            throw new Error('转录API返回无效结果');
-          }
-        } catch (error) {
-          console.error('语音转文字失败:', error);
-          // 返回模拟结果作为备选
-          const mockTranscription =
-            language === 'zh' ? '你好，很高兴认识你' : 'こんにちは、はじめまして';
-          setCurrentTranscription(mockTranscription);
-          return mockTranscription;
-        } finally {
-          setIsTranscribing(false);
-        }
-      },
-      [realTimeTranscription, currentTranscription, originalText, language],
-    );
+    // 仅使用实时识别结果；不再调用服务端兜底
+    const MIN_TRANSCRIPTION_CHARS = 6;
 
     const startRecording = useCallback(async () => {
       try {
+        if (!recognitionRef.current) {
+          alert('当前浏览器不支持实时语音识别，请更换浏览器/开启权限');
+          return;
+        }
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
         const mediaRecorder = new MediaRecorder(stream, {
@@ -297,7 +273,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
         }
       } catch (error) {
         console.error('Error starting recording:', error);
-        alert('无法访问麦克风，请检查权限设置');
+        alert('无法访问麦克风，请更换浏览器/开启权限');
       }
     }, []);
 
@@ -311,39 +287,19 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
           recognitionRef.current.stop();
         }
 
-        // 等待一小段时间让语音识别完成，然后使用最终结果
+        // 等待一小段时间让语音识别完成，然后仅使用实时结果
         setTimeout(() => {
-          const latestTranscription = realTimeTranscriptionRef.current;
-
-          if (latestTranscription.trim()) {
-            // 检查转录质量
-            const transcriptionQuality = checkTranscriptionQuality(
-              latestTranscription,
-              originalText,
-            );
-
-            // 立即更新转录文字状态
+          const latestTranscription = realTimeTranscriptionRef.current.trim();
+          if (latestTranscription) {
             setCurrentTranscription(latestTranscription);
             onTranscriptionReady?.(latestTranscription);
           } else {
-            // 如果没有实时转录结果，使用API转录
-            if (audioChunksRef.current.length > 0) {
-              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-
-              // 自动进行语音转文字
-              transcribeAudio(audioBlob)
-                .then((transcription) => {
-                  setCurrentTranscription(transcription);
-                  onTranscriptionReady?.(transcription);
-                })
-                .catch((error) => {
-                  console.error('转录失败:', error);
-                });
-            }
+            setCurrentTranscription('');
+            alert('识别结果为空或过短，请重试（请更换浏览器/开启权限）');
           }
-        }, 1000); // 增加等待时间到1秒
+        }, 800);
       }
-    }, [isRecording, realTimeTranscription, transcribeAudio, onTranscriptionReady]);
+    }, [isRecording, onTranscriptionReady]);
 
     const playAudio = useCallback(
       (url: string, recordingId: string) => {
@@ -416,13 +372,17 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
         const data = await response.json();
 
         if (data.success) {
-          // 确保使用最新的转录文字
-          const finalTranscription =
-            realTimeTranscriptionRef.current.trim() || currentTranscription;
+          // 仅使用实时转录结果
+          const finalTranscription = realTimeTranscriptionRef.current.trim();
+          if (!finalTranscription || finalTranscription.length < MIN_TRANSCRIPTION_CHARS) {
+            alert('转写过短，保存失败，请重试');
+            // 不追加到列表，直接返回
+            return;
+          }
 
           const newRecording = {
             ...data.audio,
-            transcription: finalTranscription, // 添加转录文字
+            transcription: finalTranscription, // 仅实时转写
           };
           setRecordings((prev) => [...prev, newRecording]);
           onRecordingAdded?.(newRecording);
@@ -446,7 +406,6 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
       sessionId,
       onRecordingAdded,
       realTimeTranscription,
-      currentTranscription,
     ]);
 
     // 暴露方法给父组件
@@ -562,7 +521,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
         // 停止录音
         if (mediaRecorderRef.current) {
           try {
-            if ((mediaRecorderRef.current as any).state === 'recording') {
+            if (mediaRecorderRef.current.state === 'recording') {
               mediaRecorderRef.current.stop();
             }
           } catch {}
@@ -587,33 +546,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
       };
     }, [currentRecordingUrl]);
 
-    // 检查转录质量
-    const checkTranscriptionQuality = (transcription: string, originalText?: string) => {
-      if (!originalText) return { quality: 'unknown', message: '无法检查转录质量' };
-
-      const transcriptionLength = transcription.trim().length;
-      const originalLength = originalText.trim().length;
-      const lengthRatio = transcriptionLength / originalLength;
-
-      let quality = 'good';
-      let message = '';
-
-      if (lengthRatio < 0.3) {
-        quality = 'poor';
-        message = '转录内容过少，建议重新录音';
-      } else if (lengthRatio < 0.6) {
-        quality = 'fair';
-        message = '转录内容不完整，建议重新录音';
-      } else if (lengthRatio > 1.5) {
-        quality = 'fair';
-        message = '转录内容过多，可能包含背景噪音';
-      } else {
-        quality = 'good';
-        message = '转录质量良好';
-      }
-
-      return { quality, message, lengthRatio };
-    };
+    // 已移除质量检查，仅保留实时识别
 
     return (
       <div
@@ -680,13 +613,6 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
                 <span className="text-sm font-medium text-green-700">实时转录中...</span>
               </div>
             )}
-
-            {isTranscribing && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
-                <span className="text-sm font-medium text-blue-700">转录中...</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -724,13 +650,13 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
               <div className="flex items-center gap-2">
                 <Button
                   onClick={uploadCurrentRecording}
-                  disabled={uploadingRecording || isTranscribing}
+                  disabled={uploadingRecording || (currentTranscription.trim().length < MIN_TRANSCRIPTION_CHARS)}
                   variant="default"
                   size="sm"
                   className="h-8 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all"
                 >
                   <Upload className="w-3 h-3 mr-1" />
-                  {uploadingRecording ? '上传中...' : isTranscribing ? '转录中...' : '保存'}
+                  {uploadingRecording ? '上传中...' : '保存'}
                 </Button>
                 <Button
                   onClick={discardCurrentRecording}
@@ -844,7 +770,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
               <Mic className="w-10 h-10 text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-700 mb-2">还没有录音</h3>
-            <p className="text-gray-500 leading-relaxed">点击"开始录音"开始练习</p>
+            <p className="text-gray-500 leading-relaxed">点击「开始录音」开始练习</p>
           </div>
         )}
         </Card>
@@ -852,5 +778,7 @@ const AudioRecorder = React.forwardRef<any, AudioRecorderProps>(
     );
   },
 );
+
+AudioRecorder.displayName = 'AudioRecorder';
 
 export default AudioRecorder;

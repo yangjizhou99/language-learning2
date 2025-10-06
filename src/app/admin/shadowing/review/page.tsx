@@ -200,6 +200,42 @@ export default function ShadowingReviewList() {
     }>
   >([]);
 
+  // 句级合成（含时间轴）
+  const synthesizeSentences = async (id: string, draft: any) => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const resp = await fetch('/api/admin/shadowing/synthesize-sentences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          id,
+          text: draft.text,
+          lang: draft.lang,
+          voice: selectedVoice?.name || null,
+          speakingRate: draft?.notes?.speakingRate || 1.0,
+          pitch: draft?.notes?.pitch || 0,
+        }),
+      });
+      const j = await resp.json();
+      if (!resp.ok) throw new Error(j?.error || '句级合成失败');
+
+      // 更新本地状态：使用代理URL
+      setItems((prev) =>
+        prev.map((it) => (it.id === id ? { ...it, notes: { ...(it.notes || {}), audio_url: j.audio_url } } : it)),
+      );
+      return true;
+    } catch (e) {
+      console.error('synthesizeSentences failed', e);
+      return false;
+    }
+  };
+
   // 统计信息
   const stats = useMemo(() => {
     const total = items.length;
@@ -801,7 +837,7 @@ export default function ShadowingReviewList() {
         }
 
         // 分别合成每个说话者的音频
-        const audioUrls = await synthDialogueWithDifferentVoices(
+        const merged = await synthDialogueWithDifferentVoices(
           draft.text,
           speakerVoices,
           draft.lang,
@@ -810,13 +846,15 @@ export default function ShadowingReviewList() {
           token || null,
         );
 
-        if (audioUrls && audioUrls.length > 0) {
+        if (merged && merged.audio_url) {
           // 保存合并后的音频地址
           const next = {
             ...draft,
             notes: {
               ...(draft.notes || {}),
-              audio_url: audioUrls[0], // 使用第一个音频（合并后的）
+              audio_url: merged.audio_url, // 合并后的整段音频
+              sentence_timeline: merged.sentence_timeline || null,
+              duration_ms: merged.duration_ms || null,
               is_dialogue: true,
               dialogue_count: Object.keys(speakerVoices).length,
               speakers: Object.keys(speakerVoices),
@@ -825,7 +863,7 @@ export default function ShadowingReviewList() {
             },
           };
 
-          console.log('准备保存的音频URL:', audioUrls[0]);
+          console.log('准备保存的音频URL:', merged.audio_url);
           console.log('准备保存的notes:', next.notes);
 
           const saveUrl = `/api/admin/shadowing/drafts/${draft.id}`;
@@ -850,13 +888,7 @@ export default function ShadowingReviewList() {
           console.log('多音色对话合成保存成功');
 
           // 直接更新本地状态，避免等待页面刷新
-          setItems((prevItems) =>
-            prevItems.map((item) =>
-              item.id === draft.id
-                ? { ...item, notes: { ...item.notes, audio_url: audioUrls[0] } }
-                : item,
-            ),
-          );
+          setItems((prevItems) => prevItems.map((item) => (item.id === draft.id ? { ...item, notes: { ...item.notes, audio_url: merged.audio_url } } : item)));
 
           // 触发页面刷新以显示新的音频
           setQ((q) => q + ' '); // 添加空格确保值变化
@@ -871,18 +903,11 @@ export default function ShadowingReviewList() {
         console.log('独白格式，使用随机音色:', selectedVoice);
       }
 
-      // 使用分配的音色进行TTS合成
-      const apiEndpoint = '/api/admin/shadowing/synthesize';
-
-      console.log(`使用随机音色分配进行TTS合成: ${draft.title}`);
-
-      // 创建AbortController用于超时控制
-      const controller = new AbortController();
-      const timeoutId = (globalThis as any).setTimeout(() => controller.abort(), timeout * 1000); // 使用配置的超时时间
-
+      // 非对话体：按句合成并生成时间轴，然后合并为整段
+      console.log(`按句合成（含时间轴）: ${draft.title}`);
       let j: any;
       try {
-        const r = await fetch(apiEndpoint, {
+        const r = await fetch('/api/admin/shadowing/synthesize-sentences', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -895,31 +920,24 @@ export default function ShadowingReviewList() {
             speakingRate: draft?.notes?.speakingRate || 1.0,
             pitch: draft?.notes?.pitch || 0,
           }),
-          signal: controller.signal,
         });
-
-        (globalThis as any).clearTimeout(timeoutId);
         j = await r.json();
-        if (!r.ok) throw new Error(j?.error || 'TTS 失败');
+        if (!r.ok) throw new Error(j?.error || '按句合成失败');
       } catch (error) {
-        (globalThis as any).clearTimeout(timeoutId);
-        if (error instanceof Error && error.name === 'AbortError') {
-          throw new Error(`TTS合成超时（${timeout}秒）`);
-        }
         throw error;
       }
 
-      // 写入 notes.audio_url 并保存
+      // 写入草稿 notes：整段音频 + 句级时间轴 + 时长
       const next = {
         ...draft,
         notes: {
           ...(draft.notes || {}),
           audio_url: j.audio_url,
-          is_dialogue: j.is_dialogue || isDialogue,
-          dialogue_count: j.dialogue_count || null,
-          speakers: j.speakers || null,
-          tts_provider: j.provider || 'google',
-          random_voice_assignment: selectedVoice, // 记录随机音色分配
+          sentence_timeline: j.sentence_timeline || null,
+          duration_ms: j.duration_ms || null,
+          is_dialogue: false,
+          tts_provider: 'google',
+          random_voice_assignment: selectedVoice,
         },
       };
       const saveUrl = `/api/admin/shadowing/drafts/${id}`;
@@ -933,7 +951,7 @@ export default function ShadowingReviewList() {
       });
       if (!save.ok) throw new Error(`保存音频地址失败(${save.status})`);
 
-      // 直接更新本地状态，避免等待页面刷新
+      // 更新本地状态（仅需音频地址立即可试听）
       setItems((prevItems) =>
         prevItems.map((item) =>
           item.id === id ? { ...item, notes: { ...item.notes, audio_url: j.audio_url } } : item,
@@ -959,7 +977,7 @@ export default function ShadowingReviewList() {
 
     const mapping: Record<string, string> = {};
 
-    // 基于“备选音色”随机按性别分配（优先）：A=男声、B=女声
+    // 基于"备选音色"随机按性别分配（优先）：A=男声、B=女声
     const maleVoices = (candidateVoices || []).filter((v: any) => {
       const g = (v.ssml_gender || v.ssmlGender || '').toLowerCase();
       return g === 'male' || g.includes('男');
@@ -1109,7 +1127,7 @@ export default function ShadowingReviewList() {
     speakingRate: number,
     pitch: number,
     token: string | null,
-  ): Promise<string[]> => {
+  ): Promise<{ audio_url: string; sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }>; duration_ms?: number }> => {
     try {
       console.log('开始多音色对话合成:', {
         text: text.substring(0, 100) + '...',
@@ -1140,8 +1158,8 @@ export default function ShadowingReviewList() {
         throw new Error('没有找到有效的对话片段');
       }
 
-      // 直接调用对话合成API，避免生成独立音频文件
-      console.log('调用对话合成API，避免独立音频存储');
+      // 直接调用对话合成API（它现在会返回时间轴）
+      console.log('调用对话合成API，返回整段音频与时间轴');
 
       const response = await fetch('/api/admin/shadowing/synthesize-dialogue', {
         method: 'POST',
@@ -1164,8 +1182,11 @@ export default function ShadowingReviewList() {
 
       const result = await response.json();
       console.log('对话合成完成:', result.audio_url);
-
-      return [result.audio_url];
+      return {
+        audio_url: result.audio_url,
+        sentence_timeline: result.sentence_timeline || null,
+        duration_ms: result.duration_ms || null,
+      };
     } catch (error) {
       console.error('多音色对话合成失败:', error);
       throw error;
@@ -2183,6 +2204,7 @@ export default function ShadowingReviewList() {
                   </SelectContent>
                 </Select>
               </div>
+              {/* 专用按钮已移除；功能并入随机生成逻辑 */}
             </div>
           </div>
         </CardHeader>

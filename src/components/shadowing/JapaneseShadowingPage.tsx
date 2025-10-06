@@ -18,6 +18,7 @@ import SelectablePassage from '@/components/SelectablePassage';
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
+const SentencePractice = dynamic(() => import('@/components/shadowing/SentencePractice'), { ssr: false });
 import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LANG_LABEL } from '@/types/lang';
@@ -273,6 +274,7 @@ export default function JapaneseShadowingPage() {
   const audioRecorderRef = useRef<{
     uploadCurrentRecording: () => Promise<void>;
     hasUnsavedRecording: () => boolean;
+    stopPlayback: () => void;
   } | null>(null);
 
   // AI翻訳相关状态
@@ -3341,8 +3343,8 @@ export default function JapaneseShadowingPage() {
                     </div>
                     )}
 
-                    {/* 音频播放器（ステップ5は非表示） */}
-                    {currentItem.audio_url && (!gatingActive || step !== 5) && (
+                    {/* 音频播放器（第1-5步均可见） */}
+                    {currentItem.audio_url && (
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-sm font-medium text-blue-700">
@@ -3658,7 +3660,19 @@ export default function JapaneseShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 録音練習（ステップ5または完了後） */}
+                  {/* 逐句练习（移动端；仅步骤5或完成后；不保存，仅实时反馈） */}
+                  {(!gatingActive || step >= 5) && (
+                    <SentencePractice
+                      originalText={currentItem?.text}
+                      language={currentItem?.lang || 'ja'}
+                      audioUrl={currentItem?.audio_url || null}
+                      sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
+                        ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
+                        : undefined}
+                    />
+                  )}
+
+                  {/* 録音練習（移动端；ステップ5または完了後） */}
                   {(!gatingActive || step >= 5) && (
                   <Card className="p-4">
                     <AudioRecorder
@@ -4909,8 +4923,8 @@ export default function JapaneseShadowingPage() {
                     </div>
                     )}
 
-                    {/* 音频播放器（ステップ5は非表示） */}
-                    {currentItem.audio_url && (!gatingActive || step !== 5) && (
+                    {/* 音频播放器（第1-5步均可见） */}
+                    {currentItem.audio_url && (
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-sm font-medium text-blue-700">原文音频</span>
@@ -5220,6 +5234,82 @@ export default function JapaneseShadowingPage() {
                         ))}
                       </div>
                     </Card>
+                  )}
+
+                  {/* 第五步顶部保留原文音频播放 */}
+                  {(!gatingActive || step >= 5) && currentItem?.audio_url && (
+                    <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                          <span className="text-blue-600">🔊</span>
+                          原文オーディオ
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          {[0.8, 1, 1.2, 1.5].map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => {
+                                setPlaybackRate(r);
+                                if (audioRef.current) audioRef.current.playbackRate = r;
+                              }}
+                              className={`px-2 py-0.5 rounded text-xs border ${
+                                playbackRate === r
+                                  ? 'bg-blue-600 text-white border-blue-600'
+                                  : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                              }`}
+                            >
+                              {r}x
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <audio
+                        controls
+                        src={currentItem.audio_url}
+                        preload="none"
+                        className="w-full"
+                        ref={audioRef}
+                        onPlay={() => {
+                          if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+                          setIsPlaying(true);
+                        }}
+                        onPause={() => setIsPlaying(false)}
+                        onEnded={() => setIsPlaying(false)}
+                      />
+                    </Card>
+                  )}
+
+                  {/* 逐句练习（仅步骤5，正式录音前；不保存，仅实时反馈） */}
+                  {(!gatingActive || step >= 5) && (
+                    (() => {
+                      try {
+                        if (currentItem && (!currentItem.audio_url || !(currentItem as unknown as { sentence_timeline?: unknown }).sentence_timeline)) {
+                          (async () => {
+                            try {
+                              const headers = await getAuthHeaders();
+                              const r = await fetch(`/api/shadowing/item?id=${currentItem!.id}`, { headers, credentials: 'include' });
+                              if (r.ok) {
+                                const data = await r.json();
+                                if (data?.item && data.item.id === currentItem!.id) {
+                                  setCurrentItem((prev) => (prev && prev.id === data.item.id ? { ...prev, ...data.item } as any : prev));
+                                }
+                              }
+                            } catch {}
+                          })();
+                        }
+                      } catch {}
+                      return null;
+                    })()
+                  )}
+                  {(!gatingActive || step >= 5) && (
+                    <SentencePractice
+                      originalText={currentItem?.text}
+                      language={currentItem?.lang || 'ja'}
+                      audioUrl={currentItem?.audio_url || null}
+                      sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
+                        ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
+                        : undefined}
+                    />
                   )}
 
                   {/* 録音練習（ステップ5または完了後） */}
