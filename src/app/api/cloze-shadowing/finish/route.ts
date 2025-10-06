@@ -35,11 +35,12 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // 统计总句数
+    // 统计需要作答的总句数（排除占位/未挖空）
     const { data: totalRows, error: totalErr } = await supabase
       .from('cloze_shadowing_items')
       .select('id', { count: 'exact', head: true })
-      .eq('source_item_id', article_id);
+      .eq('source_item_id', article_id)
+      .neq('blank_length', 0);
     if (totalErr) return NextResponse.json({ error: 'count total failed' }, { status: 500 });
     const total = totalRows?.length ? totalRows.length : (totalRows as any) || 0; // head:true returns null, but count exposed via response; workaround below
 
@@ -49,7 +50,8 @@ export async function POST(req: NextRequest) {
       const { count } = await supabase
         .from('cloze_shadowing_items')
         .select('*', { count: 'exact', head: true })
-        .eq('source_item_id', article_id);
+        .eq('source_item_id', article_id)
+        .neq('blank_length', 0);
       totalCount = count || 0;
     } else totalCount = total;
 
@@ -82,6 +84,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error?.message || 'internal error' }, { status: 500 });
   }
 }
+
+
 
 
 

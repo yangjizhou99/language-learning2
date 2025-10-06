@@ -45,29 +45,38 @@ Return STRICT JSON:
 
 // 将对话文本按说话人轮次切分，去掉 "A:"/"B:" 等提示符
 function splitDialogueTurns(text: string) {
-  const lines = String(text || '')
+  const joined = String(text || '')
     .replace(/\r\n?/g, '\n')
-    .split('\n');
-  const turns: Array<{ text: string; speaker?: string }> = [];
-  const labelRe = /^\s*([A-Za-z]{1,10}|[Ａ-Ｚ])\s*[:：]\s*(.*)$/;
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    const m = trimmed.match(labelRe);
-    if (m) {
-      const speaker = String(m[1] || '').trim();
-      const content = String(m[2] || '').trim();
-      if (content) turns.push({ text: `${speaker}: ${content}`, speaker });
-    } else {
-      if (turns.length === 0) {
-        turns.push({ text: trimmed });
-      } else {
-        const last = turns[turns.length - 1];
-        last.text += (last.text.endsWith(' ') ? '' : ' ') + trimmed;
-      }
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join(' ');
+
+  // 全文范围内查找多次出现的 “A:”/“B:” 等标签
+  const re = /([A-Za-z]{1,10}|[Ａ-Ｚ])\s*[:：]\s*/g;
+  const matches: Array<{ speaker: string; labelStart: number; contentStart: number }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(joined))) {
+    const speaker = String(m[1] || '').trim();
+    matches.push({ speaker, labelStart: m.index, contentStart: re.lastIndex });
+  }
+
+  const turns: Array<{ text: string }> = [];
+  if (matches.length === 0) {
+    const t = joined.trim();
+    return t ? [{ text: t }] : [];
+  }
+
+  for (let i = 0; i < matches.length; i++) {
+    const cur = matches[i];
+    const nextStart = i + 1 < matches.length ? matches[i + 1].labelStart : joined.length;
+    const content = joined.slice(cur.contentStart, nextStart).trim();
+    if (content) {
+      turns.push({ text: `${cur.speaker}: ${content}` });
     }
   }
-  return turns.map((t) => ({ text: t.text }));
+
+  return turns;
 }
 
 function buildFixedDistractorsPrompt({
@@ -229,6 +238,38 @@ export async function POST(req: NextRequest) {
         : splitSentencesWithIndex(it.text, (it.lang || 'en') as Lang);
       let createdForItem = 0;
       const used = new Set<number>();
+      const covered = new Set<number>();
+
+      // 为单句测量“挖空占比”的缓存，避免重复调用
+      const singleSentenceRatioCache: Record<number, number> = {};
+
+      const getBlankForText = async (
+        text: string,
+        seed: string,
+      ): Promise<
+        | { ok: true; blankText: string; blankStart: number; blankLength: number; ratio: number }
+        | { ok: false }
+      > => {
+        const attempt = await callAI(text, seed);
+        const idx0 = attempt.blankText ? findBlankIndex(text, attempt.blankText) : -1;
+        const ok = typeof attempt.blankText === 'string' && attempt.blankText.length > 0 && idx0 >= 0;
+        if (!ok) return { ok: false };
+        const blankLength = (attempt.blankText || '').length;
+        if (blankLength <= 0 || idx0 < 0 || idx0 + blankLength > text.length) return { ok: false };
+        const ratio = blankLength / Math.max(1, text.length);
+        return { ok: true, blankText: attempt.blankText, blankStart: idx0, blankLength, ratio };
+      };
+
+      const measureSingleSentenceRatio = async (idx: number) => {
+        if (idx < 0 || idx >= sents.length) return -1;
+        if (singleSentenceRatioCache[idx] !== undefined) return singleSentenceRatioCache[idx];
+        const text = sents[idx].text;
+        const seed = `${it.id}:${idx}`;
+        const res = await getBlankForText(text, seed);
+        const r = res.ok ? res.ratio : 0;
+        singleSentenceRatioCache[idx] = r;
+        return r;
+      };
 
       const callAI = async (text: string, seed: string) => {
         const prompt = buildPrompt({
@@ -263,11 +304,9 @@ export async function POST(req: NextRequest) {
       for (let i = 0; i < sents.length; i++) {
         if (used.has(i)) continue;
 
-        // 初始最小单位：当前句
-        const unitStart = i;
-        const unitEnd = i;
-        const unitText = sents[i].text;
-        const seed = `${it.id}:${i}`;
+        // 初始单元为当前句
+        let unitStart = i;
+        let unitEnd = i;
 
         // 若已有以该起始句生成记录，则跳过
         const { data: existing } = await supabase
@@ -278,19 +317,46 @@ export async function POST(req: NextRequest) {
           .maybeSingle?.() ?? { data: null };
         if (existing?.id) { used.add(i); continue; }
 
-        // 直接挖空（可为单词、短语、或整句），不再做占比与合并相邻句逻辑
-        const attempt = await callAI(unitText, seed);
-        const blankIdx0 = attempt.blankText ? findBlankIndex(unitText, attempt.blankText) : -1;
-        const ok = typeof attempt.blankText === 'string' && attempt.blankText.length > 0 && blankIdx0 >= 0;
+        // 对当前单元挖空
+        const initialSeed = `${it.id}:${unitStart}-${unitEnd}`;
+        let current = await getBlankForText(sents[i].text, initialSeed);
+        if (!current.ok) { used.add(i); continue; }
 
-        if (!ok) { used.add(i); continue; }
-        const blankStart: number = blankIdx0;
-        const blankLength: number = (attempt.blankText || '').length;
-        if (
-          blankLength <= 0 ||
-          blankStart < 0 ||
-          blankStart + blankLength > unitText.length
-        ) { used.add(i); continue; }
+        // 若挖空占比>50%，则与相邻句（更高占比者）合并，随后重新挖空，直至≤50%或无法再合并
+        while (current.ok && current.ratio > 0.5) {
+          const leftIdx = unitStart - 1;
+          const rightIdx = unitEnd + 1;
+
+          let leftRatio = -1;
+          let rightRatio = -1;
+          if (leftIdx >= 0 && !used.has(leftIdx)) leftRatio = await measureSingleSentenceRatio(leftIdx);
+          if (rightIdx < sents.length && !used.has(rightIdx)) rightRatio = await measureSingleSentenceRatio(rightIdx);
+
+          if (leftRatio < 0 && rightRatio < 0) {
+            // 无可合并的邻居
+            break;
+          }
+
+          // 选择更高占比的邻居进行合并（相等时优先右侧）
+          const chooseRight = rightRatio >= leftRatio;
+          if (chooseRight) unitEnd = rightIdx; else unitStart = leftIdx;
+
+          const mergedText = sents.slice(unitStart, unitEnd + 1).map((s) => s.text).join(' ');
+          const mergedSeed = `${it.id}:${unitStart}-${unitEnd}`;
+          const mergedRes = await getBlankForText(mergedText, mergedSeed);
+          if (!mergedRes.ok) {
+            // 合并后无法有效挖空
+            break;
+          }
+          current = mergedRes;
+        }
+
+        // 校验占比限制
+        if (!current.ok || current.ratio > 0.5) { used.add(i); continue; }
+
+        const unitText = sents.slice(unitStart, unitEnd + 1).map((s) => s.text).join(' ');
+        const blankStart = current.blankStart;
+        const blankLength = current.blankLength;
 
         // 第二阶段：仅生成3个干扰项；正确项固定为原文挖空内容
         const referenceAnswer = unitText.slice(blankStart, blankStart + blankLength);
@@ -347,7 +413,7 @@ export async function POST(req: NextRequest) {
 
           const { error: insErr } = await supabase.from('cloze_shadowing_items').insert(insertPayload);
           if (!insErr) {
-            for (let k = unitStart; k <= unitEnd; k++) used.add(k);
+            for (let k = unitStart; k <= unitEnd; k++) { used.add(k); covered.add(k); }
             createdForItem += 1;
             totalCreated += 1;
           } else {
@@ -356,6 +422,30 @@ export async function POST(req: NextRequest) {
         } catch {
           used.add(i);
         }
+      }
+
+      // 为未能挖空/被合并覆盖的句子补充占位记录，确保索引不缺失
+      for (let idx = 0; idx < sents.length; idx++) {
+        if (covered.has(idx)) continue;
+        const unitText = sents[idx].text;
+        const placeholderPayload = {
+          source_item_id: it.id,
+          theme_id: it.theme_id || null,
+          subtopic_id: it.subtopic_id || null,
+          lang: it.lang,
+          level: it.level,
+          sentence_index: idx,
+          sentence_text: unitText,
+          blank_start: 0,
+          blank_length: 0,
+          correct_options: [],
+          distractor_options: [],
+          gen_seed: `${it.id}:${idx}-${idx}`,
+          is_published: false,
+        } as const;
+        try {
+          await supabase.from('cloze_shadowing_items').insert(placeholderPayload);
+        } catch {}
       }
 
       createdDetails.push({ source_item_id: it.id, sentences: sents.length, created: createdForItem });
