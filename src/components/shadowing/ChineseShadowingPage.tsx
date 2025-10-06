@@ -18,6 +18,7 @@ import SelectablePassage from '@/components/SelectablePassage';
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
+const SentencePractice = dynamic(() => import('@/components/shadowing/SentencePractice'), { ssr: false });
 import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LANG_LABEL } from '@/types/lang';
@@ -275,6 +276,7 @@ export default function ShadowingPage() {
   const audioRecorderRef = useRef<{
     uploadCurrentRecording: () => Promise<void>;
     hasUnsavedRecording: () => boolean;
+    stopPlayback: () => void;
   } | null>(null);
 
   // AI解释相关状态
@@ -3338,8 +3340,8 @@ export default function ShadowingPage() {
                     </div>
                     )}
 
-                    {/* 音频播放器（步骤5隐藏） */}
-                    {currentItem.audio_url && (!gatingActive || step !== 5) && (
+                    {/* 音频播放器（第1-5步均可见） */}
+                    {currentItem.audio_url && (
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-sm font-medium text-blue-700">
@@ -3654,7 +3656,15 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 录音练习区域（仅步骤5显示或完成后） */}
+                  {/* 逐句练习（移动端；仅步骤5或完成后；不保存，仅实时反馈） */}
+                  {(!gatingActive || step >= 5) && (
+                    <SentencePractice
+                      originalText={currentItem?.text}
+                      language={currentItem?.lang || 'ja'}
+                    />
+                  )}
+
+                  {/* 录音练习区域（移动端；仅步骤5或完成后） */}
                   {(!gatingActive || step >= 5) && (
                   <Card className="p-4">
                     <AudioRecorder
@@ -5340,6 +5350,16 @@ export default function ShadowingPage() {
                         ))}
                       </div>
                     </Card>
+                  )}
+
+                  {/* 取消第5步顶部额外播放器，沿用下方通用播放器 */}
+
+                  {/* 逐句练习（仅步骤5，正式录音前；不保存，仅实时反馈） */}
+                  {(!gatingActive || step >= 5) && (
+                    <SentencePractice
+                      originalText={currentItem?.text}
+                      language={currentItem?.lang || 'ja'}
+                    />
                   )}
 
                   {/* 录音练习区域（仅步骤5显示；完成或移动端保持原样） */}

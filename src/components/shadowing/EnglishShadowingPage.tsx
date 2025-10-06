@@ -18,6 +18,7 @@ import SelectablePassage from '@/components/SelectablePassage';
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
+const SentencePractice = dynamic(() => import('@/components/shadowing/SentencePractice'), { ssr: false });
 import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LANG_LABEL } from '@/types/lang';
@@ -273,6 +274,7 @@ export default function EnglishShadowingPage() {
   const audioRecorderRef = useRef<{
     uploadCurrentRecording: () => Promise<void>;
     hasUnsavedRecording: () => boolean;
+    stopPlayback: () => void;
   } | null>(null);
 
   // AIExplanation相关状态
@@ -951,7 +953,6 @@ export default function EnglishShadowingPage() {
   const loadItem = async (item: ShadowingItem) => {
     // 切题前停止录音组件的播放，避免串音
     try {
-      // @ts-expect-error - 可选链调用录音组件的内部停止播放方法
       audioRecorderRef.current?.stopPlayback?.();
     } catch {}
     // 停止页面音频播放并复位
@@ -3436,7 +3437,7 @@ export default function EnglishShadowingPage() {
                     )}
 
                     {/* 音频播放器（步骤5隐藏） */}
-                    {currentItem.audio_url && (!gatingActive || step !== 5) && (
+                    {currentItem.audio_url && (
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-sm font-medium text-blue-700">
@@ -3753,7 +3754,15 @@ export default function EnglishShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 录音练习区域（仅步骤5或完成后） */}
+                  {/* 逐句练习（移动端；仅步骤5或完成后；不保存，仅实时反馈） */}
+                  {(!gatingActive || step >= 5) && (
+                    <SentencePractice
+                      originalText={currentItem?.text}
+                      language={currentItem?.lang || 'ja'}
+                    />
+                  )}
+
+                  {/* 录音练习区域（移动端；仅步骤5或完成后） */}
                   {(!gatingActive || step >= 5) && (
                   <Card className="p-4">
                     <AudioRecorder
@@ -5315,6 +5324,57 @@ export default function EnglishShadowingPage() {
                         ))}
                       </div>
                     </Card>
+                  )}
+
+                  {/* 第五步顶部保留原文音频播放 */}
+                  {(!gatingActive || step >= 5) && currentItem?.audio_url && (
+                    <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                          <span className="text-blue-600">🔊</span>
+                          Original Audio
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          {[0.8, 1, 1.2, 1.5].map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => {
+                                setPlaybackRate(r);
+                                if (audioRef.current) audioRef.current.playbackRate = r;
+                              }}
+                              className={`px-2 py-0.5 rounded text-xs border ${
+                                playbackRate === r
+                                  ? 'bg-blue-600 text-white border-blue-600'
+                                  : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                              }`}
+                            >
+                              {r}x
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <audio
+                        controls
+                        src={currentItem.audio_url}
+                        preload="none"
+                        className="w-full"
+                        ref={audioRef}
+                        onPlay={() => {
+                          if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+                          setIsPlaying(true);
+                        }}
+                        onPause={() => setIsPlaying(false)}
+                        onEnded={() => setIsPlaying(false)}
+                      />
+                    </Card>
+                  )}
+
+                  {/* 逐句练习（仅步骤5，正式录音前；不保存，仅实时反馈） */}
+                  {(!gatingActive || step >= 5) && (
+                    <SentencePractice
+                      originalText={currentItem?.text}
+                      language={currentItem?.lang || 'ja'}
+                    />
                   )}
 
                   {/* 录音练习区域（仅步骤5或完成后） */}
