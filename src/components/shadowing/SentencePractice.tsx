@@ -35,6 +35,21 @@ interface SentencePracticeProps {
 
 function splitSentences(text: string, language: Lang): string[] {
   if (!text || !text.trim()) return [];
+  // 对话体优先：以 A/B（含全角Ａ/Ｂ）作为最小句的分界
+  const hasDialogue = /(?:^|\n)\s*[ABＡＢ]\s*[：:]/.test(text);
+  if (hasDialogue) {
+    // 规范化：确保每个对话角色前有换行
+    let normalized = text;
+    normalized = normalized.replace(/([^\n])\s*([AＡ]\s*[：:])/g, '$1\n$2');
+    normalized = normalized.replace(/([^\n])\s*([BＢ]\s*[：:])/g, '$1\n$2');
+
+    // 按行首的 A/B 标签切分，每个说话段落作为一个最小句
+    const parts = normalized
+      .split(/(?=^\s*[ABＡＢ]\s*[：:])/m)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts.length) return parts;
+  }
   try {
     // Use Intl.Segmenter when available
     const SegClass = (Intl as unknown as { Segmenter?: new (loc: string, opts: { granularity: 'sentence' }) => any }).Segmenter;
