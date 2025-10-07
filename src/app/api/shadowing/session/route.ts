@@ -1,6 +1,7 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
@@ -141,17 +142,20 @@ export async function POST(req: NextRequest) {
 
     if (checkError && checkError.code === 'PGRST116') {
       // No existing session, create new one
+      const newSessionPayload = {
+        id: randomUUID(),
+        user_id: user.id,
+        item_id: item_id_db,
+        status,
+        recordings,
+        vocab_entry_ids,
+        picked_preview,
+        notes,
+      };
+
       const { data: newSession, error: insertError } = await supabase
         .from('shadowing_sessions')
-        .insert({
-          user_id: user.id,
-          item_id: item_id_db,
-          status,
-          recordings,
-          vocab_entry_ids,
-          picked_preview,
-          notes,
-        })
+        .insert(newSessionPayload)
         .select()
         .single();
 

@@ -106,7 +106,7 @@ interface ShadowingSession {
     lang: string;
   }>;
   imported_vocab_ids: string[];
-  notes: string;
+  notes: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -1409,7 +1409,7 @@ export default function EnglishShadowingPage() {
           status: 'draft',
           recordings: currentRecordings,
           picked_preview: [...previousWords, ...selectedWords],
-          notes: '',
+          notes: {},
         }),
       });
 
@@ -2184,7 +2184,7 @@ export default function EnglishShadowingPage() {
           status: 'completed',
           recordings: finalRecordings,
           picked_preview: allWords,
-          notes: '',
+          notes: {},
         }),
       });
 
