@@ -207,6 +207,21 @@ function getVoiceParamsForSpeaker(
   return params[lang]?.[speaker] || params[lang]?.A || { speakingRate: 1.0, pitch: 0 };
 }
 
+function isFatalTtsError(error: unknown): boolean {
+  const message =
+    error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+  if (!message) return false;
+  const fatalHints = [
+    'GOOGLE_TTS_CREDENTIALS',
+    'Failed to parse GOOGLE_TTS_CREDENTIALS',
+    'Permission denied',
+    'PERMISSION_DENIED',
+    'UNAUTHENTICATED',
+    'unauthorized',
+  ];
+  return fatalHints.some((hint) => message.includes(hint));
+}
+
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAdmin(req);
@@ -244,28 +259,87 @@ export async function POST(req: NextRequest) {
     // 二次清洗规则：移除片段内部残留的说话者标识（如同一行混入下一位标识）
     const innerLabelRE = /[\s\uFEFF\u00A0\u3000"'“”‘’·•\-–—]*([A-Z\uFF21-\uFF3A])\s*[\:\uFF1A]\s*/g;
 
+    const appliedSpeakerVoices: Record<string, string> = {};
+
     for (const { speaker, content } of dialogue) {
-      // 优先使用传入的音色映射，其次回退到默认映射
       const sKey = toAsciiUpperLetter(speaker);
-      const preferred = (speakerVoices && (speakerVoices[sKey] || speakerVoices[String(sKey).toUpperCase()] || speakerVoices[String(sKey).toLowerCase()])) || null;
-      const voice = preferred || getVoiceForSpeaker(speaker, lang);
-      console.log(`为角色 ${speaker} 合成音频，使用音色: ${voice}`);
-
-      // 为不同角色调整音色参数
-      const voiceParams = getVoiceParamsForSpeaker(speaker, lang);
-
+      const preferred =
+        (speakerVoices &&
+          (speakerVoices[sKey] ||
+            speakerVoices[String(sKey).toUpperCase()] ||
+            speakerVoices[String(sKey).toLowerCase()])) ||
+        null;
+      const fallbackVoice = getVoiceForSpeaker(sKey, lang);
+      const voiceParams = getVoiceParamsForSpeaker(sKey, lang);
       const cleaned = content.replace(innerLabelRE, ' ').trim();
-      const audioBuffer = await synthesizeTTS({
-        text: cleaned,
-        lang,
-        voiceName: voice,
-        speakingRate: speakingRate * voiceParams.speakingRate,
-        pitch: pitch + voiceParams.pitch,
-      });
 
+      if (!cleaned) {
+        console.warn(`跳过空对白片段: speaker=${sKey}`);
+        continue;
+      }
+
+      const candidates: (string | null)[] = [];
+      const normalizedPreferred = preferred?.trim();
+      if (normalizedPreferred) candidates.push(normalizedPreferred);
+      if (fallbackVoice?.trim()) candidates.push(fallbackVoice.trim());
+      candidates.push(null); // 允许使用库内默认音色
+
+      const uniqueCandidates: (string | null)[] = [];
+      const seen = new Set<string>();
+      for (const candidate of candidates) {
+        const key = candidate ? candidate.toLowerCase() : '__default__';
+        if (seen.has(key)) continue;
+        seen.add(key);
+        uniqueCandidates.push(candidate);
+      }
+
+      let audioBuffer: Buffer | null = null;
+      let usedVoice: string | null = null;
+      let lastError: unknown = null;
+
+      for (const candidate of uniqueCandidates) {
+        const attemptVoice = candidate || undefined;
+        const label = candidate ?? '(library-default)';
+        try {
+          console.log(`为角色 ${sKey} 合成音频，尝试音色: ${label}`);
+          const buffer = await synthesizeTTS({
+            text: cleaned,
+            lang,
+            voiceName: attemptVoice,
+            speakingRate: speakingRate * voiceParams.speakingRate,
+            pitch: pitch + voiceParams.pitch,
+          });
+          audioBuffer = buffer;
+          usedVoice = attemptVoice ?? fallbackVoice ?? '';
+          break;
+        } catch (err) {
+          lastError = err;
+          const message = err instanceof Error ? err.message : String(err);
+          console.error('音色合成失败，尝试回退', {
+            speaker: sKey,
+            attemptedVoice: label,
+            message,
+          });
+          if (isFatalTtsError(err)) {
+            throw err;
+          }
+        }
+      }
+
+      if (!audioBuffer) {
+        const message =
+          lastError instanceof Error ? lastError.message : String(lastError || '未知错误');
+        throw new Error(`无法为角色 ${sKey} 合成音频: ${message}`);
+      }
+
+      appliedSpeakerVoices[sKey] = usedVoice || '';
       audioBuffers.push(audioBuffer);
       segmentTexts.push(cleaned);
       segmentSpeakers.push(sKey);
+    }
+
+    if (audioBuffers.length === 0) {
+      return NextResponse.json({ error: '对话中没有可用的语音片段' }, { status: 400 });
     }
 
     // 合并音频（在内存中完成，不保存独立音频）
@@ -316,6 +390,7 @@ export async function POST(req: NextRequest) {
       speakers: [...new Set(dialogue.map((d) => d.speaker))],
       sentence_timeline: sentenceTimeline,
       duration_ms: Math.round((durations.reduce((a, b) => a + b, 0)) * 1000),
+      applied_speaker_voices: appliedSpeakerVoices,
     });
   } catch (error: unknown) {
     console.error('对话音频合成失败:', error);
