@@ -64,7 +64,7 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
       onRecordingDeleted,
       onTranscriptionReady,
       onRecordingSelected,
-      language = 'ja',
+    language = 'ja',
       className = '',
     },
     ref,
@@ -81,9 +81,11 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
     const realTimeTranscriptionRef = useRef<string>('');
     // 用于录音中的合成显示（最终+临时）
     const [displayTranscription, setDisplayTranscription] = useState<string>('');
+    const [uploadError, setUploadError] = useState<string | null>(null);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
+    const currentRecordingBlobRef = useRef<Blob | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const recognitionRef = useRef<WebSpeechRecognition | null>(null);
     const recordingStartTimeRef = useRef<number>(0);
@@ -171,8 +173,6 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
 
     // 语音转文字功能
     // 仅使用实时识别结果；不再调用服务端兜底
-    const MIN_TRANSCRIPTION_CHARS = 6;
-
     const startRecording = useCallback(async () => {
       try {
         if (!recognitionRef.current) {
@@ -181,9 +181,25 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
         }
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-        const mediaRecorder = new MediaRecorder(stream, {
-          mimeType: 'audio/webm;codecs=opus',
-        });
+        // 选择最合适、浏览器支持的音频编码格式
+        const MR: any = typeof window !== 'undefined' ? (window as any).MediaRecorder : undefined;
+        const isSupported = (t: string) => {
+          try {
+            return typeof MR?.isTypeSupported === 'function' ? MR.isTypeSupported(t) : false;
+          } catch { return false; }
+        };
+        const mimeCandidates = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/ogg;codecs=opus',
+          'audio/mp4',
+          'audio/wav',
+        ];
+        const selectedMime = mimeCandidates.find(isSupported);
+
+        const mediaRecorder = selectedMime
+          ? new MediaRecorder(stream, { mimeType: selectedMime })
+          : new MediaRecorder(stream);
 
         mediaRecorderRef.current = mediaRecorder;
         audioChunksRef.current = [];
@@ -195,15 +211,19 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
         };
 
         mediaRecorder.onstop = () => {
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          // 使用录制时选择的mime类型作为生成blob的类型，便于后端识别
+          const blobType = (selectedMime && typeof selectedMime === 'string') ? selectedMime : 'audio/webm';
+          const audioBlob = new Blob(audioChunksRef.current, { type: blobType });
           const audioUrl = URL.createObjectURL(audioBlob);
           setCurrentRecordingUrl(audioUrl);
+          currentRecordingBlobRef.current = audioBlob;
 
           // Stop all tracks to release microphone
           stream.getTracks().forEach((track) => track.stop());
         };
 
-        mediaRecorder.start();
+        // 周期性触发 dataavailable，提升兼容性（部分浏览器仅在分片时才写出数据）
+        try { mediaRecorder.start(1000); } catch { mediaRecorder.start(); }
         setIsRecording(true);
         recordingStartTimeRef.current = Date.now();
 
@@ -279,6 +299,7 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
 
     const stopRecording = useCallback(async () => {
       if (mediaRecorderRef.current && isRecording) {
+        try { (mediaRecorderRef.current as any).requestData?.(); } catch {}
         mediaRecorderRef.current.stop();
         setIsRecording(false);
 
@@ -326,11 +347,37 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
     );
 
     const uploadCurrentRecording = useCallback(async () => {
-      if (!currentRecordingUrl || !audioChunksRef.current.length) return;
+      if (!currentRecordingUrl) {
+        setUploadError('没有可保存的录音，请先停止并生成预览后再试');
+        return;
+      }
+      if (!audioChunksRef.current.length && !currentRecordingBlobRef.current) {
+        setUploadError('录音数据为空，可能录音太短或浏览器未写入音频数据，请重试或更换浏览器');
+        return;
+      }
+
+      const minTranscriptionChars = language === 'en' ? 6 : 1;
+      let finalTranscription = realTimeTranscriptionRef.current.trim();
+      if (!finalTranscription) {
+        finalTranscription = currentTranscription.trim();
+      }
+
+      if (!finalTranscription) {
+        const shouldContinue = window.confirm('未检测到转写文字，仍要保存录音吗？保存后可稍后手动补充或重新评分。');
+        if (!shouldContinue) {
+          return;
+        }
+      } else if (finalTranscription.length < minTranscriptionChars) {
+        const shouldContinue = window.confirm('转写文字较短，可能影响评分。仍要保存录音吗？');
+        if (!shouldContinue) {
+          return;
+        }
+      }
 
       setUploadingRecording(true);
+      setUploadError(null);
       try {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = currentRecordingBlobRef.current || new Blob(audioChunksRef.current, { type: 'audio/webm' });
 
         // 计算准确的录音时长
         const recordingDuration = Date.now() - recordingStartTimeRef.current;
@@ -372,17 +419,11 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
         const data = await response.json();
 
         if (data.success) {
-          // 仅使用实时转录结果
-          const finalTranscription = realTimeTranscriptionRef.current.trim();
-          if (!finalTranscription || finalTranscription.length < MIN_TRANSCRIPTION_CHARS) {
-            alert('转写过短，保存失败，请重试');
-            // 不追加到列表，直接返回
-            return;
-          }
+          const transcriptionToSave = finalTranscription.trim();
 
           const newRecording = {
             ...data.audio,
-            transcription: finalTranscription, // 仅实时转写
+            ...(transcriptionToSave ? { transcription: transcriptionToSave } : {}),
           };
           setRecordings((prev) => [...prev, newRecording]);
           onRecordingAdded?.(newRecording);
@@ -392,21 +433,19 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
           setCurrentRecordingUrl(null);
           setCurrentTranscription('');
           audioChunksRef.current = [];
+          currentRecordingBlobRef.current = null;
         } else {
           throw new Error(data.error || 'Upload failed');
         }
+        setUploadError(null);
       } catch (error) {
         console.error('Error uploading recording:', error);
         alert(`录音上传失败: ${error instanceof Error ? error.message : '未知错误'}`);
+        setUploadError(error instanceof Error ? error.message : '未知错误');
       } finally {
         setUploadingRecording(false);
       }
-    }, [
-      currentRecordingUrl,
-      sessionId,
-      onRecordingAdded,
-      realTimeTranscription,
-    ]);
+    }, [currentRecordingUrl, sessionId, onRecordingAdded, language, currentTranscription]);
 
     // 暴露方法给父组件
     useImperativeHandle(
@@ -650,7 +689,7 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
               <div className="flex items-center gap-2">
                 <Button
                   onClick={uploadCurrentRecording}
-                  disabled={uploadingRecording || (currentTranscription.trim().length < MIN_TRANSCRIPTION_CHARS)}
+                  disabled={uploadingRecording}
                   variant="default"
                   size="sm"
                   className="h-8 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all"
@@ -670,6 +709,11 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
             </div>
 
             {/* 实时转录显示（旧位置）移除，避免重复 */}
+            {uploadError && (
+              <div className="mt-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                保存录音失败：{uploadError}
+              </div>
+            )}
 
             {/* 转录文字显示 */}
             {currentTranscription && (

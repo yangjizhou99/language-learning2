@@ -106,7 +106,7 @@ interface ShadowingSession {
     lang: string;
   }>;
   imported_vocab_ids: string[];
-  notes: string;
+  notes: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -1381,7 +1381,7 @@ export default function JapaneseShadowingPage() {
           status: 'draft',
           recordings: currentRecordings,
           picked_preview: [...previousWords, ...selectedWords],
-          notes: '',
+          notes: {},
         }),
       });
 
@@ -2149,7 +2149,7 @@ export default function JapaneseShadowingPage() {
           status: 'completed',
           recordings: finalRecordings,
           picked_preview: allWords,
-          notes: '',
+          notes: {},
         }),
       });
 

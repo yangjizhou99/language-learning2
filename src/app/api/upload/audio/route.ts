@@ -1,10 +1,12 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+import { Buffer } from 'buffer';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
+import { getServiceSupabase } from '@/lib/supabaseAdmin';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -75,21 +77,55 @@ export async function POST(req: NextRequest) {
 
     // Convert file to buffer
     const arrayBuffer = await audioFile.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
+    const buffer = Buffer.from(arrayBuffer);
 
-    console.log('文件转换为buffer完成，大小:', buffer.length);
+    console.log('文件转换为Buffer完成，大小:', buffer.byteLength);
 
-    // Upload to Supabase Storage (使用recordings bucket)
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // 使用 service role 上传，避免因 RLS 配置不全导致失败；仍然通过用户鉴权确保安全
+    const supabaseAdmin = getServiceSupabase();
+
+    // 确认 bucket 存在，不存在则自动创建（私有）
+    try {
+      const { data: bucketInfo, error: bucketErr } = await supabaseAdmin.storage.getBucket('recordings');
+      if (bucketErr || !bucketInfo) {
+        console.warn('recordings bucket missing, creating...', bucketErr?.message);
+        const { error: createErr } = await supabaseAdmin.storage.createBucket('recordings', {
+          public: false,
+          fileSizeLimit: 50 * 1024 * 1024,
+          allowedMimeTypes: ['audio/webm', 'audio/wav', 'audio/mp3', 'audio/ogg', 'audio/mpeg', 'audio/mp4'],
+        });
+        if (createErr) {
+          console.error('Failed to create recordings bucket:', createErr);
+          return NextResponse.json(
+            { error: createErr.message, code: createErr.name ?? 'storage_create_bucket_error' },
+            { status: 500 },
+          );
+        }
+      }
+    } catch (checkBucketError) {
+      console.error('Bucket check/create failed:', checkBucketError);
+      return NextResponse.json({ error: 'Bucket check failed' }, { status: 500 });
+    }
+
+    // 上传
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
       .from('recordings')
       .upload(fileName, buffer, {
         contentType: audioFile.type || 'audio/webm',
         duplex: 'half',
+        upsert: false,
       });
 
     if (uploadError) {
       console.error('Error uploading audio:', uploadError);
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: uploadError.message,
+          code: uploadError.name ?? 'storage_upload_error',
+          hint: 'Using service role upload failed; check Storage configuration.',
+        },
+        { status: 500 },
+      );
     }
 
     console.log('上传成功:', uploadData);

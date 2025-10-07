@@ -108,7 +108,7 @@ interface ShadowingSession {
     lang: string;
   }>;
   imported_vocab_ids: string[];
-  notes: string;
+  notes: Record<string, unknown> | null;
   created_at: string;
 }
 
