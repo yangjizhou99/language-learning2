@@ -200,6 +200,20 @@ export default function ShadowingReviewList() {
     }>
   >([]);
 
+  const wait = (ms: number) =>
+    new Promise<void>((resolve) => {
+      const timer = (globalThis as any).setTimeout(() => {
+        resolve();
+      }, ms);
+      if (typeof timer === 'object' && 'unref' in timer && typeof timer.unref === 'function') {
+        timer.unref();
+      }
+    });
+
+  const appendLog = (message: string) => {
+    setLog((prev) => (prev ? `${prev}\n${message}` : message));
+  };
+
   // 句级合成（含时间轴）
   const synthesizeSentences = async (id: string, draft: any) => {
     try {
@@ -800,171 +814,220 @@ export default function ShadowingReviewList() {
   };
 
   // 使用随机音色分配进行单个TTS生成
-  const synthOneWithRandomVoices = async (id: string, taskIndex: number = 0) => {
+  const performSynthOneWithRandomVoices = async (
+    id: string,
+    taskIndex: number,
+    attempt: number,
+    totalAttempts: number,
+  ) => {
     const it = items.find((x) => x.id === id);
-    if (!it) return false;
+    if (!it) {
+      throw new Error('草稿不存在或已被删除');
+    }
 
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      const detailUrl = `/api/admin/shadowing/drafts/${id}`;
-      const detail = await fetch(detailUrl, {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      });
-      if (!detail.ok) throw new Error(`获取草稿失败(${detail.status})`);
-      const dj = await detail.json();
-      const draft = dj.draft;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    const detailUrl = `/api/admin/shadowing/drafts/${id}`;
+    const detail = await fetch(detailUrl, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!detail.ok) throw new Error(`获取草稿失败(${detail.status})`);
+    const dj = await detail.json();
+    const draft = dj.draft;
 
-      // 检查是否为对话格式
-      const isDialogue = isDialogueFormat(draft.text);
+    // 检查是否为对话格式
+    const isDialogue = isDialogueFormat(draft.text);
 
-      // 根据对话格式分配音色
-      let selectedVoice = null;
-      let processedText = draft.text;
+    // 根据对话格式分配音色
+    let selectedVoice = null;
+    let processedText = draft.text;
 
-      if (isDialogue) {
-        // 对话格式：分别合成每个说话者的音频
-        console.log('对话格式，使用多音色对话合成');
+    if (isDialogue) {
+      // 对话格式：分别合成每个说话者的音频
+      console.log('对话格式，使用多音色对话合成');
 
-        // 为对话文本分配音色
-        const speakerVoices = getSpeakerVoices(draft.text);
-        console.log('说话者音色分配:', speakerVoices);
+      // 为对话文本分配音色
+      const speakerVoices = getSpeakerVoices(draft.text);
+      console.log('说话者音色分配:', speakerVoices);
 
-        if (!speakerVoices) {
-          throw new Error('无法分配说话者音色');
-        }
-
-        // 分别合成每个说话者的音频
-        const merged = await synthDialogueWithDifferentVoices(
-          draft.text,
-          speakerVoices,
-          draft.lang,
-          draft?.notes?.speakingRate || 1.0,
-          draft?.notes?.pitch || 0,
-          token || null,
-        );
-
-        if (merged && merged.audio_url) {
-          // 保存合并后的音频地址
-          const next = {
-            ...draft,
-            notes: {
-              ...(draft.notes || {}),
-              audio_url: merged.audio_url, // 合并后的整段音频
-              sentence_timeline: merged.sentence_timeline || null,
-              duration_ms: merged.duration_ms || null,
-              is_dialogue: true,
-              dialogue_count: Object.keys(speakerVoices).length,
-              speakers: Object.keys(speakerVoices),
-              tts_provider: 'Google',
-              random_voice_assignment: speakerVoices,
-            },
-          };
-
-          console.log('准备保存的音频URL:', merged.audio_url);
-          console.log('准备保存的notes:', next.notes);
-
-          const saveUrl = `/api/admin/shadowing/drafts/${draft.id}`;
-          const save = await fetch(saveUrl, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            body: JSON.stringify({ notes: next.notes }),
-          });
-
-          if (!save.ok) {
-            const errorText = await save.text();
-            console.error('保存失败响应:', errorText);
-            throw new Error(`保存音频地址失败(${save.status}): ${errorText}`);
-          }
-
-          const saveResult = await save.json();
-          console.log('保存成功响应:', saveResult);
-
-          console.log('多音色对话合成保存成功');
-
-          // 直接更新本地状态，避免等待页面刷新
-          setItems((prevItems) => prevItems.map((item) => (item.id === draft.id ? { ...item, notes: { ...item.notes, audio_url: merged.audio_url } } : item)));
-
-          // 触发页面刷新以显示新的音频
-          setQ((q) => q + ' '); // 添加空格确保值变化
-          return true;
-        } else {
-          throw new Error('多音色对话合成失败');
-        }
-      } else {
-        // 独白格式：随机选择一个音色
-        selectedVoice = getRandomVoice();
-        processedText = draft.text;
-        console.log('独白格式，使用随机音色:', selectedVoice);
+      if (!speakerVoices) {
+        throw new Error('无法分配说话者音色');
       }
 
-      // 非对话体：按句合成并生成时间轴，然后合并为整段
-      console.log(`按句合成（含时间轴）: ${draft.title}`);
-      let j: any;
-      try {
-        const r = await fetch('/api/admin/shadowing/synthesize-sentences', {
-          method: 'POST',
+      // 分别合成每个说话者的音频
+      const merged = await synthDialogueWithDifferentVoices(
+        draft.text,
+        speakerVoices,
+        draft.lang,
+        draft?.notes?.speakingRate || 1.0,
+        draft?.notes?.pitch || 0,
+        token || null,
+      );
+
+      if (merged && merged.audio_url) {
+        const appliedMapping = merged.appliedSpeakerVoices || speakerVoices;
+
+        // 保存合并后的音频地址
+        const next = {
+          ...draft,
+          notes: {
+            ...(draft.notes || {}),
+            audio_url: merged.audio_url, // 合并后的整段音频
+            sentence_timeline: merged.sentence_timeline || null,
+            duration_ms: merged.duration_ms || null,
+            is_dialogue: true,
+            dialogue_count: Object.keys(appliedMapping).length,
+            speakers: Object.keys(appliedMapping),
+            tts_provider: 'Google',
+            random_voice_assignment: appliedMapping,
+          },
+        };
+
+        console.log('准备保存的音频URL:', merged.audio_url);
+        console.log('准备保存的notes:', next.notes);
+
+        const saveUrl = `/api/admin/shadowing/drafts/${draft.id}`;
+        const save = await fetch(saveUrl, {
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({
-            text: processedText,
-            lang: draft.lang,
-            voice: selectedVoice,
-            speakingRate: draft?.notes?.speakingRate || 1.0,
-            pitch: draft?.notes?.pitch || 0,
-          }),
+          body: JSON.stringify({ notes: next.notes }),
         });
-        j = await r.json();
-        if (!r.ok) throw new Error(j?.error || '按句合成失败');
-      } catch (error) {
-        throw error;
+
+        if (!save.ok) {
+          const errorText = await save.text();
+          console.error('保存失败响应:', errorText);
+          throw new Error(`保存音频地址失败(${save.status}): ${errorText}`);
+        }
+
+        const saveResult = await save.json();
+        console.log('保存成功响应:', saveResult);
+
+        console.log('多音色对话合成保存成功');
+
+        // 直接更新本地状态，避免等待页面刷新
+        setItems((prevItems) =>
+          prevItems.map((item) =>
+            item.id === draft.id ? { ...item, notes: { ...item.notes, audio_url: merged.audio_url } } : item,
+          ),
+        );
+
+        // 触发页面刷新以显示新的音频
+        setQ((q) => q + ' '); // 添加空格确保值变化
+        if (attempt > 1) {
+          appendLog(
+            `第 ${taskIndex + 1} 个草稿在第 ${attempt}/${totalAttempts} 次尝试后成功：${draft.title || draft.id}`,
+          );
+        }
+        return true;
+      } else {
+        throw new Error('多音色对话合成失败');
       }
-
-      // 写入草稿 notes：整段音频 + 句级时间轴 + 时长
-      const next = {
-        ...draft,
-        notes: {
-          ...(draft.notes || {}),
-          audio_url: j.audio_url,
-          sentence_timeline: j.sentence_timeline || null,
-          duration_ms: j.duration_ms || null,
-          is_dialogue: false,
-          tts_provider: 'google',
-          random_voice_assignment: selectedVoice,
-        },
-      };
-      const saveUrl = `/api/admin/shadowing/drafts/${id}`;
-      const save = await fetch(saveUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ notes: next.notes }),
-      });
-      if (!save.ok) throw new Error(`保存音频地址失败(${save.status})`);
-
-      // 更新本地状态（仅需音频地址立即可试听）
-      setItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === id ? { ...item, notes: { ...item.notes, audio_url: j.audio_url } } : item,
-        ),
-      );
-
-      // 触发页面刷新以显示新的音频
-      setQ((q) => q + ' '); // 添加空格确保值变化
-      return true;
-    } catch (e) {
-      console.error(e);
-      return false;
+    } else {
+      // 独白格式：随机选择一个音色
+      selectedVoice = getRandomVoice();
+      processedText = draft.text;
+      console.log('独白格式，使用随机音色:', selectedVoice);
     }
+
+    // 非对话体：按句合成并生成时间轴，然后合并为整段
+    console.log(`按句合成（含时间轴）: ${draft.title}`);
+    const r = await fetch('/api/admin/shadowing/synthesize-sentences', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        text: processedText,
+        lang: draft.lang,
+        voice: selectedVoice,
+        speakingRate: draft?.notes?.speakingRate || 1.0,
+        pitch: draft?.notes?.pitch || 0,
+      }),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j?.error || '按句合成失败');
+
+    // 写入草稿 notes：整段音频 + 句级时间轴 + 时长
+    const next = {
+      ...draft,
+      notes: {
+        ...(draft.notes || {}),
+        audio_url: j.audio_url,
+        sentence_timeline: j.sentence_timeline || null,
+        duration_ms: j.duration_ms || null,
+        is_dialogue: false,
+        tts_provider: 'google',
+        random_voice_assignment: selectedVoice,
+      },
+    };
+    const saveUrl = `/api/admin/shadowing/drafts/${id}`;
+    const save = await fetch(saveUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ notes: next.notes }),
+    });
+    if (!save.ok) throw new Error(`保存音频地址失败(${save.status})`);
+
+    // 更新本地状态（仅需音频地址立即可试听）
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === id ? { ...item, notes: { ...item.notes, audio_url: j.audio_url } } : item,
+      ),
+    );
+
+    // 触发页面刷新以显示新的音频
+    setQ((q) => q + ' '); // 添加空格确保值变化
+    if (attempt > 1) {
+      appendLog(
+        `第 ${taskIndex + 1} 个草稿在第 ${attempt}/${totalAttempts} 次尝试后成功：${draft.title || draft.id}`,
+      );
+    }
+    return true;
+  };
+
+  const synthOneWithRandomVoices = async (id: string, taskIndex: number = 0) => {
+    const maxAttempts = Math.max(1, (Number.isFinite(retries) ? Number(retries) : 0) + 1);
+    let attempt = 0;
+    let lastError: unknown = null;
+
+    while (attempt < maxAttempts) {
+      attempt += 1;
+      try {
+        const success = await performSynthOneWithRandomVoices(id, taskIndex, attempt, maxAttempts);
+        if (success) {
+          return true;
+        }
+      } catch (error) {
+        lastError = error;
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('随机TTS合成失败，准备重试', {
+          draftId: id,
+          attempt,
+          maxAttempts,
+          message,
+        });
+        appendLog(`第 ${taskIndex + 1} 个草稿第 ${attempt}/${maxAttempts} 次尝试失败：${message}`);
+        if (attempt >= maxAttempts) {
+          break;
+        }
+        const backoff = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+        await wait(backoff);
+      }
+    }
+
+    const finalMessage =
+      lastError instanceof Error ? lastError.message : String(lastError || '未知错误');
+    toast.error(`草稿 ${id} 在 ${maxAttempts} 次尝试后仍失败：${finalMessage}`);
+    return false;
   };
 
   // 获取说话者音色分配
@@ -1127,7 +1190,18 @@ export default function ShadowingReviewList() {
     speakingRate: number,
     pitch: number,
     token: string | null,
-  ): Promise<{ audio_url: string; sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }>; duration_ms?: number }> => {
+  ): Promise<{
+    audio_url: string;
+    sentence_timeline?: Array<{
+      index: number;
+      text: string;
+      start: number;
+      end: number;
+      speaker?: string;
+    }>;
+    duration_ms?: number;
+    appliedSpeakerVoices?: Record<string, string> | null;
+  }> => {
     try {
       console.log('开始多音色对话合成:', {
         text: text.substring(0, 100) + '...',
@@ -1186,6 +1260,7 @@ export default function ShadowingReviewList() {
         audio_url: result.audio_url,
         sentence_timeline: result.sentence_timeline || null,
         duration_ms: result.duration_ms || null,
+        appliedSpeakerVoices: result.applied_speaker_voices || null,
       };
     } catch (error) {
       console.error('多音色对话合成失败:', error);

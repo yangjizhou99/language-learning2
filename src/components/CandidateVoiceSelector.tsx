@@ -449,9 +449,9 @@ export default function CandidateVoiceSelector({
               <div className="flex flex-wrap gap-2">
                 {voices
                   .filter((v) => candidateVoices.has(v.name))
-                  .map((voice) => (
+                  .map((voice, index) => (
                     <Badge
-                      key={voice.name}
+                      key={voice.id ?? `${voice.name}-${index}`}
                       variant="secondary"
                       className="bg-green-100 text-green-800"
                     >
@@ -464,13 +464,13 @@ export default function CandidateVoiceSelector({
 
           {/* 音色列表 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredVoices.map((voice) => {
+            {filteredVoices.map((voice, index) => {
               const isCandidate = candidateVoices.has(voice.name);
               const isPreviewing = previewingVoice === voice.name;
 
               return (
                 <div
-                  key={voice.name}
+                  key={voice.id ?? `${voice.name}-${index}`}
                   className={`p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
                     isCandidate ? 'ring-2 ring-green-500 bg-green-50' : 'hover:bg-gray-50'
                   }`}
