@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -138,9 +138,9 @@ export default function ShadowingReviewList() {
   const [ttsTotal, setTtsTotal] = useState(0);
   const [ttsDone, setTtsDone] = useState(0);
   const [ttsCurrent, setTtsCurrent] = useState('');
-  const [currentOperation, setCurrentOperation] = useState<'tts' | 'publish' | 'revert' | 'delete'>(
-    'tts',
-  );
+  const [currentOperation, setCurrentOperation] = useState<
+    'tts' | 'publish' | 'revert' | 'delete' | 'clear_audio'
+  >('tts');
   // 移除ttsProvider状态，改为通过音色管理器选择
 
   // 音色管理相关状态
@@ -179,6 +179,15 @@ export default function ShadowingReviewList() {
   const [retries, setRetries] = useState(2);
   const [throttle, setThrottle] = useState(200);
   const [timeout, setTimeout] = useState(120); // TTS超时时间（秒），默认120秒
+  const voiceAssignmentsRef = useRef<
+    Map<
+      string,
+      | { type: 'dialogue'; mapping: Record<string, string> }
+      | { type: 'monologue'; voice: string }
+    >
+  >(new Map());
+  const MAX_TTS_RETRIES = 5;
+  const MAX_TTS_ATTEMPTS = MAX_TTS_RETRIES + 1;
 
   // 性能监控状态
   const [performanceStats, setPerformanceStats] = useState({
@@ -593,6 +602,133 @@ export default function ShadowingReviewList() {
     }
   }
 
+  async function clearAudioSelected() {
+    if (selected.size === 0) {
+      toast.error('请先选择要清除音频的草稿');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `确定要清除选中 ${selected.size} 个草稿的音频吗？\n此操作会移除音频URL、时间轴等信息，无法恢复。`,
+    );
+    if (!confirmed) return;
+
+    const ids = Array.from(selected);
+    setTtsLoading(true);
+    setCurrentOperation('clear_audio');
+    setTtsTotal(ids.length);
+    setTtsDone(0);
+    setTtsCurrent('');
+    let fail = 0;
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const clearOne = async (id: string) => {
+        const it = items.find((item) => item.id === id);
+        setTtsCurrent(it?.title || '');
+
+        try {
+          const detailRes = await fetch(`/api/admin/shadowing/drafts/${id}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          });
+          if (!detailRes.ok) {
+            throw new Error(`获取草稿失败(${detailRes.status})`);
+          }
+          const detailJson = await detailRes.json();
+          const draft = detailJson?.draft;
+          if (!draft) {
+            throw new Error('草稿不存在或已被删除');
+          }
+
+          const sanitizedNotes: Record<string, any> = { ...(draft.notes || {}) };
+          delete sanitizedNotes.audio_url;
+          delete sanitizedNotes.audio_url_proxy;
+          delete sanitizedNotes.sentence_timeline;
+          delete sanitizedNotes.sentenceTimeline;
+          delete sanitizedNotes.duration_ms;
+          delete sanitizedNotes.duration;
+          delete sanitizedNotes.random_voice_assignment;
+          delete sanitizedNotes.randomVoiceAssignment;
+          delete sanitizedNotes.random_voice_assignments;
+          delete sanitizedNotes.tts_provider;
+          delete sanitizedNotes.appliedSpeakerVoices;
+          delete sanitizedNotes.applied_speaker_voices;
+          delete sanitizedNotes.dialogue_count;
+          delete sanitizedNotes.speakers;
+
+          const saveRes = await fetch(`/api/admin/shadowing/drafts/${id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ notes: sanitizedNotes }),
+          });
+          if (!saveRes.ok) {
+            const text = await saveRes.text();
+            throw new Error(`保存失败(${saveRes.status}): ${text}`);
+          }
+
+          voiceAssignmentsRef.current.delete(id);
+          setItems((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    notes: {
+                      ...sanitizedNotes,
+                    },
+                  }
+                : item,
+            ),
+          );
+          return true;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error('清除音频失败:', { id, message });
+          appendLog(`清除音频失败 (${id}): ${message}`);
+          return false;
+        } finally {
+          setTtsDone((v) => v + 1);
+        }
+      };
+
+      const batchSize = Math.max(1, Math.min(concurrency, ids.length));
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        const results = await Promise.all(batch.map((id) => clearOne(id)));
+        fail += results.filter((ok) => !ok).length;
+
+        if (throttle > 0 && i + batchSize < ids.length) {
+          await wait(throttle);
+        }
+      }
+
+      if (fail === 0) {
+        toast.success(`清除音频完成：${ids.length}/${ids.length}`);
+      } else if (fail < ids.length) {
+        toast.success(`部分清除成功：${ids.length - fail}/${ids.length}`);
+        toast.error(`有 ${fail} 个草稿清除失败，请查看日志`);
+      } else {
+        toast.error('清除音频失败，请检查日志');
+      }
+
+      setSelected(new Set());
+      setQ((q) => q + ' ');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`清除音频失败：${message}`);
+    } finally {
+      setTtsCurrent('');
+      setTtsLoading(false);
+      setCurrentOperation('tts');
+    }
+  }
+
   async function publishSelected() {
     if (selected.size === 0) return;
     const ids = Array.from(selected);
@@ -732,7 +868,7 @@ export default function ShadowingReviewList() {
         `• 备选音色：${candidateVoices.length} 个\n` +
         `• 总字符数：${totalCharacters.toLocaleString()} 字符\n` +
         `• 预估花费：$${estimatedCost.toFixed(4)} (约¥${estimatedCostCNY.toFixed(2)})\n` +
-        `• 性能参数：并发${concurrency}，重试${retries}次，延迟${throttle}ms\n\n` +
+        `• 性能参数：并发${concurrency}，重试${MAX_TTS_RETRIES}次，延迟${throttle}ms\n\n` +
         `是否开始随机生成？`,
     );
 
@@ -840,20 +976,26 @@ export default function ShadowingReviewList() {
     // 检查是否为对话格式
     const isDialogue = isDialogueFormat(draft.text);
 
-    // 根据对话格式分配音色
-    let selectedVoice = null;
+    // 根据对话格式分配音色（仅生成一次，失败重试时保持不变）
+    const existingAssignment = voiceAssignmentsRef.current.get(id);
+    let selectedVoice: string | null = null;
+    let speakerVoices: Record<string, string> | null = null;
     let processedText = draft.text;
 
     if (isDialogue) {
-      // 对话格式：分别合成每个说话者的音频
       console.log('对话格式，使用多音色对话合成');
-
-      // 为对话文本分配音色
-      const speakerVoices = getSpeakerVoices(draft.text);
-      console.log('说话者音色分配:', speakerVoices);
-
-      if (!speakerVoices) {
-        throw new Error('无法分配说话者音色');
+      if (existingAssignment && existingAssignment.type === 'dialogue') {
+        speakerVoices = existingAssignment.mapping;
+      } else {
+        speakerVoices = getSpeakerVoices(draft.text);
+        console.log('说话者音色分配:', speakerVoices);
+        if (!speakerVoices) {
+          throw new Error('无法分配说话者音色');
+        }
+        if (Object.values(speakerVoices).some((voice) => !voice)) {
+          throw new Error('备选音色不足，无法为所有说话者分配音色');
+        }
+        voiceAssignmentsRef.current.set(id, { type: 'dialogue', mapping: speakerVoices });
       }
 
       // 分别合成每个说话者的音频
@@ -923,19 +1065,31 @@ export default function ShadowingReviewList() {
             `第 ${taskIndex + 1} 个草稿在第 ${attempt}/${totalAttempts} 次尝试后成功：${draft.title || draft.id}`,
           );
         }
+        voiceAssignmentsRef.current.delete(id);
         return true;
       } else {
         throw new Error('多音色对话合成失败');
       }
     } else {
-      // 独白格式：随机选择一个音色
-      selectedVoice = getRandomVoice();
+      // 独白格式：随机选择一个音色（保持一致）
+      if (existingAssignment && existingAssignment.type === 'monologue') {
+        selectedVoice = existingAssignment.voice;
+      } else {
+        selectedVoice = getRandomVoice();
+        if (!selectedVoice) {
+          throw new Error('未找到可用音色');
+        }
+        voiceAssignmentsRef.current.set(id, { type: 'monologue', voice: selectedVoice });
+      }
       processedText = draft.text;
       console.log('独白格式，使用随机音色:', selectedVoice);
     }
 
     // 非对话体：按句合成并生成时间轴，然后合并为整段
     console.log(`按句合成（含时间轴）: ${draft.title}`);
+    if (!selectedVoice) {
+      throw new Error('音色未设置，无法执行合成');
+    }
     const r = await fetch('/api/admin/shadowing/synthesize-sentences', {
       method: 'POST',
       headers: {
@@ -991,11 +1145,12 @@ export default function ShadowingReviewList() {
         `第 ${taskIndex + 1} 个草稿在第 ${attempt}/${totalAttempts} 次尝试后成功：${draft.title || draft.id}`,
       );
     }
+    voiceAssignmentsRef.current.delete(id);
     return true;
   };
 
   const synthOneWithRandomVoices = async (id: string, taskIndex: number = 0) => {
-    const maxAttempts = Math.max(1, (Number.isFinite(retries) ? Number(retries) : 0) + 1);
+    const maxAttempts = MAX_TTS_ATTEMPTS;
     let attempt = 0;
     let lastError: unknown = null;
 
@@ -1019,7 +1174,7 @@ export default function ShadowingReviewList() {
         if (attempt >= maxAttempts) {
           break;
         }
-        const backoff = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+        const backoff = Math.min(2000 * Math.pow(2, attempt - 1), 30000);
         await wait(backoff);
       }
     }
@@ -1027,6 +1182,7 @@ export default function ShadowingReviewList() {
     const finalMessage =
       lastError instanceof Error ? lastError.message : String(lastError || '未知错误');
     toast.error(`草稿 ${id} 在 ${maxAttempts} 次尝试后仍失败：${finalMessage}`);
+    voiceAssignmentsRef.current.delete(id);
     return false;
   };
 
@@ -2179,6 +2335,14 @@ export default function ShadowingReviewList() {
               🎲 随机生成
             </Button>
             <Button
+              onClick={clearAudioSelected}
+              disabled={ttsLoading || publishing || selected.size === 0}
+              variant="outline"
+              className="border-red-300 text-red-600 hover:bg-red-50"
+            >
+              清除选中音频
+            </Button>
+            <Button
               onClick={publishSelected}
               disabled={publishing || selected.size === 0}
               variant="outline"
@@ -2220,6 +2384,7 @@ export default function ShadowingReviewList() {
                   {currentOperation === 'publish' && '批量发布进度'}
                   {currentOperation === 'revert' && '批量撤回进度'}
                   {currentOperation === 'delete' && '批量删除进度'}
+                  {currentOperation === 'clear_audio' && '清除音频进度'}
                 </span>
                 <span>
                   {ttsDone}/{ttsTotal} ({Math.round((ttsDone / ttsTotal) * 100)}%)
