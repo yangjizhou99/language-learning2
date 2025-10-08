@@ -43,6 +43,24 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
       { href: '/admin/cloze/drafts', label: 'Cloze 草稿箱', icon: '🗂️', match: 'startsWith' },
       { href: '/admin/alignment/ai', label: '对齐练习生成', icon: '🤝', match: 'startsWith' },
       {
+        href: '/admin/alignment/themes',
+        label: '对齐主题管理',
+        icon: '🧭',
+        match: 'startsWith',
+      },
+      {
+        href: '/admin/alignment/subtopics-gen',
+        label: '对齐小主题生成',
+        icon: '🧱',
+        match: 'startsWith',
+      },
+      {
+        href: '/admin/alignment/materials',
+        label: '对齐训练包审核',
+        icon: '🗂️',
+        match: 'startsWith',
+      },
+      {
         href: '/admin/shadowing/themes',
         label: 'Shadowing 主题管理',
         icon: '📋',

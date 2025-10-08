@@ -328,16 +328,71 @@ SET default_table_access_method = "heap";
 
 
 CREATE TABLE IF NOT EXISTS "public"."alignment_attempts" (
-    "id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
-    "pack_id" "uuid" NOT NULL,
-    "step_key" "text" NOT NULL,
-    "submission" "text" NOT NULL,
-    "created_at" timestamp with time zone
+    "subtopic_id" "uuid" NOT NULL,
+    "material_id" "uuid",
+    "task_type" "text" NOT NULL,
+    "attempt_number" integer DEFAULT 1 NOT NULL,
+    "submission" "jsonb" NOT NULL,
+    "submission_text" "text",
+    "word_count" integer,
+    "turn_count" integer,
+    "duration_seconds" numeric,
+    "score_total" numeric,
+    "scores" "jsonb",
+    "feedback" "text",
+    "feedback_json" "jsonb",
+    "ai_model" "text",
+    "ai_response" "jsonb",
+    "prev_attempt_id" "uuid",
+    "status" "text" DEFAULT 'completed'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "alignment_attempts_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'completed'::"text", 'cancelled'::"text"]))),
+    CONSTRAINT "alignment_attempts_task_type_check" CHECK (("task_type" = ANY (ARRAY['dialogue'::"text", 'article'::"text", 'task_email'::"text", 'long_writing'::"text"])))
 );
 
 
 ALTER TABLE "public"."alignment_attempts" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."alignment_materials" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "subtopic_id" "uuid" NOT NULL,
+    "lang" "text" NOT NULL,
+    "task_type" "text" NOT NULL,
+    "status" "text" DEFAULT 'draft'::"text" NOT NULL,
+    "version" integer DEFAULT 1 NOT NULL,
+    "is_current" boolean DEFAULT true NOT NULL,
+    "task_prompt" "text" NOT NULL,
+    "task_prompt_translations" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "exemplar" "text" NOT NULL,
+    "exemplar_translations" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "knowledge_points" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "requirements" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "standard_answer" "text" NOT NULL,
+    "standard_answer_translations" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "core_sentences" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "rubric" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "dialogue_meta" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "writing_meta" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "ai_metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "review_status" "text" DEFAULT 'pending'::"text" NOT NULL,
+    "review_notes" "text",
+    "reviewed_by" "uuid",
+    "reviewed_at" timestamp with time zone,
+    "created_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "alignment_materials_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text"]))),
+    CONSTRAINT "alignment_materials_review_status_check" CHECK (("review_status" = ANY (ARRAY['pending'::"text", 'approved'::"text", 'rejected'::"text"]))),
+    CONSTRAINT "alignment_materials_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'pending_review'::"text", 'active'::"text", 'archived'::"text"]))),
+    CONSTRAINT "alignment_materials_task_type_check" CHECK (("task_type" = ANY (ARRAY['dialogue'::"text", 'article'::"text", 'task_email'::"text", 'long_writing'::"text"])))
+);
+
+
+ALTER TABLE "public"."alignment_materials" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."alignment_packs" (
@@ -359,6 +414,56 @@ CREATE TABLE IF NOT EXISTS "public"."alignment_packs" (
 
 
 ALTER TABLE "public"."alignment_packs" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."alignment_subtopics" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "theme_id" "uuid" NOT NULL,
+    "lang" "text" NOT NULL,
+    "level" integer NOT NULL,
+    "genre" "text" NOT NULL,
+    "title" "text" NOT NULL,
+    "title_translations" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "title_normalized" "text" NOT NULL,
+    "one_line" "text",
+    "one_line_translations" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "objectives" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
+    "status" "text" DEFAULT 'draft'::"text" NOT NULL,
+    "created_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "alignment_subtopics_genre_check" CHECK (("genre" = ANY (ARRAY['dialogue'::"text", 'article'::"text", 'task_email'::"text", 'long_writing'::"text"]))),
+    CONSTRAINT "alignment_subtopics_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text"]))),
+    CONSTRAINT "alignment_subtopics_level_check" CHECK ((("level" >= 1) AND ("level" <= 6))),
+    CONSTRAINT "alignment_subtopics_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'needs_review'::"text", 'active'::"text", 'archived'::"text"])))
+);
+
+
+ALTER TABLE "public"."alignment_subtopics" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."alignment_themes" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "lang" "text" NOT NULL,
+    "level" integer NOT NULL,
+    "genre" "text" NOT NULL,
+    "title" "text" NOT NULL,
+    "title_translations" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "title_normalized" "text" NOT NULL,
+    "summary" "text",
+    "summary_translations" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "status" "text" DEFAULT 'draft'::"text" NOT NULL,
+    "created_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "alignment_themes_genre_check" CHECK (("genre" = ANY (ARRAY['dialogue'::"text", 'article'::"text", 'task_email'::"text", 'long_writing'::"text"]))),
+    CONSTRAINT "alignment_themes_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text"]))),
+    CONSTRAINT "alignment_themes_level_check" CHECK ((("level" >= 1) AND ("level" <= 6))),
+    CONSTRAINT "alignment_themes_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'active'::"text", 'archived'::"text"])))
+);
+
+
+ALTER TABLE "public"."alignment_themes" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."api_limits" (
@@ -818,7 +923,8 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_items" (
     "created_by" "uuid",
     "updated_at" timestamp with time zone,
     "audio_bucket" "text",
-    "audio_path" "text"
+    "audio_path" "text",
+    "sentence_timeline" "jsonb"
 );
 
 
@@ -1008,6 +1114,26 @@ CREATE TABLE IF NOT EXISTS "public"."voices" (
 ALTER TABLE "public"."voices" OWNER TO "postgres";
 
 
+ALTER TABLE ONLY "public"."alignment_attempts"
+    ADD CONSTRAINT "alignment_attempts_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."alignment_materials"
+    ADD CONSTRAINT "alignment_materials_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."alignment_subtopics"
+    ADD CONSTRAINT "alignment_subtopics_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."alignment_themes"
+    ADD CONSTRAINT "alignment_themes_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."article_batch_items"
     ADD CONSTRAINT "article_batch_items_pkey" PRIMARY KEY ("id");
 
@@ -1068,6 +1194,46 @@ ALTER TABLE ONLY "public"."vocab_entries"
 
 
 
+CREATE INDEX "alignment_attempts_prev_idx" ON "public"."alignment_attempts" USING "btree" ("prev_attempt_id");
+
+
+
+CREATE INDEX "alignment_attempts_subtopic_created_idx" ON "public"."alignment_attempts" USING "btree" ("subtopic_id", "created_at" DESC);
+
+
+
+CREATE INDEX "alignment_attempts_user_subtopic_idx" ON "public"."alignment_attempts" USING "btree" ("user_id", "subtopic_id", "attempt_number");
+
+
+
+CREATE UNIQUE INDEX "alignment_materials_current_idx" ON "public"."alignment_materials" USING "btree" ("subtopic_id") WHERE "is_current";
+
+
+
+CREATE INDEX "alignment_materials_status_idx" ON "public"."alignment_materials" USING "btree" ("status");
+
+
+
+CREATE INDEX "alignment_materials_subtopic_idx" ON "public"."alignment_materials" USING "btree" ("subtopic_id");
+
+
+
+CREATE INDEX "alignment_subtopics_status_idx" ON "public"."alignment_subtopics" USING "btree" ("status");
+
+
+
+CREATE UNIQUE INDEX "alignment_subtopics_unique_theme_title" ON "public"."alignment_subtopics" USING "btree" ("theme_id", "title_normalized");
+
+
+
+CREATE INDEX "alignment_themes_status_idx" ON "public"."alignment_themes" USING "btree" ("status");
+
+
+
+CREATE UNIQUE INDEX "alignment_themes_unique_lang_level_genre_title" ON "public"."alignment_themes" USING "btree" ("lang", "level", "genre", "title_normalized");
+
+
+
 CREATE INDEX "idx_api_usage_logs_created_at" ON "public"."api_usage_logs" USING "btree" ("created_at");
 
 
@@ -1093,6 +1259,41 @@ CREATE OR REPLACE TRIGGER "update_user_permissions_updated_at" BEFORE UPDATE ON 
 
 
 CREATE OR REPLACE TRIGGER "update_vocab_entries_updated_at" BEFORE UPDATE ON "public"."vocab_entries" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
+ALTER TABLE ONLY "public"."alignment_attempts"
+    ADD CONSTRAINT "alignment_attempts_material_id_fkey" FOREIGN KEY ("material_id") REFERENCES "public"."alignment_materials"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."alignment_attempts"
+    ADD CONSTRAINT "alignment_attempts_prev_attempt_id_fkey" FOREIGN KEY ("prev_attempt_id") REFERENCES "public"."alignment_attempts"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."alignment_attempts"
+    ADD CONSTRAINT "alignment_attempts_subtopic_id_fkey" FOREIGN KEY ("subtopic_id") REFERENCES "public"."alignment_subtopics"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."alignment_attempts"
+    ADD CONSTRAINT "alignment_attempts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."alignment_materials"
+    ADD CONSTRAINT "alignment_materials_subtopic_fkey" FOREIGN KEY ("subtopic_id") REFERENCES "public"."alignment_subtopics"("id") ON DELETE CASCADE NOT VALID;
+
+
+
+ALTER TABLE ONLY "public"."alignment_materials"
+    ADD CONSTRAINT "alignment_materials_subtopic_id_fkey" FOREIGN KEY ("subtopic_id") REFERENCES "public"."alignment_subtopics"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."alignment_subtopics"
+    ADD CONSTRAINT "alignment_subtopics_theme_id_fkey" FOREIGN KEY ("theme_id") REFERENCES "public"."alignment_themes"("id") ON DELETE CASCADE;
 
 
 
@@ -1133,6 +1334,54 @@ ALTER TABLE ONLY "public"."cloze_shadowing_items"
 
 ALTER TABLE ONLY "public"."cloze_shadowing_items"
     ADD CONSTRAINT "cloze_shadowing_items_theme_id_fkey" FOREIGN KEY ("theme_id") REFERENCES "public"."shadowing_themes"("id");
+
+
+
+ALTER TABLE "public"."alignment_attempts" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "alignment_attempts_insert_own" ON "public"."alignment_attempts" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "alignment_attempts_select_own" ON "public"."alignment_attempts" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "alignment_attempts_update_own" ON "public"."alignment_attempts" FOR UPDATE USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."alignment_materials" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "alignment_materials_select_active" ON "public"."alignment_materials" FOR SELECT USING ((("status" = ANY (ARRAY['pending_review'::"text", 'active'::"text"])) OR ("auth"."role"() = 'service_role'::"text")));
+
+
+
+CREATE POLICY "alignment_materials_service_write" ON "public"."alignment_materials" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
+
+
+
+ALTER TABLE "public"."alignment_subtopics" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "alignment_subtopics_select_all" ON "public"."alignment_subtopics" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "alignment_subtopics_service_write" ON "public"."alignment_subtopics" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
+
+
+
+ALTER TABLE "public"."alignment_themes" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "alignment_themes_select_all" ON "public"."alignment_themes" FOR SELECT USING (true);
+
+
+
+CREATE POLICY "alignment_themes_service_write" ON "public"."alignment_themes" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
 
 
 
@@ -1288,9 +1537,27 @@ GRANT ALL ON TABLE "public"."alignment_attempts" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."alignment_materials" TO "anon";
+GRANT ALL ON TABLE "public"."alignment_materials" TO "authenticated";
+GRANT ALL ON TABLE "public"."alignment_materials" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."alignment_packs" TO "anon";
 GRANT ALL ON TABLE "public"."alignment_packs" TO "authenticated";
 GRANT ALL ON TABLE "public"."alignment_packs" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."alignment_subtopics" TO "anon";
+GRANT ALL ON TABLE "public"."alignment_subtopics" TO "authenticated";
+GRANT ALL ON TABLE "public"."alignment_subtopics" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."alignment_themes" TO "anon";
+GRANT ALL ON TABLE "public"."alignment_themes" TO "authenticated";
+GRANT ALL ON TABLE "public"."alignment_themes" TO "service_role";
 
 
 

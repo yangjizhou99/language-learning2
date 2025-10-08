@@ -141,6 +141,27 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-600 mt-1">监控和管理用户的API使用情况</p>
           </Link>
           <Link
+            href="/admin/alignment/themes"
+            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <h3 className="font-medium text-gray-900">🧭 对齐主题管理</h3>
+            <p className="text-sm text-gray-600 mt-1">维护大主题、多语言翻译与生成结果</p>
+          </Link>
+          <Link
+            href="/admin/alignment/subtopics-gen"
+            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <h3 className="font-medium text-gray-900">🧱 对齐小主题生成</h3>
+            <p className="text-sm text-gray-600 mt-1">批量生成小主题并管理目标列表</p>
+          </Link>
+          <Link
+            href="/admin/alignment/materials"
+            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <h3 className="font-medium text-gray-900">🗂️ 对齐训练包审核</h3>
+            <p className="text-sm text-gray-600 mt-1">审核并发布生成的对齐练习包</p>
+          </Link>
+          <Link
             href="/admin/database-sync"
             className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
           >

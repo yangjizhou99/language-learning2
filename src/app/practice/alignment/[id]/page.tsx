@@ -1,742 +1,671 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-// import { Container } from "@/components/Container";
+import { Textarea } from '@/components/ui/textarea';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
-import useUserPermissions from '@/hooks/useUserPermissions';
-import { getFilteredAIProviders, getDefaultProvider, getDefaultModel } from '@/lib/ai-permissions';
+import { Container } from '@/components/Container';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 
-interface AlignmentPack {
+type StageKey = 'learn' | 'task' | 'review';
+
+const STAGES: Array<{ key: StageKey; label: string; description: string }> = [
+  {
+    key: 'learn',
+    label: '步骤一 / 学习范文和知识点',
+    description: '阅读任务提示、示例与核心表达。',
+  },
+  {
+    key: 'task',
+    label: '步骤二 / 完成任务',
+    description: '根据要求完成对齐练习并提交。',
+  },
+  {
+    key: 'review',
+    label: '步骤三 / 总结评价',
+    description: '查看评分、亮点与改进建议。',
+  },
+];
+
+type AlignmentMaterialDetail = {
   id: string;
-  lang: 'en' | 'ja' | 'zh';
-  topic: string;
-  tags: string[];
-  preferred_style: any;
-  steps: any;
-  status: string;
+  lang: string;
+  task_type: string;
+  knowledge_points: Record<string, any>;
+  requirements: Array<{ label: string; translations?: Record<string, string> }>;
+  standard_answer: string;
+  standard_answer_translations?: Record<string, string>;
+  task_prompt: string;
+  task_prompt_translations?: Record<string, string>;
+  exemplar?: string;
+  exemplar_translations?: Record<string, string>;
+  rubric?: Record<string, any>;
+  subtopic?: {
+    id: string;
+    title: string;
+    one_line?: string | null;
+    level: number;
+    objectives?: Array<{ label?: string; title?: string }> | null;
+    theme?: {
+      id: string;
+      title: string;
+      level: number;
+      genre: string;
+    } | null;
+  } | null;
+};
+
+type AttemptSummary = {
+  id: string;
+  attempt_number: number;
+  score_total: number | null;
+  scores: Record<string, number> | null;
+  feedback: string | null;
+  feedback_json: any;
   created_at: string;
-}
+};
 
-interface Step {
-  type: string;
-  title: string;
-  prompt: string;
-  exemplar: string;
-  key_phrases?: string[];
-  patterns?: string[];
-  hints?: string[];
-  checklist?: string[];
-  templates?: string[];
-  outline?: string[];
-  rubric: any;
-}
+const LANG_LABEL: Record<string, string> = {
+  en: '英语',
+  ja: '日语',
+  zh: '中文',
+};
 
-interface Scores {
-  fluency: number;
-  relevance: number;
-  style: number;
-  length: number;
-  overall: number;
-}
+const TASK_LABEL: Record<string, string> = {
+  dialogue: '对话任务',
+  article: '文章写作',
+  task_email: '任务邮件',
+  long_writing: '长写作',
+};
 
-interface Feedback {
-  highlights: string[];
-  issues: string[];
-  replace_suggestions: Array<{
-    from: string;
-    to: string;
-    why: string;
-  }>;
-  extra_phrases: string[];
-}
+const GENRE_LABEL: Record<string, string> = {
+  dialogue: '对话',
+  article: '文章',
+  task_email: '任务邮件',
+  long_writing: '长写作',
+};
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: number;
-}
-
-export default function AlignmentPracticePage() {
+export default function AlignmentMaterialPracticePage() {
   const params = useParams();
-  const packId = params?.id as string;
-  const permissions = useUserPermissions();
+  const materialId = params?.id as string;
 
-  const [pack, setPack] = useState<AlignmentPack | null>(null);
-  const [currentStep, setCurrentStep] = useState<string>('D1');
-  const [submission, setSubmission] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [scores, setScores] = useState<Scores | null>(null);
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const [usage, setUsage] = useState<any>(null);
-
-  // 根据权限初始化provider和model
-  const defaultProvider = getDefaultProvider(permissions);
-  const [provider, setProvider] = useState<'openrouter' | 'deepseek'>(defaultProvider);
-  const [model, setModel] = useState(getDefaultModel(permissions, defaultProvider));
-  const [models, setModels] = useState<{ id: string; name: string }[]>([]);
-  const [temperature, setTemperature] = useState(0.2);
+  const [material, setMaterial] = useState<AlignmentMaterialDetail | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // 角色扮演对话相关状态
-  const [userRole, setUserRole] = useState<'A' | 'B' | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isDialogueStep, setIsDialogueStep] = useState(false);
-  const [chatLoading, setChatLoading] = useState(false);
+  const [submission, setSubmission] = useState('');
+  const [attempting, setAttempting] = useState(false);
+  const [attemptError, setAttemptError] = useState('');
+  const [latestAttempt, setLatestAttempt] = useState<AttemptSummary | null>(null);
+  const [history, setHistory] = useState<AttemptSummary[]>([]);
 
-  // 获取训练包详情
-  useEffect(() => {
-    if (!packId) return;
+  const [activeStage, setActiveStage] = useState<StageKey>('learn');
 
-    fetch(`/api/alignment/packs/${packId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.ok) {
-          setPack(data.pack);
-        } else {
-          setError(data.error);
-        }
-      })
-      .catch((err) => setError(err.message));
-  }, [packId]);
+  const isDialogue = material?.task_type === 'dialogue';
 
-  // 检测当前步骤是否为对话步骤
-  useEffect(() => {
-    if (pack) {
-      const step = pack.steps[currentStep];
-      const isDialogue = step?.type?.startsWith('dialogue') || currentStep.startsWith('D');
-      setIsDialogueStep(isDialogue);
-
-      // 如果是对话步骤，重置对话状态
-      if (isDialogue) {
-        setMessages([]);
-        setUserRole(null);
-      }
-    }
-  }, [currentStep, pack]);
-
-  // 获取 AI 模型列表
-  useEffect(() => {
-    const filteredProviders = getFilteredAIProviders(permissions);
-    const providerConfig = filteredProviders[provider];
-
-    if (providerConfig) {
-      setModels([...providerConfig.models]);
-      setModel(providerConfig.models[0]?.id || '');
-    } else {
-      // 如果没有权限，使用默认配置
-      if (provider === 'openrouter') {
-        fetch(`/api/ai/models?provider=${provider}`)
-          .then((r) => r.json())
-          .then((data) => {
-            setModels(data || []);
-            setModel(data?.[0]?.id || '');
-          });
-      } else if (provider === 'deepseek') {
-        const j = [
-          { id: 'deepseek-chat', name: 'deepseek-chat' },
-          { id: 'deepseek-reasoner', name: 'deepseek-reasoner' },
-        ];
-        setModels(j);
-        setModel(j[0].id);
-      } else {
-        const j = [{ id: 'gpt-4o-mini', name: 'gpt-4o-mini' }];
-        setModels(j);
-        setModel(j[0].id);
-      }
-    }
-  }, [provider, permissions]);
-
-  // 提交评分
-  const submitForScoring = async () => {
-    if (!pack) return;
-
-    // 对话步骤需要消息记录，非对话步骤需要提交内容
-    if (isDialogueStep && (!userRole || messages.length === 0)) {
-      setError('请先选择角色并开始对话');
-      return;
-    }
-    if (!isDialogueStep && !submission.trim()) {
-      setError('请先输入练习内容');
-      return;
-    }
-
+  const fetchDetail = useCallback(async () => {
+    if (!materialId) return;
     setLoading(true);
-    setScores(null);
-    setFeedback(null);
-    setUsage(null);
-
+    setError('');
     try {
-      let body: any = {
-        pack_id: pack.id,
-        step_key: currentStep,
-        provider,
-        model,
-        temperature,
-      };
-
-      if (isDialogueStep) {
-        // 对话步骤：生成转录并评分
-        const transcript = messages
-          .map(
-            (msg) =>
-              `${msg.role === 'user' ? userRole : userRole === 'A' ? 'B' : 'A'}: ${msg.content}`,
-          )
-          .join('\n');
-
-        body.userRole = userRole;
-        body.transcript = transcript;
-        body.submission = ''; // 对话步骤不需要 submission
-      } else {
-        // 非对话步骤：使用提交内容
-        body.submission = submission.trim();
+      const res = await fetch(`/api/alignment/materials/${materialId}`);
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || '加载失败');
       }
-
-      // 评分接口已下线：直接在前端给出占位反馈，避免 404
-      const r = await Promise.resolve({
-        ok: true,
-        json: async () => ({
-          ok: true,
-          result: {
-            scores: { fluency: 0, relevance: 0, style: 0, length: 0, overall: 0 },
-            feedback: { highlights: [], issues: [], replace_suggestions: [], extra_phrases: [] },
-          },
-          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-        }),
-      });
-      // const r = await fetch("/api/alignment/score", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(body)
-      // });
-
-      const data: any = await r.json();
-      if (data?.ok) {
-        setScores(data.result.scores);
-        setFeedback(data.result.feedback);
-        setUsage(data.usage);
-      } else {
-        setError(data?.error || '评分接口已停用');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setMaterial(json.item);
+    } catch (err: any) {
+      setError(err?.message || '加载失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [materialId]);
 
-  // 应用替换建议
-  const applySuggestion = (from: string, to: string) => {
-    setSubmission((prev) => prev.replace(new RegExp(from, 'g'), to));
-  };
-
-  // 发送对话消息
-  const sendMessage = async () => {
-    if (!inputMessage.trim() || !userRole || !pack) return;
-
-    const userMessage: Message = {
-      role: 'user',
-      content: inputMessage.trim(),
-      timestamp: Date.now(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInputMessage('');
-    setChatLoading(true);
-
+  const fetchHistory = useCallback(async () => {
+    if (!materialId) return;
     try {
-      const r = await fetch('/api/alignment/roleplay/turn', {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+
+      const res = await fetch(`/api/alignment/attempts?material_id=${materialId}`, {
+        cache: 'no-store',
+        headers,
+      });
+      const json = await res.json();
+      if (res.ok) {
+        const list: AttemptSummary[] = json.items || [];
+        setHistory(list);
+        setLatestAttempt(list[0] || null);
+      }
+    } catch {
+      // ignore history errors
+    }
+  }, [materialId]);
+
+  useEffect(() => {
+    fetchDetail();
+  }, [fetchDetail]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  const handleSubmit = async () => {
+    if (!material) return;
+    if (!submission.trim()) {
+      setAttemptError(isDialogue ? '请先填写对话内容' : '请先输入练习内容');
+      return;
+    }
+    setAttemptError('');
+    setAttempting(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+
+      const res = await fetch('/api/alignment/attempts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          pack_id: pack.id,
-          step_key: currentStep,
-          role: userRole,
-          messages: [...messages, userMessage],
-          provider,
-          model,
-          temperature,
+          material_id: material.id,
+          submission: isDialogue ? '' : submission,
+          transcript: isDialogue ? submission : '',
+          task_type: material.task_type,
+          provider: 'deepseek',
+          model: 'deepseek-chat',
+          temperature: 0.2,
         }),
       });
-
-      const data = await r.json();
-      if (data.ok) {
-        const aiMessage: Message = {
-          role: 'assistant',
-          content: data.reply,
-          timestamp: Date.now(),
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-      } else {
-        setError(data.error);
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || '评分失败');
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  // 当用户选择 B 且对话尚未开始时，由 AI 先开场
-  const kickoffAi = async (role: 'A' | 'B') => {
-    if (!pack || !isDialogueStep) return;
-    if (role !== 'B') return;
-    if (messages.length > 0) return;
-
-    setChatLoading(true);
-    try {
-      const r = await fetch('/api/alignment/roleplay/turn', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pack_id: pack.id,
-          step_key: currentStep,
-          role: role, // 用户扮演B，则AI扮演A并先说
-          messages: [],
-          provider,
-          model,
-          temperature,
-        }),
+      setLatestAttempt(json.attempt);
+      setHistory((prev) => {
+        const next = [json.attempt, ...prev];
+        return next.slice(0, 10);
       });
-      const data = await r.json();
-      if (data.ok) {
-        const aiMessage: Message = {
-          role: 'assistant',
-          content: data.reply,
-          timestamp: Date.now(),
-        };
-        setMessages([aiMessage]);
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setActiveStage('review');
+    } catch (err: any) {
+      setAttemptError(err?.message || '评分失败');
     } finally {
-      setChatLoading(false);
+      setAttempting(false);
     }
   };
 
-  // 处理回车键发送
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (!chatLoading) sendMessage();
-    }
-  };
+  const knowledgePoints = useMemo(() => {
+    if (!material?.knowledge_points) return [];
+    return Object.entries(material.knowledge_points)
+      .map(([category, entries]) => ({
+        category,
+        entries: Array.isArray(entries) ? entries : [],
+      }))
+      .filter((group) => group.entries.length > 0);
+  }, [material]);
 
-  function DialoguePanel() {
+  const requirements = material?.requirements || [];
+  const evaluation = latestAttempt?.feedback_json || null;
+  const requirementFeedback: Array<{ label: string; met?: boolean; comment?: string }> =
+    evaluation?.requirements || [];
+
+  if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow p-6">
-        <h3 className="font-medium mb-3">角色扮演对话</h3>
-        {!userRole && (
-          <div className="mb-4">
-            <p className="text-sm text-gray-600 mb-2">选择你要扮演的角色：</p>
-            <div className="flex gap-3">
-              <Button onClick={() => setUserRole('A')} variant="outline">
-                扮演角色 A
-              </Button>
-              <Button
-                onClick={() => {
-                  setUserRole('B');
-                  kickoffAi('B');
-                }}
-                variant="secondary"
-              >
-                扮演角色 B（由 A 先开场）
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {userRole && (
-          <>
-            <div className="mb-4 p-3 bg-gray-50 rounded text-sm">
-              <span className="font-medium">你正在扮演：角色 {userRole}</span>
-              {chatLoading && <span className="ml-3 text-xs text-gray-500">AI 正在回复…</span>}
-              <button
-                onClick={() => {
-                  setUserRole(null);
-                  setMessages([]);
-                  setInputMessage('');
-                }}
-                className="ml-3 text-blue-600 hover:underline text-xs"
-              >
-                重新选择
-              </button>
-            </div>
-
-            <div className="h-64 overflow-y-auto border rounded p-3 mb-4 bg-gray-50">
-              {messages.length === 0 ? (
-                <div className="text-gray-500 text-center py-8">
-                  {userRole === 'B' ? '正在等待 A 开场…' : '开始对话吧！输入你的第一句话'}
-                </div>
-              ) : (
-                messages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`mb-3 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}
-                  >
-                    <div
-                      className={`inline-block max-w-xs p-2 rounded ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-white text-gray-800 border'}`}
-                    >
-                      <div className="text-xs opacity-75 mb-1">
-                        {msg.role === 'user'
-                          ? `角色 ${userRole}`
-                          : `角色 ${userRole === 'A' ? 'B' : 'A'}`}
-                      </div>
-                      {msg.content}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="输入你的对话内容..."
-                className="flex-1 px-3 py-2 border rounded bg-background focus:ring-2 focus:ring-ring focus:border-transparent"
-                disabled={chatLoading}
-              />
-              <Button onClick={sendMessage} disabled={!inputMessage.trim() || chatLoading}>
-                发送
-              </Button>
-            </div>
-
-            <Button
-              onClick={submitForScoring}
-              disabled={loading || messages.length === 0}
-              className="mt-4 w-full"
-            >
-              {loading ? '评分中...' : '提交对话评分'}
-            </Button>
-          </>
-        )}
-      </div>
+      <main className="max-w-6xl mx-auto p-6 text-muted-foreground">加载中...</main>
     );
   }
 
-  function EditorPanel() {
-    return (
-      <div className="rounded-2xl border bg-card text-card-foreground p-6">
-        <h3 className="font-medium mb-3">你的练习</h3>
-        <textarea
-          value={submission}
-          onChange={(e) => setSubmission(e.target.value)}
-          placeholder="在这里输入你的练习内容..."
-          className="w-full h-48 p-3 border rounded-lg bg-background resize-none focus:ring-2 focus:ring-ring focus:border-transparent"
-        />
-        <Button
-          onClick={submitForScoring}
-          disabled={loading || !submission.trim()}
-          className="mt-4 w-full"
-        >
-          {loading ? '评分中...' : '提交评分'}
-        </Button>
-      </div>
-    );
-  }
-
-  function ResultsPanel() {
-    if (!scores) return null;
-    return (
-      <div className="bg-white rounded-2xl shadow p-6">
-        <h3 className="font-medium mb-4">AI 评分结果</h3>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{scores.overall}</div>
-            <div className="text-sm text-gray-600">总分</div>
-          </div>
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm">流畅性</span>
-              <span className="font-medium">{scores.fluency}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm">相关性</span>
-              <span className="font-medium">{scores.relevance}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm">风格</span>
-              <span className="font-medium">{scores.style}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm">长度</span>
-              <span className="font-medium">{scores.length}</span>
-            </div>
-          </div>
-        </div>
-
-        {feedback && (
-          <div className="space-y-4">
-            {feedback.highlights.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-green-600 mb-2">亮点</h4>
-                <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                  {feedback.highlights.map((highlight, i) => (
-                    <li key={i}>{highlight}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {feedback.issues.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-red-600 mb-2">需要改进</h4>
-                <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                  {feedback.issues.map((issue, i) => (
-                    <li key={i}>{issue}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {feedback.replace_suggestions.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-blue-600 mb-2">替换建议</h4>
-                <div className="space-y-2">
-                  {feedback.replace_suggestions.map((suggestion, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <span className="text-red-600">{suggestion.from}</span>
-                      <span>→</span>
-                      <span className="text-green-600">{suggestion.to}</span>
-                      <button
-                        onClick={() => applySuggestion(suggestion.from, suggestion.to)}
-                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200"
-                      >
-                        应用
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {feedback.extra_phrases.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-purple-600 mb-2">补充短语</h4>
-                <div className="flex flex-wrap gap-2">
-                  {feedback.extra_phrases.map((phrase, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-sm"
-                    >
-                      {phrase}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {usage && (
-          <div className="mt-4 pt-4 border-t text-xs text-gray-500">
-            Token 用量：PT={usage.prompt_tokens} · CT={usage.completion_tokens} · TT=
-            {usage.total_tokens}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (!pack) {
+  if (error || !material) {
     return (
       <main className="max-w-6xl mx-auto p-6">
-        {error ? (
-          <div className="text-red-600">错误：{error}</div>
-        ) : (
-          <div className="text-gray-600">加载中...</div>
-        )}
+        <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 p-6">
+          {error || '无法加载训练包'}
+        </div>
+        <div className="mt-4">
+          <Button asChild variant="outline">
+            <Link href="/practice/alignment">返回列表</Link>
+          </Button>
+        </div>
       </main>
     );
   }
 
-  const step = pack.steps[currentStep] as Step;
-  const stepOrder: string[] = (pack.steps.order as string[]) || [
-    'D1',
-    'D2',
-    'T3',
-    'W4',
-    'T5',
-    'W6',
-  ];
+  const theme = material.subtopic?.theme;
+  const activeIndex = STAGES.findIndex((stage) => stage.key === activeStage);
+  const promptTranslations = material.task_prompt_translations
+    ? Object.entries(material.task_prompt_translations)
+    : [];
+  const exemplarTranslations = material.exemplar_translations
+    ? Object.entries(material.exemplar_translations)
+    : [];
+  const standardAnswerTranslations = material.standard_answer_translations
+    ? Object.entries(material.standard_answer_translations)
+    : [];
 
-  function HeaderSection({ pack }: { pack: AlignmentPack }) {
-    return (
-      <div className="rounded-2xl border bg-card text-card-foreground p-6">
-        <h1 className="text-2xl font-semibold mb-2">{pack.topic} - 对齐练习</h1>
-        <div className="flex gap-4 text-sm text-muted-foreground">
-          <span>语言：{pack.lang === 'en' ? '英语' : pack.lang === 'ja' ? '日语' : '中文'}</span>
-          <span>标签：{pack.tags.join(', ')}</span>
-          <span>状态：{pack.status}</span>
+  const learningStage = (
+    <div className="space-y-6">
+      <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">任务提示</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            请先理解任务背景，再学习范文与知识点。
+          </p>
         </div>
-      </div>
-    );
-  }
+        <div className="bg-muted/40 rounded-xl p-4 text-sm whitespace-pre-wrap leading-relaxed">
+          {material.task_prompt}
+        </div>
+        {promptTranslations.length > 0 && (
+          <details className="text-sm">
+            <summary className="cursor-pointer text-muted-foreground">查看提示翻译</summary>
+            <div className="mt-2 bg-muted/30 rounded p-3 space-y-2">
+              {promptTranslations.map(([key, value]) => (
+                <div key={key}>
+                  <div className="font-medium uppercase text-xs text-muted-foreground">{key}</div>
+                  <p className="text-sm text-muted-foreground">{value}</p>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </section>
 
-  function LeftInfoSection({ step }: { step: Step }) {
-    return (
-      <div className="space-y-6">
-        <div className="rounded-2xl border bg-card text-card-foreground p-6">
-          <h3 className="font-medium mb-3">{step.title}</h3>
-          <p className="text-gray-700 mb-4">{step.prompt}</p>
-          {step.key_phrases && (
-            <div className="mb-4">
-              <h4 className="text-sm font-medium text-gray-600 mb-2">关键短语</h4>
-              <div className="flex flex-wrap gap-2">
-                {step.key_phrases.map((phrase, i) => (
-                  <span key={i} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm">
-                    {phrase}
-                  </span>
-                ))}
+      {knowledgePoints.length > 0 && (
+        <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
+          <h2 className="text-xl font-semibold">知识点</h2>
+          <p className="text-sm text-muted-foreground">聚焦练习需要掌握的表达、结构或策略。</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            {knowledgePoints.map((group) => (
+              <div key={group.category} className="space-y-2 text-sm">
+                <div className="font-medium capitalize">{group.category}</div>
+                <ul className="space-y-1.5">
+                  {group.entries.map((entry: any, idx: number) => (
+                    <li key={idx} className="bg-muted/30 rounded p-3">
+                      <div className="font-medium">{entry.label}</div>
+                      {entry.explanation && (
+                        <div className="text-muted-foreground">{entry.explanation}</div>
+                      )}
+                      {Array.isArray(entry.examples) && entry.examples.length > 0 && (
+                        <ul className="mt-2 text-xs space-y-1 text-muted-foreground">
+                          {entry.examples.map((ex: any, j: number) => (
+                            <li key={j}>
+                              <span className="font-medium">{ex.source}</span>
+                              {ex.translation ? ` - ${ex.translation}` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          )}
-          {step.patterns && (
-            <div className="mb-4">
-              <h4 className="text-sm font-medium text-gray-600 mb-2">句型模式</h4>
-              <div className="flex flex-wrap gap-2">
-                {step.patterns.map((pattern, i) => (
-                  <span key={i} className="px-2 py-1 bg-green-50 text-green-700 rounded text-sm">
-                    {pattern}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {step.hints && (
-            <div className="mb-4">
-              <h4 className="text-sm font-medium text-gray-600 mb-2">提示</h4>
-              <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                {step.hints.map((hint, i) => (
-                  <li key={i}>{hint}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-        <div className="rounded-2xl border bg-card text-card-foreground p-6">
-          <h3 className="font-medium mb-3">范例</h3>
-          <div className="bg-muted p-4 rounded">
-            <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">
-              {step.exemplar}
-            </pre>
+            ))}
           </div>
+        </section>
+      )}
+
+      {material.exemplar && (
+        <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
+          <details>
+            <summary className="cursor-pointer text-xl font-semibold">示例范文</summary>
+            <div className="mt-3 space-y-3">
+              <div className="bg-muted/30 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed">
+                {material.exemplar}
+              </div>
+              {exemplarTranslations.length > 0 && (
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  {exemplarTranslations.map(([key, value]) => (
+                    <div key={key}>
+                      <div className="font-medium uppercase text-xs">{key}</div>
+                      <p>{value}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </details>
+        </section>
+      )}
+
+      {material.standard_answer?.trim() && (
+        <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
+          <details>
+            <summary className="cursor-pointer text-xl font-semibold">参考答案</summary>
+            <div className="mt-3 space-y-3">
+              <div className="bg-muted/30 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed">
+                {material.standard_answer}
+              </div>
+              {standardAnswerTranslations.length > 0 && (
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  {standardAnswerTranslations.map(([key, value]) => (
+                    <div key={key}>
+                      <div className="font-medium uppercase text-xs">{key}</div>
+                      <p>{value}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </details>
+        </section>
+      )}
+    </div>
+  );
+
+  const taskStage = (
+    <div className="space-y-6">
+      <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold">完成任务</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              按照提示完成练习。如需复习范文，可点击返回第一步。
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setActiveStage('learn')}>
+            查看范文与知识点
+          </Button>
         </div>
-      </div>
-    );
-  }
+        <details className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm">
+          <summary className="cursor-pointer font-medium text-muted-foreground">
+            快速查看任务提示
+          </summary>
+          <div className="mt-2 space-y-3">
+            <div className="whitespace-pre-wrap leading-relaxed">{material.task_prompt}</div>
+            {promptTranslations.length > 0 && (
+              <div className="space-y-2">
+                {promptTranslations.map(([key, value]) => (
+                  <div key={key}>
+                    <div className="font-medium uppercase text-xs text-muted-foreground">{key}</div>
+                    <p className="text-sm text-muted-foreground">{value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </details>
+      </section>
+
+      {requirements.length > 0 && (
+        <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
+          <h2 className="text-xl font-semibold">任务要求</h2>
+          <ul className="space-y-2 text-sm">
+            {requirements.map((req, idx) => (
+              <li key={idx} className="bg-muted/30 rounded p-3 flex items-start gap-2">
+                <span className="font-medium text-slate-600">{idx + 1}.</span>
+                <div>
+                  <div className="font-medium text-slate-900">{req.label}</div>
+                  {req.translations?.en && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      EN: {req.translations.en}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">我的练习</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isDialogue
+              ? '请以对话形式书写，可用“游客：…”、“工作人员：…”表示轮次。'
+              : '请根据要求完成写作，建议使用所给知识点中的表达。'}
+          </p>
+        </div>
+        <Textarea
+          rows={10}
+          value={submission}
+          onChange={(e) => setSubmission(e.target.value)}
+          placeholder={
+            isDialogue
+              ? '示例：\n游客：你好，我想去……\n工作人员：您好，这里提供……'
+              : '请在此写下你的文章或任务回复...'
+          }
+          className="bg-background"
+        />
+        {attemptError && (
+          <div className="text-sm text-red-600 border border-red-200 bg-red-50 rounded px-3 py-2">
+            {attemptError}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <Button onClick={handleSubmit} disabled={attempting}>
+            {attempting ? '评分中...' : '提交并获取评价'}
+          </Button>
+          {latestAttempt && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setActiveStage('review')}
+            >
+              查看最近评价
+            </Button>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+
+  const reviewStage = (
+    <div className="space-y-6">
+      {!latestAttempt ? (
+        <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
+          <h2 className="text-xl font-semibold">还没有提交记录</h2>
+          <p className="text-sm text-muted-foreground">
+            完成任务并提交后，这里会展示评分和详细的改进建议。
+          </p>
+          <div>
+            <Button onClick={() => setActiveStage('task')}>前往完成任务</Button>
+          </div>
+        </section>
+      ) : (
+        <>
+          <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold">最新评价</h2>
+                <p className="text-sm text-muted-foreground">
+                  尝试次数：第 {latestAttempt.attempt_number} 次 / 时间：
+                  {new Date(latestAttempt.created_at).toLocaleString()}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setActiveStage('task')}>
+                再写一次
+              </Button>
+            </div>
+
+            {evaluation?.summary && (
+              <div className="bg-muted/30 rounded-lg p-4 text-sm leading-relaxed">
+                {evaluation.summary}
+              </div>
+            )}
+
+            {latestAttempt.score_total !== null && (
+              <div className="text-3xl font-semibold text-blue-600">
+                总分：{latestAttempt.score_total.toFixed(0)} / 100
+              </div>
+            )}
+
+            {latestAttempt.scores && (
+              <div className="grid md:grid-cols-3 gap-3 text-sm">
+                {Object.entries(latestAttempt.scores).map(([key, value]) => (
+                  <div key={key} className="rounded-lg bg-muted/40 px-3 py-2">
+                    <div className="text-xs uppercase text-muted-foreground">{key}</div>
+                    <div className="font-semibold">
+                      {typeof value === 'number' && Number.isFinite(value)
+                        ? value.toFixed(0)
+                        : '--'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {Array.isArray(requirementFeedback) && requirementFeedback.length > 0 && (
+              <div>
+                <h3 className="text-lg font-medium mb-2">要求达成情况</h3>
+                <ul className="space-y-2 text-sm">
+                  {requirementFeedback.map((item, idx) => (
+                    <li
+                      key={idx}
+                      className="border rounded-lg px-3 py-2 flex flex-col gap-1 bg-muted/20"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{item.label}</span>
+                        <Badge
+                          variant={item.met ? 'default' : 'destructive'}
+                          className={item.met ? 'bg-green-500' : undefined}
+                        >
+                          {item.met ? '已满足' : '待改善'}
+                        </Badge>
+                      </div>
+                      {item.comment && (
+                        <p className="text-xs text-muted-foreground">{item.comment}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {evaluation?.strengths?.length ? (
+              <div>
+                <h3 className="text-lg font-medium mb-1">亮点</h3>
+                <ul className="list-disc list-inside text-sm text-green-700">
+                  {evaluation.strengths.map((s: string, idx: number) => (
+                    <li key={idx}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {evaluation?.improvements?.length ? (
+              <div>
+                <h3 className="text-lg font-medium mb-1">改进建议</h3>
+                <ul className="list-disc list-inside text-sm text-orange-700">
+                  {evaluation.improvements.map((s: string, idx: number) => (
+                    <li key={idx}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </section>
+
+          {history.length > 1 && (
+            <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
+              <h2 className="text-xl font-semibold">历史记录</h2>
+              <div className="grid md:grid-cols-2 gap-3 text-sm">
+                {history.map((attempt) => (
+                  <div key={attempt.id} className="border rounded-lg px-3 py-2 bg-muted/20">
+                    <div className="flex items-center justify-between">
+                      <span>第 {attempt.attempt_number} 次</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(attempt.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-sm font-medium text-blue-600 mt-1">
+                      总分：{attempt.score_total !== null ? attempt.score_total.toFixed(0) : '--'}
+                    </div>
+                    {attempt.feedback && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-3">
+                        {attempt.feedback}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+    </div>
+  );
 
   return (
     <main className="p-6">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8" style={{ maxWidth: 1200 }}>
+      <Container>
         <Breadcrumbs
           items={[
             { href: '/', label: '首页' },
             { href: '/practice/alignment', label: '对齐练习' },
-            { href: `/practice/alignment/${packId}`, label: pack.topic },
+            { label: material.subtopic?.title || '训练包' },
           ]}
         />
-        <div className="max-w-6xl mx-auto space-y-6">
-          <HeaderSection pack={pack} />
 
-          {/* 错误显示 */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
-              <div className="text-red-800 text-sm">
-                <strong>错误：</strong> {error}
+        <div className="max-w-5xl mx-auto space-y-6">
+          <header className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{LANG_LABEL[material.lang] || material.lang}</Badge>
+              {theme && (
+                <Badge variant="outline" className="border-blue-300 text-blue-700">
+                  {GENRE_LABEL[theme.genre] || theme.genre}
+                </Badge>
+              )}
+              <Badge variant="outline">{TASK_LABEL[material.task_type] || material.task_type}</Badge>
+            </div>
+            <div>
+              <h1 className="text-2xl font-semibold">
+                {material.subtopic?.title || '未命名小主题'}
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                {material.subtopic?.one_line || theme?.title || '围绕该主题完成练习任务。'}
+              </p>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              等级：L{material.subtopic?.level ?? '?'} / 主题：
+              {theme?.title || '未分类主题'}
+            </div>
+            {material.subtopic?.objectives?.length ? (
+              <ul className="text-sm text-muted-foreground list-disc list-inside">
+                {material.subtopic.objectives.map((obj, idx) => (
+                  <li key={idx}>{obj.label || obj.title || ''}</li>
+                ))}
+              </ul>
+            ) : null}
+          </header>
+
+          <nav className="grid gap-3 md:grid-cols-3">
+            {STAGES.map((stage, index) => {
+              const status =
+                index < activeIndex ? 'done' : index === activeIndex ? 'active' : 'todo';
+              return (
                 <button
-                  onClick={() => setError('')}
-                  className="ml-2 text-red-600 hover:text-red-800 underline"
+                  key={stage.key}
+                  type="button"
+                  onClick={() => setActiveStage(stage.key)}
+                  className={cn(
+                    'rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+                    status === 'active' && 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm',
+                    status === 'done' &&
+                      'border-muted-foreground/20 bg-muted/20 hover:border-muted-foreground/30',
+                    status === 'todo' &&
+                      'border-dashed border-muted-foreground/30 text-muted-foreground hover:border-muted-foreground/60 hover:text-foreground',
+                  )}
+                  aria-current={stage.key === activeStage ? 'step' : undefined}
                 >
-                  清除
+                  <div className="text-sm font-semibold">{stage.label}</div>
+                  <p className="text-xs text-muted-foreground mt-2">{stage.description}</p>
                 </button>
-              </div>
-            </div>
-          )}
+              );
+            })}
+          </nav>
 
-          {/* 步骤导航 */}
-          <div className="rounded-2xl border bg-card text-card-foreground p-4">
-            <h3 className="font-medium mb-3">练习步骤</h3>
-            <div className="flex gap-2 flex-wrap">
-              {stepOrder.map((stepKey) => (
-                <Button
-                  key={stepKey}
-                  onClick={() => setCurrentStep(stepKey)}
-                  variant={currentStep === stepKey ? 'default' : 'outline'}
-                >
-                  {stepKey}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* 当前步骤内容 */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* 左侧：任务说明和范例 */}
-            <LeftInfoSection step={step} />
-
-            {/* 右侧：练习区域 */}
-            <div className="space-y-6">
-              {/* AI 模型选择 */}
-              <div className="rounded-2xl border bg-card text-card-foreground p-4">
-                <h3 className="font-medium mb-3">AI 模型设置</h3>
-                <div className="grid grid-cols-3 gap-3">
-                  <select
-                    value={provider}
-                    onChange={(e) => {
-                      const newProvider = e.target.value as any;
-                      setProvider(newProvider);
-                      setModel(getDefaultModel(permissions, newProvider));
-                    }}
-                    className="border rounded px-2 py-1 text-sm"
-                  >
-                    {(() => {
-                      const filteredProviders = getFilteredAIProviders(permissions);
-                      return Object.entries(filteredProviders).map(([key, config]) => (
-                        <option key={key} value={key}>
-                          {config.name}
-                        </option>
-                      ));
-                    })()}
-                  </select>
-
-                  <select
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    className="border rounded px-2 py-1 text-sm"
-                  >
-                    {models.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="1"
-                    value={temperature}
-                    onChange={(e) => setTemperature(Number(e.target.value) || 0.2)}
-                    className="border rounded px-2 py-1 text-sm"
-                    placeholder="温度"
-                  />
-                </div>
-              </div>
-
-              {/* 对话/编辑/结果分块 */}
-              {isDialogueStep && <DialoguePanel />}
-              {!isDialogueStep && <EditorPanel />}
-              <ResultsPanel />
-            </div>
-          </div>
+          {activeStage === 'learn' && learningStage}
+          {activeStage === 'task' && taskStage}
+          {activeStage === 'review' && reviewStage}
         </div>
-      </div>
+      </Container>
     </main>
   );
 }
