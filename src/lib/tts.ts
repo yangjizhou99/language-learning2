@@ -264,19 +264,12 @@ export async function synthesizeTTS({
   // 使用Google TTS
   const client = await makeClient();
   const selectedName = voiceName || DEFAULTS[lang as keyof typeof DEFAULTS];
-  let languageCode = selectedName
-    ? extractLanguageCodeFromVoiceName(selectedName) || toLocaleCode(lang)
-    : toLocaleCode(lang);
-
-  const uiLocale = toLocaleCode(lang).toLowerCase();
-  const selectedLocale = (extractLanguageCodeFromVoiceName(selectedName) || '').toLowerCase();
-  const isZhUi = uiLocale.startsWith('zh');
-  const isZhVoice = selectedLocale.startsWith('zh-') || selectedLocale.startsWith('cmn-');
-  const localeMismatch =
-    selectedName && (isZhUi ? !isZhVoice : !selectedLocale.startsWith(uiLocale));
-
-  const name = localeMismatch ? DEFAULTS[lang as keyof typeof DEFAULTS] : selectedName;
-  if (localeMismatch) languageCode = toLocaleCode(lang);
+  const inferredLanguage = extractLanguageCodeFromVoiceName(selectedName);
+  const languageCode = inferredLanguage || toLocaleCode(lang);
+  const name = selectedName;
+  if (!name) {
+    throw new Error(`未提供音色且没有为语言 ${lang} 配置默认音色`);
+  }
 
   // 基于音色名推断所需的模型与能力（对齐试听实现）
   function inferModelFromVoice(name: string | undefined): string | undefined {
@@ -314,12 +307,8 @@ export async function synthesizeTTS({
     pitch,
   });
   console.log('- selectedName:', selectedName);
+  console.log('- inferredLanguage:', inferredLanguage);
   console.log('- languageCode:', languageCode);
-  console.log('- uiLocale:', uiLocale);
-  console.log('- selectedLocale:', selectedLocale);
-  console.log('- isZhUi:', isZhUi);
-  console.log('- isZhVoice:', isZhVoice);
-  console.log('- localeMismatch:', localeMismatch);
   console.log('- 最终音色名称:', name);
   console.log('- DEFAULTS[lang]:', DEFAULTS[lang as keyof typeof DEFAULTS]);
   if (model) console.log('- 使用模型:', model);
