@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
@@ -58,6 +58,10 @@ export default function ClozeShadowingEntryPage() {
   const [selectedId, setSelectedId] = useState<string>('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>('recommended');
+  const abortRef = useRef<AbortController | null>(null);
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [page, setPage] = useState<number>(1);
+  const [total, setTotal] = useState<number>(0);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -74,6 +78,8 @@ export default function ClozeShadowingEntryPage() {
     const urlQ = params?.get('q') || '';
     const urlGenre = params?.get('genre') || 'all';
     const urlSort = params?.get('sort');
+    const urlLimit = params?.get('limit');
+    const urlOffset = params?.get('offset');
 
     if (urlLang) setLang(urlLang);
     if (urlLevel && !Number.isNaN(parseInt(urlLevel))) setLevel(parseInt(urlLevel));
@@ -83,6 +89,12 @@ export default function ClozeShadowingEntryPage() {
     if (urlQ) setQ(urlQ);
     if (urlGenre) setGenre(urlGenre);
     if (urlSort && ['recommended', 'recent', 'levelAsc', 'levelDesc', 'completion'].includes(urlSort)) setSortBy(urlSort as SortKey);
+    if (urlLimit && !Number.isNaN(parseInt(urlLimit))) setPageSize(Math.max(1, Math.min(200, parseInt(urlLimit))));
+    if (urlOffset && !Number.isNaN(parseInt(urlOffset))) {
+      const off = Math.max(0, parseInt(urlOffset));
+      const effLimit = (urlLimit && !Number.isNaN(parseInt(urlLimit))) ? Math.max(1, Math.min(200, parseInt(urlLimit))) : 20;
+      setPage(Math.floor(off / effLimit) + 1);
+    }
 
     if (!urlLang && !urlLevel && !urlPracticed) {
       const persisted = loadClozeFilters();
@@ -111,6 +123,8 @@ export default function ClozeShadowingEntryPage() {
     if (q) params.set('q', q); else params.delete('q');
     if (genre && genre !== 'all') params.set('genre', genre); else params.delete('genre');
     if (sortBy && sortBy !== 'recommended') params.set('sort', sortBy); else params.delete('sort');
+    params.set('limit', String(pageSize));
+    params.set('offset', String(Math.max(0, (page - 1) * pageSize)));
     router.replace(`${pathname}?${params.toString()}`);
     saveClozeFilters({
       lang: lang || undefined,
@@ -123,9 +137,22 @@ export default function ClozeShadowingEntryPage() {
       sort: sortBy !== 'recommended' ? sortBy : undefined,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang, level, practiced, theme, subtopic, q, genre, sortBy, page, pageSize]);
+
+  // 条件变化时回到第 1 页
+  useEffect(() => {
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang, level, practiced, theme, subtopic, q, genre, sortBy]);
 
   const fetchItems = async () => {
+      // 取消上一次请求
+      if (abortRef.current) {
+        try { abortRef.current.abort(); } catch {}
+      }
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       setLoading(true);
       setError('');
       try {
@@ -139,41 +166,55 @@ export default function ClozeShadowingEntryPage() {
           return;
         }
 
-      const params = new URLSearchParams();
-      if (lang) params.set('lang', String(lang));
-      if (level) params.set('level', String(level));
-      if (practiced !== 'all') params.set('practiced', practiced === 'practiced' ? 'true' : 'false');
-      if (theme) params.set('theme', theme);
-      if (subtopic) params.set('subtopic', subtopic);
-      if (q) params.set('q', q);
-      if (genre && genre !== 'all') params.set('genre', genre);
+        const params = new URLSearchParams();
+        if (lang) params.set('lang', String(lang));
+        if (level) params.set('level', String(level));
+        if (practiced !== 'all') params.set('practiced', practiced === 'practiced' ? 'true' : 'false');
+        if (theme) params.set('theme', theme);
+        if (subtopic) params.set('subtopic', subtopic);
+        if (q) params.set('q', q);
+        if (genre && genre !== 'all') params.set('genre', genre);
+        params.set('limit', String(pageSize));
+        params.set('offset', String(Math.max(0, (page - 1) * pageSize)));
 
-      const resp = await fetch(`/api/cloze-shadowing/catalog?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        cache: 'no-store',
-      });
-      const data = await resp.json();
-      if (!resp.ok || !data?.success) throw new Error(data?.error || '加载失败');
-      setItems(data.items || []);
-      setThemes(data.themes || []);
-      setSubtopics(data.subtopics || []);
-      if (!selectedId && (data.items || []).length > 0) setSelectedId(data.items[0].id);
-      } catch (e: unknown) {
+        const resp = await fetch(`/api/cloze-shadowing/catalog?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data?.success) throw new Error(data?.error || '加载失败');
+        setItems(data.items || []);
+        setThemes(data.themes || []);
+        setSubtopics(data.subtopics || []);
+        setTotal(typeof data.total === 'number' ? data.total : 0);
+        if (!selectedId && (data.items || []).length > 0) setSelectedId(data.items[0].id);
+      } catch (e: any) {
+        // 忽略中止错误
+        if (e?.name === 'AbortError') return;
         let msg = '加载失败';
-        if (e && typeof e === 'object' && 'toString' in e) {
-          msg = String(e as object);
-        }
+        try {
+          msg = e?.message ? String(e.message) : msg;
+        } catch {}
         setError(msg);
-      setItems([]);
+        setItems([]);
       } finally {
         setLoading(false);
       }
     };
 
   useEffect(() => {
-    fetchItems();
+    const t = setTimeout(() => {
+      fetchItems();
+    }, 300);
+    return () => {
+      clearTimeout(t);
+      if (abortRef.current) {
+        try { abortRef.current.abort(); } catch {}
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang, level, practiced, theme, subtopic, q, genre]);
+  }, [lang, level, practiced, theme, subtopic, q, genre, page, pageSize]);
 
   const filtered = useMemo(() => {
     const arr = [...items];
@@ -227,6 +268,10 @@ export default function ClozeShadowingEntryPage() {
   const completedCount = useMemo(() => filtered.filter((x) => x.isPracticed).length, [filtered]);
   const draftCount = useMemo(() => filtered.filter((x) => x.status === 'draft').length, [filtered]);
   const unstartedCount = Math.max(0, totalCount - completedCount - draftCount);
+  const pageStart = (page - 1) * pageSize + 1;
+  const pageEnd = (page - 1) * pageSize + items.length;
+  const hasPrev = page > 1;
+  const hasNext = pageEnd < total;
 
   const gotoItem = (id: string) => router.push(`/practice/cloze-shadowing/${id}`);
 
@@ -380,7 +425,10 @@ export default function ClozeShadowingEntryPage() {
           )}
 
           {error && (
-            <div className="px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-700 mb-4 shadow-sm">{error}</div>
+            <div className="px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-700 mb-4 shadow-sm flex items-center justify-between gap-3">
+              <span className="text-sm">{error}</span>
+              <Button size="sm" variant="outline" onClick={() => fetchItems()}>重试</Button>
+            </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
@@ -421,6 +469,21 @@ export default function ClozeShadowingEntryPage() {
                         <SelectItem value="5">L5 - 高级</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                    <div>
+                      {total > 0 ? (
+                        <span>
+                          显示 {pageStart}-{Math.min(total, pageEnd)} / {total}
+                        </span>
+                      ) : (
+                        <span>无结果</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" disabled={!hasPrev} onClick={() => { if (hasPrev) setPage((p) => Math.max(1, p - 1)); }}>上一页</Button>
+                      <Button size="sm" variant="outline" disabled={!hasNext} onClick={() => { if (hasNext) setPage((p) => p + 1); }}>下一页</Button>
+                    </div>
                   </div>
                   {recommendedLevel != null && (
                     <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded border border-blue-200">
@@ -529,6 +592,21 @@ export default function ClozeShadowingEntryPage() {
                     ))}
                   </div>
                 )}
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                <div>
+                  {total > 0 ? (
+                    <span>
+                      显示 {pageStart}-{Math.min(total, pageEnd)} / {total}
+                    </span>
+                  ) : (
+                    <span>无结果</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" disabled={!hasPrev} onClick={() => hasPrev && setPage((p) => Math.max(1, p - 1))}>上一页</Button>
+                  <Button size="sm" variant="outline" disabled={!hasNext} onClick={() => hasNext && setPage((p) => p + 1)}>下一页</Button>
+                </div>
               </div>
             </aside>
             )}
@@ -726,6 +804,3 @@ export default function ClozeShadowingEntryPage() {
     </main>
   );
 }
-
-
-
