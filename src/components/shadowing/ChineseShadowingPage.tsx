@@ -1,5 +1,7 @@
 'use client';
 import React, { useEffect, useState, useCallback, useRef, useMemo, useDeferredValue } from 'react';
+import { Virtuoso } from 'react-virtuoso';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -43,6 +45,10 @@ import {
   Pause,
   Menu,
   X,
+  Star,
+  Sparkles,
+  Target,
+  FileEdit,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCached, setCached } from '@/lib/clientCache';
@@ -158,6 +164,9 @@ export default function ShadowingPage() {
   const router = useRouter();
   const pathname = usePathname();
   const filtersReadyRef = useRef(false);
+  const replaceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mobileListScrollRef = useRef<HTMLDivElement | null>(null);
+  const desktopListScrollRef = useRef<HTMLDivElement | null>(null);
 
   // 初始化：URL 优先，其次本地存储；不区分语言分桶；跳转（带参）为准
   useEffect(() => {
@@ -198,19 +207,28 @@ export default function ShadowingPage() {
     // 本地保存（3天 TTL 在工具内默认）
     saveShadowingFilters({ lang, level, practiced });
 
-    const params = new URLSearchParams(navSearchParams?.toString() || '');
-    params.set('lang', lang);
-    if (level !== null && level !== undefined) params.set('level', String(level)); else params.delete('level');
-    params.set('practiced', practiced);
+    if (replaceTimerRef.current) clearTimeout(replaceTimerRef.current);
+    replaceTimerRef.current = setTimeout(() => {
+      const params = new URLSearchParams(navSearchParams?.toString() || '');
+      params.set('lang', lang);
+      if (level !== null && level !== undefined) params.set('level', String(level)); else params.delete('level');
+      params.set('practiced', practiced);
 
-    const next = `${pathname}?${params.toString()}`;
-    const current = `${pathname}?${navSearchParams?.toString() || ''}`;
-    if (next !== current) {
-      router.replace(next, { scroll: false });
-    }
+      const next = `${pathname}?${params.toString()}`;
+      const current = `${pathname}?${navSearchParams?.toString() || ''}`;
+      if (next !== current) {
+        router.replace(next, { scroll: false });
+      }
+    }, 200);
     // 不依赖 searchParams，避免自身 replace 触发循环
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang, level, practiced, pathname, router]);
+
+  useEffect(() => {
+    return () => {
+      if (replaceTimerRef.current) clearTimeout(replaceTimerRef.current);
+    };
+  }, []);
 
   // 体裁选项（基于6级难度设计）
   const GENRE_OPTIONS = [
@@ -410,35 +428,46 @@ export default function ShadowingPage() {
   }) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [latestExplanation, setLatestExplanation] = useState(explanation);
+    const tooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
-    // 当悬停时，异步获取最新解释（不阻塞显示）
     const handleMouseEnter = async () => {
       setShowTooltip(true);
-
-      // 总是获取最新解释，确保与DynamicExplanation同步
-      const timer = setTimeout(async () => {
+      if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
+      if (abortRef.current) { try { abortRef.current.abort(); } catch {} abortRef.current = null; }
+      tooltipTimerRef.current = setTimeout(async () => {
         try {
           const headers = await getAuthHeaders();
+          const controller = new AbortController();
+          abortRef.current = controller;
           const response = await fetch(
             `/api/vocab/search?term=${encodeURIComponent(word)}&_t=${Date.now()}`,
-            {
-              headers,
-            },
+            { headers, signal: controller.signal },
           );
           const data = await response.json();
-
           if (data.entries && data.entries.length > 0 && data.entries[0].explanation) {
-            const fetchedExplanation = data.entries[0].explanation;
-            setLatestExplanation(fetchedExplanation);
-            // 不更新缓存，避免循环
+            setLatestExplanation(data.entries[0].explanation);
           }
         } catch (error) {
-          console.error(`获取 ${word} 解释失败:`, error);
+          if ((error as any)?.name !== 'AbortError') console.error(`获取 ${word} 解释失败:`, error);
+        } finally {
+          abortRef.current = null;
         }
-      }, 300); // 300ms防抖延迟
-
-      return () => clearTimeout(timer);
+      }, 300);
     };
+
+    const handleMouseLeave = () => {
+      setShowTooltip(false);
+      if (tooltipTimerRef.current) { clearTimeout(tooltipTimerRef.current); tooltipTimerRef.current = null; }
+      if (abortRef.current) { try { abortRef.current.abort(); } catch {} abortRef.current = null; }
+    };
+
+    useEffect(() => {
+      return () => {
+        if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
+        if (abortRef.current) { try { abortRef.current.abort(); } catch {} }
+      };
+    }, []);
 
     const tooltipText = latestExplanation?.gloss_native || '已选择的生词';
 
@@ -446,7 +475,7 @@ export default function ShadowingPage() {
       <span
         className="bg-yellow-200 text-yellow-800 px-1 rounded font-medium cursor-help relative"
         onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => setShowTooltip(false)}
+        onMouseLeave={handleMouseLeave}
         onClick={() => setShowTooltip(!showTooltip)} // 手机端点击切换
       >
         {children}
@@ -648,6 +677,10 @@ export default function ShadowingPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState<number>(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+  }, [playbackRate]);
   const [practiceComplete, setPracticeComplete] = useState(false);
   const [showSentenceComparison, setShowSentenceComparison] = useState(false);
   const [scoringResult, setScoringResult] = useState<{
@@ -971,7 +1004,7 @@ export default function ShadowingPage() {
   const getRandomUnpracticed = () => {
     const unpracticed = items.filter((item) => !item.isPracticed);
     if (unpracticed.length === 0) {
-      alert('所有题目都已练习过！');
+      toast.info('所有题目都已练习过！');
       return;
     }
     const randomItem = unpracticed[Math.floor(Math.random() * unpracticed.length)];
@@ -982,7 +1015,7 @@ export default function ShadowingPage() {
   const getNextUnpracticed = () => {
     const unpracticed = items.filter((item) => !item.isPracticed);
     if (unpracticed.length === 0) {
-      alert('所有题目都已练习过！');
+      toast.info('所有题目都已练习过！');
       return;
     }
     loadItem(unpracticed[0]);
@@ -1043,13 +1076,7 @@ export default function ShadowingPage() {
                 const filePath = recording.fileName;
                 if (!filePath) return recording;
 
-                // 重新生成signed URL
-                const { createClient } = await import('@supabase/supabase-js');
-                const supabase = createClient(
-                  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-                );
-
+                // 重新生成signed URL（复用全局 supabase 客户端）
                 const { data: signedUrlData, error: signedUrlError } = await supabase.storage
                   .from('recordings')
                   .createSignedUrl(filePath, 60 * 60 * 24 * 7); // 7 days
@@ -1164,7 +1191,7 @@ export default function ShadowingPage() {
         setTimeout(() => setClearSelection(false), 100);
       } catch (error) {
         console.error('添加生词失败:', error);
-        alert('添加生词失败，请重试');
+        toast.error('添加生词失败，请重试');
       } finally {
         setIsAddingToVocab(false);
       }
@@ -1464,11 +1491,11 @@ export default function ShadowingPage() {
           prev.map((item) => (item.id === currentItem.id ? { ...item, status: 'draft' } : item)),
         );
 
-        alert('草稿已保存');
+        toast.success('草稿已保存');
       }
     } catch (error) {
       console.error('Failed to save draft:', error);
-      alert('保存失败');
+      toast.error('保存失败');
     } finally {
       setSaving(false);
     }
@@ -1514,7 +1541,7 @@ export default function ShadowingPage() {
           '中秋节相关条目:',
           data.entries.filter((entry: { term: string }) => entry.term.includes('中秋')),
         );
-        alert(`单词本中有 ${data.entries.length} 个条目`);
+        toast.info(`单词本中有 ${data.entries.length} 个条目`);
       } else {
         console.error('获取单词本数据失败:', response.status);
       }
@@ -1533,7 +1560,7 @@ export default function ShadowingPage() {
     );
 
     if (wordsNeedingExplanation.length === 0) {
-      alert('所有生词都已经有解释了！');
+      toast.info('所有生词都已经有解释了！');
       return;
     }
 
@@ -1599,12 +1626,12 @@ export default function ShadowingPage() {
             if (!precheckRes.ok) {
               const j = await precheckRes.json().catch(() => ({} as any));
               const msg = j?.reason || (precheckRes.status === 429 ? 'API 使用已达上限' : '无权限使用所选模型');
-              alert(msg);
+              toast.error(String(msg));
               return null;
             }
           } catch (e) {
             console.error('预检失败', e);
-            alert('暂时无法进行AI生成，请稍后再试');
+            toast.error('暂时无法进行AI生成，请稍后再试');
             return null;
           }
 
@@ -1724,11 +1751,11 @@ export default function ShadowingPage() {
           });
         }, 3000);
       } else {
-        alert('没有成功生成任何AI解释，请重试');
+        toast.warning('没有成功生成任何AI解释，请重试');
       }
     } catch (error) {
       console.error('批量生成AI解释失败:', error);
-      alert(`批量生成AI解释失败：${error instanceof Error ? error.message : '请重试'}`);
+      toast.error(`批量生成AI解释失败：${error instanceof Error ? error.message : '请重试'}`);
     } finally {
       setIsGeneratingBatchExplanation(false);
     }
@@ -2610,31 +2637,38 @@ export default function ShadowingPage() {
                       </Select>
                     </div>
 
-                    {/* 推荐等级显示 */}
+                    {/* 推荐等级显示 - 美化版 */}
                     {recommendedLevel && (
-                      <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-xs text-white font-bold">!</span>
+                      <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-200 shadow-md overflow-hidden animate-pulse">
+                        {/* 装饰性闪光效果 */}
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/30 to-amber-200/30 rounded-full blur-2xl" />
+                        
+                        <div className="relative z-10">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                              <Star className="w-4 h-4 text-white fill-white" />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Sparkles className="w-4 h-4 text-amber-600" />
+                              <span className="text-sm font-bold text-amber-900">为你推荐</span>
+                            </div>
                           </div>
-                          <span className="text-sm font-medium text-blue-700">推荐等级</span>
-                        </div>
-                        <p className="text-sm text-blue-600 mb-2">
-                          {t.shadowing.recommend_level.replace(
-                            '{level}',
-                            recommendedLevel.toString(),
+                          <div className="text-lg font-bold text-amber-900 flex items-baseline gap-2 mb-2">
+                            <span>等级</span>
+                            <span className="text-2xl text-orange-600">L{recommendedLevel}</span>
+                          </div>
+                          <p className="text-xs text-amber-700 mb-3">根据你的学习进度推荐</p>
+                          {level !== recommendedLevel && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setLevel(recommendedLevel)}
+                              className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-sm"
+                            >
+                              使用推荐等级
+                            </Button>
                           )}
-                        </p>
-                        {level !== recommendedLevel && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setLevel(recommendedLevel)}
-                            className="h-8 text-xs bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
-                          >
-                            {t.common.confirm}
-                          </Button>
-                        )}
+                        </div>
                       </div>
                     )}
 
@@ -2783,63 +2817,73 @@ export default function ShadowingPage() {
                     </div>
                   </div>
 
-                  {/* 统计信息 */}
-                  <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                    <div className="text-sm">
-                      <div className="mb-3 text-center">
-                        <span className="text-lg font-bold text-gray-800">
-                          {t.shadowing.total_questions.replace(
-                            '{count}',
-                            filteredItems.length.toString(),
-                          )}
-                        </span>
+                  {/* 统计信息 - 卡片化设计（移动端） */}
+                  <div className="p-4 space-y-3 bg-gray-50/50">
+                    {/* 总题数卡片 */}
+                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-blue-600 font-medium mb-1">总题数</p>
+                          <p className="text-2xl font-bold text-blue-900">{filteredItems.length}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                          <BookOpen className="w-5 h-5 text-blue-600" />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-1 gap-2">
-                        <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                            <span className="text-gray-600 font-medium">
-                              {t.shadowing.completed}
-                            </span>
-                          </div>
-                          <span className="text-lg font-bold text-green-600">
-                            {filteredItems.filter((item) => item.isPracticed).length}
-                          </span>
+                    </div>
+                    
+                    {/* 已完成卡片 */}
+                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-3 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="text-xs text-green-600 font-medium mb-1">已完成</p>
+                          <p className="text-2xl font-bold text-green-900">{filteredItems.filter((item) => item.isPracticed).length}</p>
                         </div>
-                        <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                            <span className="text-gray-600 font-medium">{t.shadowing.draft}</span>
-                          </div>
-                          <span className="text-lg font-bold text-yellow-600">
-                            {
-                              filteredItems.filter(
-                                (item) => item.status === 'draft' && !item.isPracticed,
-                              ).length
-                            }
-                          </span>
+                        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
                         </div>
-                        <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                            <span className="text-gray-600 font-medium">
-                              {t.shadowing.not_started}
-                            </span>
-                          </div>
-                          <span className="text-lg font-bold text-gray-600">
-                            {
-                              filteredItems.filter(
-                                (item) => !item.isPracticed && item.status !== 'draft',
-                              ).length
-                            }
-                          </span>
+                      </div>
+                      {/* 进度条 */}
+                      <div className="w-full bg-green-200/50 rounded-full h-1.5 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${filteredItems.length > 0 ? (filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-green-600 mt-1">
+                        {filteredItems.length > 0 ? Math.round((filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100) : 0}%
+                      </p>
+                    </div>
+                    
+                    {/* 草稿中卡片 */}
+                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-amber-600 font-medium mb-1">草稿中</p>
+                          <p className="text-2xl font-bold text-amber-900">{filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                          <FileEdit className="w-5 h-5 text-amber-600" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* 未开始卡片 */}
+                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-gray-50 to-gray-100/50 p-3 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-gray-600 font-medium mb-1">未开始</p>
+                          <p className="text-2xl font-bold text-gray-900">{filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-gray-500/10 flex items-center justify-center">
+                          <Circle className="w-5 h-5 text-gray-600" />
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* 题目列表 */}
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1 overflow-y-auto" ref={mobileListScrollRef}>
                     {loading ? (
                       <div className="space-y-3 p-4">
                         {Array.from({ length: 8 }).map((_, i) => (
@@ -2865,99 +2909,64 @@ export default function ShadowingPage() {
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-3 p-4">
-                        {filteredItems.map((item, index) => (
-                          <div
-                            key={item.id}
-                            className={`p-4 rounded-2xl cursor-pointer transition-all duration-200 ${
-                              currentItem?.id === item.id
-                                ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 shadow-lg transform scale-[1.02]'
-                                : item.isPracticed
-                                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 hover:from-green-100 hover:to-emerald-100 hover:shadow-md'
-                                  : item.status === 'draft'
-                                    ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 hover:from-yellow-100 hover:to-amber-100 hover:shadow-md'
-                                    : 'bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-md hover:border-gray-300'
-                            }`}
-                            onClick={() => {
-                              loadItem(item);
-                              setMobileSidebarOpen(false);
-                            }}
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <div className="flex items-center gap-2">
-                                    {item.isPracticed ? (
-                                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      <div className="p-4">
+                        <Virtuoso
+                          customScrollParent={mobileListScrollRef.current ?? undefined}
+                          data={filteredItems}
+                          itemContent={(index, item) => {
+                            const it = item as any;
+                            return (
+                              <div
+                                key={it.id}
+                                className={`p-4 mb-3 rounded-2xl cursor-pointer transition-all duration-200 ${
+                                  currentItem?.id === it.id
+                                    ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 shadow-lg transform scale-[1.02]'
+                                    : it.isPracticed
+                                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 hover:from-green-100 hover:to-emerald-100 hover:shadow-md'
+                                      : it.status === 'draft'
+                                        ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 hover:from-yellow-100 hover:to-amber-100 hover:shadow-md'
+                                        : 'bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-md hover:border-gray-300'
+                                }`}
+                                onClick={() => { loadItem(it); setMobileSidebarOpen(false); }}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <div className="flex items-center gap-2">
+                                        {it.isPracticed ? (
+                                          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                            <CheckCircle className="w-4 h-4 text-green-600" />
+                                          </div>
+                                        ) : it.status === 'draft' ? (
+                                          <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center">
+                                            <FileText className="w-4 h-4 text-yellow-600" />
+                                          </div>
+                                        ) : (
+                                          <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                            <Circle className="w-4 h-4 text-gray-400" />
+                                          </div>
+                                        )}
+                                        <span className="text-sm text-gray-500 font-bold min-w-[2rem]">{index + 1}.</span>
                                       </div>
-                                    ) : item.status === 'draft' ? (
-                                      <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center">
-                                        <FileText className="w-4 h-4 text-yellow-600" />
-                                      </div>
-                                    ) : (
-                                      <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                                        <Circle className="w-4 h-4 text-gray-400" />
-                                      </div>
-                                    )}
-                                    <span className="text-sm text-gray-500 font-bold min-w-[2rem]">
-                                      {index + 1}.
-                                    </span>
+                                      <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 flex-1">
+                                        {it.subtopic ? it.subtopic.title : it.title}
+                                      </h4>
+                                    </div>
+                                    <div className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">{it.text.substring(0, 100)}...</div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${it.lang === 'en' ? 'bg-blue-100 text-blue-700' : it.lang === 'ja' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{(LANG_LABEL as any)[it.lang]}</span>
+                                      <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">L{it.level}</span>
+                                      {it.cefr && (<span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">{it.cefr}</span>)}
+                                      {it.tokens && (<span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">{it.tokens}词</span>)}
+                                    </div>
+                                    {it.isPracticed && (<div className="flex items-center gap-1 mt-2"><span className="text-xs text-green-600 font-medium">已完成练习</span></div>)}
+                                    {it.status === 'draft' && (<div className="flex items-center gap-1 mt-2"><span className="text-xs text-yellow-600 font-medium">草稿状态</span></div>)}
                                   </div>
-                                  <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 flex-1">
-                                    {item.subtopic ? item.subtopic.title : item.title}
-                                  </h4>
                                 </div>
-
-                                <div className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">
-                                  {item.text.substring(0, 100)}...
-                                </div>
-
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span
-                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                      item.lang === 'en'
-                                        ? 'bg-blue-100 text-blue-700'
-                                        : item.lang === 'ja'
-                                          ? 'bg-red-100 text-red-700'
-                                          : 'bg-green-100 text-green-700'
-                                    }`}
-                                  >
-                                    {LANG_LABEL[item.lang]}
-                                  </span>
-                                  <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                                    L{item.level}
-                                  </span>
-                                  {item.cefr && (
-                                    <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-                                      {item.cefr}
-                                    </span>
-                                  )}
-                                  {item.tokens && (
-                                    <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                                      {item.tokens}词
-                                    </span>
-                                  )}
-                                </div>
-
-                                {item.isPracticed && (
-                                  <div className="flex items-center gap-1 mt-2">
-                                    <span className="text-xs text-green-600 font-medium">
-                                      已完成练习
-                                    </span>
-                                  </div>
-                                )}
-                                {item.status === 'draft' && (
-                                  <div className="flex items-center gap-1 mt-2">
-                                    <span className="text-xs text-yellow-600 font-medium">
-                                      草稿状态
-                                    </span>
-                                  </div>
-                                )}
                               </div>
-                            </div>
-                          </div>
-                        ))}
+                            );
+                          }}
+                        />
                       </div>
                     )}
                   </div>
@@ -4152,24 +4161,30 @@ export default function ShadowingPage() {
               className={`${sidebarCollapsed ? 'w-16' : 'w-72'} flex-shrink-0 transition-all duration-300 max-h-[85vh] overflow-y-auto`}
             >
               <Card className="min-h-full flex flex-col bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-2xl">
-                {/* 标题和折叠按钮 */}
-                <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-t-2xl">
-                  <div className="flex items-center justify-between">
+                {/* 标题和折叠按钮 - 美化版 */}
+                <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl relative overflow-hidden">
+                  {/* 装饰性背景光晕 */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+                  
+                  <div className="relative z-10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {!sidebarCollapsed && (
                         <>
-                          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                            <Filter className="w-4 h-4" />
+                          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
+                            <BookOpen className="w-5 h-5" />
                           </div>
-                          <h3 className="font-bold text-lg">
-                            {t.shadowing.shadowing_vocabulary || 'Shadowing 题库'}
-                          </h3>
+                          <div>
+                            <h3 className="font-bold text-xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                              {t.shadowing.shadowing_vocabulary || 'Shadowing 题库'}
+                            </h3>
+                            <p className="text-xs text-white/80 mt-0.5">跟读练习题库</p>
+                          </div>
                         </>
                       )}
                       {!sidebarCollapsed && (
                         <button
                           onClick={() => fetchItems()}
-                          className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/20 transition-colors"
+                          className="text-white/80 hover:text-white p-2.5 rounded-lg hover:bg-white/20 transition-all ml-2 hover:shadow-md"
                           title={t.shadowing.refresh_vocabulary || '刷新题库'}
                           disabled={loading}
                         >
@@ -4181,7 +4196,8 @@ export default function ShadowingPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                      className="text-white hover:bg-white/20"
+                      className="text-white hover:bg-white/20 hover:shadow-md transition-all"
+                      aria-label={sidebarCollapsed ? (t.common.expand || '展开') : (t.common.collapse || '折叠')}
                     >
                       {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
                     </Button>
@@ -4254,28 +4270,38 @@ export default function ShadowingPage() {
                         </Select>
                       </div>
 
-                      {/* 推荐等级显示 */}
+                      {/* 推荐等级显示 - 美化版 */}
                       {recommendedLevel && (
-                        <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                              <span className="text-xs text-white font-bold">!</span>
+                        <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-200 shadow-md overflow-hidden animate-pulse">
+                          {/* 装饰性闪光效果 */}
+                          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/30 to-amber-200/30 rounded-full blur-2xl" />
+                          
+                          <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                                <Star className="w-4 h-4 text-white fill-white" />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Sparkles className="w-4 h-4 text-amber-600" />
+                                <span className="text-sm font-bold text-amber-900">为你推荐</span>
+                              </div>
                             </div>
-                            <span className="text-sm font-medium text-blue-700">推荐等级</span>
+                            <div className="text-lg font-bold text-amber-900 flex items-baseline gap-2 mb-2">
+                              <span>等级</span>
+                              <span className="text-2xl text-orange-600">L{recommendedLevel}</span>
+                            </div>
+                            <p className="text-xs text-amber-700 mb-3">根据你的学习进度推荐</p>
+                            {level !== recommendedLevel && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setLevel(recommendedLevel)}
+                                className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-sm"
+                              >
+                                使用推荐等级
+                              </Button>
+                            )}
                           </div>
-                          <p className="text-sm text-blue-600 mb-2">
-                            推荐等级: L{recommendedLevel}
-                          </p>
-                          {level !== recommendedLevel && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setLevel(recommendedLevel)}
-                              className="h-8 text-xs bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
-                            >
-                              使用
-                            </Button>
-                          )}
                         </div>
                       )}
 
@@ -4422,169 +4448,175 @@ export default function ShadowingPage() {
                       </div>
                     </div>
 
-                    {/* 统计信息 */}
-                    <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                      <div className="text-sm">
-                        <div className="mb-3 text-center">
-                          <span className="text-lg font-bold text-gray-800">
-                            {t.shadowing.total_questions.replace(
-                              '{count}',
-                              filteredItems.length.toString(),
-                            )}
-                          </span>
+                    {/* 统计信息 - 卡片化设计 */}
+                    <div className="p-4 space-y-3 bg-gray-50/50">
+                      {/* 总题数卡片 */}
+                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-blue-600 font-medium mb-1">总题数</p>
+                            <p className="text-2xl font-bold text-blue-900">{filteredItems.length}</p>
+                          </div>
+                          <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                            <BookOpen className="w-5 h-5 text-blue-600" />
+                          </div>
                         </div>
-                        <div className="grid grid-cols-1 gap-2">
-                          <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                              <span className="text-gray-600 font-medium">
-                                {t.shadowing.completed}
-                              </span>
-                            </div>
-                            <span className="text-lg font-bold text-green-600">
-                              {filteredItems.filter((item) => item.isPracticed).length}
-                            </span>
+                      </div>
+                      
+                      {/* 已完成卡片 */}
+                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <p className="text-xs text-green-600 font-medium mb-1">已完成</p>
+                            <p className="text-2xl font-bold text-green-900">{filteredItems.filter((item) => item.isPracticed).length}</p>
                           </div>
-                          <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                              <span className="text-gray-600 font-medium">{t.shadowing.draft}</span>
-                            </div>
-                            <span className="text-lg font-bold text-yellow-600">
-                              {
-                                filteredItems.filter(
-                                  (item) => item.status === 'draft' && !item.isPracticed,
-                                ).length
-                              }
-                            </span>
+                          <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                            <CheckCircle className="w-5 h-5 text-green-600" />
                           </div>
-                          <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                              <span className="text-gray-600 font-medium">
-                                {t.shadowing.not_started}
-                              </span>
-                            </div>
-                            <span className="text-lg font-bold text-gray-600">
-                              {
-                                filteredItems.filter(
-                                  (item) => !item.isPracticed && item.status !== 'draft',
-                                ).length
-                              }
-                            </span>
+                        </div>
+                        {/* 进度条 */}
+                        <div className="w-full bg-green-200/50 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500"
+                            style={{ width: `${filteredItems.length > 0 ? (filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-green-600 mt-1">
+                          {filteredItems.length > 0 ? Math.round((filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100) : 0}%
+                        </p>
+                      </div>
+                      
+                      {/* 草稿中卡片 */}
+                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-amber-600 font-medium mb-1">草稿中</p>
+                            <p className="text-2xl font-bold text-amber-900">{filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}</p>
+                          </div>
+                          <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                            <FileEdit className="w-5 h-5 text-amber-600" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 未开始卡片 */}
+                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-gray-50 to-gray-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-600 font-medium mb-1">未开始</p>
+                            <p className="text-2xl font-bold text-gray-900">{filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}</p>
+                          </div>
+                          <div className="w-10 h-10 rounded-full bg-gray-500/10 flex items-center justify-center">
+                            <Circle className="w-5 h-5 text-gray-600" />
                           </div>
                         </div>
                       </div>
                     </div>
 
                     {/* 题目列表 */}
-                    <div className="flex-1">
+                    <div className="flex-1" ref={desktopListScrollRef}>
                       {loading ? (
-                        <div className="p-4 text-center text-gray-500">加载中...</div>
+                        <div className="p-6 text-center">
+                          <div className="animate-spin w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                          <p className="text-sm text-gray-600 font-medium animate-pulse">加载中...</p>
+                        </div>
                       ) : filteredItems.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">
-                          {t.shadowing.no_questions_found || '没有找到题目'}
+                        <div className="p-8 text-center">
+                          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                            <BookOpen className="w-10 h-10 text-gray-400" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            {t.shadowing.no_questions_found || '没有找到题目'}
+                          </h3>
+                          <p className="text-sm text-gray-500 mb-4">试试调整筛选条件或搜索关键词</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setLang('zh');
+                              setLevel(null);
+                              setPracticed('all');
+                              setTheme('all');
+                              setSelectedThemeId('all');
+                              setSelectedSubtopicId('all');
+                              setSearchQuery('');
+                            }}
+                            className="hover:bg-violet-50 hover:border-violet-300"
+                          >
+                            <Filter className="w-4 h-4 mr-2" />
+                            重置筛选
+                          </Button>
                         </div>
                       ) : (
-                        <div className="space-y-2 p-2">
-                          {filteredItems.map((item, index) => (
-                            <div
-                              key={item.id}
-                              className={`p-3 rounded border cursor-pointer transition-colors ${
-                                currentItem?.id === item.id
-                                  ? 'bg-blue-50 border-blue-200'
-                                  : item.isPracticed
-                                    ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                                    : item.status === 'draft'
-                                      ? 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100'
-                                      : 'hover:bg-gray-50'
-                              }`}
-                              onClick={() => loadItem(item)}
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    {item.isPracticed ? (
-                                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                                    ) : item.status === 'draft' ? (
-                                      <FileText className="w-4 h-4 text-yellow-600 flex-shrink-0" />
-                                    ) : (
-                                      <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                    )}
-                                    <span className="text-sm text-gray-500 font-medium min-w-[1.5rem]">
-                                      {index + 1}.
-                                    </span>
-                                    <span className="text-sm font-medium truncate">
-                                      {item.subtopic ? item.subtopic.title : item.title}
-                                      {item.isPracticed && (
-                                        <span className="ml-1 text-green-600">✓</span>
+                        <div className="p-2">
+                          <Virtuoso
+                            customScrollParent={desktopListScrollRef.current ?? undefined}
+                            data={filteredItems}
+                            itemContent={(index, item) => {
+                              const it = item as any;
+                              return (
+                                <div
+                                  key={it.id}
+                                  className={`p-3 mb-2 rounded border cursor-pointer transition-colors ${
+                                    currentItem?.id === it.id
+                                      ? 'bg-blue-50 border-blue-200'
+                                      : it.isPracticed
+                                        ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                                        : it.status === 'draft'
+                                          ? 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100'
+                                          : 'hover:bg-gray-50'
+                                  }`}
+                                  onClick={() => loadItem(it)}
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        {it.isPracticed ? (
+                                          <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                        ) : it.status === 'draft' ? (
+                                          <FileText className="w-4 h-4 text-yellow-600 flex-shrink-0" />
+                                        ) : (
+                                          <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                        )}
+                                        <span className="text-sm text-gray-500 font-medium min-w-[1.5rem]">{index + 1}.</span>
+                                        <span className="text-sm font-medium truncate">
+                                          {it.subtopic ? it.subtopic.title : it.title}
+                                          {it.isPracticed && (<span className="ml-1 text-green-600">✓</span>)}
+                                          {it.status === 'draft' && (<span className="ml-1 text-yellow-600">📝</span>)}
+                                        </span>
+                                      </div>
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {(LANG_LABEL as any)[it.lang]} • L{it.level}
+                                        {it.cefr && ` • ${it.cefr}`}
+                                        {it.isPracticed && (
+                                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{t.shadowing.completed}</span>
+                                        )}
+                                        {it.status === 'draft' && !it.isPracticed && (
+                                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">{t.shadowing.draft}</span>
+                                        )}
+                                      </div>
+                                      {it.isPracticed && (
+                                        <div className="mt-2">
+                                          <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
+                                            <span className="flex items-center gap-1"><Mic className="w-3 h-3" /> {it.stats.recordingCount} 录音</span>
+                                            <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> {it.stats.vocabCount} 生词</span>
+                                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(it.stats.practiceTime)}</span>
+                                          </div>
+                                          <div className="w-full bg-gray-200 rounded-full h-1.5"><div className="bg-green-500 h-1.5 rounded-full" style={{ width: '100%' }} /></div>
+                                        </div>
                                       )}
-                                      {item.status === 'draft' && (
-                                        <span className="ml-1 text-yellow-600">📝</span>
+                                      {!it.isPracticed && (
+                                        <div className="mt-2">
+                                          <div className="w-full bg-gray-200 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${it.status === 'draft' ? 'bg-yellow-500' : 'bg-gray-300'}`} style={{ width: it.status === 'draft' ? '50%' : '0%' }} /></div>
+                                          <div className="text-xs text-gray-400 mt-1">{it.status === 'draft' ? t.shadowing.draft : t.shadowing.not_started}</div>
+                                        </div>
                                       )}
-                                    </span>
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {LANG_LABEL[item.lang]} • L{item.level}
-                                    {item.cefr && ` • ${item.cefr}`}
-                                    {item.isPracticed && (
-                                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        {t.shadowing.completed}
-                                      </span>
-                                    )}
-                                    {item.status === 'draft' && !item.isPracticed && (
-                                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        {t.shadowing.draft}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {item.isPracticed && (
-                                    <div className="mt-2">
-                                      <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
-                                        <span className="flex items-center gap-1">
-                                          <Mic className="w-3 h-3" />
-                                          {item.stats.recordingCount} 录音
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                          <BookOpen className="w-3 h-3" />
-                                          {item.stats.vocabCount} 生词
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                          <Clock className="w-3 h-3" />
-                                          {formatTime(item.stats.practiceTime)}
-                                        </span>
-                                      </div>
-                                      <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                        <div
-                                          className="bg-green-500 h-1.5 rounded-full"
-                                          style={{ width: '100%' }}
-                                        ></div>
-                                      </div>
                                     </div>
-                                  )}
-                                  {!item.isPracticed && (
-                                    <div className="mt-2">
-                                      <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                        <div
-                                          className={`h-1.5 rounded-full ${
-                                            item.status === 'draft'
-                                              ? 'bg-yellow-500'
-                                              : 'bg-gray-300'
-                                          }`}
-                                          style={{ width: item.status === 'draft' ? '50%' : '0%' }}
-                                        ></div>
-                                      </div>
-                                      <div className="text-xs text-gray-400 mt-1">
-                                        {item.status === 'draft'
-                                          ? t.shadowing.draft
-                                          : t.shadowing.not_started}
-                                      </div>
-                                    </div>
-                                  )}
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          ))}
+                              );
+                            }}
+                          />
                         </div>
                       )}
                     </div>

@@ -80,6 +80,7 @@ export async function GET(req: NextRequest) {
     const themeId = url.searchParams.get('theme');
     const subtopicId = url.searchParams.get('subtopic');
     const keyword = url.searchParams.get('q');
+    const genre = url.searchParams.get('genre');
     const limitParam = url.searchParams.get('limit');
     const offsetParam = url.searchParams.get('offset');
     const limit = limitParam ? Math.max(1, Math.min(200, parseInt(limitParam))) : null;
@@ -89,9 +90,8 @@ export async function GET(req: NextRequest) {
     // 先取有已发布 cloze 的 source_item_id 列表（按创建时间近→远）
     let clozeQuery = supabase
       .from('cloze_shadowing_items')
-      .select('source_item_id', { count: 'exact' })
-      .eq('is_published', true)
-      .order('created_at', { ascending: false });
+      .select('source_item_id')
+      .eq('is_published', true);
 
     const { data: clozeRows, error: clozeErr } = await clozeQuery;
     if (clozeErr) {
@@ -136,16 +136,38 @@ export async function GET(req: NextRequest) {
       // 这里先取后过滤
     }
 
+    // 应用数据库端关键词/体裁过滤
+    if (keyword) {
+      itemQuery = itemQuery.ilike('title', `%${keyword}%`);
+    }
+    if (genre && genre !== 'all') {
+      itemQuery = itemQuery.eq('genre', genre);
+    }
+
+    // practiced/unpracticed 预过滤（数据库端）
+    if (practiced === 'true' || practiced === 'false') {
+      const { data: completedRows } = await supabase
+        .from('shadowing_sessions')
+        .select('item_id')
+        .eq('user_id', user.id)
+        .eq('status', 'completed');
+      const completedIds = Array.from(new Set((completedRows || []).map((r: any) => r.item_id).filter(Boolean)));
+      if (practiced === 'true') {
+        const none = '00000000-0000-0000-0000-000000000000';
+        itemQuery = itemQuery.in('id', completedIds.length > 0 ? completedIds : [none]);
+      } else if (practiced === 'false' && completedIds.length > 0) {
+        const list = `(${completedIds.join(',')})`;
+        // @ts-ignore postgrest not-in
+        itemQuery = (itemQuery as any).not('id', 'in', list);
+      }
+    }
+
     const { data: items, error: itemsErr } = await itemQuery;
     if (itemsErr) {
       return NextResponse.json({ error: 'Items query failed' }, { status: 500 });
     }
 
     let filteredTitleItems = items || [];
-    if (keyword) {
-      const kw = keyword.toLowerCase();
-      filteredTitleItems = (items || []).filter((it: any) => (it.title || '').toLowerCase().includes(kw));
-    }
 
     // 取用户 Shadowing 会话，沿用“完成”判定
     const ids = filteredTitleItems.map((it: any) => it.id);
@@ -159,12 +181,19 @@ export async function GET(req: NextRequest) {
       sessions = s || [];
     }
 
-    // 统计：每篇发布句数（基于前面 clozeRows）
+    // 统计：每篇发布句数（仅针对本页 ids，避免全量扫描）
     const publishedCountMap = new Map<string, number>();
-    for (const row of clozeRows || []) {
-      const sid = (row as any).source_item_id as string;
-      if (!sid) continue;
-      publishedCountMap.set(sid, (publishedCountMap.get(sid) || 0) + 1);
+    if (ids.length > 0) {
+      const { data: pageClozeRows } = await supabase
+        .from('cloze_shadowing_items')
+        .select('source_item_id')
+        .eq('is_published', true)
+        .in('source_item_id', ids);
+      for (const row of pageClozeRows || []) {
+        const sid = (row as any).source_item_id as string;
+        if (!sid) continue;
+        publishedCountMap.set(sid, (publishedCountMap.get(sid) || 0) + 1);
+      }
     }
 
     // Cloze 总结与最近练习时间
@@ -245,5 +274,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
-
