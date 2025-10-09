@@ -107,12 +107,12 @@ export default function DesktopLayout({
                   className={`px-4 py-2 rounded-full text-sm font-medium ${
                     currentItem.lang === 'en'
                       ? 'bg-blue-100 text-blue-700'
-                      : currentItem.lang === 'ja'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-green-100 text-green-700'
-                  }`}
-                >
-                  {LANG_LABEL[currentItem.lang]}
+                    : currentItem.lang === 'ja'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-green-100 text-green-700'
+                }`}
+              >
+                {LANG_LABEL[currentItem.lang as keyof typeof LANG_LABEL]}
                 </span>
                 <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
                   {t.shadowing?.level || '等级'} L{currentItem.level}

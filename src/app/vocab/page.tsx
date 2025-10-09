@@ -1982,7 +1982,7 @@ export default function VocabPage() {
                       {hasExplanation && (
                         <div className="mt-3 pl-8">
                           <p className="text-sm text-gray-700 font-medium line-clamp-2">
-                            {entry.explanation.gloss_native}
+                            {entry.explanation?.gloss_native}
                           </p>
                         </div>
                       )}

@@ -158,7 +158,7 @@ export function SwipeableVocabCard({
       {/* 可滑动的卡片主体 */}
       <motion.div
         ref={cardRef}
-        {...bind()}
+        {...(bind() as any)}
         style={{ x, backgroundColor }}
         className={`bg-white rounded-xl shadow-sm border-2 overflow-hidden transition-all touch-pan-y ${
           !hasExplanation ? 'border-yellow-200' : 'border-gray-200'
@@ -241,7 +241,7 @@ export function SwipeableVocabCard({
           {hasExplanation && (
             <div className="mt-3 pl-8">
               <p className="text-sm text-gray-700 font-medium line-clamp-2">
-                {entry.explanation.gloss_native}
+                {entry.explanation?.gloss_native}
               </p>
             </div>
           )}
