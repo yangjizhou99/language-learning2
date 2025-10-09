@@ -3,6 +3,11 @@ name: CI (Supabase local verify)
 on:
   pull_request:
     branches: [develop, main]
+  # 额外增加 push 触发，解决 PR 合并性计算异常导致的检查“0/挂起”问题
+  # 避免和生产部署重复，这里忽略 main；如需更严格也可加 develop
+  push:
+    branches-ignore:
+      - main
   workflow_dispatch:
 
 jobs:
