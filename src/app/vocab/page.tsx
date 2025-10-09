@@ -1406,6 +1406,7 @@ export default function VocabPage() {
                   </div>
                 </div>
               </div>
+            </div>
             </motion.div>
           </FadeInWhenVisible>
 
