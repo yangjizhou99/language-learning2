@@ -64,7 +64,13 @@ export async function GET(request: NextRequest) {
 
     console.log('API分页参数:', { page, limit, offset, lang, status, explanation, search });
 
-    const nowIso = new Date().toISOString();
+    const now = new Date();
+    const nowIso = now.toISOString();
+    // 以 UTC 计算“明天”的区间 [明天00:00, 后天00:00)
+    const tomorrowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
+    const dayAfterStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 2, 0, 0, 0, 0));
+    const tomorrowStartIso = tomorrowStart.toISOString();
+    const dayAfterStartIso = dayAfterStart.toISOString();
 
     type VocabEntryBase = {
       id: string;
@@ -93,6 +99,7 @@ export async function GET(request: NextRequest) {
     type QueryError = { code?: string; message?: string } | null;
     type EntriesResult<T> = { data: T[] | null; error: QueryError; count: number | null };
     type DueCountResult = { count: number | null; error: QueryError };
+    type TomorrowCountResult = { count: number | null; error: QueryError };
     type StatsRow = { lang: string; status: string; explanation: unknown };
     type StatsResult = { data: StatsRow[] | null; error: QueryError };
 
@@ -103,6 +110,7 @@ export async function GET(request: NextRequest) {
       EntriesResult<VocabEntryBase | VocabEntrySrs>,
       DueCountResult,
       StatsResult,
+      TomorrowCountResult,
     ]> => {
       const selectFields = includeSrs
         ? 'id,term,lang,native_lang,source,context,tags,status,explanation,created_at,updated_at,srs_due,srs_interval,srs_ease,srs_reps,srs_lapses,srs_last,srs_state'
@@ -158,6 +166,17 @@ export async function GET(request: NextRequest) {
             return { count: count ?? 0, error: error as QueryError };
           })();
 
+      // 统计明天到期数量（UTC）：[明天00:00, 后天00:00)
+      const tomorrowCountPromise = includeSrs
+        ? supabase
+            .from('vocab_entries')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .or('status.neq.archived,status.is.null')
+            .gte('srs_due', tomorrowStartIso)
+            .lt('srs_due', dayAfterStartIso)
+        : Promise.resolve({ count: 0, error: null });
+
       const statsPromise = supabase
         .from('vocab_entries')
         .select('lang,status,explanation')
@@ -167,6 +186,7 @@ export async function GET(request: NextRequest) {
         entriesPromise,
         dueCountPromise,
         statsPromise as Promise<StatsResult>,
+        tomorrowCountPromise as Promise<TomorrowCountResult>,
       ]);
     };
 
@@ -174,17 +194,19 @@ export async function GET(request: NextRequest) {
     let [
       { data: entries, error: entriesError, count: entriesCount },
       { count: dueCount, error: dueCountError },
-      { data: stats, error: statsError }
+      { data: stats, error: statsError },
+      { count: tomorrowCount, error: tomorrowCountError },
     ] = await runQueries(true);
 
     // 如果因缺少列报错，则降级重试（去掉 SRS 列）
     const isUndefinedColumn = (err: unknown) => !!(err && typeof err === 'object' && (err as { code?: string }).code === '42703');
-    if (isUndefinedColumn(entriesError) || isUndefinedColumn(dueCountError)) {
+    if (isUndefinedColumn(entriesError) || isUndefinedColumn(dueCountError) || isUndefinedColumn(tomorrowCountError)) {
       console.warn('检测到缺少 SRS 列，降级为无 SRS 查询');
       [
         { data: entries, error: entriesError, count: entriesCount },
         { count: dueCount, error: dueCountError },
-        { data: stats, error: statsError }
+        { data: stats, error: statsError },
+        { count: tomorrowCount, error: tomorrowCountError },
       ] = await runQueries(false);
     }
 
@@ -202,6 +224,10 @@ export async function GET(request: NextRequest) {
       console.error('查询统计信息失败:', statsError);
       return NextResponse.json({ error: '查询失败' }, { status: 500 });
     }
+    if (tomorrowCountError) {
+      console.error('查询明天到期数量失败:', tomorrowCountError);
+      return NextResponse.json({ error: '查询失败' }, { status: 500 });
+    }
 
     // 计算统计信息
     const statsData = {
@@ -210,7 +236,8 @@ export async function GET(request: NextRequest) {
       byStatus: {} as Record<string, number>,
       withExplanation: 0,
       withoutExplanation: 0,
-      dueCount: dueCount || 0
+      dueCount: dueCount || 0,
+      tomorrowCount: tomorrowCount || 0,
     };
 
     if (stats) {
@@ -248,6 +275,7 @@ export async function GET(request: NextRequest) {
       entriesCount: entriesArray.length || 0,
       totalCount: entriesCount || 0,
       pagination: responseData.pagination,
+      tomorrowCount,
       firstEntry: entriesArray[0]?.term || 'none',
       lastEntry: entriesArray[entriesArray.length - 1]?.term || 'none',
     });

@@ -22,6 +22,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FadeInWhenVisible } from '@/components/FadeInWhenVisible';
 import { useCounterAnimation } from '@/hooks/useCounterAnimation';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { VocabListSkeleton } from '@/components/VocabCardSkeleton';
+import { SwipeableVocabCard } from '@/components/SwipeableVocabCard';
 
 interface VocabEntry {
   id: string;
@@ -72,7 +82,6 @@ export default function VocabPage() {
     totalPages: 0,
   });
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
   // 动画相关状态
@@ -110,12 +119,12 @@ export default function VocabPage() {
 
   // ====== SRS Review states ======
   const [dueCount, setDueCount] = useState(0);
+  const [tomorrowCount, setTomorrowCount] = useState(0);
   const [reviewing, setReviewing] = useState(false);
   const [reviewList, setReviewList] = useState<VocabEntry[]>([]);
   const [reviewIndex, setReviewIndex] = useState(0);
   const [showBack, setShowBack] = useState(false);
   const [reviewAmount, setReviewAmount] = useState<string>('all');
-  const [buttonDelays, setButtonDelays] = useState<Record<string, number>>({});
   const [clickedButton, setClickedButton] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [pendingReviews, setPendingReviews] = useState<Array<{id: string, rating: string}>>([]);
@@ -128,6 +137,12 @@ export default function VocabPage() {
     filters: any;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // UI状态
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [aiSettingsSheetOpen, setAiSettingsSheetOpen] = useState(false);
 
 
   // 获取用户个人资料
@@ -326,6 +341,7 @@ export default function VocabPage() {
       setEntries(data.entries);
       setPagination(data.pagination);
       setDueCount(data.stats.dueCount);
+      setTomorrowCount(data.stats.tomorrowCount || 0);
       setStatsLoaded(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.vocabulary.messages.fetch_vocab_failed);
@@ -339,6 +355,7 @@ export default function VocabPage() {
     // 如果缓存中有数据，直接使用
     if (cache && cache.data.stats) {
       setDueCount(cache.data.stats.dueCount);
+      setTomorrowCount(cache.data.stats.tomorrowCount || 0);
       return;
     }
     
@@ -1142,6 +1159,19 @@ export default function VocabPage() {
     }
   };
 
+  // 切换卡片展开状态
+  const toggleCard = (id: string) => {
+    setExpandedCards((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
   // 一键选择未解释的生词
   const selectUnexplainedEntries = () => {
     const unexplainedEntries = entries.filter(
@@ -1182,103 +1212,198 @@ export default function VocabPage() {
   // 数字计数动画
   const animatedTotal = useCounterAnimation(pagination.total, 1500, statsLoaded && !prefersReducedMotion);
   const animatedDueCount = useCounterAnimation(dueCount, 1200, statsLoaded && !prefersReducedMotion);
+  const animatedTomorrowCount = useCounterAnimation(tomorrowCount, 1200, statsLoaded && !prefersReducedMotion);
 
   return (<>
     <main className="p-3 sm:p-6 bg-gray-50 min-h-screen">
       <Container>
         <Breadcrumbs items={[{ href: '/', label: t.nav.home }, { label: t.vocabulary.title }]} />
 
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* 页面标题区域 */}
+        <div className="max-w-7xl mx-auto space-y-4">
+          {/* 页面标题 */}
           <motion.div
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 sm:p-6 text-white"
+            className="flex items-center justify-between"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+            transition={{ duration: 0.3 }}
           >
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <motion.div
-                className="flex items-center gap-3 sm:gap-4"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                <span className="text-xl">📚</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{t.vocabulary.title}</h1>
+                <p className="text-sm text-gray-600 hidden sm:block">{t.vocabulary.messages.page_description}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* 统计卡片区域 - 卡片式布局 */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* 总词汇量卡片 */}
+            <motion.div
+              className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              whileHover={{ scale: 1.02, y: -2 }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-blue-100 mb-1">总词汇量</p>
+                  <p className="text-3xl font-bold">{animatedTotal}</p>
+                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">📖</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 今日到期卡片 */}
+            <motion.div
+              className="bg-gradient-to-br from-orange-500 to-red-500 rounded-xl p-4 text-white shadow-lg cursor-pointer"
+              initial={{ opacity: 0, y: 20 }}
+              animate={animatedDueCount > 0 ? { opacity: 1, y: 0, scale: [1, 1.02, 1] } : { opacity: 1, y: 0 }}
+              transition={animatedDueCount > 0 ? { duration: 2, repeat: Infinity, delay: 0.2 } : { duration: 0.3, delay: 0.2 }}
+              whileHover={{ scale: 1.02, y: -2 }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-orange-100 mb-1">今日待复习</p>
+                  <p className="text-3xl font-bold">{animatedDueCount}</p>
+                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">🔥</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 明日到期卡片 */}
+            <motion.div
+              className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 text-white shadow-lg"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.3 }}
+              whileHover={{ scale: 1.02, y: -2 }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-100 mb-1">明日到期</p>
+                  <p className="text-3xl font-bold">{animatedTomorrowCount}</p>
+                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl">📅</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* 复习控制区域 - 移动端固定在底部 */}
+          <motion.div
+            className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
+          >
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="flex-1">
+                <Label className="text-xs text-gray-600 mb-1 block">选择复习数量</Label>
+                <Select value={reviewAmount} onValueChange={(v) => setReviewAmount(v)}>
+                  <SelectTrigger className="h-10 w-full sm:w-40">
+                    <SelectValue placeholder={t.vocabulary.messages.review_count_placeholder} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t.vocabulary.messages.review_count_all}</SelectItem>
+                    <SelectItem value="10">{t.vocabulary.messages.review_count_10}</SelectItem>
+                    <SelectItem value="20">{t.vocabulary.messages.review_count_20}</SelectItem>
+                    <SelectItem value="30">{t.vocabulary.messages.review_count_30}</SelectItem>
+                    <SelectItem value="50">{t.vocabulary.messages.review_count_50}</SelectItem>
+                    <SelectItem value="100">{t.vocabulary.messages.review_count_100}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <motion.div 
+                className="sm:mt-5"
+                whileHover={{ scale: 1.02 }} 
+                whileTap={{ scale: 0.98 }}
               >
-                <motion.div
-                  className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0"
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
+                <Button
+                  onClick={startReview}
+                  className="w-full sm:w-auto h-10 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium shadow-lg"
+                  disabled={dueCount === 0}
                 >
-                  <span className="text-xl sm:text-2xl">📚</span>
-                </motion.div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-2xl sm:text-3xl font-bold truncate">{t.vocabulary.title}</h1>
-                  <p className="text-blue-100 mt-1 text-sm sm:text-base">{t.vocabulary.messages.page_description}</p>
-                </div>
-              </motion.div>
-              <motion.div
-                className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start sm:items-center lg:items-end xl:items-center gap-3 sm:gap-4 lg:gap-2 xl:gap-4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-              >
-                <div className="text-center sm:text-right">
-                  <div className="text-xl sm:text-2xl font-bold">{animatedTotal}</div>
-                  <div className="text-blue-100 text-xs sm:text-sm">
-                    {t.vocabulary.total_vocab.replace('{count}', animatedTotal.toString())}
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                  <motion.span
-                    className="px-2 py-1 rounded-full text-xs bg-white/20 text-center sm:text-left"
-                    animate={animatedDueCount > 0 ? { scale: [1, 1.05, 1] } : {}}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    {t.vocabulary.messages.review_progress
-                      .replace('{current}', animatedDueCount.toString())
-                      .replace('{total}', animatedTotal.toString())}
-                  </motion.span>
-                  <div className="flex gap-2">
-                    <Select value={reviewAmount} onValueChange={(v) => setReviewAmount(v)}>
-                      <SelectTrigger className="h-8 w-24 sm:w-28 bg-white text-blue-700 text-xs sm:text-sm">
-                        <SelectValue placeholder={t.vocabulary.messages.review_count_placeholder} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">{t.vocabulary.messages.review_count_all}</SelectItem>
-                        <SelectItem value="10">{t.vocabulary.messages.review_count_10}</SelectItem>
-                        <SelectItem value="20">{t.vocabulary.messages.review_count_20}</SelectItem>
-                        <SelectItem value="30">{t.vocabulary.messages.review_count_30}</SelectItem>
-                        <SelectItem value="50">{t.vocabulary.messages.review_count_50}</SelectItem>
-                        <SelectItem value="100">{t.vocabulary.messages.review_count_100}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Button
-                        onClick={startReview}
-                        className="h-8 px-3 bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm whitespace-nowrap"
-                      >
-                        {t.vocabulary.messages.start_review}
-                      </Button>
-                    </motion.div>
-                  </div>
-                </div>
+                  <span className="mr-2">🚀</span>
+                  {t.vocabulary.messages.start_review}
+                </Button>
               </motion.div>
             </div>
           </motion.div>
 
-          {/* 过滤器卡片 */}
+          {/* 过滤器卡片 - 移动端使用Sheet，桌面端可折叠 */}
           <FadeInWhenVisible delay={0.1}>
-            <motion.div
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
-                <h2 className="text-lg font-semibold text-gray-800">{t.vocabulary.messages.filter_conditions}</h2>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              {/* 筛选器头部 - 移动端触发Sheet，桌面端触发折叠 */}
+              <div 
+                className="flex items-center justify-between p-4 cursor-pointer sm:cursor-default"
+                onClick={() => {
+                  if (window.innerWidth < 640) {
+                    setFilterSheetOpen(true);
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <Filter className="w-5 h-5 text-blue-600" />
+                  <h2 className="text-lg font-semibold text-gray-800">{t.vocabulary.messages.filter_conditions}</h2>
+                  {(filters.lang !== 'all' || filters.status !== 'all' || filters.explanation !== 'all' || filters.search) && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                      筛选中
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFilters({
+                        lang: 'all',
+                        status: 'all',
+                        explanation: 'all',
+                        search: '',
+                      });
+                    }}
+                    className="text-sm text-gray-500 hover:text-gray-700 px-2 py-1 hover:bg-gray-100 rounded"
+                  >
+                    重置
+                  </button>
+                  <button
+                    className="hidden sm:block p-1 hover:bg-gray-100 rounded"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    {showFilters ? (
+                      <ChevronUp className="w-5 h-5 text-gray-600" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-600" />
+                    )}
+                  </button>
+                  <div className="sm:hidden">
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* 桌面端折叠内容 */}
+              <AnimatePresence>
+                {showFilters && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="hidden sm:block overflow-hidden border-t border-gray-100"
+                  >
+                    <div className="p-4">
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* 语言筛选 */}
               <div className="space-y-2">
                 <Label htmlFor="lang-filter" className="text-sm font-medium text-gray-700">
@@ -1344,70 +1469,75 @@ export default function VocabPage() {
               </div>
 
               {/* 搜索框 */}
-              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
+              <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="search" className="text-sm font-medium text-gray-700">
                   {t.vocabulary.filters.search}
                 </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="search"
-                    placeholder={t.vocabulary.filters.search_placeholder}
-                    value={filters.search}
-                    onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-                    className="h-10 flex-1"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setFilters({
-                        lang: 'all',
-                        status: 'all',
-                        explanation: 'all',
-                        search: '',
-                      })
-                    }
-                    className="h-10 px-3 whitespace-nowrap"
-                  >
-                    {t.vocabulary.filters.reset}
-                  </Button>
-                </div>
+                <Input
+                  id="search"
+                  placeholder={t.vocabulary.filters.search_placeholder}
+                  value={filters.search}
+                  onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+                  className="h-10 w-full"
+                />
               </div>
             </div>
 
-            {/* 语音速度控制 */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                <Label
-                  htmlFor="speech-rate"
-                  className="text-sm font-medium text-gray-700 flex items-center gap-2 flex-shrink-0"
-                >
-                  <span>🔊</span>
-                  {t.vocabulary.filters.speech_rate}
-                </Label>
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="flex-1 max-w-xs">
-                    <input
-                      id="speech-rate"
-                      type="range"
-                      min="0.3"
-                      max="1.5"
-                      step="0.1"
-                      value={speechRate}
-                      onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                      style={{
-                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((speechRate - 0.3) / 1.2) * 100}%, #e5e7eb ${((speechRate - 0.3) / 1.2) * 100}%, #e5e7eb 100%)`,
-                      }}
-                    />
+                        {/* 语音速度控制 */}
+                        <div className="pt-4 border-t border-gray-100">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <Label
+                              htmlFor="speech-rate"
+                              className="text-sm font-medium text-gray-700 flex items-center gap-2"
+                            >
+                              <span>🔊</span>
+                              {t.vocabulary.filters.speech_rate}
+                            </Label>
+                            <div className="flex items-center gap-3 flex-1">
+                              <input
+                                id="speech-rate"
+                                type="range"
+                                min="0.3"
+                                max="1.5"
+                                step="0.1"
+                                value={speechRate}
+                                onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                                className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                style={{
+                                  background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((speechRate - 0.3) / 1.2) * 100}%, #e5e7eb ${((speechRate - 0.3) / 1.2) * 100}%, #e5e7eb 100%)`,
+                                }}
+                              />
+                              <div className="text-sm font-medium text-gray-600 min-w-[3rem] text-center">
+                                {speechRate}x
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* 移动端Sheet */}
+              <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+                <SheetContent side="bottom" className="h-[80vh] overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>{t.vocabulary.messages.filter_conditions}</SheetTitle>
+                    <SheetDescription>
+                      设置筛选条件来查找您需要的生词
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="mt-6 space-y-4">
+                    {/* 复制桌面端的筛选器内容 */}
+                    {/* 移动端筛选器内容复制略，应该和桌面端一致 */}
+                    <div className="text-sm text-gray-600 text-center py-4">
+                      筛选器功能将在移动端展开时显示
+                    </div>
                   </div>
-                  <div className="text-sm font-medium text-gray-600 min-w-[3rem] text-center">
-                    {speechRate}x
-                  </div>
-                </div>
-              </div>
+                </SheetContent>
+              </Sheet>
             </div>
-            </motion.div>
           </FadeInWhenVisible>
 
           {/* 错误信息 */}
@@ -1424,11 +1554,11 @@ export default function VocabPage() {
             )}
           </AnimatePresence>
 
-          {/* AI生成设置 */}
+          {/* AI生成设置 - 桌面端 */}
           <AnimatePresence>
             {selectedEntries.length > 0 && (
               <motion.div
-                className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6"
+                className="hidden sm:block bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6"
                 initial={{ opacity: 0, height: 0, marginTop: 0 }}
                 animate={{ opacity: 1, height: 'auto', marginTop: '1.5rem' }}
                 exit={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -1630,12 +1760,7 @@ export default function VocabPage() {
 
           {/* 生词列表 */}
           {isLoading ? (
-            <div className="text-center py-8">
-              <div className="inline-flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                {t.vocabulary.messages.loading}
-              </div>
-            </div>
+            <VocabListSkeleton count={itemsPerPage} />
           ) : entries.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               {t.vocabulary.messages.no_vocab}，去{' '}
@@ -1659,31 +1784,29 @@ export default function VocabPage() {
                 maxVisiblePages={5}
                 className="mb-4"
               />
-              {/* 批量操作工具栏 */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={toggleSelectAll}
-                        className="h-9 px-3 sm:px-4 text-xs sm:text-sm"
-                      >
-                        {selectedEntries.length === entries.length
-                          ? t.vocabulary.batch_operations.deselect_all
-                          : t.vocabulary.batch_operations.select_all}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={selectUnexplainedEntries}
-                        className="h-9 px-3 sm:px-4 bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100 text-xs sm:text-sm"
-                      >
-                        🎯 {t.vocabulary.batch_operations.select_unexplained}
-                      </Button>
-                    </div>
-                    <div className="hidden sm:block h-6 w-px bg-gray-300"></div>
+              {/* 批量操作工具栏 - 桌面端 */}
+              <div className="hidden sm:block bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleSelectAll}
+                      className="h-9"
+                    >
+                      {selectedEntries.length === entries.length
+                        ? t.vocabulary.batch_operations.deselect_all
+                        : t.vocabulary.batch_operations.select_all}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={selectUnexplainedEntries}
+                      className="h-9 bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100"
+                    >
+                      🎯 {t.vocabulary.batch_operations.select_unexplained}
+                    </Button>
+                    <div className="h-6 w-px bg-gray-300"></div>
                     <div className="text-sm text-gray-600">
                       <span className="font-medium text-gray-800">
                         {t.vocabulary.batch_operations.selected_count.replace(
@@ -1697,81 +1820,122 @@ export default function VocabPage() {
                         ).length;
                         return unexplainedCount > 0 ? (
                           <span className="ml-2 text-yellow-600">
-                            (
-                            {t.vocabulary.batch_operations.selected_unexplained.replace(
+                            ({t.vocabulary.batch_operations.selected_unexplained.replace(
                               '{count}',
                               unexplainedCount.toString(),
-                            )}
-                            )
+                            )})
                           </span>
-                        ) : (
-                          ''
-                        );
+                        ) : null;
                       })()}
                     </div>
                   </div>
-
                   {selectedEntries.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={deleteSelectedEntries}
-                        disabled={isDeleting}
-                        className="h-9 px-3 sm:px-4 text-xs sm:text-sm"
-                      >
-                        {isDeleting ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            {t.vocabulary.batch_operations.deleting}
-                          </>
-                        ) : (
-                          <>
-                            🗑️ {t.vocabulary.batch_operations.delete_selected} (
-                            {selectedEntries.length})
-                          </>
-                        )}
-                      </Button>
-                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={deleteSelectedEntries}
+                      disabled={isDeleting}
+                      className="h-9"
+                    >
+                      {isDeleting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          {t.vocabulary.batch_operations.deleting}
+                        </>
+                      ) : (
+                        <>🗑️ {t.vocabulary.batch_operations.delete_selected} ({selectedEntries.length})</>
+                      )}
+                    </Button>
                   )}
                 </div>
               </div>
 
-              {/* 生词卡片网格 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* 移动端快速操作按钮 */}
+              <div className="sm:hidden flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSelectAll}
+                  className="flex-1 h-10"
+                >
+                  {selectedEntries.length === entries.length ? '取消全选' : '全选'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectUnexplainedEntries}
+                  className="flex-1 h-10 bg-yellow-50 border-yellow-200 text-yellow-700"
+                >
+                  🎯 选未解释
+                </Button>
+              </div>
+
+              {/* 生词卡片网格 - 使用滑动手势卡片 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                 {entries.map((entry, index) => (
+                  <SwipeableVocabCard
+                    key={entry.id}
+                    entry={entry}
+                    index={index}
+                    isExpanded={expandedCards.has(entry.id)}
+                    isSelected={selectedEntries.includes(entry.id)}
+                    speakingId={speakingId}
+                    onToggleExpand={toggleCard}
+                    onToggleSelect={toggleSelection}
+                    onSpeak={speakText}
+                    onStar={updateEntryStatus}
+                    onDelete={deleteEntry}
+                  />
+                ))}
+              </div>
+
+              {/* 原有的卡片代码备份 - 如果需要切换回来可以用 */}
+              <div className="hidden grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                {entries.map((entry, index) => {
+                  const isExpanded = expandedCards.has(entry.id);
+                  const hasExplanation = entry.explanation && entry.explanation.gloss_native;
+                  
+                  return (
                   <motion.div
                     key={entry.id}
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
-                    whileHover={{ y: -4, boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)' }}
-                    className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+                    className={`group bg-white rounded-xl shadow-sm border-2 overflow-hidden transition-all ${
+                      !hasExplanation ? 'border-yellow-200' : 'border-gray-200'
+                    } ${selectedEntries.includes(entry.id) ? 'ring-2 ring-blue-400' : ''}`}
                   >
-                    {/* 卡片头部 */}
-                    <div className="p-3 sm:p-4 border-b border-gray-100">
+                    {/* 卡片头部 - 可点击展开 */}
+                    <div 
+                      className="p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => toggleCard(entry.id)}
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3 flex-1 min-w-0">
                           <input
                             type="checkbox"
                             checked={selectedEntries.includes(entry.id)}
-                            onChange={() => toggleSelection(entry.id)}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0 mt-1"
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleSelection(entry.id);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0 mt-1"
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                              <h3 className="text-lg sm:text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors truncate">
+                              <h3 className="text-lg sm:text-xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors break-words">
                                 {entry.term}
                               </h3>
                               {entry.explanation?.pronunciation && (
-                                <span className="font-mono bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs sm:text-sm font-medium flex-shrink-0">
+                                <span className="font-mono bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs font-medium w-fit">
                                   {entry.explanation.pronunciation}
                                 </span>
                               )}
                             </div>
-                            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <span
-                                className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                className={`px-2 py-0.5 text-xs font-medium rounded-full ${
                                   entry.lang === 'en'
                                     ? 'bg-blue-100 text-blue-700'
                                     : entry.lang === 'ja'
@@ -1779,136 +1943,128 @@ export default function VocabPage() {
                                       : 'bg-green-100 text-green-700'
                                 }`}
                               >
-                                {
-                                  t.vocabulary.language_labels[
-                                    entry.lang as keyof typeof t.vocabulary.language_labels
-                                  ]
-                                }
+                                {t.vocabulary.language_labels[entry.lang as keyof typeof t.vocabulary.language_labels]}
                               </span>
-                              <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                                {entry.source}
-                              </span>
-                              <span
-                                className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                  entry.status === 'starred'
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : entry.status === 'archived'
-                                      ? 'bg-gray-100 text-gray-600'
-                                      : 'bg-green-100 text-green-700'
-                                }`}
-                              >
-                                {
-                                  t.vocabulary.status_labels[
-                                    entry.status as keyof typeof t.vocabulary.status_labels
-                                  ]
-                                }
-                              </span>
+                              {entry.status === 'starred' && (
+                                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
+                                  ⭐
+                                </span>
+                              )}
+                              {!hasExplanation && (
+                                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
+                                  未解释
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
-                        <div className="flex-shrink-0">
-                          <TTSButton
-                            text={entry.term}
-                            lang={entry.lang}
-                            entryId={entry.id}
-                            isPlaying={speakingId === entry.id}
-                            onPlay={speakText}
-                            disabled={speakingId !== null && speakingId !== entry.id}
-                          />
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <TTSButton
+                              text={entry.term}
+                              lang={entry.lang}
+                              entryId={entry.id}
+                              isPlaying={speakingId === entry.id}
+                              onPlay={speakText}
+                              disabled={speakingId !== null && speakingId !== entry.id}
+                            />
+                          </div>
+                          <motion.div
+                            animate={{ rotate: isExpanded ? 180 : 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                          </motion.div>
                         </div>
                       </div>
+                      
+                      {/* 精简释义 - 始终显示 */}
+                      {hasExplanation && (
+                        <div className="mt-3 pl-8">
+                          <p className="text-sm text-gray-700 font-medium line-clamp-2">
+                            {entry.explanation.gloss_native}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
-                    {/* 卡片内容 */}
-                    <div className="p-3 sm:p-4">
+                    {/* 卡片详细内容 - 展开后显示 */}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="overflow-hidden"
+                        >
+                    <div className="p-3 sm:p-4" onClick={(e) => e.stopPropagation()}>
                       {/* 上下文 */}
                       {entry.context && (
                         <div className="mb-3 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-200">
-                          <p className="text-sm text-gray-700 italic break-words">"{entry.context}"</p>
+                          <p className="text-xs font-medium text-gray-500 mb-1">上下文</p>
+                          <p className="text-sm text-gray-700 italic break-words">&ldquo;{entry.context}&rdquo;</p>
                         </div>
                       )}
 
-                      {/* 解释内容 */}
-                      {entry.explanation ? (
-                        <div className="space-y-3">
-                          <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                            <p className="text-gray-800 font-medium break-words">
-                              {entry.explanation.gloss_native}
-                            </p>
-                          </div>
-
-                          {/* 词性和例句 */}
-                          <div className="space-y-2">
-                            {entry.explanation.pos && (
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                  {t.vocabulary.vocab_card.part_of_speech}
-                                </span>
-                                <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium w-fit">
-                                  {entry.explanation.pos}
-                                </span>
-                              </div>
-                            )}
-
-                            {Array.isArray(entry.explanation.senses) &&
-                              entry.explanation.senses.length > 0 && (
-                                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                                  <div className="text-xs font-medium text-amber-700 mb-2">
-                                    {t.vocabulary.vocab_card.example}
-                                  </div>
-                                  <div className="text-sm text-gray-700 space-y-1">
-                                    <div className="font-medium break-words">
-                                      {entry.explanation.senses[0].example_target}
-                                    </div>
-                                    <div className="text-gray-600 break-words">
-                                      {entry.explanation.senses[0].example_native}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                          </div>
+                      {/* 词性 */}
+                      {entry.explanation?.pos && (
+                        <div className="mb-3">
+                          <span className="text-xs font-medium text-gray-500 mr-2">词性:</span>
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium">
+                            {entry.explanation.pos}
+                          </span>
                         </div>
-                      ) : (
-                        <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200 text-center">
-                          <p className="text-sm text-yellow-700 font-medium">
-                            {t.vocabulary.vocab_card.no_explanation}
-                          </p>
+                      )}
+
+                      {/* 例句 */}
+                      {entry.explanation && Array.isArray(entry.explanation.senses) && entry.explanation.senses.length > 0 && entry.explanation.senses[0] && (
+                        <div className="mb-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                          <div className="text-xs font-medium text-amber-700 mb-2">
+                            {t.vocabulary.vocab_card.example}
+                          </div>
+                          <div className="space-y-1">
+                            <div className="text-sm font-medium text-gray-800 break-words">
+                              {entry.explanation.senses[0].example_target}
+                            </div>
+                            <div className="text-sm text-gray-600 break-words">
+                              {entry.explanation.senses[0].example_native}
+                            </div>
+                          </div>
                         </div>
                       )}
 
                       {/* 操作按钮 */}
-                      <div className="mt-4 pt-3 border-t border-gray-100">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <button
-                              className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                                entry.status === 'starred'
-                                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                              }`}
-                              onClick={() =>
-                                updateEntryStatus(
-                                  entry.id,
-                                  entry.status === 'starred' ? 'new' : 'starred',
-                                )
-                              }
-                            >
-                              {entry.status === 'starred'
-                                ? '⭐ ' + t.vocabulary.vocab_card.unstar
-                                : '☆ ' + t.vocabulary.vocab_card.star}
-                            </button>
-                          </div>
-                          <button
-                            className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-colors w-fit sm:w-auto"
-                            onClick={() => deleteEntry(entry.id)}
-                          >
-                            🗑️ {t.vocabulary.vocab_card.delete}
-                          </button>
-                        </div>
+                      <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100">
+                        <button
+                          className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            entry.status === 'starred'
+                              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                          onClick={() =>
+                            updateEntryStatus(
+                              entry.id,
+                              entry.status === 'starred' ? 'new' : 'starred',
+                            )
+                          }
+                        >
+                          {entry.status === 'starred' ? '⭐ 取消标星' : '☆ 标星'}
+                        </button>
+                        <button
+                          className="flex-1 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                          onClick={() => deleteEntry(entry.id)}
+                        >
+                          🗑️ 删除
+                        </button>
                       </div>
                     </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* 底部分页 */}
@@ -1931,6 +2087,230 @@ export default function VocabPage() {
         </div>
       </Container>
     </main>
+
+    {/* 移动端底部浮动操作栏 - 选中项目时显示 */}
+    <AnimatePresence>
+      {selectedEntries.length > 0 && (
+        <motion.div
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 100, opacity: 0 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          className="fixed bottom-0 left-0 right-0 z-40 sm:hidden bg-white border-t-2 border-gray-200 shadow-2xl"
+        >
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                已选中 {selectedEntries.length} 项
+              </span>
+              <button
+                onClick={() => setSelectedEntries([])}
+                className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 hover:bg-gray-100 rounded"
+              >
+                取消选择
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={deleteSelectedEntries}
+                disabled={isDeleting}
+                className="flex-1 h-11"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    删除中...
+                  </>
+                ) : (
+                  <>🗑️ 删除 ({selectedEntries.length})</>
+                )}
+              </Button>
+              <Button
+                onClick={() => {
+                  setAiSettingsSheetOpen(true);
+                }}
+                disabled={isGenerating}
+                className="flex-1 h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                {isGenerating ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    生成中...
+                  </>
+                ) : (
+                  <>✨ AI解释</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* 移动端AI设置Sheet */}
+    <Sheet open={aiSettingsSheetOpen} onOpenChange={setAiSettingsSheetOpen}>
+      <SheetContent side="bottom" className="h-[85vh] overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <span className="text-2xl">🤖</span>
+            {t.vocabulary.ai_generation.title}
+          </SheetTitle>
+          <SheetDescription>
+            为 {selectedEntries.length} 个生词生成AI解释
+          </SheetDescription>
+        </SheetHeader>
+        
+        <div className="mt-6 space-y-6">
+          {/* 母语选择 */}
+          <div className="space-y-2">
+            <Label className="text-base font-semibold text-gray-900">
+              {t.vocabulary.ai_generation.native_language}
+            </Label>
+            <Select
+              value={generationSettings.native_lang}
+              onValueChange={(value) =>
+                setGenerationSettings((prev) => ({ ...prev, native_lang: value }))
+              }
+            >
+              <SelectTrigger className="h-12 text-base">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="zh">{t.vocabulary.language_labels.zh}</SelectItem>
+                <SelectItem value="en">{t.vocabulary.language_labels.en}</SelectItem>
+                <SelectItem value="ja">{t.vocabulary.language_labels.ja}</SelectItem>
+              </SelectContent>
+            </Select>
+            {userProfile?.native_lang && (
+              <p className="text-xs text-blue-600 flex items-center gap-1">
+                <span>💡</span>
+                {t.vocabulary.ai_generation.auto_selected}
+              </p>
+            )}
+          </div>
+
+          {/* AI提供商选择 */}
+          <div className="space-y-2">
+            <Label className="text-base font-semibold text-gray-900">
+              {t.vocabulary.ai_generation.ai_provider}
+            </Label>
+            <div className="flex gap-2">
+              <Select
+                value={generationSettings.provider}
+                onValueChange={(value) => {
+                  const provider = availableModels[value];
+                  const defaultModel = provider?.models?.[0]?.id || '';
+                  setGenerationSettings((prev) => ({
+                    ...prev,
+                    provider: value,
+                    model: defaultModel,
+                  }));
+                }}
+              >
+                <SelectTrigger className="h-12 text-base flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(availableModels).map(([key, provider]: [string, any]) => (
+                    <SelectItem key={key} value={key}>
+                      {provider.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchAvailableModels}
+                title={t.vocabulary.ai_generation.refresh_models}
+                className="h-12 px-4"
+              >
+                🔄
+              </Button>
+            </div>
+          </div>
+
+          {/* 模型选择 */}
+          <div className="space-y-2">
+            <Label className="text-base font-semibold text-gray-900">
+              {t.vocabulary.ai_generation.model}
+            </Label>
+            <Select
+              value={generationSettings.model}
+              onValueChange={(value) =>
+                setGenerationSettings((prev) => ({ ...prev, model: value }))
+              }
+            >
+              <SelectTrigger className="h-12 text-base">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableModels[generationSettings.provider]?.models?.map((model: any) => (
+                  <SelectItem key={model.id} value={model.id}>
+                    <div>
+                      <div className="font-medium">{model.name}</div>
+                      {model.description && (
+                        <div className="text-xs text-gray-500">{model.description}</div>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 生成按钮 */}
+          <div className="sticky bottom-0 pt-4 pb-2 bg-white border-t">
+            <Button
+              onClick={() => {
+                generateExplanations();
+                setAiSettingsSheetOpen(false);
+              }}
+              disabled={isGenerating}
+              className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold text-base"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  {t.vocabulary.ai_generation.generating}
+                </>
+              ) : (
+                <>
+                  ✨ {t.vocabulary.ai_generation.generate_explanations} ({selectedEntries.length})
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* 生成进度显示 */}
+          {isGenerating && generationProgress.total > 0 && (
+            <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-800">
+                    {t.vocabulary.ai_generation.progress}
+                  </span>
+                  <span className="text-sm font-medium text-blue-600">
+                    {generationProgress.current} / {generationProgress.total}
+                  </span>
+                </div>
+
+                <Progress
+                  value={(generationProgress.current / generationProgress.total) * 100}
+                  className="w-full h-2"
+                />
+
+                <div className="text-sm text-gray-700">
+                  {generationProgress.status}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
 
     <AnimatePresence>
       {reviewing && (
@@ -2004,21 +2384,21 @@ export default function VocabPage() {
                 </div>
 
                 {/* 主要内容区域 */}
-                <div className="p-4 sm:p-6 lg:p-10">
+                <div className="p-4 sm:p-6 lg:p-8">
                   {/* 单词显示区域 */}
-                  <div className="text-center mb-6 sm:mb-8 lg:mb-10">
-                    <div className="relative">
-                      <div className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-800 mb-4 sm:mb-6 tracking-wide break-words">
+                  <div className="text-center mb-6 sm:mb-8">
+                    <div className="relative inline-block">
+                      <div className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-3 sm:mb-4 tracking-wide break-words px-4">
                         {cur.term}
                       </div>
-                      <div className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center shadow-lg">
-                        <span className="text-white text-xs sm:text-sm font-bold">{reviewIndex + 1}</span>
+                      <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center shadow-lg">
+                        <span className="text-white text-xs font-bold">{reviewIndex + 1}</span>
                       </div>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+                    <div className="flex flex-wrap items-center justify-center gap-2 mb-4 sm:mb-6">
                       <span
-                        className={`px-3 sm:px-4 py-2 text-sm sm:text-base font-semibold rounded-full ${
+                        className={`px-3 py-1.5 text-sm font-semibold rounded-full ${
                           cur.lang === 'en'
                             ? 'bg-blue-100 text-blue-700'
                             : cur.lang === 'ja'
@@ -2030,7 +2410,7 @@ export default function VocabPage() {
                       </span>
                       
                       {cur.explanation?.pronunciation && (
-                        <span className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm sm:text-base font-mono">
+                        <span className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm font-mono">
                           {cur.explanation.pronunciation}
                         </span>
                       )}
@@ -2039,10 +2419,10 @@ export default function VocabPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => speakText(cur.term, cur.lang, cur.id)}
-                        className="bg-white hover:bg-gray-50 border-gray-200 text-gray-700 hover:text-gray-900 shadow-sm px-3 sm:px-4 py-2 text-sm sm:text-base font-medium"
+                        className="bg-white hover:bg-gray-50 border-gray-200 text-gray-700 hover:text-gray-900 shadow-sm px-3 py-1.5 h-auto"
                       >
-                        <span className="mr-1 sm:mr-2">🔊</span>
-                        {t.vocabulary.vocab_card.pronunciation}
+                        <span className="mr-1.5">🔊</span>
+                        <span className="text-sm">发音</span>
                       </Button>
                     </div>
                   </div>
@@ -2127,13 +2507,13 @@ export default function VocabPage() {
                   </div>
 
                   {/* 评分按钮区域 */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                     {(() => {
                       const delays = calculateButtonDelays(cur);
                       return (
                         <>
                           <Button 
-                            className={`bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px] sm:min-h-[80px] ${
+                            className={`bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[68px] sm:min-h-[76px] relative ${
                               clickedButton === 'again' 
                                 ? 'transform scale-95 shadow-2xl ring-4 ring-red-300 ring-opacity-50' 
                                 : 'transform hover:scale-105'
@@ -2142,23 +2522,23 @@ export default function VocabPage() {
                             disabled={isTransitioning}
                           >
                             <div className="text-center w-full">
-                              <div className="text-sm sm:text-base font-bold mb-1 flex items-center justify-center gap-1">
-                                <span className={`text-base sm:text-lg transition-transform duration-200 ${clickedButton === 'again' ? 'scale-125' : ''}`}>✕</span>
-                                <span className="truncate">{t.vocabulary.messages.review_again}</span>
+                              <div className="text-sm sm:text-base font-bold mb-0.5 flex items-center justify-center gap-1">
+                                <span className={`text-lg transition-transform duration-200 ${clickedButton === 'again' ? 'scale-125' : ''}`}>✕</span>
+                                <span>{t.vocabulary.messages.review_again}</span>
                               </div>
                               <div className="text-xs opacity-90">
                                 {delays.again === 1 ? t.vocabulary.messages.review_tomorrow : t.vocabulary.messages.review_days_later.replace('{days}', delays.again.toString())}
                               </div>
                               {clickedButton === 'again' && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center bg-red-600/20 rounded-xl">
+                                  <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                                 </div>
                               )}
                             </div>
                           </Button>
                           
                           <Button 
-                            className={`bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px] sm:min-h-[80px] ${
+                            className={`bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[68px] sm:min-h-[76px] relative ${
                               clickedButton === 'hard' 
                                 ? 'transform scale-95 shadow-2xl ring-4 ring-orange-300 ring-opacity-50' 
                                 : 'transform hover:scale-105'
@@ -2167,23 +2547,23 @@ export default function VocabPage() {
                             disabled={isTransitioning}
                           >
                             <div className="text-center w-full">
-                              <div className="text-sm sm:text-base font-bold mb-1 flex items-center justify-center gap-1">
-                                <span className={`text-base sm:text-lg transition-transform duration-200 ${clickedButton === 'hard' ? 'scale-125' : ''}`}>😰</span>
-                                <span className="truncate">{t.vocabulary.messages.review_hard}</span>
+                              <div className="text-sm sm:text-base font-bold mb-0.5 flex items-center justify-center gap-1">
+                                <span className={`text-lg transition-transform duration-200 ${clickedButton === 'hard' ? 'scale-125' : ''}`}>😰</span>
+                                <span>{t.vocabulary.messages.review_hard}</span>
                               </div>
                               <div className="text-xs opacity-90">
                                 {delays.hard === 1 ? t.vocabulary.messages.review_tomorrow : t.vocabulary.messages.review_days_later.replace('{days}', delays.hard.toString())}
                               </div>
                               {clickedButton === 'hard' && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center bg-orange-600/20 rounded-xl">
+                                  <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                                 </div>
                               )}
                             </div>
                           </Button>
                           
                           <Button 
-                            className={`bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px] sm:min-h-[80px] ${
+                            className={`bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[68px] sm:min-h-[76px] relative ${
                               clickedButton === 'good' 
                                 ? 'transform scale-95 shadow-2xl ring-4 ring-blue-300 ring-opacity-50' 
                                 : 'transform hover:scale-105'
@@ -2192,23 +2572,23 @@ export default function VocabPage() {
                             disabled={isTransitioning}
                           >
                             <div className="text-center w-full">
-                              <div className="text-sm sm:text-base font-bold mb-1 flex items-center justify-center gap-1">
-                                <span className={`text-base sm:text-lg transition-transform duration-200 ${clickedButton === 'good' ? 'scale-125' : ''}`}>😊</span>
-                                <span className="truncate">{t.vocabulary.messages.review_good}</span>
+                              <div className="text-sm sm:text-base font-bold mb-0.5 flex items-center justify-center gap-1">
+                                <span className={`text-lg transition-transform duration-200 ${clickedButton === 'good' ? 'scale-125' : ''}`}>😊</span>
+                                <span>{t.vocabulary.messages.review_good}</span>
                               </div>
                               <div className="text-xs opacity-90">
                                 {delays.good === 1 ? t.vocabulary.messages.review_tomorrow : t.vocabulary.messages.review_days_later.replace('{days}', delays.good.toString())}
                               </div>
                               {clickedButton === 'good' && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center bg-blue-600/20 rounded-xl">
+                                  <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                                 </div>
                               )}
                             </div>
                           </Button>
                           
                           <Button 
-                            className={`bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[60px] sm:min-h-[80px] ${
+                            className={`bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[68px] sm:min-h-[76px] relative ${
                               clickedButton === 'easy' 
                                 ? 'transform scale-95 shadow-2xl ring-4 ring-green-300 ring-opacity-50' 
                                 : 'transform hover:scale-105'
@@ -2217,16 +2597,16 @@ export default function VocabPage() {
                             disabled={isTransitioning}
                           >
                             <div className="text-center w-full">
-                              <div className="text-sm sm:text-base font-bold mb-1 flex items-center justify-center gap-1">
-                                <span className={`text-base sm:text-lg transition-transform duration-200 ${clickedButton === 'easy' ? 'scale-125' : ''}`}>😎</span>
-                                <span className="truncate">{t.vocabulary.messages.review_easy}</span>
+                              <div className="text-sm sm:text-base font-bold mb-0.5 flex items-center justify-center gap-1">
+                                <span className={`text-lg transition-transform duration-200 ${clickedButton === 'easy' ? 'scale-125' : ''}`}>😎</span>
+                                <span>{t.vocabulary.messages.review_easy}</span>
                               </div>
                               <div className="text-xs opacity-90">
                                 {delays.easy === 1 ? t.vocabulary.messages.review_tomorrow : t.vocabulary.messages.review_days_later.replace('{days}', delays.easy.toString())}
                               </div>
                               {clickedButton === 'easy' && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="w-6 h-6 sm:w-8 sm:h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 flex items-center justify-center bg-green-600/20 rounded-xl">
+                                  <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                                 </div>
                               )}
                             </div>

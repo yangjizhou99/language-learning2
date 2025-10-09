@@ -48,13 +48,16 @@ export async function GET(req: NextRequest) {
     const nowIso = new Date().toISOString();
 
     // 首选包含 SRS 的查询
+    // 到期规则：
+    // - 未归档（status != 'archived' 或 status 为空）
+    // - 且 (srs_due <= now 或 srs_due 为空 -> 表示从未安排，按新词优先复习)
     let query = supabase
       .from('vocab_entries')
       .select('*', { count: 'exact' })
       .eq('user_id', user.id)
       .or('status.neq.archived,status.is.null')
-      .lte('srs_due', nowIso)
-      .order('srs_due', { ascending: true })
+      .or(`srs_due.lte.${nowIso},srs_due.is.null`)
+      .order('srs_due', { ascending: true, nullsFirst: true })
       .range(offset, offset + limit - 1);
 
     let { data, error, count } = await query;
@@ -109,5 +112,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: '服务器错误' }, { status: 500 });
   }
 }
-
 
