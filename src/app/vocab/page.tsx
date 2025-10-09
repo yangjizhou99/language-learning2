@@ -18,6 +18,10 @@ import TTSButton from '@/components/TTSButton';
 import Pagination from '@/components/Pagination';
 import { supabase } from '@/lib/supabase';
 import { useLanguage, useTranslation } from '@/contexts/LanguageContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FadeInWhenVisible } from '@/components/FadeInWhenVisible';
+import { useCounterAnimation } from '@/hooks/useCounterAnimation';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface VocabEntry {
   id: string;
@@ -59,6 +63,7 @@ interface Pagination {
 export default function VocabPage() {
   const { setLanguageFromUserProfile } = useLanguage();
   const t = useTranslation();
+  const prefersReducedMotion = useReducedMotion();
   const [entries, setEntries] = useState<VocabEntry[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -69,6 +74,9 @@ export default function VocabPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // 动画相关状态
+  const [statsLoaded, setStatsLoaded] = useState(false);
 
   // 过滤条件
   const [filters, setFilters] = useState({
@@ -318,6 +326,7 @@ export default function VocabPage() {
       setEntries(data.entries);
       setPagination(data.pagination);
       setDueCount(data.stats.dueCount);
+      setStatsLoaded(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : t.vocabulary.messages.fetch_vocab_failed);
     } finally {
@@ -1170,6 +1179,10 @@ export default function VocabPage() {
     }
   };
 
+  // 数字计数动画
+  const animatedTotal = useCounterAnimation(pagination.total, 1500, statsLoaded && !prefersReducedMotion);
+  const animatedDueCount = useCounterAnimation(dueCount, 1200, statsLoaded && !prefersReducedMotion);
+
   return (<>
     <main className="p-3 sm:p-6 bg-gray-50 min-h-screen">
       <Container>
@@ -1177,30 +1190,53 @@ export default function VocabPage() {
 
         <div className="max-w-7xl mx-auto space-y-6">
           {/* 页面标题区域 */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 sm:p-6 text-white">
+          <motion.div
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-4 sm:p-6 text-white"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+          >
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <motion.div
+                className="flex items-center gap-3 sm:gap-4"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                <motion.div
+                  className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                >
                   <span className="text-xl sm:text-2xl">📚</span>
-                </div>
+                </motion.div>
                 <div className="min-w-0 flex-1">
                   <h1 className="text-2xl sm:text-3xl font-bold truncate">{t.vocabulary.title}</h1>
                   <p className="text-blue-100 mt-1 text-sm sm:text-base">{t.vocabulary.messages.page_description}</p>
                 </div>
-              </div>
-              <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start sm:items-center lg:items-end xl:items-center gap-3 sm:gap-4 lg:gap-2 xl:gap-4">
+              </motion.div>
+              <motion.div
+                className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start sm:items-center lg:items-end xl:items-center gap-3 sm:gap-4 lg:gap-2 xl:gap-4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+              >
                 <div className="text-center sm:text-right">
-                  <div className="text-xl sm:text-2xl font-bold">{pagination.total}</div>
+                  <div className="text-xl sm:text-2xl font-bold">{animatedTotal}</div>
                   <div className="text-blue-100 text-xs sm:text-sm">
-                    {t.vocabulary.total_vocab.replace('{count}', pagination.total.toString())}
+                    {t.vocabulary.total_vocab.replace('{count}', animatedTotal.toString())}
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                  <span className="px-2 py-1 rounded-full text-xs bg-white/20 text-center sm:text-left">
+                  <motion.span
+                    className="px-2 py-1 rounded-full text-xs bg-white/20 text-center sm:text-left"
+                    animate={animatedDueCount > 0 ? { scale: [1, 1.05, 1] } : {}}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  >
                     {t.vocabulary.messages.review_progress
-                      .replace('{current}', dueCount.toString())
-                      .replace('{total}', pagination.total.toString())}
-                  </span>
+                      .replace('{current}', animatedDueCount.toString())
+                      .replace('{total}', animatedTotal.toString())}
+                  </motion.span>
                   <div className="flex gap-2">
                     <Select value={reviewAmount} onValueChange={(v) => setReviewAmount(v)}>
                       <SelectTrigger className="h-8 w-24 sm:w-28 bg-white text-blue-700 text-xs sm:text-sm">
@@ -1215,26 +1251,34 @@ export default function VocabPage() {
                         <SelectItem value="100">{t.vocabulary.messages.review_count_100}</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Button
-                      onClick={startReview}
-                      className="h-8 px-3 bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm whitespace-nowrap"
-                    >
-                      {t.vocabulary.messages.start_review}
-                    </Button>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        onClick={startReview}
+                        className="h-8 px-3 bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm whitespace-nowrap"
+                      >
+                        {t.vocabulary.messages.start_review}
+                      </Button>
+                    </motion.div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
           {/* 过滤器卡片 */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
-              <h2 className="text-lg font-semibold text-gray-800">{t.vocabulary.messages.filter_conditions}</h2>
-            </div>
+          <FadeInWhenVisible delay={0.1}>
+            <motion.div
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+                <h2 className="text-lg font-semibold text-gray-800">{t.vocabulary.messages.filter_conditions}</h2>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* 语言筛选 */}
               <div className="space-y-2">
                 <Label htmlFor="lang-filter" className="text-sm font-medium text-gray-700">
@@ -1362,30 +1406,55 @@ export default function VocabPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </FadeInWhenVisible>
 
           {/* 错误信息 */}
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700">{error}</div>
-          )}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="p-3 bg-red-50 border border-red-200 rounded text-red-700"
+              >
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* AI生成设置 */}
-          {selectedEntries.length > 0 && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-lg">🤖</span>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {t.vocabulary.ai_generation.title}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {t.vocabulary.messages.ai_generation_for_selected.replace('{count}', selectedEntries.length.toString())}
-                  </p>
-                </div>
-              </div>
+          <AnimatePresence>
+            {selectedEntries.length > 0 && (
+              <motion.div
+                className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6"
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: '1.5rem' }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                <motion.div
+                  className="flex items-center gap-3 mb-4"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                >
+                  <motion.div
+                    className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center"
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <span className="text-white text-lg">🤖</span>
+                  </motion.div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {t.vocabulary.ai_generation.title}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {t.vocabulary.messages.ai_generation_for_selected.replace('{count}', selectedEntries.length.toString())}
+                    </p>
+                  </div>
+                </motion.div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
@@ -1482,23 +1551,29 @@ export default function VocabPage() {
                 </div>
 
                 <div className="flex items-end">
-                  <Button
-                    onClick={generateExplanations}
-                    disabled={isGenerating}
-                    className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                  <motion.div
+                    className="w-full"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                   >
-                    {isGenerating ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                        {t.vocabulary.ai_generation.generating}
-                      </>
-                    ) : (
-                      <>
-                        ✨ {t.vocabulary.ai_generation.generate_explanations} (
-                        {selectedEntries.length})
-                      </>
-                    )}
-                  </Button>
+                    <Button
+                      onClick={generateExplanations}
+                      disabled={isGenerating}
+                      className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          {t.vocabulary.ai_generation.generating}
+                        </>
+                      ) : (
+                        <>
+                          ✨ {t.vocabulary.ai_generation.generate_explanations} (
+                          {selectedEntries.length})
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
 
@@ -1548,13 +1623,9 @@ export default function VocabPage() {
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* 错误信息 */}
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700">{error}</div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* 生词列表 */}
           {isLoading ? (
@@ -1667,10 +1738,14 @@ export default function VocabPage() {
 
               {/* 生词卡片网格 */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {entries.map((entry) => (
-                  <div
+                {entries.map((entry, index) => (
+                  <motion.div
                     key={entry.id}
-                    className="group bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
+                    whileHover={{ y: -4, boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.1)' }}
+                    className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
                   >
                     {/* 卡片头部 */}
                     <div className="p-3 sm:p-4 border-b border-gray-100">
@@ -1831,7 +1906,7 @@ export default function VocabPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
 
@@ -1856,9 +1931,22 @@ export default function VocabPage() {
       </Container>
     </main>
 
-    {reviewing && (
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-        <div className="w-full max-w-4xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden transform transition-all duration-300 scale-100 max-h-[95vh] overflow-y-auto">
+    <AnimatePresence>
+      {reviewing && (
+        <motion.div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <motion.div
+            className="w-full max-w-4xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto"
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+          >
           {(() => {
             const total = reviewList.length;
             const cur = reviewList[reviewIndex];
@@ -1960,18 +2048,37 @@ export default function VocabPage() {
 
                   {/* 解释显示区域 */}
                   <div className="mb-6 sm:mb-8 lg:mb-10">
-                    {!showBack ? (
-                      <div className="text-center">
-                        <Button 
-                          className="w-full py-4 sm:py-5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-lg sm:text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105" 
-                          onClick={() => setShowBack(true)}
+                    <AnimatePresence mode="wait">
+                      {!showBack ? (
+                        <motion.div
+                          key="show-button"
+                          className="text-center"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.2 }}
                         >
-                          <span className="mr-2 sm:mr-3 text-xl sm:text-2xl">💡</span>
-                          {t.vocabulary.messages.review_show_explanation}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl sm:rounded-3xl border border-blue-100 p-4 sm:p-6 lg:p-8 shadow-sm">
+                          <motion.div
+                            animate={{ scale: [1, 1.02, 1] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                          >
+                            <Button 
+                              className="w-full py-4 sm:py-5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-lg sm:text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105" 
+                              onClick={() => setShowBack(true)}
+                            >
+                              <span className="mr-2 sm:mr-3 text-xl sm:text-2xl">💡</span>
+                              {t.vocabulary.messages.review_show_explanation}
+                            </Button>
+                          </motion.div>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="answer"
+                          className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl sm:rounded-3xl border border-blue-100 p-4 sm:p-6 lg:p-8 shadow-sm"
+                          initial={{ opacity: 0, rotateX: -10 }}
+                          animate={{ opacity: 1, rotateX: 0 }}
+                          transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                        >
                         {cur.explanation?.gloss_native ? (
                           <div className="space-y-4 sm:space-y-6">
                             <div className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800 leading-relaxed break-words">
@@ -2013,8 +2120,9 @@ export default function VocabPage() {
                             </div>
                           </div>
                         )}
-                      </div>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   {/* 评分按钮区域 */}
@@ -2130,8 +2238,9 @@ export default function VocabPage() {
               </div>
             );
           })()}
-        </div>
-      </div>
-    )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   </>);
 }
