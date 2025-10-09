@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useCallback, useRef, useMemo, useDeferredValue } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo, useDeferredValue, RefObject } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,19 @@ import { useMobile } from '@/contexts/MobileContext';
 import FilterLanguageSelector from './FilterLanguageSelector';
 import PracticeStepper from './PracticeStepper';
 import { speakText as speakTextUtil } from '@/lib/speechUtils';
+import CollapsibleFilterSection from './CollapsibleFilterSection';
+import CompactStatsCards from './CompactStatsCards';
+import EnhancedAudioPlayer from './EnhancedAudioPlayer';
+import DesktopThreeColumnLayout from './DesktopThreeColumnLayout';
+import RightPanelTabs from './RightPanelTabs';
+import ShortcutsHelpModal from './ShortcutsHelpModal';
+import DesktopLayout from './DesktopLayout';
+import { useKeyboardShortcuts, type KeyboardShortcut } from '@/hooks/useKeyboardShortcuts';
+import { useScrollDirection } from '@/hooks/useScrollDirection';
+import { useSwipeGesture } from '@/hooks/useSwipeGesture';
+import CollapsibleCard from './CollapsibleCard';
+import FloatingActionButtons from './FloatingActionButtons';
+import BottomNavBar from './BottomNavBar';
 // import { getAuthHeaders } from "@/lib/supabase";
 import {
   Shuffle,
@@ -2455,6 +2468,597 @@ export default function ShadowingPage() {
   // 移动端也启用步骤门控：仅在未完成时生效
   const gatingActive = !practiceComplete;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  
+  // 引导提示状态
+  const [showGuide, setShowGuide] = useState(false);
+  
+  // 快捷键帮助弹窗状态
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  
+  // 步骤提示展开状态
+  const [stepTipExpanded, setStepTipExpanded] = useState(false);
+  
+  // 滚动方向检测（用于智能隐藏顶部导航）
+  const { scrollDirection, scrollY } = useScrollDirection({
+    threshold: 10,
+    enabled: actualIsMobile,
+  });
+  
+  // 顶部导航栏显示状态
+  const [showHeader, setShowHeader] = useState(true);
+  
+  // 更新顶部导航栏显示状态
+  useEffect(() => {
+    if (!actualIsMobile) {
+      setShowHeader(true);
+      return;
+    }
+    
+    // 在顶部时始终显示
+    if (scrollY < 50) {
+      setShowHeader(true);
+      return;
+    }
+    
+    // 根据滚动方向决定显示/隐藏
+    if (scrollDirection === 'down') {
+      setShowHeader(false);
+    } else if (scrollDirection === 'up') {
+      setShowHeader(true);
+    }
+  }, [scrollDirection, scrollY, actualIsMobile]);
+  
+  // 主内容区域引用（用于手势检测）
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  
+  // 手势检测：左右滑动切换题目
+  useSwipeGesture(mainContentRef as RefObject<HTMLElement>, {
+    enabled: actualIsMobile && !!currentItem,
+    threshold: 80,
+    onSwipeLeft: () => {
+      // 向左滑动：下一题
+      handleNext();
+    },
+    onSwipeRight: () => {
+      // 向右滑动：上一题
+      handlePrev();
+    },
+  });
+  
+  // 返回顶部
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  // 切换到下一题
+  const handleNext = () => {
+    if (!filteredItems.length || !currentItem) return;
+    const currentIndex = filteredItems.findIndex((item) => item.id === currentItem.id);
+    if (currentIndex < filteredItems.length - 1) {
+      loadItem(filteredItems[currentIndex + 1]);
+      scrollToTop();
+    }
+  };
+  
+  // 切换到上一题
+  const handlePrev = () => {
+    if (!filteredItems.length || !currentItem) return;
+    const currentIndex = filteredItems.findIndex((item) => item.id === currentItem.id);
+    if (currentIndex > 0) {
+      loadItem(filteredItems[currentIndex - 1]);
+      scrollToTop();
+    }
+  };
+  
+  // 检查是否首次访问，显示引导提示
+  useEffect(() => {
+    const hasSeenGuide = localStorage.getItem('shadowing-guide-seen');
+    if (!hasSeenGuide && !currentItem) {
+      // 延迟1秒显示，让用户先看到页面
+      const timer = setTimeout(() => {
+        setShowGuide(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentItem]);
+  
+  // 隐藏引导提示
+  const hideGuide = () => {
+    setShowGuide(false);
+    localStorage.setItem('shadowing-guide-seen', 'true');
+  };
+
+  // 渲染左侧题库面板内容（桌面端）
+  const renderLeftPanelContent = () => {
+    return (
+      <Card className={`min-h-full flex flex-col bg-white/80 backdrop-blur-sm border-0 rounded-2xl relative transition-all ${
+        showGuide && !currentItem && !sidebarCollapsed
+          ? 'shadow-[0_0_30px_rgba(139,92,246,0.4)] ring-2 ring-violet-400/30'
+          : 'shadow-xl'
+      }`}>
+        {/* 柔和呼吸光效 */}
+        {showGuide && !currentItem && !sidebarCollapsed && (
+          <div className="absolute inset-0 rounded-2xl animate-pulse pointer-events-none z-10">
+            <div className="absolute inset-0 rounded-2xl bg-violet-400/15 blur-xl"></div>
+          </div>
+        )}
+        
+        {/* 标题和折叠按钮 */}
+        <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                  {t.shadowing.shadowing_vocabulary || 'Shadowing 题库'}
+                </h3>
+                <p className="text-xs text-white/80 mt-0.5">{t.shadowing.shadowing_practice || 'Shadowing 练习'}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => fetchItems()}
+              className="text-white/80 hover:text-white p-2.5 rounded-lg hover:bg-white/20 transition-all ml-2 hover:shadow-md"
+              title={t.shadowing.refresh_vocabulary || '刷新题库'}
+              disabled={loading}
+            >
+              <div className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}>🔄</div>
+            </button>
+          </div>
+        </div>
+
+        {/* 过滤器 */}
+        <div className="p-6 bg-gray-50/50 space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Filter className="w-3 h-3 text-blue-600" />
+            </div>
+            <span className="text-sm font-semibold text-gray-700">{t.shadowing.filter}</span>
+          </div>
+
+          <FilterLanguageSelector
+            value={lang}
+            onChange={setLang}
+            allowedLanguages={permissions.allowed_languages}
+            className="h-10"
+          />
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">{t.shadowing.level}</Label>
+            <Select
+              value={level?.toString() || 'all'}
+              onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
+            >
+              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <SelectValue placeholder="全部等级" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                <SelectItem value="all" className="rounded-lg">全部等级</SelectItem>
+                {permissions.allowed_levels.includes(1) && <SelectItem value="1" className="rounded-lg">L1 - 初级</SelectItem>}
+                {permissions.allowed_levels.includes(2) && <SelectItem value="2" className="rounded-lg">L2 - 初中级</SelectItem>}
+                {permissions.allowed_levels.includes(3) && <SelectItem value="3" className="rounded-lg">L3 - 中级</SelectItem>}
+                {permissions.allowed_levels.includes(4) && <SelectItem value="4" className="rounded-lg">L4 - 中高级</SelectItem>}
+                {permissions.allowed_levels.includes(5) && <SelectItem value="5" className="rounded-lg">L5 - 高级</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {recommendedLevel && (
+            <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-200 shadow-md overflow-hidden animate-pulse">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/30 to-amber-200/30 rounded-full blur-2xl" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                    <Star className="w-4 h-4 text-white fill-white" />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <span className="text-sm font-bold text-amber-900">为你推荐</span>
+                  </div>
+                </div>
+                <div className="text-lg font-bold text-amber-900 flex items-baseline gap-2 mb-2">
+                  <span>等级</span>
+                  <span className="text-2xl text-orange-600">L{recommendedLevel}</span>
+                </div>
+                <p className="text-xs text-amber-700 mb-3">根据你的学习进度推荐</p>
+                {level !== recommendedLevel && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLevel(recommendedLevel)}
+                    className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-sm"
+                  >
+                    使用推荐等级
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">{t.shadowing.practice_status}</Label>
+            <Select
+              value={practiced}
+              onValueChange={(v: 'all' | 'practiced' | 'unpracticed') => setPracticed(v)}
+            >
+              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                <SelectItem value="all" className="rounded-lg">全部</SelectItem>
+                <SelectItem value="unpracticed" className="rounded-lg">未练习</SelectItem>
+                <SelectItem value="practiced" className="rounded-lg">已练习</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">{t.shadowing.genre}</Label>
+            <Select value={theme} onValueChange={setTheme}>
+              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                {GENRE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value} className="rounded-lg">
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">{t.shadowing.major_theme}</Label>
+            <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
+              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                <SelectItem value="all" className="rounded-lg">全部大主题</SelectItem>
+                {themes.map((theme) => (
+                  <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
+                    {theme.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">{t.shadowing.minor_theme}</Label>
+            <Select
+              value={selectedSubtopicId}
+              onValueChange={setSelectedSubtopicId}
+              disabled={selectedThemeId === 'all'}
+            >
+              <SelectTrigger className={`h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}>
+                <SelectValue placeholder={selectedThemeId === 'all' ? '请先选择大主题' : '选择小主题'} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                <SelectItem value="all" className="rounded-lg">全部小主题</SelectItem>
+                {subtopics.map((subtopic) => (
+                  <SelectItem key={subtopic.id} value={subtopic.id} className="rounded-lg">
+                    {subtopic.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">{t.shadowing.search || '搜索'}</Label>
+            <Input
+              placeholder={t.shadowing.search_placeholder || '搜索标题、主题...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={getRandomUnpracticed}
+              className="flex-1 h-10 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100 hover:border-green-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+            >
+              <Shuffle className="w-4 h-4 mr-2" />
+              {t.shadowing.random}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={getNextUnpracticed}
+              className="flex-1 h-10 bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-violet-100 hover:border-purple-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+            >
+              <ArrowRight className="w-4 h-4 mr-2" />
+              {t.shadowing.next_question}
+            </Button>
+          </div>
+        </div>
+
+        {/* 统计信息 */}
+        <div className="p-4 space-y-3 bg-gray-50/50">
+          <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-blue-600 font-medium mb-1">总题数</p>
+                <p className="text-2xl font-bold text-blue-900">{filteredItems.length}</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-blue-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <p className="text-xs text-green-600 font-medium mb-1">已完成</p>
+                <p className="text-2xl font-bold text-green-900">{filteredItems.filter((item) => item.isPracticed).length}</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+              </div>
+            </div>
+            <div className="w-full bg-green-200/50 rounded-full h-1.5 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500"
+                style={{ width: `${filteredItems.length > 0 ? (filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100 : 0}%` }}
+              />
+            </div>
+            <p className="text-xs text-green-600 mt-1">
+              {filteredItems.length > 0 ? Math.round((filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100) : 0}%
+            </p>
+          </div>
+          
+          <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-amber-600 font-medium mb-1">草稿中</p>
+                <p className="text-2xl font-bold text-amber-900">{filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <FileEdit className="w-5 h-5 text-amber-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-gray-50 to-gray-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-600 font-medium mb-1">未开始</p>
+                <p className="text-2xl font-bold text-gray-900">{filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-gray-500/10 flex items-center justify-center">
+                <Circle className="w-5 h-5 text-gray-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 题目列表 */}
+        <div className="flex-1 overflow-y-auto" ref={desktopListScrollRef}>
+          {loading ? (
+            <div className="p-6 text-center">
+              <div className="animate-spin w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-sm text-gray-600 font-medium animate-pulse">加载中...</p>
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                <BookOpen className="w-10 h-10 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {t.shadowing.no_questions_found || '没有找到题目'}
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">{t.shadowing.search_adjust_filters_hint || '试试调整筛选条件或搜索关键词'}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setLang('zh');
+                  setLevel(null);
+                  setPracticed('all');
+                  setTheme('all');
+                  setSelectedThemeId('all');
+                  setSelectedSubtopicId('all');
+                  setSearchQuery('');
+                }}
+                className="hover:bg-violet-50 hover:border-violet-300"
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                重置筛选
+              </Button>
+            </div>
+          ) : (
+            <div className="p-2">
+              <Virtuoso
+                customScrollParent={desktopListScrollRef.current ?? undefined}
+                data={filteredItems}
+                itemContent={(index, item) => {
+                  const it = item as any;
+                  return (
+                    <div
+                      key={it.id}
+                      className={`p-3 mb-2 rounded border cursor-pointer transition-colors ${
+                        currentItem?.id === it.id
+                          ? 'bg-blue-50 border-blue-200'
+                          : it.isPracticed
+                            ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                            : it.status === 'draft'
+                              ? 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100'
+                              : 'hover:bg-gray-50'
+                      }`}
+                      onClick={() => loadItem(it)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            {it.isPracticed ? (
+                              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                            ) : it.status === 'draft' ? (
+                              <FileText className="w-4 h-4 text-yellow-600 flex-shrink-0" />
+                            ) : (
+                              <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            )}
+                            <span className="text-sm text-gray-500 font-medium min-w-[1.5rem]">{index + 1}.</span>
+                            <span className="text-sm font-medium truncate">
+                              {it.subtopic ? it.subtopic.title : it.title}
+                              {it.isPracticed && (<span className="ml-1 text-green-600">✓</span>)}
+                              {it.status === 'draft' && (<span className="ml-1 text-yellow-600">📝</span>)}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {(LANG_LABEL as any)[it.lang]} • L{it.level}
+                            {it.cefr && ` • ${it.cefr}`}
+                            {it.isPracticed && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{t.shadowing.completed}</span>
+                            )}
+                            {it.status === 'draft' && !it.isPracticed && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">{t.shadowing.draft}</span>
+                            )}
+                          </div>
+                          {it.isPracticed && (
+                            <div className="mt-2">
+                              <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
+                                <span className="flex items-center gap-1"><Mic className="w-3 h-3" /> {it.stats.recordingCount} 录音</span>
+                                <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> {it.stats.vocabCount} 生词</span>
+                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(it.stats.practiceTime)}</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-1.5"><div className="bg-green-500 h-1.5 rounded-full" style={{ width: '100%' }} /></div>
+                            </div>
+                          )}
+                          {!it.isPracticed && (
+                            <div className="mt-2">
+                              <div className="w-full bg-gray-200 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${it.status === 'draft' ? 'bg-yellow-500' : 'bg-gray-300'}`} style={{ width: it.status === 'draft' ? '50%' : '0%' }} /></div>
+                              <div className="text-xs text-gray-400 mt-1">{it.status === 'draft' ? t.shadowing.draft : t.shadowing.not_started}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </Card>
+    );
+  };
+
+  // 键盘快捷键配置
+  const keyboardShortcuts: KeyboardShortcut[] = [
+    {
+      key: ' ',
+      description: '播放/暂停音频',
+      category: '音频控制',
+      action: () => {
+        if (audioRef.current) {
+          if (isPlaying) {
+            audioRef.current.pause();
+          } else {
+            audioRef.current.play();
+          }
+        }
+      },
+    },
+    {
+      key: 'ArrowLeft',
+      description: '上一题',
+      category: '导航',
+      action: () => {
+        const currentIndex = filteredItems.findIndex((item) => item.id === currentItem?.id);
+        if (currentIndex > 0) {
+          loadItem(filteredItems[currentIndex - 1]);
+        }
+      },
+    },
+    {
+      key: 'ArrowRight',
+      description: '下一题',
+      category: '导航',
+      action: () => {
+        const currentIndex = filteredItems.findIndex((item) => item.id === currentItem?.id);
+        if (currentIndex >= 0 && currentIndex < filteredItems.length - 1) {
+          loadItem(filteredItems[currentIndex + 1]);
+        }
+      },
+    },
+    {
+      key: 't',
+      description: '切换翻译显示',
+      category: '显示控制',
+      action: () => setShowTranslation((prev) => !prev),
+    },
+    {
+      key: 'v',
+      description: '切换生词模式',
+      category: '显示控制',
+      action: () => setIsVocabMode((prev) => !prev),
+    },
+    {
+      key: 's',
+      description: '保存草稿',
+      category: '操作',
+      action: saveDraft,
+    },
+    {
+      key: 'Enter',
+      ctrl: true,
+      cmd: true,
+      description: '完成并保存',
+      category: '操作',
+      action: unifiedCompleteAndSave,
+    },
+    {
+      key: '?',
+      shift: true,
+      description: '显示快捷键帮助',
+      category: '帮助',
+      action: () => setShowShortcutsHelp(true),
+    },
+    {
+      key: '1',
+      description: '跳转到步骤1',
+      category: '步骤导航',
+      action: () => setStep(1),
+    },
+    {
+      key: '2',
+      description: '跳转到步骤2',
+      category: '步骤导航',
+      action: () => setStep(2),
+    },
+    {
+      key: '3',
+      description: '跳转到步骤3',
+      category: '步骤导航',
+      action: () => setStep(3),
+    },
+    {
+      key: '4',
+      description: '跳转到步骤4',
+      category: '步骤导航',
+      action: () => setStep(4),
+    },
+    {
+      key: '5',
+      description: '跳转到步骤5',
+      category: '步骤导航',
+      action: () => setStep(5),
+    },
+  ];
+
+  // 使用键盘快捷键（仅在桌面端启用）
+  useKeyboardShortcuts({
+    shortcuts: keyboardShortcuts,
+    enabled: !actualIsMobile && !!currentItem,
+  });
 
   // 如果正在检查认证或用户未登录，显示相应提示
   if (authLoading) {
@@ -2504,30 +3108,54 @@ export default function ShadowingPage() {
 
         {/* 移动端布局 */}
         {actualIsMobile ? (
-          <div className="space-y-6">
-            {/* 手机端顶部工具栏 - 美化 */}
-            <div className="flex items-center justify-between bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-white" />
+          <div className="space-y-6" ref={mainContentRef} style={{ willChange: 'scroll-position' }}>
+            {/* 手机端顶部工具栏 - 智能隐藏版 */}
+            <div 
+              className={`sticky top-0 z-30 transition-transform duration-300 ${
+                showHeader ? 'translate-y-0' : '-translate-y-full'
+              }`}
+              style={{ willChange: 'transform' }}
+            >
+              <div className="flex items-center justify-between bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-lg border border-white/20">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                  <BookOpen className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  <h1 className="text-base font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                     {t.shadowing.shadowing_practice || 'Shadowing 练习'}
                   </h1>
-                  <p className="text-xs text-gray-500">跟读练习，提升口语能力</p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setMobileSidebarOpen(true)}
-                className="flex items-center gap-2 bg-white/50 hover:bg-white/80 border-white/30 shadow-md"
-                aria-label={t.shadowing.shadowing_vocabulary}
-              >
-                <Menu className="w-4 h-4" />
-                {t.shadowing.shadowing_vocabulary}
-              </Button>
+              
+              {/* 题库按钮 - 柔和光效引导 */}
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setMobileSidebarOpen(true);
+                    hideGuide();
+                  }}
+                  className={`flex items-center gap-1.5 bg-white/50 hover:bg-white/80 border-white/30 h-9 px-3 transition-all ${
+                    showGuide 
+                      ? 'shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-2 ring-blue-400/30 ring-offset-2' 
+                      : 'shadow-md'
+                  }`}
+                  aria-label={t.shadowing.shadowing_vocabulary}
+                >
+                  <Menu className="w-4 h-4" />
+                  <span className="text-sm">题库</span>
+                </Button>
+                
+                {/* 呼吸光效 */}
+                {showGuide && (
+                  <div className="absolute inset-0 rounded-lg animate-pulse">
+                    <div className="absolute inset-0 rounded-lg bg-blue-400/20 blur-md"></div>
+                  </div>
+                )}
+              </div>
+              </div>
             </div>
 
             {/* 移动端步骤栏与提示（置于标题下方） */}
@@ -2564,9 +3192,9 @@ export default function ShadowingPage() {
               />
             )}
 
-            {/* 手机端侧边栏 */}
+            {/* 手机端侧边栏 - 优化宽度 */}
             <div
-              className={`fixed top-0 left-0 h-full w-80 bg-white/95 backdrop-blur-xl z-50 transform transition-all duration-300 shadow-2xl border-r border-white/20 ${
+              className={`fixed top-0 left-0 h-full w-[90vw] max-w-[360px] bg-white/95 backdrop-blur-xl z-50 transform transition-all duration-300 shadow-2xl border-r border-white/20 ${
                 mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
               }`}
             >
@@ -2605,228 +3233,225 @@ export default function ShadowingPage() {
                   </div>
                 </div>
 
-                {/* 侧边栏内容 */}
+                {/* 侧边栏内容 - 优化版 */}
                 <div className="flex-1 overflow-y-auto bg-gray-50/50">
-                  {/* 过滤器 */}
-                  <div className="p-6 space-y-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Filter className="w-3 h-3 text-blue-600" />
-                      </div>
-                      <span className="text-sm font-semibold text-gray-700">
-                        {t.shadowing.filter}
-                      </span>
-                    </div>
-
-                    {/* 语言选择 */}
-                    <FilterLanguageSelector
-                      value={lang}
-                      onChange={setLang}
-                      allowedLanguages={permissions.allowed_languages}
-                      className="h-11"
-                    />
-
-                    {/* 等级选择 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">
-                        {t.shadowing.level}
-                      </Label>
-                      <Select
-                        value={level?.toString() || 'all'}
-                        onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
-                      >
-                        <SelectTrigger className="h-11 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                          <SelectValue placeholder={t.shadowing.all_levels} />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                          <SelectItem value="all" className="rounded-lg">
-                            {t.shadowing.all_levels}
-                          </SelectItem>
-                          {permissions.allowed_levels.includes(1) && (
-                            <SelectItem value="1" className="rounded-lg">
-                              L1 - 初级
-                            </SelectItem>
-                          )}
-                          {permissions.allowed_levels.includes(2) && (
-                            <SelectItem value="2" className="rounded-lg">
-                              L2 - 初中级
-                            </SelectItem>
-                          )}
-                          {permissions.allowed_levels.includes(3) && (
-                            <SelectItem value="3" className="rounded-lg">
-                              L3 - 中级
-                            </SelectItem>
-                          )}
-                          {permissions.allowed_levels.includes(4) && (
-                            <SelectItem value="4" className="rounded-lg">
-                              L4 - 中高级
-                            </SelectItem>
-                          )}
-                          {permissions.allowed_levels.includes(5) && (
-                            <SelectItem value="5" className="rounded-lg">
-                              L5 - 高级
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* 推荐等级显示 - 美化版 */}
-                    {recommendedLevel && (
-                      <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-200 shadow-md overflow-hidden animate-pulse">
-                        {/* 装饰性闪光效果 */}
-                        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/30 to-amber-200/30 rounded-full blur-2xl" />
-                        
-                        <div className="relative z-10">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                              <Star className="w-4 h-4 text-white fill-white" />
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Sparkles className="w-4 h-4 text-amber-600" />
-                              <span className="text-sm font-bold text-amber-900">为你推荐</span>
-                            </div>
-                          </div>
-                          <div className="text-lg font-bold text-amber-900 flex items-baseline gap-2 mb-2">
-                            <span>等级</span>
-                            <span className="text-2xl text-orange-600">L{recommendedLevel}</span>
-                          </div>
-                          <p className="text-xs text-amber-700 mb-3">根据你的学习进度推荐</p>
-                          {level !== recommendedLevel && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setLevel(recommendedLevel)}
-                              className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-sm"
-                            >
-                              使用推荐等级
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 练习状态 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">
-                        {t.shadowing.practice_status}
-                      </Label>
-                      <Select
-                        value={practiced}
-                        onValueChange={(v: 'all' | 'practiced' | 'unpracticed') => setPracticed(v)}
-                      >
-                        <SelectTrigger className="h-11 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                          <SelectItem value="all" className="rounded-lg">
-                            {t.shadowing.all_status}
-                          </SelectItem>
-                          <SelectItem value="unpracticed" className="rounded-lg">
-                            {t.shadowing.unpracticed}
-                          </SelectItem>
-                          <SelectItem value="practiced" className="rounded-lg">
-                            {t.shadowing.practiced}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* 体裁筛选 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">
-                        {t.shadowing.genre}
-                      </Label>
-                      <Select value={theme} onValueChange={setTheme}>
-                        <SelectTrigger className="h-11 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                          {GENRE_OPTIONS.map((option) => (
-                            <SelectItem
-                              key={option.value}
-                              value={option.value}
-                              className="rounded-lg"
-                            >
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* 大主题筛选 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">
-                        {t.shadowing.major_theme}
-                      </Label>
-                      <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
-                        <SelectTrigger className="h-11 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                          <SelectItem value="all" className="rounded-lg">
-                            {t.shadowing.all_major_themes}
-                          </SelectItem>
-                          {themes.map((theme) => (
-                            <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
-                              {theme.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* 小主题筛选 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">
-                        {t.shadowing.minor_theme}
-                      </Label>
-                      <Select
-                        value={selectedSubtopicId}
-                        onValueChange={setSelectedSubtopicId}
-                        disabled={selectedThemeId === 'all'}
-                      >
-                        <SelectTrigger
-                          className={`h-11 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}
-                        >
-                          <SelectValue
-                            placeholder={
-                              selectedThemeId === 'all'
-                                ? t.shadowing.select_major_theme_first
-                                : t.shadowing.all_minor_themes
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                          <SelectItem value="all" className="rounded-lg">
-                            {t.shadowing.all_minor_themes}
-                          </SelectItem>
-                          {subtopics.map((subtopic) => (
-                            <SelectItem
-                              key={subtopic.id}
-                              value={subtopic.id}
-                              className="rounded-lg"
-                            >
-                              {subtopic.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* 搜索 */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium text-gray-700">
-                        {t.shadowing.search}
-                      </Label>
-                      <Input
-                        placeholder={t.shadowing.search_placeholder}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-11 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  {/* 过滤器 - 使用折叠式布局 */}
+                  <div className="p-4 space-y-4">
+                    {/* 基础筛选 - 默认展开 */}
+                    <CollapsibleFilterSection
+                      title={t.shadowing.filter || '筛选'}
+                      icon={<Filter className="w-3 h-3 text-blue-600" />}
+                      defaultOpen={true}
+                    >
+                      {/* 语言选择 */}
+                      <FilterLanguageSelector
+                        value={lang}
+                        onChange={setLang}
+                        allowedLanguages={permissions.allowed_languages}
+                        className="h-10"
                       />
-                    </div>
+
+                      {/* 等级选择 */}
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-gray-700">
+                          {t.shadowing.level}
+                        </Label>
+                        <Select
+                          value={level?.toString() || 'all'}
+                          onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
+                        >
+                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                            <SelectValue placeholder={t.shadowing.all_levels} />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                            <SelectItem value="all" className="rounded-lg">
+                              {t.shadowing.all_levels}
+                            </SelectItem>
+                            {permissions.allowed_levels.includes(1) && (
+                              <SelectItem value="1" className="rounded-lg">
+                                L1 - 初级
+                              </SelectItem>
+                            )}
+                            {permissions.allowed_levels.includes(2) && (
+                              <SelectItem value="2" className="rounded-lg">
+                                L2 - 初中级
+                              </SelectItem>
+                            )}
+                            {permissions.allowed_levels.includes(3) && (
+                              <SelectItem value="3" className="rounded-lg">
+                                L3 - 中级
+                              </SelectItem>
+                            )}
+                            {permissions.allowed_levels.includes(4) && (
+                              <SelectItem value="4" className="rounded-lg">
+                                L4 - 中高级
+                              </SelectItem>
+                            )}
+                            {permissions.allowed_levels.includes(5) && (
+                              <SelectItem value="5" className="rounded-lg">
+                                L5 - 高级
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* 推荐等级显示 - 紧凑版 */}
+                      {recommendedLevel && (
+                        <div className="relative p-3 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border border-amber-200 overflow-hidden">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
+                                <Star className="w-3 h-3 text-white fill-white" />
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold text-amber-900">推荐 L{recommendedLevel}</p>
+                                <p className="text-[10px] text-amber-600">根据学习进度</p>
+                              </div>
+                            </div>
+                            {level !== recommendedLevel && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setLevel(recommendedLevel)}
+                                className="h-7 text-xs px-2 bg-amber-500 hover:bg-amber-600 text-white border-0"
+                              >
+                                使用
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 练习状态 */}
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-gray-700">
+                          {t.shadowing.practice_status}
+                        </Label>
+                        <Select
+                          value={practiced}
+                          onValueChange={(v: 'all' | 'practiced' | 'unpracticed') => setPracticed(v)}
+                        >
+                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                            <SelectItem value="all" className="rounded-lg">
+                              {t.shadowing.all_status}
+                            </SelectItem>
+                            <SelectItem value="unpracticed" className="rounded-lg">
+                              {t.shadowing.unpracticed}
+                            </SelectItem>
+                            <SelectItem value="practiced" className="rounded-lg">
+                              {t.shadowing.practiced}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CollapsibleFilterSection>
+
+                    {/* 高级筛选 - 可折叠 */}
+                    <CollapsibleFilterSection
+                      title="高级筛选"
+                      icon={<Target className="w-3 h-3 text-blue-600" />}
+                      defaultOpen={false}
+                    >
+                      {/* 体裁筛选 */}
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-gray-700">
+                          {t.shadowing.genre}
+                        </Label>
+                        <Select value={theme} onValueChange={setTheme}>
+                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                            {GENRE_OPTIONS.map((option) => (
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                                className="rounded-lg"
+                              >
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* 大主题筛选 */}
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-gray-700">
+                          {t.shadowing.major_theme}
+                        </Label>
+                        <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
+                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                            <SelectItem value="all" className="rounded-lg">
+                              {t.shadowing.all_major_themes}
+                            </SelectItem>
+                            {themes.map((theme) => (
+                              <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
+                                {theme.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* 小主题筛选 */}
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-gray-700">
+                          {t.shadowing.minor_theme}
+                        </Label>
+                        <Select
+                          value={selectedSubtopicId}
+                          onValueChange={setSelectedSubtopicId}
+                          disabled={selectedThemeId === 'all'}
+                        >
+                          <SelectTrigger
+                            className={`h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}
+                          >
+                            <SelectValue
+                              placeholder={
+                                selectedThemeId === 'all'
+                                  ? t.shadowing.select_major_theme_first
+                                  : t.shadowing.all_minor_themes
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                            <SelectItem value="all" className="rounded-lg">
+                              {t.shadowing.all_minor_themes}
+                            </SelectItem>
+                            {subtopics.map((subtopic) => (
+                              <SelectItem
+                                key={subtopic.id}
+                                value={subtopic.id}
+                                className="rounded-lg"
+                              >
+                                {subtopic.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* 搜索 */}
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium text-gray-700">
+                          {t.shadowing.search}
+                        </Label>
+                        <Input
+                          placeholder={t.shadowing.search_placeholder}
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </CollapsibleFilterSection>
 
                     {/* 快捷操作 */}
                     <div className="flex gap-3">
@@ -2851,70 +3476,13 @@ export default function ShadowingPage() {
                     </div>
                   </div>
 
-                  {/* 统计信息 - 卡片化设计（移动端） */}
-                  <div className="p-4 space-y-3 bg-gray-50/50">
-                    {/* 总题数卡片 */}
-                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 transition-all hover:shadow-md">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-blue-600 font-medium mb-1">总题数</p>
-                          <p className="text-2xl font-bold text-blue-900">{filteredItems.length}</p>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                          <BookOpen className="w-5 h-5 text-blue-600" />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* 已完成卡片 */}
-                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-3 transition-all hover:shadow-md">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <p className="text-xs text-green-600 font-medium mb-1">已完成</p>
-                          <p className="text-2xl font-bold text-green-900">{filteredItems.filter((item) => item.isPracticed).length}</p>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                          <CheckCircle className="w-5 h-5 text-green-600" />
-                        </div>
-                      </div>
-                      {/* 进度条 */}
-                      <div className="w-full bg-green-200/50 rounded-full h-1.5 overflow-hidden">
-                        <div 
-                          className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500"
-                          style={{ width: `${filteredItems.length > 0 ? (filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100 : 0}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-green-600 mt-1">
-                        {filteredItems.length > 0 ? Math.round((filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100) : 0}%
-                      </p>
-                    </div>
-                    
-                    {/* 草稿中卡片 */}
-                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 transition-all hover:shadow-md">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-amber-600 font-medium mb-1">草稿中</p>
-                          <p className="text-2xl font-bold text-amber-900">{filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}</p>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                          <FileEdit className="w-5 h-5 text-amber-600" />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* 未开始卡片 */}
-                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-gray-50 to-gray-100/50 p-3 transition-all hover:shadow-md">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-gray-600 font-medium mb-1">未开始</p>
-                          <p className="text-2xl font-bold text-gray-900">{filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}</p>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-gray-500/10 flex items-center justify-center">
-                          <Circle className="w-5 h-5 text-gray-600" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {/* 统计信息 - 紧凑横向卡片 */}
+                  <CompactStatsCards
+                    totalCount={filteredItems.length}
+                    completedCount={filteredItems.filter((item) => item.isPracticed).length}
+                    draftCount={filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}
+                    unstartedCount={filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}
+                  />
 
                   {/* 题目列表 */}
                   <div className="flex-1 overflow-y-auto" ref={mobileListScrollRef}>
@@ -2986,7 +3554,7 @@ export default function ShadowingPage() {
                                         {it.subtopic ? it.subtopic.title : it.title}
                                       </h4>
                                     </div>
-                                    <div className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">{it.text.substring(0, 100)}...</div>
+                                    <div className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">{it.text.substring(0, 60)}...</div>
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${it.lang === 'en' ? 'bg-blue-100 text-blue-700' : it.lang === 'ja' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{(LANG_LABEL as any)[it.lang]}</span>
                                       <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">L{it.level}</span>
@@ -3009,7 +3577,7 @@ export default function ShadowingPage() {
             </div>
 
             {/* 手机端主内容区域 */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {!currentItem ? (
                 <Card className="p-8 bg-gradient-to-br from-white to-gray-50 border-0 shadow-xl rounded-3xl">
                   <div className="text-center">
@@ -3026,36 +3594,70 @@ export default function ShadowingPage() {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {/* 手机端步骤导航与提示（未完成时显示） */}
+                  {/* 手机端步骤导航与提示（未完成时显示）- 紧凑折叠式 */}
                   {gatingActive && (
-                    <Card className="p-4 bg-white border-0 shadow-sm">
-                      <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <span className={`px-2 py-1 rounded ${step===1?'bg-blue-600 text-white':'bg-gray-100'}`}>1 {t.shadowing.step_labels?.blind_listen || '盲听'}</span>
-                          <span className={`px-2 py-1 rounded ${step===2?'bg-blue-600 text-white':'bg-gray-100'}`}>2 看原文</span>
-                          <span className={`px-2 py-1 rounded ${step===3?'bg-blue-600 text-white':'bg-gray-100'}`}>3 {t.shadowing.step_labels?.select_words || '选生词'}</span>
-                          <span className={`px-2 py-1 rounded ${step===4?'bg-blue-600 text-white':'bg-gray-100'}`}>4 {t.shadowing.step_labels?.view_translation || '看翻译'}</span>
-                          <span className={`px-2 py-1 rounded ${step===5?'bg-blue-600 text-white':'bg-gray-100'}`}>5 {t.shadowing.step_labels?.record_scoring || '录音评分'}</span>
+                    <Card className="bg-white border-0 shadow-sm overflow-hidden">
+                      <button
+                        onClick={() => setStepTipExpanded(!stepTipExpanded)}
+                        className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+                        aria-expanded={stepTipExpanded}
+                      >
+                        <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin">
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===1?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>1 盲听</span>
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===2?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>2 原文</span>
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===3?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>3 生词</span>
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===4?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>4 翻译</span>
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===5?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>5 录音</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} disabled={step===1}>{t.shadowing.prev_step || '上一步'}</Button>
-                          <Button size="sm" onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} disabled={step===5}>{t.shadowing.next_step || '下一步'}</Button>
+                        <div className="flex items-center gap-2 ml-2">
+                          <span className="text-xs text-gray-500">{stepTipExpanded ? '收起' : '展开'}</span>
+                          <svg className={`w-4 h-4 text-gray-400 transition-transform ${stepTipExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </button>
+                      
+                      {/* 展开的详细内容 */}
+                      <div className={`transition-all duration-200 ${stepTipExpanded ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+                        <div className="px-4 pb-3 space-y-2">
+                          <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                            💡 {stepTips[step]}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} 
+                              disabled={step===1}
+                              className="flex-1 h-8 text-xs"
+                            >
+                              ← 上一步
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} 
+                              disabled={step===5}
+                              className="flex-1 h-8 text-xs"
+                            >
+                              下一步 →
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                      <div className="mt-3 text-xs text-gray-700">{stepTips[step]}</div>
                     </Card>
                   )}
                   {/* 题目信息 - 手机端优化 */}
-                  <Card className="p-6 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg rounded-2xl">
-                    <div className="mb-6">
+                  <Card className="p-4 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg rounded-2xl">
+                    <div className="mb-4">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
                           <h2 className="text-xl font-bold text-gray-900 mb-3 leading-tight">
                             {currentItem.title}
                           </h2>
-                          <div className="flex items-center gap-3 flex-wrap">
+                          {/* 标签 - 横向滚动布局 */}
+                          <div className="flex items-center gap-2 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                             <span
-                              className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              className={`snap-start flex-shrink-0 px-3 py-1 rounded-full text-sm font-medium ${
                                 currentItem.lang === 'en'
                                   ? 'bg-blue-100 text-blue-700'
                                   : currentItem.lang === 'ja'
@@ -3065,16 +3667,16 @@ export default function ShadowingPage() {
                             >
                               {LANG_LABEL[currentItem.lang]}
                             </span>
-                            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                            <span className="snap-start flex-shrink-0 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
                               {t.shadowing.level} L{currentItem.level}
                             </span>
                             {currentItem.cefr && (
-                              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                              <span className="snap-start flex-shrink-0 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
                                 {currentItem.cefr}
                               </span>
                             )}
                             {currentItem.tokens && (
-                              <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+                              <span className="snap-start flex-shrink-0 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
                                 {currentItem.tokens} {t.shadowing.words || '词'}
                               </span>
                             )}
@@ -3082,13 +3684,13 @@ export default function ShadowingPage() {
                         </div>
                       </div>
 
-                      {/* 手机端操作按钮 */}
+                      {/* 手机端操作按钮 - 统一高度h-14 */}
                       <div className="grid grid-cols-1 gap-3">
                         <Button
                           onClick={playAudio}
                           variant="outline"
-                          size="sm"
-                          className={`h-12 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all ${highlightPlay ? 'animate-pulse ring-2 ring-blue-400' : ''}`}
+                          size="lg"
+                          className={`h-14 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all ${highlightPlay ? 'animate-pulse ring-2 ring-blue-400' : ''}`}
                         >
                           {isPlaying ? (
                             <Pause className="w-5 h-5 mr-2" />
@@ -3101,20 +3703,20 @@ export default function ShadowingPage() {
                         <div className="grid grid-cols-2 gap-3">
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="lg"
                             onClick={saveDraft}
                             disabled={saving}
-                            className="h-12 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 hover:from-yellow-100 hover:to-amber-100 hover:border-yellow-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                            className="h-14 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 hover:from-yellow-100 hover:to-amber-100 hover:border-yellow-300 rounded-xl shadow-sm hover:shadow-md transition-all"
                           >
                             <Save className="w-5 h-5 mr-2" />
                             {saving ? t.common.loading : t.shadowing.save_draft}
                           </Button>
 
                           <Button
-                            size="sm"
+                            size="lg"
                             onClick={unifiedCompleteAndSave}
                             disabled={saving}
-                            className="h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                            className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
                           >
                             <CheckCircle className="w-5 h-5 mr-2" />
           {saving ? (t.shadowing.saving_modal_title || '保存中...') : '完成'}
@@ -3150,7 +3752,8 @@ export default function ShadowingPage() {
 
                     {/* 文本内容（步骤>=2显示；步骤5也需显示原文） */}
                     {(!gatingActive || step >= 2) && (
-                    <div id="shadowing-text" className="p-4 bg-gray-50 rounded-lg">
+                    <div id="shadowing-text" className="relative">
+                      <div className="px-6 py-4 bg-amber-50/30 rounded-xl max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                       {step === 4 && currentItem.translations && currentItem.translations[translationLang] && (
                         <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                           <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
@@ -3176,7 +3779,7 @@ export default function ShadowingPage() {
                             onSelectionChange={handleTextSelection}
                             clearSelection={clearSelection}
                             disabled={false}
-                            className="text-base leading-relaxed"
+                            className="text-lg leading-loose"
                           />
                           {selectedText && (
                             <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -3219,7 +3822,7 @@ export default function ShadowingPage() {
                           )}
                         </>
                       ) : (
-                        <div className="text-base leading-relaxed">
+                        <div className="text-lg leading-loose">
                           {/* 文本渲染逻辑保持不变 */}
                           {(() => {
                             // 格式化对话文本，按说话者分行
@@ -3380,68 +3983,41 @@ export default function ShadowingPage() {
                           })()}
                         </div>
                       )}
+                      </div>
+                      {/* 底部渐变遮罩提示有更多内容 */}
+                      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 to-transparent pointer-events-none rounded-b-xl"></div>
                     </div>
                     )}
 
-                    {/* 音频播放器（第1-5步均可见） */}
+                    {/* 音频播放器 - 优化版 */}
                     {currentItem.audio_url && (
-                      <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-sm font-medium text-blue-700">
-                            {t.shadowing.original_audio_text}
+                      <div className="mt-4">
+                        <div className="mb-2 px-1">
+                          <span className="text-sm font-medium text-gray-700">
+                            {t.shadowing.original_audio_text || '原音频'}
                           </span>
-                          {currentItem.duration_ms && (
-                            <span className="text-xs text-blue-600">
-                              {(t.shadowing.duration_seconds || '时长: {seconds}秒').replace('{seconds}', String(Math.round(currentItem.duration_ms / 1000)))}
-                            </span>
-                          )}
-                          <div className="ml-auto flex items-center gap-2">
-                            <span className="text-xs text-blue-700">倍速</span>
-                            <div className="flex flex-wrap gap-1">
-                              {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3].map((r) => (
-                                <button
-                                  key={r}
-                                  onClick={() => {
-                                    setPlaybackRate(r);
-                                    if (audioRef.current) audioRef.current.playbackRate = r;
-                                  }}
-                                  className={`px-2 py-0.5 rounded text-xs border ${
-                                    playbackRate === r
-                                      ? 'bg-blue-600 text-white border-blue-600'
-                                      : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
-                                  }`}
-                                >
-                                  {r}x
-                                </button>
-                              ))}
-                            </div>
-                          </div>
                         </div>
-                        <audio
-                          controls
-                          src={currentItem.audio_url}
-                          preload="none"
-                          className="w-full"
-                          ref={audioRef}
-                          onPlay={() => {
-                            if (audioRef.current) audioRef.current.playbackRate = playbackRate;
-                            setIsPlaying(true);
-                          }}
-                          onPause={() => setIsPlaying(false)}
-                          onEnded={() => setIsPlaying(false)}
+                        <EnhancedAudioPlayer
+                          audioUrl={currentItem.audio_url}
+                          onPlayStateChange={(playing) => setIsPlaying(playing)}
+                          duration_ms={currentItem.duration_ms}
                         />
                       </div>
                     )}
                   </Card>
 
-                  {/* 生词区域 - 手机端优化 */}
+                  {/* 生词区域 - 手机端优化 - 折叠式 */}
                   {previousWords.length > 0 && (
-                    <Card className="p-4">
-                      <h3 className="text-lg font-semibold text-gray-600 mb-3">
-                        {(t.shadowing.previous_words_title || '之前的生词 ({count})').replace('{count}', String(previousWords.length))}
-                      </h3>
-
-                      <div className="space-y-3">
+                    <CollapsibleCard
+                      title="之前的生词"
+                      icon={<BookOpen className="w-5 h-5 text-gray-600" />}
+                      badge={<span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{previousWords.length}</span>}
+                      summary={`${previousWords.length}个生词`}
+                      defaultOpen={false}
+                      className="border-0 shadow-sm"
+                      contentClassName="pt-2"
+                    >
+                      <div className="space-y-2">
                         {previousWords.map((item, index) => (
                           <div
                             key={`prev-${index}`}
@@ -3505,17 +4081,21 @@ export default function ShadowingPage() {
                           </div>
                         ))}
                       </div>
-                    </Card>
+                    </CollapsibleCard>
                   )}
 
-                  {/* 本次选中的生词 */}
+                  {/* 本次选中的生词 - 折叠式 */}
                   {selectedWords.length > 0 && (
-                    <Card className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-semibold text-blue-600">
-                          {(t.shadowing.selected_words_title || '本次选中的生词 ({count})').replace('{count}', String(selectedWords.length))}
-                        </h3>
-                        <div className="flex gap-2">
+                    <CollapsibleCard
+                      title="本次选中的生词"
+                      icon={<Sparkles className="w-5 h-5 text-blue-600" />}
+                      badge={<span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-xs font-medium">{selectedWords.length}</span>}
+                      summary={`${selectedWords.length}个生词待处理`}
+                      defaultOpen={true}
+                      className="border-0 shadow-sm"
+                      contentClassName="pt-2"
+                    >
+                      <div className="flex gap-2 mb-3">
                           <Button
                             variant="outline"
                             size="sm"
@@ -3534,7 +4114,6 @@ export default function ShadowingPage() {
                             {isImporting ? (t.shadowing.importing || '导入中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
                           </Button>
                         </div>
-                      </div>
 
                       {/* 批量AI解释进度显示 */}
                       {isGeneratingBatchExplanation && batchExplanationProgress.total > 0 && (
@@ -3626,7 +4205,7 @@ export default function ShadowingPage() {
                           </div>
                         ))}
                       </div>
-                    </Card>
+                    </CollapsibleCard>
                   )}
 
                   {/* 翻译模块 - 移动端（仅步骤4显示或完成后） */}
@@ -4192,6 +4771,40 @@ export default function ShadowingPage() {
                 </div>
               </>
             )}
+
+            {/* 底部导航栏 - 仅在有题目时显示 */}
+            {currentItem && (
+              <BottomNavBar
+                onPrevious={handlePrev}
+                onNext={handleNext}
+                onRecord={() => {
+                  // 滚动到录音区域
+                  const recordingSection = document.getElementById('recording-section');
+                  recordingSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+                onComplete={unifiedCompleteAndSave}
+                isRecording={false}
+                showPrevious={true}
+                showNext={true}
+                showRecord={step === 5 && !practiceComplete}
+                showComplete={step === 5 && !practiceComplete}
+                disabled={saving}
+              />
+            )}
+
+            {/* 浮动操作按钮 */}
+            {currentItem && (
+              <FloatingActionButtons
+                showVocabButton={step === 3 && !practiceComplete}
+                isVocabMode={isVocabMode}
+                onToggleVocabMode={() => setIsVocabMode(!isVocabMode)}
+                showTranslationButton={step === 4 && !practiceComplete}
+                showTranslation={showTranslation}
+                onToggleTranslation={() => setShowTranslation(!showTranslation)}
+                showScrollToTop={scrollY > 300}
+                onScrollToTop={scrollToTop}
+              />
+            )}
           </div>
         ) : (
           /* 桌面端布局 - 优化滚动体验 */
@@ -4200,7 +4813,17 @@ export default function ShadowingPage() {
             <div
               className={`${sidebarCollapsed ? 'w-16' : 'w-72'} flex-shrink-0 transition-all duration-300 max-h-[85vh] overflow-y-auto`}
             >
-              <Card className="min-h-full flex flex-col bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-2xl">
+              <Card className={`min-h-full flex flex-col bg-white/80 backdrop-blur-sm border-0 rounded-2xl relative transition-all ${
+                showGuide && !currentItem && !sidebarCollapsed
+                  ? 'shadow-[0_0_30px_rgba(139,92,246,0.4)] ring-2 ring-violet-400/30'
+                  : 'shadow-xl'
+              }`}>
+                {/* 柔和呼吸光效 */}
+                {showGuide && !currentItem && !sidebarCollapsed && (
+                  <div className="absolute inset-0 rounded-2xl animate-pulse pointer-events-none z-10">
+                    <div className="absolute inset-0 rounded-2xl bg-violet-400/15 blur-xl"></div>
+                  </div>
+                )}
                 {/* 标题和折叠按钮 - 美化版 */}
                 <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl relative overflow-hidden">
                   {/* 装饰性背景光晕 */}
@@ -5123,50 +5746,16 @@ export default function ShadowingPage() {
                       </div>
                     )}
 
-                    {/* 音频播放器（步骤5隐藏；完成或移动端保持原样） */}
+                    {/* 音频播放器（步骤5隐藏；完成或移动端保持原样） - 使用增强版 */}
                     {currentItem.audio_url && (!gatingActive || step !== 5) && (
-                      <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                        <div className="flex items-center gap-3 mb-2">
+                      <div className="mt-4">
+                        <div className="mb-2 flex items-center gap-2">
                           <span className="text-sm font-medium text-blue-700">{t.shadowing.original_audio_text || '原文音频'}</span>
-                          {currentItem.duration_ms && (
-                            <span className="text-xs text-blue-600">
-                              {(t.shadowing.duration_seconds || '时长: {seconds}秒').replace('{seconds}', String(Math.round(currentItem.duration_ms / 1000)))}
-                            </span>
-                          )}
-                          <div className="ml-auto flex items-center gap-2">
-                            <span className="text-xs text-blue-700">倍速</span>
-                            <div className="flex flex-wrap gap-1">
-                              {[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3].map((r) => (
-                                <button
-                                  key={r}
-                                  onClick={() => {
-                                    setPlaybackRate(r);
-                                    if (audioRef.current) audioRef.current.playbackRate = r;
-                                  }}
-                                  className={`px-2 py-0.5 rounded text-xs border ${
-                                    playbackRate === r
-                                      ? 'bg-blue-600 text-white border-blue-600'
-                                      : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
-                                  }`}
-                                >
-                                  {r}x
-                                </button>
-                              ))}
-                            </div>
-                          </div>
                         </div>
-                        <audio
-                          controls
-                          src={currentItem.audio_url}
-                          preload="none"
-                          className="w-full"
-                          ref={audioRef}
-                          onPlay={() => {
-                            if (audioRef.current) audioRef.current.playbackRate = playbackRate;
-                            setIsPlaying(true);
-                          }}
-                          onPause={() => setIsPlaying(false)}
-                          onEnded={() => setIsPlaying(false)}
+                        <EnhancedAudioPlayer
+                          audioUrl={currentItem.audio_url}
+                          duration_ms={currentItem.duration_ms}
+                          onPlayStateChange={(playing) => setIsPlaying(playing)}
                         />
                       </div>
                     )}
@@ -5898,6 +6487,15 @@ export default function ShadowingPage() {
             <X className="h-4 w-4" />
           </button>
         </div>
+      )}
+      
+      {/* 快捷键帮助弹窗 */}
+      {!actualIsMobile && (
+        <ShortcutsHelpModal
+          isOpen={showShortcutsHelp}
+          onClose={() => setShowShortcutsHelp(false)}
+          shortcuts={keyboardShortcuts}
+        />
       )}
     </main>
   );
