@@ -55,6 +55,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "recharts": "^3.1.2",
+    "react-virtuoso": "^4.14.1",
     "sonner": "^2.0.7",
     "ws": "^8.18.3",
     "yauzl": "^3.2.0",
