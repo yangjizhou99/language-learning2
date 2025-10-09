@@ -43,6 +43,9 @@ import {
   Pause,
   Menu,
   X,
+  Star,
+  Sparkles,
+  FileEdit,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCached, setCached } from '@/lib/clientCache';
@@ -2702,31 +2705,38 @@ export default function EnglishShadowingPage() {
                       </Select>
                     </div>
 
-                    {/* 推荐等级显示 */}
+                    {/* 推荐等级显示 - 美化版 */}
                     {recommendedLevel && (
-                      <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-xs text-white font-bold">!</span>
+                      <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-200 shadow-md overflow-hidden animate-pulse">
+                        {/* 装饰性闪光效果 */}
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/30 to-amber-200/30 rounded-full blur-2xl" />
+                        
+                        <div className="relative z-10">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                              <Star className="w-4 h-4 text-white fill-white" />
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Sparkles className="w-4 h-4 text-amber-600" />
+                              <span className="text-sm font-bold text-amber-900">为你推荐</span>
+                            </div>
                           </div>
-                          <span className="text-sm font-medium text-blue-700">推荐等级</span>
-                        </div>
-                        <p className="text-sm text-blue-600 mb-2">
-                          {t.shadowing.recommend_level.replace(
-                            '{level}',
-                            recommendedLevel.toString(),
+                          <div className="text-lg font-bold text-amber-900 flex items-baseline gap-2 mb-2">
+                            <span>等级</span>
+                            <span className="text-2xl text-orange-600">L{recommendedLevel}</span>
+                          </div>
+                          <p className="text-xs text-amber-700 mb-3">根据你的学习进度推荐</p>
+                          {level !== recommendedLevel && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setLevel(recommendedLevel)}
+                              className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-sm"
+                            >
+                              使用推荐等级
+                            </Button>
                           )}
-                        </p>
-                        {level !== recommendedLevel && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setLevel(recommendedLevel)}
-                            className="h-8 text-xs bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
-                          >
-                            {t.common.confirm}
-                          </Button>
-                        )}
+                        </div>
                       </div>
                     )}
 
@@ -2875,56 +2885,66 @@ export default function EnglishShadowingPage() {
                     </div>
                   </div>
 
-                  {/* 统计信息 */}
-                  <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                    <div className="text-sm">
-                      <div className="mb-3 text-center">
-                        <span className="text-lg font-bold text-gray-800">
-                          {t.shadowing.total_questions.replace(
-                            '{count}',
-                            filteredItems.length.toString(),
-                          )}
-                        </span>
+                  {/* 统计信息 - 卡片化设计（移动端） */}
+                  <div className="p-4 space-y-3 bg-gray-50/50">
+                    {/* 总题数卡片 */}
+                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-blue-600 font-medium mb-1">总题数</p>
+                          <p className="text-2xl font-bold text-blue-900">{filteredItems.length}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                          <BookOpen className="w-5 h-5 text-blue-600" />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-1 gap-2">
-                        <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                            <span className="text-gray-600 font-medium">
-                              {t.shadowing.completed}
-                            </span>
-                          </div>
-                          <span className="text-lg font-bold text-green-600">
-                            {filteredItems.filter((item) => item.isPracticed).length}
-                          </span>
+                    </div>
+                    
+                    {/* 已完成卡片 */}
+                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-3 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="text-xs text-green-600 font-medium mb-1">已完成</p>
+                          <p className="text-2xl font-bold text-green-900">{filteredItems.filter((item) => item.isPracticed).length}</p>
                         </div>
-                        <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                            <span className="text-gray-600 font-medium">{t.shadowing.draft}</span>
-                          </div>
-                          <span className="text-lg font-bold text-yellow-600">
-                            {
-                              filteredItems.filter(
-                                (item) => item.status === 'draft' && !item.isPracticed,
-                              ).length
-                            }
-                          </span>
+                        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                          <CheckCircle className="w-5 h-5 text-green-600" />
                         </div>
-                        <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                            <span className="text-gray-600 font-medium">
-                              {t.shadowing.not_started}
-                            </span>
-                          </div>
-                          <span className="text-lg font-bold text-gray-600">
-                            {
-                              filteredItems.filter(
-                                (item) => !item.isPracticed && item.status !== 'draft',
-                              ).length
-                            }
-                          </span>
+                      </div>
+                      {/* 进度条 */}
+                      <div className="w-full bg-green-200/50 rounded-full h-1.5 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${filteredItems.length > 0 ? (filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-green-600 mt-1">
+                        {filteredItems.length > 0 ? Math.round((filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100) : 0}%
+                      </p>
+                    </div>
+                    
+                    {/* 草稿中卡片 */}
+                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-amber-600 font-medium mb-1">草稿中</p>
+                          <p className="text-2xl font-bold text-amber-900">{filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                          <FileEdit className="w-5 h-5 text-amber-600" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* 未开始卡片 */}
+                    <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-gray-50 to-gray-100/50 p-3 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-gray-600 font-medium mb-1">未开始</p>
+                          <p className="text-2xl font-bold text-gray-900">{filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-gray-500/10 flex items-center justify-center">
+                          <Circle className="w-5 h-5 text-gray-600" />
                         </div>
                       </div>
                     </div>
@@ -4271,24 +4291,30 @@ export default function EnglishShadowingPage() {
               className={`${sidebarCollapsed ? 'w-16' : 'w-72'} flex-shrink-0 transition-all duration-300 max-h-[85vh] overflow-y-auto`}
             >
               <Card className="min-h-full flex flex-col bg-white/80 backdrop-blur-sm border-0 shadow-xl rounded-2xl">
-                {/* 标题和折叠按钮 */}
-                <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-t-2xl">
-                  <div className="flex items-center justify-between">
+                {/* 标题和折叠按钮 - 美化版 */}
+                <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl relative overflow-hidden">
+                  {/* 装饰性背景光晕 */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+                  
+                  <div className="relative z-10 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {!sidebarCollapsed && (
                         <>
-                          <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                            <Filter className="w-4 h-4" />
+                          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
+                            <BookOpen className="w-5 h-5" />
                           </div>
-                          <h3 className="font-bold text-lg">
-                            {t.shadowing.shadowing_vocabulary || 'Shadowing 题库'}
-                          </h3>
+                          <div>
+                            <h3 className="font-bold text-xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                              {t.shadowing.shadowing_vocabulary || 'Shadowing 题库'}
+                            </h3>
+                            <p className="text-xs text-white/80 mt-0.5">跟读练习题库</p>
+                          </div>
                         </>
                       )}
                       {!sidebarCollapsed && (
                         <button
                           onClick={() => fetchItems()}
-                          className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/20 transition-colors"
+                          className="text-white/80 hover:text-white p-2.5 rounded-lg hover:bg-white/20 transition-all ml-2 hover:shadow-md"
                           title={t.shadowing.refresh_vocabulary || '刷新题库'}
                           disabled={loading}
                         >
@@ -4300,7 +4326,7 @@ export default function EnglishShadowingPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                      className="text-white hover:bg-white/20"
+                      className="text-white hover:bg-white/20 hover:shadow-md transition-all"
                       aria-label={sidebarCollapsed ? (t.common.expand || '展开') : (t.common.collapse || '折叠')}
                     >
                       {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
@@ -4374,28 +4400,38 @@ export default function EnglishShadowingPage() {
                         </Select>
                       </div>
 
-                      {/* 推荐等级显示 */}
+                      {/* 推荐等级显示 - 美化版 */}
                       {recommendedLevel && (
-                        <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                              <span className="text-xs text-white font-bold">!</span>
+                        <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-200 shadow-md overflow-hidden animate-pulse">
+                          {/* 装饰性闪光效果 */}
+                          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/30 to-amber-200/30 rounded-full blur-2xl" />
+                          
+                          <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                                <Star className="w-4 h-4 text-white fill-white" />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Sparkles className="w-4 h-4 text-amber-600" />
+                                <span className="text-sm font-bold text-amber-900">为你推荐</span>
+                              </div>
                             </div>
-                            <span className="text-sm font-medium text-blue-700">推荐等级</span>
+                            <div className="text-lg font-bold text-amber-900 flex items-baseline gap-2 mb-2">
+                              <span>等级</span>
+                              <span className="text-2xl text-orange-600">L{recommendedLevel}</span>
+                            </div>
+                            <p className="text-xs text-amber-700 mb-3">根据你的学习进度推荐</p>
+                            {level !== recommendedLevel && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setLevel(recommendedLevel)}
+                                className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-sm"
+                              >
+                                使用推荐等级
+                              </Button>
+                            )}
                           </div>
-                          <p className="text-sm text-blue-600 mb-2">
-                            推荐等级: L{recommendedLevel}
-                          </p>
-                          {level !== recommendedLevel && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setLevel(recommendedLevel)}
-                              className="h-8 text-xs bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
-                            >
-                              使用
-                            </Button>
-                          )}
                         </div>
                       )}
 
@@ -4542,56 +4578,66 @@ export default function EnglishShadowingPage() {
                       </div>
                     </div>
 
-                    {/* 统计信息 */}
-                    <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                      <div className="text-sm">
-                        <div className="mb-3 text-center">
-                          <span className="text-lg font-bold text-gray-800">
-                            {t.shadowing.total_questions.replace(
-                              '{count}',
-                              filteredItems.length.toString(),
-                            )}
-                          </span>
+                    {/* 统计信息 - 卡片化设计 */}
+                    <div className="p-4 space-y-3 bg-gray-50/50">
+                      {/* 总题数卡片 */}
+                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-blue-600 font-medium mb-1">总题数</p>
+                            <p className="text-2xl font-bold text-blue-900">{filteredItems.length}</p>
+                          </div>
+                          <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                            <BookOpen className="w-5 h-5 text-blue-600" />
+                          </div>
                         </div>
-                        <div className="grid grid-cols-1 gap-2">
-                          <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                              <span className="text-gray-600 font-medium">
-                                {t.shadowing.completed}
-                              </span>
-                            </div>
-                            <span className="text-lg font-bold text-green-600">
-                              {filteredItems.filter((item) => item.isPracticed).length}
-                            </span>
+                      </div>
+                      
+                      {/* 已完成卡片 */}
+                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <p className="text-xs text-green-600 font-medium mb-1">已完成</p>
+                            <p className="text-2xl font-bold text-green-900">{filteredItems.filter((item) => item.isPracticed).length}</p>
                           </div>
-                          <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                              <span className="text-gray-600 font-medium">{t.shadowing.draft}</span>
-                            </div>
-                            <span className="text-lg font-bold text-yellow-600">
-                              {
-                                filteredItems.filter(
-                                  (item) => item.status === 'draft' && !item.isPracticed,
-                                ).length
-                              }
-                            </span>
+                          <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                            <CheckCircle className="w-5 h-5 text-green-600" />
                           </div>
-                          <div className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                              <span className="text-gray-600 font-medium">
-                                {t.shadowing.not_started}
-                              </span>
-                            </div>
-                            <span className="text-lg font-bold text-gray-600">
-                              {
-                                filteredItems.filter(
-                                  (item) => !item.isPracticed && item.status !== 'draft',
-                                ).length
-                              }
-                            </span>
+                        </div>
+                        {/* 进度条 */}
+                        <div className="w-full bg-green-200/50 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500"
+                            style={{ width: `${filteredItems.length > 0 ? (filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-green-600 mt-1">
+                          {filteredItems.length > 0 ? Math.round((filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100) : 0}%
+                        </p>
+                      </div>
+                      
+                      {/* 草稿中卡片 */}
+                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-amber-600 font-medium mb-1">草稿中</p>
+                            <p className="text-2xl font-bold text-amber-900">{filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}</p>
+                          </div>
+                          <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                            <FileEdit className="w-5 h-5 text-amber-600" />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* 未开始卡片 */}
+                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-gray-50 to-gray-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-600 font-medium mb-1">未开始</p>
+                            <p className="text-2xl font-bold text-gray-900">{filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}</p>
+                          </div>
+                          <div className="w-10 h-10 rounded-full bg-gray-500/10 flex items-center justify-center">
+                            <Circle className="w-5 h-5 text-gray-600" />
                           </div>
                         </div>
                       </div>
@@ -4600,10 +4646,36 @@ export default function EnglishShadowingPage() {
                     {/* 题目列表 */}
                     <div className="flex-1" ref={desktopListScrollRef}>
                       {loading ? (
-                        <div className="p-4 text-center text-gray-500">加载中...</div>
+                        <div className="p-6 text-center">
+                          <div className="animate-spin w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                          <p className="text-sm text-gray-600 font-medium animate-pulse">加载中...</p>
+                        </div>
                       ) : filteredItems.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">
-                          {t.shadowing.no_questions_found || '没有找到题目'}
+                        <div className="p-8 text-center">
+                          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                            <BookOpen className="w-10 h-10 text-gray-400" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            {t.shadowing.no_questions_found || '没有找到题目'}
+                          </h3>
+                          <p className="text-sm text-gray-500 mb-4">试试调整筛选条件或搜索关键词</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setLang('en');
+                              setLevel(null);
+                              setPracticed('all');
+                              setTheme('all');
+                              setSelectedThemeId('all');
+                              setSelectedSubtopicId('all');
+                              setSearchQuery('');
+                            }}
+                            className="hover:bg-violet-50 hover:border-violet-300"
+                          >
+                            <Filter className="w-4 h-4 mr-2" />
+                            重置筛选
+                          </Button>
                         </div>
                       ) : (
                         <div className="p-2">
