@@ -625,7 +625,7 @@ export default function ShadowingPage() {
           <button
             onClick={refreshExplanation}
             className="text-xs text-blue-500 hover:text-blue-700"
-            title="刷新解释"
+            title={t.shadowing.refresh_explanation || '刷新解释'}
           >
             🔄
           </button>
@@ -641,7 +641,7 @@ export default function ShadowingPage() {
           <button
             onClick={refreshExplanation}
             className="text-xs text-blue-500 hover:text-blue-700"
-            title="刷新解释"
+            title={t.shadowing.refresh_explanation || '刷新解释'}
             disabled={loading}
           >
             🔄
@@ -707,11 +707,11 @@ export default function ShadowingPage() {
 
 
   const stepTips: Record<number, string> = {
-    1: 'Step 1 · 盲听：先完整听一遍，不看原文。准备好后点击"下一步"。',
-    2: 'Step 2 · 看原文跟读：现在可以看原文，再听一遍并跟读。',
-    3: 'Step 3 · 生词选择：开启生词模式，点击原文选取生词，并点击 AI 解释。',
-    4: 'Step 4 · 查看翻译：优先显示你的母语翻译，一边看翻译一边播放理解含义。',
-    5: 'Step 5 · 录音评分：开始录音并评分，此时仅保留原文，其它模块隐藏。',
+    1: t.shadowing.step1_tip,
+    2: t.shadowing.step2_tip,
+    3: t.shadowing.step3_tip,
+    4: t.shadowing.step4_tip,
+    5: t.shadowing.step5_tip,
   };
 
   // 步骤切换时的联动：自动开/关生词模式与翻译偏好
@@ -1191,7 +1191,7 @@ export default function ShadowingPage() {
         setTimeout(() => setClearSelection(false), 100);
       } catch (error) {
         console.error('添加生词失败:', error);
-        toast.error('添加生词失败，请重试');
+        toast.error(t.shadowing.messages?.add_vocab_failed || '添加生词失败，请重试');
       } finally {
         setIsAddingToVocab(false);
       }
@@ -1300,7 +1300,7 @@ export default function ShadowingPage() {
     if (!wordToRemove) return;
 
     // 确认删除
-    if (!confirm(`确定要删除生词 "${wordToRemove.word}" 吗？这将从生词表中永久删除。`)) {
+    if (!confirm((t.shadowing.messages?.confirm_delete_vocab || '确定要删除生词 "{word}" 吗？这将从生词表中永久删除。').replace('{word}', wordToRemove.word))) {
       return;
     }
 
@@ -1751,11 +1751,12 @@ export default function ShadowingPage() {
           });
         }, 3000);
       } else {
-        toast.warning('没有成功生成任何AI解释，请重试');
+        toast.warning(t.shadowing.messages?.batch_ai_explanation_none_success || '没有成功生成任何AI解释，请重试');
       }
     } catch (error) {
       console.error('批量生成AI解释失败:', error);
-      toast.error(`批量生成AI解释失败：${error instanceof Error ? error.message : '请重试'}`);
+      const errMsg = error instanceof Error ? error.message : (t.common.error || '错误');
+      toast.error((t.shadowing.messages?.batch_ai_explanation_failed || '批量生成AI解释失败：{error}').replace('{error}', errMsg));
     } finally {
       setIsGeneratingBatchExplanation(false);
     }
@@ -1874,11 +1875,11 @@ export default function ShadowingPage() {
         }
       } else {
         const errorData = await response.json();
-        alert(`生成解释失败：${errorData.error}`);
+        alert(`${t.shadowing.messages?.generate_explanation_failed || '生成解释失败，请重试'}：${errorData.error}`);
       }
     } catch (error) {
       console.error('生成解释失败:', error);
-      alert('生成解释失败，请重试');
+      alert(t.shadowing.messages?.generate_explanation_failed || '生成解释失败，请重试');
     } finally {
       setIsGeneratingExplanation(false);
       setGeneratingWord(null);
@@ -1910,7 +1911,7 @@ export default function ShadowingPage() {
 
       if (!textToScore) {
         console.error('没有找到转录文字');
-        alert('没有找到转录文字，无法进行评分');
+        alert(t.shadowing.no_recording_yet || '还没有录音');
         return;
       }
 
@@ -1959,10 +1960,39 @@ export default function ShadowingPage() {
       const fullFeedback =
         feedback + (suggestions.length > 0 ? '\n\n建议：\n• ' + suggestions.join('\n• ') : '');
 
+      // Recompute feedback via i18n to avoid hardcoded copy
+      let feedback2 = '';
+      const suggestions2: string[] = [];
+      if (scorePercentage >= 80) {
+        feedback2 = (t.shadowing.feedback_great || '发音准确率: {percent}%，非常棒！').replace('{percent}', String(scorePercentage));
+        suggestions2.push(t.shadowing.suggestions?.keep_level || '继续保持这个水平！');
+      } else if (scorePercentage >= 60) {
+        feedback2 = (t.shadowing.feedback_good || '发音准确率: {percent}%，很好！').replace('{percent}', String(scorePercentage));
+        suggestions2.push(t.shadowing.suggestions?.clearer_pronunciation || '可以尝试更清晰地发音');
+        suggestions2.push(t.shadowing.suggestions?.intonation_rhythm || '注意语调和节奏');
+      } else if (scorePercentage >= 40) {
+        feedback2 = (t.shadowing.feedback_ok || '发音准确率: {percent}%，还不错').replace('{percent}', String(scorePercentage));
+        suggestions2.push(t.shadowing.suggestions?.listen_more || '建议多听几遍原文');
+        suggestions2.push(t.shadowing.suggestions?.mind_word_pronunciation || '注意单词的发音');
+        suggestions2.push(t.shadowing.suggestions?.slow_down || '可以尝试放慢语速');
+      } else {
+        feedback2 = (t.shadowing.feedback_need_improvement || '发音准确率: {percent}%，需要加强练习').replace('{percent}', String(scorePercentage));
+        suggestions2.push(t.shadowing.suggestions?.listen_before_practice || '建议先听几遍原文再练习');
+        suggestions2.push(t.shadowing.suggestions?.each_word_pronunciation || '注意每个单词的发音');
+        suggestions2.push(t.shadowing.suggestions?.practice_in_sections || '可以分段练习');
+        suggestions2.push(t.shadowing.suggestions?.practice_more || '多练习几次会更好');
+      }
+      if (textToScore.length < originalText.length * 0.3) {
+        suggestions2.push(t.shadowing.suggestions?.transcription_too_short || '转录内容较少，建议重新录音');
+      } else if (textToScore.length < originalText.length * 0.6) {
+        suggestions2.push(t.shadowing.suggestions?.transcription_incomplete || '转录内容不完整，建议重新录音');
+      }
+      const fullFeedback_i18n = feedback2 + (suggestions2.length > 0 ? `\n\n${t.shadowing.suggestions_title_text || '建议：'}\n• ` + suggestions2.join('\n• ') : '');
+
       const scoringResult = {
         score: scorePercentage,
         accuracy: normalizedAccuracy,
-        feedback: fullFeedback,
+        feedback: fullFeedback_i18n,
         transcription: textToScore,
         originalText: originalText,
       };
@@ -1971,7 +2001,8 @@ export default function ShadowingPage() {
       setShowSentenceComparison(false); // 不再显示逐句对比
     } catch (error) {
       console.error('评分失败:', error);
-      alert(`评分失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      const errMsg = error instanceof Error ? error.message : (t.shadowing.unknown_error || '未知错误');
+      alert((t.shadowing.scoring_failed || '评分失败: {error}').replace('{error}', errMsg));
     } finally {
       setIsScoring(false);
     }
@@ -2056,14 +2087,14 @@ export default function ShadowingPage() {
         const missingItems = cleanSentence.filter((item) => !cleanTranscribed.includes(item));
         if (missingItems.length > 0) {
           if (isChinese) {
-            issues.push(`遗漏字符: ${missingItems.join('')}`);
+            issues.push((t.shadowing.issue_missing_chars || '遗漏字符: {items}').replace('{items}', missingItems.join('')));
           } else {
-            issues.push(`遗漏单词: ${missingItems.join(', ')}`);
+            issues.push((t.shadowing.issue_missing_words || '遗漏单词: {items}').replace('{items}', missingItems.join(', ')));
           }
         }
       } else {
         status = 'missing';
-        issues.push('大部分内容未说出');
+        issues.push(t.shadowing.issue_most_missing || '大部分内容未说出');
       }
 
       // 检查发音错误（仅英文）
@@ -2108,7 +2139,10 @@ export default function ShadowingPage() {
 
     for (const error of commonErrors) {
       if (originalWords.includes(error.original) && transcribedWords.includes(error.error)) {
-        errors.push(`"${error.original}" 说成了 "${error.error}"`);
+        const msg = (t.shadowing.pronounced_as || '"{original}" 说成了 "{error}"')
+          .replace('{original}', error.original)
+          .replace('{error}', error.error);
+        errors.push(msg);
       }
     }
 
@@ -2284,7 +2318,7 @@ export default function ShadowingPage() {
       }
 
       // 6. 显示完成消息（包含保存的详细信息）
-      let message = '练习完成并保存！';
+      let message = t.shadowing.practice_done_title || '练习已完成';
       const details = [];
 
       if (currentRecordings.length > 0) {
@@ -2324,7 +2358,7 @@ export default function ShadowingPage() {
     } catch (error) {
       console.error('Failed to save practice data:', error);
       // 即使保存失败，本地状态已经更新，用户体验不受影响
-      alert('练习已完成，但部分数据同步可能延迟');
+      alert(t.shadowing.messages?.practice_completed_delayed_sync || '练习已完成，但部分数据同步可能延迟');
     } finally {
       setSaving(false);
     }
@@ -2333,7 +2367,7 @@ export default function ShadowingPage() {
   // 导入到生词本
   const importToVocab = async () => {
     if (selectedWords.length === 0) {
-      alert('没有新的生词可以导入');
+      alert(t.shadowing.no_new_words_to_import || '没有新的生词可以导入');
       return;
     }
 
@@ -2358,7 +2392,7 @@ export default function ShadowingPage() {
       });
 
       if (response.ok) {
-        alert(`已成功导入 ${entries.length} 个生词`);
+        alert((t.shadowing.import_success || '成功导入 {count} 个生词到生词本！').replace('{count}', String(entries.length)));
 
         // 将本次选中的生词移动到之前的生词中
         setPreviousWords((prev) => [...prev, ...selectedWords]);
@@ -2391,11 +2425,11 @@ export default function ShadowingPage() {
         }
       } else {
         const errorData = await response.json();
-        alert('导入失败: ' + errorData.error);
+        alert((t.shadowing.import_failed || '导入失败: {error}').replace('{error}', String(errorData.error)));
       }
     } catch (error) {
       console.error('导入生词失败:', error);
-      alert('导入失败');
+      alert((t.shadowing.import_failed || '导入失败: {error}').replace('{error}', String((error as Error)?.message || '')));
     } finally {
       setIsImporting(false);
     }
@@ -2454,7 +2488,7 @@ export default function ShadowingPage() {
                 href="/auth"
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                前往登录
+                {t.common.login || '登录'}
               </a>
             </div>
           </div>
@@ -2997,15 +3031,15 @@ export default function ShadowingPage() {
                     <Card className="p-4 bg-white border-0 shadow-sm">
                       <div className="flex items-center justify-between flex-wrap gap-3">
                         <div className="flex items-center gap-2 text-xs text-gray-600">
-                          <span className={`px-2 py-1 rounded ${step===1?'bg-blue-600 text-white':'bg-gray-100'}`}>1 盲听</span>
+                          <span className={`px-2 py-1 rounded ${step===1?'bg-blue-600 text-white':'bg-gray-100'}`}>1 {t.shadowing.step_labels?.blind_listen || '盲听'}</span>
                           <span className={`px-2 py-1 rounded ${step===2?'bg-blue-600 text-white':'bg-gray-100'}`}>2 看原文</span>
-                          <span className={`px-2 py-1 rounded ${step===3?'bg-blue-600 text-white':'bg-gray-100'}`}>3 选生词</span>
-                          <span className={`px-2 py-1 rounded ${step===4?'bg-blue-600 text-white':'bg-gray-100'}`}>4 看翻译</span>
-                          <span className={`px-2 py-1 rounded ${step===5?'bg-blue-600 text-white':'bg-gray-100'}`}>5 录音评分</span>
+                          <span className={`px-2 py-1 rounded ${step===3?'bg-blue-600 text-white':'bg-gray-100'}`}>3 {t.shadowing.step_labels?.select_words || '选生词'}</span>
+                          <span className={`px-2 py-1 rounded ${step===4?'bg-blue-600 text-white':'bg-gray-100'}`}>4 {t.shadowing.step_labels?.view_translation || '看翻译'}</span>
+                          <span className={`px-2 py-1 rounded ${step===5?'bg-blue-600 text-white':'bg-gray-100'}`}>5 {t.shadowing.step_labels?.record_scoring || '录音评分'}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} disabled={step===1}>上一步</Button>
-                          <Button size="sm" onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} disabled={step===5}>下一步</Button>
+                          <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} disabled={step===1}>{t.shadowing.prev_step || '上一步'}</Button>
+                          <Button size="sm" onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} disabled={step===5}>{t.shadowing.next_step || '下一步'}</Button>
                         </div>
                       </div>
                       <div className="mt-3 text-xs text-gray-700">{stepTips[step]}</div>
@@ -3083,7 +3117,7 @@ export default function ShadowingPage() {
                             className="h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
                           >
                             <CheckCircle className="w-5 h-5 mr-2" />
-                            {saving ? '保存中...' : '完成'}
+          {saving ? (t.shadowing.saving_modal_title || '保存中...') : '完成'}
                           </Button>
                         </div>
                       </div>
@@ -3358,7 +3392,7 @@ export default function ShadowingPage() {
                           </span>
                           {currentItem.duration_ms && (
                             <span className="text-xs text-blue-600">
-                              时长: {Math.round(currentItem.duration_ms / 1000)}秒
+                              {(t.shadowing.duration_seconds || '时长: {seconds}秒').replace('{seconds}', String(Math.round(currentItem.duration_ms / 1000)))}
                             </span>
                           )}
                           <div className="ml-auto flex items-center gap-2">
@@ -3404,7 +3438,7 @@ export default function ShadowingPage() {
                   {previousWords.length > 0 && (
                     <Card className="p-4">
                       <h3 className="text-lg font-semibold text-gray-600 mb-3">
-                        之前的生词 ({previousWords.length})
+                        {(t.shadowing.previous_words_title || '之前的生词 ({count})').replace('{count}', String(previousWords.length))}
                       </h3>
 
                       <div className="space-y-3">
@@ -3425,7 +3459,7 @@ export default function ShadowingPage() {
                                     size="sm"
                                     onClick={() => speakWord(item.word, currentItem?.lang || 'en')}
                                     className="text-blue-500 hover:text-blue-700 p-1"
-                                    title="发音"
+                                    title={t.shadowing.pronounce || '发音'}
                                   >
                                     🔊
                                   </Button>
@@ -3433,28 +3467,30 @@ export default function ShadowingPage() {
                                 <div className="text-sm text-gray-600 mt-1">{item.context}</div>
                               </div>
                               <div className="flex gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    generateWordExplanation(
-                                      item.word,
-                                      item.context,
-                                      currentItem?.lang || 'en',
-                                    )
-                                  }
-                                  disabled={isGeneratingExplanation}
-                                  className="text-xs"
-                                >
-                                  {generatingWord === item.word ? '生成中...' : 'AI解释'}
-                                </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      generateWordExplanation(
+                                        item.word,
+                                        item.context,
+                                        currentItem?.lang || 'en',
+                                      )
+                                    }
+                                    disabled={isGeneratingExplanation}
+                                    className="text-xs"
+                                  >
+                                  {generatingWord === item.word
+                                    ? (t.shadowing.generating || '生成中...')
+                                    : (t.shadowing.ai_explanation_button || 'AI解释')}
+                                  </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => removePreviousWord(index)}
                                   className="text-red-500 hover:text-red-700"
                                 >
-                                  删除
+                                  {t.shadowing.remove || '删除'}
                                 </Button>
                               </div>
                             </div>
@@ -3477,7 +3513,7 @@ export default function ShadowingPage() {
                     <Card className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-semibold text-blue-600">
-                          本次选中的生词 ({selectedWords.length})
+                          {(t.shadowing.selected_words_title || '本次选中的生词 ({count})').replace('{count}', String(selectedWords.length))}
                         </h3>
                         <div className="flex gap-2">
                           <Button
@@ -3487,13 +3523,15 @@ export default function ShadowingPage() {
                             disabled={isGeneratingBatchExplanation}
                             className="text-green-600 hover:text-green-800 border-green-300"
                           >
-                            {isGeneratingBatchExplanation ? '生成中...' : '一键AI解释'}
+                            {isGeneratingBatchExplanation
+                              ? (t.shadowing.generating || '生成中...')
+                              : (t.shadowing.ai_explanation_batch_button || '一键AI解释')}
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => setSelectedWords([])}>
-                            清空
+                            {t.shadowing.clear || '清空'}
                           </Button>
                           <Button size="sm" onClick={importToVocab} disabled={isImporting}>
-                            {isImporting ? '导入中...' : '导入'}
+                            {isImporting ? (t.shadowing.importing || '导入中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
                           </Button>
                         </div>
                       </div>
@@ -3503,7 +3541,7 @@ export default function ShadowingPage() {
                         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                              <span className="font-medium text-green-700">AI解释生成进度</span>
+                              <span className="font-medium text-green-700">{t.shadowing.ai_explanation_generation_progress || 'AI解释生成进度'}</span>
                               <span className="text-green-600">
                                 {batchExplanationProgress.current} /{' '}
                                 {batchExplanationProgress.total}
@@ -3542,7 +3580,7 @@ export default function ShadowingPage() {
                                     size="sm"
                                     onClick={() => speakWord(item.word, item.lang)}
                                     className="text-blue-500 hover:text-blue-700 p-1"
-                                    title="发音"
+                                    title={t.shadowing.pronounce || '发音'}
                                   >
                                     🔊
                                   </Button>
@@ -3559,7 +3597,9 @@ export default function ShadowingPage() {
                                   disabled={isGeneratingExplanation}
                                   className="text-xs"
                                 >
-                                  {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                                  {generatingWord === item.word
+                                    ? (t.shadowing.generating || '生成中...')
+                                    : (t.shadowing.ai_explanation_button || 'AI解释')}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -3600,7 +3640,7 @@ export default function ShadowingPage() {
                           <h3 className="text-xl font-bold text-gray-900">
                             {t.shadowing.translation || '翻译'}
                           </h3>
-                          <p className="text-sm text-gray-600">多语言翻译支持</p>
+                          <p className="text-sm text-gray-600">{t.shadowing.translation_support_hint || '多语言翻译支持'}</p>
                         </div>
                       </div>
 
@@ -3647,8 +3687,8 @@ export default function ShadowingPage() {
                             <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                               <span className="text-2xl">📝</span>
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-700 mb-2">暂无翻译</h3>
-                            <p className="text-gray-500">可能尚未生成翻译内容</p>
+                            <h3 className="text-lg font-semibold text-gray-700 mb-2">{t.shadowing.translation_none_title || '暂无翻译'}</h3>
+                            <p className="text-gray-500">{t.shadowing.translation_none_desc || '可能尚未生成翻译内容'}</p>
                           </div>
                         ) : (
                           <div className="text-center py-8">
@@ -3656,9 +3696,9 @@ export default function ShadowingPage() {
                               <span className="text-2xl">🌐</span>
                             </div>
                             <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                              开启翻译功能
+                              {t.shadowing.translation_enable_action || '开启翻译功能'}
                             </h3>
-                            <p className="text-gray-500">勾选上方选项以显示翻译内容</p>
+                            <p className="text-gray-500">{t.shadowing.translation_enable_hint || '勾选上方选项以显示翻译内容'}</p>
                           </div>
                         )}
                       </div>
@@ -3706,7 +3746,7 @@ export default function ShadowingPage() {
                           <h3 className="text-xl font-bold text-gray-900">
                             {t.shadowing.practice_scoring || '练习评分'}
                           </h3>
-                          <p className="text-sm text-gray-600">AI智能评分，精准分析发音</p>
+                          <p className="text-sm text-gray-600">{t.shadowing.ai_scoring_subtitle || 'AI智能评分，精准分析发音'}</p>
                         </div>
                       </div>
 
@@ -3769,7 +3809,7 @@ export default function ShadowingPage() {
                             <h3 className="text-xl font-bold text-gray-900">
                               {t.shadowing.scoring_result || '评分结果'}
                             </h3>
-                            <p className="text-sm text-gray-600">AI智能分析完成</p>
+                            <p className="text-sm text-gray-600">{t.shadowing.ai_analysis_done || 'AI智能分析完成'}</p>
                           </div>
                         </div>
                         <Button
@@ -4072,8 +4112,8 @@ export default function ShadowingPage() {
                           <span className="text-white text-lg">✅</span>
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold text-gray-900">练习已完成</h3>
-                          <p className="text-sm text-gray-600">成绩与生词已保存，你可以选择继续提升</p>
+                          <h3 className="text-xl font-bold text-gray-900">{t.shadowing.practice_done_title || '练习已完成'}</h3>
+                          <p className="text-sm text-gray-600">{t.shadowing.practice_done_desc || '成绩与生词已保存，你可以选择继续提升'}</p>
                         </div>
                       </div>
                       <div className="flex gap-3 flex-wrap">
@@ -4087,7 +4127,7 @@ export default function ShadowingPage() {
                           }}
                           className="bg-blue-600 hover:bg-blue-700"
                         >
-                          再练一次
+                          {t.shadowing.practice_again || '再练一次'}
                         </Button>
                         <Button
                           variant="outline"
@@ -4095,7 +4135,7 @@ export default function ShadowingPage() {
                             setCurrentItem(null);
                           }}
                         >
-                          返回题库
+                          {t.shadowing.back_to_catalog || '返回题库'}
                         </Button>
                       </div>
                     </Card>
@@ -4116,24 +4156,24 @@ export default function ShadowingPage() {
                         onClick={() => setStep((s) => (Math.max(1, (s as number) - 1) as 1 | 2 | 3 | 4 | 5))}
                         disabled={step === 1}
                         className="flex items-center gap-2"
-                        aria-label="上一步"
+                        aria-label={t.shadowing.prev_step || '上一步'}
                       >
                         <ArrowLeft className="w-4 h-4" />
-                        上一步
+                        {t.shadowing.prev_step || '上一步'}
                       </Button>
                       <Button
                         size="sm"
                         onClick={playAudio}
                         className="px-6"
-                        aria-label={isPlaying ? '暂停' : '播放'}
+                        aria-label={isPlaying ? (t.shadowing.pause || '暂停') : (t.shadowing.play || '播放')}
                       >
                         {isPlaying ? (
                           <>
-                            <Pause className="w-4 h-4 mr-2" /> 暂停
+                            <Pause className="w-4 h-4 mr-2" /> {t.shadowing.pause || '暂停'}
                           </>
                         ) : (
                           <>
-                            <Play className="w-4 h-4 mr-2" /> 播放
+                            <Play className="w-4 h-4 mr-2" /> {t.shadowing.play || '播放'}
                           </>
                         )}
                       </Button>
@@ -4142,9 +4182,9 @@ export default function ShadowingPage() {
                         onClick={() => setStep((s) => (Math.min(5, (s as number) + 1) as 1 | 2 | 3 | 4 | 5))}
                         disabled={step === 5}
                         className="flex items-center gap-2"
-                        aria-label="下一步"
+                        aria-label={t.shadowing.next_step || '下一步'}
                       >
-                        下一步
+                        {t.shadowing.next_step || '下一步'}
                         <ArrowRight className="w-4 h-4" />
                       </Button>
                     </div>
@@ -4177,7 +4217,7 @@ export default function ShadowingPage() {
                             <h3 className="font-bold text-xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
                               {t.shadowing.shadowing_vocabulary || 'Shadowing 题库'}
                             </h3>
-                            <p className="text-xs text-white/80 mt-0.5">跟读练习题库</p>
+                          <p className="text-xs text-white/80 mt-0.5">{t.shadowing.shadowing_practice || 'Shadowing 练习'}</p>
                           </div>
                         </>
                       )}
@@ -4416,9 +4456,9 @@ export default function ShadowingPage() {
 
                       {/* 搜索 */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">搜索</Label>
+                        <Label className="text-sm font-medium text-gray-700">{t.shadowing.search || '搜索'}</Label>
                         <Input
-                          placeholder="搜索标题、主题..."
+                          placeholder={t.shadowing.search_placeholder || '搜索标题、主题...'}
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -4528,7 +4568,7 @@ export default function ShadowingPage() {
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">
                             {t.shadowing.no_questions_found || '没有找到题目'}
                           </h3>
-                          <p className="text-sm text-gray-500 mb-4">试试调整筛选条件或搜索关键词</p>
+                            <p className="text-sm text-gray-500 mb-4">{t.shadowing.search_adjust_filters_hint || '试试调整筛选条件或搜索关键词'}</p>
                           <Button
                             variant="outline"
                             size="sm"
@@ -4653,7 +4693,13 @@ export default function ShadowingPage() {
                           currentStep={step}
                           onStepChange={(s)=> setStep(s)}
                           maxStepAllowed={step}
-                          labels={["盲听","看原文","选生词","看翻译","录音评分"]}
+                          labels={[
+                            t.shadowing.step_labels?.blind_listen || '盲听',
+                            t.shadowing.step_labels?.read_text || '看原文',
+                            t.shadowing.step_labels?.select_words || '选生词',
+                            t.shadowing.step_labels?.view_translation || '看翻译',
+                            t.shadowing.step_labels?.record_scoring || '录音评分',
+                          ]}
                         />
                         <div className="flex items-center gap-2">
                           <Button
@@ -4661,14 +4707,14 @@ export default function ShadowingPage() {
                             variant="outline"
                             onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))}
                             disabled={step===1}
-                            aria-label="上一步"
-                          >上一步</Button>
+                            aria-label={t.shadowing.prev_step || '上一步'}
+                          >{t.shadowing.prev_step || '上一步'}</Button>
                           <Button
                             size="sm"
                             onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))}
                             disabled={step===5}
-                            aria-label="下一步"
-                          >下一步</Button>
+                            aria-label={t.shadowing.next_step || '下一步'}
+                          >{t.shadowing.next_step || '下一步'}</Button>
                         </div>
                       </div>
                       <div className="mt-3 text-sm text-gray-700">{stepTips[step]}</div>
@@ -4680,51 +4726,51 @@ export default function ShadowingPage() {
                     <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-0 shadow-sm">
                       {step === 1 && (
                         <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">如何高效盲听：</div>
+                          <div className="font-medium">{t.shadowing.guide_blind_listen_title || '如何高效盲听：'}</div>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>放松不要急，先整体感知节奏与停顿</li>
                             <li>不要看原文，尝试抓关键词与语气</li>
-                            <li>准备好后点击"下一步"，再看原文跟读</li>
+                            <li>{t.shadowing.guide_blind_listen_tip1 || '准备好后点击“下一步”，再看原文跟读'}</li>
                           </ul>
                         </div>
                       )}
                       {step === 2 && (
                         <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">看原文 + 跟读建议：</div>
+                          <div className="font-medium">{t.shadowing.step_labels?.read_text || '看原文'} + {t.shadowing.follow_recording || '跟读'}：</div>
                           <ul className="list-disc pl-5 space-y-1">
-                            <li>先快速浏览一遍原文结构与段落</li>
-                            <li>再次播放音频，对照原文跟读（注意连读/重音）</li>
-                            <li>跟读时轻声起步，逐步提升音量与流畅度</li>
+                            <li>{t.shadowing.guide_read_text_tip1 || '先快速浏览一遍原文结构与段落'}</li>
+                            <li>{t.shadowing.guide_read_text_tip2 || '再次播放音频，对照原文跟读（注意连读/重音）'}</li>
+                            <li>{t.shadowing.guide_read_text_tip3 || '跟读时轻声起步，逐步提升音量与流畅度'}</li>
                           </ul>
                         </div>
                       )}
                       {step === 3 && (
                         <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">选生词 + AI 解释：</div>
+                          <div className="font-medium">{t.shadowing.guide_select_words_title || '选生词 + AI 解释：'}</div>
                           <ul className="list-disc pl-5 space-y-1">
-                            <li>点击原文中的词语即可加入生词</li>
-                            <li>点击"AI解释"为生词生成本地化释义与例句</li>
-                            <li>建议聚焦于影响理解的关键词汇，避免一次选太多</li>
+                            <li>{t.shadowing.guide_select_words_tip1 || '点击原文中的词语即可加入生词'}</li>
+                            <li>{t.shadowing.guide_select_words_tip2 || `点击“${t.shadowing.ai_explanation_button || 'AI解释'}”为生词生成本地化释义与例句`}</li>
+                            <li>{t.shadowing.guide_select_words_tip3 || '建议聚焦于影响理解的关键词汇，避免一次选太多'}</li>
                           </ul>
                         </div>
                       )}
                       {step === 4 && (
                         <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">查看翻译：</div>
+                          <div className="font-medium">{t.shadowing.guide_view_translation_title || '查看翻译：'}</div>
                           <ul className="list-disc pl-5 space-y-1">
-                            <li>优先显示你的母语翻译，理解语义与细节</li>
-                            <li>遇到不通顺的地方，回放原文定位比对</li>
-                            <li>理解后可返回原文再跟读一遍，强化记忆</li>
+                            <li>{t.shadowing.guide_view_translation_tip1 || '优先显示你的母语翻译，理解语义与细节'}</li>
+                            <li>{t.shadowing.guide_view_translation_tip2 || '遇到不通顺的地方，回放原文定位比对'}</li>
+                            <li>{t.shadowing.guide_view_translation_tip3 || '理解后可返回原文再跟读一遍，强化记忆'}</li>
                           </ul>
                         </div>
                       )}
                       {step === 5 && (
                         <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">录音与评分：</div>
+                          <div className="font-medium">{t.shadowing.record_and_score_title || '录音与评分：'}</div>
                           <ul className="list-disc pl-5 space-y-1">
-                            <li>对照原文逐句录音，尽量贴合节奏与停顿</li>
-                            <li>录完保存后点击评分，查看整体与逐句分析</li>
-                            <li>根据问题提示再次练习可显著提升分数</li>
+                            <li>{t.shadowing.guide_record_tip1 || '对照原文逐句录音，尽量贴合节奏与停顿'}</li>
+                            <li>{t.shadowing.guide_record_tip2 || '录完保存后点击评分，查看整体与逐句分析'}</li>
+                            <li>{t.shadowing.guide_record_tip3 || '根据问题提示再次练习可显著提升分数'}</li>
                           </ul>
                         </div>
                       )}
@@ -4798,7 +4844,7 @@ export default function ShadowingPage() {
                           className="h-11 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 hover:from-yellow-100 hover:to-amber-100 hover:border-yellow-300 rounded-xl shadow-sm hover:shadow-md transition-all"
                         >
                           <Save className="w-5 h-5 mr-2" />
-                          {saving ? '保存中...' : '保存草稿'}
+                          {saving ? (t.shadowing.saving_modal_title || '保存中...') : (t.shadowing.save_draft || '保存草稿')}
                         </Button>
 
                         <div className="flex items-center gap-2">
@@ -4837,11 +4883,13 @@ export default function ShadowingPage() {
                           onClick={() => setIsVocabMode(!isVocabMode)}
                           className={highlightVocab ? 'animate-pulse ring-2 ring-amber-400' : ''}
                         >
-                          {isVocabMode ? '退出生词模式' : '生词选择模式'}
+                          {isVocabMode
+                            ? (t.shadowing.vocab_mode_on || '退出选词模式')
+                            : (t.shadowing.vocab_mode_off || '开启选词模式')}
                         </Button>
                         {isVocabMode && (
                           <div className="mt-2 space-y-2">
-                            <p className="text-sm text-blue-600">点击文本中的单词来选择生词</p>
+                          <p className="text-sm text-blue-600">{t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}</p>
                           </div>
                         )}
                       </div>
@@ -5079,10 +5127,10 @@ export default function ShadowingPage() {
                     {currentItem.audio_url && (!gatingActive || step !== 5) && (
                       <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="text-sm font-medium text-blue-700">原文音频</span>
+                          <span className="text-sm font-medium text-blue-700">{t.shadowing.original_audio_text || '原文音频'}</span>
                           {currentItem.duration_ms && (
                             <span className="text-xs text-blue-600">
-                              时长: {Math.round(currentItem.duration_ms / 1000)}秒
+                              {(t.shadowing.duration_seconds || '时长: {seconds}秒').replace('{seconds}', String(Math.round(currentItem.duration_ms / 1000)))}
                             </span>
                           )}
                           <div className="ml-auto flex items-center gap-2">
@@ -5133,7 +5181,7 @@ export default function ShadowingPage() {
                         </div>
                         <div>
                           <h3 className="text-xl font-bold text-gray-900">翻译</h3>
-                          <p className="text-sm text-gray-600">多语言翻译支持</p>
+                          <p className="text-sm text-gray-600">{t.shadowing.translation_support_hint || '多语言翻译支持'}</p>
                         </div>
                       </div>
 
@@ -5178,7 +5226,7 @@ export default function ShadowingPage() {
                             <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                               <span className="text-2xl">📝</span>
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-700 mb-2">暂无翻译</h3>
+                            <h3 className="text-lg font-semibold text-gray-700 mb-2">{t.shadowing.translation_none_title || '暂无翻译'}</h3>
                             <p className="text-gray-500">可能尚未生成翻译内容</p>
                           </div>
                         ) : (
@@ -5187,9 +5235,9 @@ export default function ShadowingPage() {
                               <span className="text-2xl">🌐</span>
                             </div>
                             <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                              开启翻译功能
+                              {t.shadowing.translation_enable_action || '开启翻译功能'}
                             </h3>
-                            <p className="text-gray-500">勾选上方选项以显示翻译内容</p>
+                            <p className="text-gray-500">{t.shadowing.translation_enable_hint || '勾选上方选项以显示翻译内容'}</p>
                           </div>
                         )}
                       </div>
@@ -5201,7 +5249,7 @@ export default function ShadowingPage() {
                     <Card className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-600">
-                          之前的生词 ({previousWords.length})
+                          {(t.shadowing.previous_words_title || '之前的生词 ({count})').replace('{count}', String(previousWords.length))}
                         </h3>
                       </div>
 
@@ -5223,7 +5271,7 @@ export default function ShadowingPage() {
                                     size="sm"
                                     onClick={() => speakWord(item.word, currentItem?.lang || 'en')}
                                     className="text-blue-500 hover:text-blue-700 p-1"
-                                    title="发音"
+                                    title={t.shadowing.pronounce || '发音'}
                                   >
                                     🔊
                                   </Button>
@@ -5231,7 +5279,7 @@ export default function ShadowingPage() {
                                 <div className="text-sm text-gray-600 mt-1">{item.context}</div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <div className="text-xs text-gray-500">已导入</div>
+                                <div className="text-xs text-gray-500">{t.shadowing.imported || '已导入'}</div>
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -5245,7 +5293,9 @@ export default function ShadowingPage() {
                                   disabled={isGeneratingExplanation}
                                   className="text-xs"
                                 >
-                                  {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                                  {generatingWord === item.word
+                                    ? (t.shadowing.generating || '生成中...')
+                                    : (t.shadowing.ai_explanation_button || 'AI解释')}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -5253,7 +5303,7 @@ export default function ShadowingPage() {
                                   onClick={() => removePreviousWord(index)}
                                   className="text-red-500 hover:text-red-700"
                                 >
-                                  删除
+                                  {t.shadowing.remove || '删除'}
                                 </Button>
                               </div>
                             </div>
@@ -5276,7 +5326,7 @@ export default function ShadowingPage() {
                     <Card className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-blue-600">
-                          本次选中的生词 ({selectedWords.length})
+                          {(t.shadowing.selected_words_title || '本次选中的生词 ({count})').replace('{count}', String(selectedWords.length))}
                         </h3>
                         <div className="flex gap-2">
                           <Button
@@ -5286,13 +5336,15 @@ export default function ShadowingPage() {
                             disabled={isGeneratingBatchExplanation}
                             className="text-green-600 hover:text-green-800 border-green-300"
                           >
-                            {isGeneratingBatchExplanation ? '生成中...' : '一键AI解释'}
+                            {isGeneratingBatchExplanation
+                              ? (t.shadowing.generating || '生成中...')
+                              : (t.shadowing.ai_explanation_batch_button || '一键AI解释')}
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => setSelectedWords([])}>
-                            清空
+                            {t.shadowing.clear || '清空'}
                           </Button>
                           <Button size="sm" onClick={importToVocab} disabled={isImporting}>
-                            {isImporting ? '导入中...' : '导入到生词本'}
+                            {isImporting ? (t.shadowing.importing || '导入中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
                           </Button>
                         </div>
                       </div>
@@ -5302,7 +5354,7 @@ export default function ShadowingPage() {
                         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                              <span className="font-medium text-green-700">AI解释生成进度</span>
+                              <span className="font-medium text-green-700">{t.shadowing.ai_explanation_generation_progress || 'AI解释生成进度'}</span>
                               <span className="text-green-600">
                                 {batchExplanationProgress.current} /{' '}
                                 {batchExplanationProgress.total}
@@ -5341,7 +5393,7 @@ export default function ShadowingPage() {
                                     size="sm"
                                     onClick={() => speakWord(item.word, item.lang)}
                                     className="text-blue-500 hover:text-blue-700 p-1"
-                                    title="发音"
+                                    title={t.shadowing.pronounce || '发音'}
                                   >
                                     🔊
                                   </Button>
@@ -5358,7 +5410,9 @@ export default function ShadowingPage() {
                                   disabled={isGeneratingExplanation}
                                   className="text-xs"
                                 >
-                                  {generatingWord === item.word ? '生成中...' : 'AI解释'}
+                                  {generatingWord === item.word
+                                    ? (t.shadowing.generating || '生成中...')
+                                    : (t.shadowing.ai_explanation_button || 'AI解释')}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -5457,7 +5511,7 @@ export default function ShadowingPage() {
                           <h3 className="text-xl font-bold text-gray-900">
                             {t.shadowing.practice_scoring || '练习评分'}
                           </h3>
-                          <p className="text-sm text-gray-600">AI智能评分，精准分析发音</p>
+                          <p className="text-sm text-gray-600">{t.shadowing.ai_scoring_subtitle || 'AI智能评分，精准分析发音'}</p>
                         </div>
                       </div>
 
@@ -5482,7 +5536,7 @@ export default function ShadowingPage() {
                             {isScoring ? (
                               <>
                                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                评分中...
+                                {t.shadowing.scoring_in_progress || '评分中...'}
                               </>
                             ) : (
                               <>
@@ -5520,7 +5574,7 @@ export default function ShadowingPage() {
                             <h3 className="text-xl font-bold text-gray-900">
                               {t.shadowing.scoring_result || '评分结果'}
                             </h3>
-                            <p className="text-sm text-gray-600">AI智能分析完成</p>
+                            <p className="text-sm text-gray-600">{t.shadowing.ai_analysis_done || 'AI智能分析完成'}</p>
                           </div>
                         </div>
                         <Button
@@ -5530,7 +5584,7 @@ export default function ShadowingPage() {
                           size="sm"
                           className="h-8 bg-white hover:bg-gray-50 border-gray-200 text-gray-700 rounded-lg"
                         >
-                          {isScoring ? '重新评分中...' : '重新评分'}
+                          {isScoring ? (t.shadowing.re_scoring_in_progress || '重新评分中...') : (t.shadowing.re_score || '重新评分')}
                         </Button>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

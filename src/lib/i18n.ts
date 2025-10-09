@@ -345,6 +345,91 @@ export interface Translations {
       l4: string;
       l5: string;
     };
+    // Navigation and controls
+    prev_step: string;
+    next_step: string;
+    pronounce: string;
+    imported: string;
+    selected_words_title: string; // with {count}
+    no_new_words_to_import: string;
+    ai_scoring_subtitle: string;
+    ai_analysis_done: string;
+    play: string;
+    pause: string;
+    // Feedback and suggestions
+    feedback_great: string; // with {percent}
+    feedback_good: string;  // with {percent}
+    feedback_ok: string;    // with {percent}
+    feedback_need_improvement: string; // with {percent}
+    suggestions_title_text: string;
+    suggestions: {
+      keep_level: string;
+      clearer_pronunciation: string;
+      intonation_rhythm: string;
+      listen_more: string;
+      mind_word_pronunciation: string;
+      slow_down: string;
+      listen_before_practice: string;
+      each_word_pronunciation: string;
+      practice_in_sections: string;
+      practice_more: string;
+      transcription_too_short: string;
+      transcription_incomplete: string;
+    };
+    // Issues in analysis
+    issue_missing_chars: string; // with {items}
+    issue_missing_words: string; // with {items}
+    issue_most_missing: string;
+    pronounced_as: string; // with {original} {error}
+    scoring_failed: string; // with {error}
+    unknown_error: string;
+    // Guides
+    guide_blind_listen_title: string;
+    guide_blind_listen_tip1: string;
+    guide_select_words_title: string;
+    guide_view_translation_title: string;
+    search_adjust_filters_hint: string;
+    guide_view_translation_tip3: string;
+    record_and_score_title: string;
+    guide_record_tip1: string;
+    guide_record_tip2: string;
+    guide_record_tip3: string;
+    previous_words_title: string; // with {count}
+    duration_seconds: string; // with {seconds}
+    guide_read_text_tip1: string;
+    guide_read_text_tip2: string;
+    guide_read_text_tip3: string;
+    guide_select_words_tip1: string;
+    guide_select_words_tip2: string;
+    guide_select_words_tip3: string;
+    guide_view_translation_tip1: string;
+    guide_view_translation_tip2: string;
+    // 常用动作/提示（本轮新增）
+    refresh_explanation: string;
+    generating: string;
+    ai_explanation_button: string;
+    ai_explanation_batch_button: string;
+    ai_explanation_generation_progress: string;
+    translation_support_hint: string;
+    translation_none_title: string;
+    translation_none_desc: string;
+    translation_enable_action: string;
+    translation_enable_hint: string;
+    step_labels: {
+      blind_listen: string;
+      read_text: string;
+      select_words: string;
+      view_translation: string;
+      record_scoring: string;
+    };
+    messages: {
+      add_vocab_failed: string;
+      batch_ai_explanation_none_success: string;
+      batch_ai_explanation_failed: string; // accepts {error}
+      generate_explanation_failed: string;
+      practice_completed_delayed_sync: string;
+      confirm_delete_vocab: string; // with {word}
+    };
     // 保存弹窗
     saving_modal_title: string;
     saving_modal_description: string;
@@ -842,6 +927,90 @@ const zh: Translations = {
       l3: 'L3 - 中级',
       l4: 'L4 - 中高级',
       l5: 'L5 - 高级',
+    },
+    // Navigation and controls
+    prev_step: '上一步',
+    next_step: '下一步',
+    pronounce: '发音',
+    imported: '已导入',
+    selected_words_title: '本次选中的生词 ({count})',
+    no_new_words_to_import: '没有新的生词可以导入',
+    ai_scoring_subtitle: 'AI智能评分，精准分析发音',
+    ai_analysis_done: 'AI智能分析完成',
+    play: '播放',
+    pause: '暂停',
+    // Feedback and suggestions
+    feedback_great: '发音准确率: {percent}%，非常棒！',
+    feedback_good: '发音准确率: {percent}%，很好！',
+    feedback_ok: '发音准确率: {percent}%，还不错',
+    feedback_need_improvement: '发音准确率: {percent}%，需要加强练习',
+    suggestions_title_text: '建议：',
+    suggestions: {
+      keep_level: '继续保持这个水平！',
+      clearer_pronunciation: '可以尝试更清晰地发音',
+      intonation_rhythm: '注意语调和节奏',
+      listen_more: '建议多听几遍原文',
+      mind_word_pronunciation: '注意单词的发音',
+      slow_down: '可以尝试放慢语速',
+      listen_before_practice: '建议先听几遍原文再练习',
+      each_word_pronunciation: '注意每个单词的发音',
+      practice_in_sections: '可以分段练习',
+      practice_more: '多练习几次会更好',
+      transcription_too_short: '转录内容较少，建议重新录音',
+      transcription_incomplete: '转录内容不完整，建议重新录音',
+    },
+    issue_missing_chars: '遗漏字符: {items}',
+    issue_missing_words: '遗漏单词: {items}',
+    issue_most_missing: '大部分内容未说出',
+    pronounced_as: '"{original}" 说成了 "{error}"',
+    scoring_failed: '评分失败: {error}',
+    unknown_error: '未知错误',
+    // Guides
+    guide_blind_listen_title: '如何高效盲听：',
+    guide_blind_listen_tip1: '准备好后点击“下一步”，再看原文跟读',
+    guide_select_words_title: '选生词 + AI 解释：',
+    guide_view_translation_title: '查看翻译：',
+    search_adjust_filters_hint: '试试调整筛选条件或搜索关键词',
+    guide_view_translation_tip3: '理解后可返回原文再跟读一遍，强化记忆',
+    record_and_score_title: '录音与评分：',
+    guide_record_tip1: '对照原文逐句录音，尽量贴合节奏与停顿',
+    guide_record_tip2: '录完保存后点击评分，查看整体与逐句分析',
+    guide_record_tip3: '根据问题提示再次练习可显著提升分数',
+    previous_words_title: '之前的生词 ({count})',
+    duration_seconds: '时长: {seconds}秒',
+    guide_read_text_tip1: '先快速浏览一遍原文结构与段落',
+    guide_read_text_tip2: '再次播放音频，对照原文跟读（注意连读/重音）',
+    guide_read_text_tip3: '跟读时轻声起步，逐步提升音量与流畅度',
+    guide_select_words_tip1: '点击原文中的词语即可加入生词',
+    guide_select_words_tip2: '点击“AI解释”为生词生成本地化释义与例句',
+    guide_select_words_tip3: '建议聚焦于影响理解的关键词汇，避免一次选太多',
+    guide_view_translation_tip1: '优先显示你的母语翻译，理解语义与细节',
+    guide_view_translation_tip2: '遇到不通顺的地方，回放原文定位比对',
+    // 常用动作/提示（本轮新增）
+    refresh_explanation: '刷新解释',
+    generating: '生成中...',
+    ai_explanation_button: 'AI解释',
+    ai_explanation_batch_button: '一键AI解释',
+    ai_explanation_generation_progress: 'AI解释生成进度',
+    translation_support_hint: '多语言翻译支持',
+    translation_none_title: '暂无翻译',
+    translation_none_desc: '可能尚未生成翻译内容',
+    translation_enable_action: '开启翻译功能',
+    translation_enable_hint: '勾选上方选项以显示翻译内容',
+    step_labels: {
+      blind_listen: '盲听',
+      read_text: '看原文',
+      select_words: '选生词',
+      view_translation: '看翻译',
+      record_scoring: '录音评分',
+    },
+    messages: {
+      add_vocab_failed: '添加生词失败，请重试',
+      batch_ai_explanation_none_success: '没有成功生成任何AI解释，请重试',
+      batch_ai_explanation_failed: '批量生成AI解释失败：{error}',
+      generate_explanation_failed: '生成解释失败，请重试',
+      practice_completed_delayed_sync: '练习已完成，但部分数据同步可能延迟',
+      confirm_delete_vocab: '确定要删除生词 "{word}" 吗？这将从生词表中永久删除。',
     },
     // 保存弹窗
     saving_modal_title: '保存中...',
@@ -1347,6 +1516,90 @@ const en: Translations = {
       l4: 'L4 - Upper-Intermediate',
       l5: 'L5 - Advanced',
     },
+    // Navigation and controls
+    prev_step: 'Previous',
+    next_step: 'Next',
+    pronounce: 'Pronounce',
+    imported: 'Imported',
+    selected_words_title: 'Selected words this time ({count})',
+    no_new_words_to_import: 'No new words to import',
+    ai_scoring_subtitle: 'AI scoring with precise pronunciation analysis',
+    ai_analysis_done: 'AI analysis completed',
+    play: 'Play',
+    pause: 'Pause',
+    // Feedback and suggestions
+    feedback_great: 'Pronunciation accuracy: {percent}%. Excellent!',
+    feedback_good: 'Pronunciation accuracy: {percent}%. Great!',
+    feedback_ok: 'Pronunciation accuracy: {percent}%. Not bad.',
+    feedback_need_improvement: 'Pronunciation accuracy: {percent}%. Needs improvement.',
+    suggestions_title_text: 'Suggestions:',
+    suggestions: {
+      keep_level: 'Keep up the good work!',
+      clearer_pronunciation: 'Try to pronounce more clearly',
+      intonation_rhythm: 'Pay attention to intonation and rhythm',
+      listen_more: 'Listen to the original a few more times',
+      mind_word_pronunciation: 'Mind the pronunciation of words',
+      slow_down: 'Try slowing down your speaking rate',
+      listen_before_practice: 'Listen several times before practicing',
+      each_word_pronunciation: 'Focus on each word’s pronunciation',
+      practice_in_sections: 'Practice in sections',
+      practice_more: 'Practice more for better results',
+      transcription_too_short: 'Transcription is too short; consider re-recording',
+      transcription_incomplete: 'Transcription incomplete; consider re-recording',
+    },
+    issue_missing_chars: 'Missing characters: {items}',
+    issue_missing_words: 'Missing words: {items}',
+    issue_most_missing: 'Most of the content was not spoken',
+    pronounced_as: '"{original}" pronounced as "{error}"',
+    scoring_failed: 'Scoring failed: {error}',
+    unknown_error: 'Unknown error',
+    // Guides
+    guide_blind_listen_title: 'How to blind-listen effectively:',
+    guide_blind_listen_tip1: 'Click “Next” when ready, then read along with text',
+    guide_select_words_title: 'Pick words + AI explanation:',
+    guide_view_translation_title: 'View translation:',
+    search_adjust_filters_hint: 'Try adjusting filters or search keywords',
+    guide_view_translation_tip3: 'After understanding, shadow again to reinforce memory',
+    record_and_score_title: 'Record & Score:',
+    guide_record_tip1: 'Record sentence-by-sentence following the original pacing',
+    guide_record_tip2: 'Save and click score to see overall and per-sentence analysis',
+    guide_record_tip3: 'Practice again based on issues to significantly improve',
+    previous_words_title: 'Previously selected words ({count})',
+    duration_seconds: 'Duration: {seconds}s',
+    guide_read_text_tip1: 'Quickly browse the text structure and paragraphs',
+    guide_read_text_tip2: 'Play again and shadow with the text (watch linking/stress)',
+    guide_read_text_tip3: 'Start softly and gradually increase volume and fluency',
+    guide_select_words_tip1: 'Click words in the text to add to vocabulary',
+    guide_select_words_tip2: 'Click “AI Explanation” to generate localized gloss and examples',
+    guide_select_words_tip3: 'Focus on key words; avoid selecting too many at once',
+    guide_view_translation_tip1: 'Prefer your native translation to understand meaning and details',
+    guide_view_translation_tip2: 'Replay the original to compare when something feels unclear',
+    // Common actions/prompts (new)
+    refresh_explanation: 'Refresh explanation',
+    generating: 'Generating...',
+    ai_explanation_button: 'AI Explanation',
+    ai_explanation_batch_button: 'Batch AI Explanation',
+    ai_explanation_generation_progress: 'AI Explanation Progress',
+    translation_support_hint: 'Multi-language translation support',
+    translation_none_title: 'No translation',
+    translation_none_desc: 'Translation may not be generated yet',
+    translation_enable_action: 'Enable translation',
+    translation_enable_hint: 'Check the option above to show translation',
+    step_labels: {
+      blind_listen: 'Blind Listen',
+      read_text: 'View Text',
+      select_words: 'Pick Words',
+      view_translation: 'View Translation',
+      record_scoring: 'Record & Score',
+    },
+    messages: {
+      add_vocab_failed: 'Failed to add vocabulary, please try again',
+      batch_ai_explanation_none_success: 'No AI explanations were generated, please retry',
+      batch_ai_explanation_failed: 'Batch AI explanation failed: {error}',
+      generate_explanation_failed: 'Failed to generate explanation, please retry',
+      practice_completed_delayed_sync: 'Practice completed. Some data may sync with delay',
+      confirm_delete_vocab: 'Delete "{word}" from vocabulary? This action cannot be undone.',
+    },
     // 保存弹窗
     saving_modal_title: 'Saving...',
     saving_modal_description: 'Saving practice data, please wait',
@@ -1847,6 +2100,90 @@ const ja: Translations = {
       l3: 'L3 - 中級',
       l4: 'L4 - 中上級',
       l5: 'L5 - 上級',
+    },
+    // Navigation and controls
+    prev_step: '前へ',
+    next_step: '次へ',
+    pronounce: '発音',
+    imported: 'インポート済み',
+    selected_words_title: '今回選択した単語 ({count})',
+    no_new_words_to_import: 'インポートできる新しい単語はありません',
+    ai_scoring_subtitle: 'AI採点で発音を精密分析',
+    ai_analysis_done: 'AI分析が完了しました',
+    play: '再生',
+    pause: '一時停止',
+    // Feedback and suggestions
+    feedback_great: '発音の正確性: {percent}%、素晴らしい！',
+    feedback_good: '発音の正確性: {percent}%、とても良い！',
+    feedback_ok: '発音の正確性: {percent}%、まずまず',
+    feedback_need_improvement: '発音の正確性: {percent}%、改善が必要',
+    suggestions_title_text: '提案：',
+    suggestions: {
+      keep_level: 'このレベルを維持しましょう！',
+      clearer_pronunciation: 'より明瞭な発音を心がけましょう',
+      intonation_rhythm: 'イントネーションとリズムに注意',
+      listen_more: '原文を数回聞くことをおすすめします',
+      mind_word_pronunciation: '単語の発音に注意',
+      slow_down: '話す速度を少し落としてみましょう',
+      listen_before_practice: '練習前に数回聞いてみましょう',
+      each_word_pronunciation: '各単語の発音に注意',
+      practice_in_sections: 'セクションごとに練習',
+      practice_more: '回数を重ねるとより良くなります',
+      transcription_too_short: '文字起こしが少なすぎます。再録音を検討してください',
+      transcription_incomplete: '文字起こしが不完全です。再録音を検討してください',
+    },
+    issue_missing_chars: '欠落文字: {items}',
+    issue_missing_words: '欠落単語: {items}',
+    issue_most_missing: 'ほとんどの内容が発話されていません',
+    pronounced_as: '"{original}" を "{error}" と発音しました',
+    scoring_failed: '採点に失敗しました: {error}',
+    unknown_error: '不明なエラー',
+    // Guides
+    guide_blind_listen_title: '効果的な盲聴のコツ：',
+    guide_blind_listen_tip1: '準備ができたら「次へ」をクリックし、原文を見ながら練習',
+    guide_select_words_title: '単語選択 + AI説明：',
+    guide_view_translation_title: '翻訳を見る：',
+    search_adjust_filters_hint: 'フィルターや検索キーワードを調整してみてください',
+    guide_view_translation_tip3: '理解したら原文に戻ってもう一度シャドーイングし、記憶を強化',
+    record_and_score_title: '録音と採点：',
+    guide_record_tip1: '原文に合わせて一文ずつ録音し、リズムと間を意識',
+    guide_record_tip2: '録音保存後に採点をクリックし、全体と文ごとの分析を確認',
+    guide_record_tip3: '指摘事項に基づいて再練習するとスコアが大幅に向上',
+    previous_words_title: '以前の単語 ({count})',
+    duration_seconds: '再生時間: {seconds}秒',
+    guide_read_text_tip1: 'まず原文の構成と段落をざっと確認',
+    guide_read_text_tip2: 'もう一度再生し、原文を見ながらシャドーイング（連結や強勢に注意）',
+    guide_read_text_tip3: '小さな声から始め、徐々に音量と流暢さを上げる',
+    guide_select_words_tip1: '本文の単語をクリックして単語帳に追加',
+    guide_select_words_tip2: '「AI説明」をクリックしてローカライズされた解説と例文を生成',
+    guide_select_words_tip3: '理解に影響するキーワードに集中し、一度に選びすぎない',
+    guide_view_translation_tip1: '母語の翻訳を優先して意味と細部を理解',
+    guide_view_translation_tip2: '不自然な箇所は原文を再生して照合',
+    // よく使う操作/ヒント（新規）
+    refresh_explanation: '説明を更新',
+    generating: '生成中...',
+    ai_explanation_button: 'AI説明',
+    ai_explanation_batch_button: '一括AI説明',
+    ai_explanation_generation_progress: 'AI説明の生成進捗',
+    translation_support_hint: '多言語翻訳サポート',
+    translation_none_title: '翻訳はありません',
+    translation_none_desc: '翻訳がまだ生成されていない可能性があります',
+    translation_enable_action: '翻訳を有効化',
+    translation_enable_hint: '上のオプションをチェックして翻訳を表示',
+    step_labels: {
+      blind_listen: '盲聴',
+      read_text: '原文を見る',
+      select_words: '単語選択',
+      view_translation: '翻訳を見る',
+      record_scoring: '録音と採点',
+    },
+    messages: {
+      add_vocab_failed: '単語の追加に失敗しました。もう一度お試しください',
+      batch_ai_explanation_none_success: 'AI説明が生成されませんでした。再試行してください',
+      batch_ai_explanation_failed: '一括AI説明の生成に失敗しました：{error}',
+      generate_explanation_failed: '説明の生成に失敗しました。再試行してください',
+      practice_completed_delayed_sync: '練習は完了しましたが、一部のデータ同期に時間がかかる場合があります',
+      confirm_delete_vocab: '単語 "{word}" を単語帳から削除しますか？この操作は元に戻せません。',
     },
     // 保存弹窗
     saving_modal_title: '保存中...',

@@ -1,7 +1,6 @@
-'use client';
-import React from 'react';
-import JapaneseShadowingPage from '@/components/shadowing/JapaneseShadowingPage';
+import { redirect } from 'next/navigation';
 
 export default function JapaneseShadowingPracticePage() {
-  return <JapaneseShadowingPage />;
+  // Keep stable subpath, redirect to unified page with lang param
+  redirect('/practice/shadowing?lang=ja');
 }

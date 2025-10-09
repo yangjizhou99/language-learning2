@@ -1,7 +1,6 @@
-'use client';
-import React from 'react';
-import EnglishShadowingPage from '@/components/shadowing/EnglishShadowingPage';
+import { redirect } from 'next/navigation';
 
 export default function EnglishShadowingPracticePage() {
-  return <EnglishShadowingPage />;
+  // Keep stable subpath, redirect to unified page with lang param
+  redirect('/practice/shadowing?lang=en');
 }

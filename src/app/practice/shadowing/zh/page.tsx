@@ -1,7 +1,6 @@
-'use client';
-import React from 'react';
-import ChineseShadowingPage from '@/components/shadowing/ChineseShadowingPage';
+import { redirect } from 'next/navigation';
 
 export default function ChineseShadowingPracticePage() {
-  return <ChineseShadowingPage />;
+  // Keep stable subpath, redirect to unified page with lang param
+  redirect('/practice/shadowing?lang=zh');
 }
