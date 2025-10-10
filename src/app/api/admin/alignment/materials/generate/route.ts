@@ -408,7 +408,7 @@ export async function POST(req: NextRequest) {
   const standardDialogue = stageTwoPayload.standard_dialogue || null;
 
   if (practiceScenario && !Array.isArray(practiceScenario.objectives)) {
-    practiceScenario.objectives = objectives.map((label) => ({ label, translations: {} }));
+    practiceScenario.objectives = objectives.map((label: string) => ({ label, translations: {} }));
   }
   if (standardDialogue && !Array.isArray(standardDialogue.turns)) {
     standardDialogue.turns = [];

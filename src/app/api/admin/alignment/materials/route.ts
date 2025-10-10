@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
     // ensure JSON fields fallback
     payload.task_prompt_translations = item.task_prompt_translations || {};
     payload.exemplar_translations = item.exemplar_translations || {};
-    const knowledgePoints = item.knowledge_points || {};
+    const knowledgePoints = (item.knowledge_points || {}) as { words?: unknown; sentences?: unknown };
     payload.knowledge_points = {
       words: Array.isArray(knowledgePoints.words) ? knowledgePoints.words : [],
       sentences: Array.isArray(knowledgePoints.sentences) ? knowledgePoints.sentences : [],
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
     payload.dialogue_meta = item.dialogue_meta || {};
     payload.writing_meta = item.writing_meta || {};
     payload.ai_metadata = item.ai_metadata || {};
-    payload.practice_scenario = item.practice_scenario || {};
+    payload.practice_scenario = item.practice_scenario || null;
     payload.standard_dialogue = item.standard_dialogue || { turns: [] };
 
     const { data, error } = await supabase

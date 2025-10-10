@@ -263,7 +263,7 @@ export async function POST(req: NextRequest) {
             original: item?.original || '',
             correction: item?.correction || '',
           }))
-          .filter((item) => item.original && item.correction)
+          .filter((item: { type: string; original: string; correction: string }) => item.original && item.correction)
       : [];
     const normalizedSuggestions: string[] = Array.isArray(evaluation?.suggestions)
       ? evaluation.suggestions

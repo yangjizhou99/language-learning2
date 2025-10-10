@@ -522,7 +522,7 @@ export default function AlignmentMaterialPracticePage() {
                           : Object.entries(item.translations || {}).map(([code, value]) => (
                               <div key={code}>
                                 <span className="uppercase font-semibold mr-1">{code}</span>
-                                {value}
+                                {String(value)}
                               </div>
                             ))}
                       </div>
@@ -544,7 +544,7 @@ export default function AlignmentMaterialPracticePage() {
                           : Object.entries(item.translations || {}).map(([code, value]) => (
                               <div key={code}>
                                 <span className="uppercase font-semibold mr-1">{code}</span>
-                                {value}
+                                {String(value)}
                               </div>
                             ))}
                       </div>

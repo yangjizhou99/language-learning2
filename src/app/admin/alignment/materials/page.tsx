@@ -1001,7 +1001,7 @@ export default function AlignmentMaterialsPage() {
         practice_scenario:
           finalPreview.practice_scenario ||
           stageTwoResult?.practice_scenario ||
-          {},
+          null,
         standard_dialogue:
           finalPreview.standard_dialogue ||
           stageTwoResult?.standard_dialogue || { summary: '', turns: [] },

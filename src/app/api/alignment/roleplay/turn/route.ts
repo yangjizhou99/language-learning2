@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
-import { chatJSON } from '@/lib/ai/client';
+import { chatJSON, type ChatJSONArgs } from '@/lib/ai/client';
 import { normUsage } from '@/lib/ai/usage';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
 import type { AlignmentDialogueSpeaker } from '@/lib/alignment/types';
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
     } = body as {
       material_id: string;
       history?: TurnMessage[];
-      provider?: string;
+      provider?: ChatJSONArgs['provider'];
       model?: string;
       temperature?: number;
     };
@@ -255,8 +255,9 @@ export async function POST(req: NextRequest) {
     const scenarioObjectives = Array.isArray(scenario?.objectives)
       ? scenario.objectives.map((obj: any) => obj.label || '').filter(Boolean)
       : [];
-    const fallbackObjectives = Array.isArray(material.subtopic?.objectives)
-      ? material.subtopic.objectives.map((obj: any) => obj.label || obj.title || '').filter(Boolean)
+    const subtopic = Array.isArray(material.subtopic) ? material.subtopic[0] : material.subtopic;
+    const fallbackObjectives = Array.isArray(subtopic?.objectives)
+      ? subtopic.objectives.map((obj: any) => obj.label || obj.title || '').filter(Boolean)
       : [];
     const objectives = scenarioObjectives.length ? scenarioObjectives : fallbackObjectives;
 
@@ -266,7 +267,7 @@ export async function POST(req: NextRequest) {
 
     const prompt = buildPrompt({
       lang: material.lang,
-      level: material.subtopic?.level || 0,
+      level: subtopic?.level || 0,
       scenario,
       standardDialogue: material.standard_dialogue || {},
       knowledgePoints,
@@ -325,7 +326,7 @@ export async function POST(req: NextRequest) {
             met: Boolean(item.met),
             evidence: typeof item.evidence === 'string' ? item.evidence : '',
           }))
-      : objectives.map((label, idx) => ({
+      : objectives.map((label: string, idx: number) => ({
           index: idx + 1,
           label,
           met: false,
