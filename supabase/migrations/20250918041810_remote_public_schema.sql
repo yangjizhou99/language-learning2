@@ -369,7 +369,7 @@ CREATE TABLE IF NOT EXISTS "public"."alignment_materials" (
     "task_prompt_translations" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "exemplar" "text" NOT NULL,
     "exemplar_translations" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "knowledge_points" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "knowledge_points" "jsonb" DEFAULT '{"words": [], "sentences": []}'::"jsonb" NOT NULL,
     "requirements" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
     "standard_answer" "text" NOT NULL,
     "standard_answer_translations" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
@@ -385,6 +385,8 @@ CREATE TABLE IF NOT EXISTS "public"."alignment_materials" (
     "created_by" "uuid",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "practice_scenario" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "standard_dialogue" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     CONSTRAINT "alignment_materials_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text"]))),
     CONSTRAINT "alignment_materials_review_status_check" CHECK (("review_status" = ANY (ARRAY['pending'::"text", 'approved'::"text", 'rejected'::"text"]))),
     CONSTRAINT "alignment_materials_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'pending_review'::"text", 'active'::"text", 'archived'::"text"]))),
@@ -1263,12 +1265,27 @@ CREATE OR REPLACE TRIGGER "update_vocab_entries_updated_at" BEFORE UPDATE ON "pu
 
 
 ALTER TABLE ONLY "public"."alignment_attempts"
+    ADD CONSTRAINT "alignment_attempts_material_fkey" FOREIGN KEY ("material_id") REFERENCES "public"."alignment_materials"("id") ON DELETE SET NULL NOT VALID;
+
+
+
+ALTER TABLE ONLY "public"."alignment_attempts"
     ADD CONSTRAINT "alignment_attempts_material_id_fkey" FOREIGN KEY ("material_id") REFERENCES "public"."alignment_materials"("id") ON DELETE SET NULL;
 
 
 
 ALTER TABLE ONLY "public"."alignment_attempts"
     ADD CONSTRAINT "alignment_attempts_prev_attempt_id_fkey" FOREIGN KEY ("prev_attempt_id") REFERENCES "public"."alignment_attempts"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."alignment_attempts"
+    ADD CONSTRAINT "alignment_attempts_prev_fkey" FOREIGN KEY ("prev_attempt_id") REFERENCES "public"."alignment_attempts"("id") ON DELETE SET NULL NOT VALID;
+
+
+
+ALTER TABLE ONLY "public"."alignment_attempts"
+    ADD CONSTRAINT "alignment_attempts_subtopic_fkey" FOREIGN KEY ("subtopic_id") REFERENCES "public"."alignment_subtopics"("id") ON DELETE CASCADE NOT VALID;
 
 
 

@@ -104,3 +104,5 @@ export function formatShortcut(shortcut: KeyboardShortcut): string {
   return parts.join(isMac ? '' : '+');
 }
 
+
+

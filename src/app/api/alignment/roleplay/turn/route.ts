@@ -1,175 +1,353 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
+import { chatJSON } from '@/lib/ai/client';
+import { normUsage } from '@/lib/ai/usage';
+import { getServiceSupabase } from '@/lib/supabaseAdmin';
+import type { AlignmentDialogueSpeaker } from '@/lib/alignment/types';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from 'next/server';
-import { chatJSON } from '@/lib/ai/client';
-import { normUsage } from '@/lib/ai/usage';
-import { supabase } from '@/lib/supabase';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const SYS = `You are the counterpart in a roleplay dialogue for language learners.
-Speak ONLY as the assigned role (not both), in the target language.
-For D1 (easy): 1–3 short sentences. For D2 (rich): 2–5 sentences.
-When continuing a running dialogue, end with a question to keep it going.
-For the very first turn (kickoff), produce a natural opening for your role based on the exemplar (no need to end with a question unless natural).
-Return plain text only.`;
+type TurnMessage = {
+  speaker: AlignmentDialogueSpeaker;
+  text: string;
+};
 
-function extractFirstLineForRole(exemplar: string, role: 'A' | 'B'): string {
-  const lines = (exemplar || '').split(/\r?\n/);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith(`${role}:`)) {
-      return trimmed.replace(/^A:\s*|^B:\s*/, '').trim();
-    }
+const SYSTEM_PROMPT = `You are the AI partner in a language learning roleplay.
+Stay in character, speak only in the target language, and keep replies natural and concise (1-3 sentences unless scenario requires more).
+Return STRICT JSON only.`;
+
+async function getAuthSupabase(req: NextRequest) {
+  const authHeader = req.headers.get('authorization') || '';
+  if (/^Bearer\s+/i.test(authHeader)) {
+    return createClient(supabaseUrl, supabaseAnon, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: authHeader } },
+    });
   }
-  return '';
+
+  const cookieStore = await cookies();
+  return createServerClient(supabaseUrl, supabaseAnon, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
+      },
+      set() {},
+      remove() {},
+    },
+  });
 }
 
-function buildTurnPrompt({
-  lang,
-  topic,
-  stepKey,
-  step,
-  role,
-  historyPreview,
-  isKickoff,
-}: {
-  lang: 'en' | 'ja' | 'zh';
-  topic: string;
-  stepKey: string;
-  step: any;
-  role: 'A' | 'B';
-  historyPreview: string;
-  isKickoff: boolean;
-}) {
-  const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : '简体中文';
-  const aiRole = role === 'A' ? 'B' : 'A';
-  const exemplar = (step?.exemplar || '').slice(0, 1500);
-  const openingTemplate = extractFirstLineForRole(step?.exemplar || '', aiRole);
-  const support = [
-    step?.key_phrases ? `KEY_PHRASES=${JSON.stringify(step.key_phrases)}` : '',
-    step?.patterns ? `PATTERNS=${JSON.stringify(step.patterns)}` : '',
-    step?.hints ? `HINTS=${JSON.stringify(step.hints)}` : '',
-    isKickoff && openingTemplate ? `OPENING_TEMPLATE(${aiRole})=${openingTemplate}` : '',
-  ]
-    .filter(Boolean)
+function labelLanguage(lang: string) {
+  if (lang === 'en') return 'English';
+  if (lang === 'ja') return 'Japanese';
+  if (lang === 'zh') return 'Simplified Chinese';
+  return lang;
+}
+
+function serialiseHistory(history: TurnMessage[]) {
+  return history
+    .slice(-12)
+    .map((turn) => `${turn.speaker === 'user' ? 'LEARNER' : 'AI'}: ${turn.text}`)
     .join('\n');
+}
 
-  const modeLine = isKickoff
-    ? `KICKOFF: Start the dialogue as ROLE ${aiRole}. Write 1-2 natural opening sentences appropriate for your role and scenario, aligned with the exemplar's first ${aiRole} line. No need to end with a question unless natural.`
-    : `CONTINUE: Continue the dialogue naturally as ROLE ${aiRole}. End with a question.`;
+function buildPrompt({
+  lang,
+  level,
+  scenario,
+  standardDialogue,
+  knowledgePoints,
+  objectives,
+  requirements,
+  history,
+  kickoffSpeaker,
+}: {
+  lang: string;
+  level: number;
+  scenario: any;
+  standardDialogue: any;
+  knowledgePoints: { words: any[]; sentences: any[] };
+  objectives: string[];
+  requirements: string[];
+  history: TurnMessage[];
+  kickoffSpeaker: AlignmentDialogueSpeaker;
+}) {
+  const langLabel = labelLanguage(lang);
+  const historyText = serialiseHistory(history) || 'NONE';
+  const latestUserMsg =
+    [...history].reverse().find((turn) => turn.speaker === 'user')?.text || '';
+  const isKickoff = history.length === 0;
 
-  return `LANG=${L}\nTOPIC=${topic}\nSTEP=${stepKey} (${step?.type})\nYOU_ARE_ROLE=${aiRole} (the AI). The user is ROLE=${role}.\n\n${modeLine}\n- Use key phrases/patterns when natural.\n- Do NOT output the user's lines.\n\nEXEMPLAR_SNIPPET<<<\n${exemplar}\n>>>\n\nSUPPORT<<<\n${support}\n>>>\n\nRECENT HISTORY (newest first)<<<\n${historyPreview}\n>>>`;
+  const wordLines = knowledgePoints.words
+    .map((item: any) => `- ${item.term ?? ''}`)
+    .join('\n');
+  const sentenceLines = knowledgePoints.sentences
+    .map((item: any) => `- ${item.sentence ?? ''}`)
+    .join('\n');
+  const objectivesLines = objectives.map((label, idx) => `${idx + 1}. ${label}`).join('\n') || 'N/A';
+  const requirementsLine = requirements.map((label, idx) => `${idx + 1}. ${label}`).join('\n') || 'N/A';
+  const referenceDialogue =
+    Array.isArray(standardDialogue?.turns) && standardDialogue.turns.length
+      ? standardDialogue.turns
+          .slice(0, 12)
+          .map(
+            (turn: any, idx: number) =>
+              `${idx + 1}. ${turn.speaker === 'ai' ? 'AI' : 'Learner'}: ${turn.text}`,
+          )
+          .join('\n')
+      : 'N/A';
+
+  const kickoffLine = isKickoff
+    ? `KICKOFF: No conversation yet. ${kickoffSpeaker === 'ai' ? 'You speak first.' : 'Wait for learner input.'}`
+    : '';
+
+  const responseInstruction =
+    kickoffSpeaker === 'ai' && isKickoff
+      ? 'Start the dialogue with a friendly opener (1-2 sentences) that fits the scenario.'
+      : 'Respond to the learner. Avoid repeating their message and end with a question if conversation should continue.';
+
+  return `
+TARGET_LANGUAGE=${langLabel}
+LEVEL=L${level}
+${kickoffLine}
+SCENARIO_SUMMARY=${scenario?.summary ?? ''}
+LEARNER_ROLE=${scenario?.user_role?.name ?? ''}: ${scenario?.user_role?.description ?? ''}
+AI_ROLE=${scenario?.ai_role?.name ?? ''}: ${scenario?.ai_role?.description ?? ''}
+OBJECTIVES:
+${objectivesLines}
+REQUIREMENTS:
+${requirementsLine}
+KEY_WORDS:
+${wordLines || 'N/A'}
+KEY_SENTENCES:
+${sentenceLines || 'N/A'}
+REFERENCE_STANDARD_DIALOGUE:
+${referenceDialogue}
+
+CONVERSATION_HISTORY (oldest -> newest):
+${historyText}
+
+LATEST_LEARNER_MESSAGE:
+${latestUserMsg || '(none)'}
+
+TASK:
+${responseInstruction}
+- Correct the learner's latest message only when there are clear grammar or word choice errors; provide the corrected sentence(s) without explanations.
+- Track objective completion using the entire history. When an objective becomes completed for the first time this turn, flag it with evidence text (key sentence).
+- If no corrections are needed, return an empty array.
+
+Return JSON ONLY with this shape:
+{
+  "reply": STRING,                               // your next message, in ${langLabel}
+  "corrections": [                               // optional corrections for learner
+    { "original": STRING, "corrected": STRING }
+  ],
+  "objectives": [                                // status for each objective (1-based index)
+    { "index": NUMBER, "label": STRING, "met": BOOLEAN, "evidence": STRING }
+  ],
+  "newly_completed": [NUMBER]                    // subset of indexes that became met this turn
+}
+Ensure arrays exist even if empty.`;
 }
 
 export async function POST(req: NextRequest) {
-  const b = await req.json();
-  const {
-    pack_id,
-    step_key,
-    role,
-    messages = [],
-    provider = 'deepseek',
-    model = 'deepseek-chat',
-    temperature = 0.3,
-  } = b as any;
-  if (!pack_id || !step_key || !role)
-    return NextResponse.json({ error: 'missing fields' }, { status: 400 });
-
-  // 获取用户信息
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const mockPack = {
-    lang: 'zh' as const,
-    topic: '订餐',
-    steps: {
-      D1: {
-        type: 'dialogue_easy',
-        exemplar:
-          'A: 你好，我想订餐.\nB: 您好，请问需要点什么？\nA: 我要一份宫保鸡丁和一碗米饭。\nB: 好的，还需要别的吗？\nA: 不用了，谢谢。\nB: 请稍等，马上就好。',
-        key_phrases: ['你好', '我想订餐', '请问需要点什么'],
-        patterns: ['我想+动词', '请问+什么'],
-        hints: ['使用基本问候语'],
-      },
-      D2: {
-        type: 'dialogue_rich',
-        exemplar:
-          'A: 您好，我想订一份外卖。\nB: 好的，您想点些什么？\nA: 请给我来一份鱼香肉丝，不要放辣椒。另外再加一份炒青菜。\nB: 鱼香肉丝不加辣椒，炒青菜一份。需要主食吗？\nA: 要两碗米饭。大概多久能送到？\nB: 大约30分钟。您的地址是？\nA: 人民路123号。\nB: 好的，总计45元。\nA: 谢谢，我等你。',
-        key_phrases: ['我想订外卖', '不要放辣椒', '另外再加'],
-        patterns: ['不要+动词', '另外+动词'],
-        hints: ['提出特殊要求'],
-      },
-    },
-  };
-
-  const step = mockPack.steps[step_key as keyof typeof mockPack.steps];
-  const type = step?.type || step_key;
-  if (
-    !step ||
-    !(String(type).startsWith('dialogue') || step_key.startsWith('D1') || step_key.startsWith('D2'))
-  ) {
-    return NextResponse.json({ error: 'step is not a dialogue' }, { status: 400 });
-  }
-
-  const isKickoff = (messages || []).length === 0;
-
-  const lastTurns = [...messages]
-    .slice(-8)
-    .reverse()
-    .map((m: any) => `${m.role === 'user' ? role : role === 'A' ? 'B' : 'A'}: ${m.content}`)
-    .join('\n');
-
   try {
+    const body = await req.json();
+    const {
+      material_id,
+      history: rawHistory = [],
+      provider = 'deepseek',
+      model = 'deepseek-chat',
+      temperature = 0.3,
+    } = body as {
+      material_id: string;
+      history?: TurnMessage[];
+      provider?: string;
+      model?: string;
+      temperature?: number;
+    };
+
+    if (!material_id) {
+      return NextResponse.json({ error: 'missing material_id' }, { status: 400 });
+    }
+
+    const supabaseAuth = await getAuthSupabase(req);
+    const {
+      data: { user },
+    } = await supabaseAuth.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+    }
+
+    const supabaseAdmin = getServiceSupabase();
+    const { data: material, error: materialError } = await supabaseAdmin
+      .from('alignment_materials')
+      .select(
+        `
+        id,
+        lang,
+        task_type,
+        status,
+        review_status,
+        practice_scenario,
+        standard_dialogue,
+        knowledge_points,
+        requirements,
+        subtopic:alignment_subtopics!alignment_materials_subtopic_fkey(
+          id,
+          title,
+          level,
+          objectives
+        )
+      `,
+      )
+      .eq('id', material_id)
+      .single();
+
+    if (materialError || !material) {
+      return NextResponse.json({ error: 'material not found' }, { status: 404 });
+    }
+    if (material.status !== 'active' || material.review_status !== 'approved') {
+      return NextResponse.json({ error: 'material not available' }, { status: 403 });
+    }
+
+    const scenario = material.practice_scenario || {};
+    const kickoffSpeaker: AlignmentDialogueSpeaker =
+      scenario?.kickoff_speaker === 'user' ? 'user' : 'ai';
+
+    const history: TurnMessage[] = Array.isArray(rawHistory)
+      ? rawHistory
+          .filter(
+            (turn) =>
+              turn &&
+              (turn.speaker === 'user' || turn.speaker === 'ai') &&
+              typeof turn.text === 'string',
+          )
+          .map((turn) => ({ speaker: turn.speaker, text: turn.text.trim() }))
+      : [];
+
+    if (history.length === 0 && kickoffSpeaker === 'user') {
+      return NextResponse.json({
+        ok: true,
+        wait_for_user: true,
+        objectives: [],
+        corrections: [],
+        reply: '',
+        newly_completed: [],
+      });
+    }
+
+    const knowledgePoints = {
+      words: Array.isArray(material.knowledge_points?.words)
+        ? material.knowledge_points.words
+        : [],
+      sentences: Array.isArray(material.knowledge_points?.sentences)
+        ? material.knowledge_points.sentences
+        : [],
+    };
+
+    const scenarioObjectives = Array.isArray(scenario?.objectives)
+      ? scenario.objectives.map((obj: any) => obj.label || '').filter(Boolean)
+      : [];
+    const fallbackObjectives = Array.isArray(material.subtopic?.objectives)
+      ? material.subtopic.objectives.map((obj: any) => obj.label || obj.title || '').filter(Boolean)
+      : [];
+    const objectives = scenarioObjectives.length ? scenarioObjectives : fallbackObjectives;
+
+    const requirements = Array.isArray(material.requirements)
+      ? material.requirements.map((req: any) => req.label || '').filter(Boolean)
+      : [];
+
+    const prompt = buildPrompt({
+      lang: material.lang,
+      level: material.subtopic?.level || 0,
+      scenario,
+      standardDialogue: material.standard_dialogue || {},
+      knowledgePoints,
+      objectives,
+      requirements,
+      history,
+      kickoffSpeaker,
+    });
+
     const { content, usage } = await chatJSON({
       provider,
       model,
       temperature,
-      response_json: false,
+      response_json: true,
       messages: [
-        { role: 'system', content: SYS },
-        {
-          role: 'user',
-          content: buildTurnPrompt({
-            lang: mockPack.lang,
-            topic: mockPack.topic,
-            stepKey: step_key,
-            step,
-            role,
-            historyPreview: lastTurns,
-            isKickoff,
-          }),
-        },
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: prompt },
       ],
-      userId: user.id, // 传递用户ID进行权限检查
+      userId: user.id,
     });
 
-    console.log('角色扮演对话:', {
-      pack_id,
-      step_key,
-      role,
-      messages: messages.length,
-      reply: content,
-    });
+    let parsed: any;
+    try {
+      parsed = JSON.parse(content);
+    } catch (error) {
+      console.error('roleplay turn JSON parse failed', { content, error });
+      return NextResponse.json({ error: 'LLM 返回的 JSON 无法解析' }, { status: 400 });
+    }
 
-    const u = normUsage(usage);
-    return NextResponse.json({ ok: true, reply: content, usage: u });
+    const reply = typeof parsed.reply === 'string' ? parsed.reply : '';
+    const corrections = Array.isArray(parsed.corrections)
+      ? parsed.corrections
+          .filter(
+            (item: any) =>
+              item &&
+              typeof item.original === 'string' &&
+              typeof item.corrected === 'string' &&
+              item.original.trim() &&
+              item.corrected.trim(),
+          )
+          .map((item: any) => ({
+            original: item.original,
+            corrected: item.corrected,
+          }))
+      : [];
+
+    const objectivesState = Array.isArray(parsed.objectives)
+      ? parsed.objectives
+          .filter(
+            (item: any) =>
+              item && typeof item.index === 'number' && typeof item.label === 'string',
+          )
+          .map((item: any) => ({
+            index: item.index,
+            label: item.label,
+            met: Boolean(item.met),
+            evidence: typeof item.evidence === 'string' ? item.evidence : '',
+          }))
+      : objectives.map((label, idx) => ({
+          index: idx + 1,
+          label,
+          met: false,
+          evidence: '',
+        }));
+
+    const newlyCompleted = Array.isArray(parsed.newly_completed)
+      ? parsed.newly_completed.filter((n: any) => Number.isInteger(n))
+      : [];
+
+    return NextResponse.json({
+      ok: true,
+      reply,
+      corrections,
+      objectives: objectivesState,
+      newly_completed: newlyCompleted,
+      usage: normUsage(usage),
+    });
   } catch (error) {
-    console.error('角色扮演对话错误:', error);
+    console.error('roleplay turn error', error);
     return NextResponse.json(
-      {
-        error:
-          'AI 对话失败: ' +
-          (error instanceof Error
-            ? error instanceof Error
-              ? error.message
-              : String(error)
-            : String(error)),
-      },
+      { error: error instanceof Error ? error.message : 'internal error' },
       { status: 500 },
     );
   }

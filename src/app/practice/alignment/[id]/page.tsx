@@ -22,17 +22,17 @@ const STAGES: Array<{ key: StageKey; label: string; description: string }> = [
   {
     key: 'learn',
     label: '步骤一 / 学习范文和知识点',
-    description: '阅读任务提示、示例与核心表达�?,
+    description: '阅读任务提示、示例与核心表达',
   },
   {
     key: 'task',
-    label: '步骤�?/ 完成任务',
-    description: '根据要求完成对齐练习并提交�?,
+    label: '步骤二 / 完成任务',
+    description: '根据要求完成对齐练习并提交',
   },
   {
     key: 'review',
-    label: '步骤�?/ 总结评价',
-    description: '查看评分、亮点与改进建议�?,
+    label: '步骤三 / 总结评价',
+    description: '查看评分、亮点与改进建议',
   },
 ];
 
@@ -103,14 +103,14 @@ const TASK_LABEL: Record<string, string> = {
   dialogue: '对话任务',
   article: '文章写作',
   task_email: '任务邮件',
-  long_writing: '长写�?,
+  long_writing: '长写作',
 };
 
 const GENRE_LABEL: Record<string, string> = {
   dialogue: '对话',
   article: '文章',
   task_email: '任务邮件',
-  long_writing: '长写�?,
+  long_writing: '长写作',
 };
 
 export default function AlignmentMaterialPracticePage() {
@@ -367,12 +367,12 @@ export default function AlignmentMaterialPracticePage() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        setChatError('���ȵ�¼���ټ����Ի�');
+        setChatError('请先登录后再继续对话');
         return;
       }
     } catch (err) {
       console.error(err);
-      setChatError('��¼״̬У��ʧ�ܣ����Ժ�����');
+      setChatError('登录状态校验失败，请稍后重试');
       return;
     }
 
@@ -384,7 +384,7 @@ export default function AlignmentMaterialPracticePage() {
       await sendTurn(nextHistory);
     } catch (err) {
       console.error(err);
-      setChatError('����ʧ�ܣ����Ժ�����');
+      setChatError('发送失败，请稍后重试');
     }
   }, [material, chatLoading, chatInput, chatHistory, sendTurn]);
 
@@ -395,13 +395,13 @@ export default function AlignmentMaterialPracticePage() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        setChatError('���ȵ�¼���ٿ�ʼ�Ի�');
+        setChatError('请先登录后再开始对话');
         return;
       }
       await sendTurn([]);
     } catch (err) {
       console.error(err);
-      setChatError('����Ի�ʧ�ܣ����Ժ�����');
+      setChatError('开始对话失败，请稍后重试');
     }
   }, [material, chatLoading, sendTurn]);
 
@@ -446,7 +446,7 @@ export default function AlignmentMaterialPracticePage() {
 
   if (loading) {
     return (
-      <main className="max-w-6xl mx-auto p-6 text-muted-foreground">加载�?..</main>
+      <main className="max-w-6xl mx-auto p-6 text-muted-foreground">加载中...</main>
     );
   }
 
@@ -483,7 +483,8 @@ export default function AlignmentMaterialPracticePage() {
         <div>
           <h2 className="text-xl font-semibold">任务提示</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            请先理解任务背景，再学习范文与知识点�?          </p>
+            请先理解任务背景，再学习范文与知识点。
+          </p>
         </div>
         <div className="bg-muted/40 rounded-xl p-4 text-sm whitespace-pre-wrap leading-relaxed">
           {material.task_prompt}
@@ -579,7 +580,7 @@ export default function AlignmentMaterialPracticePage() {
         </section>
       )}
 
-      {/* 标准答案在任务完成后展示，这里不再显�?*/}
+      {/* 标准答案在任务完成后展示，这里不再显示 */}
     </div>
   );
 
@@ -590,7 +591,8 @@ export default function AlignmentMaterialPracticePage() {
           <div>
             <h2 className="text-xl font-semibold">完成写作任务</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              按照提示完成练习。如需复习范文，可点击返回第一步�?            </p>
+              按照提示完成练习。如需复习范文，可点击返回第一步。
+            </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setActiveStage('learn')}>
             查看范文与知识点
@@ -598,7 +600,8 @@ export default function AlignmentMaterialPracticePage() {
         </div>
         <details className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm">
           <summary className="cursor-pointer font-medium text-muted-foreground">
-            快速查看任务提�?          </summary>
+            快速查看任务提示
+          </summary>
           <div className="mt-2 space-y-3">
             <div className="whitespace-pre-wrap leading-relaxed">{material.task_prompt}</div>
             {promptTranslations.length > 0 && (
@@ -640,7 +643,8 @@ export default function AlignmentMaterialPracticePage() {
         <div>
           <h2 className="text-xl font-semibold">我的练习</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            请根据要求完成写作，建议使用所给知识点中的表达�?          </p>
+            请根据要求完成写作，建议使用所给知识点中的表达。
+          </p>
         </div>
         <Textarea
           rows={10}
@@ -664,7 +668,8 @@ export default function AlignmentMaterialPracticePage() {
               variant="outline"
               onClick={() => setActiveStage('review')}
             >
-              查看最近评�?            </Button>
+              查看最近评价
+            </Button>
           )}
         </div>
       </section>
@@ -689,7 +694,7 @@ export default function AlignmentMaterialPracticePage() {
           <div className="rounded-lg bg-muted/30 p-3 text-sm">
             <div className="font-medium text-foreground">学员角色</div>
             <div className="text-muted-foreground">
-              {userRoleName} · {scenario?.user_role?.description || '请根据目标完成任�?}
+              {userRoleName} · {scenario?.user_role?.description || '请根据目标完成任务'}
             </div>
           </div>
           <div className="rounded-lg bg-muted/30 p-3 text-sm">
@@ -699,9 +704,9 @@ export default function AlignmentMaterialPracticePage() {
             </div>
           </div>
           <div className="rounded-lg bg-muted/20 p-3 text-sm md:col-span-2">
-            <div className="font-medium text-foreground">开场顺�?/div>
+            <div className="font-medium text-foreground">开场顺序</div>
             <div className="text-muted-foreground">
-              {kickoffSpeaker === 'ai' ? 'AI 先开场，你紧随其后回应�? : '请先由你发言来开启对话�?}
+              {kickoffSpeaker === 'ai' ? 'AI 先开场，你紧随其后回应' : '请先由你发言来开启对话'}
             </div>
           </div>
         </div>
@@ -724,7 +729,7 @@ export default function AlignmentMaterialPracticePage() {
                     {obj.index}. {obj.label}
                   </span>
                   <Badge variant={obj.met ? 'default' : 'secondary'}>
-                    {obj.met ? '已完�? : '待完�?}
+                    {obj.met ? '已完成' : '待完成'}
                   </Badge>
                 </div>
                 {obj.evidence && (
@@ -741,7 +746,8 @@ export default function AlignmentMaterialPracticePage() {
           <div>
             <h2 className="text-xl font-semibold">实时对话</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              使用上方知识点，完成对话并满足目标。AI 会在必要时纠正你的表达�?            </p>
+              使用上方知识点，完成对话并满足目标。AI 会在必要时纠正你的表达。
+            </p>
           </div>
           <div className="flex items-center gap-2" />
         </div>
@@ -751,9 +757,9 @@ export default function AlignmentMaterialPracticePage() {
             <div className="text-sm text-muted-foreground">
               {kickoffSpeaker === 'ai'
                 ? chatLoading
-                  ? 'AI 正在开启对话�?
-                  : '点击“让 AI 开始”或稍候等�?AI 发言�?
-                : '请先输入第一句对话来开启练习�?}
+                  ? 'AI 正在开启对话...'
+                  : '点击"让 AI 开始"或稍候等待 AI 发言。'
+                : '请先输入第一句对话来开启练习。'}
             </div>
           ) : (
             chatHistory.map((turn, idx) => (
@@ -777,7 +783,8 @@ export default function AlignmentMaterialPracticePage() {
 
         {newlyCompletedObjectives.length > 0 && (
           <div className="text-sm text-green-700 border border-green-200 bg-green-50 rounded px-3 py-2">
-            恭喜完成目标 {newlyCompletedObjectives.join(', ')}�?          </div>
+            恭喜完成目标 {newlyCompletedObjectives.join(', ')}！
+          </div>
         )}
 
         {latestCorrections.length > 0 && (
@@ -803,17 +810,18 @@ export default function AlignmentMaterialPracticePage() {
             rows={3}
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
-            placeholder="请输入你的下一句对�?.."
+            placeholder="请输入你的下一句对话..."
             disabled={chatLoading}
             className="bg-background"
           />
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={handleSendChat} disabled={chatLoading || !chatInput.trim()}>
-              {chatLoading ? '生成�?..' : '发�?}
+              {chatLoading ? '生成中...' : '发送'}
             </Button>
             {kickoffSpeaker === 'ai' && chatHistory.length === 0 && !chatLoading && (
               <Button type="button" variant="outline" onClick={handleKickoff}>
-                �?AI 开�?              </Button>
+                让 AI 开始
+              </Button>
             )}
             <Button
               type="button"
@@ -836,11 +844,12 @@ export default function AlignmentMaterialPracticePage() {
 
         <div className="flex flex-wrap items-center gap-3">
           <Button onClick={handleSubmit} disabled={attempting || chatLoading}>
-            {attempting ? '评分�?..' : '结束对话并提交评�?}
+            {attempting ? '评分中...' : '结束对话并提交评价'}
           </Button>
           {latestAttempt && (
             <Button variant="outline" onClick={() => setActiveStage('review')}>
-              查看最近评�?            </Button>
+              查看最近评价
+            </Button>
           )}
         </div>
       </section>
@@ -854,9 +863,10 @@ export default function AlignmentMaterialPracticePage() {
     <div className="space-y-6">
       {!latestAttempt ? (
         <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
-          <h2 className="text-xl font-semibold">还没有提交记�?/h2>
+          <h2 className="text-xl font-semibold">还没有提交记录</h2>
           <p className="text-sm text-muted-foreground">
-            完成任务并提交后，这里会展示评分和详细的改进建议�?          </p>
+            完成任务并提交后，这里会展示评分和详细的改进建议。
+          </p>
           <div>
             <Button onClick={() => setActiveStage('task')}>前往完成任务</Button>
           </div>
@@ -866,13 +876,15 @@ export default function AlignmentMaterialPracticePage() {
           <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold">最新评�?/h2>
+                <h2 className="text-xl font-semibold">最新评价</h2>
                 <p className="text-sm text-muted-foreground">
-                  尝试次数：第 {latestAttempt.attempt_number} �?/ 时间�?                  {new Date(latestAttempt.created_at).toLocaleString()}
+                  尝试次数：第 {latestAttempt.attempt_number} 次 / 时间：
+                  {new Date(latestAttempt.created_at).toLocaleString()}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => setActiveStage('task')}>
-                再写一�?              </Button>
+                再写一次
+              </Button>
             </div>
 
             {latestAttempt.score_total !== null && (
@@ -884,15 +896,15 @@ export default function AlignmentMaterialPracticePage() {
             <div className="text-sm text-muted-foreground">
               当前状态：
               {evaluationCompleted === null
-                ? '未评�?
+                ? '未评价'
                 : evaluationCompleted
-                  ? '任务已完�?
-                  : '任务未完�?}
+                  ? '任务已完成'
+                  : '任务未完成'}
             </div>
 
             {evaluationErrors.length > 0 && (
               <div className="space-y-2">
-                <h3 className="text-lg font-medium">发现的错�?/h3>
+                <h3 className="text-lg font-medium">发现的错误</h3>
                 <ul className="space-y-2 text-sm">
                   {evaluationErrors.map((err, idx) => (
                     <li
@@ -929,7 +941,7 @@ export default function AlignmentMaterialPracticePage() {
                 {history.map((attempt) => (
                   <div key={attempt.id} className="border rounded-lg px-3 py-2 bg-muted/20">
                     <div className="flex items-center justify-between">
-                      <span>�?{attempt.attempt_number} �?/span>
+                      <span>第 {attempt.attempt_number} 次</span>
                       <span className="text-xs text-muted-foreground">
                         {new Date(attempt.created_at).toLocaleString()}
                       </span>
@@ -959,7 +971,7 @@ export default function AlignmentMaterialPracticePage() {
           items={[
             { href: '/', label: '首页' },
             { href: '/practice/alignment', label: '对齐练习' },
-            { label: material.subtopic?.title || '训练�? },
+            { label: material.subtopic?.title || '训练页' },
           ]}
         />
 
@@ -979,11 +991,12 @@ export default function AlignmentMaterialPracticePage() {
                 {material.subtopic?.title || '未命名小主题'}
               </h1>
               <p className="text-muted-foreground mt-2">
-                {material.subtopic?.one_line || theme?.title || '围绕该主题完成练习任务�?}
+                {material.subtopic?.one_line || theme?.title || '围绕该主题完成练习任务。'}
               </p>
             </div>
             <div className="text-sm text-muted-foreground">
-              等级：L{material.subtopic?.level ?? '?'} / 主题�?              {theme?.title || '未分类主�?}
+              等级：L{material.subtopic?.level ?? '?'} / 主题：
+              {theme?.title || '未分类主题'}
             </div>
             {material.subtopic?.objectives?.length ? (
               <ul className="text-sm text-muted-foreground list-disc list-inside">

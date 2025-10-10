@@ -69,14 +69,14 @@ const GENRE_LABEL: Record<AlignmentGenre, string> = {
   dialogue: '对话',
   article: '文章',
   task_email: '任务邮件',
-  long_writing: '长写作',
+  long_writing: '长写�?,
 };
 
 const TASK_LABEL: Record<AlignmentTaskType, string> = {
   dialogue: '对话',
   article: '文章写作',
   task_email: '任务邮件',
-  long_writing: '长写作',
+  long_writing: '长写�?,
 };
 
 export default function AlignmentMaterialsPage() {
@@ -148,7 +148,7 @@ export default function AlignmentMaterialsPage() {
         setSubtopics(json.items || []);
       }
     } catch (error) {
-      console.error('加载小主题失败', error);
+      console.error('加载小主题失�?, error);
     }
   }, [getAuthHeaders]);
 
@@ -380,7 +380,7 @@ export default function AlignmentMaterialsPage() {
 
   const handleGenerateStageOne = useCallback(async () => {
     if (!generateSubtopicId) {
-      alert('请选择小主题');
+      alert('请选择小主�?);
       return;
     }
     setGeneratingStage('stage1');
@@ -408,7 +408,7 @@ export default function AlignmentMaterialsPage() {
       }
       const base = normalizeStageOne(json.data || json.stage1 || null);
       if (!base) {
-        throw new Error('AI 未返回有效内容');
+        throw new Error('AI 未返回有效内�?);
       }
       setStageOneResult(base);
       setGeneratePreview(base);
@@ -429,7 +429,7 @@ export default function AlignmentMaterialsPage() {
 
   const handleGenerateStageTwo = useCallback(async () => {
     if (!generateSubtopicId) {
-      alert('请选择小主题');
+      alert('请选择小主�?);
       return;
     }
     if (!stageOneResult) {
@@ -471,19 +471,10 @@ export default function AlignmentMaterialsPage() {
       if (standardDialogue && !Array.isArray(standardDialogue.turns)) {
         standardDialogue.turns = [];
       }
-      const filledStandardAnswer =
-        stageOneResult.standard_answer?.trim()
-          ? stageOneResult.standard_answer
-          : standardDialogue?.turns?.length
-            ? standardDialogue.turns
-                .map((turn) => `${turn.speaker === 'ai' ? 'AI' : '学员'}: ${turn.text}`)
-                .join('\n')
-            : stageOneResult.exemplar || '';
       const merged = {
         ...stageOneResult,
         practice_scenario: practiceScenario,
         standard_dialogue: standardDialogue,
-        standard_answer: filledStandardAnswer,
       } as GeneratedMaterial;
       setStageOneResult(merged);
       setStageTwoResult({
@@ -524,14 +515,6 @@ export default function AlignmentMaterialsPage() {
 
   const buildTranslationPayload = useCallback((material: AlignmentMaterialWithRelations) => {
     const knowledge = material.knowledge_points || { words: [], sentences: [] };
-    const resolvedStandardAnswer =
-      material.standard_answer && material.standard_answer.trim()
-        ? material.standard_answer
-        : material.standard_dialogue?.turns?.length
-          ? material.standard_dialogue.turns
-              .map((turn: any) => `${turn.speaker === 'ai' ? 'AI' : '学员'}: ${turn.text}`)
-              .join('\n')
-          : material.exemplar || '';
     return {
       task_prompt: material.task_prompt,
       task_prompt_translations: material.task_prompt_translations || {},
@@ -557,7 +540,7 @@ export default function AlignmentMaterialsPage() {
             translations: req?.translations || {},
           }))
         : [],
-      standard_answer: resolvedStandardAnswer,
+      standard_answer: material.standard_answer || '',
       standard_answer_translations: material.standard_answer_translations || {},
       practice_scenario: material.practice_scenario || null,
       standard_dialogue: material.standard_dialogue || null,
@@ -714,7 +697,7 @@ export default function AlignmentMaterialsPage() {
 
   const handleGenerateAll = useCallback(async () => {
     if (!generateSubtopicId) {
-      alert('请选择小主题');
+      alert('请选择小主�?);
       return;
     }
     setGeneratingStage('all');
@@ -742,7 +725,7 @@ export default function AlignmentMaterialsPage() {
       }
       const item = normalizeStageOne(json.item || null);
       if (!item) {
-        throw new Error('AI 未返回有效内容');
+        throw new Error('AI 未返回有效内�?);
       }
       if (item.practice_scenario && !Array.isArray(item.practice_scenario.objectives)) {
         item.practice_scenario.objectives = (selectedSubtopic?.objectives || []).map(
@@ -755,15 +738,6 @@ export default function AlignmentMaterialsPage() {
       if (item.standard_dialogue && !Array.isArray(item.standard_dialogue.turns)) {
         item.standard_dialogue.turns = [];
       }
-      item.standard_answer =
-        item.standard_answer?.trim()
-          ? item.standard_answer
-          : item.standard_dialogue?.turns?.length
-            ? item.standard_dialogue.turns
-                .map((turn) => `${turn.speaker === 'ai' ? 'AI' : '学员'}: ${turn.text}`)
-                .join('\n')
-            : item.exemplar || '';
-      item.standard_answer_translations = item.standard_answer_translations || {};
       setStageOneResult(item);
       setStageTwoResult({
         practice_scenario: item.practice_scenario ?? null,
@@ -852,7 +826,7 @@ export default function AlignmentMaterialsPage() {
 
   const handleBulkPublish = useCallback(async () => {
     if (selectedMaterialIds.length === 0) {
-      alert('请先选择要操作的训练包');
+      alert('请先选择要操作的训练�?);
       return;
     }
     setBulkAction('publish');
@@ -879,7 +853,7 @@ export default function AlignmentMaterialsPage() {
           throw new Error(json.error || '批量发布失败');
         }
       }
-      alert('选中的训练包已发布');
+      alert('选中的训练包已发�?);
       setSelectedMaterials({});
       await loadMaterials();
     } catch (error) {
@@ -892,7 +866,7 @@ export default function AlignmentMaterialsPage() {
 
   const handleBulkTranslateSelected = useCallback(async () => {
     if (selectedMaterialObjects.length === 0) {
-      alert('请先选择要翻译的训练包');
+      alert('请先选择要翻译的训练�?);
       return;
     }
     setBulkAction('translate');
@@ -932,7 +906,7 @@ export default function AlignmentMaterialsPage() {
           }),
         });
       }
-      alert('翻译已补齐');
+      alert('翻译已补�?);
       setSelectedMaterials({});
       await loadMaterials();
     } catch (error) {
@@ -959,18 +933,6 @@ export default function AlignmentMaterialsPage() {
       return;
     }
     const finalPreview = generatePreview || stageOneResult;
-    const resolvedStandardAnswer = (() => {
-      if (finalPreview.standard_answer && finalPreview.standard_answer.trim()) {
-        return finalPreview.standard_answer;
-      }
-      if (finalPreview.standard_dialogue?.turns?.length) {
-        return finalPreview.standard_dialogue.turns
-          .map((turn) => `${turn.speaker === 'ai' ? 'AI' : '学员'}: ${turn.text}`)
-          .join('\n');
-      }
-      return finalPreview.exemplar || '';
-    })();
-
     setSaving(true);
     try {
       const payload: Partial<AlignmentMaterial> = {
@@ -991,7 +953,7 @@ export default function AlignmentMaterialsPage() {
           label: req.label || '',
           translations: req.translations || {},
         })),
-        standard_answer: resolvedStandardAnswer,
+        standard_answer: finalPreview.standard_answer,
         standard_answer_translations: finalPreview.standard_answer_translations || {},
         core_sentences: finalPreview.core_sentences || [],
         rubric: finalPreview.rubric || {},
@@ -1023,7 +985,7 @@ export default function AlignmentMaterialsPage() {
       setStageOneResult(null);
       setStageTwoResult(null);
       await loadMaterials();
-      alert('已保存为待审核草稿');
+      alert('已保存为待审核草�?);
     } catch (error) {
       console.error(error);
       alert((error as Error).message || '保存失败');
@@ -1111,8 +1073,7 @@ export default function AlignmentMaterialsPage() {
     if (!requirementRange) return null;
     return (
       <span className="text-xs text-muted-foreground">
-        要求数量建议：{requirementRange[0]}~{requirementRange[1]} 条
-      </span>
+        要求数量建议：{requirementRange[0]}~{requirementRange[1]} �?      </span>
     );
   };
 
@@ -1120,8 +1081,7 @@ export default function AlignmentMaterialsPage() {
     if (!wordRange) return null;
     return (
       <span className="text-xs text-muted-foreground">
-        字数目标：{wordRange[0]}~{wordRange[1]} 词
-      </span>
+        字数目标：{wordRange[0]}~{wordRange[1]} �?      </span>
     );
   };
 
@@ -1131,8 +1091,7 @@ export default function AlignmentMaterialsPage() {
         <div>
           <h1 className="text-2xl font-semibold">对齐练习 · 训练包生成与审核</h1>
           <p className="text-sm text-muted-foreground">
-            为小主题生成完整的练习材料，审核并发布，对应的任务与评分标准会提供给学员。
-          </p>
+            为小主题生成完整的练习材料，审核并发布，对应的任务与评分标准会提供给学员�?          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={loadMaterials} disabled={loading}>
@@ -1146,8 +1105,7 @@ export default function AlignmentMaterialsPage() {
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
-            AI 生成训练包
-          </CardTitle>
+            AI 生成训练�?          </CardTitle>
           <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
             {renderRequirementRange()}
             {renderWordRange()}
@@ -1159,7 +1117,7 @@ export default function AlignmentMaterialsPage() {
               <Label>选择主题</Label>
               <Select value={themeFilter} onValueChange={setThemeFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="筛选主题" />
+                  <SelectValue placeholder="筛选主�? />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
                   <SelectItem value="all">全部主题</SelectItem>
@@ -1172,10 +1130,10 @@ export default function AlignmentMaterialsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>选择小主题</Label>
+              <Label>选择小主�?/Label>
               <Select value={generateSubtopicId} onValueChange={setGenerateSubtopicId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="选择小主题" />
+                  <SelectValue placeholder="选择小主�? />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
                   {subtopicsForGeneration.map((subtopic) => (
@@ -1245,10 +1203,10 @@ export default function AlignmentMaterialsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <Badge variant={stageOneCompleted ? 'default' : 'outline'}>
-              步骤一 · {stageOneCompleted ? '已完成' : '待执行'}
+              步骤一 · {stageOneCompleted ? '已完�? : '待执�?}
             </Badge>
             <Badge variant={stageTwoCompleted ? 'default' : 'outline'}>
-              步骤二 · {stageTwoCompleted ? '已完成' : '待执行'}
+              步骤�?· {stageTwoCompleted ? '已完�? : '待执�?}
             </Badge>
           </div>
 
@@ -1274,11 +1232,11 @@ export default function AlignmentMaterialsPage() {
               <CardContent className="space-y-3 text-sm text-muted-foreground">
                 {targetLangs.length > 0 && (
                   <div className="rounded-md border border-dashed border-muted-foreground/40 bg-muted/20 p-3 text-xs space-y-2">
-                    <div className="font-medium text-foreground">翻译状态</div>
+                    <div className="font-medium text-foreground">翻译状�?/div>
                     {translationStatus.perLang.map((item) => (
                       <div key={item.code} className="flex items-start gap-2">
                         <Badge variant={item.done ? 'default' : 'secondary'} className="mt-0.5">
-                          {item.code.toUpperCase()} {item.done ? '已完成' : '待翻译'}
+                          {item.code.toUpperCase()} {item.done ? '已完�? : '待翻�?}
                         </Badge>
                         {item.fields.length > 0 ? (
                           <span className="text-muted-foreground">
@@ -1290,20 +1248,19 @@ export default function AlignmentMaterialsPage() {
                       </div>
                     ))}
                     <p className="text-muted-foreground">
-                      使用“生成翻译字段”可一次性补齐所有语言，需要时可反复执行以覆盖最新内容。
-                    </p>
+                      使用“生成翻译字段”可一次性补齐所有语言，需要时可反复执行以覆盖最新内容�?                    </p>
                   </div>
                 )}
                 <div>
-                  <span className="font-medium text-foreground">任务提示：</span>
+                  <span className="font-medium text-foreground">任务提示�?/span>
                   <pre className="whitespace-pre-wrap text-sm mt-1">{generatePreview.task_prompt}</pre>
                 </div>
                 <div>
-                  <span className="font-medium text-foreground">范文：</span>
+                  <span className="font-medium text-foreground">范文�?/span>
                   <pre className="whitespace-pre-wrap text-sm mt-1">{generatePreview.exemplar}</pre>
                 </div>
                 <div className="space-y-2">
-                  <span className="font-medium text-foreground">核心词汇：</span>
+                  <span className="font-medium text-foreground">核心词汇�?/span>
                   {generatePreview.knowledge_points?.words?.length ? (
                     <ul className="space-y-1 text-sm leading-relaxed">
                       {generatePreview.knowledge_points.words.map((item, idx) => (
@@ -1327,7 +1284,7 @@ export default function AlignmentMaterialsPage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <span className="font-medium text-foreground">关键句型：</span>
+                  <span className="font-medium text-foreground">关键句型�?/span>
                   {generatePreview.knowledge_points?.sentences?.length ? (
                     <ul className="space-y-1 text-sm leading-relaxed">
                       {generatePreview.knowledge_points.sentences.map((item, idx) => (
@@ -1351,7 +1308,7 @@ export default function AlignmentMaterialsPage() {
                   )}
                 </div>
                 <div>
-                  <span className="font-medium text-foreground">要求：</span>
+                  <span className="font-medium text-foreground">要求�?/span>
                   <ul className="list-disc list-inside">
                     {generatePreview.requirements?.map((req, idx) => (
                       <li key={idx}>{req.label}</li>
@@ -1359,12 +1316,12 @@ export default function AlignmentMaterialsPage() {
                   </ul>
                 </div>
                 <div>
-                  <span className="font-medium text-foreground">标准答案：</span>
+                  <span className="font-medium text-foreground">标准答案�?/span>
                   <pre className="whitespace-pre-wrap text-sm mt-1">{generatePreview.standard_answer}</pre>
                 </div>
                 {generatePreview.practice_scenario && (
                   <div className="space-y-2">
-                    <span className="font-medium text-foreground">练习场景：</span>
+                    <span className="font-medium text-foreground">练习场景�?/span>
                     <div className="border rounded px-3 py-2 bg-muted/40 text-sm leading-relaxed">
                       <div>{generatePreview.practice_scenario.summary}</div>
                       <div className="text-xs text-muted-foreground mt-2">
@@ -1391,11 +1348,11 @@ export default function AlignmentMaterialsPage() {
                 )}
                 {generatePreview.standard_dialogue?.turns?.length ? (
                   <div className="space-y-2">
-                    <span className="font-medium text-foreground">标准对话：</span>
+                    <span className="font-medium text-foreground">标准对话�?/span>
                     <ul className="space-y-1 text-sm leading-relaxed">
                       {generatePreview.standard_dialogue.turns.map((turn, idx) => (
                         <li key={`turn-${idx}`} className="border rounded px-3 py-2 bg-muted/30">
-                          <div className="font-medium">{turn.speaker === 'ai' ? 'AI' : '学员'}：</div>
+                          <div className="font-medium">{turn.speaker === 'ai' ? 'AI' : '学员'}�?/div>
                           <div>{turn.text}</div>
                           {turn.objective_refs?.length ? (
                             <div className="text-xs text-muted-foreground mt-1">
@@ -1410,8 +1367,7 @@ export default function AlignmentMaterialsPage() {
                 <div className="flex gap-2">
                   <Button onClick={handleSaveGenerated} disabled={saving}>
                     {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    保存为草稿
-                  </Button>
+                    保存为草�?                  </Button>
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -1431,7 +1387,7 @@ export default function AlignmentMaterialsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>筛选条件</CardTitle>
+          <CardTitle>筛选条�?/CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -1452,25 +1408,25 @@ export default function AlignmentMaterialsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>状态</Label>
+              <Label>状�?/Label>
               <Select value={status} onValueChange={(val) => setStatus(val as typeof status)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="状态" />
+                  <SelectValue placeholder="状�? />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部</SelectItem>
                   <SelectItem value="draft">草稿</SelectItem>
-                  <SelectItem value="pending_review">待审核</SelectItem>
-                  <SelectItem value="active">已发布</SelectItem>
-                  <SelectItem value="archived">已归档</SelectItem>
+                  <SelectItem value="pending_review">待审�?/SelectItem>
+                  <SelectItem value="active">已发�?/SelectItem>
+                  <SelectItem value="archived">已归�?/SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>所属主题</Label>
+              <Label>所属主�?/Label>
               <Select value={themeFilter} onValueChange={setThemeFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="筛选主题" />
+                  <SelectValue placeholder="筛选主�? />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
                   <SelectItem value="all">全部主题</SelectItem>
@@ -1489,7 +1445,7 @@ export default function AlignmentMaterialsPage() {
                   <SelectValue placeholder="筛选小主题" />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
-                  <SelectItem value="all">全部小主题</SelectItem>
+                  <SelectItem value="all">全部小主�?/SelectItem>
                   {subtopicsForFilter.map((subtopic) => (
                     <SelectItem key={subtopic.id} value={subtopic.id}>
                       {subtopic.title} · L{subtopic.level}
@@ -1515,7 +1471,7 @@ export default function AlignmentMaterialsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>关键词</Label>
+              <Label>关键�?/Label>
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="标题/内容搜索" />
             </div>
             <div className="space-y-2">
@@ -1526,7 +1482,7 @@ export default function AlignmentMaterialsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="false">全部</SelectItem>
-                  <SelectItem value="true">仅当前版本</SelectItem>
+                  <SelectItem value="true">仅当前版�?/SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1537,7 +1493,7 @@ export default function AlignmentMaterialsPage() {
       <Card>
         <CardHeader className="flex flex-col gap-2">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-            <CardTitle>训练包列表</CardTitle>
+            <CardTitle>训练包列�?/CardTitle>
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
@@ -1546,8 +1502,8 @@ export default function AlignmentMaterialsPage() {
                 disabled={materials.length === 0}
               >
                 {selectedMaterialIds.length === materials.length && materials.length > 0
-                  ? '取消全选'
-                  : '全选当前列表'}
+                  ? '取消全�?
+                  : '全选当前列�?}
               </Button>
               <Button
                 size="sm"
@@ -1569,11 +1525,10 @@ export default function AlignmentMaterialsPage() {
                 翻译选中
               </Button>
               <div className="text-xs text-muted-foreground">
-                已选 {selectedMaterialIds.length} 项
-              </div>
+                已�?{selectedMaterialIds.length} �?              </div>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground">共 {materials.length} 条记录</div>
+          <div className="text-sm text-muted-foreground">�?{materials.length} 条记�?/div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -1605,9 +1560,9 @@ export default function AlignmentMaterialsPage() {
                             </h3>
                             <Badge variant="outline">{LANG_LABEL[material.lang as AlignmentLang]}</Badge>
                             <Badge variant="outline">{TASK_LABEL[material.task_type as AlignmentTaskType]}</Badge>
-                            {material.status === 'active' && <Badge variant="default">已发布</Badge>}
+                            {material.status === 'active' && <Badge variant="default">已发�?/Badge>}
                             {material.review_status === 'pending' && (
-                              <Badge variant="secondary">待审核</Badge>
+                              <Badge variant="secondary">待审�?/Badge>
                             )}
                             {material.is_current && (
                               <Badge variant="outline" className="border-green-500 text-green-600">
@@ -1633,7 +1588,6 @@ export default function AlignmentMaterialsPage() {
                             查看 / 审核
                           </Button>
                         </div>
-                      </div>
                     </div>
                     <div className="text-xs text-muted-foreground">
                       更新时间：{new Date(material.updated_at).toLocaleString()}
@@ -1649,7 +1603,7 @@ export default function AlignmentMaterialsPage() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>训练包详情</DialogTitle>
+            <DialogTitle>训练包详�?/DialogTitle>
           </DialogHeader>
           {editing && (
             <div className="space-y-4">
@@ -1676,7 +1630,7 @@ export default function AlignmentMaterialsPage() {
                 </div>
               </div>
               <div>
-                <Label>知识点 JSON</Label>
+                <Label>知识�?JSON</Label>
                 <Textarea
                   rows={6}
                   value={JSON.stringify(editing.knowledge_points || {}, null, 2)}
@@ -1792,8 +1746,7 @@ export default function AlignmentMaterialsPage() {
                   <Button onClick={() => handleReview(editing.id, 'approve')} disabled={saving}>
                     {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     <CheckCircle2 className="w-4 h-4 mr-1" />
-                    通过并发布
-                  </Button>
+                    通过并发�?                  </Button>
                 </div>
               </div>
             </div>
@@ -1803,3 +1756,4 @@ export default function AlignmentMaterialsPage() {
     </main>
   );
 }
+
