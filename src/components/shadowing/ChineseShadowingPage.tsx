@@ -3150,7 +3150,7 @@ export default function ShadowingPage() {
                 
                 {/* 呼吸光效 */}
                 {showGuide && (
-                  <div className="absolute inset-0 rounded-lg animate-pulse">
+                  <div className="absolute inset-0 rounded-lg animate-pulse pointer-events-none">
                     <div className="absolute inset-0 rounded-lg bg-blue-400/20 blur-md"></div>
                   </div>
                 )}
