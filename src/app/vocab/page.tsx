@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -143,6 +143,9 @@ export default function VocabPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [aiSettingsSheetOpen, setAiSettingsSheetOpen] = useState(false);
+  
+  // 请求中止控制器
+  const abortRef = useRef<AbortController | null>(null);
 
 
   // 获取用户个人资料
@@ -274,8 +277,21 @@ export default function VocabPage() {
 
   // 获取生词列表（优化版）
   const fetchEntries = async (page = 1, limit = itemsPerPage, useCache = true) => {
-    // 暂时禁用缓存，因为API返回的是分页数据，不能用于前端分页
-    // TODO: 如果需要缓存，应该修改API返回所有数据，然后在前端分页
+    // 取消之前的请求
+    if (abortRef.current) {
+      try {
+        abortRef.current.abort();
+      } catch {}
+    }
+    
+    const controller = new AbortController();
+    abortRef.current = controller;
+    
+    // 设置请求超时（15秒）
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 15000);
+
     console.log('获取生词数据:', { page, limit, useCache, filters });
 
     setIsLoading(true);
@@ -305,7 +321,9 @@ export default function VocabPage() {
       // 使用新的合并API
       const response = await fetch(`/api/vocab/dashboard?${params}`, {
         headers,
+        signal: controller.signal,
       });
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || t.vocabulary.messages.fetch_vocab_failed);
@@ -343,10 +361,17 @@ export default function VocabPage() {
       setDueCount(data.stats.dueCount);
       setTomorrowCount(data.stats.tomorrowCount || 0);
       setStatsLoaded(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t.vocabulary.messages.fetch_vocab_failed);
+    } catch (err: any) {
+      // 区分不同类型的错误
+      if (err?.name === 'AbortError') {
+        console.log('Vocab fetch was cancelled or timed out');
+      } else {
+        setError(err instanceof Error ? err.message : t.vocabulary.messages.fetch_vocab_failed);
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
+      abortRef.current = null;
     }
   };
 

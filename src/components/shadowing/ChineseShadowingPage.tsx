@@ -309,6 +309,9 @@ export default function ShadowingPage() {
     hasUnsavedRecording: () => boolean;
     stopPlayback: () => void;
   } | null>(null);
+  
+  // 请求中止控制器
+  const abortRef = useRef<AbortController | null>(null);
 
   // AI解释相关状态
   const [wordExplanations, setWordExplanations] = useState<
@@ -792,10 +795,25 @@ export default function ShadowingPage() {
     } catch (error) {
       console.error('Failed to fetch recommended level:', error);
     }
-  }, [lang, user]);
+  }, [lang, user, getAuthHeaders]);
 
   // 获取题库列表
   const fetchItems = useCallback(async () => {
+    // 取消之前的请求
+    if (abortRef.current) {
+      try {
+        abortRef.current.abort();
+      } catch {}
+    }
+    
+    const controller = new AbortController();
+    abortRef.current = controller;
+    
+    // 设置请求超时（15秒）
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 15000);
+
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -808,30 +826,56 @@ export default function ShadowingPage() {
       const cached = getCached<any>(key);
       if (cached) {
         setItems(cached.items || []);
-      } else {
-        let headers = await getAuthHeaders();
-        let response = await fetch(`/api/shadowing/catalog?${params.toString()}`, { headers, credentials: 'include' });
-        if (response.status === 401) {
-          try {
-            await supabase.auth.refreshSession();
-            headers = await getAuthHeaders();
-            response = await fetch(`/api/shadowing/catalog?${params.toString()}`, { headers, credentials: 'include' });
-          } catch {}
-        }
-        if (response.ok) {
-          const data = await response.json();
-          setCached(key, data, 30_000);
-          setItems(data.items || []);
-        } else {
-          console.error('Failed to fetch items:', response.status, await response.text());
+        setLoading(false);
+        clearTimeout(timeoutId);
+        return;
+      }
+
+      let headers = await getAuthHeaders();
+      let response = await fetch(`/api/shadowing/catalog?${params.toString()}`, { 
+        headers, 
+        credentials: 'include',
+        signal: controller.signal 
+      });
+      
+      if (response.status === 401) {
+        try {
+          await supabase.auth.refreshSession();
+          headers = await getAuthHeaders();
+          response = await fetch(`/api/shadowing/catalog?${params.toString()}`, { 
+            headers, 
+            credentials: 'include',
+            signal: controller.signal 
+          });
+        } catch (refreshError) {
+          console.error('Session refresh failed:', refreshError);
         }
       }
-    } catch (error) {
-      console.error('Failed to fetch items:', error);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCached(key, data, 30_000);
+        setItems(data.items || []);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to fetch items:', response.status, errorText);
+        // 显示用户友好的错误提示
+        setItems([]);
+      }
+    } catch (error: any) {
+      // 区分不同类型的错误
+      if (error.name === 'AbortError') {
+        console.log('Request was cancelled or timed out');
+      } else {
+        console.error('Failed to fetch items:', error);
+      }
+      setItems([]);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
+      abortRef.current = null;
     }
-  }, [lang, level, practiced]);
+  }, [lang, level, practiced, getAuthHeaders]);
 
   // 加载主题列表
   const loadThemes = useCallback(async () => {
@@ -866,24 +910,24 @@ export default function ShadowingPage() {
 
   // 鉴权由 AuthContext 统一处理
 
-  // 初始加载题库（仅在用户已登录时）
+  // 加载题库（初始加载和筛选条件变化时）
   useEffect(() => {
-    if (authLoading) return;
+    // 等待认证完成且用户已登录
+    if (authLoading || !user) return;
+    
+    // 防抖延迟，避免快速切换时多次请求
     const t = setTimeout(() => {
-      if (user) {
-        fetchItems();
+      fetchItems();
+      // 只在初始加载时获取推荐等级（level为null时）
+      if (level === null) {
         fetchRecommendedLevel();
       }
     }, 50);
+    
     return () => clearTimeout(t);
-  }, [fetchItems, fetchRecommendedLevel, authLoading, user]);
-
-  // 筛选条件变化时立即刷新题库
-  useEffect(() => {
-    if (authLoading || !user) return;
-    const t = setTimeout(() => fetchItems(), 50);
-    return () => clearTimeout(t);
-  }, [lang, level, practiced, authLoading, user, fetchItems]);
+    // 依赖筛选条件，确保条件变化时重新加载
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang, level, practiced, authLoading, user]);
 
   // 加载主题数据
   useEffect(() => {
