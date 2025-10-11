@@ -30,7 +30,7 @@ import PracticeStepper from './PracticeStepper';
 import { speakText as speakTextUtil } from '@/lib/speechUtils';
 import CollapsibleFilterSection from './CollapsibleFilterSection';
 import CompactStatsCards from './CompactStatsCards';
-import EnhancedAudioPlayer from './EnhancedAudioPlayer';
+import EnhancedAudioPlayer, { type EnhancedAudioPlayerRef } from './EnhancedAudioPlayer';
 import DesktopThreeColumnLayout from './DesktopThreeColumnLayout';
 import RightPanelTabs from './RightPanelTabs';
 import ShortcutsHelpModal from './ShortcutsHelpModal';
@@ -688,12 +688,7 @@ export default function ShadowingPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState<number>(1);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.playbackRate = playbackRate;
-  }, [playbackRate]);
+  const audioPlayerRef = useRef<EnhancedAudioPlayerRef | null>(null);
   const [practiceComplete, setPracticeComplete] = useState(false);
   const [showSentenceComparison, setShowSentenceComparison] = useState(false);
   const [scoringResult, setScoringResult] = useState<{
@@ -1043,11 +1038,8 @@ export default function ShadowingPage() {
     } catch {}
     // 停止页面音频播放并复位
     try {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        audioRef.current.playbackRate = playbackRate;
-      }
+      audioPlayerRef.current?.pause();
+      audioPlayerRef.current?.reset();
     } catch {}
     setCurrentItem(item);
     setSelectedWords([]);
@@ -1899,16 +1891,10 @@ export default function ShadowingPage() {
     }
   };
 
-  // 播放/暂停音频（统一控制页面 <audio> 元素）
+  // 播放/暂停音频（统一控制音频播放器）
   const playAudio = () => {
     if (!currentItem?.audio_url) return;
-    const el = audioRef.current;
-    if (!el) return;
-    if (el.paused) {
-      el.play();
-    } else {
-      el.pause();
-    }
+    audioPlayerRef.current?.toggle();
   };
 
   // 评分功能（支持转录文字和逐句对比）
@@ -2958,13 +2944,7 @@ export default function ShadowingPage() {
       description: '播放/暂停音频',
       category: '音频控制',
       action: () => {
-        if (audioRef.current) {
-          if (isPlaying) {
-            audioRef.current.pause();
-          } else {
-            audioRef.current.play();
-          }
-        }
+        playAudio();
       },
     },
     {
@@ -4000,6 +3980,7 @@ export default function ShadowingPage() {
                           </span>
                         </div>
                         <EnhancedAudioPlayer
+                          ref={audioPlayerRef}
                           audioUrl={currentItem.audio_url}
                           onPlayStateChange={(playing) => setIsPlaying(playing)}
                           duration_ms={currentItem.duration_ms}
