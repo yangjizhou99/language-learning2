@@ -425,14 +425,12 @@ export default function SentencePractice({ originalText, language, className = '
         console.log(`完成度: ${Math.round(completionRate * 100)}%, 静默: ${diff}ms, 目标tokens: ${targetTokens.length}, 当前tokens: ${currentTokens.length}, 文本: "${currentText}"`);
         
         // 根据完成度动态调整静默时间
-        let requiredSilence = 5000; // 默认5秒（<80%时）
+        let requiredSilence = 10000; // 默认10秒（<100%时）
         
         if (completionRate >= 1.0) {
-          requiredSilence = 500;  // 完成度 >= 100%：0.5秒
-        } else if (completionRate >= 0.8) {
-          requiredSilence = 1000; // 完成度 80%-100%：1秒
+          requiredSilence = 1000; // 完成度 >= 100%：1秒
         }
-        // else: 完成度 < 80%：保持默认5秒
+        // else: 完成度 < 100%：保持默认10秒
         
         // 达到静默时间要求，自动停止
         if (diff >= requiredSilence) {
@@ -440,9 +438,9 @@ export default function SentencePractice({ originalText, language, className = '
           try { rec.stop(); } catch {}
           clearSilenceTimer();
         }
-        // 超过8秒强制兜底（防止卡住）
-        else if (diff >= 8000) {
-          console.log('超过 8秒，强制兜底停止');
+        // 超过12秒强制兜底（防止卡住）
+        else if (diff >= 12000) {
+          console.log('超过 12秒，强制兜底停止');
           try { rec.stop(); } catch {}
           clearSilenceTimer();
         }
