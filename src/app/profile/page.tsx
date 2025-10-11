@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,6 +74,9 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const t = useTranslation();
   const { language } = useLanguage();
+  
+  // 请求中止控制器
+  const abortRef = useRef<AbortController | null>(null);
 
   // 表单状态
   const [formData, setFormData] = useState({
@@ -133,6 +136,21 @@ export default function ProfilePage() {
   }, []);
 
   const loadProfile = async () => {
+    // 取消之前的请求
+    if (abortRef.current) {
+      try {
+        abortRef.current.abort();
+      } catch {}
+    }
+    
+    const controller = new AbortController();
+    abortRef.current = controller;
+    
+    // 设置请求超时（10秒）
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 10000);
+
     try {
       setLoading(true);
 
@@ -141,6 +159,12 @@ export default function ProfilePage() {
         data: { user },
         error: userError,
       } = await supabase.auth.getUser();
+      
+      // 检查是否被取消
+      if (controller.signal.aborted) {
+        return;
+      }
+      
       if (userError) throw userError;
       if (!user) {
         // 未登录：无需抛错，显示登录提示或静默等待上面的 onAuthStateChange 触发
@@ -163,7 +187,13 @@ export default function ProfilePage() {
         .from('profiles')
         .select('*')
         .eq('id', user?.id)
+        .abortSignal(controller.signal)
         .single();
+
+      // 检查是否被取消
+      if (controller.signal.aborted) {
+        return;
+      }
 
       if (profileError) {
         // 若不存在则自动创建一行
@@ -171,13 +201,21 @@ export default function ProfilePage() {
         if ((profileError as any).code === 'PGRST116') {
           const { error: insertErr } = await supabase
             .from('profiles')
-            .insert({ id: user.id });
+            .insert({ id: user.id })
+            .abortSignal(controller.signal);
           if (insertErr) throw insertErr;
+          
+          // 检查是否被取消
+          if (controller.signal.aborted) {
+            return;
+          }
+          
           // 再次获取
           const { data: created } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', user.id)
+            .abortSignal(controller.signal)
             .single();
           if (created) {
             setProfile(created as any);
@@ -206,11 +244,18 @@ export default function ProfilePage() {
           target_langs: profileData.target_langs || [],
         });
       }
-    } catch (error) {
-      console.error('加载资料失败:', error);
-      toast.error(t.profile.load_failed || t.common.error);
+    } catch (error: any) {
+      // 区分不同类型的错误
+      if (error?.name === 'AbortError') {
+        console.log('Profile loading was cancelled or timed out');
+      } else {
+        console.error('加载资料失败:', error);
+        toast.error(t.profile.load_failed || t.common.error);
+      }
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
+      abortRef.current = null;
     }
   };
 

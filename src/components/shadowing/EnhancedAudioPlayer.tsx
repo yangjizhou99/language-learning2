@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 import {
@@ -18,12 +18,19 @@ interface EnhancedAudioPlayerProps {
   className?: string;
 }
 
-export default function EnhancedAudioPlayer({
+export interface EnhancedAudioPlayerRef {
+  play: () => void;
+  pause: () => void;
+  toggle: () => void;
+  reset: () => void;
+}
+
+const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlayerProps>(({
   audioUrl,
   onPlayStateChange,
   duration_ms,
   className = '',
-}: EnhancedAudioPlayerProps) {
+}, ref) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -81,6 +88,28 @@ export default function EnhancedAudioPlayer({
       audioRef.current.playbackRate = rateNum;
     }
   };
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    play: () => {
+      audioRef.current?.play();
+    },
+    pause: () => {
+      audioRef.current?.pause();
+    },
+    toggle: () => {
+      if (audioRef.current) {
+        if (audioRef.current.paused) {
+          audioRef.current.play();
+        } else {
+          audioRef.current.pause();
+        }
+      }
+    },
+    reset: () => {
+      resetAudio();
+    },
+  }));
 
   return (
     <div className={`space-y-3 ${className}`}>
@@ -167,5 +196,9 @@ export default function EnhancedAudioPlayer({
       </div>
     </div>
   );
-}
+});
+
+EnhancedAudioPlayer.displayName = 'EnhancedAudioPlayer';
+
+export default EnhancedAudioPlayer;
 

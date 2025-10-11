@@ -425,25 +425,22 @@ export default function SentencePractice({ originalText, language, className = '
         console.log(`完成度: ${Math.round(completionRate * 100)}%, 静默: ${diff}ms, 目标tokens: ${targetTokens.length}, 当前tokens: ${currentTokens.length}, 文本: "${currentText}"`);
         
         // 根据完成度动态调整静默时间
-        let requiredSilence = 5000; // 默认5秒（说得太少时）
+        let requiredSilence = 10000; // 默认10秒（<100%时）
         
         if (completionRate >= 1.0) {
-          requiredSilence = 500;  // 完成度 >= 100%：0.5秒
-        } else if (completionRate >= 0.9) {
-          requiredSilence = 1000; // 完成度 >= 90%：1秒
-        } else if (completionRate >= 0.8) {
-          requiredSilence = 1500; // 完成度 >= 80%：1.5秒
+          requiredSilence = 1000; // 完成度 >= 100%：1秒
         }
+        // else: 完成度 < 100%：保持默认10秒
         
-        // 达到完成度要求且满足静默时间，自动停止
-        if (completionRate >= 0.8 && diff >= requiredSilence) {
+        // 达到静默时间要求，自动停止
+        if (diff >= requiredSilence) {
           console.log(`完成度 ${Math.round(completionRate * 100)}% 且静默 ${requiredSilence}ms，自动停止`);
           try { rec.stop(); } catch {}
           clearSilenceTimer();
         }
-        // 超过5秒兜底
-        else if (diff >= 5000) {
-          console.log('超过 5秒，兜底停止');
+        // 超过12秒强制兜底（防止卡住）
+        else if (diff >= 12000) {
+          console.log('超过 12秒，强制兜底停止');
           try { rec.stop(); } catch {}
           clearSilenceTimer();
         }
@@ -452,13 +449,23 @@ export default function SentencePractice({ originalText, language, className = '
     rec.onresult = (event: WebSpeechRecognitionEvent) => {
       let fullFinal = '';
       let interim = '';
+      
+      // 正确处理所有结果：累积所有final结果，只取最后一个interim结果
       for (let i = 0; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) fullFinal += transcript + ' ';
-        else if (i >= event.resultIndex) interim += transcript;
+        if (event.results[i].isFinal) {
+          fullFinal += transcript + ' ';
+        } else {
+          // 对于interim结果，直接拼接（移动端可能一次返回多个interim）
+          interim += transcript;
+        }
       }
+      
       const finalTrimmed = fullFinal.trim();
-      const combined = `${finalTrimmed}${finalTrimmed && interim ? ' ' : ''}${interim}`.trim();
+      const interimTrimmed = interim.trim();
+      const combined = finalTrimmed 
+        ? (interimTrimmed ? `${finalTrimmed} ${interimTrimmed}` : finalTrimmed)
+        : interimTrimmed;
       
       // 只要完整文本有变化就重置静默时间（包括interim变化）
       if (combined && combined !== tempCombinedTextRef.current) {
@@ -474,10 +481,44 @@ export default function SentencePractice({ originalText, language, className = '
       // 暂存到 ref
       tempFinalTextRef.current = finalTrimmed;
       tempCombinedTextRef.current = combined; // 保存完整文本供完成度计算
-      setDisplayText(combined);
+      
+      // 使用requestAnimationFrame优化UI更新，避免阻塞
+      requestAnimationFrame(() => {
+        setDisplayText(combined);
+      });
     };
     rec.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
+      const errorType = event.error || 'unknown';
+      
+      // 只在严重错误时弹出提示
+      if (errorType === 'not-allowed' || errorType === 'permission-denied') {
+        // 检查是否是HTTPS问题
+        const isNonSecure = typeof window !== 'undefined' && 
+                           window.location.protocol !== 'https:' && 
+                           window.location.hostname !== 'localhost' &&
+                           !window.location.hostname.startsWith('127.');
+        
+        if (isNonSecure) {
+          setTimeout(() => {
+            alert('麦克风权限被拒绝。\n\n移动端需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问，或部署到Vercel等平台测试。');
+          }, 100);
+        } else {
+          setTimeout(() => {
+            alert('麦克风权限被拒绝。\n\n请在浏览器设置中允许本网站使用麦克风。\n\n步骤：\n1. 点击地址栏的锁图标\n2. 找到麦克风权限\n3. 设置为"允许"\n4. 刷新页面');
+          }, 100);
+        }
+      } else if (errorType === 'audio-capture') {
+        setTimeout(() => {
+          alert('无法捕获音频。\n\n可能原因：\n1. 麦克风被其他应用占用\n2. 麦克风硬件故障');
+        }, 100);
+      } else if (errorType === 'service-not-allowed') {
+        setTimeout(() => {
+          alert('语音识别服务不可用。\n\n请确保使用支持Web Speech API的浏览器（如Chrome）。');
+        }, 100);
+      }
+      // no-speech等其他错误不提示，静默处理
+      
       setIsRecognizing(false);
       clearSilenceTimer();
       // 发生错误时也要提交结果，延迟到按钮状态更新后
@@ -508,9 +549,10 @@ export default function SentencePractice({ originalText, language, className = '
 
   const start = useCallback(() => {
     if (!recognitionRef.current) {
-      alert('当前浏览器不支持实时语音识别，请更换浏览器/开启权限');
+      alert('当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
       return;
     }
+    
     try {
       setDisplayText('');
       setFinalText('');
@@ -518,8 +560,10 @@ export default function SentencePractice({ originalText, language, className = '
       tempCombinedTextRef.current = '';
       lastFinalTextRef.current = '';
       recognitionRef.current.start();
-    } catch {
-      alert('无法开始识别，请更换浏览器/开启权限');
+    } catch (error) {
+      console.error('语音识别启动错误:', error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      alert(`无法开始语音识别：${errorMsg}\n\n请检查麦克风权限。`);
     }
   }, []);
 
