@@ -2,11 +2,10 @@
 
 import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
+import { Sparkles, ArrowRight, CheckCircle, Target, AlertCircle, TrendingUp, Play } from 'lucide-react';
 
 interface SentenceScore {
-  coverage: number;
-  similarity: number;
+  score: number; // 综合相似度评分 (0-1范围)
 }
 
 interface SmartSuggestionProps {
@@ -41,70 +40,81 @@ export default function SmartSuggestion({
     
     Object.entries(scores).forEach(([indexStr, score]) => {
       const index = parseInt(indexStr);
-      const avg = (score.coverage + score.similarity) / 2;
       
-      if (avg >= 0.8) {
+      if (score.score >= 0.8) {
         excellentIndices.push(index);
-      } else if (avg >= 0.6) {
+      } else if (score.score >= 0.6) {
         mediumIndices.push(index);
       } else {
         poorIndices.push(index);
       }
     });
     
-    // 生成建议
+    // 生成建议 - Pastel柔和配色
     if (practiced === 0) {
       return {
         type: 'start' as const,
-        title: '开始练习',
-        message: '从第1句开始，逐句练习，打好基础',
+        IconComponent: Target,
+        subIcon: '1',
         targetIndex: 0,
-        icon: '🎯',
-        color: 'from-blue-500 to-indigo-600',
+        bgColor: 'from-sky-50/80 to-indigo-100/80',
+        textColor: 'text-indigo-600',
+        iconColor: 'text-indigo-500',
+        showArrow: true,
       };
     }
     
     if (poorIndices.length > 0) {
       return {
         type: 'improve' as const,
-        title: '重点突破',
-        message: `第 ${poorIndices.map(i => i + 1).join('、')} 句需要重点练习`,
+        IconComponent: AlertCircle,
+        subIcon: `${poorIndices[0] + 1}`,
         targetIndex: poorIndices[0],
-        icon: '⚠️',
-        color: 'from-red-500 to-orange-600',
+        bgColor: 'from-rose-50/80 to-pink-100/80',
+        textColor: 'text-rose-600',
+        iconColor: 'text-rose-500',
+        showArrow: true,
+        badges: poorIndices.slice(0, 3).map(i => ({ num: i + 1, color: 'red' })),
       };
     }
     
     if (mediumIndices.length > 0) {
       return {
         type: 'improve' as const,
-        title: '继续提升',
-        message: `第 ${mediumIndices.map(i => i + 1).join('、')} 句还有进步空间`,
+        IconComponent: TrendingUp,
+        subIcon: `${mediumIndices[0] + 1}`,
         targetIndex: mediumIndices[0],
-        icon: '📈',
-        color: 'from-yellow-500 to-orange-500',
+        bgColor: 'from-amber-50/80 to-yellow-100/80',
+        textColor: 'text-amber-600',
+        iconColor: 'text-amber-500',
+        showArrow: true,
+        badges: mediumIndices.slice(0, 3).map(i => ({ num: i + 1, color: 'yellow' })),
       };
     }
     
     if (unpracticedIndices.length > 0) {
       return {
         type: 'continue' as const,
-        title: '继续练习',
-        message: `还有 ${unpracticedIndices.length} 句未练习`,
+        IconComponent: Play,
+        subIcon: `${unpracticedIndices.length}`,
         targetIndex: unpracticedIndices[0],
-        icon: '▶️',
-        color: 'from-purple-500 to-indigo-600',
+        bgColor: 'from-violet-50/80 to-indigo-100/80',
+        textColor: 'text-violet-600',
+        iconColor: 'text-violet-500',
+        showArrow: true,
       };
     }
     
     // 全部优秀
     return {
       type: 'complete' as const,
-      title: '太棒了！',
-      message: '所有句子都达到优秀水平，可以进行正式录音了',
+      IconComponent: CheckCircle,
+      subIcon: '✓',
       targetIndex: null,
-      icon: '🎉',
-      color: 'from-green-500 to-emerald-600',
+      bgColor: 'from-emerald-50/80 to-teal-100/80',
+      textColor: 'text-emerald-600',
+      iconColor: 'text-emerald-500',
+      showArrow: false,
     };
   }, [total, scores]);
 
@@ -113,50 +123,62 @@ export default function SmartSuggestion({
   return (
     <div className={`${className}`}>
       <div className={`
-        relative overflow-hidden rounded-xl p-4
-        bg-gradient-to-r ${suggestion.color}
-        text-white shadow-lg
+        relative overflow-hidden rounded-2xl p-3
+        bg-gradient-to-r ${suggestion.bgColor}
+        ${suggestion.textColor} shadow-sm border border-slate-200
       `}>
         {/* 背景装饰 */}
-        <div className="absolute top-0 right-0 opacity-10">
-          <Sparkles className="w-32 h-32" />
+        <div className={`absolute top-0 right-0 opacity-5 ${suggestion.iconColor}`}>
+          <Sparkles className="w-24 h-24" />
         </div>
         
         <div className="relative z-10">
-          <div className="flex items-start gap-3">
-            {/* 图标 */}
-            <div className="flex-shrink-0 text-2xl">
-              {suggestion.icon}
+          <div className="flex items-center justify-between gap-3">
+            {/* 主图标和副图标 */}
+            <div className="flex items-center gap-2.5">
+              <div className="flex-shrink-0">
+                <suggestion.IconComponent className={`w-6 h-6 ${suggestion.iconColor}`} />
+              </div>
+              
+              {suggestion.subIcon && (
+                <div className="text-2xl font-bold">
+                  {suggestion.subIcon}
+                </div>
+              )}
+              
+              {/* 徽章组 - Pastel柔和配色 */}
+              {suggestion.badges && suggestion.badges.length > 0 && (
+                <div className="flex items-center gap-1">
+                  {suggestion.badges.map((badge, idx) => (
+                    <div 
+                      key={idx}
+                      className={`
+                        px-2 py-0.5 rounded-full text-xs font-medium
+                        ${badge.color === 'red' 
+                          ? 'bg-rose-100/70 border border-rose-200 text-rose-600' 
+                          : 'bg-amber-100/70 border border-amber-200 text-amber-600'}
+                      `}
+                    >
+                      #{badge.num}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             
-            {/* 内容 */}
-            <div className="flex-1 min-w-0">
-              <h4 className="text-base font-bold mb-1">
-                {suggestion.title}
-              </h4>
-              <p className="text-sm opacity-90">
-                {suggestion.message}
-              </p>
-            </div>
-            
-            {/* 操作按钮 */}
-            {suggestion.type !== 'complete' && suggestion.targetIndex !== null && onJumpToSentence && (
+            {/* 操作按钮或完成图标 */}
+            {suggestion.showArrow && suggestion.targetIndex !== null && onJumpToSentence ? (
               <Button
                 onClick={() => onJumpToSentence(suggestion.targetIndex!)}
                 size="sm"
-                variant="secondary"
-                className="flex-shrink-0 bg-white/20 hover:bg-white/30 text-white border-0"
+                variant="outline"
+                className={`flex-shrink-0 ${suggestion.iconColor} border-current hover:bg-white/50 hover:scale-110 transition-transform`}
               >
-                {suggestion.type === 'start' && '开始'}
-                {suggestion.type === 'improve' && '去练习'}
-                {suggestion.type === 'continue' && '继续'}
-                <ArrowRight className="w-4 h-4 ml-1" />
+                <ArrowRight className="w-5 h-5" />
               </Button>
-            )}
-            
-            {suggestion.type === 'complete' && (
-              <CheckCircle className="w-6 h-6 flex-shrink-0" />
-            )}
+            ) : suggestion.type === 'complete' ? (
+              <CheckCircle className={`w-6 h-6 flex-shrink-0 ${suggestion.iconColor}`} />
+            ) : null}
           </div>
         </div>
       </div>

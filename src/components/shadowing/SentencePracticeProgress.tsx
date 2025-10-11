@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { MessageSquare } from 'lucide-react';
 
 interface SentenceScore {
-  coverage: number;
-  similarity: number;
+  score: number; // 综合相似度评分 (0-1范围)
 }
 
 interface SentencePracticeProgressProps {
@@ -14,12 +14,11 @@ interface SentencePracticeProgressProps {
   className?: string;
 }
 
-// 根据评分获取颜色
+// 根据评分获取状态
 function getScoreStatus(score: SentenceScore | null): 'excellent' | 'medium' | 'poor' | 'unpracticed' {
   if (!score) return 'unpracticed';
-  const avg = (score.coverage + score.similarity) / 2;
-  if (avg >= 0.8) return 'excellent';
-  if (avg >= 0.6) return 'medium';
+  if (score.score >= 0.8) return 'excellent';
+  if (score.score >= 0.6) return 'medium';
   return 'poor';
 }
 
@@ -40,11 +39,10 @@ export default function SentencePracticeProgress({
     let totalScore = 0;
     
     scoreList.forEach(score => {
-      const avg = (score.coverage + score.similarity) / 2;
-      totalScore += avg;
+      totalScore += score.score;
       
-      if (avg >= 0.8) excellentCount++;
-      else if (avg >= 0.6) mediumCount++;
+      if (score.score >= 0.8) excellentCount++;
+      else if (score.score >= 0.6) mediumCount++;
       else poorCount++;
     });
     
@@ -70,43 +68,22 @@ export default function SentencePracticeProgress({
     });
   }, [total, scores]);
 
-  // 获取徽章
-  const badge = useMemo(() => {
-    if (stats.excellentCount === total && total > 0) {
-      return { emoji: '🥇', label: '黄金练习者', color: 'text-yellow-600' };
-    } else if (stats.practiced >= 10) {
-      return { emoji: '🥈', label: '白银练习者', color: 'text-gray-400' };
-    } else if (stats.practiced >= 5) {
-      return { emoji: '🥉', label: '青铜练习者', color: 'text-orange-400' };
-    }
-    return null;
-  }, [stats.practiced, stats.excellentCount, total]);
 
   return (
     <div className={`space-y-3 ${className}`}>
-      {/* 主进度显示 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="text-2xl">🗣️</div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">逐句练习</h3>
-            <div className="text-sm text-gray-600">
-              {stats.practiced}/{total} 已练习
-              {stats.avgScore > 0 && (
-                <span className="ml-2 text-gray-500">
-                  · 平均 {Math.round(stats.avgScore * 100)}%
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {/* 徽章显示 */}
-        {badge && (
-          <div className={`flex items-center gap-1 px-3 py-1 bg-white rounded-full border-2 border-gray-200 ${badge.color}`}>
-            <span className="text-lg">{badge.emoji}</span>
-            <span className="text-xs font-medium">{badge.label}</span>
-          </div>
+      {/* 主进度显示 - Pastel柔和蓝色风格 */}
+      <div className="flex items-center gap-2.5">
+        <MessageSquare className="w-5 h-5 text-indigo-500 flex-shrink-0" />
+        <span className="text-xl font-bold text-indigo-600">
+          {stats.practiced}/{total}
+        </span>
+        {stats.avgScore > 0 && (
+          <>
+            <span className="text-indigo-200 text-sm">·</span>
+            <span className="text-lg font-semibold text-indigo-500">
+              {Math.round(stats.avgScore * 100)}%
+            </span>
+          </>
         )}
       </div>
 
@@ -114,17 +91,17 @@ export default function SentencePracticeProgress({
       <div className="flex flex-wrap items-center gap-2">
         {dots.map(({ index, status }) => {
           const colors = {
-            unpracticed: 'bg-gray-300 border-gray-400',
-            poor: 'bg-red-400 border-red-500',
-            medium: 'bg-yellow-400 border-yellow-500',
-            excellent: 'bg-green-400 border-green-500',
+            unpracticed: 'bg-white border-slate-400 text-slate-600',
+            poor: 'bg-rose-50/80 border-rose-200 text-rose-500',
+            medium: 'bg-amber-50/80 border-amber-200 text-amber-500',
+            excellent: 'bg-emerald-50/80 border-emerald-200 text-emerald-500',
           };
 
           const labels = {
-            unpracticed: '未练习',
-            poor: '需改进',
-            medium: '中等',
-            excellent: '优秀',
+            unpracticed: 'Not practiced',
+            poor: 'Needs improvement',
+            medium: 'Good',
+            excellent: 'Excellent',
           };
 
           return (
@@ -132,66 +109,59 @@ export default function SentencePracticeProgress({
               key={index}
               onClick={() => onJumpToSentence?.(index)}
               className={`
-                relative w-8 h-8 rounded-full border-2 transition-all duration-200
+                relative w-7 h-7 rounded-full border transition-all duration-200
                 ${colors[status]}
-                ${onJumpToSentence ? 'hover:scale-125 hover:shadow-lg cursor-pointer' : ''}
+                ${onJumpToSentence ? 'hover:scale-125 hover:shadow-md cursor-pointer' : ''}
                 ${status === 'unpracticed' ? 'opacity-50' : ''}
+                flex items-center justify-center text-xs font-semibold
               `}
-              title={`第 ${index + 1} 句 - ${labels[status]}`}
-              aria-label={`跳转到第 ${index + 1} 句`}
+              title={`#${index + 1} - ${labels[status]}`}
+              aria-label={`#${index + 1}`}
             >
               {/* 优秀标记 */}
-              {status === 'excellent' && (
-                <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">
-                  ✓
-                </span>
-              )}
+              {status === 'excellent' && '✓'}
               
               {/* 需改进标记 */}
-              {status === 'poor' && (
-                <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">
-                  !
-                </span>
-              )}
+              {status === 'poor' && '!'}
             </button>
           );
         })}
       </div>
 
-      {/* 进度条 */}
+      {/* 进度条 - Pastel柔和渐变 */}
       <div className="space-y-1">
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500"
+            className="h-full bg-gradient-to-r from-sky-400 to-indigo-400 transition-all duration-500"
             style={{ width: `${stats.practiceRate * 100}%` }}
           />
         </div>
         
-        {/* 统计信息 */}
+        {/* 统计信息 - Pastel柔和色调 */}
         {stats.practiced > 0 && (
-          <div className="flex items-center gap-4 text-xs text-gray-600">
+          <div className="flex items-center gap-2 text-xs font-medium">
             {stats.excellentCount > 0 && (
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-400"></span>
-                优秀 {stats.excellentCount}
+              <span className="flex items-center gap-0.5 text-emerald-600">
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                {stats.excellentCount}
               </span>
             )}
             {stats.mediumCount > 0 && (
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
-                中等 {stats.mediumCount}
+              <span className="flex items-center gap-0.5 text-amber-600">
+                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                {stats.mediumCount}
               </span>
             )}
             {stats.poorCount > 0 && (
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-red-400"></span>
-                需改进 {stats.poorCount}
+              <span className="flex items-center gap-0.5 text-rose-600">
+                <span className="w-2 h-2 rounded-full bg-rose-400"></span>
+                {stats.poorCount}
               </span>
             )}
             {stats.unpracticed > 0 && (
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-gray-300"></span>
-                未练习 {stats.unpracticed}
+              <span className="flex items-center gap-0.5 text-slate-500">
+                <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+                {stats.unpracticed}
               </span>
             )}
           </div>

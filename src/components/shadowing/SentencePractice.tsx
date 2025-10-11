@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Play, Square, Volume2, ChevronDown, ChevronUp } from 'lucide-react';
 import SentencePracticeProgress from './SentencePracticeProgress';
 import SmartSuggestion from './SmartSuggestion';
-import { AnimatedScore, Toast, BadgeUpgrade } from './ScoreAnimation';
+import { Toast } from './ScoreAnimation';
 import SentenceCard from './SentenceCard';
 import { useMobile } from '@/contexts/MobileContext';
 
@@ -41,8 +41,7 @@ interface SentencePracticeProps {
 }
 
 interface SentenceScore {
-  coverage: number;
-  similarity: number;
+  score: number; // 综合相似度评分 (0-1范围)
   finalText: string;
   missing: string[];
   extra: string[];
@@ -131,6 +130,61 @@ function unique<T>(arr: T[]): T[] {
   return Array.from(new Set(arr));
 }
 
+// 将词汇按在原文中的连续性分组
+function groupConsecutiveTokens(tokens: string[], sourceTokens: string[], separator: string = ''): string[] {
+  if (tokens.length === 0) return [];
+  
+  // 找到每个token在source中的所有位置
+  const tokenPositions = new Map<string, number[]>();
+  sourceTokens.forEach((token, index) => {
+    if (!tokenPositions.has(token)) {
+      tokenPositions.set(token, []);
+    }
+    tokenPositions.get(token)!.push(index);
+  });
+  
+  // 为每个缺失/多余的token找到它在原文中的位置
+  const positionsWithTokens: Array<{ pos: number; token: string; used: boolean }> = [];
+  tokens.forEach(token => {
+    const positions = tokenPositions.get(token) || [];
+    positions.forEach(pos => {
+      positionsWithTokens.push({ pos, token, used: false });
+    });
+  });
+  
+  // 按位置排序
+  positionsWithTokens.sort((a, b) => a.pos - b.pos);
+  
+  // 分组：将位置连续的token合并
+  const groups: string[] = [];
+  let currentGroup: string[] = [];
+  let lastPos = -2;
+  
+  for (const item of positionsWithTokens) {
+    if (item.used) continue;
+    
+    if (item.pos === lastPos + 1) {
+      // 连续的，加入当前组
+      currentGroup.push(item.token);
+    } else {
+      // 不连续，开始新组
+      if (currentGroup.length > 0) {
+        groups.push(currentGroup.join(separator));
+      }
+      currentGroup = [item.token];
+    }
+    lastPos = item.pos;
+    item.used = true;
+  }
+  
+  // 添加最后一组
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup.join(separator));
+  }
+  
+  return groups.length > 0 ? groups : tokens;
+}
+
 const EN_STOPWORDS = new Set([
   'the','a','an','and','or','but','if','then','else','when','at','by','for','in','of','on','to','with','as','is','are','was','were','be','been','being','do','does','did','have','has','had','i','you','he','she','it','we','they','them','me','my','your','his','her','its','our','their','this','that','these','those','from'
 ]);
@@ -146,16 +200,14 @@ function getScoreColor(score: SentenceScore | null): { bg: string; border: strin
     };
   }
   
-  const avgScore = (score.coverage + score.similarity) / 2;
-  
-  if (avgScore >= 0.8) {
+  if (score.score >= 0.8) {
     return {
       bg: 'bg-green-50',
       border: 'border-green-300',
       text: 'text-green-900',
       badge: 'bg-green-500 text-white'
     };
-  } else if (avgScore >= 0.6) {
+  } else if (score.score >= 0.6) {
     return {
       bg: 'bg-yellow-50',
       border: 'border-yellow-300',
@@ -178,11 +230,7 @@ export default function SentencePractice({ originalText, language, className = '
   const [displayText, setDisplayText] = useState('');
   const [finalText, setFinalText] = useState('');
   const [sentenceScores, setSentenceScores] = useState<Record<number, SentenceScore>>({});
-  const [quickMode, setQuickMode] = useState(false); // 快速练习模式
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'celebration' } | null>(null);
-  const [badgeUpgrade, setBadgeUpgrade] = useState<{ emoji: string; label: string } | null>(null);
-  const prevPracticedCount = useRef(0);
-  const prevExcellentCount = useRef(0);
   
   const recognitionRef = useRef<WebSpeechRecognition | null>(null);
   const silenceTimerRef = useRef<number | null>(null);
@@ -190,11 +238,34 @@ export default function SentencePractice({ originalText, language, className = '
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stopAtRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
+  const iosUnlockedRef = useRef(false);
+  
+  // 临时存储识别结果，只在录音真正停止时才提交
+  const tempFinalTextRef = useRef<string>('');
+  // 保存上一次的最终文本，用于检测是否有新内容
+  const lastFinalTextRef = useRef<string>('');
+  // 保存完整文本（final + interim），供完成度计算使用
+  const tempCombinedTextRef = useRef<string>('');
+
+  const isIOS = useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent || '';
+    const platform = (navigator as any).platform || '';
+    const iOSUA = /iPad|iPhone|iPod/.test(ua);
+    const iPadOS13Plus = /Mac/.test(platform) && 'ontouchend' in (window as any);
+    return iOSUA || iPadOS13Plus;
+  }, []);
 
   const sentences = useMemo(() => splitSentences(originalText || '', language), [originalText, language]);
   const total = sentences.length;
   const currentSentence = expandedIndex !== null ? sentences[expandedIndex] || '' : '';
   const { actualIsMobile } = useMobile();
+  
+  // 使用 ref 保存当前句子，供定时器闭包使用
+  const currentSentenceRef = useRef('');
+  useEffect(() => {
+    currentSentenceRef.current = currentSentence;
+  }, [currentSentence]);
 
   // 是否为对话类型
   const isConversation = useMemo(() => {
@@ -209,6 +280,7 @@ export default function SentencePractice({ originalText, language, className = '
     if (!audioRef.current) {
       audioRef.current = new Audio(audioUrl);
       audioRef.current.preload = 'auto';
+      try { audioRef.current.load(); } catch {}
       audioRef.current.addEventListener('timeupdate', () => {
         const stopAt = stopAtRef.current;
         if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
@@ -224,6 +296,7 @@ export default function SentencePractice({ originalText, language, className = '
       });
     } else {
       audioRef.current.src = audioUrl;
+      try { audioRef.current.load(); } catch {}
     }
   }, [audioUrl, sentenceTimeline]);
 
@@ -243,18 +316,27 @@ export default function SentencePractice({ originalText, language, className = '
     const dist = levenshtein(targetTokens, saidTokens);
     const maxLen = Math.max(targetTokens.length, saidTokens.length, 1);
     const sim = 1 - dist / maxLen;
-    const missingTokens = unique(targetTokens.filter((t) => !saidTokens.includes(t)));
-    const extraTokens = unique(saidTokens.filter((t) => !targetTokens.includes(t)));
     
-    return { coverage: cov, similarity: sim, missing: missingTokens, extra: extraTokens };
+    // 找出缺失和多余的token
+    const missingTokensRaw = unique(targetTokens.filter((t) => !saidTokens.includes(t)));
+    const extraTokensRaw = unique(saidTokens.filter((t) => !targetTokens.includes(t)));
+    
+    // 将连续的token分组（中文/日文直接连接，英文用空格连接）
+    const separator = language === 'en' ? ' ' : '';
+    const missingGroups = groupConsecutiveTokens(missingTokensRaw, targetTokens, separator);
+    const extraGroups = groupConsecutiveTokens(extraTokensRaw, saidTokens, separator);
+    
+    // 合并覆盖度和相似度为综合得分
+    const comprehensiveScore = (cov + sim) / 2;
+    
+    return { score: comprehensiveScore, missing: missingGroups, extra: extraGroups };
   }, [currentSentence, finalText, language, expandedIndex, isConversation]);
 
   // 保存评分当finalText更新时
   useEffect(() => {
     if (expandedIndex !== null && finalText && currentMetrics) {
       const newScore = {
-        coverage: currentMetrics.coverage,
-        similarity: currentMetrics.similarity,
+        score: currentMetrics.score,
         finalText: finalText,
         missing: currentMetrics.missing,
         extra: currentMetrics.extra,
@@ -266,8 +348,7 @@ export default function SentencePractice({ originalText, language, className = '
       }));
       
       // 检查是否优秀并显示反馈
-      const avg = (currentMetrics.coverage + currentMetrics.similarity) / 2;
-      if (avg >= 0.8) {
+      if (currentMetrics.score >= 0.8) {
         setToast({
           message: '做得很好！这句练得不错 👍',
           type: 'success',
@@ -275,27 +356,6 @@ export default function SentencePractice({ originalText, language, className = '
       }
     }
   }, [expandedIndex, finalText, currentMetrics]);
-  
-  // 检查徽章升级
-  useEffect(() => {
-    const practiced = Object.keys(sentenceScores).length;
-    const excellent = Object.values(sentenceScores).filter(score => {
-      const avg = (score.coverage + score.similarity) / 2;
-      return avg >= 0.8;
-    }).length;
-    
-    // 检查徽章升级
-    if (practiced >= 5 && prevPracticedCount.current < 5) {
-      setBadgeUpgrade({ emoji: '🥉', label: '青铜练习者' });
-    } else if (practiced >= 10 && prevPracticedCount.current < 10) {
-      setBadgeUpgrade({ emoji: '🥈', label: '白银练习者' });
-    } else if (excellent === total && total > 0 && prevExcellentCount.current < total) {
-      setBadgeUpgrade({ emoji: '🥇', label: '黄金练习者' });
-    }
-    
-    prevPracticedCount.current = practiced;
-    prevExcellentCount.current = excellent;
-  }, [sentenceScores, total]);
 
   // 清理静默定时器
   const clearSilenceTimer = () => {
@@ -320,19 +380,76 @@ export default function SentencePractice({ originalText, language, className = '
       setIsRecognizing(true);
       setDisplayText('');
       setFinalText('');
+      tempFinalTextRef.current = '';
+      tempCombinedTextRef.current = '';
       lastResultAtRef.current = Date.now();
       clearSilenceTimer();
-      // 使用定时器检查静默，不依赖 isRecognizing 闭包值
+      
+      console.log('录音开始，当前句子:', currentSentenceRef.current); // 调试日志
+      
+      // 智能静默检测：根据完成度动态调整静默时间
       silenceTimerRef.current = window.setInterval(() => {
         const diff = Date.now() - lastResultAtRef.current;
-        if (diff >= 2000) {
+        
+        // 从 ref 获取当前句子，避免闭包问题
+        const targetSentence = currentSentenceRef.current;
+        if (!targetSentence || targetSentence.trim() === '') {
+          // 没有目标句子时，使用简单的静默检测（2秒）
+          if (diff >= 2000) {
+            console.log('无目标句子，2秒后自动停止');
+            try { rec.stop(); } catch {}
+            clearSilenceTimer();
+          }
+          return;
+        }
+        
+        // 计算当前录入文本的token数量（使用完整文本：final + interim）
+        const currentText = tempCombinedTextRef.current;
+        const currentTokensRaw = tokenize(currentText, language);
+        const targetTokensRaw = tokenize(targetSentence, language);
+        
+        // 检测是否为对话类型（从当前句子判断）
+        const isDialogueType = /^[ABＡＢ]\s*[：:]/.test(targetSentence.trim());
+        
+        // 对话类型需要过滤A/B标记（与评分计算保持一致）
+        const filterSpeaker = (arr: string[]) =>
+          isDialogueType ? arr.filter((w) => w.toLowerCase() !== 'a' && w.toLowerCase() !== 'b') : arr;
+        
+        const currentTokens = filterSpeaker(currentTokensRaw);
+        const targetTokens = filterSpeaker(targetTokensRaw);
+        
+        const completionRate = targetTokens.length > 0 
+          ? currentTokens.length / targetTokens.length 
+          : 0;
+        
+        console.log(`完成度: ${Math.round(completionRate * 100)}%, 静默: ${diff}ms, 目标tokens: ${targetTokens.length}, 当前tokens: ${currentTokens.length}, 文本: "${currentText}"`);
+        
+        // 根据完成度动态调整静默时间
+        let requiredSilence = 5000; // 默认5秒（说得太少时）
+        
+        if (completionRate >= 1.0) {
+          requiredSilence = 500;  // 完成度 >= 100%：0.5秒
+        } else if (completionRate >= 0.9) {
+          requiredSilence = 1000; // 完成度 >= 90%：1秒
+        } else if (completionRate >= 0.8) {
+          requiredSilence = 1500; // 完成度 >= 80%：1.5秒
+        }
+        
+        // 达到完成度要求且满足静默时间，自动停止
+        if (completionRate >= 0.8 && diff >= requiredSilence) {
+          console.log(`完成度 ${Math.round(completionRate * 100)}% 且静默 ${requiredSilence}ms，自动停止`);
           try { rec.stop(); } catch {}
           clearSilenceTimer();
         }
-      }, 300);
+        // 超过5秒兜底
+        else if (diff >= 5000) {
+          console.log('超过 5秒，兜底停止');
+          try { rec.stop(); } catch {}
+          clearSilenceTimer();
+        }
+      }, 50);
     };
     rec.onresult = (event: WebSpeechRecognitionEvent) => {
-      lastResultAtRef.current = Date.now();
       let fullFinal = '';
       let interim = '';
       for (let i = 0; i < event.results.length; i++) {
@@ -341,18 +458,45 @@ export default function SentencePractice({ originalText, language, className = '
         else if (i >= event.resultIndex) interim += transcript;
       }
       const finalTrimmed = fullFinal.trim();
-      setFinalText(finalTrimmed);
       const combined = `${finalTrimmed}${finalTrimmed && interim ? ' ' : ''}${interim}`.trim();
+      
+      // 只要完整文本有变化就重置静默时间（包括interim变化）
+      if (combined && combined !== tempCombinedTextRef.current) {
+        lastResultAtRef.current = Date.now();
+        console.log('检测到新内容，重置静默时间:', combined);
+      }
+      
+      // 保存final文本用于最终评分
+      if (finalTrimmed && finalTrimmed !== lastFinalTextRef.current) {
+        lastFinalTextRef.current = finalTrimmed;
+      }
+      
+      // 暂存到 ref
+      tempFinalTextRef.current = finalTrimmed;
+      tempCombinedTextRef.current = combined; // 保存完整文本供完成度计算
       setDisplayText(combined);
     };
     rec.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
       setIsRecognizing(false);
       clearSilenceTimer();
+      // 发生错误时也要提交结果，延迟到按钮状态更新后
+      if (tempFinalTextRef.current) {
+        setTimeout(() => {
+          setFinalText(tempFinalTextRef.current);
+        }, 100);
+      }
     };
     rec.onend = () => {
       setIsRecognizing(false);
       clearSilenceTimer();
+      // 录音真正结束时才提交最终结果用于评分
+      // 延迟一小段时间，确保按钮从"停止"变为"练习"后再开始评分
+      if (tempFinalTextRef.current) {
+        setTimeout(() => {
+          setFinalText(tempFinalTextRef.current);
+        }, 100);
+      }
     };
     recognitionRef.current = rec;
     return () => {
@@ -370,6 +514,9 @@ export default function SentencePractice({ originalText, language, className = '
     try {
       setDisplayText('');
       setFinalText('');
+      tempFinalTextRef.current = '';
+      tempCombinedTextRef.current = '';
+      lastFinalTextRef.current = '';
       recognitionRef.current.start();
     } catch {
       alert('无法开始识别，请更换浏览器/开启权限');
@@ -384,72 +531,145 @@ export default function SentencePractice({ originalText, language, className = '
       // 立即清理状态
       clearSilenceTimer();
       setIsRecognizing(false);
+      // 手动停止时也要提交结果，延迟到按钮状态更新后
+      if (tempFinalTextRef.current) {
+        setTimeout(() => {
+          setFinalText(tempFinalTextRef.current);
+        }, 100);
+      }
     } catch (e) {
       console.error('停止识别时出错:', e);
-      // 即使出错也要清理状态
+      // 即使出错也要清理状态和提交结果
       clearSilenceTimer();
       setIsRecognizing(false);
+      if (tempFinalTextRef.current) {
+        setTimeout(() => {
+          setFinalText(tempFinalTextRef.current);
+        }, 100);
+      }
     }
   }, []);
 
   const speak = useCallback(async (index: number) => {
-    if (audioUrl && sentenceTimeline && sentenceTimeline.length > 0) {
-      if (!audioRef.current) {
+    if (!(audioUrl && sentenceTimeline && sentenceTimeline.length > 0)) {
+      alert('未找到可用的生成音频或时间轴，无法播放该句。');
+      return;
+    }
+
+    if (!audioRef.current) {
+      try {
+        audioRef.current = new Audio(audioUrl);
+        audioRef.current.preload = 'auto';
+        try { audioRef.current.load(); } catch {}
+        audioRef.current.addEventListener('timeupdate', () => {
+          const stopAt = stopAtRef.current;
+          if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
+            audioRef.current.pause();
+            stopAtRef.current = null;
+          }
+        });
+      } catch {}
+    } else if (audioRef.current.src !== audioUrl) {
+      audioRef.current.src = audioUrl;
+      try { audioRef.current.load(); } catch {}
+    }
+
+    const a = audioRef.current;
+    const seg = sentenceTimeline.find((s) => s.index === index) || sentenceTimeline[index];
+    if (!(seg && a)) {
+      alert('未找到可用的生成音频或时间轴，无法播放该句。');
+      return;
+    }
+
+    // iOS 解锁：在用户手势内先触发一次静音播放以满足自动播放策略
+    if (isIOS && !iosUnlockedRef.current) {
+      try {
+        a.muted = true;
+        // 不等待，以保留用户手势调用栈
+        const p = a.play();
+        if (p && typeof p.then === 'function') {
+          p.then(() => { try { a.pause(); } catch {}; a.muted = false; }).catch(() => { a.muted = false; });
+        } else {
+          try { a.pause(); } catch {}
+          a.muted = false;
+        }
+      } catch { a.muted = false; }
+      iosUnlockedRef.current = true;
+    }
+
+    try {
+      // 等待元数据就绪
+      await new Promise<void>((resolve) => {
+        if (a.readyState >= 1) return resolve();
+        const onLoaded = () => {
+          a.removeEventListener('loadedmetadata', onLoaded);
+          a.removeEventListener('canplay', onLoaded);
+          resolve();
+        };
+        a.addEventListener('loadedmetadata', onLoaded, { once: true });
+        a.addEventListener('canplay', onLoaded, { once: true });
+        try { a.load(); } catch {}
+      });
+
+      const START_EPS = 0.005;
+      const STOP_EPS = 0.08;
+      const targetStart = Math.max(0, seg.start + START_EPS);
+      const targetStop = Math.max(seg.start, seg.end - STOP_EPS);
+
+      // 尽量使用 fastSeek，iOS 对 seeking 更稳定
+      const anyAudio = a as any;
+      try {
+        if (typeof anyAudio.fastSeek === 'function') {
+          anyAudio.fastSeek(targetStart);
+        } else {
+          a.currentTime = targetStart;
+        }
+      } catch { a.currentTime = targetStart; }
+
+      // 等待 seek 完成或可以播放该位置
+      await new Promise<void>((resolve) => {
+        let done = false;
+        const finish = () => { if (!done) { done = true; cleanup(); resolve(); } };
+        const onSeeked = () => finish();
+        const onCanPlay = () => finish();
+        const cleanup = () => {
+          a.removeEventListener('seeked', onSeeked);
+          a.removeEventListener('canplay', onCanPlay);
+        };
+        a.addEventListener('seeked', onSeeked, { once: true });
+        a.addEventListener('canplay', onCanPlay, { once: true });
+        // 超时兜底
+        setTimeout(finish, 1200);
+      });
+
+      stopAtRef.current = targetStop;
+
+      // 避免在 iOS 上同步 cancel 造成卡顿
+      if (!isIOS) {
         try {
-          audioRef.current = new Audio(audioUrl);
-          audioRef.current.preload = 'auto';
-          audioRef.current.addEventListener('timeupdate', () => {
-            const stopAt = stopAtRef.current;
-            if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
-              audioRef.current.pause();
-              stopAtRef.current = null;
-            }
-          });
+          if ('speechSynthesis' in window) {
+            setTimeout(() => { try { window.speechSynthesis.cancel(); } catch {} }, 0);
+          }
         } catch {}
-      } else if (audioRef.current.src !== audioUrl) {
-        audioRef.current.src = audioUrl;
       }
 
-      const seg = sentenceTimeline.find((s) => s.index === index) || sentenceTimeline[index];
-      if (seg && audioRef.current) {
-        try {
-          const ensureReady = () =>
-            new Promise<void>((resolve) => {
-              const a = audioRef.current!;
-              if (a.readyState >= 1) return resolve();
-              const onLoaded = () => {
-                a.removeEventListener('loadedmetadata', onLoaded);
-                a.removeEventListener('canplay', onLoaded);
-                resolve();
-              };
-              a.addEventListener('loadedmetadata', onLoaded, { once: true });
-              a.addEventListener('canplay', onLoaded, { once: true });
-              try { a.load(); } catch {}
-            });
-          await ensureReady();
-          const START_EPS = 0.005;
-          const STOP_EPS = 0.08;
-          audioRef.current.currentTime = Math.max(0, seg.start + START_EPS);
-          stopAtRef.current = Math.max(seg.start, seg.end - STOP_EPS);
-          try { window.speechSynthesis.cancel(); } catch {}
-          await audioRef.current.play();
-          const tick = () => {
-            const stopAt = stopAtRef.current;
-            if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
-              audioRef.current.pause();
-              stopAtRef.current = null;
-              rafRef.current = null;
-              return;
-            }
-            rafRef.current = requestAnimationFrame(tick);
-          };
-          if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
+      await a.play();
+      const tick = () => {
+        const stopAt = stopAtRef.current;
+        if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
+          audioRef.current.pause();
+          stopAtRef.current = null;
+          rafRef.current = null;
           return;
-        } catch {}
-      }
-    }
+        }
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
+      return;
+    } catch {}
+
     alert('未找到可用的生成音频或时间轴，无法播放该句。');
-  }, [audioUrl, sentenceTimeline]);
+  }, [audioUrl, sentenceTimeline, isIOS]);
 
   const handleSentenceClick = async (index: number) => {
     // 如果点击的是当前展开的句子，则折叠
@@ -468,20 +688,6 @@ export default function SentencePractice({ originalText, language, className = '
       setExpandedIndex(index);
       setDisplayText('');
       setFinalText('');
-      
-      // 快速模式：自动播放+录音
-      if (quickMode) {
-        setTimeout(async () => {
-          // 先播放原音
-          await speak(index);
-          // 播放完毕后自动开始录音
-          setTimeout(() => {
-            if (expandedIndex === index) { // 确保还在当前句子
-              start();
-            }
-          }, 500);
-        }, 300);
-      }
     }
   };
 
@@ -489,45 +695,26 @@ export default function SentencePractice({ originalText, language, className = '
   const progress = useMemo(() => {
     const practiced = Object.keys(sentenceScores).length;
     const goodCount = Object.values(sentenceScores).filter(score => {
-      const avg = (score.coverage + score.similarity) / 2;
-      return avg >= 0.8;
+      return score.score >= 0.8;
     }).length;
     return { practiced, total, goodCount };
   }, [sentenceScores, total]);
 
   return (
-    <Card className={`p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 ${className || ''}`}>
-      {/* 顶部：进度和快速模式切换 */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex-1 min-w-0">
-          <SentencePracticeProgress
-            total={total}
-            scores={sentenceScores}
-            onJumpToSentence={(index) => {
-              handleSentenceClick(index);
-              setTimeout(() => {
-                const element = document.getElementById(`sentence-${index}`);
-                element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }, 100);
-            }}
-          />
-        </div>
-        
-        {/* 快速模式开关 */}
-        <button
-          onClick={() => setQuickMode(!quickMode)}
-          className={`
-            flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all
-            ${quickMode 
-              ? 'bg-gradient-to-r from-purple-500 to-indigo-600 border-purple-600 text-white shadow-lg' 
-              : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
-            }
-          `}
-          title={quickMode ? '关闭快速模式' : '开启快速模式：点击句子自动播放+录音+评分'}
-        >
-          <span className="text-lg">{quickMode ? '⚡' : '⚪'}</span>
-          <span className="text-xs font-medium whitespace-nowrap">快速模式</span>
-        </button>
+    <Card className={`p-4 md:p-6 border border-slate-200 shadow-sm bg-slate-50/30 ${className || ''}`}>
+      {/* 顶部：进度显示 */}
+      <div className="mb-4">
+        <SentencePracticeProgress
+          total={total}
+          scores={sentenceScores}
+          onJumpToSentence={(index) => {
+            handleSentenceClick(index);
+            setTimeout(() => {
+              const element = document.getElementById(`sentence-${index}`);
+              element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+          }}
+        />
       </div>
 
       {/* 智能建议 */}
@@ -572,7 +759,6 @@ export default function SentencePractice({ originalText, language, className = '
                   setFinalText('');
                   setTimeout(() => start(), 100);
                 }}
-                tokenize={tokenize}
               />
             );
           })}
@@ -581,29 +767,12 @@ export default function SentencePractice({ originalText, language, className = '
         <div className="text-gray-500 text-center py-8">暂无内容</div>
       )}
 
-      {/* 提示信息 */}
-      {total > 0 && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="text-xs text-blue-700">
-            💡 <strong>提示：</strong>点击任意句子开始练习，建议把每一句都练好（绿色=优秀）后再进行正式录音。
-          </div>
-        </div>
-      )}
-      
       {/* Toast 通知 */}
       {toast && (
         <Toast
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
-        />
-      )}
-      
-      {/* 徽章升级动画 */}
-      {badgeUpgrade && (
-        <BadgeUpgrade
-          badge={badgeUpgrade}
-          onClose={() => setBadgeUpgrade(null)}
         />
       )}
     </Card>

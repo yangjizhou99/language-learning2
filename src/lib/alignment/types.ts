@@ -47,19 +47,19 @@ export interface AlignmentSubtopic {
   material?: AlignmentMaterial | null;
 }
 
-export interface AlignmentKnowledgePoints {
-  grammar?: Array<AlignmentKnowledgeItem>;
-  vocabulary?: Array<AlignmentKnowledgeItem>;
-  phrases?: Array<AlignmentKnowledgeItem>;
-  culture?: Array<AlignmentKnowledgeItem>;
-  [key: string]: unknown;
+export interface AlignmentKnowledgeWord {
+  term: string;
+  translations: Record<string, string>;
 }
 
-export interface AlignmentKnowledgeItem {
-  label: string;
-  explanation?: string;
-  examples?: Array<{ source: string; translation?: string }>;
-  translations?: Record<string, string>;
+export interface AlignmentKnowledgeSentence {
+  sentence: string;
+  translations: Record<string, string>;
+}
+
+export interface AlignmentKnowledgePoints {
+  words: AlignmentKnowledgeWord[];
+  sentences: AlignmentKnowledgeSentence[];
 }
 
 export interface AlignmentRequirement {
@@ -73,6 +73,38 @@ export interface AlignmentRubricDimension {
   description: string;
   translations?: Record<string, string>;
   weight?: number;
+}
+
+export type AlignmentDialogueSpeaker = 'user' | 'ai';
+
+export interface AlignmentPracticeScenarioRole {
+  name: string;
+  description: string;
+  translations?: Record<string, string>;
+}
+
+export interface AlignmentPracticeScenario {
+  summary: string;
+  summary_translations: Record<string, string>;
+  user_role: AlignmentPracticeScenarioRole;
+  ai_role: AlignmentPracticeScenarioRole;
+  kickoff_speaker: AlignmentDialogueSpeaker;
+  objectives: Array<{ label: string; translations?: Record<string, string> }>;
+  context_notes?: string;
+  context_notes_translations?: Record<string, string>;
+}
+
+export interface AlignmentStandardDialogueTurn {
+  speaker: AlignmentDialogueSpeaker;
+  text: string;
+  translations?: Record<string, string>;
+  objective_refs?: Array<number>;
+}
+
+export interface AlignmentStandardDialogue {
+  summary?: string;
+  summary_translations?: Record<string, string>;
+  turns: AlignmentStandardDialogueTurn[];
 }
 
 export interface AlignmentMaterial {
@@ -107,6 +139,8 @@ export interface AlignmentMaterial {
     [key: string]: unknown;
   };
   ai_metadata: Record<string, unknown>;
+  practice_scenario?: AlignmentPracticeScenario | null;
+  standard_dialogue?: AlignmentStandardDialogue | null;
   review_status: AlignmentMaterialReviewStatus;
   review_notes: string | null;
   reviewed_by: string | null;

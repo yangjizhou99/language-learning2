@@ -3,8 +3,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/contexts/LanguageContext';
-import { validateInvitationCode } from '@/lib/invitation';
-import type { InvitationValidationResult } from '@/types/invitation';
 import type { RegistrationConfig } from '@/types/registrationConfig';
 
 export default function AuthPage() {
@@ -17,8 +15,6 @@ export default function AuthPage() {
   const [pw, setPw] = useState('');
   const [msg, setMsg] = useState('');
   const [invitationCode, setInvitationCode] = useState('');
-  const [invitationValidation, setInvitationValidation] =
-    useState<InvitationValidationResult | null>(null);
   const [isValidatingInvitation, setIsValidatingInvitation] = useState(false);
   const [showInvitationForm, setShowInvitationForm] = useState(true); // 默认展开邀请码注册
   const [registrationConfig, setRegistrationConfig] = useState<RegistrationConfig | null>(null);
@@ -67,41 +63,31 @@ export default function AuthPage() {
     setMsg(error ? `${t.auth.signup_failed}：${error.message}` : t.auth.signup_success_email);
   };
 
-  const validateInvitation = async () => {
+  // 合并验证和注册为一个操作
+  const validateAndRegister = async () => {
+    // 验证输入
     if (!invitationCode.trim()) {
       setMsg('请输入邀请码');
       return;
     }
-
-    setIsValidatingInvitation(true);
-    setMsg('');
-
-    try {
-      const result = await validateInvitationCode(invitationCode);
-      setInvitationValidation(result);
-
-      if (result.is_valid) {
-        setMsg('邀请码验证成功！');
-      } else {
-        setMsg(`邀请码验证失败：${result.error_message}`);
-      }
-    } catch (error) {
-      console.error('验证邀请码失败:', error);
-      setMsg('验证邀请码时发生错误');
-    } finally {
-      setIsValidatingInvitation(false);
+    if (!email.trim()) {
+      setMsg('请输入邮箱');
+      return;
     }
-  };
-
-  const registerWithInvitation = async () => {
-    if (!invitationValidation?.is_valid) {
-      setMsg('请先验证邀请码');
+    if (!pw.trim()) {
+      setMsg('请输入密码');
+      return;
+    }
+    if (pw.length < 6) {
+      setMsg('密码长度至少6位');
       return;
     }
 
-    setMsg('');
+    setIsValidatingInvitation(true);
+    setMsg('正在验证邀请码并注册...');
 
     try {
+      // 直接调用注册接口，后端会验证邀请码
       const response = await fetch('/api/auth/register-with-invitation', {
         method: 'POST',
         headers: {
@@ -138,6 +124,8 @@ export default function AuthPage() {
     } catch (error) {
       console.error('注册失败:', error);
       setMsg('注册时发生错误');
+    } finally {
+      setIsValidatingInvitation(false);
     }
   };
 
@@ -241,196 +229,36 @@ export default function AuthPage() {
 
           {showInvitationForm && (
             <div className="space-y-3">
-              <div className="flex gap-2">
+              <div className="space-y-2">
                 <input
-                  className="border rounded px-2 py-1 flex-1"
+                  className="border rounded px-2 py-1 w-full"
+                  placeholder="请输入邮箱"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <input
+                  className="border rounded px-2 py-1 w-full"
+                  type="password"
+                  placeholder="请输入密码（至少6位）"
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                />
+                <input
+                  className="border rounded px-2 py-1 w-full"
                   placeholder="请输入8位邀请码"
                   value={invitationCode}
                   onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
                   maxLength={8}
                 />
-                <button
-                  onClick={validateInvitation}
-                  disabled={isValidatingInvitation}
-                  className="px-3 py-1 rounded border bg-blue-50 hover:bg-blue-100 disabled:opacity-50"
-                >
-                  {isValidatingInvitation ? '验证中...' : '验证'}
-                </button>
               </div>
 
-              {invitationValidation && (
-                <div
-                  className={`p-3 rounded text-sm ${
-                    invitationValidation.is_valid
-                      ? 'bg-green-50 text-green-800 border border-green-200'
-                      : 'bg-red-50 text-red-800 border border-red-200'
-                  }`}
-                >
-                  {invitationValidation.is_valid ? (
-                    <div>
-                      <p className="font-medium">✅ 邀请码验证成功！</p>
-                      <p className="text-xs mt-1">
-                        使用次数：{invitationValidation.used_count}/{invitationValidation.max_uses}
-                        {invitationValidation.expires_at && (
-                          <span>
-                            {' '}
-                            | 过期时间：
-                            {new Date(invitationValidation.expires_at).toLocaleDateString()}
-                          </span>
-                        )}
-                      </p>
-                      {invitationValidation.permissions && (
-                        <div className="mt-2 text-xs">
-                          <p className="font-medium">权限设置：</p>
-                          <div className="space-y-2 mt-1">
-                            {/* 功能权限 */}
-                            <div>
-                              <p className="text-gray-600 font-medium">功能权限：</p>
-                              <div className="grid grid-cols-2 gap-1 mt-1">
-                                {invitationValidation.permissions.can_access_shadowing && (
-                                  <span>✓ Shadowing 练习</span>
-                                )}
-                                {invitationValidation.permissions.can_access_cloze && (
-                                  <span>✓ Cloze 练习</span>
-                                )}
-                                {invitationValidation.permissions.can_access_alignment && (
-                                  <span>✓ Alignment 练习</span>
-                                )}
-                                {invitationValidation.permissions.can_access_articles && (
-                                  <span>✓ 广读文章</span>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* 语言权限 */}
-                            {invitationValidation.permissions.allowed_languages &&
-                              invitationValidation.permissions.allowed_languages.length > 0 && (
-                                <div>
-                                  <p className="text-gray-600 font-medium">允许语言：</p>
-                                  <span className="text-gray-800">
-                                    {invitationValidation.permissions.allowed_languages
-                                      .map((lang) =>
-                                        lang === 'en' ? '英语' : lang === 'ja' ? '日语' : '中文',
-                                      )
-                                      .join(', ')}
-                                  </span>
-                                </div>
-                              )}
-
-                            {/* 难度等级 */}
-                            {invitationValidation.permissions.allowed_levels &&
-                              invitationValidation.permissions.allowed_levels.length > 0 && (
-                                <div>
-                                  <p className="text-gray-600 font-medium">难度等级：</p>
-                                  <span className="text-gray-800">
-                                    等级{' '}
-                                    {invitationValidation.permissions.allowed_levels.join(', ')}
-                                  </span>
-                                </div>
-                              )}
-
-                            {/* 使用限制 */}
-                            {invitationValidation.permissions.max_daily_attempts && (
-                              <div>
-                                <p className="text-gray-600 font-medium">每日限制：</p>
-                                <span className="text-gray-800">
-                                  {invitationValidation.permissions.max_daily_attempts} 次练习
-                                </span>
-                              </div>
-                            )}
-
-                            {/* AI功能 */}
-                            {invitationValidation.permissions.ai_enabled && (
-                              <div>
-                                <p className="text-gray-600 font-medium">AI功能：</p>
-                                <span className="text-gray-800">✓ 启用</span>
-                              </div>
-                            )}
-
-                            {/* API使用限制 */}
-                            {invitationValidation.permissions.api_limits?.enabled && (
-                              <div>
-                                <p className="text-gray-600 font-medium">API使用限制：</p>
-                                <div className="text-gray-800 text-xs space-y-1">
-                                  <div>
-                                    每日:{' '}
-                                    {invitationValidation.permissions.api_limits.daily_calls_limit}
-                                    次调用,
-                                    {
-                                      invitationValidation.permissions.api_limits.daily_tokens_limit
-                                    }{' '}
-                                    tokens, $
-                                    {invitationValidation.permissions.api_limits.daily_cost_limit}
-                                  </div>
-                                  <div>
-                                    每月:{' '}
-                                    {
-                                      invitationValidation.permissions.api_limits
-                                        .monthly_calls_limit
-                                    }
-                                    次调用,
-                                    {
-                                      invitationValidation.permissions.api_limits
-                                        .monthly_tokens_limit
-                                    }{' '}
-                                    tokens, $
-                                    {invitationValidation.permissions.api_limits.monthly_cost_limit}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* API密钥配置 */}
-                            {(invitationValidation.permissions.api_keys?.deepseek ||
-                              invitationValidation.permissions.api_keys?.openrouter) && (
-                              <div>
-                                <p className="text-gray-600 font-medium">API密钥配置：</p>
-                                <div className="text-gray-800 text-xs space-y-1">
-                                  {invitationValidation.permissions.api_keys?.deepseek && (
-                                    <div>✓ DeepSeek API Key 已配置</div>
-                                  )}
-                                  {invitationValidation.permissions.api_keys?.openrouter && (
-                                    <div>✓ OpenRouter API Key 已配置</div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* 模型权限 */}
-                            {invitationValidation.permissions.model_permissions &&
-                              invitationValidation.permissions.model_permissions.length > 0 && (
-                                <div>
-                                  <p className="text-gray-600 font-medium">可用AI模型：</p>
-                                  <div className="text-gray-800 text-xs space-y-1">
-                                    {invitationValidation.permissions.model_permissions.map(
-                                      (model, index) => (
-                                        <div key={index}>
-                                          {model.enabled ? '✓' : '✗'} {model.model_name}(
-                                          {model.daily_limit}次/日, {model.token_limit} tokens)
-                                        </div>
-                                      ),
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p>❌ {invitationValidation.error_message}</p>
-                  )}
-                </div>
-              )}
-
-              {invitationValidation?.is_valid && (
-                <button
-                  onClick={registerWithInvitation}
-                  className="w-full px-3 py-2 rounded bg-green-600 text-white hover:bg-green-700"
-                >
-                  使用邀请码注册
-                </button>
-              )}
+              <button
+                onClick={validateAndRegister}
+                disabled={isValidatingInvitation}
+                className="w-full px-3 py-2 rounded bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {isValidatingInvitation ? '正在处理...' : '验证并注册'}
+              </button>
             </div>
           )}
         </section>

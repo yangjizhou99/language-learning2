@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -13,7 +13,10 @@
     "lint:fix": "next lint --fix",
     "db:dump": "supabase db dump --local --schema public -f supabase/migrations/20250918041810_remote_public_schema.sql",
     "db:push": "supabase db push && npm run db:dump",
-    "db:reset": "supabase db reset && npm run db:dump"
+    "db:reset": "supabase db reset && npm run db:dump",
+    "sync:verify": "node scripts/verify-remote-sync.js",
+    "sync:all:dry-run": "node scripts/sync-database.js --all --dry-run",
+    "sync:all": "node scripts/sync-database.js --all"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.3.0",

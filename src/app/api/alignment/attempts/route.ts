@@ -36,19 +36,13 @@ function buildEvaluationPrompt({
     : [];
 
   const knowledge = material.knowledge_points || {};
-  const knowledgeSummary = Object.entries(knowledge)
-    .map(([key, value]) => {
-      if (!Array.isArray(value)) return '';
-      const bullets = value
-        .map((item: any) => {
-          const label = item.label || '';
-          const explanation = item.explanation || '';
-          return `${label}${explanation ? `: ${explanation}` : ''}`;
-        })
-        .filter(Boolean)
-        .join('; ');
-      return `${key}: ${bullets}`;
-    })
+  const wordList = Array.isArray(knowledge.words)
+    ? knowledge.words.map((item: any) => item.term || '').filter(Boolean).join('; ')
+    : '';
+  const sentenceList = Array.isArray(knowledge.sentences)
+    ? knowledge.sentences.map((item: any) => item.sentence || '').filter(Boolean).join('; ')
+    : '';
+  const knowledgeSummary = [wordList ? `WORDS: ${wordList}` : '', sentenceList ? `SENTENCES: ${sentenceList}` : '']
     .filter(Boolean)
     .join('\n');
 
@@ -77,24 +71,20 @@ ${material.standard_answer || ''}
 LEARNER_SUBMISSION:
 ${userContent}
 
-Evaluate the learner submission according to the requirements and level. Return STRICT JSON ONLY:
+评估要点：
+- 学习者是否覆盖所有要求，是否达到任务目标
+- 是否存在明显的语法或用词错误（只记录真正影响表达的错误）
+- 如未完成任务，请说明主要缺失点
+
+返回 STRICT JSON：
 {
-  "scores": {
-    "fluency": 0-100,
-    "relevance": 0-100,
-    "language": 0-100,
-    "structure": 0-100,
-    "length": 0-100,
-    "overall": 0-100
-  },
-  "summary": "One concise paragraph summarizing performance.",
-  "strengths": ["bullet", "..."],
-  "improvements": ["bullet", "..."],
-  "requirements": [
-    { "label": "requirement text", "met": true/false, "comment": "short comment" }
-  ]
+  "task_completed": true/false,
+  "errors": [
+    { "type": "grammar|word_choice|content|other", "original": "...", "correction": "..." }
+  ],
+  "suggestions": ["..."]
 }
-Ensure numeric scores are integers between 0 and 100. Always include every requirement in the output.
+仅在确有必要时列出错误与建议；当表达自然、无关键错误时，可返回空数组。
 `.trim();
 }
 
@@ -252,26 +242,48 @@ export async function POST(req: NextRequest) {
           {
             role: 'system',
             content:
-              'You are a meticulous language tutor. Score the submission and respond with STRICT JSON only.',
+              'You are a meticulous language tutor. Evaluate the submission and respond with STRICT JSON only.',
           },
           { role: 'user', content: prompt },
         ],
       });
       usage = normUsage(rawUsage);
       evaluation = JSON.parse(content);
-      if (evaluation && usage) {
-        evaluation.usage = usage;
-      }
     } catch (error) {
       console.error('alignment attempt evaluation failed', error);
       evaluation = null;
     }
 
-    const scores = evaluation?.scores || {};
-    const overallScore =
-      typeof scores.overall === 'number' && Number.isFinite(scores.overall)
-        ? scores.overall
-        : null;
+    const normalizedErrors: Array<{ type: string; original: string; correction: string }> = Array.isArray(
+      evaluation?.errors,
+    )
+      ? evaluation.errors
+          .map((item: any) => ({
+            type: item?.type || 'error',
+            original: item?.original || '',
+            correction: item?.correction || '',
+          }))
+          .filter((item: { type: string; original: string; correction: string }) => item.original && item.correction)
+      : [];
+    const normalizedSuggestions: string[] = Array.isArray(evaluation?.suggestions)
+      ? evaluation.suggestions
+          .filter((s: any) => typeof s === 'string' && s.trim())
+          .map((s: string) => s.trim())
+      : [];
+    const taskCompleted = Boolean(evaluation?.task_completed);
+    const overallScore = taskCompleted ? (normalizedErrors.length === 0 ? 100 : 80) : 40;
+    const feedbackText = taskCompleted
+      ? normalizedErrors.length === 0
+        ? '任务完成，表达准确。'
+        : '任务完成，但仍有可改进之处。'
+      : '任务尚未完成，请继续努力。';
+
+    const evaluationPayload = {
+      task_completed: taskCompleted,
+      errors: normalizedErrors,
+      suggestions: normalizedSuggestions,
+      usage,
+    };
 
     const wordCount = isDialogue ? null : countWords(userText);
     const turnCount = isDialogue
@@ -306,11 +318,11 @@ export async function POST(req: NextRequest) {
       word_count: wordCount,
       turn_count: turnCount,
       score_total: overallScore,
-      scores: scores || null,
-      feedback: evaluation?.summary || null,
-      feedback_json: evaluation || null,
+      scores: { overall: overallScore },
+      feedback: feedbackText,
+      feedback_json: evaluationPayload,
       ai_model: model,
-      ai_response: evaluation ? evaluation : null,
+      ai_response: evaluationPayload,
       duration_seconds: null,
       prev_attempt_id: lastAttempt?.id || null,
     };

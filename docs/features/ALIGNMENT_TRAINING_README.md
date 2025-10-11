@@ -75,6 +75,9 @@
 - 风格偏好设置
 - 6个训练步骤的详细内容
 - AI 生成记录和用量统计
+- 词汇与句型知识点（`knowledge_points.words` / `knowledge_points.sentences`）
+- 练习场景与角色设定（`practice_scenario`，含开场方、角色描述、多语言摘要）
+- 对话类标准答案（`standard_dialogue`，使用 `turns` 队列并标注目标关联）
 
 ## 训练步骤详解
 
