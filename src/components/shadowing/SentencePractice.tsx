@@ -425,25 +425,24 @@ export default function SentencePractice({ originalText, language, className = '
         console.log(`完成度: ${Math.round(completionRate * 100)}%, 静默: ${diff}ms, 目标tokens: ${targetTokens.length}, 当前tokens: ${currentTokens.length}, 文本: "${currentText}"`);
         
         // 根据完成度动态调整静默时间
-        let requiredSilence = 5000; // 默认5秒（说得太少时）
+        let requiredSilence = 5000; // 默认5秒（<80%时）
         
         if (completionRate >= 1.0) {
           requiredSilence = 500;  // 完成度 >= 100%：0.5秒
-        } else if (completionRate >= 0.9) {
-          requiredSilence = 1000; // 完成度 >= 90%：1秒
         } else if (completionRate >= 0.8) {
-          requiredSilence = 1500; // 完成度 >= 80%：1.5秒
+          requiredSilence = 1000; // 完成度 80%-100%：1秒
         }
+        // else: 完成度 < 80%：保持默认5秒
         
-        // 达到完成度要求且满足静默时间，自动停止
-        if (completionRate >= 0.8 && diff >= requiredSilence) {
+        // 达到静默时间要求，自动停止
+        if (diff >= requiredSilence) {
           console.log(`完成度 ${Math.round(completionRate * 100)}% 且静默 ${requiredSilence}ms，自动停止`);
           try { rec.stop(); } catch {}
           clearSilenceTimer();
         }
-        // 超过5秒兜底
-        else if (diff >= 5000) {
-          console.log('超过 5秒，兜底停止');
+        // 超过8秒强制兜底（防止卡住）
+        else if (diff >= 8000) {
+          console.log('超过 8秒，强制兜底停止');
           try { rec.stop(); } catch {}
           clearSilenceTimer();
         }
