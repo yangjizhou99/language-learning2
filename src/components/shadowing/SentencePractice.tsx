@@ -536,19 +536,13 @@ export default function SentencePractice({ originalText, language, className = '
   }, [language]);
 
   const start = useCallback(async () => {
-    // 检查HTTPS（移动端必须）
-    if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-      alert('移动端语音识别需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问本页面。');
-      return;
-    }
-    
     if (!recognitionRef.current) {
       alert('当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
       return;
     }
     
     try {
-      // 在移动端，先请求麦克风权限以确保权限已授予
+      // 先请求麦克风权限以确保权限已授予
       // 这样可以避免语音识别启动时因权限问题失败
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -557,12 +551,24 @@ export default function SentencePractice({ originalText, language, className = '
       } catch (permError) {
         console.error('麦克风权限错误:', permError);
         const errorMsg = permError instanceof Error ? permError.message : String(permError);
-        if (errorMsg.includes('Permission denied') || errorMsg.includes('NotAllowedError')) {
+        const errorName = permError instanceof Error ? permError.name : '';
+        
+        // 根据错误类型给出具体提示
+        if (errorName === 'NotAllowedError' || errorMsg.includes('Permission denied')) {
           alert('无法访问麦克风。\n\n请在浏览器设置中允许本网站使用麦克风权限。\n\n步骤：\n1. 点击地址栏左侧的锁图标\n2. 找到"麦克风"权限\n3. 设置为"允许"');
-        } else if (errorMsg.includes('NotFoundError')) {
+        } else if (errorName === 'NotFoundError') {
           alert('未检测到麦克风设备。\n\n请确保您的设备有可用的麦克风。');
-        } else if (errorMsg.includes('https')) {
-          alert('语音识别需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问本页面。');
+        } else if (errorName === 'NotSupportedError') {
+          // 只在真正不支持时才提示HTTPS
+          const isNonSecure = typeof window !== 'undefined' && 
+                             window.location.protocol !== 'https:' && 
+                             window.location.hostname !== 'localhost' &&
+                             !window.location.hostname.startsWith('127.');
+          if (isNonSecure) {
+            alert('麦克风访问需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问本页面。');
+          } else {
+            alert('当前浏览器不支持麦克风访问。\n\n请使用最新版Chrome浏览器。');
+          }
         } else {
           alert(`麦克风访问失败：${errorMsg}\n\n请检查浏览器权限设置。`);
         }
@@ -578,7 +584,7 @@ export default function SentencePractice({ originalText, language, className = '
     } catch (error) {
       console.error('语音识别启动错误:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
-      alert(`无法开始语音识别：${errorMsg}\n\n请确保已授予麦克风权限并使用HTTPS连接。`);
+      alert(`无法开始语音识别：${errorMsg}\n\n请检查麦克风权限。`);
     }
   }, []);
 

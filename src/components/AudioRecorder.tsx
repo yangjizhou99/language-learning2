@@ -199,12 +199,6 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
     // 仅使用实时识别结果；不再调用服务端兜底
     const startRecording = useCallback(async () => {
       try {
-        // 检查HTTPS（移动端必须）
-        if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-          alert('移动端语音识别需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问本页面。');
-          return;
-        }
-        
         if (!recognitionRef.current) {
           alert('当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
           return;
@@ -222,10 +216,19 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
             alert('无法访问麦克风。\n\n请在浏览器设置中允许本网站使用麦克风权限。\n\n步骤：\n1. 点击地址栏左侧的锁图标\n2. 找到"麦克风"权限\n3. 设置为"允许"\n4. 刷新页面重试');
           } else if (errorName === 'NotFoundError') {
             alert('未检测到麦克风设备。\n\n请确保您的设备有可用的麦克风。');
-          } else if (errorName === 'NotSupportedError' || errorMsg.includes('https')) {
-            alert('语音识别需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问本页面。');
+          } else if (errorName === 'NotSupportedError') {
+            // 只在真正不支持时才提示HTTPS
+            const isNonSecure = typeof window !== 'undefined' && 
+                               window.location.protocol !== 'https:' && 
+                               window.location.hostname !== 'localhost' &&
+                               !window.location.hostname.startsWith('127.');
+            if (isNonSecure) {
+              alert('麦克风访问需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问本页面。');
+            } else {
+              alert('当前浏览器不支持麦克风访问。\n\n请使用最新版Chrome浏览器。');
+            }
           } else {
-            alert(`麦克风访问失败：${errorMsg}\n\n请检查浏览器权限设置，并确保使用HTTPS连接。`);
+            alert(`麦克风访问失败：${errorMsg}\n\n请检查浏览器权限设置。`);
           }
           return;
         }
@@ -342,7 +345,7 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
       } catch (error) {
         console.error('Error starting recording:', error);
         const errorMsg = error instanceof Error ? error.message : String(error);
-        alert(`录音启动失败：${errorMsg}\n\n请确保已授予麦克风权限并使用HTTPS连接。`);
+        alert(`录音启动失败：${errorMsg}\n\n请确保已授予麦克风权限。`);
       }
     }, []);
 
