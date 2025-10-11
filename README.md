@@ -48,9 +48,24 @@ npm run dev
 - `src/lib`：服务端/通用库（AI、TTS、数据库、缓存、权限等）
 - `supabase`：数据库迁移与初始化脚本
 - `scripts`：性能测试与运维脚本
+- `docs`：📚 **项目文档中心** - 所有功能文档、指南和报告
+
+### 📚 文档中心
+项目的所有文档已整理到 `docs/` 目录下，按功能分类：
+
+- **[docs/README.md](./docs/README.md)** - 📖 文档索引和导航
+- **[docs/features/](./docs/features/)** - 🎯 各功能模块文档
+- **[docs/database/](./docs/database/)** - 🗄️ 数据库相关文档
+- **[docs/deployment/](./docs/deployment/)** - 🚀 部署指南
+- **[docs/setup/](./docs/setup/)** - ⚙️ 环境配置指南
+- **[docs/optimization/](./docs/optimization/)** - ⚡ 性能优化文档
+- **[docs/guides/](./docs/guides/)** - 📖 操作指南
+- **[docs/中文文档/](./docs/中文文档/)** - 🇨🇳 中文文档
+
+💡 **开始使用**: 查看 [docs/README.md](./docs/README.md) 获取完整的文档导航
 
 ### 故障排查
 - 环境变量无法读取：确认 `.env.local` 是否存在且已重启 dev
 - Supabase 连接失败：检查连接串与网络，可先用本地 `LOCAL_DB_URL`
 - 语音合成失败：检查 Google/讯飞 凭据格式
-- 权限问题：参考 `ENVIRONMENT_VARIABLES_SETUP.md` 与 `TROUBLESHOOTING_ADMIN.md`
+- 权限问题：参考 [docs/setup/](./docs/setup/) 和 [docs/guides/](./docs/guides/)
