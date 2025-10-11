@@ -2,8 +2,9 @@
 
 import React, { useRef, RefObject } from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Square, Volume2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Square, Volume2, ChevronDown, ChevronUp, Mic, RotateCcw, Smile, Meh, Frown, AlertTriangle, XCircle } from 'lucide-react';
 import { useSentenceGesture } from '@/hooks/useSentenceGesture';
+import WaveformAnimation from './WaveformAnimation';
 
 interface SentenceScore {
   score: number; // 综合相似度评分 (0-1范围)
@@ -34,37 +35,37 @@ interface SentenceCardProps {
   onRetry: () => void;
 }
 
-// 根据评分获取颜色方案
+// 根据评分获取颜色方案 - Pastel柔和配色
 function getScoreColor(score: SentenceScore | null): { bg: string; border: string; text: string; badge: string } {
   if (!score || !score.finalText) {
     return {
-      bg: 'bg-gray-50',
-      border: 'border-gray-200',
-      text: 'text-gray-700',
-      badge: 'bg-gray-100 text-gray-600'
+      bg: 'bg-slate-50/50',
+      border: 'border-slate-200',
+      text: 'text-slate-700',
+      badge: 'bg-slate-100 text-slate-600'
     };
   }
   
   if (score.score >= 0.8) {
     return {
-      bg: 'bg-green-50',
-      border: 'border-green-300',
-      text: 'text-green-900',
-      badge: 'bg-green-500 text-white'
+      bg: 'bg-emerald-50/60',
+      border: 'border-emerald-200',
+      text: 'text-emerald-800',
+      badge: 'bg-emerald-400 text-white'
     };
   } else if (score.score >= 0.6) {
     return {
-      bg: 'bg-yellow-50',
-      border: 'border-yellow-300',
-      text: 'text-yellow-900',
-      badge: 'bg-yellow-500 text-white'
+      bg: 'bg-amber-50/60',
+      border: 'border-amber-200',
+      text: 'text-amber-800',
+      badge: 'bg-amber-400 text-white'
     };
   } else {
     return {
-      bg: 'bg-red-50',
-      border: 'border-red-300',
-      text: 'text-red-900',
-      badge: 'bg-red-500 text-white'
+      bg: 'bg-rose-50/60',
+      border: 'border-rose-200',
+      text: 'text-rose-800',
+      badge: 'bg-rose-400 text-white'
     };
   }
 }
@@ -96,7 +97,6 @@ export default function SentenceCard({
   
   // DOM 引用，用于直接操作避免重渲染
   const progressBarRef = useRef<HTMLDivElement>(null);
-  const percentageRef = useRef<HTMLDivElement>(null);
   
   // 保存最后一次的评分结果，即使重练也保留显示
   const [lastMetrics, setLastMetrics] = React.useState<{
@@ -105,48 +105,94 @@ export default function SentenceCard({
     extra: string[];
   } | null>(null);
 
-  // 根据分数(0-100)计算颜色 - 红→黄→绿渐变
+  // 根据分数(0-100)计算颜色 - Pastel柔和渐变
   const getGradientColors = React.useCallback((scorePercent: number): { bg: string; border: string; shadow: string } => {
-    // 性能优化：使用固定的颜色断点
+    // 性能优化：使用固定的颜色断点，柔和渐变
     if (scorePercent >= 85) {
       return {
-        bg: 'from-emerald-50 via-green-100 to-emerald-100',
-        border: 'border-emerald-400',
-        shadow: 'shadow-emerald-200/60'
+        bg: 'from-emerald-50/80 via-emerald-100/60 to-teal-50/80',
+        border: 'border-emerald-200',
+        shadow: 'shadow-emerald-100/40'
       };
     } else if (scorePercent >= 70) {
       return {
-        bg: 'from-green-50 via-lime-100 to-green-100',
-        border: 'border-green-400',
-        shadow: 'shadow-green-200/60'
+        bg: 'from-green-50/80 via-emerald-50/60 to-green-100/80',
+        border: 'border-green-200',
+        shadow: 'shadow-green-100/40'
       };
     } else if (scorePercent >= 55) {
       return {
-        bg: 'from-yellow-50 via-amber-100 to-yellow-100',
-        border: 'border-yellow-400',
-        shadow: 'shadow-yellow-200/60'
+        bg: 'from-amber-50/80 via-yellow-50/60 to-amber-100/80',
+        border: 'border-amber-200',
+        shadow: 'shadow-amber-100/40'
       };
     } else if (scorePercent >= 40) {
       return {
-        bg: 'from-orange-50 via-amber-100 to-orange-100',
-        border: 'border-orange-400',
-        shadow: 'shadow-orange-200/60'
+        bg: 'from-orange-50/80 via-amber-50/60 to-orange-100/80',
+        border: 'border-orange-200',
+        shadow: 'shadow-orange-100/40'
       };
     } else {
       return {
-        bg: 'from-red-50 via-rose-100 to-red-100',
-        border: 'border-red-400',
-        shadow: 'shadow-red-200/60'
+        bg: 'from-rose-50/80 via-pink-50/60 to-rose-100/80',
+        border: 'border-rose-200',
+        shadow: 'shadow-rose-100/40'
       };
     }
   }, []);
 
-  // 根据分数计算进度条颜色
+  // 根据分数计算进度条颜色 - Pastel柔和渐变
   const getProgressColor = React.useCallback((scorePercent: number): string => {
-    if (scorePercent >= 80) return 'bg-gradient-to-r from-green-400 to-emerald-500';
-    if (scorePercent >= 60) return 'bg-gradient-to-r from-yellow-400 to-amber-500';
-    return 'bg-gradient-to-r from-red-400 to-rose-500';
+    if (scorePercent >= 80) return 'bg-gradient-to-r from-emerald-300 to-teal-400';
+    if (scorePercent >= 60) return 'bg-gradient-to-r from-amber-300 to-yellow-400';
+    return 'bg-gradient-to-r from-rose-300 to-pink-400';
   }, []);
+
+  // 根据当前状态获取转录框颜色 - Pastel柔和配色
+  const getTranscriptionColors = React.useCallback((): {
+    border: string;
+    bg: string;
+    shadow: string;
+    text: string;
+    waveColor: 'green' | 'yellow' | 'red' | 'blue';
+  } => {
+    if (lastMetrics && finalText) {
+      const scorePercent = Math.round(lastMetrics.score * 100);
+      if (scorePercent >= 80) {
+        return {
+          border: 'border-emerald-200',
+          bg: 'from-emerald-50/70 via-teal-50/50 to-emerald-100/70',
+          shadow: 'shadow-emerald-100/40',
+          text: 'text-emerald-700',
+          waveColor: 'green'
+        };
+      } else if (scorePercent >= 60) {
+        return {
+          border: 'border-amber-200',
+          bg: 'from-amber-50/70 via-yellow-50/50 to-amber-100/70',
+          shadow: 'shadow-amber-100/40',
+          text: 'text-amber-700',
+          waveColor: 'yellow'
+        };
+      } else {
+        return {
+          border: 'border-rose-200',
+          bg: 'from-rose-50/70 via-pink-50/50 to-rose-100/70',
+          shadow: 'shadow-rose-100/40',
+          text: 'text-rose-700',
+          waveColor: 'red'
+        };
+      }
+    }
+    // 录音中或无评分时使用柔和蓝色
+    return {
+      border: 'border-sky-200',
+      bg: 'from-sky-50/70 via-blue-50/50 to-sky-100/70',
+      shadow: 'shadow-sky-100/40',
+      text: 'text-sky-700',
+      waveColor: 'blue'
+    };
+  }, [lastMetrics, finalText]);
 
   // 当评分更新时触发动画和保存结果
   React.useEffect(() => {
@@ -184,9 +230,6 @@ export default function SentenceCard({
         // 直接操作DOM，避免React重渲染
         if (progressBarRef.current) {
           progressBarRef.current.style.transform = `scaleX(${currentScore / 100})`;
-        }
-        if (percentageRef.current) {
-          percentageRef.current.style.left = `calc(${currentScore}% - 20px)`;
         }
         
         if (progress < 1) {
@@ -253,14 +296,15 @@ export default function SentenceCard({
     <div
       id={`sentence-${index}`}
       ref={cardRef}
-      className={`border-2 rounded-lg transition-all ${colors.border} ${colors.bg}`}
+      className={`border-2 rounded-2xl transition-all shadow-sm hover:shadow-md ${colors.border} ${colors.bg}`}
     >
-      {/* 句子标题栏 - 可点击展开 */}
-      <button
-        onClick={onToggleExpand}
-        className={`w-full px-3 py-2 flex items-center justify-between hover:bg-white/50 transition-colors ${isExpanded ? 'rounded-t-lg' : 'rounded-lg'}`}
-      >
-        <div className="flex items-center gap-2 flex-1 text-left min-w-0">
+      {/* 句子标题栏 */}
+      <div className={`w-full px-3 py-2 flex items-center gap-2 hover:bg-white/50 transition-colors ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
+        {/* 左侧：序号 + 评分 + 文本 - 可点击展开 */}
+        <button
+          onClick={onToggleExpand}
+          className="flex items-center gap-2 flex-1 text-left min-w-0"
+        >
           {/* 序号 */}
           <span className={`px-2 py-0.5 rounded text-xs font-bold flex-shrink-0 ${colors.badge}`}>
             {index + 1}
@@ -269,16 +313,16 @@ export default function SentenceCard({
           {/* 评分圆点 */}
           {score && (
             <div className="flex items-center gap-0.5 flex-shrink-0" title={`综合相似度: ${Math.round(score.score * 100)}%`}>
-              {/* 综合相似度圆点 */}
+              {/* 综合相似度圆点 - Pastel柔和色 */}
               {[...Array(5)].map((_, i) => (
                 <div
                   key={`score-${i}`}
                   className={`w-1.5 h-1.5 rounded-full ${
                     i < Math.round(score.score * 5) 
-                      ? colors.badge.includes('green') ? 'bg-green-500' 
-                        : colors.badge.includes('yellow') ? 'bg-yellow-500'
-                        : 'bg-red-500'
-                      : 'bg-gray-300'
+                      ? colors.badge.includes('emerald') ? 'bg-emerald-400' 
+                        : colors.badge.includes('amber') ? 'bg-amber-400'
+                        : 'bg-rose-400'
+                      : 'bg-slate-200'
                   }`}
                 />
               ))}
@@ -289,140 +333,168 @@ export default function SentenceCard({
           <span className={`${colors.text} text-sm flex-1 ${isExpanded ? '' : 'line-clamp-1'}`}>
             {sentence}
           </span>
-        </div>
+        </button>
         
-        {/* 展开/折叠图标 */}
-        {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
-        ) : (
-          <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
-        )}
-      </button>
+        {/* 右侧：操作按钮 */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* 播放按钮 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSpeak();
+            }}
+            className="p-1.5 rounded-full hover:bg-gray-200 transition-all hover:scale-110"
+            title="🔊"
+          >
+            <Volume2 className="w-4 h-4 text-gray-600" />
+          </button>
+          
+          {/* 录音/停止按钮 */}
+          {!isRecognizing ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isExpanded) {
+                  onToggleExpand(); // 先展开
+                }
+                setTimeout(() => {
+                  onStartPractice(); // 延迟执行录音，确保展开完成
+                }, isExpanded ? 0 : 100);
+              }}
+              className="p-1.5 rounded-full hover:bg-blue-100 transition-all hover:scale-110"
+              title="🎤"
+            >
+              <Mic className="w-4 h-4 text-blue-600" />
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onStopPractice();
+              }}
+              className="p-1.5 rounded-full hover:bg-red-100 transition-all hover:scale-110"
+              title="🛑"
+            >
+              <Square className="w-4 h-4 text-red-600" />
+            </button>
+          )}
+          
+          {/* 重试按钮 - 仅在有评分时显示 */}
+          {score && !isRecognizing && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isExpanded) {
+                  onToggleExpand(); // 先展开
+                }
+                setTimeout(() => {
+                  onRetry(); // 延迟执行重试，确保展开完成
+                }, isExpanded ? 0 : 100);
+              }}
+              className="p-1.5 rounded-full hover:bg-purple-100 transition-all hover:scale-110 hover:rotate-180"
+              title="🔄"
+            >
+              <RotateCcw className="w-4 h-4 text-purple-600" />
+            </button>
+          )}
+          
+          {/* 展开/折叠图标 */}
+          <button
+            onClick={onToggleExpand}
+            className="p-1 hover:bg-gray-200 rounded transition-all"
+          >
+            {isExpanded ? (
+              <ChevronUp className="w-4 h-4 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* 展开的内容 */}
       {isExpanded && (
         <div className={`px-4 pb-4 space-y-3 border-t border-gray-200 ${isMobile ? 'pb-20' : ''}`}>
-          {/* 操作按钮 - 仅在桌面端显示 */}
-          {!isMobile && (
-            <div className="flex items-center gap-2 flex-wrap mt-2">
-              <Button 
-                onClick={onSpeak} 
-                variant="outline" 
-                size="sm" 
-                className="rounded-lg"
-              >
-                <Volume2 className="w-4 h-4 mr-1" /> 朗读
-              </Button>
-              {!isRecognizing ? (
-                <Button 
-                  onClick={onStartPractice} 
-                  variant="default" 
-                  size="sm" 
-                  className="rounded-lg"
-                >
-                  <Play className="w-4 h-4 mr-1" /> 练习
-                </Button>
-              ) : (
-                <Button 
-                  onClick={onStopPractice} 
-                  variant="destructive" 
-                  size="sm" 
-                  className="rounded-lg"
-                >
-                  <Square className="w-4 h-4 mr-1" /> 停止
-                </Button>
-              )}
-              {/* 重新练习按钮 */}
-              {score && !isRecognizing && (
-                <Button
-                  onClick={onRetry}
-                  variant="outline"
-                  size="sm"
-                  className="rounded-lg text-purple-600 border-purple-300 hover:bg-purple-50"
-                >
-                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  重练
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* 实时转录 */}
+          {/* 实时转录 - 紧凑布局，Pastel圆润风格 */}
           {(isRecognizing || displayText) && (
-            <div className="p-4 rounded-xl border-2 border-green-400 bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 shadow-lg shadow-green-200/60">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-xs font-medium text-gray-600">实时转录</div>
-                {isRecognizing && !displayText && (
-                  <span className="text-xs text-green-600 animate-pulse">识别中...</span>
-                )}
-              </div>
-              <div className="text-sm text-green-800 whitespace-pre-wrap break-words leading-relaxed min-h-[1.5rem]">
-                {displayText || '正在识别...'}
+            <div className={`p-3 rounded-xl border-2 ${getTranscriptionColors().border} bg-gradient-to-br ${getTranscriptionColors().bg} shadow-sm ${getTranscriptionColors().shadow}`}>
+              <div className="flex items-start gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
+                  <Mic className={`w-5 h-5 ${
+                    lastMetrics && finalText
+                      ? animatedScore >= 80 ? 'text-emerald-500'
+                        : animatedScore >= 60 ? 'text-amber-500'
+                        : 'text-rose-500'
+                      : 'text-sky-500'
+                  }`} />
+                  <WaveformAnimation isActive={isRecognizing} color={getTranscriptionColors().waveColor} size="md" />
+                </div>
+                <div className={`text-sm ${getTranscriptionColors().text} whitespace-pre-wrap break-words leading-relaxed min-h-[1.5rem] flex-1`}>
+                  {displayText || '...'}
+                </div>
               </div>
             </div>
           )}
 
-          {/* 评分结果 - 带动画和进度条（点击重练后依然保留） */}
+          {/* 评分结果 - 单行布局带完整信息 */}
           {lastMetrics && (
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div 
                 key={scoreAnimKey}
                 className={`
-                  p-4 rounded-xl border-2 transition-all duration-700 ease-in-out
-                  score-card-animate bg-gradient-to-br shadow-lg
+                  p-3 rounded-xl border-2 transition-all duration-700 ease-in-out
+                  score-card-animate bg-gradient-to-br shadow-sm
                   ${getGradientColors(animatedScore).bg}
                   ${getGradientColors(animatedScore).border}
                   ${getGradientColors(animatedScore).shadow}
                   ${!finalText ? 'opacity-75' : ''}
                 `}
               >
-                <div className="space-y-2">
-                  {/* 标题栏 */}
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs font-medium text-gray-600">综合相似度</div>
-                    {!finalText && isRecognizing && (
-                      <span className="text-xs text-gray-500 animate-pulse">录音中...</span>
-                    )}
-                    {prevScore !== null && prevScore !== animatedScore && finalText && (
-                      <span className={`text-xs font-semibold ${animatedScore > prevScore ? 'text-green-600' : 'text-red-600'}`}>
-                        {animatedScore > prevScore ? '↑' : '↓'} {Math.abs(animatedScore - prevScore)}%
-                      </span>
-                    )}
+                {/* 单行布局：图标 + 进度条（带百分比和刻度） + 提升 */}
+                <div className="flex items-center gap-3">
+                  {/* 表情图标 */}
+                  <div className="flex-shrink-0">
+                    {finalText ? (
+                      <>
+                        {lastMetrics.score >= 0.8 ? (
+                          <Smile className="w-5 h-5 text-emerald-500" />
+                        ) : lastMetrics.score >= 0.6 ? (
+                          <Meh className="w-5 h-5 text-amber-500" />
+                        ) : (
+                          <Frown className="w-5 h-5 text-rose-500" />
+                        )}
+                      </>
+                    ) : isRecognizing ? (
+                      <Mic className="w-5 h-5 text-sky-500" />
+                    ) : null}
                   </div>
                   
-                  {/* 进度条容器 */}
-                  <div className="relative pt-6 pb-1">
-                    {/* 百分比指示器（无箭头） */}
+                  {/* 进度条容器（带百分比和刻度） */}
+                  <div className="flex-1 relative pt-5 pb-2">
+                    {/* 百分比指示器 */}
                     <div 
-                      ref={percentageRef}
-                      className="absolute top-0"
+                      className="absolute top-0 left-0 right-0 flex justify-center pointer-events-none"
                       style={{ 
                         left: `calc(${animatedScore}% - 20px)`,
-                        width: '40px',
-                        willChange: 'left'
+                        width: '40px'
                       }}
                     >
-                      <div className="flex flex-col items-center">
-                        <div className={`
-                          text-base font-bold
-                          ${animatedScore >= 80 ? 'text-green-600' : animatedScore >= 60 ? 'text-yellow-600' : 'text-red-600'}
-                        `}>
-                          {Math.round(lastMetrics.score * 100)}%
-                        </div>
+                      <div className={`
+                        text-base font-bold
+                        ${animatedScore >= 80 ? 'text-emerald-600' : animatedScore >= 60 ? 'text-amber-600' : 'text-rose-600'}
+                      `}>
+                        {Math.round(lastMetrics.score * 100)}%
                       </div>
                     </div>
                     
                     {/* 进度条背景 */}
                     <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-                      {/* 进度条填充 - 使用 transform 提高性能 */}
+                      {/* 进度条填充 */}
                       <div 
                         ref={progressBarRef}
                         className={`
                           h-full rounded-full
                           ${getProgressColor(animatedScore)}
-                          relative overflow-hidden
                         `}
                         style={{ 
                           width: '100%',
@@ -430,16 +502,7 @@ export default function SentenceCard({
                           transformOrigin: 'left',
                           willChange: 'transform'
                         }}
-                      >
-                        {/* 光泽效果 */}
-                        <div 
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
-                          style={{
-                            animation: 'shimmer 2s infinite',
-                            backgroundSize: '200% 100%'
-                          }}
-                        />
-                      </div>
+                      />
                       
                       {/* 刻度线 */}
                       <div className="absolute inset-0 flex items-center pointer-events-none">
@@ -462,6 +525,13 @@ export default function SentenceCard({
                       <span>100</span>
                     </div>
                   </div>
+                  
+                  {/* 提升指示 - Pastel柔和色 */}
+                  {prevScore !== null && prevScore !== animatedScore && finalText && (
+                    <div className={`flex items-center gap-1 text-sm font-bold flex-shrink-0 ${animatedScore > prevScore ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {animatedScore > prevScore ? '↑' : '↓'}{Math.abs(animatedScore - prevScore)}
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -474,15 +544,6 @@ export default function SentenceCard({
                   100% {
                     opacity: 1;
                     transform: translateY(0);
-                  }
-                }
-                
-                @keyframes shimmer {
-                  0% {
-                    background-position: -200% 0;
-                  }
-                  100% {
-                    background-position: 200% 0;
                   }
                 }
                 
@@ -510,19 +571,28 @@ export default function SentenceCard({
                 }
               `}} />
 
-              {/* 缺失和多读词汇（显示最后一次的结果） */}
+              {/* 缺失和多读词汇 - Pastel柔和配色 */}
               {(lastMetrics.missing.length > 0 || lastMetrics.extra.length > 0) && (
-                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
+                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
                   {lastMetrics.missing.length > 0 && (
                     <div 
                       key={`missing-${scoreAnimKey}`}
-                      className="p-3 bg-white rounded-lg border border-amber-200 animate-gentle-reminder"
+                      className={`p-2 rounded-xl border animate-gentle-reminder ${
+                        animatedScore >= 80 
+                          ? 'bg-emerald-50/60 border-emerald-200' 
+                          : animatedScore >= 60 
+                          ? 'bg-amber-50/60 border-amber-200'
+                          : 'bg-rose-50/60 border-rose-200'
+                      }`}
                     >
-                      <div className="text-xs font-medium text-amber-700 mb-1 flex items-center gap-1">
-                        <span>缺失关键词</span>
-                        <span className="text-[10px] text-amber-500">（点击发音）</span>
-                      </div>
-                      <div className={`text-sm text-amber-800 flex flex-wrap gap-2 ${isMobile ? 'overflow-x-auto scrollbar-thin' : ''}`}>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${
+                          animatedScore >= 80 
+                            ? 'text-emerald-500' 
+                            : animatedScore >= 60 
+                            ? 'text-amber-500'
+                            : 'text-rose-500'
+                        }`} />
                         {lastMetrics.missing.map((group, idx) => (
                           <button
                             key={`miss-${idx}`}
@@ -530,11 +600,17 @@ export default function SentenceCard({
                               e.stopPropagation();
                               speakWord(group);
                             }}
-                            className="px-2 py-0.5 bg-amber-50 border border-amber-200 rounded flex-shrink-0 hover:bg-amber-100 hover:border-amber-300 active:bg-amber-200 transition-colors cursor-pointer inline-flex items-center gap-1"
-                            title={`点击朗读: ${group}`}
+                            className={`px-2 py-1 rounded-full flex-shrink-0 transition-all cursor-pointer inline-flex items-center gap-1 hover:scale-105 text-xs ${
+                              animatedScore >= 80
+                                ? 'bg-emerald-100/80 border border-emerald-200 text-emerald-700 hover:bg-emerald-200/90 hover:border-emerald-300 active:bg-emerald-200'
+                                : animatedScore >= 60
+                                ? 'bg-amber-100/80 border border-amber-200 text-amber-700 hover:bg-amber-200/90 hover:border-amber-300 active:bg-amber-200'
+                                : 'bg-rose-100/80 border border-rose-200 text-rose-700 hover:bg-rose-200/90 hover:border-rose-300 active:bg-rose-200'
+                            }`}
+                            title={`Play: ${group}`}
                           >
-                            <Volume2 className="w-3 h-3 opacity-60" />
-                            {group}
+                            <Volume2 className="w-3 h-3" />
+                            <span className="font-medium">{group}</span>
                           </button>
                         ))}
                       </div>
@@ -543,13 +619,22 @@ export default function SentenceCard({
                   {lastMetrics.extra.length > 0 && (
                     <div 
                       key={`extra-${scoreAnimKey}`}
-                      className="p-3 bg-white rounded-lg border border-red-200 animate-gentle-reminder"
+                      className={`p-2 rounded-xl border animate-gentle-reminder ${
+                        animatedScore >= 80 
+                          ? 'bg-emerald-50/60 border-emerald-200' 
+                          : animatedScore >= 60 
+                          ? 'bg-amber-50/60 border-amber-200'
+                          : 'bg-rose-50/60 border-rose-200'
+                      }`}
                     >
-                      <div className="text-xs font-medium text-red-700 mb-1 flex items-center gap-1">
-                        <span>误读/多读</span>
-                        <span className="text-[10px] text-red-500">（点击发音）</span>
-                      </div>
-                      <div className={`text-sm text-red-800 flex flex-wrap gap-2 ${isMobile ? 'overflow-x-auto scrollbar-thin' : ''}`}>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <XCircle className={`w-5 h-5 flex-shrink-0 ${
+                          animatedScore >= 80 
+                            ? 'text-emerald-500' 
+                            : animatedScore >= 60 
+                            ? 'text-amber-500'
+                            : 'text-rose-500'
+                        }`} />
                         {lastMetrics.extra.map((group, idx) => (
                           <button
                             key={`extra-${idx}`}
@@ -557,11 +642,17 @@ export default function SentenceCard({
                               e.stopPropagation();
                               speakWord(group);
                             }}
-                            className="px-2 py-0.5 bg-red-50 border border-red-200 rounded flex-shrink-0 hover:bg-red-100 hover:border-red-300 active:bg-red-200 transition-colors cursor-pointer inline-flex items-center gap-1"
-                            title={`点击朗读: ${group}`}
+                            className={`px-2 py-1 rounded-full flex-shrink-0 transition-all cursor-pointer inline-flex items-center gap-1 hover:scale-105 text-xs ${
+                              animatedScore >= 80
+                                ? 'bg-emerald-100/80 border border-emerald-200 text-emerald-700 hover:bg-emerald-200/90 hover:border-emerald-300 active:bg-emerald-200'
+                                : animatedScore >= 60
+                                ? 'bg-amber-100/80 border border-amber-200 text-amber-700 hover:bg-amber-200/90 hover:border-amber-300 active:bg-amber-200'
+                                : 'bg-rose-100/80 border border-rose-200 text-rose-700 hover:bg-rose-200/90 hover:border-rose-300 active:bg-rose-200'
+                            }`}
+                            title={`Play: ${group}`}
                           >
-                            <Volume2 className="w-3 h-3 opacity-60" />
-                            {group}
+                            <Volume2 className="w-3 h-3" />
+                            <span className="font-medium">{group}</span>
                           </button>
                         ))}
                       </div>
@@ -575,46 +666,48 @@ export default function SentenceCard({
         </div>
       )}
       
-      {/* 移动端底部固定操作栏（仅展开时显示） */}
+      {/* 移动端底部固定操作栏 - Pastel柔和风格 */}
       {isMobile && isExpanded && (
-        <div className="border-t border-gray-200 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center gap-2 rounded-b-lg -mx-[1px] -mb-[2px]">
+        <div className="border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center gap-2 rounded-b-2xl -mx-[1px] -mb-[2px]">
           <Button 
             onClick={onSpeak} 
             variant="outline" 
-            size="sm" 
-            className="flex-1 rounded-lg"
+            size="lg" 
+            className="flex-1 rounded-full p-3"
+            title="🔊"
           >
-            <Volume2 className="w-4 h-4" />
+            <Volume2 className="w-5 h-5" />
           </Button>
           {!isRecognizing ? (
             <Button 
               onClick={onStartPractice} 
-              variant="default" 
-              size="sm" 
-              className="flex-[2] rounded-lg"
+              variant="outline" 
+              size="lg" 
+              className="flex-[2] rounded-full p-3 text-sky-500 border-sky-200 hover:bg-sky-50"
+              title="🎤"
             >
-              <Play className="w-4 h-4 mr-1" /> 练习
+              <Mic className="w-5 h-5" />
             </Button>
           ) : (
             <Button 
               onClick={onStopPractice} 
-              variant="destructive" 
-              size="sm" 
-              className="flex-[2] rounded-lg"
+              variant="outline" 
+              size="lg" 
+              className="flex-[2] rounded-full p-3 text-rose-500 border-rose-200 hover:bg-rose-50"
+              title="🛑"
             >
-              <Square className="w-4 h-4 mr-1" /> 停止
+              <Square className="w-5 h-5" />
             </Button>
           )}
           {score && !isRecognizing && (
             <Button
               onClick={onRetry}
               variant="outline"
-              size="sm"
-              className="flex-1 rounded-lg"
+              size="lg"
+              className="flex-1 rounded-full p-3 text-indigo-500 border-indigo-200 hover:bg-indigo-50"
+              title="🔄"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+              <RotateCcw className="w-5 h-5" />
             </Button>
           )}
         </div>

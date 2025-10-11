@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Play, Square, Volume2, ChevronDown, ChevronUp } from 'lucide-react';
 import SentencePracticeProgress from './SentencePracticeProgress';
 import SmartSuggestion from './SmartSuggestion';
-import { AnimatedScore, Toast, BadgeUpgrade } from './ScoreAnimation';
+import { Toast } from './ScoreAnimation';
 import SentenceCard from './SentenceCard';
 import { useMobile } from '@/contexts/MobileContext';
 
@@ -230,11 +230,7 @@ export default function SentencePractice({ originalText, language, className = '
   const [displayText, setDisplayText] = useState('');
   const [finalText, setFinalText] = useState('');
   const [sentenceScores, setSentenceScores] = useState<Record<number, SentenceScore>>({});
-  const [quickMode, setQuickMode] = useState(false); // 快速练习模式
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'celebration' } | null>(null);
-  const [badgeUpgrade, setBadgeUpgrade] = useState<{ emoji: string; label: string } | null>(null);
-  const prevPracticedCount = useRef(0);
-  const prevExcellentCount = useRef(0);
   
   const recognitionRef = useRef<WebSpeechRecognition | null>(null);
   const silenceTimerRef = useRef<number | null>(null);
@@ -248,6 +244,8 @@ export default function SentencePractice({ originalText, language, className = '
   const tempFinalTextRef = useRef<string>('');
   // 保存上一次的最终文本，用于检测是否有新内容
   const lastFinalTextRef = useRef<string>('');
+  // 保存完整文本（final + interim），供完成度计算使用
+  const tempCombinedTextRef = useRef<string>('');
 
   const isIOS = useMemo(() => {
     if (typeof navigator === 'undefined') return false;
@@ -358,26 +356,6 @@ export default function SentencePractice({ originalText, language, className = '
       }
     }
   }, [expandedIndex, finalText, currentMetrics]);
-  
-  // 检查徽章升级
-  useEffect(() => {
-    const practiced = Object.keys(sentenceScores).length;
-    const excellent = Object.values(sentenceScores).filter(score => {
-      return score.score >= 0.8;
-    }).length;
-    
-    // 检查徽章升级
-    if (practiced >= 5 && prevPracticedCount.current < 5) {
-      setBadgeUpgrade({ emoji: '🥉', label: '青铜练习者' });
-    } else if (practiced >= 10 && prevPracticedCount.current < 10) {
-      setBadgeUpgrade({ emoji: '🥈', label: '白银练习者' });
-    } else if (excellent === total && total > 0 && prevExcellentCount.current < total) {
-      setBadgeUpgrade({ emoji: '🥇', label: '黄金练习者' });
-    }
-    
-    prevPracticedCount.current = practiced;
-    prevExcellentCount.current = excellent;
-  }, [sentenceScores, total]);
 
   // 清理静默定时器
   const clearSilenceTimer = () => {
@@ -403,6 +381,7 @@ export default function SentencePractice({ originalText, language, className = '
       setDisplayText('');
       setFinalText('');
       tempFinalTextRef.current = '';
+      tempCombinedTextRef.current = '';
       lastResultAtRef.current = Date.now();
       clearSilenceTimer();
       
@@ -424,15 +403,26 @@ export default function SentencePractice({ originalText, language, className = '
           return;
         }
         
-        // 计算当前录入文本的token数量
-        const currentText = tempFinalTextRef.current;
-        const currentTokens = tokenize(currentText, language);
-        const targetTokens = tokenize(targetSentence, language);
+        // 计算当前录入文本的token数量（使用完整文本：final + interim）
+        const currentText = tempCombinedTextRef.current;
+        const currentTokensRaw = tokenize(currentText, language);
+        const targetTokensRaw = tokenize(targetSentence, language);
+        
+        // 检测是否为对话类型（从当前句子判断）
+        const isDialogueType = /^[ABＡＢ]\s*[：:]/.test(targetSentence.trim());
+        
+        // 对话类型需要过滤A/B标记（与评分计算保持一致）
+        const filterSpeaker = (arr: string[]) =>
+          isDialogueType ? arr.filter((w) => w.toLowerCase() !== 'a' && w.toLowerCase() !== 'b') : arr;
+        
+        const currentTokens = filterSpeaker(currentTokensRaw);
+        const targetTokens = filterSpeaker(targetTokensRaw);
+        
         const completionRate = targetTokens.length > 0 
           ? currentTokens.length / targetTokens.length 
           : 0;
         
-        console.log(`完成度: ${Math.round(completionRate * 100)}%, 静默: ${diff}ms, 当前文本: "${currentText}"`);
+        console.log(`完成度: ${Math.round(completionRate * 100)}%, 静默: ${diff}ms, 目标tokens: ${targetTokens.length}, 当前tokens: ${currentTokens.length}, 文本: "${currentText}"`);
         
         // 根据完成度动态调整静默时间
         let requiredSilence = 5000; // 默认5秒（说得太少时）
@@ -468,17 +458,22 @@ export default function SentencePractice({ originalText, language, className = '
         else if (i >= event.resultIndex) interim += transcript;
       }
       const finalTrimmed = fullFinal.trim();
+      const combined = `${finalTrimmed}${finalTrimmed && interim ? ' ' : ''}${interim}`.trim();
       
-      // 只在最终文本实际发生变化时才重置静默时间
-      if (finalTrimmed && finalTrimmed !== lastFinalTextRef.current) {
+      // 只要完整文本有变化就重置静默时间（包括interim变化）
+      if (combined && combined !== tempCombinedTextRef.current) {
         lastResultAtRef.current = Date.now();
-        lastFinalTextRef.current = finalTrimmed;
-        console.log('检测到新内容，重置静默时间:', finalTrimmed);
+        console.log('检测到新内容，重置静默时间:', combined);
       }
       
-      // 暂存到 ref，不立即触发评分
+      // 保存final文本用于最终评分
+      if (finalTrimmed && finalTrimmed !== lastFinalTextRef.current) {
+        lastFinalTextRef.current = finalTrimmed;
+      }
+      
+      // 暂存到 ref
       tempFinalTextRef.current = finalTrimmed;
-      const combined = `${finalTrimmed}${finalTrimmed && interim ? ' ' : ''}${interim}`.trim();
+      tempCombinedTextRef.current = combined; // 保存完整文本供完成度计算
       setDisplayText(combined);
     };
     rec.onerror = (event) => {
@@ -520,6 +515,7 @@ export default function SentencePractice({ originalText, language, className = '
       setDisplayText('');
       setFinalText('');
       tempFinalTextRef.current = '';
+      tempCombinedTextRef.current = '';
       lastFinalTextRef.current = '';
       recognitionRef.current.start();
     } catch {
@@ -692,20 +688,6 @@ export default function SentencePractice({ originalText, language, className = '
       setExpandedIndex(index);
       setDisplayText('');
       setFinalText('');
-      
-      // 快速模式：自动播放+录音
-      if (quickMode) {
-        setTimeout(async () => {
-          // 先播放原音
-          await speak(index);
-          // 播放完毕后自动开始录音
-          setTimeout(() => {
-            if (expandedIndex === index) { // 确保还在当前句子
-              start();
-            }
-          }, 500);
-        }, 300);
-      }
     }
   };
 
@@ -719,38 +701,20 @@ export default function SentencePractice({ originalText, language, className = '
   }, [sentenceScores, total]);
 
   return (
-    <Card className={`p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 ${className || ''}`}>
-      {/* 顶部：进度和快速模式切换 */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex-1 min-w-0">
-          <SentencePracticeProgress
-            total={total}
-            scores={sentenceScores}
-            onJumpToSentence={(index) => {
-              handleSentenceClick(index);
-              setTimeout(() => {
-                const element = document.getElementById(`sentence-${index}`);
-                element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }, 100);
-            }}
-          />
-        </div>
-        
-        {/* 快速模式开关 */}
-        <button
-          onClick={() => setQuickMode(!quickMode)}
-          className={`
-            flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all
-            ${quickMode 
-              ? 'bg-gradient-to-r from-purple-500 to-indigo-600 border-purple-600 text-white shadow-lg' 
-              : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
-            }
-          `}
-          title={quickMode ? '关闭快速模式' : '开启快速模式：点击句子自动播放+录音+评分'}
-        >
-          <span className="text-lg">{quickMode ? '⚡' : '⚪'}</span>
-          <span className="text-xs font-medium whitespace-nowrap">快速模式</span>
-        </button>
+    <Card className={`p-4 md:p-6 border border-slate-200 shadow-sm bg-slate-50/30 ${className || ''}`}>
+      {/* 顶部：进度显示 */}
+      <div className="mb-4">
+        <SentencePracticeProgress
+          total={total}
+          scores={sentenceScores}
+          onJumpToSentence={(index) => {
+            handleSentenceClick(index);
+            setTimeout(() => {
+              const element = document.getElementById(`sentence-${index}`);
+              element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+          }}
+        />
       </div>
 
       {/* 智能建议 */}
@@ -803,29 +767,12 @@ export default function SentencePractice({ originalText, language, className = '
         <div className="text-gray-500 text-center py-8">暂无内容</div>
       )}
 
-      {/* 提示信息 */}
-      {total > 0 && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="text-xs text-blue-700">
-            💡 <strong>提示：</strong>点击任意句子开始练习，建议把每一句都练好（绿色=优秀）后再进行正式录音。
-          </div>
-        </div>
-      )}
-      
       {/* Toast 通知 */}
       {toast && (
         <Toast
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
-        />
-      )}
-      
-      {/* 徽章升级动画 */}
-      {badgeUpgrade && (
-        <BadgeUpgrade
-          badge={badgeUpgrade}
-          onClose={() => setBadgeUpgrade(null)}
         />
       )}
     </Card>
