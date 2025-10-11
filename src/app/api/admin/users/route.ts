@@ -62,8 +62,13 @@ export async function GET(req: NextRequest) {
     const userIds = users?.map((u) => u.id) || [];
     const practiceStats = await getPracticeStats(supabase, userIds);
 
+    // 获取用户的邮箱信息（从auth.users表）
+    const { data: authUsers } = await supabase.auth.admin.listUsers();
+    const emailMap = new Map(authUsers?.users.map((u) => [u.id, u.email]) || []);
+
     const usersWithStats = users?.map((user) => ({
       ...user,
+      email: emailMap.get(user.id) || '',
       practice_stats: practiceStats[user.id] || {
         total_shadowing_attempts: 0,
         total_cloze_attempts: 0,

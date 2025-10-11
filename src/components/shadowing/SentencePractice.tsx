@@ -190,6 +190,16 @@ export default function SentencePractice({ originalText, language, className = '
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stopAtRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
+  const iosUnlockedRef = useRef(false);
+
+  const isIOS = useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent || '';
+    const platform = (navigator as any).platform || '';
+    const iOSUA = /iPad|iPhone|iPod/.test(ua);
+    const iPadOS13Plus = /Mac/.test(platform) && 'ontouchend' in (window as any);
+    return iOSUA || iPadOS13Plus;
+  }, []);
 
   const sentences = useMemo(() => splitSentences(originalText || '', language), [originalText, language]);
   const total = sentences.length;
@@ -209,6 +219,7 @@ export default function SentencePractice({ originalText, language, className = '
     if (!audioRef.current) {
       audioRef.current = new Audio(audioUrl);
       audioRef.current.preload = 'auto';
+      try { audioRef.current.load(); } catch {}
       audioRef.current.addEventListener('timeupdate', () => {
         const stopAt = stopAtRef.current;
         if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
@@ -224,6 +235,7 @@ export default function SentencePractice({ originalText, language, className = '
       });
     } else {
       audioRef.current.src = audioUrl;
+      try { audioRef.current.load(); } catch {}
     }
   }, [audioUrl, sentenceTimeline]);
 
@@ -393,63 +405,125 @@ export default function SentencePractice({ originalText, language, className = '
   }, []);
 
   const speak = useCallback(async (index: number) => {
-    if (audioUrl && sentenceTimeline && sentenceTimeline.length > 0) {
-      if (!audioRef.current) {
+    if (!(audioUrl && sentenceTimeline && sentenceTimeline.length > 0)) {
+      alert('未找到可用的生成音频或时间轴，无法播放该句。');
+      return;
+    }
+
+    if (!audioRef.current) {
+      try {
+        audioRef.current = new Audio(audioUrl);
+        audioRef.current.preload = 'auto';
+        try { audioRef.current.load(); } catch {}
+        audioRef.current.addEventListener('timeupdate', () => {
+          const stopAt = stopAtRef.current;
+          if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
+            audioRef.current.pause();
+            stopAtRef.current = null;
+          }
+        });
+      } catch {}
+    } else if (audioRef.current.src !== audioUrl) {
+      audioRef.current.src = audioUrl;
+      try { audioRef.current.load(); } catch {}
+    }
+
+    const a = audioRef.current;
+    const seg = sentenceTimeline.find((s) => s.index === index) || sentenceTimeline[index];
+    if (!(seg && a)) {
+      alert('未找到可用的生成音频或时间轴，无法播放该句。');
+      return;
+    }
+
+    // iOS 解锁：在用户手势内先触发一次静音播放以满足自动播放策略
+    if (isIOS && !iosUnlockedRef.current) {
+      try {
+        a.muted = true;
+        // 不等待，以保留用户手势调用栈
+        const p = a.play();
+        if (p && typeof p.then === 'function') {
+          p.then(() => { try { a.pause(); } catch {}; a.muted = false; }).catch(() => { a.muted = false; });
+        } else {
+          try { a.pause(); } catch {}
+          a.muted = false;
+        }
+      } catch { a.muted = false; }
+      iosUnlockedRef.current = true;
+    }
+
+    try {
+      // 等待元数据就绪
+      await new Promise<void>((resolve) => {
+        if (a.readyState >= 1) return resolve();
+        const onLoaded = () => {
+          a.removeEventListener('loadedmetadata', onLoaded);
+          a.removeEventListener('canplay', onLoaded);
+          resolve();
+        };
+        a.addEventListener('loadedmetadata', onLoaded, { once: true });
+        a.addEventListener('canplay', onLoaded, { once: true });
+        try { a.load(); } catch {}
+      });
+
+      const START_EPS = 0.005;
+      const STOP_EPS = 0.08;
+      const targetStart = Math.max(0, seg.start + START_EPS);
+      const targetStop = Math.max(seg.start, seg.end - STOP_EPS);
+
+      // 尽量使用 fastSeek，iOS 对 seeking 更稳定
+      const anyAudio = a as any;
+      try {
+        if (typeof anyAudio.fastSeek === 'function') {
+          anyAudio.fastSeek(targetStart);
+        } else {
+          a.currentTime = targetStart;
+        }
+      } catch { a.currentTime = targetStart; }
+
+      // 等待 seek 完成或可以播放该位置
+      await new Promise<void>((resolve) => {
+        let done = false;
+        const finish = () => { if (!done) { done = true; cleanup(); resolve(); } };
+        const onSeeked = () => finish();
+        const onCanPlay = () => finish();
+        const cleanup = () => {
+          a.removeEventListener('seeked', onSeeked);
+          a.removeEventListener('canplay', onCanPlay);
+        };
+        a.addEventListener('seeked', onSeeked, { once: true });
+        a.addEventListener('canplay', onCanPlay, { once: true });
+        // 超时兜底
+        setTimeout(finish, 1200);
+      });
+
+      stopAtRef.current = targetStop;
+
+      // 避免在 iOS 上同步 cancel 造成卡顿
+      if (!isIOS) {
         try {
-          audioRef.current = new Audio(audioUrl);
-          audioRef.current.preload = 'auto';
-          audioRef.current.addEventListener('timeupdate', () => {
-            const stopAt = stopAtRef.current;
-            if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
-              audioRef.current.pause();
-              stopAtRef.current = null;
-            }
-          });
+          if ('speechSynthesis' in window) {
+            setTimeout(() => { try { window.speechSynthesis.cancel(); } catch {} }, 0);
+          }
         } catch {}
-      } else if (audioRef.current.src !== audioUrl) {
-        audioRef.current.src = audioUrl;
       }
 
-      const seg = sentenceTimeline.find((s) => s.index === index) || sentenceTimeline[index];
-      if (seg && audioRef.current) {
-        try {
-          const ensureReady = () =>
-            new Promise<void>((resolve) => {
-              const a = audioRef.current!;
-              if (a.readyState >= 1) return resolve();
-              const onLoaded = () => {
-                a.removeEventListener('loadedmetadata', onLoaded);
-                a.removeEventListener('canplay', onLoaded);
-                resolve();
-              };
-              a.addEventListener('loadedmetadata', onLoaded, { once: true });
-              a.addEventListener('canplay', onLoaded, { once: true });
-              try { a.load(); } catch {}
-            });
-          await ensureReady();
-          const START_EPS = 0.005;
-          const STOP_EPS = 0.08;
-          audioRef.current.currentTime = Math.max(0, seg.start + START_EPS);
-          stopAtRef.current = Math.max(seg.start, seg.end - STOP_EPS);
-          try { window.speechSynthesis.cancel(); } catch {}
-          await audioRef.current.play();
-          const tick = () => {
-            const stopAt = stopAtRef.current;
-            if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
-              audioRef.current.pause();
-              stopAtRef.current = null;
-              rafRef.current = null;
-              return;
-            }
-            rafRef.current = requestAnimationFrame(tick);
-          };
-          if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
+      await a.play();
+      const tick = () => {
+        const stopAt = stopAtRef.current;
+        if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
+          audioRef.current.pause();
+          stopAtRef.current = null;
+          rafRef.current = null;
           return;
-        } catch {}
-      }
-    }
+        }
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
+      return;
+    } catch {}
+
     alert('未找到可用的生成音频或时间轴，无法播放该句。');
-  }, [audioUrl, sentenceTimeline]);
+  }, [audioUrl, sentenceTimeline, isIOS]);
 
   const handleSentenceClick = async (index: number) => {
     // 如果点击的是当前展开的句子，则折叠

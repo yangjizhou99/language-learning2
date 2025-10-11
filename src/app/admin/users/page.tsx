@@ -607,6 +607,7 @@ export default function UsersPage() {
                         </TableHead>
                       )}
                       <TableHead>用户</TableHead>
+                      <TableHead>邮箱</TableHead>
                       <TableHead>角色</TableHead>
                       <TableHead>注册时间</TableHead>
                       <TableHead>最后活动</TableHead>
@@ -643,6 +644,11 @@ export default function UsersPage() {
                                 ID: {user.id.slice(0, 8)}...
                               </div>
                             </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-gray-600">
+                            {user.email || '-'}
                           </div>
                         </TableCell>
                         <TableCell>
