@@ -151,6 +151,7 @@ export async function POST(req: NextRequest) {
         vocab_entry_ids,
         picked_preview,
         notes,
+        created_at: new Date().toISOString(),
       };
 
       const { data: newSession, error: insertError } = await supabase

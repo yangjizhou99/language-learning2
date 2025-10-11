@@ -3700,7 +3700,7 @@ export default function ShadowingPage() {
                           {isPlaying ? '暂停' : t.shadowing.play_audio}
                         </Button>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className={`grid ${(!gatingActive || step === 5) ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
                           <Button
                             variant="outline"
                             size="lg"
@@ -3712,15 +3712,17 @@ export default function ShadowingPage() {
                             {saving ? t.common.loading : t.shadowing.save_draft}
                           </Button>
 
-                          <Button
-                            size="lg"
-                            onClick={unifiedCompleteAndSave}
-                            disabled={saving}
-                            className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                          >
-                            <CheckCircle className="w-5 h-5 mr-2" />
-          {saving ? (t.shadowing.saving_modal_title || '保存中...') : '完成'}
-                          </Button>
+                          {(!gatingActive || step === 5) && (
+                            <Button
+                              size="lg"
+                              onClick={unifiedCompleteAndSave}
+                              disabled={saving}
+                              className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                            >
+                              <CheckCircle className="w-5 h-5 mr-2" />
+            {saving ? (t.shadowing.saving_modal_title || '保存中...') : '完成'}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -4656,7 +4658,7 @@ export default function ShadowingPage() {
                         </div>
                       )}
 
-                      {!practiceComplete && (
+                      {!practiceComplete && (!gatingActive || step === 5) && (
                         <div className="flex items-center gap-2 w-full mt-2">
                           <Button
                             onClick={unifiedCompleteAndSave}
@@ -4787,7 +4789,7 @@ export default function ShadowingPage() {
                 showPrevious={true}
                 showNext={true}
                 showRecord={step === 5 && !practiceComplete}
-                showComplete={step === 5 && !practiceComplete}
+                showComplete={(!gatingActive || step === 5) && !practiceComplete}
                 disabled={saving}
               />
             )}
@@ -5470,30 +5472,32 @@ export default function ShadowingPage() {
                           {saving ? (t.shadowing.saving_modal_title || '保存中...') : (t.shadowing.save_draft || '保存草稿')}
                         </Button>
 
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            onClick={unifiedCompleteAndSave}
-                            disabled={saving}
-                            className="h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                          >
-                            <CheckCircle className="w-5 h-5 mr-2" />
-                            {saving ? t.common.loading : t.shadowing.complete_and_save}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPracticeComplete(false);
-                              setStep(1);
-                              setScoringResult(null);
-                              setIsVocabMode(false);
-                              setShowTranslation(false);
-                            }}
-                          >
-                            {t.shadowing.practice_again}
-                          </Button>
-                        </div>
+                        {(!gatingActive || step === 5) && (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              onClick={unifiedCompleteAndSave}
+                              disabled={saving}
+                              className="h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                            >
+                              <CheckCircle className="w-5 h-5 mr-2" />
+                              {saving ? t.common.loading : t.shadowing.complete_and_save}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPracticeComplete(false);
+                                setStep(1);
+                                setScoringResult(null);
+                                setIsVocabMode(false);
+                                setShowTranslation(false);
+                              }}
+                            >
+                              {t.shadowing.practice_again}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -6432,7 +6436,7 @@ export default function ShadowingPage() {
                         </div>
                       )}
 
-                      {!practiceComplete && (
+                      {!practiceComplete && (!gatingActive || step === 5) && (
                         <Button
                           onClick={unifiedCompleteAndSave}
                           className="bg-green-600 hover:bg-green-700"

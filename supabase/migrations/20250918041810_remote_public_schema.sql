@@ -233,11 +233,11 @@ CREATE OR REPLACE FUNCTION "public"."update_shadowing_sessions_updated_at"() RET
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public'
     AS $$
-    BEGIN
-      NEW.updated_at = NOW();
-      RETURN NEW;
-    END;
-    $$;
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
 
 
 ALTER FUNCTION "public"."update_shadowing_sessions_updated_at"() OWNER TO "postgres";
@@ -942,11 +942,20 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_sessions" (
     "vocab_entry_ids" "text"[],
     "picked_preview" "jsonb",
     "notes" "jsonb",
-    "created_at" timestamp with time zone
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 
 ALTER TABLE "public"."shadowing_sessions" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."shadowing_sessions"."created_at" IS 'Timestamp when the session was created';
+
+
+
+COMMENT ON COLUMN "public"."shadowing_sessions"."updated_at" IS 'Timestamp when the session was last updated';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."shadowing_subtopics" (
@@ -1249,6 +1258,10 @@ CREATE INDEX "idx_vocab_entries_user_due" ON "public"."vocab_entries" USING "btr
 
 
 CREATE UNIQUE INDEX "user_api_limits_user_id_key" ON "public"."user_api_limits" USING "btree" ("user_id");
+
+
+
+CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."shadowing_sessions" FOR EACH ROW EXECUTE FUNCTION "public"."update_shadowing_sessions_updated_at"();
 
 
 
