@@ -3,8 +3,7 @@
 import React, { useMemo } from 'react';
 
 interface SentenceScore {
-  coverage: number;
-  similarity: number;
+  score: number; // 综合相似度评分 (0-1范围)
 }
 
 interface SentencePracticeProgressProps {
@@ -14,12 +13,11 @@ interface SentencePracticeProgressProps {
   className?: string;
 }
 
-// 根据评分获取颜色
+// 根据评分获取状态
 function getScoreStatus(score: SentenceScore | null): 'excellent' | 'medium' | 'poor' | 'unpracticed' {
   if (!score) return 'unpracticed';
-  const avg = (score.coverage + score.similarity) / 2;
-  if (avg >= 0.8) return 'excellent';
-  if (avg >= 0.6) return 'medium';
+  if (score.score >= 0.8) return 'excellent';
+  if (score.score >= 0.6) return 'medium';
   return 'poor';
 }
 
@@ -40,11 +38,10 @@ export default function SentencePracticeProgress({
     let totalScore = 0;
     
     scoreList.forEach(score => {
-      const avg = (score.coverage + score.similarity) / 2;
-      totalScore += avg;
+      totalScore += score.score;
       
-      if (avg >= 0.8) excellentCount++;
-      else if (avg >= 0.6) mediumCount++;
+      if (score.score >= 0.8) excellentCount++;
+      else if (score.score >= 0.6) mediumCount++;
       else poorCount++;
     });
     

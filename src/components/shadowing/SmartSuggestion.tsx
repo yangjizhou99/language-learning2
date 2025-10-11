@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
 
 interface SentenceScore {
-  coverage: number;
-  similarity: number;
+  score: number; // 综合相似度评分 (0-1范围)
 }
 
 interface SmartSuggestionProps {
@@ -41,11 +40,10 @@ export default function SmartSuggestion({
     
     Object.entries(scores).forEach(([indexStr, score]) => {
       const index = parseInt(indexStr);
-      const avg = (score.coverage + score.similarity) / 2;
       
-      if (avg >= 0.8) {
+      if (score.score >= 0.8) {
         excellentIndices.push(index);
-      } else if (avg >= 0.6) {
+      } else if (score.score >= 0.6) {
         mediumIndices.push(index);
       } else {
         poorIndices.push(index);
