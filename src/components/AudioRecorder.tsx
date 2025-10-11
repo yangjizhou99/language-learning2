@@ -77,7 +77,6 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
     const [uploadingRecording, setUploadingRecording] = useState(false);
     const [currentTranscription, setCurrentTranscription] = useState<string>('');
     const [isRealTimeTranscribing, setIsRealTimeTranscribing] = useState(false);
-    const [realTimeTranscription, setRealTimeTranscription] = useState<string>('');
     const realTimeTranscriptionRef = useRef<string>('');
     // 用于录音中的合成显示（最终+临时）
     const [displayTranscription, setDisplayTranscription] = useState<string>('');
@@ -116,7 +115,6 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
 
           recognitionRef.current.onstart = () => {
             setIsRealTimeTranscribing(true);
-            setRealTimeTranscription('');
             realTimeTranscriptionRef.current = '';
             setDisplayTranscription('');
           };
@@ -135,15 +133,12 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
             }
 
             // 累积所有最终转录结果
-            setRealTimeTranscription((prev) => {
-              const newFinal = finalTranscript.trim();
-              if (newFinal) {
-                const updated = prev + (prev ? ' ' : '') + newFinal;
-                realTimeTranscriptionRef.current = updated;
-                return updated;
-              }
-              return prev;
-            });
+            const newFinal = finalTranscript.trim();
+            if (newFinal) {
+              const prev = realTimeTranscriptionRef.current;
+              const updated = prev + (prev ? ' ' : '') + newFinal;
+              realTimeTranscriptionRef.current = updated;
+            }
 
             // 实时显示（最终+临时）
             const accumulatedFinal = realTimeTranscriptionRef.current || '';
@@ -153,6 +148,35 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
 
           recognitionRef.current.onerror = (event: { error?: string }) => {
             console.error('实时语音识别错误:', event.error);
+            const errorType = event.error || 'unknown';
+            let errorMessage = '';
+            
+            switch (errorType) {
+              case 'not-allowed':
+              case 'permission-denied':
+                errorMessage = '麦克风权限被拒绝。\n\n请在浏览器设置中允许本网站使用麦克风。\n\n步骤：\n1. 点击地址栏的锁图标\n2. 找到麦克风权限\n3. 设置为"允许"\n4. 刷新页面';
+                break;
+              case 'no-speech':
+                // 不提示，这是正常情况
+                break;
+              case 'audio-capture':
+                errorMessage = '无法捕获音频。\n\n可能原因：\n1. 麦克风被其他应用占用\n2. 麦克风硬件故障\n3. 需要使用HTTPS连接';
+                break;
+              case 'network':
+                errorMessage = '网络错误。\n\n语音识别需要网络连接，请检查网络状态。';
+                break;
+              case 'service-not-allowed':
+                errorMessage = '语音识别服务不可用。\n\n可能需要HTTPS连接或浏览器不支持。';
+                break;
+              default:
+                errorMessage = `语音识别错误：${errorType}\n\n请检查麦克风权限和网络连接。`;
+            }
+            
+            // 只在严重错误时弹出提示
+            if (['not-allowed', 'permission-denied', 'audio-capture', 'service-not-allowed'].includes(errorType)) {
+              setTimeout(() => alert(errorMessage), 100);
+            }
+            
             setIsRealTimeTranscribing(false);
           };
 
@@ -175,14 +199,39 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
     // 仅使用实时识别结果；不再调用服务端兜底
     const startRecording = useCallback(async () => {
       try {
-        if (!recognitionRef.current) {
-          alert('当前浏览器不支持实时语音识别，请更换浏览器/开启权限');
+        // 检查HTTPS（移动端必须）
+        if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+          alert('移动端语音识别需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问本页面。');
           return;
         }
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        if (!recognitionRef.current) {
+          alert('当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
+          return;
+        }
+        
+        let stream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (error) {
+          console.error('麦克风权限错误:', error);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          const errorName = error instanceof Error ? error.name : '';
+          
+          if (errorName === 'NotAllowedError' || errorMsg.includes('Permission denied')) {
+            alert('无法访问麦克风。\n\n请在浏览器设置中允许本网站使用麦克风权限。\n\n步骤：\n1. 点击地址栏左侧的锁图标\n2. 找到"麦克风"权限\n3. 设置为"允许"\n4. 刷新页面重试');
+          } else if (errorName === 'NotFoundError') {
+            alert('未检测到麦克风设备。\n\n请确保您的设备有可用的麦克风。');
+          } else if (errorName === 'NotSupportedError' || errorMsg.includes('https')) {
+            alert('语音识别需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问本页面。');
+          } else {
+            alert(`麦克风访问失败：${errorMsg}\n\n请检查浏览器权限设置，并确保使用HTTPS连接。`);
+          }
+          return;
+        }
 
         // 选择最合适、浏览器支持的音频编码格式
-        const MR: any = typeof window !== 'undefined' ? (window as any).MediaRecorder : undefined;
+        const MR = typeof window !== 'undefined' ? window.MediaRecorder : undefined;
         const isSupported = (t: string) => {
           try {
             return typeof MR?.isTypeSupported === 'function' ? MR.isTypeSupported(t) : false;
@@ -287,19 +336,23 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
 
         // 开始实时语音识别
         if (recognitionRef.current) {
-          setRealTimeTranscription('');
           realTimeTranscriptionRef.current = '';
           recognitionRef.current.start();
         }
       } catch (error) {
         console.error('Error starting recording:', error);
-        alert('无法访问麦克风，请更换浏览器/开启权限');
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        alert(`录音启动失败：${errorMsg}\n\n请确保已授予麦克风权限并使用HTTPS连接。`);
       }
     }, []);
 
     const stopRecording = useCallback(async () => {
       if (mediaRecorderRef.current && isRecording) {
-        try { (mediaRecorderRef.current as any).requestData?.(); } catch {}
+        try {
+          // 尝试请求数据（如果支持的话）
+          const recorder = mediaRecorderRef.current as MediaRecorder & { requestData?: () => void };
+          recorder.requestData?.();
+        } catch {}
         mediaRecorderRef.current.stop();
         setIsRecording(false);
 
