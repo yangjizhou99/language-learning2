@@ -123,11 +123,13 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
             let finalTranscript = '';
             let interimTranscript = '';
 
+            // 从resultIndex开始处理新结果
             for (let i = event.resultIndex; i < event.results.length; i++) {
               const transcript = event.results[i][0].transcript;
               if (event.results[i].isFinal) {
                 finalTranscript += transcript + ' ';
               } else {
+                // 拼接所有interim结果（移动端可能批量返回）
                 interimTranscript += transcript;
               }
             }
@@ -142,8 +144,15 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
 
             // 实时显示（最终+临时）
             const accumulatedFinal = realTimeTranscriptionRef.current || '';
-            const combined = `${accumulatedFinal}${accumulatedFinal && interimTranscript ? ' ' : ''}${interimTranscript}`.trim();
-            setDisplayTranscription(combined);
+            const interimTrimmed = interimTranscript.trim();
+            const combined = accumulatedFinal
+              ? (interimTrimmed ? `${accumulatedFinal} ${interimTrimmed}` : accumulatedFinal)
+              : interimTrimmed;
+            
+            // 使用requestAnimationFrame优化UI更新
+            requestAnimationFrame(() => {
+              setDisplayTranscription(combined);
+            });
           };
 
           recognitionRef.current.onerror = (event: { error?: string }) => {

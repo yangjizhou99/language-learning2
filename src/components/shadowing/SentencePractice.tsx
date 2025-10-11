@@ -452,13 +452,23 @@ export default function SentencePractice({ originalText, language, className = '
     rec.onresult = (event: WebSpeechRecognitionEvent) => {
       let fullFinal = '';
       let interim = '';
+      
+      // 正确处理所有结果：累积所有final结果，只取最后一个interim结果
       for (let i = 0; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) fullFinal += transcript + ' ';
-        else if (i >= event.resultIndex) interim += transcript;
+        if (event.results[i].isFinal) {
+          fullFinal += transcript + ' ';
+        } else {
+          // 对于interim结果，直接拼接（移动端可能一次返回多个interim）
+          interim += transcript;
+        }
       }
+      
       const finalTrimmed = fullFinal.trim();
-      const combined = `${finalTrimmed}${finalTrimmed && interim ? ' ' : ''}${interim}`.trim();
+      const interimTrimmed = interim.trim();
+      const combined = finalTrimmed 
+        ? (interimTrimmed ? `${finalTrimmed} ${interimTrimmed}` : finalTrimmed)
+        : interimTrimmed;
       
       // 只要完整文本有变化就重置静默时间（包括interim变化）
       if (combined && combined !== tempCombinedTextRef.current) {
@@ -474,7 +484,11 @@ export default function SentencePractice({ originalText, language, className = '
       // 暂存到 ref
       tempFinalTextRef.current = finalTrimmed;
       tempCombinedTextRef.current = combined; // 保存完整文本供完成度计算
-      setDisplayText(combined);
+      
+      // 使用requestAnimationFrame优化UI更新，避免阻塞
+      requestAnimationFrame(() => {
+        setDisplayText(combined);
+      });
     };
     rec.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
