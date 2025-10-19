@@ -220,11 +220,15 @@ BEGIN
   END IF;
 END $$;
 
--- 7. 清理旧的日文句节关联数据（需要重新生成）
-DELETE FROM public.sentence_units 
-WHERE sentence_id IN (
-  SELECT sentence_id FROM public.pron_sentences WHERE lang = 'ja-JP'
-);
+DO $$
+BEGIN
+  IF to_regclass('public.sentence_units') IS NOT NULL THEN
+    DELETE FROM public.sentence_units 
+    WHERE sentence_id IN (
+      SELECT sentence_id FROM public.pron_sentences WHERE lang = 'ja-JP'
+    );
+  END IF;
+END $$;
 
 -- 8. 验证迁移结果
 DO $$
