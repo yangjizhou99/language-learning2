@@ -213,7 +213,12 @@ ORDER BY
 COMMENT ON VIEW public.japanese_romaji_view IS '日语罗马字音节视图：按行分类显示';
 
 -- 6. 清理旧的日文用户统计数据（需要重新生成）
-DELETE FROM public.user_unit_stats WHERE lang = 'ja-JP';
+DO $$
+BEGIN
+  IF to_regclass('public.user_unit_stats') IS NOT NULL THEN
+    DELETE FROM public.user_unit_stats WHERE lang = 'ja-JP';
+  END IF;
+END $$;
 
 -- 7. 清理旧的日文句节关联数据（需要重新生成）
 DELETE FROM public.sentence_units 
