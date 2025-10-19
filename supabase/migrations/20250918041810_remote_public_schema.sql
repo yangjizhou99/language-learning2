@@ -760,40 +760,7 @@ CREATE TABLE IF NOT EXISTS "public"."default_user_permissions" (
 ALTER TABLE "public"."default_user_permissions" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."en_phoneme_units" (
-    "symbol" "text" NOT NULL,
-    "category" "text" NOT NULL,
-    "subcategory" "text",
-    "examples" "text"[],
-    "description" "text",
-    "created_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."en_phoneme_units" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."en_phoneme_units" IS '英语音素辅助表：存储英语IPA音素的分类、示例和描述信息';
-
-
-
-COMMENT ON COLUMN "public"."en_phoneme_units"."symbol" IS 'IPA音素符号';
-
-
-
-COMMENT ON COLUMN "public"."en_phoneme_units"."category" IS '音素类别：vowel, diphthong, consonant';
-
-
-
-COMMENT ON COLUMN "public"."en_phoneme_units"."subcategory" IS '音素子类别：如 short_vowel, stop, fricative 等';
-
-
-
-COMMENT ON COLUMN "public"."en_phoneme_units"."examples" IS '包含该音素的示例词数组';
-
-
-
-COMMENT ON COLUMN "public"."en_phoneme_units"."description" IS '音素描述信息';
+-- en_phoneme_units table already exists from previous migration
 
 
 
@@ -1651,8 +1618,7 @@ ALTER TABLE ONLY "public"."default_user_permissions"
 
 
 
-ALTER TABLE ONLY "public"."en_phoneme_units"
-    ADD CONSTRAINT "en_phoneme_units_pkey" PRIMARY KEY ("symbol");
+-- en_phoneme_units primary key already exists from previous migration
 
 
 
@@ -1716,13 +1682,11 @@ ALTER TABLE ONLY "public"."unit_alias"
 
 
 
-ALTER TABLE ONLY "public"."unit_catalog"
-    ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
+-- unit_catalog unique constraint already exists from previous migration
 
 
 
-ALTER TABLE ONLY "public"."unit_catalog"
-    ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
+-- unit_catalog primary key already exists from table definition
 
 
 
@@ -1809,11 +1773,7 @@ CREATE INDEX "idx_cloze_shadowing_items_published" ON "public"."cloze_shadowing_
 
 
 
-CREATE INDEX "idx_en_phoneme_units_category" ON "public"."en_phoneme_units" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_en_phoneme_units_subcategory" ON "public"."en_phoneme_units" USING "btree" ("subcategory");
+-- en_phoneme_units indexes already exist from previous migration
 
 
 
@@ -1869,15 +1829,15 @@ CREATE INDEX "idx_unit_alias_unit_id" ON "public"."unit_alias" USING "btree" ("u
 
 
 
-CREATE INDEX "idx_unit_catalog_en_us" ON "public"."unit_catalog" USING "btree" ("lang") WHERE ("lang" = 'en-US'::"text");
+-- idx_unit_catalog_en_us index already exists from previous migration
 
 
 
-CREATE INDEX "idx_unit_catalog_lang" ON "public"."unit_catalog" USING "btree" ("lang");
+-- idx_unit_catalog_lang index already exists from previous migration
 
 
 
-CREATE INDEX "idx_unit_catalog_symbol" ON "public"."unit_catalog" USING "btree" ("symbol");
+-- idx_unit_catalog_symbol index already exists from previous migration
 
 
 
@@ -2518,9 +2478,7 @@ GRANT ALL ON TABLE "public"."default_user_permissions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."en_phoneme_units" TO "anon";
-GRANT ALL ON TABLE "public"."en_phoneme_units" TO "authenticated";
-GRANT ALL ON TABLE "public"."en_phoneme_units" TO "service_role";
+-- en_phoneme_units permissions already granted in previous migration
 
 
 
