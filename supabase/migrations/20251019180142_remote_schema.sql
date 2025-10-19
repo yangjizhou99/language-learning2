@@ -2256,7 +2256,7 @@ alter table "public"."shadowing_themes" drop constraint "shadowing_themes_id_uni
 
 drop function if exists "public"."shadowing_items_audio_sync"();
 
-alter table "public"."en_phoneme_units" drop constraint "en_phoneme_units_pkey";
+alter table "public"."en_phoneme_units" drop constraint if exists "en_phoneme_units_pkey";
 
 alter table "public"."ja_phoneme_units" drop constraint "ja_phoneme_units_pkey";
 
@@ -3532,5 +3532,4 @@ CREATE TRIGGER update_invitation_codes_updated_at BEFORE UPDATE ON public.invita
 CREATE TRIGGER trg_phrases_updated_at BEFORE UPDATE ON public.phrases FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_registration_config_updated_at BEFORE UPDATE ON public.registration_config FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 
