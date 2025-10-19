@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
         .single();
     };
 
-    let res = await doUpdate(false);
+    const res = await doUpdate(false);
     updated = res.data;
     updErr = res.error;
     if (updErr && (updErr as any)?.code === '42703') {

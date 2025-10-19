@@ -386,7 +386,7 @@ export async function POST(req: NextRequest) {
 
   const encoder = new TextEncoder();
   let done = 0;
-  let aggUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+  const aggUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {

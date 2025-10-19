@@ -21,6 +21,7 @@ import {
   Bookmark,
   BarChart3,
   Zap,
+  Mic,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import GoalCard from '@/components/GoalCard';
@@ -149,6 +150,14 @@ export default function Home() {
       href: '/practice/shadowing',
       color: 'bg-blue-500',
       show: permissions.can_access_shadowing,
+    },
+    {
+      title: 'AI发音纠正',
+      description: '精准评测发音，快速定位问题',
+      icon: Mic,
+      href: '/practice/pronunciation',
+      color: 'bg-red-500',
+      show: true,
     },
     {
       title: t.nav.cloze,

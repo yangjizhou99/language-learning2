@@ -458,9 +458,9 @@ export default function AlignmentMaterialsPage() {
         throw new Error(json.error || '生成失败');
       }
       const data = json.data || json.stage2 || {};
-      let practiceScenario: AlignmentPracticeScenario | null =
+      const practiceScenario: AlignmentPracticeScenario | null =
         data.practice_scenario || null;
-      let standardDialogue: AlignmentStandardDialogue | null =
+      const standardDialogue: AlignmentStandardDialogue | null =
         data.standard_dialogue || null;
       if (practiceScenario && !Array.isArray(practiceScenario.objectives)) {
         practiceScenario.objectives = (selectedSubtopic?.objectives || []).map((obj: any) => ({
@@ -609,7 +609,7 @@ export default function AlignmentMaterialsPage() {
           }))
         : [];
 
-      let mergedScenario = material.practice_scenario
+      const mergedScenario = material.practice_scenario
         ? { ...material.practice_scenario }
         : null;
       if (mergedScenario) {
@@ -652,7 +652,7 @@ export default function AlignmentMaterialsPage() {
         }
       }
 
-      let mergedDialogue = material.standard_dialogue
+      const mergedDialogue = material.standard_dialogue
         ? { ...material.standard_dialogue }
         : null;
       if (mergedDialogue) {

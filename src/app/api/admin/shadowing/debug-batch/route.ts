@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     };
 
     // 检查数据库表
-    let dbStatus = {
+    const dbStatus = {
       shadowing_subtopics: false,
       shadowing_drafts: false,
       shadowing_themes: false,

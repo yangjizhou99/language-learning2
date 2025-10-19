@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
 
     // 仅展示：有已发布 cloze 的文章 + 源文章已审核
     // 先取有已发布 cloze 的 source_item_id 列表（按创建时间近→远）
-    let clozeQuery = supabase
+    const clozeQuery = supabase
       .from('cloze_shadowing_items')
       .select('source_item_id')
       .eq('is_published', true);
@@ -167,7 +167,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Items query failed' }, { status: 500 });
     }
 
-    let filteredTitleItems = items || [];
+    const filteredTitleItems = items || [];
 
     // 取用户 Shadowing 会话，沿用“完成”判定
     const ids = filteredTitleItems.map((it: any) => it.id);

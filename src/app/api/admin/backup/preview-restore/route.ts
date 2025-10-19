@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 获取当前存储桶中的文件
-    let currentFiles = new Set<string>();
+    const currentFiles = new Set<string>();
     let totalCurrentFiles = 0;
 
     for (const bucket of buckets) {

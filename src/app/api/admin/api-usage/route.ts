@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
     // 获取所有用户信息
     const userIds = [...new Set(usageStats?.map((log) => log.user_id) || [])];
 
-    let userMap = new Map();
+    const userMap = new Map();
     if (userIds.length > 0) {
       // 从 auth.users 获取邮箱信息
       const { data: users, error: usersError } = await supabase.auth.admin.listUsers();

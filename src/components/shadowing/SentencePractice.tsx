@@ -70,7 +70,7 @@ function splitSentences(text: string, language: Lang): string[] {
     if (SegClass) {
       const seg = new SegClass(language, { granularity: 'sentence' });
       const parts: string[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       for (const { segment } of seg.segment(text) as any) {
         const s = String(segment).trim();
         if (s) parts.push(s);

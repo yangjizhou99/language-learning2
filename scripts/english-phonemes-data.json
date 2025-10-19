@@ -1,0 +1,412 @@
+{
+  "description": "英语(en-US)音素数据清单 - 44个标准音素",
+  "version": "1.0",
+  "created_at": "2025-01-17",
+  "phonemes": [
+    {
+      "symbol": "ɪ",
+      "ipa": "/ɪ/",
+      "category": "vowel",
+      "subcategory": "short_vowel",
+      "examples": ["bit", "sit", "hit"],
+      "description": "短元音，如 bit 中的 i"
+    },
+    {
+      "symbol": "ɛ",
+      "ipa": "/ɛ/",
+      "category": "vowel",
+      "subcategory": "short_vowel",
+      "examples": ["bed", "red", "get"],
+      "description": "短元音，如 bed 中的 e"
+    },
+    {
+      "symbol": "æ",
+      "ipa": "/æ/",
+      "category": "vowel",
+      "subcategory": "short_vowel",
+      "examples": ["cat", "bat", "hat"],
+      "description": "短元音，如 cat 中的 a"
+    },
+    {
+      "symbol": "ʌ",
+      "ipa": "/ʌ/",
+      "category": "vowel",
+      "subcategory": "short_vowel",
+      "examples": ["but", "cut", "run"],
+      "description": "短元音，如 but 中的 u"
+    },
+    {
+      "symbol": "ʊ",
+      "ipa": "/ʊ/",
+      "category": "vowel",
+      "subcategory": "short_vowel",
+      "examples": ["book", "look", "good"],
+      "description": "短元音，如 book 中的 oo"
+    },
+    {
+      "symbol": "ə",
+      "ipa": "/ə/",
+      "category": "vowel",
+      "subcategory": "short_vowel",
+      "examples": ["about", "ago", "the"],
+      "description": "中性元音，如 about 中的 a"
+    },
+    {
+      "symbol": "i",
+      "ipa": "/i/",
+      "category": "vowel",
+      "subcategory": "long_vowel",
+      "examples": ["beat", "seat", "heat"],
+      "description": "长元音，如 beat 中的 ea"
+    },
+    {
+      "symbol": "e",
+      "ipa": "/e/",
+      "category": "vowel",
+      "subcategory": "long_vowel",
+      "examples": ["bait", "late", "make"],
+      "description": "长元音，如 bait 中的 ai"
+    },
+    {
+      "symbol": "ɑ",
+      "ipa": "/ɑ/",
+      "category": "vowel",
+      "subcategory": "long_vowel",
+      "examples": ["father", "calm", "hot"],
+      "description": "长元音，如 father 中的 a"
+    },
+    {
+      "symbol": "ɔ",
+      "ipa": "/ɔ/",
+      "category": "vowel",
+      "subcategory": "long_vowel",
+      "examples": ["bought", "caught", "law"],
+      "description": "长元音，如 bought 中的 ou"
+    },
+    {
+      "symbol": "u",
+      "ipa": "/u/",
+      "category": "vowel",
+      "subcategory": "long_vowel",
+      "examples": ["boot", "food", "soon"],
+      "description": "长元音，如 boot 中的 oo"
+    },
+    {
+      "symbol": "aɪ",
+      "ipa": "/aɪ/",
+      "category": "diphthong",
+      "subcategory": "diphthong",
+      "examples": ["bite", "time", "my"],
+      "description": "双元音，如 bite 中的 i"
+    },
+    {
+      "symbol": "aʊ",
+      "ipa": "/aʊ/",
+      "category": "diphthong",
+      "subcategory": "diphthong",
+      "examples": ["bout", "town", "how"],
+      "description": "双元音，如 bout 中的 ou"
+    },
+    {
+      "symbol": "ɔɪ",
+      "ipa": "/ɔɪ/",
+      "category": "diphthong",
+      "subcategory": "diphthong",
+      "examples": ["boy", "toy", "enjoy"],
+      "description": "双元音，如 boy 中的 oy"
+    },
+    {
+      "symbol": "eɪ",
+      "ipa": "/eɪ/",
+      "category": "diphthong",
+      "subcategory": "diphthong",
+      "examples": ["bait", "late", "make"],
+      "description": "双元音，如 bait 中的 ai"
+    },
+    {
+      "symbol": "oʊ",
+      "ipa": "/oʊ/",
+      "category": "diphthong",
+      "subcategory": "diphthong",
+      "examples": ["boat", "note", "go"],
+      "description": "双元音，如 boat 中的 oa"
+    },
+    {
+      "symbol": "ɪə",
+      "ipa": "/ɪə/",
+      "category": "diphthong",
+      "subcategory": "diphthong",
+      "examples": ["near", "hear", "beer"],
+      "description": "双元音，如 near 中的 ear"
+    },
+    {
+      "symbol": "ɛə",
+      "ipa": "/ɛə/",
+      "category": "diphthong",
+      "subcategory": "diphthong",
+      "examples": ["bear", "care", "there"],
+      "description": "双元音，如 bear 中的 ear"
+    },
+    {
+      "symbol": "ʊə",
+      "ipa": "/ʊə/",
+      "category": "diphthong",
+      "subcategory": "diphthong",
+      "examples": ["poor", "tour", "sure"],
+      "description": "双元音，如 poor 中的 oor"
+    },
+    {
+      "symbol": "p",
+      "ipa": "/p/",
+      "category": "consonant",
+      "subcategory": "stop",
+      "examples": ["pen", "top", "stop"],
+      "description": "清音爆破音，如 pen 中的 p"
+    },
+    {
+      "symbol": "b",
+      "ipa": "/b/",
+      "category": "consonant",
+      "subcategory": "stop",
+      "examples": ["bed", "rub", "about"],
+      "description": "浊音爆破音，如 bed 中的 b"
+    },
+    {
+      "symbol": "t",
+      "ipa": "/t/",
+      "category": "consonant",
+      "subcategory": "stop",
+      "examples": ["top", "get", "sit"],
+      "description": "清音爆破音，如 top 中的 t"
+    },
+    {
+      "symbol": "d",
+      "ipa": "/d/",
+      "category": "consonant",
+      "subcategory": "stop",
+      "examples": ["dog", "red", "good"],
+      "description": "浊音爆破音，如 dog 中的 d"
+    },
+    {
+      "symbol": "k",
+      "ipa": "/k/",
+      "category": "consonant",
+      "subcategory": "stop",
+      "examples": ["cat", "back", "like"],
+      "description": "清音爆破音，如 cat 中的 c"
+    },
+    {
+      "symbol": "g",
+      "ipa": "/g/",
+      "category": "consonant",
+      "subcategory": "stop",
+      "examples": ["go", "big", "ago"],
+      "description": "浊音爆破音，如 go 中的 g"
+    },
+    {
+      "symbol": "f",
+      "ipa": "/f/",
+      "category": "consonant",
+      "subcategory": "fricative",
+      "examples": ["fan", "off", "if"],
+      "description": "清音摩擦音，如 fan 中的 f"
+    },
+    {
+      "symbol": "v",
+      "ipa": "/v/",
+      "category": "consonant",
+      "subcategory": "fricative",
+      "examples": ["van", "of", "give"],
+      "description": "浊音摩擦音，如 van 中的 v"
+    },
+    {
+      "symbol": "θ",
+      "ipa": "/θ/",
+      "category": "consonant",
+      "subcategory": "fricative",
+      "examples": ["think", "both", "with"],
+      "description": "清音摩擦音，如 think 中的 th"
+    },
+    {
+      "symbol": "ð",
+      "ipa": "/ð/",
+      "category": "consonant",
+      "subcategory": "fricative",
+      "examples": ["this", "other", "with"],
+      "description": "浊音摩擦音，如 this 中的 th"
+    },
+    {
+      "symbol": "s",
+      "ipa": "/s/",
+      "category": "consonant",
+      "subcategory": "fricative",
+      "examples": ["sun", "yes", "pass"],
+      "description": "清音摩擦音，如 sun 中的 s"
+    },
+    {
+      "symbol": "z",
+      "ipa": "/z/",
+      "category": "consonant",
+      "subcategory": "fricative",
+      "examples": ["zoo", "has", "buzz"],
+      "description": "浊音摩擦音，如 zoo 中的 z"
+    },
+    {
+      "symbol": "ʃ",
+      "ipa": "/ʃ/",
+      "category": "consonant",
+      "subcategory": "fricative",
+      "examples": ["shoe", "wash", "wish"],
+      "description": "清音摩擦音，如 shoe 中的 sh"
+    },
+    {
+      "symbol": "ʒ",
+      "ipa": "/ʒ/",
+      "category": "consonant",
+      "subcategory": "fricative",
+      "examples": ["measure", "pleasure"],
+      "description": "浊音摩擦音，如 measure 中的 s"
+    },
+    {
+      "symbol": "h",
+      "ipa": "/h/",
+      "category": "consonant",
+      "subcategory": "fricative",
+      "examples": ["hat", "who", "ahead"],
+      "description": "清音摩擦音，如 hat 中的 h"
+    },
+    {
+      "symbol": "tʃ",
+      "ipa": "/tʃ/",
+      "category": "consonant",
+      "subcategory": "affricate",
+      "examples": ["chair", "watch", "much"],
+      "description": "清音塞擦音，如 chair 中的 ch"
+    },
+    {
+      "symbol": "dʒ",
+      "ipa": "/dʒ/",
+      "category": "consonant",
+      "subcategory": "affricate",
+      "examples": ["jump", "age", "judge"],
+      "description": "浊音塞擦音，如 jump 中的 j"
+    },
+    {
+      "symbol": "m",
+      "ipa": "/m/",
+      "category": "consonant",
+      "subcategory": "nasal",
+      "examples": ["man", "come", "him"],
+      "description": "双唇鼻音，如 man 中的 m"
+    },
+    {
+      "symbol": "n",
+      "ipa": "/n/",
+      "category": "consonant",
+      "subcategory": "nasal",
+      "examples": ["no", "sun", "can"],
+      "description": "齿龈鼻音，如 no 中的 n"
+    },
+    {
+      "symbol": "ŋ",
+      "ipa": "/ŋ/",
+      "category": "consonant",
+      "subcategory": "nasal",
+      "examples": ["sing", "long", "thing"],
+      "description": "软腭鼻音，如 sing 中的 ng"
+    },
+    {
+      "symbol": "l",
+      "ipa": "/l/",
+      "category": "consonant",
+      "subcategory": "approximant",
+      "examples": ["leg", "ball", "call"],
+      "description": "齿龈近音，如 leg 中的 l"
+    },
+    {
+      "symbol": "r",
+      "ipa": "/r/",
+      "category": "consonant",
+      "subcategory": "approximant",
+      "examples": ["red", "car", "more"],
+      "description": "齿龈近音，如 red 中的 r"
+    },
+    {
+      "symbol": "w",
+      "ipa": "/w/",
+      "category": "consonant",
+      "subcategory": "approximant",
+      "examples": ["wet", "one", "away"],
+      "description": "双唇近音，如 wet 中的 w"
+    },
+    {
+      "symbol": "j",
+      "ipa": "/j/",
+      "category": "consonant",
+      "subcategory": "approximant",
+      "examples": ["yes", "you", "use"],
+      "description": "硬腭近音，如 yes 中的 y"
+    }
+  ],
+  "azure_mapping": {
+    "description": "Azure Speech Service 音素映射规则",
+    "mappings": {
+      "ih": "ɪ",
+      "eh": "ɛ", 
+      "ae": "æ",
+      "ah": "ʌ",
+      "uh": "ʊ",
+      "ax": "ə",
+      "iy": "i",
+      "ey": "e",
+      "aa": "ɑ",
+      "ao": "ɔ",
+      "uw": "u",
+      "ay": "aɪ",
+      "aw": "aʊ",
+      "oy": "ɔɪ",
+      "ey": "eɪ",
+      "ow": "oʊ",
+      "ihr": "ɪə",
+      "ehr": "ɛə",
+      "uhr": "ʊə",
+      "p": "p",
+      "b": "b",
+      "t": "t",
+      "d": "d",
+      "k": "k",
+      "g": "g",
+      "f": "f",
+      "v": "v",
+      "th": "θ",
+      "dh": "ð",
+      "s": "s",
+      "z": "z",
+      "sh": "ʃ",
+      "zh": "ʒ",
+      "h": "h",
+      "ch": "tʃ",
+      "jh": "dʒ",
+      "m": "m",
+      "n": "n",
+      "ng": "ŋ",
+      "l": "l",
+      "r": "r",
+      "w": "w",
+      "y": "j"
+    }
+  },
+  "statistics": {
+    "total_phonemes": 44,
+    "vowels": 12,
+    "diphthongs": 8,
+    "consonants": 24,
+    "short_vowels": 6,
+    "long_vowels": 5,
+    "stops": 6,
+    "fricatives": 9,
+    "affricates": 2,
+    "nasals": 3,
+    "approximants": 4
+  }
+}
