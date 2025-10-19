@@ -23,7 +23,7 @@ COMMENT ON TABLE public.unit_catalog IS '发音单元规范表：存储各语言
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS public.en_phoneme_units (
-  symbol VARCHAR(10) PRIMARY KEY,   -- IPA音素符号，如 "ɪ", "tʃ"
+  symbol VARCHAR(10) NOT NULL UNIQUE,   -- IPA音素符号，如 "ɪ", "tʃ"
   category VARCHAR(20) NOT NULL,    -- vowel, diphthong, consonant
   subcategory VARCHAR(20),          -- short_vowel, stop, fricative 等
   examples TEXT[],                  -- 示例词数组
