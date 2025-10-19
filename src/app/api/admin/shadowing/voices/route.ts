@@ -76,12 +76,12 @@ function generateVoiceCharacteristics(voice: any) {
   const languageCode = voice.languageCode;
 
   // 基础特征
-  let voiceType = gender === 'FEMALE' ? '女性' : gender === 'MALE' ? '男性' : '中性';
+  const voiceType = gender === 'FEMALE' ? '女性' : gender === 'MALE' ? '男性' : '中性';
   let tone = '清晰自然';
   let accent = '标准';
-  let speed = '中等';
+  const speed = '中等';
   let pitch = '中音';
-  let emotion = '中性';
+  const emotion = '中性';
   let useCase = '通用';
   let ageRange = '20-50岁';
   let personality = '专业';
@@ -174,7 +174,7 @@ export async function GET(req: NextRequest) {
     // 获取 Google Cloud TTS 音色 - 总是获取所有音色，然后筛选
     const client = makeClient();
     const [res] = await client.listVoices({});
-    let allVoices = res.voices || [];
+    const allVoices = res.voices || [];
 
     // 根据语言筛选
     let voices = allVoices;

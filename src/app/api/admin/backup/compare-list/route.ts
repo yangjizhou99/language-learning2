@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     try {
       const files = await fs.readdir(backupPath);
       
-      let backupFiles: Array<{
+      const backupFiles: Array<{
         filename: string;
         filepath: string;
         size: number;

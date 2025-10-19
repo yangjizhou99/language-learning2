@@ -23,11 +23,11 @@ COMMENT ON TABLE public.unit_catalog IS '发音单元规范表：存储各语言
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS public.en_phoneme_units (
-  symbol TEXT PRIMARY KEY,  -- IPA音素符号，如 "ɪ", "tʃ"
-  category TEXT NOT NULL,   -- vowel, diphthong, consonant
-  subcategory TEXT,         -- short_vowel, stop, fricative 等
-  examples TEXT[],          -- 示例词数组
-  description TEXT,         -- 音素描述
+  symbol VARCHAR(10) NOT NULL UNIQUE,   -- IPA音素符号，如 "ɪ", "tʃ"
+  category VARCHAR(20) NOT NULL,    -- vowel, diphthong, consonant
+  subcategory VARCHAR(20),          -- short_vowel, stop, fricative 等
+  examples TEXT[],                  -- 示例词数组
+  description TEXT,                 -- 音素描述
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -110,19 +110,7 @@ INSERT INTO public.unit_catalog (lang, symbol, unit_type) VALUES
 ON CONFLICT (lang, symbol) DO NOTHING;
 
 -- =====================================================
--- 3. 创建英语音素辅助表
--- =====================================================
-
-CREATE TABLE IF NOT EXISTS public.en_phoneme_units (
-  symbol VARCHAR(10) PRIMARY KEY,
-  category VARCHAR(20) NOT NULL,
-  subcategory VARCHAR(20),
-  examples TEXT[],
-  description TEXT
-);
-
--- =====================================================
--- 4. 插入英语音素辅助信息
+-- 3. 插入英语音素辅助信息
 -- =====================================================
 
 INSERT INTO public.en_phoneme_units (symbol, category, subcategory, examples, description) VALUES

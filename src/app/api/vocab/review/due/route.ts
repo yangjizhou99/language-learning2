@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     // 到期规则：
     // - 未归档（status != 'archived' 或 status 为空）
     // - 且 (srs_due <= now 或 srs_due 为空 -> 表示从未安排，按新词优先复习)
-    let query = supabase
+    const query = supabase
       .from('vocab_entries')
       .select('*', { count: 'exact' })
       .eq('user_id', user.id)
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       .order('srs_due', { ascending: true, nullsFirst: true })
       .range(offset, offset + limit - 1);
 
-    let { data, error, count } = await query;
+    const { data, error, count } = await query;
 
     // 若 srs_due 列不存在，则降级为按 created_at 查询
     // Postgres 错误码 42703: undefined_column

@@ -44,7 +44,7 @@ export const SimpleAnalysisDisplay = ({
     const matchRatio = cleanSentence.length > 0 ? matchedWords.length / cleanSentence.length : 0;
 
     let status: 'correct' | 'partial' | 'missing';
-    let issues: string[] = [];
+    const issues: string[] = [];
 
     if (matchRatio >= 0.9) {
       status = 'correct';

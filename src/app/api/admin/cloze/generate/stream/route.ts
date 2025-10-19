@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   // Prepare provider request
   let url = '';
   let headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  let body: any = {
+  const body: any = {
     model:
       model ||
       (provider === 'openrouter'

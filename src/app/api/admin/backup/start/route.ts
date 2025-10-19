@@ -853,7 +853,7 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
     }
 
     let processedBuckets = 0;
-    let bucketResults = [];
+    const bucketResults = [];
 
     for (const bucketChunk of bucketChunks) {
       // 并行处理存储桶

@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     skipped: 0,
   };
   const perDifficulty: Record<string, any> = {};
-  let usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+  const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
   (items || []).forEach((it: any) => {
     counts[it.status] = (counts[it.status] || 0) + 1;

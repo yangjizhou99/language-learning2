@@ -344,7 +344,8 @@ export async function checkUserAIPermissions(
     }
 
     // 检查AI功能是否启用 - 只有明确设置为true才允许
-    if (permissions.ai_enabled !== true) {
+    const aiEnabled = permissions.ai_enabled || permissions.custom_restrictions?.ai_enabled;
+    if (aiEnabled !== true) {
       return {
         allowed: false,
         reason: 'AI功能未启用，请联系管理员开启',
@@ -353,7 +354,7 @@ export async function checkUserAIPermissions(
     }
 
     // 检查API密钥配置（如果字段存在）
-    const apiKeys = permissions.api_keys || {};
+    const apiKeys = permissions.api_keys || permissions.custom_restrictions?.api_keys || {};
     if (provider === 'openrouter' && !apiKeys.openrouter && !process.env.OPENROUTER_API_KEY) {
       return {
         allowed: false,

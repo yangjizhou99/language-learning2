@@ -1,6 +1,6 @@
-## 语言学习应用（Next.js 15 + App Router）
+## AI发音评测系统（Next.js 15 + App Router）
 
-本项目是基于 Next.js 的语言学习平台，集成 Supabase、AI 文本与语音能力（OpenRouter、OpenAI、DeepSeek、Google TTS、讯飞 TTS），并包含完整的管理后台与实践练习页面。
+本项目是基于 Next.js 的多语言发音评测平台，集成 Supabase、Azure Speech Service、AI 内容生成（DeepSeek）、智能推荐算法，支持中文、英文、日文三种语言的发音评测和个性化学习。
 
 ### 快速开始
 
@@ -32,7 +32,8 @@ npm run dev
 ### 环境变量
 请参考 `env.template` 并复制为 `.env.local`。关键项：
 - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
-- AI Keys: `OPENROUTER_API_KEY` 或 `OPENAI_API_KEY` 或 `DEEPSEEK_API_KEY`
+- Azure Speech: `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`
+- AI Keys: `DEEPSEEK_API_KEY` (用于内容生成)
 - 语音合成: Google TTS / 讯飞 TTS 相关密钥
 - 本地/云端数据库连接：`LOCAL_DB_URL`, `PROD_DB_URL`
 
@@ -42,10 +43,17 @@ npm run dev
 - 推荐使用 Vercel。根目录已提供 `vercel.json` 与 `next.config.ts`。
 - 在部署平台面板中配置与本地一致的环境变量后再部署。
 
+### 核心功能
+- **多语言发音评测**: 支持中文、英文、日文发音评测
+- **智能推荐系统**: 基于Set Cover算法和信息增益的个性化推荐
+- **个人画像**: 雷达图展示发音能力，等级分布分析
+- **AI内容生成**: 使用DeepSeek自动生成练习句子
+- **管理后台**: 完整的发音内容管理和数据统计
+
 ### 目录结构（节选）
-- `src/app`：App Router 页面与 API 路由（大量 `/api` 管理与练习接口）
-- `src/components`：通用 UI 与功能组件
-- `src/lib`：服务端/通用库（AI、TTS、数据库、缓存、权限等）
+- `src/app`：App Router 页面与 API 路由（发音评测、管理后台、个人画像）
+- `src/components`：UI 组件（雷达图、等级分布、录音组件等）
+- `src/lib`：核心库（发音评测、AI生成、推荐算法、统计分析）
 - `supabase`：数据库迁移与初始化脚本
 - `scripts`：性能测试与运维脚本
 - `docs`：📚 **项目文档中心** - 所有功能文档、指南和报告

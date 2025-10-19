@@ -173,7 +173,7 @@ export async function POST(req: NextRequest) {
         });
     };
 
-    let upRes = await doUpsert(false);
+    const upRes = await doUpsert(false);
     updateErr = upRes.error;
     if (updateErr && (updateErr as any)?.code === '42703') {
       const fbUp = await doUpsert(true);

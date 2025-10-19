@@ -1,0 +1,2564 @@
+{
+  "sentences": [
+    {
+      "sentence_id": 1,
+      "lang": "en-US",
+      "text": "Hello world.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.986Z"
+    },
+    {
+      "sentence_id": 2,
+      "lang": "en-US",
+      "text": "Good morning.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 3,
+      "lang": "en-US",
+      "text": "Thank you very much.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 4,
+      "lang": "en-US",
+      "text": "How are you today?",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 5,
+      "lang": "en-US",
+      "text": "Nice to meet you.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 6,
+      "lang": "en-US",
+      "text": "What is your name?",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 7,
+      "lang": "en-US",
+      "text": "Where are you from?",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 8,
+      "lang": "en-US",
+      "text": "I am fine, thank you.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 9,
+      "lang": "en-US",
+      "text": "Have a good day.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 10,
+      "lang": "en-US",
+      "text": "See you later.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 11,
+      "lang": "en-US",
+      "text": "Good night.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 12,
+      "lang": "en-US",
+      "text": "Excuse me, please.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 13,
+      "lang": "en-US",
+      "text": "I love you.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 14,
+      "lang": "en-US",
+      "text": "Happy birthday to you.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 15,
+      "lang": "en-US",
+      "text": "Welcome to our school.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 16,
+      "lang": "en-US",
+      "text": "This is my friend.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 17,
+      "lang": "en-US",
+      "text": "I like coffee.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 18,
+      "lang": "en-US",
+      "text": "The weather is nice.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 19,
+      "lang": "en-US",
+      "text": "I am happy today.",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 20,
+      "lang": "en-US",
+      "text": "Can you help me?",
+      "level": 1,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 21,
+      "lang": "en-US",
+      "text": "I go to school every day.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 22,
+      "lang": "en-US",
+      "text": "She works in a hospital.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 23,
+      "lang": "en-US",
+      "text": "We live in a big city.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 24,
+      "lang": "en-US",
+      "text": "The children play in the park.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 25,
+      "lang": "en-US",
+      "text": "My father drives a blue car.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 26,
+      "lang": "en-US",
+      "text": "The teacher explains the lesson clearly.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 27,
+      "lang": "en-US",
+      "text": "Students study hard for their exams.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 28,
+      "lang": "en-US",
+      "text": "The restaurant serves delicious food.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 29,
+      "lang": "en-US",
+      "text": "I enjoy reading books in the evening.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 30,
+      "lang": "en-US",
+      "text": "The movie was very interesting.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 31,
+      "lang": "en-US",
+      "text": "She speaks three languages fluently.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 32,
+      "lang": "en-US",
+      "text": "The computer helps me with my work.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 33,
+      "lang": "en-US",
+      "text": "Children learn new things quickly.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 34,
+      "lang": "en-US",
+      "text": "The doctor examines the patient carefully.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 35,
+      "lang": "en-US",
+      "text": "We celebrate Christmas with our family.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 36,
+      "lang": "en-US",
+      "text": "The library has many interesting books.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 37,
+      "lang": "en-US",
+      "text": "Students practice speaking English daily.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 38,
+      "lang": "en-US",
+      "text": "The weather forecast predicts rain tomorrow.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 39,
+      "lang": "en-US",
+      "text": "I prefer tea over coffee in the morning.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 40,
+      "lang": "en-US",
+      "text": "The museum displays ancient artifacts.",
+      "level": 2,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 41,
+      "lang": "en-US",
+      "text": "The scientific research demonstrates significant improvements in technology.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 42,
+      "lang": "en-US",
+      "text": "Environmental protection requires collective effort from all citizens.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 43,
+      "lang": "en-US",
+      "text": "Economic development depends on education and innovation.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 44,
+      "lang": "en-US",
+      "text": "The international conference discussed global climate change.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 45,
+      "lang": "en-US",
+      "text": "Modern medicine has revolutionized healthcare treatment methods.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 46,
+      "lang": "en-US",
+      "text": "Educational systems should adapt to technological advancements.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 47,
+      "lang": "en-US",
+      "text": "Cultural diversity enriches our understanding of different societies.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 48,
+      "lang": "en-US",
+      "text": "The government implements policies to support small businesses.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 49,
+      "lang": "en-US",
+      "text": "Research indicates that exercise improves mental health significantly.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 50,
+      "lang": "en-US",
+      "text": "Technological innovation transforms traditional industries rapidly.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 51,
+      "lang": "en-US",
+      "text": "Global communication networks connect people across continents instantly.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 52,
+      "lang": "en-US",
+      "text": "Educational institutions prepare students for future career challenges.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 53,
+      "lang": "en-US",
+      "text": "Environmental sustainability requires immediate action from governments.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 54,
+      "lang": "en-US",
+      "text": "Scientific discoveries advance our knowledge of the universe.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 55,
+      "lang": "en-US",
+      "text": "Economic globalization affects international trade relationships.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 56,
+      "lang": "en-US",
+      "text": "Cultural exchange programs promote understanding between nations.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 57,
+      "lang": "en-US",
+      "text": "Technological development creates new employment opportunities.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 58,
+      "lang": "en-US",
+      "text": "Healthcare systems must adapt to changing population demographics.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 59,
+      "lang": "en-US",
+      "text": "Educational technology enhances learning experiences for students.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 60,
+      "lang": "en-US",
+      "text": "Environmental awareness influences consumer purchasing decisions.",
+      "level": 3,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 61,
+      "lang": "en-US",
+      "text": "The comprehensive analysis of demographic trends reveals significant shifts in population distribution across metropolitan areas.",
+      "level": 4,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 62,
+      "lang": "en-US",
+      "text": "International collaboration in scientific research has accelerated the development of breakthrough technologies.",
+      "level": 4,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 63,
+      "lang": "en-US",
+      "text": "Environmental sustainability initiatives require coordinated efforts between governments, corporations, and communities.",
+      "level": 4,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 64,
+      "lang": "en-US",
+      "text": "The implementation of artificial intelligence systems transforms traditional business operations and decision-making processes.",
+      "level": 4,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 65,
+      "lang": "en-US",
+      "text": "Educational institutions worldwide are adapting their curricula to prepare students for an increasingly digital economy.",
+      "level": 4,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 66,
+      "lang": "en-US",
+      "text": "Global economic interdependence necessitates international cooperation in addressing financial market volatility.",
+      "level": 4,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 67,
+      "lang": "en-US",
+      "text": "The integration of renewable energy sources into national power grids represents a critical step toward carbon neutrality.",
+      "level": 4,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 68,
+      "lang": "en-US",
+      "text": "Cultural preservation efforts balance the maintenance of traditional practices with adaptation to modern societal changes.",
+      "level": 4,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 69,
+      "lang": "en-US",
+      "text": "Healthcare delivery systems must evolve to meet the challenges posed by aging populations and emerging diseases.",
+      "level": 4,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 70,
+      "lang": "en-US",
+      "text": "Technological innovation in communication has fundamentally altered the way humans interact and share information globally.",
+      "level": 4,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 71,
+      "lang": "en-US",
+      "text": "The interdisciplinary approach to addressing climate change encompasses scientific research, economic policy development, and social behavioral modification.",
+      "level": 5,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 72,
+      "lang": "en-US",
+      "text": "Contemporary educational paradigms emphasize critical thinking skills and collaborative problem-solving capabilities over traditional rote memorization.",
+      "level": 5,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 73,
+      "lang": "en-US",
+      "text": "The exponential growth of artificial intelligence applications necessitates comprehensive ethical frameworks and regulatory oversight mechanisms.",
+      "level": 5,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 74,
+      "lang": "en-US",
+      "text": "Global health security requires international cooperation in disease surveillance, vaccine development, and healthcare infrastructure strengthening.",
+      "level": 5,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 75,
+      "lang": "en-US",
+      "text": "The digital transformation of traditional industries demands substantial investment in workforce retraining and technological infrastructure modernization.",
+      "level": 5,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 76,
+      "lang": "en-US",
+      "text": "Sustainable development goals require balancing economic growth with environmental protection and social equity considerations.",
+      "level": 5,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 77,
+      "lang": "en-US",
+      "text": "The evolution of communication technologies has fundamentally reshaped human interaction patterns and information consumption behaviors.",
+      "level": 5,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 78,
+      "lang": "en-US",
+      "text": "International trade relationships are increasingly influenced by geopolitical considerations and technological competitiveness factors.",
+      "level": 5,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 79,
+      "lang": "en-US",
+      "text": "The integration of renewable energy systems into existing infrastructure requires sophisticated engineering solutions and policy coordination.",
+      "level": 5,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    },
+    {
+      "sentence_id": 80,
+      "lang": "en-US",
+      "text": "Cultural globalization presents both opportunities for cross-cultural understanding and challenges to local identity preservation.",
+      "level": 5,
+      "domain_tags": [
+        "script-generated"
+      ],
+      "created_at": "2025-10-16T13:47:31.988Z"
+    }
+  ],
+  "sentenceUnits": [
+    {
+      "sentence_id": 1,
+      "unit_id": 1,
+      "count": 1
+    },
+    {
+      "sentence_id": 1,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 1,
+      "unit_id": 3,
+      "count": 2
+    },
+    {
+      "sentence_id": 1,
+      "unit_id": 4,
+      "count": 1
+    },
+    {
+      "sentence_id": 1,
+      "unit_id": 5,
+      "count": 1
+    },
+    {
+      "sentence_id": 1,
+      "unit_id": 6,
+      "count": 1
+    },
+    {
+      "sentence_id": 1,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 1,
+      "unit_id": 8,
+      "count": 1
+    },
+    {
+      "sentence_id": 2,
+      "unit_id": 9,
+      "count": 1
+    },
+    {
+      "sentence_id": 2,
+      "unit_id": 10,
+      "count": 1
+    },
+    {
+      "sentence_id": 2,
+      "unit_id": 8,
+      "count": 1
+    },
+    {
+      "sentence_id": 2,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 2,
+      "unit_id": 12,
+      "count": 1
+    },
+    {
+      "sentence_id": 2,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 2,
+      "unit_id": 13,
+      "count": 1
+    },
+    {
+      "sentence_id": 2,
+      "unit_id": 14,
+      "count": 1
+    },
+    {
+      "sentence_id": 2,
+      "unit_id": 15,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 16,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 17,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 15,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 18,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 21,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 22,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 24,
+      "count": 1
+    },
+    {
+      "sentence_id": 3,
+      "unit_id": 25,
+      "count": 1
+    },
+    {
+      "sentence_id": 4,
+      "unit_id": 1,
+      "count": 1
+    },
+    {
+      "sentence_id": 4,
+      "unit_id": 26,
+      "count": 1
+    },
+    {
+      "sentence_id": 4,
+      "unit_id": 27,
+      "count": 1
+    },
+    {
+      "sentence_id": 4,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 4,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 4,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 4,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 4,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 4,
+      "unit_id": 8,
+      "count": 1
+    },
+    {
+      "sentence_id": 4,
+      "unit_id": 28,
+      "count": 1
+    },
+    {
+      "sentence_id": 5,
+      "unit_id": 13,
+      "count": 1
+    },
+    {
+      "sentence_id": 5,
+      "unit_id": 35,
+      "count": 1
+    },
+    {
+      "sentence_id": 5,
+      "unit_id": 29,
+      "count": 1
+    },
+    {
+      "sentence_id": 5,
+      "unit_id": 30,
+      "count": 2
+    },
+    {
+      "sentence_id": 5,
+      "unit_id": 20,
+      "count": 2
+    },
+    {
+      "sentence_id": 5,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 5,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 5,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 5,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 24,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 14,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 33,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 12,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 13,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 28,
+      "count": 1
+    },
+    {
+      "sentence_id": 6,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 7,
+      "unit_id": 5,
+      "count": 1
+    },
+    {
+      "sentence_id": 7,
+      "unit_id": 22,
+      "count": 1
+    },
+    {
+      "sentence_id": 7,
+      "unit_id": 7,
+      "count": 3
+    },
+    {
+      "sentence_id": 7,
+      "unit_id": 27,
+      "count": 1
+    },
+    {
+      "sentence_id": 7,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 7,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 7,
+      "unit_id": 31,
+      "count": 1
+    },
+    {
+      "sentence_id": 7,
+      "unit_id": 24,
+      "count": 1
+    },
+    {
+      "sentence_id": 7,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 8,
+      "unit_id": 31,
+      "count": 1
+    },
+    {
+      "sentence_id": 8,
+      "unit_id": 35,
+      "count": 1
+    },
+    {
+      "sentence_id": 8,
+      "unit_id": 13,
+      "count": 1
+    },
+    {
+      "sentence_id": 8,
+      "unit_id": 16,
+      "count": 1
+    },
+    {
+      "sentence_id": 8,
+      "unit_id": 17,
+      "count": 1
+    },
+    {
+      "sentence_id": 8,
+      "unit_id": 15,
+      "count": 1
+    },
+    {
+      "sentence_id": 8,
+      "unit_id": 18,
+      "count": 1
+    },
+    {
+      "sentence_id": 8,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 8,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 9,
+      "unit_id": 1,
+      "count": 1
+    },
+    {
+      "sentence_id": 9,
+      "unit_id": 17,
+      "count": 1
+    },
+    {
+      "sentence_id": 9,
+      "unit_id": 21,
+      "count": 1
+    },
+    {
+      "sentence_id": 9,
+      "unit_id": 9,
+      "count": 1
+    },
+    {
+      "sentence_id": 9,
+      "unit_id": 10,
+      "count": 1
+    },
+    {
+      "sentence_id": 9,
+      "unit_id": 8,
+      "count": 2
+    },
+    {
+      "sentence_id": 9,
+      "unit_id": 28,
+      "count": 1
+    },
+    {
+      "sentence_id": 10,
+      "unit_id": 29,
+      "count": 1
+    },
+    {
+      "sentence_id": 10,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 10,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 10,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 10,
+      "unit_id": 3,
+      "count": 1
+    },
+    {
+      "sentence_id": 10,
+      "unit_id": 28,
+      "count": 1
+    },
+    {
+      "sentence_id": 10,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 10,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 10,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 11,
+      "unit_id": 9,
+      "count": 1
+    },
+    {
+      "sentence_id": 11,
+      "unit_id": 10,
+      "count": 1
+    },
+    {
+      "sentence_id": 11,
+      "unit_id": 8,
+      "count": 1
+    },
+    {
+      "sentence_id": 11,
+      "unit_id": 13,
+      "count": 1
+    },
+    {
+      "sentence_id": 11,
+      "unit_id": 35,
+      "count": 1
+    },
+    {
+      "sentence_id": 11,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 12,
+      "unit_id": 14,
+      "count": 1
+    },
+    {
+      "sentence_id": 12,
+      "unit_id": 18,
+      "count": 2
+    },
+    {
+      "sentence_id": 12,
+      "unit_id": 29,
+      "count": 1
+    },
+    {
+      "sentence_id": 12,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 12,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 12,
+      "unit_id": 33,
+      "count": 2
+    },
+    {
+      "sentence_id": 12,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 12,
+      "unit_id": 23,
+      "count": 2
+    },
+    {
+      "sentence_id": 12,
+      "unit_id": 32,
+      "count": 1
+    },
+    {
+      "sentence_id": 12,
+      "unit_id": 3,
+      "count": 1
+    },
+    {
+      "sentence_id": 13,
+      "unit_id": 3,
+      "count": 1
+    },
+    {
+      "sentence_id": 13,
+      "unit_id": 24,
+      "count": 1
+    },
+    {
+      "sentence_id": 13,
+      "unit_id": 21,
+      "count": 1
+    },
+    {
+      "sentence_id": 13,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 13,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 1,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 17,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 32,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 36,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 6,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 16,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 8,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 28,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 20,
+      "count": 2
+    },
+    {
+      "sentence_id": 14,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 5,
+      "count": 1
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 22,
+      "count": 1
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 3,
+      "count": 2
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 18,
+      "count": 2
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 20,
+      "count": 2
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 26,
+      "count": 1
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 15,
+      "unit_id": 29,
+      "count": 1
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 14,
+      "count": 2
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 29,
+      "count": 1
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 33,
+      "count": 1
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 35,
+      "count": 1
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 31,
+      "count": 1
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 22,
+      "count": 1
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 13,
+      "count": 1
+    },
+    {
+      "sentence_id": 16,
+      "unit_id": 8,
+      "count": 1
+    },
+    {
+      "sentence_id": 17,
+      "unit_id": 3,
+      "count": 1
+    },
+    {
+      "sentence_id": 17,
+      "unit_id": 35,
+      "count": 1
+    },
+    {
+      "sentence_id": 17,
+      "unit_id": 18,
+      "count": 2
+    },
+    {
+      "sentence_id": 17,
+      "unit_id": 12,
+      "count": 1
+    },
+    {
+      "sentence_id": 17,
+      "unit_id": 31,
+      "count": 1
+    },
+    {
+      "sentence_id": 17,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 18,
+      "unit_id": 34,
+      "count": 2
+    },
+    {
+      "sentence_id": 18,
+      "unit_id": 2,
+      "count": 2
+    },
+    {
+      "sentence_id": 18,
+      "unit_id": 5,
+      "count": 1
+    },
+    {
+      "sentence_id": 18,
+      "unit_id": 22,
+      "count": 1
+    },
+    {
+      "sentence_id": 18,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 18,
+      "unit_id": 14,
+      "count": 1
+    },
+    {
+      "sentence_id": 18,
+      "unit_id": 33,
+      "count": 1
+    },
+    {
+      "sentence_id": 18,
+      "unit_id": 13,
+      "count": 1
+    },
+    {
+      "sentence_id": 18,
+      "unit_id": 35,
+      "count": 1
+    },
+    {
+      "sentence_id": 18,
+      "unit_id": 29,
+      "count": 1
+    },
+    {
+      "sentence_id": 19,
+      "unit_id": 1,
+      "count": 1
+    },
+    {
+      "sentence_id": 19,
+      "unit_id": 17,
+      "count": 1
+    },
+    {
+      "sentence_id": 19,
+      "unit_id": 32,
+      "count": 1
+    },
+    {
+      "sentence_id": 19,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 19,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 19,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 19,
+      "unit_id": 8,
+      "count": 1
+    },
+    {
+      "sentence_id": 19,
+      "unit_id": 28,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 18,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 17,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 13,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 19,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 1,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 22,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 3,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 32,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 20,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 21,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 21,
+      "unit_id": 20,
+      "count": 2
+    },
+    {
+      "sentence_id": 21,
+      "unit_id": 29,
+      "count": 1
+    },
+    {
+      "sentence_id": 21,
+      "unit_id": 18,
+      "count": 1
+    },
+    {
+      "sentence_id": 21,
+      "unit_id": 3,
+      "count": 1
+    },
+    {
+      "sentence_id": 21,
+      "unit_id": 8,
+      "count": 1
+    },
+    {
+      "sentence_id": 21,
+      "unit_id": 28,
+      "count": 1
+    },
+    {
+      "sentence_id": 24,
+      "unit_id": 34,
+      "count": 2
+    },
+    {
+      "sentence_id": 24,
+      "unit_id": 2,
+      "count": 2
+    },
+    {
+      "sentence_id": 25,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 25,
+      "unit_id": 35,
+      "count": 1
+    },
+    {
+      "sentence_id": 26,
+      "unit_id": 34,
+      "count": 2
+    },
+    {
+      "sentence_id": 26,
+      "unit_id": 2,
+      "count": 2
+    },
+    {
+      "sentence_id": 28,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 28,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 29,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 29,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 30,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 30,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 30,
+      "unit_id": 21,
+      "count": 1
+    },
+    {
+      "sentence_id": 30,
+      "unit_id": 22,
+      "count": 1
+    },
+    {
+      "sentence_id": 30,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 30,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 32,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 32,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 32,
+      "unit_id": 11,
+      "count": 2
+    },
+    {
+      "sentence_id": 32,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 32,
+      "unit_id": 35,
+      "count": 1
+    },
+    {
+      "sentence_id": 34,
+      "unit_id": 34,
+      "count": 2
+    },
+    {
+      "sentence_id": 34,
+      "unit_id": 2,
+      "count": 2
+    },
+    {
+      "sentence_id": 35,
+      "unit_id": 26,
+      "count": 1
+    },
+    {
+      "sentence_id": 35,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 36,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 36,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 38,
+      "unit_id": 34,
+      "count": 2
+    },
+    {
+      "sentence_id": 38,
+      "unit_id": 2,
+      "count": 2
+    },
+    {
+      "sentence_id": 38,
+      "unit_id": 5,
+      "count": 1
+    },
+    {
+      "sentence_id": 38,
+      "unit_id": 22,
+      "count": 1
+    },
+    {
+      "sentence_id": 38,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 18,
+      "count": 1
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 12,
+      "count": 2
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 31,
+      "count": 1
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 13,
+      "count": 1
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 14,
+      "count": 1
+    },
+    {
+      "sentence_id": 39,
+      "unit_id": 15,
+      "count": 1
+    },
+    {
+      "sentence_id": 40,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 40,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 41,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 41,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 42,
+      "unit_id": 31,
+      "count": 1
+    },
+    {
+      "sentence_id": 42,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 42,
+      "unit_id": 24,
+      "count": 1
+    },
+    {
+      "sentence_id": 42,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 44,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 44,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 46,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 46,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 47,
+      "unit_id": 26,
+      "count": 1
+    },
+    {
+      "sentence_id": 47,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 48,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 48,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 48,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 48,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 53,
+      "unit_id": 31,
+      "count": 1
+    },
+    {
+      "sentence_id": 53,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 53,
+      "unit_id": 24,
+      "count": 1
+    },
+    {
+      "sentence_id": 53,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 54,
+      "unit_id": 26,
+      "count": 1
+    },
+    {
+      "sentence_id": 54,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 54,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 54,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 58,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 58,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 61,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 61,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 62,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 62,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 64,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 64,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 65,
+      "unit_id": 27,
+      "count": 1
+    },
+    {
+      "sentence_id": 65,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 65,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 65,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 67,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 67,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 68,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 68,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 68,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 68,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 69,
+      "unit_id": 30,
+      "count": 2
+    },
+    {
+      "sentence_id": 69,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 69,
+      "unit_id": 11,
+      "count": 1
+    },
+    {
+      "sentence_id": 69,
+      "unit_id": 23,
+      "count": 1
+    },
+    {
+      "sentence_id": 69,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 69,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 70,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 70,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 71,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 71,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 71,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 71,
+      "unit_id": 20,
+      "count": 1
+    },
+    {
+      "sentence_id": 73,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 73,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 75,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 75,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 77,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 77,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 78,
+      "unit_id": 27,
+      "count": 1
+    },
+    {
+      "sentence_id": 78,
+      "unit_id": 7,
+      "count": 1
+    },
+    {
+      "sentence_id": 79,
+      "unit_id": 34,
+      "count": 1
+    },
+    {
+      "sentence_id": 79,
+      "unit_id": 2,
+      "count": 1
+    },
+    {
+      "sentence_id": 80,
+      "unit_id": 30,
+      "count": 1
+    },
+    {
+      "sentence_id": 80,
+      "unit_id": 20,
+      "count": 1
+    }
+  ],
+  "wordPhonemeMap": {
+    "hello": [
+      "h",
+      "ə",
+      "l",
+      "oʊ"
+    ],
+    "world": [
+      "w",
+      "ɜ",
+      "r",
+      "l",
+      "d"
+    ],
+    "good": [
+      "g",
+      "ʊ",
+      "d"
+    ],
+    "morning": [
+      "m",
+      "ɔ",
+      "r",
+      "n",
+      "ɪ",
+      "ŋ"
+    ],
+    "thank": [
+      "θ",
+      "æ",
+      "ŋ",
+      "k"
+    ],
+    "you": [
+      "j",
+      "u"
+    ],
+    "very": [
+      "v",
+      "ɛ",
+      "r",
+      "i"
+    ],
+    "much": [
+      "m",
+      "ʌ",
+      "tʃ"
+    ],
+    "how": [
+      "h",
+      "aʊ"
+    ],
+    "are": [
+      "ɑ",
+      "r"
+    ],
+    "today": [
+      "t",
+      "ə",
+      "d",
+      "eɪ"
+    ],
+    "nice": [
+      "n",
+      "aɪ",
+      "s"
+    ],
+    "to": [
+      "t",
+      "u"
+    ],
+    "meet": [
+      "m",
+      "i",
+      "t"
+    ],
+    "what": [
+      "w",
+      "ʌ",
+      "t"
+    ],
+    "is": [
+      "ɪ",
+      "z"
+    ],
+    "your": [
+      "j",
+      "ɔ",
+      "r"
+    ],
+    "name": [
+      "n",
+      "eɪ",
+      "m"
+    ],
+    "where": [
+      "w",
+      "ɛ",
+      "r"
+    ],
+    "from": [
+      "f",
+      "r",
+      "ʌ",
+      "m"
+    ],
+    "fine": [
+      "f",
+      "aɪ",
+      "n"
+    ],
+    "have": [
+      "h",
+      "æ",
+      "v"
+    ],
+    "day": [
+      "d",
+      "eɪ"
+    ],
+    "see": [
+      "s",
+      "i"
+    ],
+    "later": [
+      "l",
+      "eɪ",
+      "t",
+      "ə",
+      "r"
+    ],
+    "night": [
+      "n",
+      "aɪ",
+      "t"
+    ],
+    "excuse": [
+      "ɪ",
+      "k",
+      "s",
+      "k",
+      "j",
+      "u",
+      "z"
+    ],
+    "please": [
+      "p",
+      "l",
+      "i",
+      "z"
+    ],
+    "love": [
+      "l",
+      "ʌ",
+      "v"
+    ],
+    "happy": [
+      "h",
+      "æ",
+      "p",
+      "i"
+    ],
+    "birthday": [
+      "b",
+      "ɜ",
+      "r",
+      "θ",
+      "d",
+      "eɪ"
+    ],
+    "welcome": [
+      "w",
+      "ɛ",
+      "l",
+      "k",
+      "ə",
+      "m"
+    ],
+    "our": [
+      "aʊ",
+      "r"
+    ],
+    "school": [
+      "s",
+      "k",
+      "u",
+      "l"
+    ],
+    "this": [
+      "ð",
+      "ɪ",
+      "s"
+    ],
+    "my": [
+      "m",
+      "aɪ"
+    ],
+    "friend": [
+      "f",
+      "r",
+      "ɛ",
+      "n",
+      "d"
+    ],
+    "like": [
+      "l",
+      "aɪ",
+      "k"
+    ],
+    "coffee": [
+      "k",
+      "ɔ",
+      "f",
+      "i"
+    ],
+    "the": [
+      "ð",
+      "ə"
+    ],
+    "weather": [
+      "w",
+      "ɛ",
+      "ð",
+      "ə",
+      "r"
+    ],
+    "can": [
+      "k",
+      "æ",
+      "n"
+    ],
+    "help": [
+      "h",
+      "ɛ",
+      "l",
+      "p"
+    ],
+    "me": [
+      "m",
+      "i"
+    ]
+  },
+  "generated_at": "2025-10-16T13:47:31.991Z",
+  "stats": {
+    "total_sentences": 80,
+    "total_sentence_units": 302,
+    "unique_words": 44
+  }
+}

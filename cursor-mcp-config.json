@@ -1,0 +1,14 @@
+{
+    "mcpServers": {
+      "playwright": {
+        "command": "npx",
+        "args": ["@playwright/mcp@latest"],
+        "cwd": "D:\\gptWebapp\\new-lan-learning\\language-learning2"
+      },
+      "postgres": {
+        "command": "npx",
+        "args": ["@ahmetkca/mcp-server-postgres", "--connection-string", "postgres://postgres:postgres@127.0.0.1:54340/postgres"],
+        "cwd": "D:\\gptWebapp\\new-lan-learning\\language-learning2"
+      }
+    }
+  }

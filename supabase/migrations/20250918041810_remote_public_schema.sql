@@ -201,6 +201,23 @@ $$;
 ALTER FUNCTION "public"."shadowing_items_audio_sync"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."trigger_set_timestamp"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_set_timestamp"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_set_timestamp"() IS '自动更新 updated_at 字段';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."update_api_usage_logs_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public'
@@ -743,6 +760,54 @@ CREATE TABLE IF NOT EXISTS "public"."default_user_permissions" (
 ALTER TABLE "public"."default_user_permissions" OWNER TO "postgres";
 
 
+-- en_phoneme_units table already exists from previous migration
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."unit_catalog" (
+    "unit_id" bigint NOT NULL,
+    "lang" "text" NOT NULL,
+    "symbol" "text" NOT NULL,
+    "unit_type" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "unit_catalog_unit_type_check" CHECK (("unit_type" = ANY (ARRAY['phoneme'::"text", 'syllable'::"text", 'custom'::"text"])))
+);
+
+
+ALTER TABLE "public"."unit_catalog" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."unit_catalog" IS '发音单元规范表：存储各语言的音素/音节（统一用带空格格式）';
+
+
+
+CREATE OR REPLACE VIEW "public"."english_phonemes_view" AS
+ SELECT "uc"."unit_id",
+    "uc"."symbol",
+    "epu"."category",
+    "epu"."subcategory",
+    "epu"."examples",
+    "epu"."description",
+    "uc"."created_at"
+   FROM ("public"."unit_catalog" "uc"
+     LEFT JOIN "public"."en_phoneme_units" "epu" ON (("uc"."symbol" = "epu"."symbol")))
+  WHERE (("uc"."lang" = 'en-US'::"text") AND ("uc"."unit_type" = 'phoneme'::"text"))
+  ORDER BY
+        CASE "epu"."category"
+            WHEN 'vowel'::"text" THEN 1
+            WHEN 'diphthong'::"text" THEN 2
+            WHEN 'consonant'::"text" THEN 3
+            ELSE 4
+        END, "uc"."unit_id";
+
+
+ALTER VIEW "public"."english_phonemes_view" OWNER TO "postgres";
+
+
+COMMENT ON VIEW "public"."english_phonemes_view" IS '英语音素视图：合并unit_catalog和en_phoneme_units的完整音素信息';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."glossary" (
     "id" "uuid" NOT NULL,
     "term" "text" NOT NULL,
@@ -787,6 +852,82 @@ CREATE TABLE IF NOT EXISTS "public"."invitation_uses" (
 ALTER TABLE "public"."invitation_uses" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."ja_phoneme_units" (
+    "symbol" "text" NOT NULL,
+    "category" "text" NOT NULL,
+    "subcategory" "text",
+    "examples" "text"[],
+    "description" "text",
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."ja_phoneme_units" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."ja_phoneme_units" IS '日语音素辅助表：用于分类和描述';
+
+
+
+CREATE OR REPLACE VIEW "public"."japanese_phonemes_view" AS
+ SELECT "uc"."unit_id",
+    "uc"."symbol",
+    "jpu"."category",
+    "jpu"."subcategory",
+    "jpu"."examples",
+    "jpu"."description"
+   FROM ("public"."unit_catalog" "uc"
+     JOIN "public"."ja_phoneme_units" "jpu" ON (("uc"."symbol" = "jpu"."symbol")))
+  WHERE ("uc"."lang" = 'ja-JP'::"text")
+  ORDER BY "jpu"."category", "jpu"."subcategory", "uc"."symbol";
+
+
+ALTER VIEW "public"."japanese_phonemes_view" OWNER TO "postgres";
+
+
+COMMENT ON VIEW "public"."japanese_phonemes_view" IS '日语音素视图：用于验证和查询';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."minimal_pairs" (
+    "pair_id" bigint NOT NULL,
+    "lang" "text" NOT NULL,
+    "unit_id_1" bigint,
+    "unit_id_2" bigint,
+    "word_1" "text" NOT NULL,
+    "word_2" "text" NOT NULL,
+    "pinyin_1" "text",
+    "pinyin_2" "text",
+    "difficulty" integer DEFAULT 1,
+    "category" "text",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "minimal_pairs_difficulty_check" CHECK ((("difficulty" >= 1) AND ("difficulty" <= 5)))
+);
+
+
+ALTER TABLE "public"."minimal_pairs" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."minimal_pairs" IS '最小对立词表：用于二次验证和针对性训练';
+
+
+
+CREATE SEQUENCE IF NOT EXISTS "public"."minimal_pairs_pair_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE "public"."minimal_pairs_pair_id_seq" OWNER TO "postgres";
+
+
+ALTER SEQUENCE "public"."minimal_pairs_pair_id_seq" OWNED BY "public"."minimal_pairs"."pair_id";
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."phrases" (
     "id" "uuid" NOT NULL,
     "tag" "text",
@@ -821,6 +962,67 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."pron_sentences" (
+    "sentence_id" bigint NOT NULL,
+    "lang" "text" NOT NULL,
+    "text" "text" NOT NULL,
+    "level" integer DEFAULT 1,
+    "domain_tags" "text"[] DEFAULT '{}'::"text"[],
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "pron_sentences_level_check" CHECK ((("level" >= 1) AND ("level" <= 5)))
+);
+
+
+ALTER TABLE "public"."pron_sentences" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."pron_sentences" IS '评测句子库';
+
+
+
+CREATE SEQUENCE IF NOT EXISTS "public"."pron_sentences_sentence_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE "public"."pron_sentences_sentence_id_seq" OWNER TO "postgres";
+
+
+ALTER SEQUENCE "public"."pron_sentences_sentence_id_seq" OWNED BY "public"."pron_sentences"."sentence_id";
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."pronunciation_test_runs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "admin_id" "uuid" NOT NULL,
+    "mode" "text" NOT NULL,
+    "locale" "text" NOT NULL,
+    "reference_text" "text",
+    "session_label" "text",
+    "recognized_text" "text",
+    "audio_duration_ms" integer,
+    "audio_storage_path" "text",
+    "overall_score" numeric,
+    "accuracy_score" numeric,
+    "fluency_score" numeric,
+    "completeness_score" numeric,
+    "prosody_score" numeric,
+    "azure_detail" "jsonb",
+    "azure_raw" "jsonb",
+    "extra_metrics" "jsonb",
+    "notes" "text",
+    CONSTRAINT "pronunciation_test_runs_mode_check" CHECK (("mode" = ANY (ARRAY['batch'::"text", 'stream'::"text"])))
+);
+
+
+ALTER TABLE "public"."pronunciation_test_runs" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."registration_config" (
     "id" "text" NOT NULL,
     "allow_direct_registration" boolean NOT NULL,
@@ -836,6 +1038,20 @@ CREATE TABLE IF NOT EXISTS "public"."registration_config" (
 
 
 ALTER TABLE "public"."registration_config" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."sentence_units" (
+    "sentence_id" bigint NOT NULL,
+    "unit_id" bigint NOT NULL,
+    "count" integer DEFAULT 1
+);
+
+
+ALTER TABLE "public"."sentence_units" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."sentence_units" IS '句子包含的Unit及出现次数（自动生成）';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."sessions" (
@@ -1017,6 +1233,46 @@ CREATE TABLE IF NOT EXISTS "public"."study_cards" (
 ALTER TABLE "public"."study_cards" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."training_content" (
+    "content_id" bigint NOT NULL,
+    "unit_id" bigint NOT NULL,
+    "lang" "text" NOT NULL,
+    "articulation_points" "text",
+    "common_errors" "text",
+    "tips" "text",
+    "ipa_symbol" "text",
+    "practice_words" "text"[],
+    "practice_phrases" "text"[],
+    "audio_url" "text",
+    "difficulty" integer DEFAULT 2,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "training_content_difficulty_check" CHECK ((("difficulty" >= 1) AND ("difficulty" <= 5)))
+);
+
+
+ALTER TABLE "public"."training_content" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."training_content" IS '训练内容表：发音要领、常见错误、练习材料';
+
+
+
+CREATE SEQUENCE IF NOT EXISTS "public"."training_content_content_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE "public"."training_content_content_id_seq" OWNER TO "postgres";
+
+
+ALTER SEQUENCE "public"."training_content_content_id_seq" OWNED BY "public"."training_content"."content_id";
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."tts_assets" (
     "id" "uuid" NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -1033,6 +1289,36 @@ CREATE TABLE IF NOT EXISTS "public"."tts_assets" (
 
 
 ALTER TABLE "public"."tts_assets" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."unit_alias" (
+    "lang" "text" NOT NULL,
+    "alias" "text" NOT NULL,
+    "unit_id" bigint NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."unit_alias" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."unit_alias" IS '音素别名映射表：仅用于真正的别名（如 lü ↔ lv）';
+
+
+
+CREATE SEQUENCE IF NOT EXISTS "public"."unit_catalog_unit_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE "public"."unit_catalog_unit_id_seq" OWNER TO "postgres";
+
+
+ALTER SEQUENCE "public"."unit_catalog_unit_id_seq" OWNED BY "public"."unit_catalog"."unit_id";
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."user_api_limits" (
@@ -1073,6 +1359,122 @@ CREATE TABLE IF NOT EXISTS "public"."user_permissions" (
 
 
 ALTER TABLE "public"."user_permissions" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_pron_attempts" (
+    "attempt_id" bigint NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "lang" "text" NOT NULL,
+    "sentence_id" bigint,
+    "azure_raw_json" "jsonb",
+    "accuracy" numeric(5,2),
+    "fluency" numeric(5,2),
+    "completeness" numeric(5,2),
+    "prosody" numeric(5,2),
+    "pron_score" numeric(5,2),
+    "valid_flag" boolean DEFAULT true,
+    "audio_path" "text",
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."user_pron_attempts" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_pron_attempts" IS '用户评测记录';
+
+
+
+CREATE SEQUENCE IF NOT EXISTS "public"."user_pron_attempts_attempt_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE "public"."user_pron_attempts_attempt_id_seq" OWNER TO "postgres";
+
+
+ALTER SEQUENCE "public"."user_pron_attempts_attempt_id_seq" OWNED BY "public"."user_pron_attempts"."attempt_id";
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_pron_verifications" (
+    "verification_id" bigint NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "unit_id" bigint NOT NULL,
+    "lang" "text" NOT NULL,
+    "original_mean" numeric,
+    "original_count" integer,
+    "verification_mean" numeric,
+    "verification_count" integer,
+    "replaced" boolean DEFAULT false,
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."user_pron_verifications" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_pron_verifications" IS '二次验证历史记录';
+
+
+
+CREATE SEQUENCE IF NOT EXISTS "public"."user_pron_verifications_verification_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE "public"."user_pron_verifications_verification_id_seq" OWNER TO "postgres";
+
+
+ALTER SEQUENCE "public"."user_pron_verifications_verification_id_seq" OWNED BY "public"."user_pron_verifications"."verification_id";
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_sentence_progress" (
+    "user_id" "uuid" NOT NULL,
+    "sentence_id" bigint NOT NULL,
+    "status" "text" DEFAULT 'pending'::"text",
+    "attempts_count" integer DEFAULT 0,
+    "best_score" numeric(5,2),
+    "latest_score" numeric(5,2),
+    "first_attempt_at" timestamp with time zone,
+    "last_attempt_at" timestamp with time zone,
+    CONSTRAINT "user_sentence_progress_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'completed'::"text"])))
+);
+
+
+ALTER TABLE "public"."user_sentence_progress" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_sentence_progress" IS '用户句子练习进度';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_unit_stats" (
+    "user_id" "uuid" NOT NULL,
+    "lang" "text" NOT NULL,
+    "unit_id" bigint NOT NULL,
+    "n" integer DEFAULT 0,
+    "mean" numeric(5,2) DEFAULT 0,
+    "m2" numeric(12,4) DEFAULT 0,
+    "ci_low" numeric(5,2),
+    "ci_high" numeric(5,2),
+    "difficulty" numeric(5,2),
+    "last_updated" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."user_unit_stats" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_unit_stats" IS '用户Unit统计（Welford在线统计）';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."vocab_entries" (
@@ -1125,6 +1527,47 @@ CREATE TABLE IF NOT EXISTS "public"."voices" (
 ALTER TABLE "public"."voices" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."zh_pinyin_units" (
+    "symbol" "text" NOT NULL,
+    "shengmu" "text",
+    "yunmu" "text",
+    "tone" integer,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "zh_pinyin_units_tone_check" CHECK ((("tone" >= 1) AND ("tone" <= 5)))
+);
+
+
+ALTER TABLE "public"."zh_pinyin_units" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."zh_pinyin_units" IS '中文拼音辅助表：声母、韵母、声调';
+
+
+
+ALTER TABLE ONLY "public"."minimal_pairs" ALTER COLUMN "pair_id" SET DEFAULT "nextval"('"public"."minimal_pairs_pair_id_seq"'::"regclass");
+
+
+
+ALTER TABLE ONLY "public"."pron_sentences" ALTER COLUMN "sentence_id" SET DEFAULT "nextval"('"public"."pron_sentences_sentence_id_seq"'::"regclass");
+
+
+
+ALTER TABLE ONLY "public"."training_content" ALTER COLUMN "content_id" SET DEFAULT "nextval"('"public"."training_content_content_id_seq"'::"regclass");
+
+
+
+ALTER TABLE ONLY "public"."unit_catalog" ALTER COLUMN "unit_id" SET DEFAULT "nextval"('"public"."unit_catalog_unit_id_seq"'::"regclass");
+
+
+
+ALTER TABLE ONLY "public"."user_pron_attempts" ALTER COLUMN "attempt_id" SET DEFAULT "nextval"('"public"."user_pron_attempts_attempt_id_seq"'::"regclass");
+
+
+
+ALTER TABLE ONLY "public"."user_pron_verifications" ALTER COLUMN "verification_id" SET DEFAULT "nextval"('"public"."user_pron_verifications_verification_id_seq"'::"regclass");
+
+
+
 ALTER TABLE ONLY "public"."alignment_attempts"
     ADD CONSTRAINT "alignment_attempts_pkey" PRIMARY KEY ("id");
 
@@ -1175,8 +1618,37 @@ ALTER TABLE ONLY "public"."default_user_permissions"
 
 
 
+-- en_phoneme_units primary key already exists from previous migration
+
+
+
+ALTER TABLE ONLY "public"."ja_phoneme_units"
+    ADD CONSTRAINT "ja_phoneme_units_pkey" PRIMARY KEY ("symbol");
+
+
+
+ALTER TABLE ONLY "public"."minimal_pairs"
+    ADD CONSTRAINT "minimal_pairs_pkey" PRIMARY KEY ("pair_id");
+
+
+
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."pron_sentences"
+    ADD CONSTRAINT "pron_sentences_pkey" PRIMARY KEY ("sentence_id");
+
+
+
+ALTER TABLE ONLY "public"."pronunciation_test_runs"
+    ADD CONSTRAINT "pronunciation_test_runs_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."sentence_units"
+    ADD CONSTRAINT "sentence_units_pkey" PRIMARY KEY ("sentence_id", "unit_id");
 
 
 
@@ -1195,13 +1667,61 @@ ALTER TABLE ONLY "public"."shadowing_themes"
 
 
 
+ALTER TABLE ONLY "public"."training_content"
+    ADD CONSTRAINT "training_content_pkey" PRIMARY KEY ("content_id");
+
+
+
+ALTER TABLE ONLY "public"."training_content"
+    ADD CONSTRAINT "training_content_unit_id_lang_key" UNIQUE ("unit_id", "lang");
+
+
+
+ALTER TABLE ONLY "public"."unit_alias"
+    ADD CONSTRAINT "unit_alias_pkey" PRIMARY KEY ("lang", "alias");
+
+
+
+-- unit_catalog unique constraint already exists from previous migration
+
+
+
+-- unit_catalog primary key already exists from table definition
+
+
+
 ALTER TABLE ONLY "public"."user_permissions"
     ADD CONSTRAINT "user_permissions_user_id_key" UNIQUE ("user_id");
 
 
 
+ALTER TABLE ONLY "public"."user_pron_attempts"
+    ADD CONSTRAINT "user_pron_attempts_pkey" PRIMARY KEY ("attempt_id");
+
+
+
+ALTER TABLE ONLY "public"."user_pron_verifications"
+    ADD CONSTRAINT "user_pron_verifications_pkey" PRIMARY KEY ("verification_id");
+
+
+
+ALTER TABLE ONLY "public"."user_sentence_progress"
+    ADD CONSTRAINT "user_sentence_progress_pkey" PRIMARY KEY ("user_id", "sentence_id");
+
+
+
+ALTER TABLE ONLY "public"."user_unit_stats"
+    ADD CONSTRAINT "user_unit_stats_pkey" PRIMARY KEY ("user_id", "lang", "unit_id");
+
+
+
 ALTER TABLE ONLY "public"."vocab_entries"
     ADD CONSTRAINT "vocab_entries_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."zh_pinyin_units"
+    ADD CONSTRAINT "zh_pinyin_units_pkey" PRIMARY KEY ("symbol");
 
 
 
@@ -1253,11 +1773,135 @@ CREATE INDEX "idx_cloze_shadowing_items_published" ON "public"."cloze_shadowing_
 
 
 
+-- en_phoneme_units indexes already exist from previous migration
+
+
+
+CREATE INDEX "idx_ja_phoneme_units_category" ON "public"."ja_phoneme_units" USING "btree" ("category");
+
+
+
+CREATE INDEX "idx_ja_phoneme_units_subcategory" ON "public"."ja_phoneme_units" USING "btree" ("subcategory");
+
+
+
+CREATE INDEX "idx_minimal_pairs_category" ON "public"."minimal_pairs" USING "btree" ("category");
+
+
+
+CREATE INDEX "idx_minimal_pairs_lang" ON "public"."minimal_pairs" USING "btree" ("lang");
+
+
+
+CREATE INDEX "idx_minimal_pairs_unit1" ON "public"."minimal_pairs" USING "btree" ("unit_id_1");
+
+
+
+CREATE INDEX "idx_minimal_pairs_unit2" ON "public"."minimal_pairs" USING "btree" ("unit_id_2");
+
+
+
+CREATE INDEX "idx_pron_sentences_lang" ON "public"."pron_sentences" USING "btree" ("lang");
+
+
+
+CREATE INDEX "idx_pron_sentences_level" ON "public"."pron_sentences" USING "btree" ("level");
+
+
+
+CREATE INDEX "idx_sentence_units_sentence" ON "public"."sentence_units" USING "btree" ("sentence_id");
+
+
+
+CREATE INDEX "idx_sentence_units_unit" ON "public"."sentence_units" USING "btree" ("unit_id");
+
+
+
+CREATE INDEX "idx_training_content_lang" ON "public"."training_content" USING "btree" ("lang");
+
+
+
+CREATE INDEX "idx_training_content_unit" ON "public"."training_content" USING "btree" ("unit_id");
+
+
+
+CREATE INDEX "idx_unit_alias_unit_id" ON "public"."unit_alias" USING "btree" ("unit_id");
+
+
+
+-- idx_unit_catalog_en_us index already exists from previous migration
+
+
+
+-- idx_unit_catalog_lang index already exists from previous migration
+
+
+
+-- idx_unit_catalog_symbol index already exists from previous migration
+
+
+
+CREATE INDEX "idx_user_pron_attempts_created" ON "public"."user_pron_attempts" USING "btree" ("created_at");
+
+
+
+CREATE INDEX "idx_user_pron_attempts_sentence" ON "public"."user_pron_attempts" USING "btree" ("sentence_id");
+
+
+
+CREATE INDEX "idx_user_pron_attempts_user" ON "public"."user_pron_attempts" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_user_pron_attempts_user_sentence" ON "public"."user_pron_attempts" USING "btree" ("user_id", "sentence_id");
+
+
+
+CREATE INDEX "idx_user_pron_verifications_unit" ON "public"."user_pron_verifications" USING "btree" ("unit_id");
+
+
+
+CREATE INDEX "idx_user_pron_verifications_user" ON "public"."user_pron_verifications" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_user_sentence_progress_status" ON "public"."user_sentence_progress" USING "btree" ("status");
+
+
+
+CREATE INDEX "idx_user_sentence_progress_user" ON "public"."user_sentence_progress" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_user_sentence_progress_user_status" ON "public"."user_sentence_progress" USING "btree" ("user_id", "status");
+
+
+
+CREATE INDEX "idx_user_unit_stats_mean" ON "public"."user_unit_stats" USING "btree" ("mean");
+
+
+
+CREATE INDEX "idx_user_unit_stats_user_lang" ON "public"."user_unit_stats" USING "btree" ("user_id", "lang");
+
+
+
 CREATE INDEX "idx_vocab_entries_user_due" ON "public"."vocab_entries" USING "btree" ("user_id", "srs_due") WHERE ("status" <> 'archived'::"text");
 
 
 
+CREATE INDEX "pronunciation_test_runs_admin_idx" ON "public"."pronunciation_test_runs" USING "btree" ("admin_id");
+
+
+
+CREATE INDEX "pronunciation_test_runs_created_at_idx" ON "public"."pronunciation_test_runs" USING "btree" ("created_at" DESC);
+
+
+
 CREATE UNIQUE INDEX "user_api_limits_user_id_key" ON "public"."user_api_limits" USING "btree" ("user_id");
+
+
+
+CREATE OR REPLACE TRIGGER "set_timestamp_pron_sentences" BEFORE UPDATE ON "public"."pron_sentences" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_set_timestamp"();
 
 
 
@@ -1367,6 +2011,76 @@ ALTER TABLE ONLY "public"."cloze_shadowing_items"
 
 
 
+ALTER TABLE ONLY "public"."minimal_pairs"
+    ADD CONSTRAINT "minimal_pairs_unit_id_1_fkey" FOREIGN KEY ("unit_id_1") REFERENCES "public"."unit_catalog"("unit_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."minimal_pairs"
+    ADD CONSTRAINT "minimal_pairs_unit_id_2_fkey" FOREIGN KEY ("unit_id_2") REFERENCES "public"."unit_catalog"("unit_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."pronunciation_test_runs"
+    ADD CONSTRAINT "pronunciation_test_runs_admin_id_fkey" FOREIGN KEY ("admin_id") REFERENCES "public"."profiles"("id");
+
+
+
+ALTER TABLE ONLY "public"."sentence_units"
+    ADD CONSTRAINT "sentence_units_sentence_id_fkey" FOREIGN KEY ("sentence_id") REFERENCES "public"."pron_sentences"("sentence_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."sentence_units"
+    ADD CONSTRAINT "sentence_units_unit_id_fkey" FOREIGN KEY ("unit_id") REFERENCES "public"."unit_catalog"("unit_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."training_content"
+    ADD CONSTRAINT "training_content_unit_id_fkey" FOREIGN KEY ("unit_id") REFERENCES "public"."unit_catalog"("unit_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."unit_alias"
+    ADD CONSTRAINT "unit_alias_unit_id_fkey" FOREIGN KEY ("unit_id") REFERENCES "public"."unit_catalog"("unit_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_pron_attempts"
+    ADD CONSTRAINT "user_pron_attempts_sentence_id_fkey" FOREIGN KEY ("sentence_id") REFERENCES "public"."pron_sentences"("sentence_id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."user_pron_attempts"
+    ADD CONSTRAINT "user_pron_attempts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_pron_verifications"
+    ADD CONSTRAINT "user_pron_verifications_unit_id_fkey" FOREIGN KEY ("unit_id") REFERENCES "public"."unit_catalog"("unit_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_sentence_progress"
+    ADD CONSTRAINT "user_sentence_progress_sentence_id_fkey" FOREIGN KEY ("sentence_id") REFERENCES "public"."pron_sentences"("sentence_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_sentence_progress"
+    ADD CONSTRAINT "user_sentence_progress_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_unit_stats"
+    ADD CONSTRAINT "user_unit_stats_unit_id_fkey" FOREIGN KEY ("unit_id") REFERENCES "public"."unit_catalog"("unit_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_unit_stats"
+    ADD CONSTRAINT "user_unit_stats_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE "public"."alignment_attempts" ENABLE ROW LEVEL SECURITY;
 
 
@@ -1451,10 +2165,87 @@ CREATE POLICY "cloze_shadowing_items_service_write" ON "public"."cloze_shadowing
 ALTER TABLE "public"."default_user_permissions" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."pron_sentences" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "pron_sentences_read" ON "public"."pron_sentences" FOR SELECT USING (true);
+
+
+
+ALTER TABLE "public"."pronunciation_test_runs" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."sentence_units" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "sentence_units_read" ON "public"."sentence_units" FOR SELECT USING (true);
+
+
+
+ALTER TABLE "public"."training_content" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "training_content_select_all" ON "public"."training_content" FOR SELECT TO "authenticated" USING (true);
+
+
+
+ALTER TABLE "public"."unit_alias" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "unit_alias_read" ON "public"."unit_alias" FOR SELECT USING (true);
+
+
+
+ALTER TABLE "public"."unit_catalog" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "unit_catalog_read" ON "public"."unit_catalog" FOR SELECT USING (true);
+
+
+
 ALTER TABLE "public"."user_permissions" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "user_permissions_combined" ON "public"."user_permissions" TO "authenticated" USING ((( SELECT "public"."is_admin"() AS "is_admin") OR (( SELECT "auth"."uid"() AS "uid") = "user_id"))) WITH CHECK ((( SELECT "public"."is_admin"() AS "is_admin") OR (( SELECT "auth"."uid"() AS "uid") = "user_id")));
+
+
+
+ALTER TABLE "public"."user_pron_attempts" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_pron_attempts_own" ON "public"."user_pron_attempts" USING (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."user_pron_verifications" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_pron_verifications_insert_service" ON "public"."user_pron_verifications" FOR INSERT TO "service_role" WITH CHECK (true);
+
+
+
+CREATE POLICY "user_pron_verifications_select_own" ON "public"."user_pron_verifications" FOR SELECT TO "authenticated" USING (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."user_sentence_progress" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_sentence_progress_own" ON "public"."user_sentence_progress" USING (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."user_unit_stats" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_unit_stats_own" ON "public"."user_unit_stats" USING (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."zh_pinyin_units" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "zh_pinyin_units_read" ON "public"."zh_pinyin_units" FOR SELECT USING (true);
 
 
 
@@ -1516,6 +2307,12 @@ GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."shadowing_items_audio_sync"() TO "anon";
 GRANT ALL ON FUNCTION "public"."shadowing_items_audio_sync"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."shadowing_items_audio_sync"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_set_timestamp"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_set_timestamp"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_set_timestamp"() TO "service_role";
 
 
 
@@ -1681,6 +2478,22 @@ GRANT ALL ON TABLE "public"."default_user_permissions" TO "service_role";
 
 
 
+-- en_phoneme_units permissions already granted in previous migration
+
+
+
+GRANT ALL ON TABLE "public"."unit_catalog" TO "anon";
+GRANT ALL ON TABLE "public"."unit_catalog" TO "authenticated";
+GRANT ALL ON TABLE "public"."unit_catalog" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."english_phonemes_view" TO "anon";
+GRANT ALL ON TABLE "public"."english_phonemes_view" TO "authenticated";
+GRANT ALL ON TABLE "public"."english_phonemes_view" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."glossary" TO "anon";
 GRANT ALL ON TABLE "public"."glossary" TO "authenticated";
 GRANT ALL ON TABLE "public"."glossary" TO "service_role";
@@ -1699,6 +2512,30 @@ GRANT ALL ON TABLE "public"."invitation_uses" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "anon";
+GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "authenticated";
+GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."japanese_phonemes_view" TO "anon";
+GRANT ALL ON TABLE "public"."japanese_phonemes_view" TO "authenticated";
+GRANT ALL ON TABLE "public"."japanese_phonemes_view" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."minimal_pairs" TO "anon";
+GRANT ALL ON TABLE "public"."minimal_pairs" TO "authenticated";
+GRANT ALL ON TABLE "public"."minimal_pairs" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."minimal_pairs_pair_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."minimal_pairs_pair_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."minimal_pairs_pair_id_seq" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."phrases" TO "anon";
 GRANT ALL ON TABLE "public"."phrases" TO "authenticated";
 GRANT ALL ON TABLE "public"."phrases" TO "service_role";
@@ -1711,9 +2548,33 @@ GRANT ALL ON TABLE "public"."profiles" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."pron_sentences" TO "anon";
+GRANT ALL ON TABLE "public"."pron_sentences" TO "authenticated";
+GRANT ALL ON TABLE "public"."pron_sentences" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."pron_sentences_sentence_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."pron_sentences_sentence_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."pron_sentences_sentence_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."pronunciation_test_runs" TO "anon";
+GRANT ALL ON TABLE "public"."pronunciation_test_runs" TO "authenticated";
+GRANT ALL ON TABLE "public"."pronunciation_test_runs" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."registration_config" TO "anon";
 GRANT ALL ON TABLE "public"."registration_config" TO "authenticated";
 GRANT ALL ON TABLE "public"."registration_config" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."sentence_units" TO "anon";
+GRANT ALL ON TABLE "public"."sentence_units" TO "authenticated";
+GRANT ALL ON TABLE "public"."sentence_units" TO "service_role";
 
 
 
@@ -1765,9 +2626,33 @@ GRANT ALL ON TABLE "public"."study_cards" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."training_content" TO "anon";
+GRANT ALL ON TABLE "public"."training_content" TO "authenticated";
+GRANT ALL ON TABLE "public"."training_content" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."training_content_content_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."training_content_content_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."training_content_content_id_seq" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."tts_assets" TO "anon";
 GRANT ALL ON TABLE "public"."tts_assets" TO "authenticated";
 GRANT ALL ON TABLE "public"."tts_assets" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."unit_alias" TO "anon";
+GRANT ALL ON TABLE "public"."unit_alias" TO "authenticated";
+GRANT ALL ON TABLE "public"."unit_alias" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."unit_catalog_unit_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."unit_catalog_unit_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."unit_catalog_unit_id_seq" TO "service_role";
 
 
 
@@ -1783,6 +2668,42 @@ GRANT ALL ON TABLE "public"."user_permissions" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."user_pron_attempts" TO "anon";
+GRANT ALL ON TABLE "public"."user_pron_attempts" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_pron_attempts" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."user_pron_attempts_attempt_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."user_pron_attempts_attempt_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."user_pron_attempts_attempt_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_pron_verifications" TO "anon";
+GRANT ALL ON TABLE "public"."user_pron_verifications" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_pron_verifications" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."user_pron_verifications_verification_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."user_pron_verifications_verification_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."user_pron_verifications_verification_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_sentence_progress" TO "anon";
+GRANT ALL ON TABLE "public"."user_sentence_progress" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_sentence_progress" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_unit_stats" TO "anon";
+GRANT ALL ON TABLE "public"."user_unit_stats" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_unit_stats" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."vocab_entries" TO "anon";
 GRANT ALL ON TABLE "public"."vocab_entries" TO "authenticated";
 GRANT ALL ON TABLE "public"."vocab_entries" TO "service_role";
@@ -1792,6 +2713,12 @@ GRANT ALL ON TABLE "public"."vocab_entries" TO "service_role";
 GRANT ALL ON TABLE "public"."voices" TO "anon";
 GRANT ALL ON TABLE "public"."voices" TO "authenticated";
 GRANT ALL ON TABLE "public"."voices" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."zh_pinyin_units" TO "anon";
+GRANT ALL ON TABLE "public"."zh_pinyin_units" TO "authenticated";
+GRANT ALL ON TABLE "public"."zh_pinyin_units" TO "service_role";
 
 
 
