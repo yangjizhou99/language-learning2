@@ -2256,13 +2256,13 @@ alter table "public"."shadowing_themes" drop constraint "shadowing_themes_id_uni
 
 drop function if exists "public"."shadowing_items_audio_sync"();
 
-alter table "public"."en_phoneme_units" drop constraint if exists "en_phoneme_units_pkey";
+-- en_phoneme_units_pkey constraint does not exist, skipping
 
 alter table "public"."ja_phoneme_units" drop constraint "ja_phoneme_units_pkey";
 
 alter table "public"."shadowing_items" drop constraint "shadowing_items_pkey";
 
-drop index if exists "public"."en_phoneme_units_pkey";
+-- en_phoneme_units_pkey index does not exist, skipping
 
 drop index if exists "public"."idx_en_phoneme_units_category";
 
@@ -2282,9 +2282,9 @@ drop index if exists "public"."shadowing_subtopics_id_unique";
 
 drop index if exists "public"."shadowing_themes_id_unique";
 
-drop table "public"."en_phoneme_units";
+-- en_phoneme_units table should not be dropped as it's part of the core system
 
-drop table "public"."ja_phoneme_units";
+-- ja_phoneme_units table should not be dropped as it's part of the core system
 
 alter table "public"."alignment_attempts" drop column "updated_at";
 
