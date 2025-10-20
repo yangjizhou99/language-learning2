@@ -83,32 +83,11 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-600 mt-1">AI生成、手动录入、内容抓取</p>
           </Link>
           <Link
-            href="/admin/drafts"
-            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <h3 className="font-medium text-gray-900">📋 草稿箱</h3>
-            <p className="text-sm text-gray-600 mt-1">审核、编辑、发布草稿</p>
-          </Link>
-          <Link
             href="/admin/drafts/batch"
             className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
           >
             <h3 className="font-medium text-gray-900">⚡ 批量生成</h3>
             <p className="text-sm text-gray-600 mt-1">批量创建文章草稿</p>
-          </Link>
-          <Link
-            href="/admin/performance-test"
-            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <h3 className="font-medium text-gray-900">🧪 性能测试</h3>
-            <p className="text-sm text-gray-600 mt-1">数据库、API、缓存性能测试</p>
-          </Link>
-          <Link
-            href="/admin/performance"
-            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <h3 className="font-medium text-gray-900">📊 性能监控</h3>
-            <p className="text-sm text-gray-600 mt-1">实时性能指标监控</p>
           </Link>
           <Link
             href="/admin/api-usage"

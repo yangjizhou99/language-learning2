@@ -19,8 +19,6 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
     title: '内容',
     items: [
       { href: '/admin', label: '控制台', icon: '🏠', match: 'exact' },
-      { href: '/admin/banks', label: '题库总览', icon: '📚', match: 'startsWith' },
-      { href: '/admin/drafts', label: '草稿箱', icon: '📋', match: 'startsWith' },
     ],
   },
   {
@@ -36,7 +34,6 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
   {
     title: '生成 / AI',
     items: [
-      { href: '/admin/batch-gen', label: '批量生成中心', icon: '⚡' },
       { href: '/admin/cloze-shadowing/generate', label: 'Cloze-Shadowing 生成', icon: '🧩', match: 'startsWith' },
       { href: '/admin/alignment/ai', label: '对齐练习生成', icon: '🤝', match: 'startsWith' },
       {
@@ -83,14 +80,7 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
     title: '系统',
     items: [
       { href: '/admin/backup', label: '数据备份', icon: '💾' },
-      { href: '/admin/migrate', label: '数据迁移', icon: '🔄' },
-      { href: '/admin/performance', label: '性能监控', icon: '📊' },
-      { href: '/admin/performance-test', label: '性能测试', icon: '🧪' },
-      { href: '/admin/performance-optimization', label: '性能优化', icon: '🚀' },
       { href: '/admin/pronunciation-test', label: '发音评测实验', icon: '🗣️', match: 'startsWith' },
-      { href: '/admin/advanced-optimization', label: '高级优化', icon: '⚡' },
-      { href: '/admin/drafts/simple', label: '草稿箱（简）', icon: '🧪', hidden: !showDebug },
-      { href: '/admin/drafts/test-fix', label: '草稿诊断', icon: '🔧', hidden: !showDebug },
     ],
   },
   {
@@ -100,24 +90,6 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
       { href: '/admin/alignment/packs', label: '对齐训练包', icon: '🧭', match: 'startsWith' },
       { href: '/admin/shadowing/items', label: 'Shadowing 素材', icon: '🎙️', match: 'startsWith' },
       { href: '/admin/question-bank/export', label: '题库导出', icon: '📦', match: 'startsWith' },
-      {
-        href: '/admin/question-bank/copy-sync',
-        label: 'COPY流式同步',
-        icon: '⚡',
-        match: 'startsWith',
-      },
-      {
-        href: '/admin/question-bank/specialized',
-        label: '专项题目打包',
-        icon: '🎯',
-        match: 'startsWith',
-      },
-      {
-        href: '/admin/question-bank/test-env',
-        label: '环境变量测试',
-        icon: '🔧',
-        match: 'startsWith',
-      },
     ],
   },
 ];
