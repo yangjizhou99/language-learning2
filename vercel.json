@@ -1,8 +1,9 @@
 {
-  "installCommand": "pnpm i --frozen-lockfile=false",
-  "buildCommand": "pnpm run build",
+  "installCommand": "npm ci --prefer-offline --no-audit --no-fund",
+  "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
+  "nodeVersion": "20.x",
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 60
