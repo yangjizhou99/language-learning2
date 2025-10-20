@@ -38,9 +38,7 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
     title: '生成 / AI',
     items: [
       { href: '/admin/batch-gen', label: '批量生成中心', icon: '⚡' },
-      { href: '/admin/cloze/ai', label: 'Cloze 生成/审核', icon: '🎯', match: 'startsWith' },
       { href: '/admin/cloze-shadowing/generate', label: 'Cloze-Shadowing 生成', icon: '🧩', match: 'startsWith' },
-      { href: '/admin/cloze/drafts', label: 'Cloze 草稿箱', icon: '🗂️', match: 'startsWith' },
       { href: '/admin/alignment/ai', label: '对齐练习生成', icon: '🤝', match: 'startsWith' },
       {
         href: '/admin/alignment/themes',
@@ -100,7 +98,6 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
     title: '题库管理',
     items: [
       { href: '/admin/pronunciation', label: '发音评测管理', icon: '🎤', match: 'startsWith' },
-      { href: '/admin/cloze/items', label: 'Cloze 题库', icon: '🧩', match: 'startsWith' },
       { href: '/admin/alignment/packs', label: '对齐训练包', icon: '🧭', match: 'startsWith' },
       { href: '/admin/articles/list', label: '广读文章', icon: '📄', match: 'startsWith' },
       { href: '/admin/shadowing/items', label: 'Shadowing 素材', icon: '🎙️', match: 'startsWith' },

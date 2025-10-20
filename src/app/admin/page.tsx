@@ -3,12 +3,14 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Container } from '@/components/Container';
-import { Breadcrumbs } from '@/components/Breadcrumbs';
 import PerformanceTestReminder from '@/components/PerformanceTestReminder';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<{
+    totalDrafts: number;
+    pendingDrafts: number;
+    publishedDrafts: number;
+  } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -18,33 +20,23 @@ export default function AdminDashboard() {
         } = await supabase.auth.getSession();
         const headers = new Headers();
         if (session?.access_token) headers.set('Authorization', `Bearer ${session.access_token}`);
-        const [draftsRes, clozeDraftsRes, clozeItemsRes] = await Promise.all([
-          fetch('/api/admin/drafts/list?status=all', { headers }),
-          fetch('/api/admin/cloze/drafts', { headers }),
-          fetch('/api/admin/cloze/items', { headers }),
-        ]);
+        const draftsRes = await fetch('/api/admin/drafts/list?status=all', { headers });
 
-        const nextStats: any = {
+        const nextStats: {
+          totalDrafts: number;
+          pendingDrafts: number;
+          publishedDrafts: number;
+        } = {
           totalDrafts: 0,
           pendingDrafts: 0,
           publishedDrafts: 0,
-          totalClozeDrafts: 0,
-          totalClozeItems: 0,
         };
 
         if (draftsRes.ok) {
           const drafts = await draftsRes.json();
           nextStats.totalDrafts = drafts.length;
-          nextStats.pendingDrafts = drafts.filter((d: any) => d.status === 'pending').length;
-          nextStats.publishedDrafts = drafts.filter((d: any) => d.status === 'published').length;
-        }
-        if (clozeDraftsRes.ok) {
-          const clozeDrafts = await clozeDraftsRes.json();
-          nextStats.totalClozeDrafts = clozeDrafts.length;
-        }
-        if (clozeItemsRes.ok) {
-          const clozeItems = await clozeItemsRes.json();
-          nextStats.totalClozeItems = clozeItems.length;
+          nextStats.pendingDrafts = drafts.filter((d: { status: string }) => d.status === 'pending').length;
+          nextStats.publishedDrafts = drafts.filter((d: { status: string }) => d.status === 'published').length;
         }
 
         setStats(nextStats);
@@ -64,7 +56,7 @@ export default function AdminDashboard() {
       <PerformanceTestReminder />
 
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-white p-6 rounded-lg border shadow-sm">
             <h3 className="text-lg font-medium text-gray-900">总草稿数</h3>
             <p className="text-3xl font-bold text-blue-600">{stats.totalDrafts}</p>
@@ -76,14 +68,6 @@ export default function AdminDashboard() {
           <div className="bg-white p-6 rounded-lg border shadow-sm">
             <h3 className="text-lg font-medium text-gray-900">已发布</h3>
             <p className="text-3xl font-bold text-green-600">{stats.publishedDrafts}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg border shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900">Cloze 草稿</h3>
-            <p className="text-3xl font-bold text-purple-600">{stats.totalClozeDrafts}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg border shadow-sm">
-            <h3 className="text-lg font-medium text-gray-900">Cloze 题目</h3>
-            <p className="text-3xl font-bold text-indigo-600">{stats.totalClozeItems}</p>
           </div>
         </div>
       )}
@@ -111,13 +95,6 @@ export default function AdminDashboard() {
           >
             <h3 className="font-medium text-gray-900">⚡ 批量生成</h3>
             <p className="text-sm text-gray-600 mt-1">批量创建文章草稿</p>
-          </Link>
-          <Link
-            href="/admin/cloze/ai"
-            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <h3 className="font-medium text-gray-900">🎯 Cloze 挖空练习</h3>
-            <p className="text-sm text-gray-600 mt-1">AI生成、审核、发布挖空练习</p>
           </Link>
           <Link
             href="/admin/performance-test"

@@ -9,7 +9,6 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   BookOpen,
-  Target,
   AlignCenter,
   FileText,
   GraduationCap,
@@ -158,14 +157,6 @@ export default function Home() {
       href: '/practice/pronunciation',
       color: 'bg-red-500',
       show: true,
-    },
-    {
-      title: t.nav.cloze,
-      description: '完形填空，巩固语法和词汇',
-      icon: Target,
-      href: '/practice/cloze',
-      color: 'bg-green-500',
-      show: permissions.can_access_cloze,
     },
     {
       title: t.nav.alignment_practice,
