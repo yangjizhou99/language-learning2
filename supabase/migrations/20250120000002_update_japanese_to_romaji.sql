@@ -280,3 +280,4 @@ BEGIN
   
   RAISE NOTICE '✅ 日语罗马音发音评测系统迁移成功！';
 END $$;
+

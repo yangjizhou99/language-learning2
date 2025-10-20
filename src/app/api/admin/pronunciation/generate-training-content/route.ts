@@ -342,3 +342,4 @@ JSON形式で返す：
     return null;
   }
 }
+

@@ -343,3 +343,4 @@ async function processJapaneseRomajiStats() {
 
 // 运行处理
 processJapaneseRomajiStats();
+

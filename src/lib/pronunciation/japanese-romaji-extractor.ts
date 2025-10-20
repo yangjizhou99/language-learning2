@@ -495,3 +495,4 @@ export function analyzeJapaneseText(text: string): JapaneseRomajiResult {
     isValid,
   };
 }
+

@@ -66,3 +66,4 @@ function extractJapanesePhonemes(text) {
 }
 
 module.exports = { extractJapanesePhonemes };
+

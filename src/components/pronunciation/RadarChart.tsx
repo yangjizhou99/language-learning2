@@ -289,3 +289,4 @@ export default function RadarChart({ lang, className }: RadarChartProps) {
     </Card>
   );
 }
+

@@ -100,3 +100,4 @@ BEGIN
   RAISE NOTICE '  特殊音: % 个', special_count;
   RAISE NOTICE '  总计: % 个', total_count;
 END $$;
+

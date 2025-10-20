@@ -143,3 +143,4 @@ async function updateJapaneseToRomaji() {
 
 // 运行更新
 updateJapaneseToRomaji();
+

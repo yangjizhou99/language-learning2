@@ -302,3 +302,4 @@ export default function GradeDistributionChart({ lang, className }: GradeDistrib
     </Card>
   );
 }
+

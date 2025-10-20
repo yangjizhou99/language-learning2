@@ -245,3 +245,4 @@ async function getUncoveredUnits(
   // 6. 按频率排序（高频音节优先）
   return result.sort((a, b) => b.frequency - a.frequency);
 }
+
