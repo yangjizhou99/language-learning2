@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
         const value = rest.join('=').trim();
         if (key) cookieMap.set(key, value);
       });
-      supabase = createServerClient(
+      supabase = (createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
@@ -43,10 +43,10 @@ export async function GET(req: NextRequest) {
             remove() {},
           },
         },
-      );
+      ) as unknown) as SupabaseClient;
     } else {
       const cookieStore = await cookies();
-      supabase = createServerClient(
+      supabase = (createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
             remove() {},
           },
         },
-      );
+      ) as unknown) as SupabaseClient;
     }
 
     const {

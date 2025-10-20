@@ -70,61 +70,59 @@ async function getUserAnalytics(supabase: SupabaseClient, period: string) {
     analytics.new_users_30d = newUsers30d || 0;
 
     // 活跃用户统计（基于练习记录）
-    const { data: activeUsers7d } = await supabase
+    const { data: activeUsers7dA } = await supabase
       .from('shadowing_attempts')
       .select('user_id')
-      .gte('created_at', sevenDaysAgo.toISOString())
-      .union(
-        supabase
-          .from('cloze_attempts')
-          .select('user_id')
-          .gte('created_at', sevenDaysAgo.toISOString()),
-      )
-      .union(
-        supabase
-          .from('alignment_attempts')
-          .select('user_id')
-          .gte('created_at', sevenDaysAgo.toISOString()),
-      );
-
-    const uniqueActiveUsers7d = new Set(((activeUsers7d as IdRow[] | null) || []).map((u) => u.user_id));
+      .gte('created_at', sevenDaysAgo.toISOString());
+    const { data: activeUsers7dB } = await supabase
+      .from('cloze_attempts')
+      .select('user_id')
+      .gte('created_at', sevenDaysAgo.toISOString());
+    const { data: activeUsers7dC } = await supabase
+      .from('alignment_attempts')
+      .select('user_id')
+      .gte('created_at', sevenDaysAgo.toISOString());
+    const uniqueActiveUsers7d = new Set(
+      ([...(activeUsers7dA || []), ...(activeUsers7dB || []), ...(activeUsers7dC || [])] as IdRow[]).map(
+        (u) => u.user_id,
+      ),
+    );
     analytics.active_users_7d = uniqueActiveUsers7d.size;
 
-    const { data: activeUsers30d } = await supabase
+    const { data: activeUsers30dA } = await supabase
       .from('shadowing_attempts')
       .select('user_id')
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .union(
-        supabase
-          .from('cloze_attempts')
-          .select('user_id')
-          .gte('created_at', thirtyDaysAgo.toISOString()),
-      )
-      .union(
-        supabase
-          .from('alignment_attempts')
-          .select('user_id')
-          .gte('created_at', thirtyDaysAgo.toISOString()),
-      );
-
-    const uniqueActiveUsers30d = new Set(((activeUsers30d as IdRow[] | null) || []).map((u) => u.user_id));
+      .gte('created_at', thirtyDaysAgo.toISOString());
+    const { data: activeUsers30dB } = await supabase
+      .from('cloze_attempts')
+      .select('user_id')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+    const { data: activeUsers30dC } = await supabase
+      .from('alignment_attempts')
+      .select('user_id')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+    const uniqueActiveUsers30d = new Set(
+      ([...(activeUsers30dA || []), ...(activeUsers30dB || []), ...(activeUsers30dC || [])] as IdRow[]).map(
+        (u) => u.user_id,
+      ),
+    );
     analytics.active_users_30d = uniqueActiveUsers30d.size;
 
     // 练习类型分布
-    const { data: shadowingCount } = await supabase
+    const { count: shadowingCount } = await supabase
       .from('shadowing_attempts')
       .select('*', { count: 'exact', head: true });
-    analytics.practice_type_distribution.shadowing = shadowingCount || 0;
+    analytics.practice_type_distribution.shadowing = shadowingCount ?? 0;
 
-    const { data: clozeCount } = await supabase
+    const { count: clozeCount } = await supabase
       .from('cloze_attempts')
       .select('*', { count: 'exact', head: true });
-    analytics.practice_type_distribution.cloze = clozeCount || 0;
+    analytics.practice_type_distribution.cloze = clozeCount ?? 0;
 
-    const { data: alignmentCount } = await supabase
+    const { count: alignmentCount } = await supabase
       .from('alignment_attempts')
       .select('*', { count: 'exact', head: true });
-    analytics.practice_type_distribution.alignment = alignmentCount || 0;
+    analytics.practice_type_distribution.alignment = alignmentCount ?? 0;
 
     // 语言分布
     const { data: shadowingByLang } = await supabase.from('shadowing_attempts').select('lang');
@@ -164,27 +162,25 @@ async function getUserAnalytics(supabase: SupabaseClient, period: string) {
       const dateStr = date.toISOString().split('T')[0];
       const nextDate = new Date(date.getTime() + 24 * 60 * 60 * 1000);
 
-      const { data: dailyUsers } = await supabase
+      const { data: dailyA } = await supabase
         .from('shadowing_attempts')
         .select('user_id')
         .gte('created_at', date.toISOString())
-        .lt('created_at', nextDate.toISOString())
-        .union(
-          supabase
-            .from('cloze_attempts')
-            .select('user_id')
-            .gte('created_at', date.toISOString())
-            .lt('created_at', nextDate.toISOString()),
-        )
-        .union(
-          supabase
-            .from('alignment_attempts')
-            .select('user_id')
-            .gte('created_at', date.toISOString())
-            .lt('created_at', nextDate.toISOString()),
-        );
+        .lt('created_at', nextDate.toISOString());
+      const { data: dailyB } = await supabase
+        .from('cloze_attempts')
+        .select('user_id')
+        .gte('created_at', date.toISOString())
+        .lt('created_at', nextDate.toISOString());
+      const { data: dailyC } = await supabase
+        .from('alignment_attempts')
+        .select('user_id')
+        .gte('created_at', date.toISOString())
+        .lt('created_at', nextDate.toISOString());
 
-      const uniqueDailyUsers = new Set(((dailyUsers as IdRow[] | null) || []).map((u) => u.user_id));
+      const uniqueDailyUsers = new Set(
+        ([...(dailyA || []), ...(dailyB || []), ...(dailyC || [])] as IdRow[]).map((u) => u.user_id),
+      );
       analytics.daily_active_users.push({
         date: dateStr,
         count: uniqueDailyUsers.size,

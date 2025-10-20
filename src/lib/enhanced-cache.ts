@@ -173,11 +173,11 @@ export class EnhancedCacheManager {
   static async dedupeWithETag<T>(
     key: string,
     fetcher: () => Promise<T>,
-    clientETag?: string,
+    clientETag?: string | null,
     ttlSeconds = 300,
   ): Promise<ETagResponse> {
     // 首先检查缓存和 ETag
-    const etagCheck = this.checkETag<T>(key, clientETag);
+    const etagCheck = this.checkETag<T>(key, clientETag ?? undefined);
     if (etagCheck.data !== null) {
       return etagCheck;
     }

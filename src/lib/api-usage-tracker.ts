@@ -112,7 +112,7 @@ export function extractTokenUsage(response: UsageShape | null | undefined): numb
 }
 
 // 包装API调用函数，自动记录使用情况
-export function withUsageTracking<T extends any[], R>(
+export function withUsageTracking<T extends any[], R extends UsageShape | null | undefined>(
   fn: (...args: T) => Promise<R>,
   provider: string,
   model: string,
@@ -131,7 +131,7 @@ export function withUsageTracking<T extends any[], R>(
       const result = await fn(...args);
 
       // 尝试从结果中提取token使用情况
-      tokensUsed = extractTokenUsage(result);
+      tokensUsed = extractTokenUsage(result as UsageShape | null | undefined);
       cost = calculateAPICost(provider, model, tokensUsed);
 
       // 记录使用情况

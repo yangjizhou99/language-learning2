@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
     // 获取用户的邮箱信息（从auth.users表）
     const { data: authUsers } = await supabase.auth.admin.listUsers();
     const emailMap = new Map<string, string | null>(
-      (authUsers?.users || []).map((u) => [u.id, u.email]),
+      (authUsers?.users || []).map((u) => [u.id, u.email ?? null] as [string, string | null]),
     );
 
     const usersWithStats = users?.map((user) => ({

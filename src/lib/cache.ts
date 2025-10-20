@@ -188,7 +188,7 @@ export class CacheManager {
    */
   static async dedupe<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
     if (this.requestCache.has(key)) {
-      return this.requestCache.get(key)!;
+      return this.requestCache.get(key)! as Promise<T>;
     }
 
     const promise = fetcher().finally(() => {

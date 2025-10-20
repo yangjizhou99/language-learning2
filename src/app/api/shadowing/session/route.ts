@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       });
     } else {
       const cookieStore = await cookies();
-      supabase = createServerClient(supabaseUrl, supabaseAnon, {
+      supabase = (createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
           get(name: string) {
             return cookieStore.get(name)?.value;
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
           set() {},
           remove() {},
         },
-      });
+      }) as unknown) as SupabaseClient;
     }
 
     // Check authentication
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       });
     } else {
       const cookieStore = await cookies();
-      supabase = createServerClient(supabaseUrl, supabaseAnon, {
+      supabase = (createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
           get(name: string) {
             return cookieStore.get(name)?.value;
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
           set() {},
           remove() {},
         },
-      });
+      }) as unknown) as SupabaseClient;
     }
 
     // Check authentication

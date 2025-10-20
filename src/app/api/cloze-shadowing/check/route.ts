@@ -31,13 +31,13 @@ export async function POST(req: NextRequest) {
       });
     } else {
       const cookieStore = await cookies();
-      supabase = createServerClient(supabaseUrl, supabaseAnon, {
+      supabase = (createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
           get(name: string) { return cookieStore.get(name)?.value; },
           set() {},
           remove() {},
         },
-      });
+      }) as unknown) as SupabaseClient;
     }
 
     const { data: { user } } = await supabase.auth.getUser();

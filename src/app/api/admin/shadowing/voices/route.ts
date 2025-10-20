@@ -205,7 +205,7 @@ export async function GET(req: NextRequest) {
 
       return {
         name: voiceName,
-        displayName: voice.displayName, // 添加显示名称
+        displayName: (voice as any)?.displayName ?? null, // 添加显示名称（SDK 类型未声明，使用可选读取）
         languageCode,
         ssmlGender: voice.ssmlGender ?? null,
         naturalSampleRateHertz: voice.naturalSampleRateHertz ?? null,
@@ -222,10 +222,13 @@ export async function GET(req: NextRequest) {
         examplePrice10k: ((pricing.pricePerMillionChars / 1000000) * 10000).toFixed(2),
         // 使用原始特征信息（如果存在）或生成新的
         characteristics:
-          voice.characteristics ||
+          (voice as any)?.characteristics ||
           generateVoiceCharacteristics({
             name: voiceName,
-            ssmlGender: voice.ssmlGender,
+            ssmlGender: (voice.ssmlGender ?? undefined) as
+              | protos.google.cloud.texttospeech.v1.SsmlVoiceGender
+              | string
+              | undefined,
             languageCode,
           }),
       };

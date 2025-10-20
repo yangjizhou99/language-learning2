@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
           const value = rest.join('=').trim();
           if (key) cookieMap.set(key, value);
         });
-        supabase = createServerClient(supabaseUrl, supabaseAnon, {
+        supabase = (createServerClient(supabaseUrl, supabaseAnon, {
           cookies: {
             get(name: string) {
               return cookieMap.get(name);
@@ -60,10 +60,10 @@ export async function GET(req: NextRequest) {
             set() {},
             remove() {},
           },
-        });
+        }) as unknown) as SupabaseClient;
       } else {
         const cookieStore = await cookies();
-        supabase = createServerClient(supabaseUrl, supabaseAnon, {
+        supabase = (createServerClient(supabaseUrl, supabaseAnon, {
           cookies: {
             get(name: string) {
               return cookieStore.get(name)?.value;
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
             set() {},
             remove() {},
           },
-        });
+        }) as unknown) as SupabaseClient;
       }
     }
     const searchParams = new URL(req.url).searchParams;
