@@ -1434,13 +1434,41 @@ ALTER TABLE ONLY "public"."unit_alias"
 
 
 
-ALTER TABLE ONLY "public"."unit_catalog"
-    ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public'
+      AND t.relname = 'unit_catalog'
+      AND c.conname = 'unit_catalog_lang_symbol_key'
+  ) THEN
+    ALTER TABLE ONLY "public"."unit_catalog"
+      ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
+  END IF;
+END
+$$;
 
 
 
-ALTER TABLE ONLY "public"."unit_catalog"
-    ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public'
+      AND t.relname = 'unit_catalog'
+      AND c.conname = 'unit_catalog_pkey'
+  ) THEN
+    ALTER TABLE ONLY "public"."unit_catalog"
+      ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
+  END IF;
+END
+$$;
 
 
 

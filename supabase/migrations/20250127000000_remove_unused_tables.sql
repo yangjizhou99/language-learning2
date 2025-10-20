@@ -20,20 +20,60 @@
 -- 注意：这些表已经过全面检查，确认在应用代码和脚本中都没有被使用
 -- ===========================================
 
--- 删除表之前，先删除相关的RLS策略（如果存在）
-DROP POLICY IF EXISTS "article_cloze_combined" ON public.article_cloze;
-DROP POLICY IF EXISTS "article_keys_combined" ON public.article_keys;
-DROP POLICY IF EXISTS "articles_combined" ON public.articles;
-DROP POLICY IF EXISTS "registration_config_combined" ON public.registration_config;
-DROP POLICY IF EXISTS "sessions_all_own" ON public.sessions;
-DROP POLICY IF EXISTS "study_cards_combined" ON public.study_cards;
-DROP POLICY IF EXISTS "tts_assets_all_own" ON public.tts_assets;
-DROP POLICY IF EXISTS "cd_admin" ON public.cloze_drafts;
-DROP POLICY IF EXISTS "ci_read" ON public.cloze_items;
-DROP POLICY IF EXISTS "draft_select" ON public.article_drafts;
-DROP POLICY IF EXISTS "draft_write" ON public.article_drafts;
-DROP POLICY IF EXISTS "p_glossary_read" ON public.glossary;
-DROP POLICY IF EXISTS "p_phrases_read" ON public.phrases;
+-- 需要注意：DROP POLICY 语句即使带 IF EXISTS，也要求目标表存在。
+-- 为了在首次初始化或已被手动删除表的环境中安全执行，这里先判断表是否存在。
+DO $$
+BEGIN
+  IF to_regclass('public.article_cloze') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "article_cloze_combined" ON public.article_cloze';
+  END IF;
+
+  IF to_regclass('public.article_keys') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "article_keys_combined" ON public.article_keys';
+  END IF;
+
+  IF to_regclass('public.articles') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "articles_combined" ON public.articles';
+  END IF;
+
+  IF to_regclass('public.registration_config') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "registration_config_combined" ON public.registration_config';
+  END IF;
+
+  IF to_regclass('public.sessions') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "sessions_all_own" ON public.sessions';
+  END IF;
+
+  IF to_regclass('public.study_cards') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "study_cards_combined" ON public.study_cards';
+  END IF;
+
+  IF to_regclass('public.tts_assets') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "tts_assets_all_own" ON public.tts_assets';
+  END IF;
+
+  IF to_regclass('public.cloze_drafts') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "cd_admin" ON public.cloze_drafts';
+  END IF;
+
+  IF to_regclass('public.cloze_items') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "ci_read" ON public.cloze_items';
+  END IF;
+
+  IF to_regclass('public.article_drafts') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "draft_select" ON public.article_drafts';
+    EXECUTE 'DROP POLICY IF EXISTS "draft_write" ON public.article_drafts';
+  END IF;
+
+  IF to_regclass('public.glossary') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "p_glossary_read" ON public.glossary';
+  END IF;
+
+  IF to_regclass('public.phrases') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "p_phrases_read" ON public.phrases';
+  END IF;
+END
+$$;
 
 -- 删除表之前，先删除相关的索引（如果存在）
 DROP INDEX IF EXISTS public.idx_article_cloze_article_id;
