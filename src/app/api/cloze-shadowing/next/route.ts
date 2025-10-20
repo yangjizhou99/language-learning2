@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { CacheManager } from '@/lib/cache';
 import { getUserPermissions, checkLevelPermission, checkLanguagePermission, checkAccessPermission } from '@/lib/user-permissions-server';
 
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     // auth: Bearer 优先，其次 Cookie
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: any;
+    let supabase: SupabaseClient;
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
     // 从 cloze_shadowing_items 取该句
     const { data: item, error } = await supabase
       .from('cloze_shadowing_items')
-      .select('*')
+      .select('sentence_index, sentence_text, blank_start, blank_length, correct_options, distractor_options')
       .eq('source_item_id', articleId)
       .eq('sentence_index', idx)
       .eq('is_published', true)
@@ -74,7 +74,10 @@ export async function GET(req: NextRequest) {
     }
 
     // 组装 options（打乱，但不改变可复现性：按固定排序即可，前端可随机本地打乱）
-    const options = [...(item.correct_options || []), ...(item.distractor_options || [])];
+    const options = [
+      ...((Array.isArray(item.correct_options) ? item.correct_options : []) as string[]),
+      ...((Array.isArray(item.distractor_options) ? item.distractor_options : []) as string[]),
+    ];
     const isPlaceholder = (Number(item.blank_length) || 0) === 0;
 
     return NextResponse.json({
@@ -96,8 +99,9 @@ export async function GET(req: NextRequest) {
       },
       skip: isPlaceholder,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'internal error' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'internal error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

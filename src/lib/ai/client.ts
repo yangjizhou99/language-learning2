@@ -40,8 +40,8 @@ export async function chatJSON({
   }
 
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const signal = controller?.signal as any;
-  let timer: any = null;
+  const signal = controller?.signal;
+  let timer: ReturnType<typeof setTimeout> | null = null;
   if (controller && timeoutMs && timeoutMs > 0) {
     timer = setTimeout(() => controller.abort(), timeoutMs);
   }
@@ -64,7 +64,7 @@ export async function chatJSON({
       'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || '',
       'X-Title': process.env.NEXT_PUBLIC_SITE_NAME || '',
     };
-    const body: any = { model, temperature, messages };
+    const body: Record<string, unknown> = { model, temperature, messages };
     if (response_json) body.response_format = { type: 'json_object' };
     const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       // 官方端点
@@ -109,7 +109,7 @@ export async function chatJSON({
       key = process.env.DEEPSEEK_API_KEY!;
     }
 
-    const body: any = { model, temperature, messages };
+    const body: Record<string, unknown> = { model, temperature, messages };
     if (response_json) body.response_format = { type: 'json_object' };
     const r = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
@@ -143,7 +143,7 @@ export async function chatJSON({
 
   // openai
   const key = process.env.OPENAI_API_KEY!;
-  const body: any = { model, temperature, messages };
+  const body: Record<string, unknown> = { model, temperature, messages };
   if (response_json) body.response_format = { type: 'json_object' };
   const r = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

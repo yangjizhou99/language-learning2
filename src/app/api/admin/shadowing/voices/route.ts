@@ -2,13 +2,15 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import textToSpeech from '@google-cloud/text-to-speech';
+import textToSpeech, { protos } from '@google-cloud/text-to-speech';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
   if (!raw) throw new Error('GOOGLE_TTS_CREDENTIALS missing');
 
-  let credentials: any;
+  let credentials: Record<string, unknown>;
   try {
     credentials = JSON.parse(raw);
   } catch {
@@ -18,10 +20,8 @@ function makeClient() {
           'File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS',
         );
       }
-      const fs = require('fs');
-      const path = require('path');
-      const filePath = path.resolve(process.cwd(), raw);
-      const fileContent = fs.readFileSync(filePath, 'utf8');
+      const filePath = resolve(process.cwd(), raw);
+      const fileContent = readFileSync(filePath, 'utf8');
       credentials = JSON.parse(fileContent);
     } catch (fileError: unknown) {
       const errorMessage = fileError instanceof Error ? fileError.message : String(fileError);
@@ -29,7 +29,7 @@ function makeClient() {
     }
   }
 
-  const projectId = process.env.GOOGLE_TTS_PROJECT_ID || credentials.project_id;
+  const projectId = (process.env.GOOGLE_TTS_PROJECT_ID || (credentials as any).project_id) as string | undefined;
   return new textToSpeech.TextToSpeechClient({ credentials, projectId });
 }
 
@@ -70,7 +70,11 @@ function getVoicePricing(voiceName: string) {
 }
 
 // 生成音色特征信息
-function generateVoiceCharacteristics(voice: any) {
+function generateVoiceCharacteristics(voice: {
+  name: string;
+  ssmlGender?: protos.google.cloud.texttospeech.v1.SsmlVoiceGender | string;
+  languageCode: string;
+}) {
   const name = voice.name;
   const gender = voice.ssmlGender;
   const languageCode = voice.languageCode;
@@ -138,8 +142,8 @@ function generateVoiceCharacteristics(voice: any) {
   };
 }
 
-function categorizeVoices(voices: any[]) {
-  const categories: any = {
+function categorizeVoices(voices: Array<{ name: string }>) {
+  const categories: Record<string, Array<{ name: string }>> = {
     'Chirp3-HD': [],
     Neural2: [],
     Wavenet: [],
@@ -174,13 +178,13 @@ export async function GET(req: NextRequest) {
     // 获取 Google Cloud TTS 音色 - 总是获取所有音色，然后筛选
     const client = makeClient();
     const [res] = await client.listVoices({});
-    const allVoices = res.voices || [];
+    const allVoices = (res.voices as protos.google.cloud.texttospeech.v1.IVoice[] | undefined) || [];
 
     // 根据语言筛选
     let voices = allVoices;
     if (lang !== 'all') {
-      voices = allVoices.filter((voice: any) => {
-        const voiceLang = voice.languageCode || voice.languageCodes?.[0];
+      voices = allVoices.filter((voice) => {
+        const voiceLang = (voice as any).languageCode || voice.languageCodes?.[0];
         // 处理语言代码的大小写问题
         if (lang === 'cmn-cn') {
           return voiceLang === 'cmn-CN';
@@ -194,19 +198,19 @@ export async function GET(req: NextRequest) {
     }
 
     // 处理音色数据
-    const processedVoices = voices.map((voice: any) => {
-      const voiceName = voice.name;
-      const languageCode = voice.languageCode || voice.languageCodes?.[0] || 'unknown';
+    const processedVoices = voices.map((voice) => {
+      const voiceName = voice.name as string;
+      const languageCode = (voice as any).languageCode || voice.languageCodes?.[0] || 'unknown';
       const pricing = getVoicePricing(voiceName);
 
       return {
         name: voiceName,
         displayName: voice.displayName, // 添加显示名称
         languageCode,
-        ssmlGender: voice.ssmlGender,
-        naturalSampleRateHertz: voice.naturalSampleRateHertz,
-        supportedEngines: voice.supportedEngines,
-        supportedModels: voice.supportedModels,
+        ssmlGender: voice.ssmlGender ?? null,
+        naturalSampleRateHertz: voice.naturalSampleRateHertz ?? null,
+        supportedEngines: (voice as any).supportedEngines ?? null,
+        supportedModels: (voice as any).supportedModels ?? null,
         pricing: {
           pricePerMillionChars: pricing.pricePerMillionChars,
           quality: pricing.quality,
@@ -228,12 +232,12 @@ export async function GET(req: NextRequest) {
     });
 
     // 按语言分组
-    const groupedByLanguage = processedVoices.reduce((acc: any, voice: any) => {
+    const groupedByLanguage = processedVoices.reduce<Record<string, typeof processedVoices>>((acc, voice) => {
       const langCode = voice.languageCode;
       if (!acc[langCode]) acc[langCode] = [];
       acc[langCode].push(voice);
       return acc;
-    }, {});
+    }, {} as Record<string, typeof processedVoices>);
 
     // 按质量分类
     const categorizedVoices = categorizeVoices(processedVoices);

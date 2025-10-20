@@ -24,6 +24,12 @@ export const AI_PROVIDERS = {
 export type AIProvider = keyof typeof AI_PROVIDERS;
 
 // 根据用户权限过滤可用的提供商和模型
+type ModelPermission = {
+  provider: 'openai' | 'openrouter' | 'deepseek' | 'anthropic' | string;
+  model_id: string;
+  enabled?: boolean;
+};
+
 export function getFilteredAIProviders(permissions: ReturnType<typeof useUserPermissions>) {
   // 如果AI功能未启用，返回空对象
   if (!permissions || !permissions.permissions.ai_enabled) {
@@ -35,8 +41,10 @@ export function getFilteredAIProviders(permissions: ReturnType<typeof useUserPer
     return AI_PROVIDERS;
   }
 
-  const enabledModels = permissions.permissions.model_permissions.filter((m) => m.enabled);
-  const filteredProviders: Record<string, any> = {};
+  const enabledModels = (permissions.permissions.model_permissions as ModelPermission[]).filter(
+    (m) => m.enabled,
+  );
+  const filteredProviders: Record<string, { name: string; models: Array<{ id: string; name: string }> }> = {};
 
   // 检查每个提供商是否有启用的模型
   Object.entries(AI_PROVIDERS).forEach(([providerKey, providerConfig]) => {

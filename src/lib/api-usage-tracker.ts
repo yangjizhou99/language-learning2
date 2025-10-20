@@ -7,8 +7,8 @@ export interface APIUsageLog {
   model: string;
   tokens_used: number;
   cost: number;
-  request_data?: any;
-  response_data?: any;
+  request_data?: unknown;
+  response_data?: unknown;
 }
 
 // API定价配置（每1000 tokens的价格，单位：美元）
@@ -73,7 +73,17 @@ export async function logAPIUsage(log: APIUsageLog): Promise<void> {
 }
 
 // 从响应中提取Token使用情况
-export function extractTokenUsage(response: any): number {
+type UsageShape = {
+  usage?: {
+    total_tokens?: number;
+    completion_tokens?: number;
+    prompt_tokens?: number;
+    tokens?: number;
+  };
+  choices?: Array<{ message?: { content?: string } }>;
+};
+
+export function extractTokenUsage(response: UsageShape | null | undefined): number {
   if (!response) return 0;
 
   // 尝试从不同字段提取token使用量
@@ -127,7 +137,7 @@ export function withUsageTracking<T extends any[], R>(
       // 记录使用情况
       await logAPIUsage({
         user_id: userId,
-        provider: provider as any,
+        provider: provider as 'deepseek' | 'openrouter' | 'openai' | 'anthropic',
         model,
         tokens_used: tokensUsed,
         cost,
@@ -141,7 +151,7 @@ export function withUsageTracking<T extends any[], R>(
       if (tokensUsed > 0) {
         await logAPIUsage({
           user_id: userId,
-          provider: provider as any,
+          provider: provider as 'deepseek' | 'openrouter' | 'openai' | 'anthropic',
           model,
           tokens_used: tokensUsed,
           cost,

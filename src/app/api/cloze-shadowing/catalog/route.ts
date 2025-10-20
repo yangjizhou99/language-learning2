@@ -98,7 +98,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Cloze query failed' }, { status: 500 });
     }
 
-    const sourceIds = Array.from(new Set((clozeRows || []).map((r: any) => r.source_item_id))).filter(Boolean);
+    const sourceIds = Array.from(
+      new Set((clozeRows || []).map((r: { source_item_id: string | null }) => r.source_item_id)),
+    ).filter(Boolean) as string[];
     if (sourceIds.length === 0) {
       return NextResponse.json({ success: true, items: [], total: 0 });
     }
@@ -151,14 +153,19 @@ export async function GET(req: NextRequest) {
         .select('item_id')
         .eq('user_id', user.id)
         .eq('status', 'completed');
-      const completedIds = Array.from(new Set((completedRows || []).map((r: any) => r.item_id).filter(Boolean)));
+      const completedIds = Array.from(
+        new Set(
+          (completedRows || [])
+            .map((r: { item_id: string | null }) => r.item_id)
+            .filter((v): v is string => Boolean(v)),
+        ),
+      );
       if (practiced === 'true') {
         const none = '00000000-0000-0000-0000-000000000000';
         itemQuery = itemQuery.in('id', completedIds.length > 0 ? completedIds : [none]);
-      } else if (practiced === 'false' && completedIds.length > 0) {
-        const list = `(${completedIds.join(',')})`;
-        // @ts-ignore postgrest not-in
-        itemQuery = (itemQuery as any).not('id', 'in', list);
+      } else if (practiced === 'false') {
+        // 为避免使用不安全的 not-in hack，改为稍后在内存中过滤
+        // 这里不对 itemQuery 追加条件
       }
     }
 
@@ -170,8 +177,21 @@ export async function GET(req: NextRequest) {
     const filteredTitleItems = items || [];
 
     // 取用户 Shadowing 会话，沿用“完成”判定
-    const ids = filteredTitleItems.map((it: any) => it.id);
-    let sessions: Array<{ item_id: string; status: 'draft' | 'completed' | null } > = [];
+    type ItemRow = {
+      id: string;
+      lang: string;
+      level: number;
+      title: string;
+      theme_id: string | null;
+      subtopic_id: string | null;
+      status: string | null;
+      created_at: string;
+      genre: string | null;
+      meta: unknown;
+    };
+
+    const ids = (filteredTitleItems as ItemRow[]).map((it) => it.id);
+    let sessions: Array<{ item_id: string; status: 'draft' | 'completed' | null }> = [];
     if (ids.length > 0) {
       const { data: s } = await supabase
         .from('shadowing_sessions')
@@ -190,14 +210,19 @@ export async function GET(req: NextRequest) {
         .eq('is_published', true)
         .in('source_item_id', ids);
       for (const row of pageClozeRows || []) {
-        const sid = (row as any).source_item_id as string;
+        const sid = (row as { source_item_id: string | null }).source_item_id as string;
         if (!sid) continue;
         publishedCountMap.set(sid, (publishedCountMap.get(sid) || 0) + 1);
       }
     }
 
     // Cloze 总结与最近练习时间
-    let articleAttempts: Array<{ source_item_id: string; total_sentences: number; accuracy: number; created_at: string } > = [];
+    let articleAttempts: Array<{
+      source_item_id: string;
+      total_sentences: number;
+      accuracy: number;
+      created_at: string;
+    }> = [];
     if (ids.length > 0) {
       const { data: aa } = await supabase
         .from('cloze_shadowing_attempts_article')
@@ -213,7 +238,18 @@ export async function GET(req: NextRequest) {
       if (!latestAttemptMap.has(a.source_item_id)) latestAttemptMap.set(a.source_item_id, a);
     }
 
-    const processed = filteredTitleItems.map((it: any) => {
+    type ProcessedItem = ItemRow & {
+      isPracticed: boolean;
+      status: 'draft' | 'completed' | null;
+      stats: {
+        sentenceCount: number;
+        lastPracticed: string | null;
+        accuracy: number | null;
+        totalSentences: number | null;
+      };
+    };
+
+    const processed: ProcessedItem[] = (filteredTitleItems as ItemRow[]).map((it) => {
       const session = sessions.find((s) => s.item_id === it.id);
       const isPracticed = session?.status === 'completed';
       const publishedCount = publishedCountMap.get(it.id) || 0;
@@ -237,20 +273,20 @@ export async function GET(req: NextRequest) {
     });
 
     // practiced 过滤
-    let filtered = processed as Array<{ isPracticed: boolean }>;
+    let filtered: ProcessedItem[] = processed;
     if (practiced === 'true') filtered = processed.filter((i) => i.isPracticed);
     else if (practiced === 'false') filtered = processed.filter((i) => !i.isPracticed);
 
     // 语言/等级未指定时，再次按权限过滤
-    if (!lang) filtered = filtered.filter((i: any) => checkLanguagePermission(permissions, i.lang));
-    if (!level) filtered = filtered.filter((i: any) => checkLevelPermission(permissions, i.level));
+    if (!lang) filtered = filtered.filter((i) => checkLanguagePermission(permissions, i.lang));
+    if (!level) filtered = filtered.filter((i) => checkLevelPermission(permissions, i.level));
 
     // 主题与子主题元数据（用于筛选）
-    const themeIds = Array.from(new Set(processed.map((i: any) => i.theme_id).filter(Boolean)));
-    const subtopicIds = Array.from(new Set(processed.map((i: any) => i.subtopic_id).filter(Boolean)));
+    const themeIds = Array.from(new Set(processed.map((i) => i.theme_id).filter(Boolean))) as string[];
+    const subtopicIds = Array.from(new Set(processed.map((i) => i.subtopic_id).filter(Boolean))) as string[];
 
-    let themes: Array<{ id: string; title: string; desc?: string } > = [];
-    let subtopics: Array<{ id: string; title: string; one_line?: string } > = [];
+    let themes: Array<{ id: string; title: string; desc?: string }> = [];
+    let subtopics: Array<{ id: string; title: string; one_line?: string }> = [];
     if (themeIds.length > 0) {
       const { data: themeRows } = await supabase
         .from('shadowing_themes')
@@ -264,6 +300,14 @@ export async function GET(req: NextRequest) {
         .select('id, title, one_line')
         .in('id', subtopicIds);
       subtopics = subRows || [];
+    }
+
+    // practiced=false 的情况在此处做内存过滤
+    if (practiced === 'false') {
+      const practicedIds = new Set(
+        sessions.filter((s) => s.status === 'completed').map((s) => s.item_id),
+      );
+      filtered = processed.filter((i) => !practicedIds.has(i.id));
     }
 
     const total = filtered.length;

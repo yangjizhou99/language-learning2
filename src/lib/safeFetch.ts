@@ -1,4 +1,4 @@
-export type SafeResp<T = any> = {
+export type SafeResp<T> = {
   ok: boolean;
   status: number;
   data: T | null;
@@ -7,21 +7,21 @@ export type SafeResp<T = any> = {
   error?: string;
 };
 
-export async function safeJsonFetch<T = any>(
+export async function safeJsonFetch<T = unknown>(
   input: RequestInfo,
   init?: RequestInit,
 ): Promise<SafeResp<T>> {
   let res: Response;
   try {
     res = await fetch(input, init);
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       ok: false,
       status: 0,
       data: null,
       text: '',
       contentType: '',
-      error: err?.message || 'network_error',
+      error: err instanceof Error ? err.message : 'network_error',
     };
   }
   const contentType = res.headers.get('content-type') || '';
@@ -37,7 +37,7 @@ export async function safeJsonFetch<T = any>(
         contentType,
         error: res.ok ? undefined : data?.error || data?.message,
       };
-    } catch (e: any) {
+    } catch (_e: unknown) {
       return {
         ok: false,
         status: res.status,

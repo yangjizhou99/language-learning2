@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
 
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     const authHeader = req.headers.get('authorization') || '';
     const cookieHeader = req.headers.get('cookie') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: any;
+    let supabase: SupabaseClient;
 
     if (hasBearer) {
       supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -136,7 +136,7 @@ export async function GET(req: NextRequest) {
       .in('item_id', itemIds);
 
     const sessionByItem = new Map<string, 'draft' | 'completed'>();
-    (sessions || []).forEach((s: any) => {
+    (sessions || []).forEach((s: { item_id: string; status: 'draft' | 'completed' }) => {
       if (s?.item_id) sessionByItem.set(s.item_id, s.status);
     });
 
@@ -157,7 +157,7 @@ export async function GET(req: NextRequest) {
 
     const seed = `${user.id}:${lang}:${new Date().toISOString().slice(0, 10)}`;
     const idx = parseInt(crypto.createHash('sha1').update(seed).digest('hex').slice(0, 8), 16) % pool.length;
-    const raw = pool[idx] as any;
+    const raw = pool[idx] as Record<string, any>;
     // 读取主题与小主题信息（如有）
     let theme: { id: string; title: string; desc?: string } | undefined;
     let subtopic: { id: string; title: string; one_line?: string } | undefined;

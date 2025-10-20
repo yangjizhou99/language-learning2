@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 // 创建 TTS 客户端
 function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
   if (!raw) throw new Error('GOOGLE_TTS_CREDENTIALS missing');
 
-  let credentials: any;
+  let credentials: Record<string, unknown>;
   try {
     credentials = JSON.parse(raw);
   } catch {
@@ -16,10 +18,8 @@ function makeClient() {
           'File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS',
         );
       }
-      const fs = require('fs');
-      const path = require('path');
-      const filePath = path.resolve(process.cwd(), raw);
-      const fileContent = fs.readFileSync(filePath, 'utf8');
+      const filePath = resolve(process.cwd(), raw);
+      const fileContent = readFileSync(filePath, 'utf8');
       credentials = JSON.parse(fileContent);
     } catch (fileError: unknown) {
       const errorMessage = fileError instanceof Error ? fileError.message : String(fileError);
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
         'Cache-Control': 'public, max-age=3600', // 缓存1小时
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Voice preview error:', error);
     return NextResponse.json(
       {

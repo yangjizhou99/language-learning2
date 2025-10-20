@@ -19,25 +19,7 @@ export async function buildRAG(
     .eq('id', uid)
     .maybeSingle();
 
-  // Get terms matching topic
-  const like = `%${topic}%`;
-  const { data: terms } = await supabase
-    .from('glossary')
-    .select('*')
-    .eq('lang', lang)
-    .or(`term.ilike.${like},definition.ilike.${like}`)
-    .order('updated_at', { ascending: false })
-    .limit(kTerms);
-
-  // Get recent phrases
-  const { data: ph } = await supabase
-    .from('phrases')
-    .select('tag,text,example,lang')
-    .eq('lang', lang)
-    .order('created_at', { ascending: false })
-    .limit(kPhrases);
-
-  // Build profile section
+  // RAG功能已删除，只返回用户档案信息
   const profPart = prof
     ? [
         `【PROFILE】`,
@@ -51,35 +33,15 @@ export async function buildRAG(
       ].join('\n')
     : '';
 
-  // Build terms section
-  const termPart =
-    terms
-      ?.map(
-        (t) =>
-          `- ${t.term} :: ${t.definition} ${t.aliases?.length ? `(aka: ${t.aliases.join(', ')})` : ''} ${t.tags?.length ? `[${t.tags.join(', ')}]` : ''}`,
-      )
-      .join('\n') || '';
-
-  // Build phrases section
-  const phrasePart = ph?.map((p) => `- ${p.tag}: ${p.text} => ${p.example}`).join('\n') || '';
-
-  // Combine all sections
-  let rag = [
-    profPart && `${profPart}\n`,
-    terms?.length ? `【GLOSSARY ${lang}】\n${termPart}\n` : '',
-    ph?.length ? `【PHRASES ${lang}】\n${phrasePart}\n` : '',
-  ]
-    .join('')
-    .trim();
-
-  // Limit to 2000 chars
+  // 限制长度
+  let rag = profPart.trim();
   if (rag.length > 2000) rag = rag.slice(0, 2000);
 
   return {
     text: rag,
     stats: {
-      terms: terms?.length || 0,
-      phrases: ph?.length || 0,
+      terms: 0,
+      phrases: 0,
       hasProfile: !!prof,
     },
   };

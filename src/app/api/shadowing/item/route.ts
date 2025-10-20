@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
 
 export async function GET(req: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const authHeader = req.headers.get('authorization') || '';
     const cookieHeader = req.headers.get('cookie') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: any;
+    let supabase: SupabaseClient;
 
     if (hasBearer) {
       supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -68,6 +68,29 @@ export async function GET(req: NextRequest) {
 
     // 使用服务端密钥查询，避免RLS导致前端拿不到题面
     const supabaseAdmin = getServiceSupabase();
+    type ItemRow = {
+      id: string;
+      lang: string;
+      level: number;
+      title: string;
+      text: string;
+      audio_url: string | null;
+      audio_bucket: string | null;
+      audio_path: string | null;
+      notes: { audio_url?: string } | null;
+      audio_url_proxy: string | null;
+      duration_ms: number | null;
+      tokens: number | null;
+      cefr: string | null;
+      meta: unknown;
+      translations: unknown;
+      trans_updated_at: string | null;
+      created_at: string;
+      sentence_timeline: unknown;
+      theme_id?: string | null;
+      subtopic_id?: string | null;
+    };
+
     const { data, error } = await supabaseAdmin
       .from('shadowing_items')
       .select(
@@ -78,15 +101,15 @@ export async function GET(req: NextRequest) {
 
     if (error || !data) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
+    const row = data as ItemRow;
     const audioUrl =
-      // @ts-ignore
-      data.audio_url_proxy || data.audio_url || data?.notes?.audio_url ||
-      (data.audio_bucket && data.audio_path
-        ? `/api/storage-proxy?path=${encodeURIComponent(data.audio_path)}&bucket=${encodeURIComponent(data.audio_bucket)}`
+      row.audio_url_proxy || row.audio_url || row.notes?.audio_url ||
+      (row.audio_bucket && row.audio_path
+        ? `/api/storage-proxy?path=${encodeURIComponent(row.audio_path)}&bucket=${encodeURIComponent(row.audio_bucket)}`
         : null);
 
     const item = {
-      ...data,
+      ...(row as Record<string, unknown>),
       audio_url: audioUrl,
     };
 

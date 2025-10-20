@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: any;
+    let supabase: SupabaseClient;
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
@@ -53,15 +53,20 @@ export async function POST(req: NextRequest) {
       .single();
     if (error || !item) return NextResponse.json({ error: 'item not found' }, { status: 404 });
 
-    const correct = new Set((item.correct_options || []).map((s: string) => s.trim().toLowerCase()));
+    const correct = new Set(
+      (Array.isArray(item.correct_options) ? item.correct_options : []).map((s: string) =>
+        s.trim().toLowerCase(),
+      ),
+    );
     const sel = (selected_options || []).map((s: string) => s.trim().toLowerCase());
     const selectedAllCorrect = sel.every((s) => correct.has(s));
     const hitCount = sel.filter((s) => correct.has(s)).length;
     const isCorrect = selectedAllCorrect && hitCount === correct.size && correct.size > 0;
 
     return NextResponse.json({ success: true, is_correct: isCorrect });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'internal error' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'internal error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

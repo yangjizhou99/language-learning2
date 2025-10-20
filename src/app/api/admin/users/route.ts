@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export async function GET(req: NextRequest) {
   try {
@@ -59,12 +60,14 @@ export async function GET(req: NextRequest) {
     }
 
     // 获取每个用户的练习统计
-    const userIds = users?.map((u) => u.id) || [];
+    const userIds = (users?.map((u) => u.id) || []) as string[];
     const practiceStats = await getPracticeStats(supabase, userIds);
 
     // 获取用户的邮箱信息（从auth.users表）
     const { data: authUsers } = await supabase.auth.admin.listUsers();
-    const emailMap = new Map(authUsers?.users.map((u) => [u.id, u.email]) || []);
+    const emailMap = new Map<string, string | null>(
+      (authUsers?.users || []).map((u) => [u.id, u.email]),
+    );
 
     const usersWithStats = users?.map((user) => ({
       ...user,
@@ -94,10 +97,45 @@ export async function GET(req: NextRequest) {
   }
 }
 
-async function getPracticeStats(supabase: any, userIds: string[]) {
-  if (userIds.length === 0) return {};
+type PracticeStats = {
+  total_shadowing_attempts: number;
+  total_cloze_attempts: number;
+  total_alignment_attempts: number;
+  total_vocab_entries: number;
+  last_activity: string | null;
+  average_scores: { shadowing: number; cloze: number; alignment: number };
+};
 
-  const stats: Record<string, any> = {};
+type ShadowingAttemptRow = {
+  user_id: string;
+  created_at: string;
+  metrics: { score?: number } | null;
+};
+
+type ClozeAttemptRow = {
+  user_id: string;
+  created_at: string;
+  ai_result: { overall?: { score?: number } } | null;
+};
+
+type AlignmentAttemptRow = {
+  user_id: string;
+  created_at: string;
+  scores: { overall?: number } | null;
+};
+
+type VocabEntryRow = {
+  user_id: string;
+  created_at: string;
+};
+
+async function getPracticeStats(
+  supabase: SupabaseClient,
+  userIds: string[],
+): Promise<Record<string, PracticeStats>> {
+  if (userIds.length === 0) return {} as Record<string, PracticeStats>;
+
+  const stats: Record<string, PracticeStats> = {} as Record<string, PracticeStats>;
 
   // 初始化统计
   userIds.forEach((id) => {
@@ -118,7 +156,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
       .select('user_id, created_at, metrics')
       .in('user_id', userIds);
 
-    shadowingStats?.forEach((attempt: any) => {
+    (shadowingStats as ShadowingAttemptRow[] | null)?.forEach((attempt) => {
       const userId = attempt.user_id;
       if (stats[userId]) {
         stats[userId].total_shadowing_attempts++;
@@ -141,7 +179,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
       .select('user_id, created_at, ai_result')
       .in('user_id', userIds);
 
-    clozeStats?.forEach((attempt: any) => {
+    (clozeStats as ClozeAttemptRow[] | null)?.forEach((attempt) => {
       const userId = attempt.user_id;
       if (stats[userId]) {
         stats[userId].total_cloze_attempts++;
@@ -164,7 +202,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
       .select('user_id, created_at, scores')
       .in('user_id', userIds);
 
-    alignmentStats?.forEach((attempt: any) => {
+    (alignmentStats as AlignmentAttemptRow[] | null)?.forEach((attempt) => {
       const userId = attempt.user_id;
       if (stats[userId]) {
         stats[userId].total_alignment_attempts++;
@@ -187,7 +225,7 @@ async function getPracticeStats(supabase: any, userIds: string[]) {
       .select('user_id, created_at')
       .in('user_id', userIds);
 
-    vocabStats?.forEach((entry: any) => {
+    (vocabStats as VocabEntryRow[] | null)?.forEach((entry) => {
       const userId = entry.user_id;
       if (stats[userId]) {
         stats[userId].total_vocab_entries++;
