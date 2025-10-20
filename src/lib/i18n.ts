@@ -155,7 +155,6 @@ export interface Translations {
   nav: {
     home: string;
     alignment_practice: string;
-    wide_reading: string;
     shadowing: string;
     vocabulary: string;
     admin: string;
@@ -746,7 +745,6 @@ const zh: Translations = {
   nav: {
     home: '首页',
     alignment_practice: '对齐练习',
-    wide_reading: '广读',
     shadowing: '跟读练习',
     vocabulary: '单词本',
     admin: '管理员',
@@ -1329,7 +1327,6 @@ const en: Translations = {
   nav: {
     home: 'Home',
     alignment_practice: 'Alignment Practice',
-    wide_reading: 'Wide Reading',
     shadowing: 'Shadowing',
     vocabulary: 'Vocabulary',
     admin: 'Admin',
@@ -1913,7 +1910,6 @@ const ja: Translations = {
   nav: {
     home: 'ホーム',
     alignment_practice: 'アライメント練習',
-    wide_reading: '多読',
     shadowing: 'シャドーイング',
     vocabulary: '題庫',
     admin: '管理者',

@@ -10,7 +10,6 @@ import { supabase } from '@/lib/supabase';
 import {
   BookOpen,
   AlignCenter,
-  FileText,
   GraduationCap,
   User,
   TrendingUp,
@@ -165,14 +164,6 @@ export default function Home() {
       href: '/practice/alignment',
       color: 'bg-purple-500',
       show: permissions.can_access_alignment,
-    },
-    {
-      title: t.nav.wide_reading,
-      description: '广泛阅读，扩展知识面',
-      icon: FileText,
-      href: '/practice/wideread',
-      color: 'bg-orange-500',
-      show: permissions.can_access_articles,
     },
     {
       title: t.nav.vocabulary,

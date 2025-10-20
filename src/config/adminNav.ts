@@ -20,7 +20,6 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
     items: [
       { href: '/admin', label: '控制台', icon: '🏠', match: 'exact' },
       { href: '/admin/banks', label: '题库总览', icon: '📚', match: 'startsWith' },
-      { href: '/admin/articles', label: '题库管理', icon: '📝', match: 'startsWith' },
       { href: '/admin/drafts', label: '草稿箱', icon: '📋', match: 'startsWith' },
     ],
   },
@@ -99,7 +98,6 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
     items: [
       { href: '/admin/pronunciation', label: '发音评测管理', icon: '🎤', match: 'startsWith' },
       { href: '/admin/alignment/packs', label: '对齐训练包', icon: '🧭', match: 'startsWith' },
-      { href: '/admin/articles/list', label: '广读文章', icon: '📄', match: 'startsWith' },
       { href: '/admin/shadowing/items', label: 'Shadowing 素材', icon: '🎙️', match: 'startsWith' },
       { href: '/admin/question-bank/export', label: '题库导出', icon: '📦', match: 'startsWith' },
       {

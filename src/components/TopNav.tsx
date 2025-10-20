@@ -190,12 +190,6 @@ export default function TopNav() {
       icon: AlignCenter,
       show: permissions.can_access_alignment,
     },
-    {
-      href: '/practice/wideread',
-      label: t.nav.wide_reading,
-      icon: FileText,
-      show: permissions.can_access_articles,
-    },
     { href: '/vocab', label: t.nav.vocabulary, icon: BookOpen, show: true },
   ];
 
