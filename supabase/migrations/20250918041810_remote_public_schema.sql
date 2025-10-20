@@ -911,20 +911,11 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_sessions" (
     "vocab_entry_ids" "text"[],
     "picked_preview" "jsonb",
     "notes" "jsonb",
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "created_at" timestamp with time zone
 );
 
 
 ALTER TABLE "public"."shadowing_sessions" OWNER TO "postgres";
-
-
-COMMENT ON COLUMN "public"."shadowing_sessions"."created_at" IS 'Timestamp when the session was created';
-
-
-
-COMMENT ON COLUMN "public"."shadowing_sessions"."updated_at" IS 'Timestamp when the session was last updated';
-
 
 
 CREATE TABLE IF NOT EXISTS "public"."shadowing_subtopics" (
@@ -1781,10 +1772,6 @@ CREATE OR REPLACE TRIGGER "set_timestamp_pron_sentences" BEFORE UPDATE ON "publi
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."shadowing_sessions" FOR EACH ROW EXECUTE FUNCTION "public"."update_shadowing_sessions_updated_at"();
-
-
-
 CREATE OR REPLACE TRIGGER "trigger_update_api_usage_logs_updated_at" BEFORE UPDATE ON "public"."api_usage_logs" FOR EACH ROW EXECUTE FUNCTION "public"."update_api_usage_logs_updated_at"();
 
 
@@ -2580,39 +2567,39 @@ GRANT ALL ON TABLE "public"."sentence_units" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."shadowing_attempts" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."shadowing_attempts" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."shadowing_attempts" TO "service_role";
+GRANT ALL ON TABLE "public"."shadowing_attempts" TO "anon";
+GRANT ALL ON TABLE "public"."shadowing_attempts" TO "authenticated";
+GRANT ALL ON TABLE "public"."shadowing_attempts" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."shadowing_drafts" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."shadowing_drafts" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."shadowing_drafts" TO "service_role";
+GRANT ALL ON TABLE "public"."shadowing_drafts" TO "anon";
+GRANT ALL ON TABLE "public"."shadowing_drafts" TO "authenticated";
+GRANT ALL ON TABLE "public"."shadowing_drafts" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."shadowing_items" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."shadowing_items" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."shadowing_items" TO "service_role";
+GRANT ALL ON TABLE "public"."shadowing_items" TO "anon";
+GRANT ALL ON TABLE "public"."shadowing_items" TO "authenticated";
+GRANT ALL ON TABLE "public"."shadowing_items" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."shadowing_sessions" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."shadowing_sessions" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."shadowing_sessions" TO "service_role";
+GRANT ALL ON TABLE "public"."shadowing_sessions" TO "anon";
+GRANT ALL ON TABLE "public"."shadowing_sessions" TO "authenticated";
+GRANT ALL ON TABLE "public"."shadowing_sessions" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."shadowing_subtopics" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."shadowing_subtopics" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."shadowing_subtopics" TO "service_role";
+GRANT ALL ON TABLE "public"."shadowing_subtopics" TO "anon";
+GRANT ALL ON TABLE "public"."shadowing_subtopics" TO "authenticated";
+GRANT ALL ON TABLE "public"."shadowing_subtopics" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."shadowing_themes" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."shadowing_themes" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."shadowing_themes" TO "service_role";
+GRANT ALL ON TABLE "public"."shadowing_themes" TO "anon";
+GRANT ALL ON TABLE "public"."shadowing_themes" TO "authenticated";
+GRANT ALL ON TABLE "public"."shadowing_themes" TO "service_role";
 
 
 
