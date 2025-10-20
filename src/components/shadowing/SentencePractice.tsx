@@ -3,12 +3,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Square, Volume2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Square, Volume2, ChevronDown, ChevronUp, Pause, RotateCcw, SkipForward, Mic } from 'lucide-react';
 import SentencePracticeProgress from './SentencePracticeProgress';
 import SmartSuggestion from './SmartSuggestion';
 import { Toast } from './ScoreAnimation';
 import SentenceCard from './SentenceCard';
 import { useMobile } from '@/contexts/MobileContext';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type Lang = 'ja' | 'en' | 'zh';
 
@@ -32,12 +35,23 @@ type WebSpeechRecognition = {
   stop: () => void;
 };
 
-interface SentencePracticeProps {
-  originalText: string | undefined | null;
-  language: Lang;
-  className?: string;
-  audioUrl?: string | null;
-  sentenceTimeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }>;
+export interface RolePracticeSegment {
+  index: number;
+  start?: number;
+  end?: number;
+  text: string;
+  speaker: string;
+}
+
+export interface RoleSentenceScore {
+  index: number;
+  transcript: string;
+  text: string;
+  scoreRatio: number;
+  scorePercent: number;
+  missing: string[];
+  extra: string[];
+  skipped?: boolean;
 }
 
 interface SentenceScore {
@@ -47,17 +61,162 @@ interface SentenceScore {
   extra: string[];
 }
 
-function splitSentences(text: string, language: Lang): string[] {
+interface SentencePracticeProps {
+  originalText: string | undefined | null;
+  language: Lang;
+  className?: string;
+  audioUrl?: string | null;
+  sentenceTimeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }>;
+  practiceMode?: 'default' | 'role';
+  activeRole?: string;
+  roleSegments?: RolePracticeSegment[];
+  onRoleRoundComplete?: (results: RoleSentenceScore[]) => void;
+}
+
+const mapLangToLocale = (lang: Lang): string => {
+  switch (lang) {
+    case 'ja':
+      return 'ja-JP';
+    case 'zh':
+      return 'zh-CN';
+    case 'en':
+    default:
+      return 'en-US';
+  }
+};
+
+const normalizeSpeakerSymbol = (value: string | null | undefined) => {
+  if (!value) return '';
+  const converted = value.replace(/[Ａ-Ｚａ-ｚ]/g, (char) =>
+    String.fromCharCode(char.charCodeAt(0) - 0xFEE0),
+  );
+  const match = converted.match(/[A-Za-z]/);
+  if (match) return match[0].toUpperCase();
+  return converted.trim().charAt(0).toUpperCase();
+};
+
+const parseSegmentLine = (line: string): { speaker: string; content: string } | null => {
+  if (!line) return null;
+  const trimmed = line.trim();
+  const match = trimmed.match(/^([A-Za-zＡ-Ｚ])[:：]\s*(.+)$/);
+  if (!match) return null;
+  const speaker = normalizeSpeakerSymbol(match[1]);
+  const content = match[2].trim();
+  if (!speaker || !content) return null;
+  return { speaker, content };
+};
+
+const buildSegmentsFromText = (text: string | null | undefined): RolePracticeSegment[] => {
+  if (!text) return [];
+  const lines = text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const segments: RolePracticeSegment[] = [];
+  let cursor = 0;
+  lines.forEach((line) => {
+    const parsed = parseSegmentLine(line);
+    if (!parsed) return;
+    const duration = Math.max(parsed.content.length / 5, 2);
+    segments.push({
+      index: segments.length,
+      speaker: parsed.speaker,
+      text: parsed.content,
+      start: cursor,
+      end: cursor + duration,
+    });
+    cursor += duration;
+  });
+  return segments;
+};
+
+const mergeTimelineWithText = (
+  timeline: Array<{ index?: number; text?: string; start?: number; end?: number; speaker?: string }> = [],
+  textSegments: RolePracticeSegment[],
+): RolePracticeSegment[] => {
+  if (!timeline.length) {
+    return textSegments.map((seg, idx) => ({ ...seg, index: idx }));
+  }
+
+  const result: RolePracticeSegment[] = [];
+  const fallbackQueue = [...textSegments];
+
+  timeline.forEach((segment, order) => {
+    const fallback = fallbackQueue[0];
+    const rawText = typeof segment.text === 'string' ? segment.text.trim() : '';
+    const parsedFromTimeline = parseSegmentLine(rawText);
+
+    let speaker = normalizeSpeakerSymbol(
+      segment.speaker || parsedFromTimeline?.speaker || fallback?.speaker || '',
+    );
+    let content =
+      parsedFromTimeline?.content ||
+      (rawText && parsedFromTimeline ? parsedFromTimeline.content : rawText) ||
+      fallback?.text ||
+      '';
+
+    if (!content && fallback) {
+      content = fallback.text;
+    } else if (content) {
+      const parsed = parseSegmentLine(content);
+      if (parsed) {
+        speaker = speaker || parsed.speaker;
+        content = parsed.content;
+      }
+    }
+
+    if (!content) return;
+
+    const start =
+      typeof segment.start === 'number'
+        ? segment.start
+        : fallback?.start ?? order * 4;
+    const end =
+      typeof segment.end === 'number'
+        ? segment.end
+        : fallback?.end ?? start + Math.max(content.length / 5, 2);
+
+    result.push({
+      index: order,
+      speaker: speaker || 'A',
+      text: content.trim(),
+      start,
+      end,
+    });
+
+    if (fallbackQueue.length) {
+      fallbackQueue.shift();
+    }
+  });
+
+  if (!result.length) {
+    return textSegments.map((seg, idx) => ({ ...seg, index: idx }));
+  }
+
+  return result
+    .filter((seg) => seg.text.length > 0)
+    .sort((a, b) => (a.start ?? 0) - (b.start ?? 0))
+    .map((seg, idx) => ({
+      ...seg,
+      index: idx,
+    }));
+};
+
+export function deriveRoleSegments(
+  text: string | null | undefined,
+  timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }>,
+): RolePracticeSegment[] {
+  const textSegments = buildSegmentsFromText(text);
+  return mergeTimelineWithText(timeline, textSegments);
+}
+
+const splitSentences = (text: string, language: Lang): string[] => {
   if (!text || !text.trim()) return [];
-  // 对话体优先：以 A/B（含全角Ａ/Ｂ）作为最小句的分界
   const hasDialogue = /(?:^|\n)\s*[ABＡＢ]\s*[：:]/.test(text);
   if (hasDialogue) {
-    // 规范化：确保每个对话角色前有换行
     let normalized = text;
     normalized = normalized.replace(/([^\n])\s*([AＡ]\s*[：:])/g, '$1\n$2');
     normalized = normalized.replace(/([^\n])\s*([BＢ]\s*[：:])/g, '$1\n$2');
-
-    // 按行首的 A/B 标签切分，每个说话段落作为一个最小句
     const parts = normalized
       .split(/(?=^\s*[ABＡＢ]\s*[：:])/m)
       .map((s) => s.trim())
@@ -65,12 +224,10 @@ function splitSentences(text: string, language: Lang): string[] {
     if (parts.length) return parts;
   }
   try {
-    // Use Intl.Segmenter when available
     const SegClass = (Intl as unknown as { Segmenter?: new (loc: string, opts: { granularity: 'sentence' }) => any }).Segmenter;
     if (SegClass) {
       const seg = new SegClass(language, { granularity: 'sentence' });
       const parts: string[] = [];
-       
       for (const { segment } of seg.segment(text) as any) {
         const s = String(segment).trim();
         if (s) parts.push(s);
@@ -78,22 +235,19 @@ function splitSentences(text: string, language: Lang): string[] {
       if (parts.length) return parts;
     }
   } catch {}
-
-  // Fallback regex by language
   if (language === 'en') {
     return text
       .split(/(?<=[.!?])\s+/)
       .map((s) => s.trim())
       .filter(Boolean);
   }
-  // zh/ja punctuation
   return text
     .split(/[。！？!?…]+/)
     .map((s) => s.trim())
     .filter(Boolean);
-}
+};
 
-function tokenize(text: string, language: Lang): string[] {
+const tokenize = (text: string, language: Lang): string[] => {
   if (!text) return [];
   if (language === 'en') {
     return text
@@ -103,11 +257,10 @@ function tokenize(text: string, language: Lang): string[] {
       .filter(Boolean)
       .filter((w) => !EN_STOPWORDS.has(w));
   }
-  // For zh/ja: simple char-based with basic punctuation removal
   return Array.from(text.replace(/[\p{P}\p{S}\s]/gu, '')).filter(Boolean);
-}
+};
 
-function levenshtein(a: string[], b: string[]): number {
+const levenshtein = (a: string[], b: string[]): number => {
   const m = a.length;
   const n = b.length;
   const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
@@ -124,17 +277,12 @@ function levenshtein(a: string[], b: string[]): number {
     }
   }
   return dp[m][n];
-}
+};
 
-function unique<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr));
-}
+const unique = <T,>(arr: T[]): T[] => Array.from(new Set(arr));
 
-// 将词汇按在原文中的连续性分组
-function groupConsecutiveTokens(tokens: string[], sourceTokens: string[], separator: string = ''): string[] {
+const groupConsecutiveTokens = (tokens: string[], sourceTokens: string[], separator = ''): string[] => {
   if (tokens.length === 0) return [];
-  
-  // 找到每个token在source中的所有位置
   const tokenPositions = new Map<string, number[]>();
   sourceTokens.forEach((token, index) => {
     if (!tokenPositions.has(token)) {
@@ -142,32 +290,22 @@ function groupConsecutiveTokens(tokens: string[], sourceTokens: string[], separa
     }
     tokenPositions.get(token)!.push(index);
   });
-  
-  // 为每个缺失/多余的token找到它在原文中的位置
-  const positionsWithTokens: Array<{ pos: number; token: string; used: boolean }> = [];
-  tokens.forEach(token => {
-    const positions = tokenPositions.get(token) || [];
-    positions.forEach(pos => {
-      positionsWithTokens.push({ pos, token, used: false });
+  const positions: Array<{ pos: number; token: string; used: boolean }> = [];
+  tokens.forEach((token) => {
+    const positionsList = tokenPositions.get(token) || [];
+    positionsList.forEach((pos) => {
+      positions.push({ pos, token, used: false });
     });
   });
-  
-  // 按位置排序
-  positionsWithTokens.sort((a, b) => a.pos - b.pos);
-  
-  // 分组：将位置连续的token合并
+  positions.sort((a, b) => a.pos - b.pos);
   const groups: string[] = [];
   let currentGroup: string[] = [];
   let lastPos = -2;
-  
-  for (const item of positionsWithTokens) {
+  for (const item of positions) {
     if (item.used) continue;
-    
     if (item.pos === lastPos + 1) {
-      // 连续的，加入当前组
       currentGroup.push(item.token);
     } else {
-      // 不连续，开始新组
       if (currentGroup.length > 0) {
         groups.push(currentGroup.join(separator));
       }
@@ -176,62 +314,108 @@ function groupConsecutiveTokens(tokens: string[], sourceTokens: string[], separa
     lastPos = item.pos;
     item.used = true;
   }
-  
-  // 添加最后一组
   if (currentGroup.length > 0) {
     groups.push(currentGroup.join(separator));
   }
-  
   return groups.length > 0 ? groups : tokens;
-}
+};
 
 const EN_STOPWORDS = new Set([
   'the','a','an','and','or','but','if','then','else','when','at','by','for','in','of','on','to','with','as','is','are','was','were','be','been','being','do','does','did','have','has','had','i','you','he','she','it','we','they','them','me','my','your','his','her','its','our','their','this','that','these','those','from'
 ]);
 
-// 根据评分获取颜色方案
-function getScoreColor(score: SentenceScore | null): { bg: string; border: string; text: string; badge: string } {
-  if (!score || !score.finalText) {
+const computeRoleScore = (target: string, said: string, lang: Lang) => {
+  const cleanTarget = target.replace(/^[A-Z]:\s*/, '');
+  const cleanSaid = said.replace(/^[A-Z]:\s*/, '');
+  const targetTokens = tokenize(cleanTarget, lang);
+  const saidTokens = tokenize(cleanSaid, lang);
+  if (!targetTokens.length) {
     return {
-      bg: 'bg-gray-50',
-      border: 'border-gray-200',
-      text: 'text-gray-700',
-      badge: 'bg-gray-100 text-gray-600'
+      ratio: 0,
+      percent: 0,
+      missing: [] as string[],
+      extra: saidTokens,
     };
   }
-  
-  if (score.score >= 0.8) {
-    return {
-      bg: 'bg-green-50',
-      border: 'border-green-300',
-      text: 'text-green-900',
-      badge: 'bg-green-500 text-white'
-    };
-  } else if (score.score >= 0.6) {
-    return {
-      bg: 'bg-yellow-50',
-      border: 'border-yellow-300',
-      text: 'text-yellow-900',
-      badge: 'bg-yellow-500 text-white'
-    };
-  } else {
-    return {
-      bg: 'bg-red-50',
-      border: 'border-red-300',
-      text: 'text-red-900',
-      badge: 'bg-red-500 text-white'
-    };
-  }
-}
+  const saidSet = new Set(saidTokens);
+  const targetSet = new Set(targetTokens);
+  const matched = targetTokens.filter((token) => saidSet.has(token)).length;
+  const coverage = matched / targetTokens.length;
+  const missing = targetTokens.filter((token) => !saidSet.has(token));
+  const extra = saidTokens.filter((token) => !targetSet.has(token));
+  const ratio = Math.max(0, Math.min(coverage, 1));
+  return {
+    ratio,
+    percent: Math.round(ratio * 100),
+    missing,
+    extra,
+  };
+};
 
-export default function SentencePractice({ originalText, language, className = '', audioUrl, sentenceTimeline }: SentencePracticeProps) {
+function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete }: SentencePracticeProps) {
+  const { t } = useLanguage();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [displayText, setDisplayText] = useState('');
   const [finalText, setFinalText] = useState('');
   const [sentenceScores, setSentenceScores] = useState<Record<number, SentenceScore>>({});
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'celebration' } | null>(null);
-  
+
+  const isRoleMode = practiceMode === 'role';
+  const normalizedActiveRole = useMemo(() => normalizeSpeakerSymbol(activeRole || 'A'), [activeRole]);
+  const derivedRoleSegments = useMemo(() => {
+    if (!isRoleMode) return [] as RolePracticeSegment[];
+    if (roleSegments && roleSegments.length > 0) return roleSegments;
+    return deriveRoleSegments(originalText, sentenceTimeline);
+  }, [isRoleMode, roleSegments, originalText, sentenceTimeline]);
+  const [roleAutoState, setRoleAutoState] = useState<'idle' | 'running'>(`idle`);
+  const [roleAutoStarted, setRoleAutoStarted] = useState(false);
+  const [roleStepSignal, setRoleStepSignal] = useState(0);
+  const roleIndexRef = useRef(0);
+  const rolePendingResolveRef = useRef<(() => void) | null>(null);
+  const roleCancelledRef = useRef(false);
+
+  useEffect(() => {
+    if (!isRoleMode) {
+      roleCancelledRef.current = true;
+      rolePendingResolveRef.current = null;
+      setRoleAutoState('idle');
+      setRoleAutoStarted(false);
+      setRoleStepSignal(0);
+    } else {
+      roleCancelledRef.current = false;
+    }
+  }, [isRoleMode]);
+
+  useEffect(() => {
+    roleIndexRef.current = 0;
+  }, [derivedRoleSegments]);
+
+  const cleanupRecognition = useCallback(() => {
+    if (silenceTimerRef.current) {
+      window.clearInterval(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    const rec = recognitionRef.current;
+    if (rec) {
+      try {
+        rec.stop();
+      } catch {}
+    }
+  }, []);
+
+  const cleanupAudio = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+      } catch {}
+    }
+  }, []);
+
   const recognitionRef = useRef<WebSpeechRecognition | null>(null);
   const silenceTimerRef = useRef<number | null>(null);
   const lastResultAtRef = useRef<number>(0);
@@ -334,28 +518,44 @@ export default function SentencePractice({ originalText, language, className = '
 
   // 保存评分当finalText更新时
   useEffect(() => {
-    if (expandedIndex !== null && finalText && currentMetrics) {
-      const newScore = {
-        score: currentMetrics.score,
-        finalText: finalText,
-        missing: currentMetrics.missing,
-        extra: currentMetrics.extra,
-      };
-      
-      setSentenceScores(prev => ({
-        ...prev,
-        [expandedIndex]: newScore,
-      }));
-      
-      // 检查是否优秀并显示反馈
-      if (currentMetrics.score >= 0.8) {
-        setToast({
-          message: '做得很好！这句练得不错 👍',
-          type: 'success',
-        });
+    if (expandedIndex === null || !finalText || !currentMetrics) {
+      return;
+    }
+
+    if (isRoleMode) {
+      const activeSegment = derivedRoleSegments.find((seg, idx) => {
+        const segIndex = typeof seg.index === 'number' ? seg.index : idx;
+        return segIndex === expandedIndex;
+      });
+
+      if (
+        activeSegment &&
+        normalizeSpeakerSymbol(activeSegment.speaker) !== normalizedActiveRole
+      ) {
+        return;
       }
     }
-  }, [expandedIndex, finalText, currentMetrics]);
+
+    const newScore = {
+      score: currentMetrics.score,
+      finalText: finalText,
+      missing: currentMetrics.missing,
+      extra: currentMetrics.extra,
+    };
+
+    setSentenceScores(prev => ({
+      ...prev,
+      [expandedIndex]: newScore,
+    }));
+
+    // 检查是否优秀并显示反馈
+    if (currentMetrics.score >= 0.8) {
+      setToast({
+        message: '做得很好！这句练得不错👍',
+        type: 'success',
+      });
+    }
+  }, [expandedIndex, finalText, currentMetrics, derivedRoleSegments, isRoleMode, normalizedActiveRole]);
 
   // 清理静默定时器
   const clearSilenceTimer = () => {
@@ -521,22 +721,39 @@ export default function SentencePractice({ originalText, language, className = '
       
       setIsRecognizing(false);
       clearSilenceTimer();
-      // 发生错误时也要提交结果，延迟到按钮状态更新后
+      const maybeResolve = () => {
+        if (rolePendingResolveRef.current) {
+          const resolve = rolePendingResolveRef.current;
+          rolePendingResolveRef.current = null;
+          resolve();
+        }
+      };
       if (tempFinalTextRef.current) {
         setTimeout(() => {
           setFinalText(tempFinalTextRef.current);
+          maybeResolve();
         }, 100);
+      } else {
+        maybeResolve();
       }
     };
     rec.onend = () => {
       setIsRecognizing(false);
       clearSilenceTimer();
-      // 录音真正结束时才提交最终结果用于评分
-      // 延迟一小段时间，确保按钮从"停止"变为"练习"后再开始评分
+      const maybeResolve = () => {
+        if (rolePendingResolveRef.current) {
+          const resolve = rolePendingResolveRef.current;
+          rolePendingResolveRef.current = null;
+          resolve();
+        }
+      };
       if (tempFinalTextRef.current) {
         setTimeout(() => {
           setFinalText(tempFinalTextRef.current);
+          maybeResolve();
         }, 100);
+      } else {
+        maybeResolve();
       }
     };
     recognitionRef.current = rec;
@@ -611,7 +828,7 @@ export default function SentencePractice({ originalText, language, className = '
             audioRef.current.pause();
             stopAtRef.current = null;
           }
-        });
+      });
       } catch {}
     } else if (audioRef.current.src !== audioUrl) {
       audioRef.current.src = audioUrl;
@@ -697,23 +914,232 @@ export default function SentencePractice({ originalText, language, className = '
         } catch {}
       }
 
-      await a.play();
-      const tick = () => {
-        const stopAt = stopAtRef.current;
-        if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
-          audioRef.current.pause();
-          stopAtRef.current = null;
-          rafRef.current = null;
-          return;
+      await new Promise<void>((resolve, reject) => {
+        let finished = false;
+        let safetyId: ReturnType<typeof setTimeout> | null = null;
+        let playbackAttempted = false;
+        let playbackStarted = false;
+
+        function clearRaf() {
+          if (rafRef.current) {
+            cancelAnimationFrame(rafRef.current);
+            rafRef.current = null;
+          }
         }
-        rafRef.current = requestAnimationFrame(tick);
-      };
-      if (!rafRef.current) rafRef.current = requestAnimationFrame(tick);
+
+        function cleanup() {
+          clearRaf();
+          if (safetyId !== null) {
+            clearTimeout(safetyId);
+            safetyId = null;
+          }
+          stopAtRef.current = null;
+          if (a) {
+            a.removeEventListener('ended', handleEnded);
+            a.removeEventListener('pause', handlePause);
+          }
+        }
+
+        function finish() {
+          if (finished) return;
+          finished = true;
+          cleanup();
+          resolve();
+        }
+
+        function fail(error?: unknown) {
+          if (finished) return;
+          finished = true;
+          cleanup();
+          reject(error ?? new Error('Audio playback failed'));
+        }
+
+        function handleEnded() {
+          finish();
+        }
+
+        function handlePause() {
+          if (!playbackAttempted) return;
+          if (!playbackStarted && !roleCancelledRef.current) return;
+          finish();
+        }
+
+        const watchPlayback = () => {
+          const stopAt = stopAtRef.current;
+          if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
+            audioRef.current.pause();
+            finish();
+            return;
+          }
+          rafRef.current = requestAnimationFrame(watchPlayback);
+        };
+
+        a.addEventListener('ended', handleEnded, { once: true });
+        a.addEventListener('pause', handlePause);
+
+        clearRaf();
+        rafRef.current = requestAnimationFrame(watchPlayback);
+
+        const estimatedDuration = Math.max((targetStop - targetStart) * 1000, 300);
+        safetyId = setTimeout(() => finish(), estimatedDuration + 2000);
+
+        (async () => {
+          try {
+            playbackAttempted = true;
+            await a.play();
+            playbackStarted = true;
+          } catch (err) {
+            fail(err);
+          }
+        })();
+      });
       return;
     } catch {}
 
     alert('未找到可用的生成音频或时间轴，无法播放该句。');
   }, [audioUrl, sentenceTimeline, isIOS]);
+
+  const speakWithTTS = useCallback(async (text: string) => {
+    if (typeof window === 'undefined') return;
+    if (!('speechSynthesis' in window)) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = mapLangToLocale(language);
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find((voice) =>
+      (voice.lang || '').toLowerCase().startsWith(utterance.lang.toLowerCase()),
+    );
+    if (preferred) {
+      utterance.voice = preferred;
+    }
+    await new Promise<void>((resolve) => {
+      utterance.onend = () => resolve();
+      utterance.onerror = () => resolve();
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+      window.speechSynthesis.speak(utterance);
+    });
+  }, [language]);
+
+  const playRolePartnerSegment = useCallback(async (segment: RolePracticeSegment) => {
+    if (audioUrl && sentenceTimeline && sentenceTimeline.length > 0) {
+      try {
+        await speak(segment.index ?? 0);
+        return;
+      } catch {
+        // fall back to TTS below
+      }
+    }
+    await speakWithTTS(segment.text);
+  }, [audioUrl, sentenceTimeline, speak, speakWithTTS]);
+
+  const stopRoleAutomation = useCallback(() => {
+    roleCancelledRef.current = true;
+    if (rolePendingResolveRef.current) {
+      rolePendingResolveRef.current = null;
+    }
+    setRoleAutoState('idle');
+    setIsRecognizing(false);
+    cleanupRecognition();
+    cleanupAudio();
+  }, [cleanupAudio, cleanupRecognition]);
+
+  const startRoleAutomation = useCallback(() => {
+    if (!isRoleMode) return;
+    const segments = derivedRoleSegments;
+    if (!segments.length) {
+      setToast({
+        message: t.shadowing?.role_no_segments || '当前材料暂不支持分角色练习。',
+        type: 'info',
+      });
+      return;
+    }
+    roleCancelledRef.current = false;
+    if (!roleAutoStarted || roleIndexRef.current >= segments.length) {
+      roleIndexRef.current = 0;
+    }
+    const target = segments[roleIndexRef.current];
+    setExpandedIndex(target.index ?? roleIndexRef.current);
+    setRoleAutoStarted(true);
+    setIsRecognizing(false);
+    setDisplayText('');
+    setFinalText('');
+    tempFinalTextRef.current = '';
+    tempCombinedTextRef.current = '';
+    lastFinalTextRef.current = '';
+    setRoleAutoState('running');
+    setRoleStepSignal((x) => x + 1);
+  }, [derivedRoleSegments, isRoleMode, roleAutoStarted, setToast, t.shadowing?.role_no_segments]);
+
+  useEffect(() => {
+    if (!isRoleMode) return;
+    if (roleAutoState !== 'running') return;
+    const segments = derivedRoleSegments;
+    if (!segments.length) {
+      stopRoleAutomation();
+      return;
+    }
+    if (roleIndexRef.current >= segments.length) {
+      stopRoleAutomation();
+      setRoleAutoStarted(false);
+      if (onRoleRoundComplete) {
+        const results = segments
+          .filter((seg) => normalizeSpeakerSymbol(seg.speaker) === normalizedActiveRole)
+          .map((seg) => {
+            const base = sentenceScores[seg.index ?? 0];
+            return {
+              index: seg.index ?? 0,
+              transcript: base?.finalText || '',
+              text: seg.text,
+              scoreRatio: base?.score || 0,
+              scorePercent: Math.round((base?.score || 0) * 100),
+            missing: base?.missing || [],
+            extra: base?.extra || [],
+              skipped: !base,
+            };
+        });
+        onRoleRoundComplete(results);
+      }
+      return;
+    }
+
+    const segment = segments[roleIndexRef.current];
+    const isUserTurn = normalizeSpeakerSymbol(segment.speaker) === normalizedActiveRole;
+    setExpandedIndex(segment.index ?? roleIndexRef.current);
+
+    if (isUserTurn) {
+      rolePendingResolveRef.current = () => {
+        rolePendingResolveRef.current = null;
+        if (roleCancelledRef.current) return;
+        roleIndexRef.current += 1;
+        setRoleStepSignal((x) => x + 1);
+      };
+      setDisplayText('');
+      setFinalText('');
+      tempFinalTextRef.current = '';
+      tempCombinedTextRef.current = '';
+      lastFinalTextRef.current = '';
+      start();
+    } else {
+      setDisplayText('');
+      setFinalText('');
+      tempFinalTextRef.current = '';
+      tempCombinedTextRef.current = '';
+      lastFinalTextRef.current = '';
+      let cancelled = false;
+      (async () => {
+        try {
+          await playRolePartnerSegment(segment);
+        } catch {}
+        if (cancelled || roleCancelledRef.current) return;
+        roleIndexRef.current += 1;
+        setRoleStepSignal((x) => x + 1);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [derivedRoleSegments, isRoleMode, normalizedActiveRole, onRoleRoundComplete, playRolePartnerSegment, roleAutoState, roleStepSignal, sentenceScores, start, stopRoleAutomation]);
 
   const handleSentenceClick = async (index: number) => {
     // 如果点击的是当前展开的句子，则折叠
@@ -745,7 +1171,56 @@ export default function SentencePractice({ originalText, language, className = '
   }, [sentenceScores, total]);
 
   return (
-    <Card className={`p-4 md:p-6 border border-slate-200 shadow-sm bg-slate-50/30 ${className || ''}`}>
+    <>
+      {isRoleMode && derivedRoleSegments.length > 0 && (
+        <Card className="mb-4 border border-indigo-100 bg-white/80 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium text-indigo-600">
+                {t.shadowing?.role_mode_title || '分角色练习'}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">
+                {t.shadowing?.role_mode_hint || '轮到对方时自动播放，轮到你时会自动录音并分析。'}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {roleAutoState !== 'running' ? (
+                <Button size="sm" onClick={startRoleAutomation}>
+                  <Play className="w-4 h-4 mr-2" />
+                  {roleAutoStarted ? t.shadowing?.role_resume_button || '继续' : t.shadowing?.role_start_button || '开始角色练习'}
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" onClick={stopRoleAutomation}>
+                  <Pause className="w-4 h-4 mr-2" />
+                  {t.shadowing?.role_pause_button || '暂停'}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  stopRoleAutomation();
+                  roleIndexRef.current = 0;
+                  setRoleAutoStarted(false);
+                  setSentenceScores({});
+                  setExpandedIndex(null);
+                  setDisplayText('');
+                  setFinalText('');
+                  tempFinalTextRef.current = '';
+                  tempCombinedTextRef.current = '';
+                  lastFinalTextRef.current = '';
+                  setToast(null);
+                }}
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                {t.shadowing?.role_reset_button || '重新开始'}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <Card className={`p-4 md:p-6 border border-slate-200 shadow-sm bg-slate-50/30 ${className || ''}`}>
       {/* 顶部：进度显示 */}
       <div className="mb-4">
         <SentencePracticeProgress
@@ -796,13 +1271,15 @@ export default function SentencePractice({ originalText, language, className = '
                 language={language}
                 onToggleExpand={() => handleSentenceClick(index)}
                 onSpeak={() => speak(index)}
-                onStartPractice={start}
-                onStopPractice={stop}
-                onRetry={() => {
-                  setDisplayText('');
-                  setFinalText('');
-                  setTimeout(() => start(), 100);
-                }}
+                onStartPractice={isRoleMode ? (() => {}) : start}
+                onStopPractice={isRoleMode ? (() => {}) : stop}
+                onRetry={isRoleMode
+                  ? () => {}
+                  : () => {
+                      setDisplayText('');
+                      setFinalText('');
+                      setTimeout(() => start(), 100);
+                    }}
               />
             );
           })}
@@ -820,5 +1297,10 @@ export default function SentencePractice({ originalText, language, className = '
         />
       )}
     </Card>
+    </>
   );
+}
+
+export default function SentencePractice(props: SentencePracticeProps) {
+  return <SentencePracticeDefault {...props} />;
 }

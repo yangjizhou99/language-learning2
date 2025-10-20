@@ -142,6 +142,134 @@ interface AudioRecording {
   transcription?: string;
 }
 
+type TimelineSegment = {
+  index?: number;
+  text?: string;
+  start?: number;
+  end?: number;
+  speaker?: string;
+};
+
+type RoleSegment = {
+  index: number;
+  start?: number;
+  end?: number;
+  text: string;
+  speaker: string;
+};
+
+const normalizeSpeakerSymbol = (value: string | null | undefined) => {
+  if (!value) return '';
+  const converted = value.replace(/[Ａ-Ｚａ-ｚ]/g, (char) =>
+    String.fromCharCode(char.charCodeAt(0) - 0xFEE0),
+  );
+  const match = converted.match(/[A-Za-z]/);
+  if (match) return match[0].toUpperCase();
+  return converted.trim().charAt(0).toUpperCase();
+};
+
+const parseSegmentLine = (line: string): { speaker: string; content: string } | null => {
+  if (!line) return null;
+  const trimmed = line.trim();
+  const match = trimmed.match(/^([A-Za-zＡ-Ｚ])[:：]\s*(.+)$/);
+  if (!match) return null;
+  const speaker = normalizeSpeakerSymbol(match[1]);
+  const content = match[2].trim();
+  if (!speaker || !content) return null;
+  return { speaker, content };
+};
+
+const buildSegmentsFromText = (text: string): RoleSegment[] => {
+  if (!text) return [];
+  const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  const segments: RoleSegment[] = [];
+  let cursor = 0;
+  lines.forEach((line) => {
+    const parsed = parseSegmentLine(line);
+    if (!parsed) return;
+    const duration = Math.max(parsed.content.length / 5, 2);
+    segments.push({
+      index: segments.length,
+      speaker: parsed.speaker,
+      text: parsed.content,
+      start: cursor,
+      end: cursor + duration,
+    });
+    cursor += duration;
+  });
+  return segments;
+};
+
+const mergeTimelineWithText = (
+  timeline: TimelineSegment[],
+  textSegments: RoleSegment[],
+): RoleSegment[] => {
+  if (!timeline.length) {
+    return textSegments.map((seg, idx) => ({ ...seg, index: idx }));
+  }
+
+  const result: RoleSegment[] = [];
+  const fallbackQueue = [...textSegments];
+
+  timeline.forEach((segment, order) => {
+    const fallback = fallbackQueue[0];
+    const rawText = typeof segment.text === 'string' ? segment.text.trim() : '';
+    const parsedFromTimeline = parseSegmentLine(rawText);
+
+    let speaker = normalizeSpeakerSymbol(segment.speaker || parsedFromTimeline?.speaker || fallback?.speaker || '');
+    let content =
+      parsedFromTimeline?.content ||
+      (rawText && parsedFromTimeline ? parsedFromTimeline.content : rawText) ||
+      fallback?.text ||
+      '';
+
+    if (!content && fallback) {
+      content = fallback.text;
+    } else if (content) {
+      const parsed = parseSegmentLine(content);
+      if (parsed) {
+        speaker = speaker || parsed.speaker;
+        content = parsed.content;
+      }
+    }
+
+    if (!content) return;
+
+    const start =
+      typeof segment.start === 'number'
+        ? segment.start
+        : fallback?.start ?? order * 4;
+    const end =
+      typeof segment.end === 'number'
+        ? segment.end
+        : fallback?.end ?? start + Math.max(content.length / 5, 2);
+
+    result.push({
+      index: order,
+      speaker: speaker || 'A',
+      text: content.trim(),
+      start,
+      end,
+    });
+
+    if (fallbackQueue.length) {
+      fallbackQueue.shift();
+    }
+  });
+
+  if (!result.length) {
+    return textSegments.map((seg, idx) => ({ ...seg, index: idx }));
+  }
+
+  return result
+    .filter((seg) => seg.text.length > 0)
+    .sort((a, b) => (a.start ?? 0) - (b.start ?? 0))
+    .map((seg, idx) => ({
+      ...seg,
+      index: idx,
+    }));
+};
+
 export default function ShadowingPage() {
   const { t, language, setLanguageFromUserProfile } = useLanguage();
   const { permissions } = useUserPermissions();
@@ -171,6 +299,10 @@ export default function ShadowingPage() {
   const [theme, setTheme] = useState<string>('all');
   const [selectedThemeId, setSelectedThemeId] = useState<string>('all');
   const [selectedSubtopicId, setSelectedSubtopicId] = useState<string>('all');
+  const [practiceMode, setPracticeMode] = useState<'default' | 'role'>('default');
+  const [selectedRole, setSelectedRole] = useState<string>('A');
+  const [completedRoleList, setCompletedRoleList] = useState<string[]>([]);
+  const [nextRoleSuggestion, setNextRoleSuggestion] = useState<string | null>(null);
 
   // 本地持久化 + URL 同步（仅语言、等级、练习情况）
   const navSearchParams = useSearchParams();
@@ -201,6 +333,16 @@ export default function ShadowingPage() {
       if (urlPracticed !== practiced) setPracticed(urlPracticed);
     }
 
+    const urlMode = params.get('mode');
+    if (urlMode === 'role') {
+      setPracticeMode('role');
+    }
+
+    const urlRole = params.get('role');
+    if (urlRole) {
+      setSelectedRole(urlRole.toUpperCase());
+    }
+
     // 如果 URL 未提供，则尝试本地持久化
     const persisted = loadShadowingFilters();
     if (persisted) {
@@ -226,6 +368,15 @@ export default function ShadowingPage() {
       params.set('lang', lang);
       if (level !== null && level !== undefined) params.set('level', String(level)); else params.delete('level');
       params.set('practiced', practiced);
+      if (practiceMode === 'role') {
+        params.set('mode', 'role');
+        if (selectedRole) {
+          params.set('role', selectedRole.toUpperCase());
+        }
+      } else {
+        params.delete('mode');
+        params.delete('role');
+      }
 
       const next = `${pathname}?${params.toString()}`;
       const current = `${pathname}?${navSearchParams?.toString() || ''}`;
@@ -235,7 +386,7 @@ export default function ShadowingPage() {
     }, 200);
     // 不依赖 searchParams，避免自身 replace 触发循环
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang, level, practiced, pathname, router]);
+  }, [lang, level, practiced, practiceMode, selectedRole, pathname, router]);
 
   useEffect(() => {
     return () => {
@@ -349,6 +500,61 @@ export default function ShadowingPage() {
     >
   >({});
 
+  const roleSegments = useMemo<RoleSegment[]>(() => {
+    if (!currentItem) return [];
+    const rawTimeline = Array.isArray(
+      (currentItem as unknown as { sentence_timeline?: TimelineSegment[] })?.sentence_timeline,
+    )
+      ? ((currentItem as unknown as { sentence_timeline: TimelineSegment[] }).sentence_timeline ?? [])
+      : [];
+    const textSegments = buildSegmentsFromText(currentItem.text || '');
+    return mergeTimelineWithText(rawTimeline, textSegments);
+  }, [currentItem]);
+
+  const availableRoles = useMemo<string[]>(() => {
+    const set = new Set<string>();
+    roleSegments.forEach((segment) => {
+      const normalized = normalizeSpeakerSymbol(segment.speaker);
+      if (normalized) {
+        set.add(normalized);
+      }
+    });
+    return Array.from(set);
+  }, [roleSegments]);
+
+  useEffect(() => {
+    if (!availableRoles.length) {
+      setPracticeMode('default');
+      return;
+    }
+    if (!availableRoles.includes(selectedRole)) {
+      setSelectedRole(availableRoles[0]);
+    }
+  }, [availableRoles, selectedRole]);
+
+  useEffect(() => {
+    setCompletedRoleList((prev) => prev.filter((role) => availableRoles.includes(role)));
+  }, [availableRoles]);
+
+  useEffect(() => {
+    if (practiceMode !== 'role') {
+      setNextRoleSuggestion(null);
+      setCompletedRoleList([]);
+    }
+  }, [practiceMode]);
+
+  useEffect(() => {
+    if (!currentItem) {
+      setPracticeMode('default');
+      setSelectedRole('A');
+      setCompletedRoleList([]);
+      setNextRoleSuggestion(null);
+      return;
+    }
+    setCompletedRoleList([]);
+    setNextRoleSuggestion(null);
+  }, [currentItem?.id]);
+
   // 用户个人资料状态
   const [userProfile, setUserProfile] = useState<{ native_lang?: string } | null>(null);
 
@@ -379,6 +585,98 @@ export default function ShadowingPage() {
     };
     return names[lang as keyof typeof names] || lang;
   };
+
+  const handleRoleRoundComplete = useCallback(
+    (_result: unknown) => {
+      setCompletedRoleList((prev) => {
+        if (prev.includes(selectedRole)) return prev;
+        const updated = [...prev, selectedRole];
+        const remaining = availableRoles.filter((role) => !updated.includes(role));
+        setNextRoleSuggestion(remaining.length > 0 ? remaining[0] : null);
+        return updated;
+      });
+    },
+    [availableRoles, selectedRole],
+  );
+
+  const renderPracticeModeSwitcher = () => (
+    <Card className="p-4 border border-indigo-100 bg-white/80 shadow-sm">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <div className="text-sm font-medium text-indigo-600">
+              {t.shadowing?.role_mode_switcher_title || '练习模式'}
+            </div>
+            <div className="text-xs text-slate-500 mt-1">
+              {t.shadowing?.role_mode_switcher_hint || '可在普通逐句与分角色对话之间切换'}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant={practiceMode === 'default' ? 'default' : 'outline'}
+              onClick={() => {
+                setPracticeMode('default');
+                setNextRoleSuggestion(null);
+                setCompletedRoleList([]);
+              }}
+              size="sm"
+            >
+              {t.shadowing?.mode_default || '逐句练习'}
+            </Button>
+            <Button
+              variant={practiceMode === 'role' ? 'default' : 'outline'}
+              onClick={() => {
+                if (!availableRoles.length) return;
+                setPracticeMode('role');
+                setCompletedRoleList([]);
+                setNextRoleSuggestion(null);
+                setSelectedRole((prev) =>
+                  availableRoles.includes(prev) ? prev : availableRoles[0],
+                );
+              }}
+              disabled={!availableRoles.length}
+              size="sm"
+            >
+              {t.shadowing?.mode_role || '分角色对话'}
+            </Button>
+          </div>
+        </div>
+        {practiceMode === 'role' && (
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-slate-600">
+                {t.shadowing?.role_select_label || '选择角色'}
+              </Label>
+              <Select
+                value={selectedRole}
+                onValueChange={(value) => {
+                  setSelectedRole(value.toUpperCase());
+                  setNextRoleSuggestion(null);
+                }}
+                disabled={!availableRoles.length}
+              >
+                <SelectTrigger className="w-28">
+                  <SelectValue placeholder="A" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRoles.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {practiceMode === 'role' && availableRoles.length === 0 && (
+              <div className="text-sm text-rose-600">
+                {t.shadowing?.role_mode_unavailable || '当前素材暂不支持分角色练习'}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
 
   // 获取用户个人资料
   const fetchUserProfile = useCallback(async () => {
@@ -4311,7 +4609,10 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 逐句练习（移动端；仅步骤5或完成后；不保存，仅实时反馈） */}
+                  {/* 练习模式切换 */}
+                  {(!gatingActive || step >= 5) && renderPracticeModeSwitcher()}
+
+                  {/* 逐句/分角色练习 */}
                   {(!gatingActive || step >= 5) && (
                     <SentencePractice
                       originalText={currentItem?.text}
@@ -4320,11 +4621,33 @@ export default function ShadowingPage() {
                       sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
                         ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
                         : undefined}
+                      practiceMode={practiceMode}
+                      activeRole={selectedRole}
+                      roleSegments={roleSegments}
+                      onRoleRoundComplete={handleRoleRoundComplete}
                     />
                   )}
 
+                  {practiceMode === 'role' && nextRoleSuggestion && (
+                    <Card className="p-4 border border-emerald-200 bg-emerald-50 text-emerald-700 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div>
+                        {t.shadowing?.role_suggestion_text || '切换到其他角色继续练习：'}
+                        <span className="font-semibold ml-1">{nextRoleSuggestion}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSelectedRole(nextRoleSuggestion);
+                          setNextRoleSuggestion(null);
+                        }}
+                      >
+                        {t.shadowing?.role_switch_now || '立即切换'}
+                      </Button>
+                    </Card>
+                  )}
+
                   {/* 录音练习区域（移动端；仅步骤5或完成后） */}
-                  {(!gatingActive || step >= 5) && (
+                  {practiceMode !== 'role' && (!gatingActive || step >= 5) && (
                   <Card className="p-4">
                     <AudioRecorder
                       ref={audioRecorderRef}
@@ -4342,7 +4665,7 @@ export default function ShadowingPage() {
                   )}
 
                   {/* 评分区域（仅步骤5显示或完成后） */}
-                  {!scoringResult && (!gatingActive || step >= 5) && (
+                  {!scoringResult && practiceMode !== 'role' && (!gatingActive || step >= 5) && (
                     <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
@@ -4404,7 +4727,7 @@ export default function ShadowingPage() {
                   )}
 
                   {/* 评分结果区域 */}
-                  {scoringResult && (
+                  {practiceMode !== 'role' && scoringResult && (
                     <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
@@ -6062,28 +6385,29 @@ export default function ShadowingPage() {
 
                   {/* 取消第5步顶部额外播放器，沿用下方通用播放器 */}
 
-                  {/* 逐句练习（仅步骤5，正式录音前；不保存，仅实时反馈） */}
-                  {(!gatingActive || step >= 5) && (
-                    (() => {
-                      try {
-                        if (currentItem && (!currentItem.audio_url || !(currentItem as unknown as { sentence_timeline?: unknown }).sentence_timeline)) {
-                          (async () => {
-                            try {
-                              const headers = await getAuthHeaders();
-                              const r = await fetch(`/api/shadowing/item?id=${currentItem!.id}`, { headers, credentials: 'include' });
-                              if (r.ok) {
-                                const data = await r.json();
-                                if (data?.item && data.item.id === currentItem!.id) {
-                                  setCurrentItem((prev) => (prev && prev.id === data.item.id ? { ...prev, ...data.item } as any : prev));
-                                }
+                  {/* 练习模式切换 */}
+                  {(!gatingActive || step >= 5) && renderPracticeModeSwitcher()}
+
+                  {/* 逐句/分角色练习 */}
+                  {(!gatingActive || step >= 5) && (() => {
+                    try {
+                      if (currentItem && (!currentItem.audio_url || !(currentItem as unknown as { sentence_timeline?: unknown }).sentence_timeline)) {
+                        (async () => {
+                          try {
+                            const headers = await getAuthHeaders();
+                            const r = await fetch(`/api/shadowing/item?id=${currentItem!.id}`, { headers, credentials: 'include' });
+                            if (r.ok) {
+                              const data = await r.json();
+                              if (data?.item && data.item.id === currentItem!.id) {
+                                setCurrentItem((prev) => (prev && prev.id === data.item.id ? { ...prev, ...data.item } as any : prev));
                               }
-                            } catch {}
-                          })();
-                        }
-                      } catch {}
-                      return null;
-                    })()
-                  )}
+                            }
+                          } catch {}
+                        })();
+                      }
+                    } catch {}
+                    return null;
+                  })()}
                   {(!gatingActive || step >= 5) && (
                     <SentencePractice
                       originalText={currentItem?.text}
@@ -6092,11 +6416,33 @@ export default function ShadowingPage() {
                       sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
                         ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
                         : undefined}
+                      practiceMode={practiceMode}
+                      activeRole={selectedRole}
+                      roleSegments={roleSegments}
+                      onRoleRoundComplete={handleRoleRoundComplete}
                     />
                   )}
 
+                  {practiceMode === 'role' && nextRoleSuggestion && (
+                    <Card className="p-4 border border-emerald-200 bg-emerald-50 text-emerald-700 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div>
+                        {t.shadowing?.role_suggestion_text || '切换到其他角色继续练习：'}
+                        <span className="font-semibold ml-1">{nextRoleSuggestion}</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSelectedRole(nextRoleSuggestion);
+                          setNextRoleSuggestion(null);
+                        }}
+                      >
+                        {t.shadowing?.role_switch_now || '立即切换'}
+                      </Button>
+                    </Card>
+                  )}
+
                   {/* 录音练习区域（仅步骤5显示；完成或移动端保持原样） */}
-                  {(!gatingActive || step >= 5) && (
+                  {practiceMode !== 'role' && (!gatingActive || step >= 5) && (
                   <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-green-50 to-emerald-50">
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -6119,7 +6465,7 @@ export default function ShadowingPage() {
                   )}
 
                   {/* 评分区域（仅步骤5显示；完成或移动端保持原样） */}
-                  {!scoringResult && (!gatingActive || step >= 5) && (
+                  {!scoringResult && practiceMode !== 'role' && (!gatingActive || step >= 5) && (
                     <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
@@ -6181,7 +6527,7 @@ export default function ShadowingPage() {
                   )}
 
                   {/* 评分结果区域 */}
-                  {scoringResult && (
+                  {practiceMode !== 'role' && scoringResult && (
                     <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
