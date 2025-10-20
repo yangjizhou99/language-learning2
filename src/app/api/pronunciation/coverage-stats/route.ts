@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -80,8 +81,10 @@ export async function GET(req: NextRequest) {
 /**
  * 获取覆盖度统计
  */
+type UnitRow = { unit_id: number; symbol: string };
+
 async function getCoverageStats(
-  supabase: any,
+  supabase: SupabaseClient,
   userId: string,
   lang: string
 ): Promise<CoverageStats> {
@@ -98,7 +101,7 @@ async function getCoverageStats(
   }
 
   const practicedUnitIds = new Set<number>(
-    (practicedUnits || []).map((u: { unit_id: number }) => Number(u.unit_id))
+    ((practicedUnits as Array<{ unit_id: number }> | null) || []).map((u) => Number(u.unit_id)),
   );
 
   // 2. 获取所有音节
@@ -112,7 +115,7 @@ async function getCoverageStats(
     throw new Error('获取音节列表失败');
   }
 
-  const totalUnits = allUnits?.length || 0;
+  const totalUnits = (allUnits as UnitRow[] | null)?.length || 0;
   const practicedUnitsCount = practicedUnitIds.size;
   const coverageRate = totalUnits > 0 ? (practicedUnitsCount / totalUnits) * 100 : 0;
 
@@ -144,7 +147,7 @@ async function getCoverageStats(
  * 获取中文分类统计
  */
 async function getChineseCategoryStats(
-  supabase: any,
+  supabase: SupabaseClient,
   practicedUnitIds: Set<number>
 ): Promise<Array<{ category: string; total: number; practiced: number; rate: number }>> {
   const { data: units, error: unitsError } = await supabase
@@ -160,7 +163,7 @@ async function getChineseCategoryStats(
   // 基于symbol进行简单分类
   const categoryMap = new Map<string, { total: number; practiced: number }>();
 
-  units.forEach((unit: any) => {
+  (units as UnitRow[]).forEach((unit) => {
     const symbol = unit.symbol;
     let category = '韵母'; // 默认韵母
 
@@ -194,7 +197,7 @@ async function getChineseCategoryStats(
  * 获取英文分类统计
  */
 async function getEnglishCategoryStats(
-  supabase: any,
+  supabase: SupabaseClient,
   practicedUnitIds: Set<number>
 ): Promise<Array<{ category: string; total: number; practiced: number; rate: number }>> {
   const { data: units, error: unitsError } = await supabase
@@ -210,7 +213,7 @@ async function getEnglishCategoryStats(
   // 基于symbol进行简单分类
   const categoryMap = new Map<string, { total: number; practiced: number }>();
 
-  units.forEach((unit: any) => {
+  (units as UnitRow[]).forEach((unit) => {
     const symbol = unit.symbol;
     let category = 'consonant'; // 默认辅音
 
@@ -244,7 +247,7 @@ async function getEnglishCategoryStats(
  * 获取日文分类统计
  */
 async function getJapaneseCategoryStats(
-  supabase: any,
+  supabase: SupabaseClient,
   practicedUnitIds: Set<number>
 ): Promise<Array<{ category: string; total: number; practiced: number; rate: number }>> {
   const { data: units, error: unitsError } = await supabase
@@ -260,7 +263,7 @@ async function getJapaneseCategoryStats(
   // 基于symbol进行简单分类
   const categoryMap = new Map<string, { total: number; practiced: number }>();
 
-  units.forEach((unit: any) => {
+  (units as UnitRow[]).forEach((unit) => {
     const symbol = unit.symbol;
     let category = 'consonant'; // 默认辅音
 

@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getUserPermissions, checkLevelPermission, checkLanguagePermission, checkAccessPermission } from '@/lib/user-permissions-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     // auth: Bearer 优先，其次 Cookie
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: any;
+    let supabase: SupabaseClient;
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
         auth: { persistSession: false, autoRefreshToken: false },
@@ -26,13 +26,13 @@ export async function GET(req: NextRequest) {
       });
     } else {
       const cookieStore = await cookies();
-      supabase = createServerClient(supabaseUrl, supabaseAnon, {
+      supabase = (createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
           get(name: string) { return cookieStore.get(name)?.value; },
           set() {},
           remove() {},
         },
-      });
+      }) as unknown) as SupabaseClient;
     }
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -89,7 +89,15 @@ export async function GET(req: NextRequest) {
       return a;
     };
 
-    const sentences = (rows || []).map((r: any) => {
+    type Row = {
+      sentence_index: number;
+      sentence_text: string;
+      blank_start: number;
+      blank_length: number;
+      correct_options: string[] | null;
+      distractor_options: string[] | null;
+    };
+    const sentences = ((rows as Row[] | null) || []).map((r) => {
       const correct = Array.isArray(r.correct_options) ? r.correct_options : [];
       const distractors = Array.isArray(r.distractor_options) ? r.distractor_options : [];
       const seedStr = `${user.id}|${article.id}|${r.sentence_index}`;
@@ -114,8 +122,9 @@ export async function GET(req: NextRequest) {
       },
       sentences,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || 'internal error' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'internal error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

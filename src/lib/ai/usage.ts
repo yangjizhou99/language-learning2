@@ -1,6 +1,14 @@
 export type Usage = { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+type AnyUsageLike = {
+  prompt_tokens?: unknown;
+  promptTokens?: unknown;
+  completion_tokens?: unknown;
+  completionTokens?: unknown;
+  total_tokens?: unknown;
+  totalTokens?: unknown;
+} | null | undefined;
 
-export function normUsage(u: any): Usage {
+export function normUsage(u: AnyUsageLike): Usage {
   if (!u) return { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
   const pt = Number(u.prompt_tokens ?? u.promptTokens ?? 0) || 0;
   const ct = Number(u.completion_tokens ?? u.completionTokens ?? 0) || 0;

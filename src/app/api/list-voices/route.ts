@@ -2,13 +2,16 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import textToSpeech from '@google-cloud/text-to-speech';
+import textToSpeech, { protos } from '@google-cloud/text-to-speech';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 function makeClient() {
   const raw = process.env.GOOGLE_TTS_CREDENTIALS;
   if (!raw) throw new Error('GOOGLE_TTS_CREDENTIALS missing');
 
-  let credentials: any;
+  type GoogleCreds = { project_id?: string } & Record<string, unknown>;
+  let credentials: GoogleCreds;
   try {
     credentials = JSON.parse(raw);
   } catch {
@@ -18,10 +21,8 @@ function makeClient() {
           'File path not supported in production. Use JSON string in GOOGLE_TTS_CREDENTIALS',
         );
       }
-      const fs = require('fs');
-      const path = require('path');
-      const filePath = path.resolve(process.cwd(), raw);
-      const fileContent = fs.readFileSync(filePath, 'utf8');
+      const filePath = resolve(process.cwd(), raw);
+      const fileContent = readFileSync(filePath, 'utf8');
       credentials = JSON.parse(fileContent);
     } catch (fileError: unknown) {
       const errorMessage = fileError instanceof Error ? fileError.message : String(fileError);
@@ -29,7 +30,9 @@ function makeClient() {
     }
   }
 
-  const projectId = process.env.GOOGLE_TTS_PROJECT_ID || credentials.project_id;
+  const projectId = (process.env.GOOGLE_TTS_PROJECT_ID ?? credentials.project_id) as
+    | string
+    | undefined;
   return new textToSpeech.TextToSpeechClient({ credentials, projectId });
 }
 
@@ -40,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     const client = makeClient();
 
-    let voices;
+    let voices: protos.google.cloud.texttospeech.v1.IVoice[];
     if (lang === 'all') {
       const [res] = await client.listVoices({});
       voices = res.voices || [];
@@ -50,21 +53,29 @@ export async function GET(req: NextRequest) {
     }
 
     // 按语言分组
-    const groupedVoices = voices.reduce((acc: any, voice: any) => {
+    type Grouped = Record<string, Array<{
+      name?: string | null;
+      languageCode: string;
+      ssmlGender?: protos.google.cloud.texttospeech.v1.SsmlVoiceGender | null;
+      naturalSampleRateHertz?: number | null;
+    }>>;
+
+    const groupedVoices = voices.reduce((acc: Grouped, voice) => {
       const langCode = voice.languageCodes?.[0] || 'unknown';
       if (!acc[langCode]) acc[langCode] = [];
 
       acc[langCode].push({
         name: voice.name,
         languageCode: langCode,
-        ssmlGender: voice.ssmlGender,
+        ssmlGender: (voice.ssmlGender as unknown as
+          | protos.google.cloud.texttospeech.v1.SsmlVoiceGender
+          | null
+          | undefined) ?? null,
         naturalSampleRateHertz: voice.naturalSampleRateHertz,
-        supportedEngines: voice.supportedEngines,
-        supportedModels: voice.supportedModels,
       });
 
       return acc;
-    }, {});
+    }, {} as Grouped);
 
     return NextResponse.json({
       success: true,
@@ -73,12 +84,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error('获取音色列表失败:', error);
-    const message =
-      error instanceof Error
-        ? error instanceof Error
-          ? error.message
-          : String(error)
-        : String(error);
+    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
       {
         success: false,

@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     // Bearer 优先，其次 Cookie 方式
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: any;
+    let supabase: SupabaseClient;
 
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       });
     } else {
       const cookieStore = await cookies();
-      supabase = createServerClient(supabaseUrl, supabaseAnon, {
+      supabase = (createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
           get(name: string) {
             return cookieStore.get(name)?.value;
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
           set() {},
           remove() {},
         },
-      });
+      }) as unknown) as SupabaseClient;
     }
 
     // Check authentication
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     // Bearer 优先，其次 Cookie 方式
     const authHeader = req.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: any;
+    let supabase: SupabaseClient;
 
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       });
     } else {
       const cookieStore = await cookies();
-      supabase = createServerClient(supabaseUrl, supabaseAnon, {
+      supabase = (createServerClient(supabaseUrl, supabaseAnon, {
         cookies: {
           get(name: string) {
             return cookieStore.get(name)?.value;
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
           set() {},
           remove() {},
         },
-      });
+      }) as unknown) as SupabaseClient;
     }
 
     // Check authentication
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
       .eq('item_id', item_id_db)
       .single();
 
-    let session, error;
+    let session: any, error: any;
 
     if (checkError && checkError.code === 'PGRST116') {
       // No existing session, create new one
@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
     if (status === 'completed' && selected_words.length > 0) {
       try {
         // Import selected words to user's vocabulary
-        const vocabEntries = selected_words.map((word: any) => ({
+        const vocabEntries = selected_words.map((word: Record<string, any>) => ({
           user_id: user.id,
           source_lang: word.lang || 'en',
           target_lang: 'zh', // Default to Chinese
@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
 
         if (!vocabError && insertedVocab) {
           // Update session with imported vocab IDs
-          const vocabIds = insertedVocab.map((v: any) => v.id);
+          const vocabIds = insertedVocab.map((v: { id: string }) => v.id);
           await supabase
             .from('shadowing_sessions')
             .update({

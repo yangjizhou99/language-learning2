@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import {
   validateInvitationCode,
-  useInvitationCode,
+  useInvitationCode as recordInvitationUse, // 非Hook函数，避免命名误导
   applyInvitationPermissions,
   applyInvitationApiLimits,
 } from '@/lib/invitation';
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    // const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!; // 未使用，移除以消除 lint 警告
     const supabaseServiceRole = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
     if (!supabaseServiceRole) {
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
         codeId = codeRow.id;
       }
 
-      const useResult = await useInvitationCode(codeId!, userId, supabase);
+      const useResult = await recordInvitationUse(codeId!, userId, supabase);
       if (!useResult.success) {
         console.error('记录邀请码使用失败:', useResult.error);
         return NextResponse.json(

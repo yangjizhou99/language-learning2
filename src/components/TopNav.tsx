@@ -179,12 +179,6 @@ export default function TopNav() {
       show: permissions.can_access_shadowing,
     },
     {
-      href: '/practice/cloze',
-      label: t.nav.cloze,
-      icon: Target,
-      show: permissions.can_access_cloze,
-    },
-    {
       href: '/practice/cloze-shadowing',
       label: 'Cloze-Shadowing',
       icon: Target,
@@ -195,12 +189,6 @@ export default function TopNav() {
       label: t.nav.alignment_practice,
       icon: AlignCenter,
       show: permissions.can_access_alignment,
-    },
-    {
-      href: '/practice/wideread',
-      label: t.nav.wide_reading,
-      icon: FileText,
-      show: permissions.can_access_articles,
     },
     { href: '/vocab', label: t.nav.vocabulary, icon: BookOpen, show: true },
   ];

@@ -3,7 +3,7 @@
  * 支持三层缓存 + 304 条件请求
  */
 
-import * as crypto from 'crypto';
+import { createHash } from 'crypto';
 
 interface CacheEntry<T> {
   value: T;
@@ -13,13 +13,13 @@ interface CacheEntry<T> {
 }
 
 interface ETagResponse {
-  data: any;
+  data: unknown;
   etag: string;
   shouldReturn304: boolean;
 }
 
 class EnhancedMemoryCache {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private maxSize = 2000;
   private cleanupInterval: NodeJS.Timeout;
 
@@ -68,7 +68,7 @@ class EnhancedMemoryCache {
 
   private generateETag<T>(value: T): string {
     const content = JSON.stringify(value);
-    return `"${crypto.createHash('sha1').update(content).digest('hex')}"`;
+    return `"${createHash('sha1').update(content).digest('hex')}"`;
   }
 
   delete(key: string): void {
@@ -123,7 +123,7 @@ class EnhancedMemoryCache {
 const enhancedCache = new EnhancedMemoryCache();
 
 export class EnhancedCacheManager {
-  private static requestCache = new Map<string, Promise<any>>();
+  private static requestCache = new Map<string, Promise<unknown>>();
 
   /**
    * 检查 ETag 并决定是否返回 304
@@ -173,11 +173,11 @@ export class EnhancedCacheManager {
   static async dedupeWithETag<T>(
     key: string,
     fetcher: () => Promise<T>,
-    clientETag?: string,
+    clientETag?: string | null,
     ttlSeconds = 300,
   ): Promise<ETagResponse> {
     // 首先检查缓存和 ETag
-    const etagCheck = this.checkETag<T>(key, clientETag);
+    const etagCheck = this.checkETag<T>(key, clientETag ?? undefined);
     if (etagCheck.data !== null) {
       return etagCheck;
     }
@@ -209,7 +209,7 @@ export class EnhancedCacheManager {
   /**
    * 生成缓存键
    */
-  static generateKey(prefix: string, params: Record<string, any>): string {
+  static generateKey(prefix: string, params: Record<string, unknown>): string {
     const sortedParams = Object.keys(params)
       .sort()
       .map((key) => `${key}:${params[key]}`)
@@ -270,15 +270,15 @@ export class EnhancedCacheManager {
  * 自动处理 ETag 和 304 响应
  */
 export function withConditionalCache(ttlSeconds = 300) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
-    const method = descriptor.value;
+  return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
+    const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
 
-    descriptor.value = async function (request: any, ...args: any[]) {
+    descriptor.value = async function (request: Request, ...args: unknown[]) {
       // 提取缓存键参数
       const url = new URL(request.url);
       const searchParams = Object.fromEntries(url.searchParams.entries());
       const cacheKey = EnhancedCacheManager.generateKey(
-        `${target.constructor.name}:${propertyName}`,
+        `${(target as { constructor: { name: string } }).constructor.name}:${propertyName}`,
         searchParams,
       );
 
@@ -289,7 +289,7 @@ export function withConditionalCache(ttlSeconds = 300) {
         // 使用增强缓存管理器
         const result = await EnhancedCacheManager.dedupeWithETag(
           cacheKey,
-          () => method.apply(this, [request, ...args]),
+          () => method.apply(this, [request, ...args]) as Promise<unknown>,
           clientETag,
           ttlSeconds,
         );

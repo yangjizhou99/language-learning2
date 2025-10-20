@@ -154,9 +154,7 @@ export interface Translations {
   // 导航
   nav: {
     home: string;
-    cloze: string;
     alignment_practice: string;
-    wide_reading: string;
     shadowing: string;
     vocabulary: string;
     admin: string;
@@ -182,7 +180,6 @@ export interface Translations {
     articles: string;
     drafts: string;
     alignment_packs: string;
-    cloze_items: string;
     shadowing_items: string;
     vocabulary_banks: string;
     ai_generation: string;
@@ -747,9 +744,7 @@ const zh: Translations = {
   },
   nav: {
     home: '首页',
-    cloze: '完形填空',
     alignment_practice: '对齐练习',
-    wide_reading: '广读',
     shadowing: '跟读练习',
     vocabulary: '单词本',
     admin: '管理员',
@@ -771,7 +766,6 @@ const zh: Translations = {
     articles: '文章管理',
     drafts: '草稿管理',
     alignment_packs: '对齐训练包',
-    cloze_items: '完形填空题',
     shadowing_items: '跟读素材',
     vocabulary_banks: '词汇库',
     ai_generation: 'AI 生成',
@@ -1332,9 +1326,7 @@ const en: Translations = {
   },
   nav: {
     home: 'Home',
-    cloze: 'Cloze',
     alignment_practice: 'Alignment Practice',
-    wide_reading: 'Wide Reading',
     shadowing: 'Shadowing',
     vocabulary: 'Vocabulary',
     admin: 'Admin',
@@ -1356,7 +1348,6 @@ const en: Translations = {
     articles: 'Articles',
     drafts: 'Drafts',
     alignment_packs: 'Alignment Packs',
-    cloze_items: 'Cloze Items',
     shadowing_items: 'Shadowing Items',
     vocabulary_banks: 'Vocabulary Banks',
     ai_generation: 'AI Generation',
@@ -1918,9 +1909,7 @@ const ja: Translations = {
   },
   nav: {
     home: 'ホーム',
-    cloze: '穴埋め問題',
     alignment_practice: 'アライメント練習',
-    wide_reading: '多読',
     shadowing: 'シャドーイング',
     vocabulary: '題庫',
     admin: '管理者',
@@ -1942,7 +1931,6 @@ const ja: Translations = {
     articles: '記事管理',
     drafts: '下書き管理',
     alignment_packs: 'アライメントパック',
-    cloze_items: '穴埋め問題',
     shadowing_items: 'シャドーイング素材',
     vocabulary_banks: '語彙バンク',
     ai_generation: 'AI生成',

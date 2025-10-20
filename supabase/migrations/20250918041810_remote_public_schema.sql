@@ -18,7 +18,7 @@ CREATE SCHEMA IF NOT EXISTS "public";
 ALTER SCHEMA "public" OWNER TO "pg_database_owner";
 
 
-COMMENT ON SCHEMA "public" IS 'standard public schema';
+COMMENT ON SCHEMA "public" IS '已删除未使用的表: article_cloze, article_keys, articles, registration_config, sessions, study_cards, tts_assets';
 
 
 
@@ -137,7 +137,6 @@ ALTER FUNCTION "public"."insert_shadowing_item"("p_lang" "text", "p_level" integ
 
 CREATE OR REPLACE FUNCTION "public"."is_admin"() RETURNS boolean
     LANGUAGE "sql" STABLE
-    SET "search_path" TO 'public'
     AS $$
   select exists(select 1 from public.profiles where id = auth.uid() and role='admin')
 $$;
@@ -161,44 +160,6 @@ $$;
 
 
 ALTER FUNCTION "public"."set_updated_at"() OWNER TO "postgres";
-
-
-CREATE OR REPLACE FUNCTION "public"."shadowing_items_audio_sync"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-DECLARE
-  b text;
-  p text;
-BEGIN
-  -- 场景A：仅写入 audio_url（旧代码路径），自动解析出 bucket/path
-  IF (NEW.audio_bucket IS NULL OR NEW.audio_path IS NULL)
-     AND NEW.audio_url IS NOT NULL AND NEW.audio_url <> '' THEN
-    -- 解析本地代理格式
-    b := substring(NEW.audio_url from 'bucket=([^&]+)');
-    p := substring(NEW.audio_url from 'path=([^&]+)');
-    IF p IS NOT NULL THEN p := replace(p, '%2F', '/'); END IF;
-
-    -- 若非代理格式，解析 Supabase 直链/签名链
-    IF b IS NULL OR p IS NULL THEN
-      b := substring(NEW.audio_url from '/storage/v1/object/(?:sign|public)/([^/]+)/');
-      p := substring(NEW.audio_url from '/storage/v1/object/(?:sign|public)/[^/]+/([^?]+)');
-    END IF;
-
-    IF NEW.audio_bucket IS NULL AND b IS NOT NULL THEN NEW.audio_bucket := b; END IF;
-    IF NEW.audio_path   IS NULL AND p IS NOT NULL THEN NEW.audio_path   := p; END IF;
-  END IF;
-
-  -- 场景B：写入 bucket/path（新代码路径），自动归一化 audio_url 为相对代理链接
-  IF NEW.audio_bucket IS NOT NULL AND NEW.audio_path IS NOT NULL THEN
-    NEW.audio_url := '/api/storage-proxy?path=' || NEW.audio_path || '&bucket=' || COALESCE(NEW.audio_bucket, 'tts');
-  END IF;
-
-  RETURN NEW;
-END
-$$;
-
-
-ALTER FUNCTION "public"."shadowing_items_audio_sync"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."trigger_set_timestamp"() RETURNS "trigger"
@@ -351,7 +312,7 @@ CREATE TABLE IF NOT EXISTS "public"."alignment_attempts" (
     "material_id" "uuid",
     "task_type" "text" NOT NULL,
     "attempt_number" integer DEFAULT 1 NOT NULL,
-    "submission" "jsonb" NOT NULL,
+    "submission" "text" NOT NULL,
     "submission_text" "text",
     "word_count" integer,
     "turn_count" integer,
@@ -364,10 +325,9 @@ CREATE TABLE IF NOT EXISTS "public"."alignment_attempts" (
     "ai_response" "jsonb",
     "prev_attempt_id" "uuid",
     "status" "text" DEFAULT 'completed'::"text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    CONSTRAINT "alignment_attempts_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'completed'::"text", 'cancelled'::"text"]))),
-    CONSTRAINT "alignment_attempts_task_type_check" CHECK (("task_type" = ANY (ARRAY['dialogue'::"text", 'article'::"text", 'task_email'::"text", 'long_writing'::"text"])))
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "pack_id" "uuid" NOT NULL,
+    "step_key" "text" NOT NULL
 );
 
 
@@ -415,20 +375,20 @@ ALTER TABLE "public"."alignment_materials" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."alignment_packs" (
-    "id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "lang" "text" NOT NULL,
     "topic" "text" NOT NULL,
-    "tags" "text"[],
-    "level_min" integer,
-    "level_max" integer,
-    "preferred_style" "jsonb",
+    "tags" "text"[] DEFAULT '{}'::"text"[],
+    "level_min" integer DEFAULT 1,
+    "level_max" integer DEFAULT 6,
+    "preferred_style" "jsonb" DEFAULT '{}'::"jsonb",
     "steps" "jsonb" NOT NULL,
     "ai_provider" "text",
     "ai_model" "text",
-    "ai_usage" "jsonb",
-    "status" "text" NOT NULL,
+    "ai_usage" "jsonb" DEFAULT '{}'::"jsonb",
+    "status" "text" DEFAULT 'draft'::"text" NOT NULL,
     "created_by" "uuid",
-    "created_at" timestamp with time zone
+    "created_at" timestamp with time zone DEFAULT "now"()
 );
 
 
@@ -486,17 +446,18 @@ ALTER TABLE "public"."alignment_themes" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."api_limits" (
-    "id" "uuid" NOT NULL,
-    "enabled" boolean NOT NULL,
-    "daily_calls_limit" integer NOT NULL,
-    "daily_tokens_limit" integer NOT NULL,
-    "daily_cost_limit" numeric NOT NULL,
-    "monthly_calls_limit" integer NOT NULL,
-    "monthly_tokens_limit" integer NOT NULL,
-    "monthly_cost_limit" numeric NOT NULL,
-    "alert_threshold" integer NOT NULL,
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "enabled" boolean DEFAULT false NOT NULL,
+    "daily_calls_limit" integer DEFAULT 1000 NOT NULL,
+    "daily_tokens_limit" integer DEFAULT 1000000 NOT NULL,
+    "daily_cost_limit" numeric(10,2) DEFAULT 10.00 NOT NULL,
+    "monthly_calls_limit" integer DEFAULT 30000 NOT NULL,
+    "monthly_tokens_limit" integer DEFAULT 30000000 NOT NULL,
+    "monthly_cost_limit" numeric(10,2) DEFAULT 300.00 NOT NULL,
+    "alert_threshold" integer DEFAULT 80 NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "api_limits_alert_threshold_check" CHECK ((("alert_threshold" >= 0) AND ("alert_threshold" <= 100)))
 );
 
 
@@ -504,16 +465,16 @@ ALTER TABLE "public"."api_limits" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."api_usage_logs" (
-    "id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
-    "provider" character varying NOT NULL,
-    "model" character varying NOT NULL,
-    "tokens_used" integer,
-    "cost" numeric,
+    "provider" character varying(50) NOT NULL,
+    "model" character varying(100) NOT NULL,
+    "tokens_used" integer DEFAULT 0,
+    "cost" numeric(10,6) DEFAULT 0.0,
     "request_data" "jsonb",
     "response_data" "jsonb",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone
+    "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 
@@ -521,16 +482,16 @@ ALTER TABLE "public"."api_usage_logs" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."article_batch_items" (
-    "id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "batch_id" "uuid" NOT NULL,
     "topic" "text",
     "difficulty" integer NOT NULL,
-    "status" "text" NOT NULL,
+    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
     "result_draft_id" "uuid",
     "error" "text",
-    "usage" "jsonb",
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone,
+    "usage" "jsonb" DEFAULT '{}'::"jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
     CONSTRAINT "article_batch_items_difficulty_check" CHECK ((("difficulty" >= 1) AND ("difficulty" <= 5)))
 );
 
@@ -539,150 +500,38 @@ ALTER TABLE "public"."article_batch_items" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."article_batches" (
-    "id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "name" "text" NOT NULL,
     "provider" "text" NOT NULL,
     "model" "text" NOT NULL,
     "lang" "text" NOT NULL,
     "genre" "text" NOT NULL,
-    "words" integer NOT NULL,
-    "temperature" double precision NOT NULL,
-    "status" "text" NOT NULL,
-    "totals" "jsonb" NOT NULL,
+    "words" integer DEFAULT 300 NOT NULL,
+    "temperature" double precision DEFAULT 0.6 NOT NULL,
+    "status" "text" DEFAULT 'pending'::"text" NOT NULL,
+    "totals" "jsonb" DEFAULT '{"total_tokens": 0, "prompt_tokens": 0, "completion_tokens": 0}'::"jsonb" NOT NULL,
     "created_by" "uuid",
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 
 ALTER TABLE "public"."article_batches" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."article_cloze" (
-    "id" "uuid" NOT NULL,
-    "article_id" "uuid",
-    "version" "text" NOT NULL,
-    "items" "jsonb" NOT NULL
-);
-
-
-ALTER TABLE "public"."article_cloze" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."article_drafts" (
-    "id" "uuid" NOT NULL,
-    "source" "text" NOT NULL,
-    "lang" "text" NOT NULL,
-    "genre" "text" NOT NULL,
-    "difficulty" integer NOT NULL,
-    "title" "text" NOT NULL,
-    "text" "text" NOT NULL,
-    "license" "text",
-    "ai_provider" "text",
-    "ai_model" "text",
-    "ai_params" "jsonb",
-    "ai_usage" "jsonb",
-    "keys" "jsonb",
-    "cloze_short" "jsonb",
-    "cloze_long" "jsonb",
-    "validator_report" "jsonb",
-    "status" "text" NOT NULL,
-    "created_by" "uuid",
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone,
-    "published_article_id" "uuid",
-    "ai_answer_provider" "text",
-    "ai_answer_model" "text",
-    "ai_answer_usage" "jsonb",
-    "ai_text_provider" "text",
-    "ai_text_model" "text",
-    "ai_text_usage" "jsonb",
-    "ai_text_suggestion" "jsonb"
-);
-
-
-ALTER TABLE "public"."article_drafts" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."article_keys" (
-    "article_id" "uuid" NOT NULL,
-    "pass1" "jsonb",
-    "pass2" "jsonb",
-    "pass3" "jsonb"
-);
-
-
-ALTER TABLE "public"."article_keys" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."articles" (
-    "id" "uuid" NOT NULL,
-    "lang" "text" NOT NULL,
-    "genre" "text" NOT NULL,
-    "difficulty" integer NOT NULL,
-    "title" "text" NOT NULL,
-    "source_url" "text",
-    "license" "text",
-    "text" "text" NOT NULL,
-    "checksum" "text" NOT NULL,
-    "meta" "jsonb",
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone
-);
-
-
-ALTER TABLE "public"."articles" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."cloze_attempts" (
-    "id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
     "item_id" "uuid" NOT NULL,
     "lang" "text" NOT NULL,
     "level" integer NOT NULL,
     "answers" "jsonb" NOT NULL,
     "ai_result" "jsonb" NOT NULL,
-    "created_at" timestamp with time zone
+    "created_at" timestamp with time zone DEFAULT "now"()
 );
 
 
 ALTER TABLE "public"."cloze_attempts" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."cloze_drafts" (
-    "id" "uuid" NOT NULL,
-    "lang" "text" NOT NULL,
-    "level" integer NOT NULL,
-    "topic" "text",
-    "title" "text" NOT NULL,
-    "passage" "text" NOT NULL,
-    "blanks" "jsonb" NOT NULL,
-    "ai_provider" "text",
-    "ai_model" "text",
-    "ai_usage" "jsonb",
-    "status" "text" NOT NULL,
-    "created_by" "uuid",
-    "created_at" timestamp with time zone
-);
-
-
-ALTER TABLE "public"."cloze_drafts" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."cloze_items" (
-    "id" "uuid" NOT NULL,
-    "lang" "text" NOT NULL,
-    "level" integer NOT NULL,
-    "topic" "text",
-    "title" "text" NOT NULL,
-    "passage" "text" NOT NULL,
-    "blanks" "jsonb" NOT NULL,
-    "meta" "jsonb",
-    "created_at" timestamp with time zone
-);
-
-
-ALTER TABLE "public"."cloze_items" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."cloze_shadowing_attempts_article" (
@@ -740,7 +589,7 @@ ALTER TABLE "public"."cloze_shadowing_items" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."default_user_permissions" (
-    "id" "text" NOT NULL,
+    "id" "text" DEFAULT 'default'::"text" NOT NULL,
     "can_access_shadowing" boolean DEFAULT true NOT NULL,
     "can_access_cloze" boolean DEFAULT true NOT NULL,
     "can_access_alignment" boolean DEFAULT true NOT NULL,
@@ -752,89 +601,63 @@ CREATE TABLE IF NOT EXISTS "public"."default_user_permissions" (
     "api_keys" "jsonb" DEFAULT '{}'::"jsonb",
     "model_permissions" "jsonb" DEFAULT '[]'::"jsonb",
     "custom_restrictions" "jsonb" DEFAULT '{}'::"jsonb",
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 
 ALTER TABLE "public"."default_user_permissions" OWNER TO "postgres";
 
 
--- en_phoneme_units table already exists from previous migration
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."unit_catalog" (
-    "unit_id" bigint NOT NULL,
-    "lang" "text" NOT NULL,
-    "symbol" "text" NOT NULL,
-    "unit_type" "text" NOT NULL,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    CONSTRAINT "unit_catalog_unit_type_check" CHECK (("unit_type" = ANY (ARRAY['phoneme'::"text", 'syllable'::"text", 'custom'::"text"])))
+CREATE TABLE IF NOT EXISTS "public"."en_phoneme_units" (
+    "symbol" character varying(10) NOT NULL,
+    "category" character varying(20) NOT NULL,
+    "subcategory" character varying(20),
+    "examples" "text"[],
+    "description" "text",
+    "created_at" timestamp with time zone DEFAULT "now"()
 );
 
 
-ALTER TABLE "public"."unit_catalog" OWNER TO "postgres";
+ALTER TABLE "public"."en_phoneme_units" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."unit_catalog" IS '发音单元规范表：存储各语言的音素/音节（统一用带空格格式）';
-
-
-
-CREATE OR REPLACE VIEW "public"."english_phonemes_view" AS
- SELECT "uc"."unit_id",
-    "uc"."symbol",
-    "epu"."category",
-    "epu"."subcategory",
-    "epu"."examples",
-    "epu"."description",
-    "uc"."created_at"
-   FROM ("public"."unit_catalog" "uc"
-     LEFT JOIN "public"."en_phoneme_units" "epu" ON (("uc"."symbol" = "epu"."symbol")))
-  WHERE (("uc"."lang" = 'en-US'::"text") AND ("uc"."unit_type" = 'phoneme'::"text"))
-  ORDER BY
-        CASE "epu"."category"
-            WHEN 'vowel'::"text" THEN 1
-            WHEN 'diphthong'::"text" THEN 2
-            WHEN 'consonant'::"text" THEN 3
-            ELSE 4
-        END, "uc"."unit_id";
-
-
-ALTER VIEW "public"."english_phonemes_view" OWNER TO "postgres";
-
-
-COMMENT ON VIEW "public"."english_phonemes_view" IS '英语音素视图：合并unit_catalog和en_phoneme_units的完整音素信息';
+COMMENT ON TABLE "public"."en_phoneme_units" IS '英语音素辅助表：存储英语IPA音素的分类、示例和描述信息';
 
 
 
-CREATE TABLE IF NOT EXISTS "public"."glossary" (
-    "id" "uuid" NOT NULL,
-    "term" "text" NOT NULL,
-    "definition" "text" NOT NULL,
-    "aliases" "text"[],
-    "tags" "text"[],
-    "lang" "text" NOT NULL,
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone
-);
+COMMENT ON COLUMN "public"."en_phoneme_units"."symbol" IS 'IPA音素符号';
 
 
-ALTER TABLE "public"."glossary" OWNER TO "postgres";
+
+COMMENT ON COLUMN "public"."en_phoneme_units"."category" IS '音素类别：vowel, diphthong, consonant';
+
+
+
+COMMENT ON COLUMN "public"."en_phoneme_units"."subcategory" IS '音素子类别：如 short_vowel, stop, fricative 等';
+
+
+
+COMMENT ON COLUMN "public"."en_phoneme_units"."examples" IS '包含该音素的示例词数组';
+
+
+
+COMMENT ON COLUMN "public"."en_phoneme_units"."description" IS '音素描述信息';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."invitation_codes" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "code" "text" NOT NULL,
     "created_by" "uuid" NOT NULL,
-    "max_uses" integer NOT NULL,
+    "max_uses" integer DEFAULT 1 NOT NULL,
     "used_count" integer DEFAULT 0 NOT NULL,
     "expires_at" timestamp with time zone,
-    "permissions" "jsonb",
+    "permissions" "jsonb" DEFAULT '{}'::"jsonb",
     "description" "text",
     "is_active" boolean DEFAULT true NOT NULL,
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 
@@ -842,10 +665,10 @@ ALTER TABLE "public"."invitation_codes" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."invitation_uses" (
-    "id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "code_id" "uuid" NOT NULL,
     "used_by" "uuid" NOT NULL,
-    "used_at" timestamp with time zone
+    "used_at" timestamp with time zone DEFAULT "now"()
 );
 
 
@@ -866,26 +689,6 @@ ALTER TABLE "public"."ja_phoneme_units" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."ja_phoneme_units" IS '日语音素辅助表：用于分类和描述';
-
-
-
-CREATE OR REPLACE VIEW "public"."japanese_phonemes_view" AS
- SELECT "uc"."unit_id",
-    "uc"."symbol",
-    "jpu"."category",
-    "jpu"."subcategory",
-    "jpu"."examples",
-    "jpu"."description"
-   FROM ("public"."unit_catalog" "uc"
-     JOIN "public"."ja_phoneme_units" "jpu" ON (("uc"."symbol" = "jpu"."symbol")))
-  WHERE ("uc"."lang" = 'ja-JP'::"text")
-  ORDER BY "jpu"."category", "jpu"."subcategory", "uc"."symbol";
-
-
-ALTER VIEW "public"."japanese_phonemes_view" OWNER TO "postgres";
-
-
-COMMENT ON VIEW "public"."japanese_phonemes_view" IS '日语音素视图：用于验证和查询';
 
 
 
@@ -928,31 +731,17 @@ ALTER SEQUENCE "public"."minimal_pairs_pair_id_seq" OWNED BY "public"."minimal_p
 
 
 
-CREATE TABLE IF NOT EXISTS "public"."phrases" (
-    "id" "uuid" NOT NULL,
-    "tag" "text",
-    "text" "text" NOT NULL,
-    "example" "text",
-    "lang" "text" NOT NULL,
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone
-);
-
-
-ALTER TABLE "public"."phrases" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "id" "uuid" NOT NULL,
     "username" "text",
     "native_lang" "text",
-    "target_langs" "text"[],
-    "created_at" timestamp with time zone,
+    "target_langs" "text"[] DEFAULT '{}'::"text"[],
+    "created_at" timestamp with time zone DEFAULT "now"(),
     "bio" "text",
     "goals" "text",
     "preferred_tone" "text",
-    "domains" "text"[],
-    "role" "text",
+    "domains" "text"[] DEFAULT '{}'::"text"[],
+    "role" "text" DEFAULT 'user'::"text",
     "invited_by" "uuid",
     "invitation_code_id" "uuid",
     "invitation_used_at" timestamp with time zone
@@ -1023,23 +812,6 @@ CREATE TABLE IF NOT EXISTS "public"."pronunciation_test_runs" (
 ALTER TABLE "public"."pronunciation_test_runs" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."registration_config" (
-    "id" "text" NOT NULL,
-    "allow_direct_registration" boolean NOT NULL,
-    "allow_invitation_registration" boolean NOT NULL,
-    "require_email_verification" boolean NOT NULL,
-    "allow_google_oauth" boolean NOT NULL,
-    "allow_anonymous_login" boolean NOT NULL,
-    "maintenance_mode" boolean NOT NULL,
-    "maintenance_message" "text",
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone
-);
-
-
-ALTER TABLE "public"."registration_config" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."sentence_units" (
     "sentence_id" bigint NOT NULL,
     "unit_id" bigint NOT NULL,
@@ -1052,25 +824,6 @@ ALTER TABLE "public"."sentence_units" OWNER TO "postgres";
 
 COMMENT ON TABLE "public"."sentence_units" IS '句子包含的Unit及出现次数（自动生成）';
 
-
-
-CREATE TABLE IF NOT EXISTS "public"."sessions" (
-    "id" "uuid" NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "task_type" "text",
-    "topic" "text",
-    "input" "jsonb",
-    "output" "jsonb",
-    "ai_feedback" "jsonb",
-    "score" numeric,
-    "created_at" timestamp with time zone,
-    "duration_sec" numeric,
-    "difficulty" "text",
-    "lang" "text"
-);
-
-
-ALTER TABLE "public"."sessions" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."shadowing_attempts" (
@@ -1158,20 +911,11 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_sessions" (
     "vocab_entry_ids" "text"[],
     "picked_preview" "jsonb",
     "notes" "jsonb",
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "created_at" timestamp with time zone
 );
 
 
 ALTER TABLE "public"."shadowing_sessions" OWNER TO "postgres";
-
-
-COMMENT ON COLUMN "public"."shadowing_sessions"."created_at" IS 'Timestamp when the session was created';
-
-
-
-COMMENT ON COLUMN "public"."shadowing_sessions"."updated_at" IS 'Timestamp when the session was last updated';
-
 
 
 CREATE TABLE IF NOT EXISTS "public"."shadowing_subtopics" (
@@ -1219,20 +963,6 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_themes" (
 ALTER TABLE "public"."shadowing_themes" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."study_cards" (
-    "id" "uuid" NOT NULL,
-    "user_id" "uuid",
-    "lang" "text" NOT NULL,
-    "type" "text" NOT NULL,
-    "value" "jsonb" NOT NULL,
-    "article_id" "uuid",
-    "created_at" timestamp with time zone
-);
-
-
-ALTER TABLE "public"."study_cards" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."training_content" (
     "content_id" bigint NOT NULL,
     "unit_id" bigint NOT NULL,
@@ -1273,24 +1003,6 @@ ALTER SEQUENCE "public"."training_content_content_id_seq" OWNED BY "public"."tra
 
 
 
-CREATE TABLE IF NOT EXISTS "public"."tts_assets" (
-    "id" "uuid" NOT NULL,
-    "user_id" "uuid" NOT NULL,
-    "path" "text" NOT NULL,
-    "lang" "text" NOT NULL,
-    "voice_name" "text",
-    "speaking_rate" numeric,
-    "pitch" numeric,
-    "topic" "text",
-    "text_excerpt" "text",
-    "text_len" integer,
-    "created_at" timestamp with time zone
-);
-
-
-ALTER TABLE "public"."tts_assets" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."unit_alias" (
     "lang" "text" NOT NULL,
     "alias" "text" NOT NULL,
@@ -1303,6 +1015,23 @@ ALTER TABLE "public"."unit_alias" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."unit_alias" IS '音素别名映射表：仅用于真正的别名（如 lü ↔ lv）';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."unit_catalog" (
+    "unit_id" bigint NOT NULL,
+    "lang" "text" NOT NULL,
+    "symbol" "text" NOT NULL,
+    "unit_type" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    CONSTRAINT "unit_catalog_unit_type_check" CHECK (("unit_type" = ANY (ARRAY['phoneme'::"text", 'syllable'::"text", 'custom'::"text"])))
+);
+
+
+ALTER TABLE "public"."unit_catalog" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."unit_catalog" IS '发音单元规范表：存储各语言的音素/音节（统一用带空格格式）';
 
 
 
@@ -1324,15 +1053,15 @@ ALTER SEQUENCE "public"."unit_catalog_unit_id_seq" OWNED BY "public"."unit_catal
 CREATE TABLE IF NOT EXISTS "public"."user_api_limits" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
-    "enabled" boolean NOT NULL,
-    "daily_calls_limit" integer NOT NULL,
-    "daily_tokens_limit" integer NOT NULL,
-    "daily_cost_limit" numeric NOT NULL,
-    "monthly_calls_limit" integer NOT NULL,
-    "monthly_tokens_limit" integer NOT NULL,
-    "monthly_cost_limit" numeric NOT NULL,
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone
+    "enabled" boolean DEFAULT false NOT NULL,
+    "daily_calls_limit" integer DEFAULT 0 NOT NULL,
+    "daily_tokens_limit" integer DEFAULT 0 NOT NULL,
+    "daily_cost_limit" numeric(10,2) DEFAULT 0.00 NOT NULL,
+    "monthly_calls_limit" integer DEFAULT 0 NOT NULL,
+    "monthly_tokens_limit" integer DEFAULT 0 NOT NULL,
+    "monthly_cost_limit" numeric(10,2) DEFAULT 0.00 NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 
@@ -1342,19 +1071,19 @@ ALTER TABLE "public"."user_api_limits" OWNER TO "postgres";
 CREATE TABLE IF NOT EXISTS "public"."user_permissions" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
-    "can_access_shadowing" boolean NOT NULL,
-    "can_access_cloze" boolean NOT NULL,
-    "can_access_alignment" boolean NOT NULL,
-    "can_access_articles" boolean NOT NULL,
-    "allowed_languages" "text"[] NOT NULL,
-    "allowed_levels" "text"[] NOT NULL,
-    "max_daily_attempts" integer NOT NULL,
-    "custom_restrictions" "jsonb",
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone,
-    "api_keys" "jsonb",
-    "ai_enabled" boolean,
-    "model_permissions" "jsonb"
+    "can_access_shadowing" boolean DEFAULT true NOT NULL,
+    "can_access_cloze" boolean DEFAULT true NOT NULL,
+    "can_access_alignment" boolean DEFAULT true NOT NULL,
+    "can_access_articles" boolean DEFAULT true NOT NULL,
+    "allowed_languages" "text"[] DEFAULT ARRAY['en'::"text", 'ja'::"text", 'zh'::"text"] NOT NULL,
+    "allowed_levels" integer[] DEFAULT ARRAY[1, 2, 3, 4, 5] NOT NULL,
+    "max_daily_attempts" integer DEFAULT 50 NOT NULL,
+    "custom_restrictions" "jsonb" DEFAULT '{}'::"jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "api_keys" "jsonb" DEFAULT '{}'::"jsonb",
+    "ai_enabled" boolean DEFAULT false,
+    "model_permissions" "jsonb" DEFAULT '[]'::"jsonb"
 );
 
 
@@ -1487,7 +1216,7 @@ CREATE TABLE IF NOT EXISTS "public"."vocab_entries" (
     "source_id" "uuid",
     "context" "text",
     "tags" "text"[],
-    "status" "text",
+    "status" "text" DEFAULT 'new'::"text",
     "explanation" "jsonb",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
@@ -1497,7 +1226,8 @@ CREATE TABLE IF NOT EXISTS "public"."vocab_entries" (
     "srs_reps" integer,
     "srs_lapses" integer,
     "srs_last" timestamp with time zone,
-    "srs_state" "text"
+    "srs_state" "text",
+    CONSTRAINT "vocab_entries_status_check" CHECK (("status" = ANY (ARRAY['new'::"text", 'starred'::"text", 'archived'::"text"])))
 );
 
 
@@ -1505,22 +1235,23 @@ ALTER TABLE "public"."vocab_entries" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."voices" (
-    "id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "name" "text" NOT NULL,
     "language_code" "text" NOT NULL,
     "ssml_gender" "text",
     "natural_sample_rate_hertz" integer,
-    "pricing" "jsonb" NOT NULL,
-    "characteristics" "jsonb" NOT NULL,
+    "pricing" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "characteristics" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "display_name" "text",
     "category" "text" NOT NULL,
-    "is_active" boolean,
-    "created_at" timestamp with time zone,
-    "updated_at" timestamp with time zone,
-    "provider" "text",
+    "is_active" boolean DEFAULT true,
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "provider" "text" DEFAULT 'google'::"text",
     "usecase" "text",
-    "is_news_voice" boolean,
-    "use_case" "text"
+    "is_news_voice" boolean DEFAULT false,
+    "use_case" "text",
+    CONSTRAINT "voices_provider_check" CHECK (("provider" = ANY (ARRAY['google'::"text", 'gemini'::"text", 'xunfei'::"text"])))
 );
 
 
@@ -1578,6 +1309,11 @@ ALTER TABLE ONLY "public"."alignment_materials"
 
 
 
+ALTER TABLE ONLY "public"."alignment_packs"
+    ADD CONSTRAINT "alignment_packs_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."alignment_subtopics"
     ADD CONSTRAINT "alignment_subtopics_pkey" PRIMARY KEY ("id");
 
@@ -1588,8 +1324,28 @@ ALTER TABLE ONLY "public"."alignment_themes"
 
 
 
+ALTER TABLE ONLY "public"."api_limits"
+    ADD CONSTRAINT "api_limits_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."api_usage_logs"
+    ADD CONSTRAINT "api_usage_logs_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."article_batch_items"
     ADD CONSTRAINT "article_batch_items_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."article_batches"
+    ADD CONSTRAINT "article_batches_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."cloze_attempts"
+    ADD CONSTRAINT "cloze_attempts_pkey" PRIMARY KEY ("id");
 
 
 
@@ -1618,12 +1374,23 @@ ALTER TABLE ONLY "public"."default_user_permissions"
 
 
 
--- en_phoneme_units primary key already exists from previous migration
+ALTER TABLE ONLY "public"."invitation_codes"
+    ADD CONSTRAINT "invitation_codes_code_key" UNIQUE ("code");
 
 
 
-ALTER TABLE ONLY "public"."ja_phoneme_units"
-    ADD CONSTRAINT "ja_phoneme_units_pkey" PRIMARY KEY ("symbol");
+ALTER TABLE ONLY "public"."invitation_codes"
+    ADD CONSTRAINT "invitation_codes_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."invitation_uses"
+    ADD CONSTRAINT "invitation_uses_code_id_used_by_key" UNIQUE ("code_id", "used_by");
+
+
+
+ALTER TABLE ONLY "public"."invitation_uses"
+    ADD CONSTRAINT "invitation_uses_pkey" PRIMARY KEY ("id");
 
 
 
@@ -1652,21 +1419,6 @@ ALTER TABLE ONLY "public"."sentence_units"
 
 
 
-ALTER TABLE ONLY "public"."shadowing_items"
-    ADD CONSTRAINT "shadowing_items_id_unique" UNIQUE ("id");
-
-
-
-ALTER TABLE ONLY "public"."shadowing_subtopics"
-    ADD CONSTRAINT "shadowing_subtopics_id_unique" UNIQUE ("id");
-
-
-
-ALTER TABLE ONLY "public"."shadowing_themes"
-    ADD CONSTRAINT "shadowing_themes_id_unique" UNIQUE ("id");
-
-
-
 ALTER TABLE ONLY "public"."training_content"
     ADD CONSTRAINT "training_content_pkey" PRIMARY KEY ("content_id");
 
@@ -1682,11 +1434,56 @@ ALTER TABLE ONLY "public"."unit_alias"
 
 
 
--- unit_catalog unique constraint already exists from previous migration
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public'
+      AND t.relname = 'unit_catalog'
+      AND c.conname = 'unit_catalog_lang_symbol_key'
+  ) THEN
+    ALTER TABLE ONLY "public"."unit_catalog"
+      ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
+  END IF;
+END
+$$;
 
 
 
--- unit_catalog primary key already exists from table definition
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class t ON t.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = t.relnamespace
+    WHERE n.nspname = 'public'
+      AND t.relname = 'unit_catalog'
+      AND c.conname = 'unit_catalog_pkey'
+  ) THEN
+    ALTER TABLE ONLY "public"."unit_catalog"
+      ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
+  END IF;
+END
+$$;
+
+
+
+ALTER TABLE ONLY "public"."user_api_limits"
+    ADD CONSTRAINT "user_api_limits_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."user_api_limits"
+    ADD CONSTRAINT "user_api_limits_user_id_key" UNIQUE ("user_id");
+
+
+
+ALTER TABLE ONLY "public"."user_permissions"
+    ADD CONSTRAINT "user_permissions_pkey" PRIMARY KEY ("id");
 
 
 
@@ -1717,6 +1514,16 @@ ALTER TABLE ONLY "public"."user_unit_stats"
 
 ALTER TABLE ONLY "public"."vocab_entries"
     ADD CONSTRAINT "vocab_entries_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."voices"
+    ADD CONSTRAINT "voices_name_key" UNIQUE ("name");
+
+
+
+ALTER TABLE ONLY "public"."voices"
+    ADD CONSTRAINT "voices_pkey" PRIMARY KEY ("id");
 
 
 
@@ -1765,7 +1572,47 @@ CREATE UNIQUE INDEX "alignment_themes_unique_lang_level_genre_title" ON "public"
 
 
 
+CREATE INDEX "idx_alignment_attempts_pack_id" ON "public"."alignment_attempts" USING "btree" ("pack_id");
+
+
+
+CREATE INDEX "idx_alignment_attempts_user_pack" ON "public"."alignment_attempts" USING "btree" ("user_id", "pack_id");
+
+
+
+CREATE INDEX "idx_alignment_packs_created_by" ON "public"."alignment_packs" USING "btree" ("created_by");
+
+
+
+CREATE INDEX "idx_alignment_packs_status_lang" ON "public"."alignment_packs" USING "btree" ("status", "lang");
+
+
+
+CREATE UNIQUE INDEX "idx_api_limits_single" ON "public"."api_limits" USING "btree" ((1));
+
+
+
 CREATE INDEX "idx_api_usage_logs_created_at" ON "public"."api_usage_logs" USING "btree" ("created_at");
+
+
+
+CREATE INDEX "idx_api_usage_logs_stats" ON "public"."api_usage_logs" USING "btree" ("user_id", "provider", "created_at");
+
+
+
+CREATE INDEX "idx_article_batch_items_batch_id" ON "public"."article_batch_items" USING "btree" ("batch_id");
+
+
+
+CREATE INDEX "idx_article_batches_created_by" ON "public"."article_batches" USING "btree" ("created_by");
+
+
+
+CREATE INDEX "idx_cloze_attempts_item_id" ON "public"."cloze_attempts" USING "btree" ("item_id");
+
+
+
+CREATE INDEX "idx_cloze_attempts_user_id" ON "public"."cloze_attempts" USING "btree" ("user_id");
 
 
 
@@ -1773,15 +1620,15 @@ CREATE INDEX "idx_cloze_shadowing_items_published" ON "public"."cloze_shadowing_
 
 
 
--- en_phoneme_units indexes already exist from previous migration
+CREATE INDEX "idx_invitation_codes_code" ON "public"."invitation_codes" USING "btree" ("code");
 
 
 
-CREATE INDEX "idx_ja_phoneme_units_category" ON "public"."ja_phoneme_units" USING "btree" ("category");
+CREATE INDEX "idx_invitation_codes_created_by" ON "public"."invitation_codes" USING "btree" ("created_by");
 
 
 
-CREATE INDEX "idx_ja_phoneme_units_subcategory" ON "public"."ja_phoneme_units" USING "btree" ("subcategory");
+CREATE INDEX "idx_invitation_uses_used_by" ON "public"."invitation_uses" USING "btree" ("used_by");
 
 
 
@@ -1798,6 +1645,14 @@ CREATE INDEX "idx_minimal_pairs_unit1" ON "public"."minimal_pairs" USING "btree"
 
 
 CREATE INDEX "idx_minimal_pairs_unit2" ON "public"."minimal_pairs" USING "btree" ("unit_id_2");
+
+
+
+CREATE INDEX "idx_profiles_invitation_code_id" ON "public"."profiles" USING "btree" ("invitation_code_id");
+
+
+
+CREATE INDEX "idx_profiles_invited_by" ON "public"."profiles" USING "btree" ("invited_by");
 
 
 
@@ -1829,15 +1684,15 @@ CREATE INDEX "idx_unit_alias_unit_id" ON "public"."unit_alias" USING "btree" ("u
 
 
 
--- idx_unit_catalog_en_us index already exists from previous migration
+CREATE INDEX "idx_unit_catalog_lang" ON "public"."unit_catalog" USING "btree" ("lang");
 
 
 
--- idx_unit_catalog_lang index already exists from previous migration
+CREATE INDEX "idx_unit_catalog_symbol" ON "public"."unit_catalog" USING "btree" ("symbol");
 
 
 
--- idx_unit_catalog_symbol index already exists from previous migration
+CREATE INDEX "idx_user_permissions_user_id" ON "public"."user_permissions" USING "btree" ("user_id");
 
 
 
@@ -1885,7 +1740,51 @@ CREATE INDEX "idx_user_unit_stats_user_lang" ON "public"."user_unit_stats" USING
 
 
 
+CREATE INDEX "idx_vocab_entries_created_at" ON "public"."vocab_entries" USING "btree" ("created_at");
+
+
+
+CREATE INDEX "idx_vocab_entries_lang" ON "public"."vocab_entries" USING "btree" ("lang");
+
+
+
+CREATE INDEX "idx_vocab_entries_status" ON "public"."vocab_entries" USING "btree" ("status");
+
+
+
+CREATE INDEX "idx_vocab_entries_term" ON "public"."vocab_entries" USING "btree" ("term");
+
+
+
+CREATE INDEX "idx_vocab_entries_term_lang" ON "public"."vocab_entries" USING "btree" ("term", "lang");
+
+
+
 CREATE INDEX "idx_vocab_entries_user_due" ON "public"."vocab_entries" USING "btree" ("user_id", "srs_due") WHERE ("status" <> 'archived'::"text");
+
+
+
+CREATE INDEX "idx_vocab_entries_user_id" ON "public"."vocab_entries" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_vocab_entries_user_lang" ON "public"."vocab_entries" USING "btree" ("user_id", "lang");
+
+
+
+CREATE INDEX "idx_voices_category" ON "public"."voices" USING "btree" ("category");
+
+
+
+CREATE INDEX "idx_voices_language_code" ON "public"."voices" USING "btree" ("language_code");
+
+
+
+CREATE INDEX "idx_voices_name" ON "public"."voices" USING "btree" ("name");
+
+
+
+CREATE INDEX "idx_voices_provider" ON "public"."voices" USING "btree" ("provider");
 
 
 
@@ -1897,15 +1796,19 @@ CREATE INDEX "pronunciation_test_runs_created_at_idx" ON "public"."pronunciation
 
 
 
-CREATE UNIQUE INDEX "user_api_limits_user_id_key" ON "public"."user_api_limits" USING "btree" ("user_id");
-
-
-
 CREATE OR REPLACE TRIGGER "set_timestamp_pron_sentences" BEFORE UPDATE ON "public"."pron_sentences" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_set_timestamp"();
 
 
 
-CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."shadowing_sessions" FOR EACH ROW EXECUTE FUNCTION "public"."update_shadowing_sessions_updated_at"();
+CREATE OR REPLACE TRIGGER "trigger_update_api_usage_logs_updated_at" BEFORE UPDATE ON "public"."api_usage_logs" FOR EACH ROW EXECUTE FUNCTION "public"."update_api_usage_logs_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_default_user_permissions_updated_at" BEFORE UPDATE ON "public"."default_user_permissions" FOR EACH ROW EXECUTE FUNCTION "public"."update_default_user_permissions_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_invitation_codes_updated_at" BEFORE UPDATE ON "public"."invitation_codes" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 
 
@@ -1921,18 +1824,17 @@ CREATE OR REPLACE TRIGGER "update_vocab_entries_updated_at" BEFORE UPDATE ON "pu
 
 
 
+CREATE OR REPLACE TRIGGER "update_voices_updated_at" BEFORE UPDATE ON "public"."voices" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
+
+
+
 ALTER TABLE ONLY "public"."alignment_attempts"
     ADD CONSTRAINT "alignment_attempts_material_fkey" FOREIGN KEY ("material_id") REFERENCES "public"."alignment_materials"("id") ON DELETE SET NULL NOT VALID;
 
 
 
 ALTER TABLE ONLY "public"."alignment_attempts"
-    ADD CONSTRAINT "alignment_attempts_material_id_fkey" FOREIGN KEY ("material_id") REFERENCES "public"."alignment_materials"("id") ON DELETE SET NULL;
-
-
-
-ALTER TABLE ONLY "public"."alignment_attempts"
-    ADD CONSTRAINT "alignment_attempts_prev_attempt_id_fkey" FOREIGN KEY ("prev_attempt_id") REFERENCES "public"."alignment_attempts"("id") ON DELETE SET NULL;
+    ADD CONSTRAINT "alignment_attempts_pack_id_fkey" FOREIGN KEY ("pack_id") REFERENCES "public"."alignment_packs"("id") ON DELETE CASCADE;
 
 
 
@@ -1943,11 +1845,6 @@ ALTER TABLE ONLY "public"."alignment_attempts"
 
 ALTER TABLE ONLY "public"."alignment_attempts"
     ADD CONSTRAINT "alignment_attempts_subtopic_fkey" FOREIGN KEY ("subtopic_id") REFERENCES "public"."alignment_subtopics"("id") ON DELETE CASCADE NOT VALID;
-
-
-
-ALTER TABLE ONLY "public"."alignment_attempts"
-    ADD CONSTRAINT "alignment_attempts_subtopic_id_fkey" FOREIGN KEY ("subtopic_id") REFERENCES "public"."alignment_subtopics"("id") ON DELETE CASCADE;
 
 
 
@@ -1966,13 +1863,33 @@ ALTER TABLE ONLY "public"."alignment_materials"
 
 
 
+ALTER TABLE ONLY "public"."alignment_packs"
+    ADD CONSTRAINT "alignment_packs_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id");
+
+
+
 ALTER TABLE ONLY "public"."alignment_subtopics"
     ADD CONSTRAINT "alignment_subtopics_theme_id_fkey" FOREIGN KEY ("theme_id") REFERENCES "public"."alignment_themes"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."cloze_shadowing_attempts_article"
-    ADD CONSTRAINT "cloze_shadowing_attempts_article_source_item_id_fkey" FOREIGN KEY ("source_item_id") REFERENCES "public"."shadowing_items"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."api_usage_logs"
+    ADD CONSTRAINT "api_usage_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."article_batch_items"
+    ADD CONSTRAINT "article_batch_items_batch_id_fkey" FOREIGN KEY ("batch_id") REFERENCES "public"."article_batches"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."article_batches"
+    ADD CONSTRAINT "article_batches_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."cloze_attempts"
+    ADD CONSTRAINT "cloze_attempts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -1987,27 +1904,22 @@ ALTER TABLE ONLY "public"."cloze_shadowing_attempts_sentence"
 
 
 ALTER TABLE ONLY "public"."cloze_shadowing_attempts_sentence"
-    ADD CONSTRAINT "cloze_shadowing_attempts_sentence_source_item_id_fkey" FOREIGN KEY ("source_item_id") REFERENCES "public"."shadowing_items"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "public"."cloze_shadowing_attempts_sentence"
     ADD CONSTRAINT "cloze_shadowing_attempts_sentence_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."cloze_shadowing_items"
-    ADD CONSTRAINT "cloze_shadowing_items_source_item_id_fkey" FOREIGN KEY ("source_item_id") REFERENCES "public"."shadowing_items"("id") ON DELETE CASCADE;
+ALTER TABLE ONLY "public"."invitation_codes"
+    ADD CONSTRAINT "invitation_codes_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."cloze_shadowing_items"
-    ADD CONSTRAINT "cloze_shadowing_items_subtopic_id_fkey" FOREIGN KEY ("subtopic_id") REFERENCES "public"."shadowing_subtopics"("id");
+ALTER TABLE ONLY "public"."invitation_uses"
+    ADD CONSTRAINT "invitation_uses_code_id_fkey" FOREIGN KEY ("code_id") REFERENCES "public"."invitation_codes"("id") ON DELETE CASCADE;
 
 
 
-ALTER TABLE ONLY "public"."cloze_shadowing_items"
-    ADD CONSTRAINT "cloze_shadowing_items_theme_id_fkey" FOREIGN KEY ("theme_id") REFERENCES "public"."shadowing_themes"("id");
+ALTER TABLE ONLY "public"."invitation_uses"
+    ADD CONSTRAINT "invitation_uses_used_by_fkey" FOREIGN KEY ("used_by") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -2018,6 +1930,16 @@ ALTER TABLE ONLY "public"."minimal_pairs"
 
 ALTER TABLE ONLY "public"."minimal_pairs"
     ADD CONSTRAINT "minimal_pairs_unit_id_2_fkey" FOREIGN KEY ("unit_id_2") REFERENCES "public"."unit_catalog"("unit_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_invitation_code_id_fkey" FOREIGN KEY ("invitation_code_id") REFERENCES "public"."invitation_codes"("id");
+
+
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "auth"."users"("id");
 
 
 
@@ -2043,6 +1965,16 @@ ALTER TABLE ONLY "public"."training_content"
 
 ALTER TABLE ONLY "public"."unit_alias"
     ADD CONSTRAINT "unit_alias_unit_id_fkey" FOREIGN KEY ("unit_id") REFERENCES "public"."unit_catalog"("unit_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_api_limits"
+    ADD CONSTRAINT "user_api_limits_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_permissions"
+    ADD CONSTRAINT "user_permissions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -2081,6 +2013,39 @@ ALTER TABLE ONLY "public"."user_unit_stats"
 
 
 
+ALTER TABLE ONLY "public"."vocab_entries"
+    ADD CONSTRAINT "vocab_entries_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+CREATE POLICY "Admins can manage api limits" ON "public"."api_limits" TO "authenticated" USING (( SELECT "public"."is_admin"() AS "is_admin")) WITH CHECK (( SELECT "public"."is_admin"() AS "is_admin"));
+
+
+
+CREATE POLICY "Service role can insert api usage logs" ON "public"."api_usage_logs" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "Users can delete own vocab entries" ON "public"."vocab_entries" FOR DELETE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
+CREATE POLICY "Users can insert own vocab entries" ON "public"."vocab_entries" FOR INSERT TO "authenticated" WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
+CREATE POLICY "Users can update own vocab entries" ON "public"."vocab_entries" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
+CREATE POLICY "Users can view own vocab entries" ON "public"."vocab_entries" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
+CREATE POLICY "aa_owner_rw" ON "public"."alignment_attempts" TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
 ALTER TABLE "public"."alignment_attempts" ENABLE ROW LEVEL SECURITY;
 
 
@@ -2107,6 +2072,13 @@ CREATE POLICY "alignment_materials_service_write" ON "public"."alignment_materia
 
 
 
+ALTER TABLE "public"."alignment_packs" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "alignment_packs_combined" ON "public"."alignment_packs" FOR SELECT TO "authenticated" USING (true);
+
+
+
 ALTER TABLE "public"."alignment_subtopics" ENABLE ROW LEVEL SECURITY;
 
 
@@ -2127,6 +2099,37 @@ CREATE POLICY "alignment_themes_select_all" ON "public"."alignment_themes" FOR S
 
 CREATE POLICY "alignment_themes_service_write" ON "public"."alignment_themes" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
 
+
+
+ALTER TABLE "public"."api_limits" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."api_usage_logs" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "api_usage_logs_combined_select" ON "public"."api_usage_logs" FOR SELECT TO "authenticated" USING ((( SELECT "public"."is_admin"() AS "is_admin") OR (( SELECT "auth"."uid"() AS "uid") = "user_id")));
+
+
+
+ALTER TABLE "public"."article_batch_items" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "article_batch_items_combined" ON "public"."article_batch_items" TO "authenticated" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "public"."article_batches" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "article_batches_combined" ON "public"."article_batches" TO "authenticated" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "ca_owner_rw" ON "public"."cloze_attempts" TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
+
+
+
+ALTER TABLE "public"."cloze_attempts" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."cloze_shadowing_attempts_article" ENABLE ROW LEVEL SECURITY;
@@ -2163,6 +2166,79 @@ CREATE POLICY "cloze_shadowing_items_service_write" ON "public"."cloze_shadowing
 
 
 ALTER TABLE "public"."default_user_permissions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "default_user_permissions_admin_all" ON "public"."default_user_permissions" TO "authenticated" USING ("public"."is_admin"()) WITH CHECK ("public"."is_admin"());
+
+
+
+ALTER TABLE "public"."invitation_codes" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "invitation_codes_admin_delete" ON "public"."invitation_codes" FOR DELETE TO "authenticated" USING ("public"."is_admin"());
+
+
+
+CREATE POLICY "invitation_codes_admin_insert" ON "public"."invitation_codes" FOR INSERT TO "authenticated" WITH CHECK ("public"."is_admin"());
+
+
+
+CREATE POLICY "invitation_codes_admin_select" ON "public"."invitation_codes" FOR SELECT TO "authenticated" USING ("public"."is_admin"());
+
+
+
+CREATE POLICY "invitation_codes_admin_update" ON "public"."invitation_codes" FOR UPDATE TO "authenticated" USING ("public"."is_admin"()) WITH CHECK ("public"."is_admin"());
+
+
+
+CREATE POLICY "invitation_codes_combined_insert" ON "public"."invitation_codes" FOR INSERT TO "authenticated" WITH CHECK ((( SELECT "public"."is_admin"() AS "is_admin") OR ("created_by" = ( SELECT "auth"."uid"() AS "uid"))));
+
+
+
+CREATE POLICY "invitation_codes_combined_select" ON "public"."invitation_codes" FOR SELECT TO "authenticated" USING ((( SELECT "public"."is_admin"() AS "is_admin") OR ("created_by" = ( SELECT "auth"."uid"() AS "uid"))));
+
+
+
+CREATE POLICY "invitation_codes_creator_insert" ON "public"."invitation_codes" FOR INSERT TO "authenticated" WITH CHECK (("created_by" = "auth"."uid"()));
+
+
+
+CREATE POLICY "invitation_codes_creator_select" ON "public"."invitation_codes" FOR SELECT TO "authenticated" USING (("created_by" = "auth"."uid"()));
+
+
+
+ALTER TABLE "public"."invitation_uses" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "invitation_uses_admin_select" ON "public"."invitation_uses" FOR SELECT TO "authenticated" USING ("public"."is_admin"());
+
+
+
+CREATE POLICY "invitation_uses_combined_select" ON "public"."invitation_uses" FOR SELECT TO "authenticated" USING ((( SELECT "public"."is_admin"() AS "is_admin") OR ("used_by" = ( SELECT "auth"."uid"() AS "uid"))));
+
+
+
+CREATE POLICY "invitation_uses_insert" ON "public"."invitation_uses" FOR INSERT TO "authenticated" WITH CHECK (true);
+
+
+
+CREATE POLICY "invitation_uses_user_select" ON "public"."invitation_uses" FOR SELECT TO "authenticated" USING (("used_by" = "auth"."uid"()));
+
+
+
+ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "profiles_insert_own" ON "public"."profiles" FOR INSERT TO "authenticated" WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "id"));
+
+
+
+CREATE POLICY "profiles_select_own" ON "public"."profiles" FOR SELECT USING (("id" = "auth"."uid"()));
+
+
+
+CREATE POLICY "profiles_update_own" ON "public"."profiles" FOR UPDATE USING (("id" = "auth"."uid"())) WITH CHECK (("id" = "auth"."uid"()));
+
 
 
 ALTER TABLE "public"."pron_sentences" ENABLE ROW LEVEL SECURITY;
@@ -2203,6 +2279,13 @@ CREATE POLICY "unit_catalog_read" ON "public"."unit_catalog" FOR SELECT USING (t
 
 
 
+ALTER TABLE "public"."user_api_limits" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_api_limits_combined" ON "public"."user_api_limits" TO "authenticated" USING ((( SELECT "public"."is_admin"() AS "is_admin") OR (( SELECT "auth"."uid"() AS "uid") = "user_id"))) WITH CHECK ((( SELECT "public"."is_admin"() AS "is_admin") OR (( SELECT "auth"."uid"() AS "uid") = "user_id")));
+
+
+
 ALTER TABLE "public"."user_permissions" ENABLE ROW LEVEL SECURITY;
 
 
@@ -2239,6 +2322,16 @@ ALTER TABLE "public"."user_unit_stats" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "user_unit_stats_own" ON "public"."user_unit_stats" USING (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."vocab_entries" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."voices" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "voices_select_all" ON "public"."voices" FOR SELECT USING (("is_active" = true));
 
 
 
@@ -2304,12 +2397,6 @@ GRANT ALL ON FUNCTION "public"."set_updated_at"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."shadowing_items_audio_sync"() TO "anon";
-GRANT ALL ON FUNCTION "public"."shadowing_items_audio_sync"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."shadowing_items_audio_sync"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."trigger_set_timestamp"() TO "anon";
 GRANT ALL ON FUNCTION "public"."trigger_set_timestamp"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."trigger_set_timestamp"() TO "service_role";
@@ -2358,169 +2445,111 @@ GRANT ALL ON FUNCTION "public"."validate_invitation_code"("code_text" "text") TO
 
 
 
-GRANT ALL ON TABLE "public"."alignment_attempts" TO "anon";
-GRANT ALL ON TABLE "public"."alignment_attempts" TO "authenticated";
-GRANT ALL ON TABLE "public"."alignment_attempts" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."alignment_attempts" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."alignment_attempts" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."alignment_attempts" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."alignment_materials" TO "anon";
-GRANT ALL ON TABLE "public"."alignment_materials" TO "authenticated";
-GRANT ALL ON TABLE "public"."alignment_materials" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."alignment_materials" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."alignment_materials" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."alignment_materials" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."alignment_packs" TO "anon";
-GRANT ALL ON TABLE "public"."alignment_packs" TO "authenticated";
-GRANT ALL ON TABLE "public"."alignment_packs" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."alignment_packs" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."alignment_packs" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."alignment_packs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."alignment_subtopics" TO "anon";
-GRANT ALL ON TABLE "public"."alignment_subtopics" TO "authenticated";
-GRANT ALL ON TABLE "public"."alignment_subtopics" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."alignment_subtopics" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."alignment_subtopics" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."alignment_subtopics" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."alignment_themes" TO "anon";
-GRANT ALL ON TABLE "public"."alignment_themes" TO "authenticated";
-GRANT ALL ON TABLE "public"."alignment_themes" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."alignment_themes" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."alignment_themes" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."alignment_themes" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."api_limits" TO "anon";
-GRANT ALL ON TABLE "public"."api_limits" TO "authenticated";
-GRANT ALL ON TABLE "public"."api_limits" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."api_limits" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."api_limits" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."api_limits" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."api_usage_logs" TO "anon";
-GRANT ALL ON TABLE "public"."api_usage_logs" TO "authenticated";
-GRANT ALL ON TABLE "public"."api_usage_logs" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."api_usage_logs" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."api_usage_logs" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."api_usage_logs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."article_batch_items" TO "anon";
-GRANT ALL ON TABLE "public"."article_batch_items" TO "authenticated";
-GRANT ALL ON TABLE "public"."article_batch_items" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."article_batch_items" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."article_batch_items" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."article_batch_items" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."article_batches" TO "anon";
-GRANT ALL ON TABLE "public"."article_batches" TO "authenticated";
-GRANT ALL ON TABLE "public"."article_batches" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."article_batches" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."article_batches" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."article_batches" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."article_cloze" TO "anon";
-GRANT ALL ON TABLE "public"."article_cloze" TO "authenticated";
-GRANT ALL ON TABLE "public"."article_cloze" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."cloze_attempts" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."cloze_attempts" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."cloze_attempts" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."article_drafts" TO "anon";
-GRANT ALL ON TABLE "public"."article_drafts" TO "authenticated";
-GRANT ALL ON TABLE "public"."article_drafts" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_article" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_article" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_article" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."article_keys" TO "anon";
-GRANT ALL ON TABLE "public"."article_keys" TO "authenticated";
-GRANT ALL ON TABLE "public"."article_keys" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."articles" TO "anon";
-GRANT ALL ON TABLE "public"."articles" TO "authenticated";
-GRANT ALL ON TABLE "public"."articles" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_items" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_items" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_items" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."cloze_attempts" TO "anon";
-GRANT ALL ON TABLE "public"."cloze_attempts" TO "authenticated";
-GRANT ALL ON TABLE "public"."cloze_attempts" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."default_user_permissions" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."default_user_permissions" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."default_user_permissions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."cloze_drafts" TO "anon";
-GRANT ALL ON TABLE "public"."cloze_drafts" TO "authenticated";
-GRANT ALL ON TABLE "public"."cloze_drafts" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."en_phoneme_units" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."en_phoneme_units" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."en_phoneme_units" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."cloze_items" TO "anon";
-GRANT ALL ON TABLE "public"."cloze_items" TO "authenticated";
-GRANT ALL ON TABLE "public"."cloze_items" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."invitation_codes" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."invitation_codes" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."invitation_codes" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_article" TO "anon";
-GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_article" TO "authenticated";
-GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_article" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."invitation_uses" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."invitation_uses" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."invitation_uses" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "anon";
-GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "authenticated";
-GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."cloze_shadowing_items" TO "anon";
-GRANT ALL ON TABLE "public"."cloze_shadowing_items" TO "authenticated";
-GRANT ALL ON TABLE "public"."cloze_shadowing_items" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."default_user_permissions" TO "anon";
-GRANT ALL ON TABLE "public"."default_user_permissions" TO "authenticated";
-GRANT ALL ON TABLE "public"."default_user_permissions" TO "service_role";
-
-
-
--- en_phoneme_units permissions already granted in previous migration
-
-
-
-GRANT ALL ON TABLE "public"."unit_catalog" TO "anon";
-GRANT ALL ON TABLE "public"."unit_catalog" TO "authenticated";
-GRANT ALL ON TABLE "public"."unit_catalog" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."english_phonemes_view" TO "anon";
-GRANT ALL ON TABLE "public"."english_phonemes_view" TO "authenticated";
-GRANT ALL ON TABLE "public"."english_phonemes_view" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."glossary" TO "anon";
-GRANT ALL ON TABLE "public"."glossary" TO "authenticated";
-GRANT ALL ON TABLE "public"."glossary" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."invitation_codes" TO "anon";
-GRANT ALL ON TABLE "public"."invitation_codes" TO "authenticated";
-GRANT ALL ON TABLE "public"."invitation_codes" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."invitation_uses" TO "anon";
-GRANT ALL ON TABLE "public"."invitation_uses" TO "authenticated";
-GRANT ALL ON TABLE "public"."invitation_uses" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "anon";
-GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "authenticated";
-GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."japanese_phonemes_view" TO "anon";
-GRANT ALL ON TABLE "public"."japanese_phonemes_view" TO "authenticated";
-GRANT ALL ON TABLE "public"."japanese_phonemes_view" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."ja_phoneme_units" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."ja_phoneme_units" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."ja_phoneme_units" TO "service_role";
 
 
 
@@ -2536,14 +2565,8 @@ GRANT ALL ON SEQUENCE "public"."minimal_pairs_pair_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."phrases" TO "anon";
-GRANT ALL ON TABLE "public"."phrases" TO "authenticated";
-GRANT ALL ON TABLE "public"."phrases" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."profiles" TO "anon";
-GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."profiles" TO "anon";
+GRANT SELECT,MAINTAIN ON TABLE "public"."profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."profiles" TO "service_role";
 
 
@@ -2560,27 +2583,15 @@ GRANT ALL ON SEQUENCE "public"."pron_sentences_sentence_id_seq" TO "service_role
 
 
 
-GRANT ALL ON TABLE "public"."pronunciation_test_runs" TO "anon";
-GRANT ALL ON TABLE "public"."pronunciation_test_runs" TO "authenticated";
-GRANT ALL ON TABLE "public"."pronunciation_test_runs" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."registration_config" TO "anon";
-GRANT ALL ON TABLE "public"."registration_config" TO "authenticated";
-GRANT ALL ON TABLE "public"."registration_config" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."pronunciation_test_runs" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."pronunciation_test_runs" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."pronunciation_test_runs" TO "service_role";
 
 
 
 GRANT ALL ON TABLE "public"."sentence_units" TO "anon";
 GRANT ALL ON TABLE "public"."sentence_units" TO "authenticated";
 GRANT ALL ON TABLE "public"."sentence_units" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."sessions" TO "anon";
-GRANT ALL ON TABLE "public"."sessions" TO "authenticated";
-GRANT ALL ON TABLE "public"."sessions" TO "service_role";
 
 
 
@@ -2620,12 +2631,6 @@ GRANT ALL ON TABLE "public"."shadowing_themes" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."study_cards" TO "anon";
-GRANT ALL ON TABLE "public"."study_cards" TO "authenticated";
-GRANT ALL ON TABLE "public"."study_cards" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."training_content" TO "anon";
 GRANT ALL ON TABLE "public"."training_content" TO "authenticated";
 GRANT ALL ON TABLE "public"."training_content" TO "service_role";
@@ -2638,15 +2643,15 @@ GRANT ALL ON SEQUENCE "public"."training_content_content_id_seq" TO "service_rol
 
 
 
-GRANT ALL ON TABLE "public"."tts_assets" TO "anon";
-GRANT ALL ON TABLE "public"."tts_assets" TO "authenticated";
-GRANT ALL ON TABLE "public"."tts_assets" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."unit_alias" TO "anon";
 GRANT ALL ON TABLE "public"."unit_alias" TO "authenticated";
 GRANT ALL ON TABLE "public"."unit_alias" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."unit_catalog" TO "anon";
+GRANT ALL ON TABLE "public"."unit_catalog" TO "authenticated";
+GRANT ALL ON TABLE "public"."unit_catalog" TO "service_role";
 
 
 
@@ -2656,15 +2661,15 @@ GRANT ALL ON SEQUENCE "public"."unit_catalog_unit_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."user_api_limits" TO "anon";
-GRANT ALL ON TABLE "public"."user_api_limits" TO "authenticated";
-GRANT ALL ON TABLE "public"."user_api_limits" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."user_api_limits" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."user_api_limits" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."user_api_limits" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."user_permissions" TO "anon";
-GRANT ALL ON TABLE "public"."user_permissions" TO "authenticated";
-GRANT ALL ON TABLE "public"."user_permissions" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."user_permissions" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."user_permissions" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."user_permissions" TO "service_role";
 
 
 
@@ -2704,15 +2709,15 @@ GRANT ALL ON TABLE "public"."user_unit_stats" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."vocab_entries" TO "anon";
-GRANT ALL ON TABLE "public"."vocab_entries" TO "authenticated";
-GRANT ALL ON TABLE "public"."vocab_entries" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."vocab_entries" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."vocab_entries" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."vocab_entries" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."voices" TO "anon";
-GRANT ALL ON TABLE "public"."voices" TO "authenticated";
-GRANT ALL ON TABLE "public"."voices" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."voices" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."voices" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."voices" TO "service_role";
 
 
 

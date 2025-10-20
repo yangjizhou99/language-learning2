@@ -8,7 +8,7 @@ interface PerformanceMetric {
   duration: number;
   timestamp: number;
   type: 'api' | 'component' | 'database' | 'custom';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface PerformanceConfig {
@@ -48,7 +48,7 @@ class PerformanceMonitor {
   endTimer(
     name: string,
     type: PerformanceMetric['type'] = 'custom',
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): number {
     if (!this.config.enabled) return 0;
 
@@ -99,7 +99,7 @@ class PerformanceMonitor {
   async measureApiCall<T>(
     name: string,
     apiCall: () => Promise<T>,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): Promise<T> {
     this.startTimer(name);
 
@@ -124,7 +124,7 @@ class PerformanceMonitor {
   measureComponentRender(
     componentName: string,
     renderFn: () => void,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): void {
     this.startTimer(`component:${componentName}`);
     renderFn();
@@ -142,7 +142,7 @@ class PerformanceMonitor {
   async measureDatabaseQuery<T>(
     queryName: string,
     queryFn: () => Promise<T>,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): Promise<T> {
     this.startTimer(queryName);
 
@@ -235,7 +235,7 @@ export const performanceMonitor = new PerformanceMonitor({
 /**
  * 性能监控装饰器
  */
-export function withPerformanceMonitoring<T extends any[], R>(
+export function withPerformanceMonitoring<T extends unknown[], R>(
   fn: (...args: T) => Promise<R>,
   operationName: string,
   type: PerformanceMetric['type'] = 'custom',
@@ -254,7 +254,7 @@ export function usePerformanceMonitoring(componentName: string) {
   const startTime = performance.now();
 
   return {
-    endRender: (metadata?: Record<string, any>) => {
+    endRender: (metadata?: Record<string, unknown>) => {
       const duration = performance.now() - startTime;
       performanceMonitor.recordMetric({
         name: `component:${componentName}`,
@@ -289,7 +289,7 @@ export function withApiPerformanceMonitoring(
 export function withDatabasePerformanceMonitoring<T>(
   queryFn: () => Promise<T>,
   queryName: string,
-  metadata?: Record<string, any>,
+  metadata?: Record<string, unknown>,
 ): Promise<T> {
   return performanceMonitor.measureDatabaseQuery(queryName, queryFn, metadata);
 }

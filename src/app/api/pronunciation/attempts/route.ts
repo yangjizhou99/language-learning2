@@ -21,7 +21,7 @@ export const runtime = 'nodejs';
  * 更新用户句子进度表
  */
 async function updateSentenceProgress(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   userId: string,
   sentenceId: number,
   score: number,
@@ -75,8 +75,16 @@ async function updateSentenceProgress(
  * 清理旧的评测记录（保留最多 MAX_ATTEMPTS_PER_SENTENCE 次）
  * 删除最旧的记录、音频文件，并从统计中移除
  */
+type PronAttemptRow = {
+  attempt_id: string;
+  azure_raw_json: unknown;
+  audio_path: string | null;
+  valid_flag: boolean | null;
+  created_at: string;
+};
+
 async function cleanupOldAttempts(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient,
   userId: string,
   sentenceId: number,
   lang: string
@@ -95,7 +103,9 @@ async function cleanupOldAttempts(
   }
 
   // 2. 删除最旧的记录（保留前 MAX_ATTEMPTS_PER_SENTENCE - 1 条）
-  const toDelete = existingAttempts.slice(MAX_ATTEMPTS_PER_SENTENCE - 1);
+  const toDelete = (existingAttempts as PronAttemptRow[]).slice(
+    MAX_ATTEMPTS_PER_SENTENCE - 1,
+  );
 
   for (const oldAttempt of toDelete) {
     try {

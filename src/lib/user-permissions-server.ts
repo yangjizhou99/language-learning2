@@ -11,13 +11,18 @@ interface UserPermissions {
   allowed_languages: string[];
   allowed_levels: number[];
   max_daily_attempts: number;
-  model_permissions: any[];
+  model_permissions: Array<{
+    provider: 'openai' | 'openrouter' | 'deepseek' | string;
+    model: string;
+    allowed?: boolean;
+    max_tokens_per_request?: number;
+  }>;
   api_keys?: {
     deepseek?: string;
     openrouter?: string;
   };
   ai_enabled: boolean;
-  custom_restrictions: Record<string, any>;
+  custom_restrictions: Record<string, unknown>;
 }
 
 const defaultPermissions: UserPermissions = {
@@ -55,12 +60,14 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
     if (userPermissions) {
       // 规范化权限字段，避免类型不一致导致过滤全空
       const normalizedAllowedLanguages = Array.isArray(userPermissions.allowed_languages)
-        ? userPermissions.allowed_languages.map((l: any) => String(l)).filter(Boolean)
+        ? (userPermissions.allowed_languages as unknown[])
+            .map((l) => String(l))
+            .filter((v) => Boolean(v))
         : ['en', 'ja', 'zh'];
       const normalizedAllowedLevels = Array.isArray(userPermissions.allowed_levels)
-        ? userPermissions.allowed_levels
-            .map((lv: any) => (typeof lv === 'number' ? lv : parseInt(String(lv), 10)))
-            .filter((n: any) => Number.isFinite(n))
+        ? (userPermissions.allowed_levels as unknown[])
+            .map((lv) => (typeof lv === 'number' ? lv : parseInt(String(lv), 10)))
+            .filter((n) => Number.isFinite(n as number))
         : [1, 2, 3, 4, 5];
 
       return {

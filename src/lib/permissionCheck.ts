@@ -10,7 +10,7 @@ export interface UserPermissions {
   allowed_levels: number[];
   max_daily_attempts: number;
   ai_enabled: boolean;
-  custom_restrictions: Record<string, any>;
+  custom_restrictions: Record<string, unknown>;
 }
 
 /**
@@ -47,7 +47,7 @@ export async function getUserPermissions(userId: string): Promise<UserPermission
       allowed_languages: permissions.allowed_languages || [],
       allowed_levels: permissions.allowed_levels || [],
       max_daily_attempts: permissions.max_daily_attempts || 0,
-      ai_enabled: permissions.custom_restrictions?.ai_enabled || false,
+      ai_enabled: (permissions.custom_restrictions as Record<string, unknown> | null)?.ai_enabled === true,
       custom_restrictions: permissions.custom_restrictions || {},
     };
   } catch (error) {

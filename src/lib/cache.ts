@@ -10,7 +10,7 @@ interface CacheEntry<T> {
 }
 
 class MemoryCache {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private maxSize = 1000; // 最大缓存条目数
   private cleanupInterval: NodeJS.Timeout;
 
@@ -104,7 +104,7 @@ class MemoryCache {
 const memoryCache = new MemoryCache();
 
 export class CacheManager {
-  private static requestCache = new Map<string, Promise<any>>();
+  private static requestCache = new Map<string, Promise<unknown>>();
 
   /**
    * 获取缓存值
@@ -188,7 +188,7 @@ export class CacheManager {
    */
   static async dedupe<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
     if (this.requestCache.has(key)) {
-      return this.requestCache.get(key)!;
+      return this.requestCache.get(key)! as Promise<T>;
     }
 
     const promise = fetcher().finally(() => {
@@ -202,7 +202,7 @@ export class CacheManager {
   /**
    * 生成缓存键
    */
-  static generateKey(prefix: string, params: Record<string, any>): string {
+  static generateKey(prefix: string, params: Record<string, unknown>): string {
     const sortedParams = Object.keys(params)
       .sort()
       .map((key) => `${key}:${params[key]}`)
@@ -249,14 +249,14 @@ export class CacheManager {
 }
 
 // 缓存装饰器
-export function cached(ttlSeconds = 300, keyGenerator?: (...args: any[]) => string) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
-    const method = descriptor.value;
+export function cached(ttlSeconds = 300, keyGenerator?: (...args: unknown[]) => string) {
+  return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
+    const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const key = keyGenerator
         ? keyGenerator(...args)
-        : CacheManager.generateKey(`${target.constructor.name}:${propertyName}`, {
+        : CacheManager.generateKey(`${(target as { constructor: { name: string } }).constructor.name}:${propertyName}`, {
             args: JSON.stringify(args),
           });
 

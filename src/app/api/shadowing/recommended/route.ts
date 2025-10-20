@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     const authHeader = req.headers.get('authorization') || '';
     const cookieHeader = req.headers.get('cookie') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
-    let supabase: any;
+    let supabase: SupabaseClient;
 
     if (hasBearer) {
       supabase = createClient(supabaseUrl, supabaseAnon, {
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
           const value = rest.join('=').trim();
           if (key) cookieMap.set(key, value);
         });
-        supabase = createServerClient(supabaseUrl, supabaseAnon, {
+        supabase = (createServerClient(supabaseUrl, supabaseAnon, {
           cookies: {
             get(name: string) {
               return cookieMap.get(name);
@@ -60,10 +60,10 @@ export async function GET(req: NextRequest) {
             set() {},
             remove() {},
           },
-        });
+        }) as unknown) as SupabaseClient;
       } else {
         const cookieStore = await cookies();
-        supabase = createServerClient(supabaseUrl, supabaseAnon, {
+        supabase = (createServerClient(supabaseUrl, supabaseAnon, {
           cookies: {
             get(name: string) {
               return cookieStore.get(name)?.value;
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
             set() {},
             remove() {},
           },
-        });
+        }) as unknown) as SupabaseClient;
       }
     }
     const searchParams = new URL(req.url).searchParams;
@@ -87,6 +87,7 @@ export async function GET(req: NextRequest) {
     const uid = user.id;
 
     // 获取最近8次该语言的练习记录
+    type AttemptRow = { level: number; metrics: Metrics };
     const { data: attempts } = await supabase
       .from('shadowing_attempts')
       .select('level, metrics')
@@ -103,15 +104,16 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const lastLevel = attempts[0].level;
-    const recentSameLevel = attempts.filter((a: any) => a.level === lastLevel).slice(0, 3);
-    const lastAttempt = attempts[0];
+    const rows = (attempts as AttemptRow[]) || [];
+    const lastLevel = rows[0].level;
+    const recentSameLevel = rows.filter((a) => a.level === lastLevel).slice(0, 3);
+    const lastAttempt = rows[0];
 
     const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
     // 升级条件：同级最近3次，平均准确率≥92%
     if (recentSameLevel.length === 3) {
-      const accuracies = recentSameLevel.map((r: any) => calculateAccuracy(r.metrics as Metrics));
+      const accuracies = recentSameLevel.map((r) => calculateAccuracy(r.metrics));
       const avgAccuracy = avg(accuracies);
 
       if (avgAccuracy >= 0.92) {
@@ -123,8 +125,8 @@ export async function GET(req: NextRequest) {
     }
 
     // 降级条件：最近一次失败/中断 或 准确率 < 75%
-    const lastAccuracy = calculateAccuracy(lastAttempt.metrics as Metrics);
-    const incomplete = (lastAttempt.metrics as Metrics)?.complete === false;
+    const lastAccuracy = calculateAccuracy(lastAttempt.metrics);
+    const incomplete = lastAttempt.metrics?.complete === false;
 
     if (incomplete || lastAccuracy < 0.75) {
       const reason = incomplete

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { randomUUID as nodeRandomUUID } from 'crypto';
 import type {
   InvitationCode,
   InvitationUse,
@@ -106,7 +107,7 @@ export async function validateInvitationCode(code: string): Promise<InvitationVa
 export async function createInvitationCode(
   request: CreateInvitationRequest,
   createdBy: string,
-  supabaseClient?: any,
+  supabaseClient?: SupabaseClient,
 ): Promise<{ success: boolean; data?: InvitationCode; error?: string }> {
   try {
     const client = supabaseClient || supabase;
@@ -137,9 +138,10 @@ export async function createInvitationCode(
       .from('invitation_codes')
       .insert({
         // 使用数据库默认值时可省略 id；但若目标库未设置默认值，则需要显式提供
-        id: (globalThis as any).crypto?.randomUUID
-          ? (globalThis as any).crypto.randomUUID()
-          : require('crypto').randomUUID(),
+        id:
+          typeof globalThis !== 'undefined' && (globalThis as unknown as { crypto?: { randomUUID?: () => string } }).crypto?.randomUUID
+            ? (globalThis as unknown as { crypto?: { randomUUID?: () => string } }).crypto!.randomUUID!()
+            : nodeRandomUUID(),
         code,
         created_by: createdBy,
         max_uses: request.max_uses || 1,
@@ -171,7 +173,7 @@ export async function getInvitationCodes(
   page: number = 1,
   limit: number = 20,
   createdBy?: string,
-  supabaseClient?: any,
+  supabaseClient?: SupabaseClient,
 ): Promise<{ data: InvitationCode[]; total: number; error?: string }> {
   try {
     const client = supabaseClient || supabase;
@@ -253,7 +255,7 @@ export async function deleteInvitationCode(
 export async function useInvitationCode(
   codeId: string,
   userId: string,
-  supabaseClient?: any,
+  supabaseClient?: SupabaseClient,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const client = supabaseClient || supabase;
@@ -273,9 +275,10 @@ export async function useInvitationCode(
     // 创建使用记录
     const { error: useError } = await client.from('invitation_uses').insert({
       // 兜底提供主键，避免目标库未设置默认值时 id 为空
-      id: (globalThis as any).crypto?.randomUUID
-        ? (globalThis as any).crypto.randomUUID()
-        : require('crypto').randomUUID(),
+      id:
+        typeof globalThis !== 'undefined' && (globalThis as unknown as { crypto?: { randomUUID?: () => string } }).crypto?.randomUUID
+          ? (globalThis as unknown as { crypto?: { randomUUID?: () => string } }).crypto!.randomUUID!()
+          : nodeRandomUUID(),
       code_id: codeId,
       used_by: userId,
     });
@@ -348,7 +351,7 @@ export async function getInvitationUses(
 export async function applyInvitationPermissions(
   userId: string,
   permissions: InvitationPermissions,
-  supabaseClient?: any,
+  supabaseClient?: SupabaseClient,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const client = supabaseClient || supabase;
@@ -419,7 +422,7 @@ export async function applyInvitationPermissions(
 export async function applyInvitationApiLimits(
   userId: string,
   apiLimits: InvitationPermissions['api_limits'],
-  supabaseClient?: any,
+  supabaseClient?: SupabaseClient,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     if (!apiLimits) {
@@ -457,8 +460,8 @@ export async function applyInvitationApiLimits(
 
     if (error) {
       // 兼容性回退：若库里缺少 UNIQUE(user_id) 导致 42P10，则改为先查后插/改
-      const pgCode = (error as any)?.code;
-      if (pgCode === '42P10' || /no unique|ON CONFLICT/i.test(String(error.message))) {
+      const pgCode = (error as { code?: string; message?: string }).code;
+      if (pgCode === '42P10' || /no unique|ON CONFLICT/i.test(String((error as { message?: string }).message || ''))) {
         // 先查是否存在
         const { data: existing, error: qErr } = await client
           .from('user_api_limits')
@@ -492,9 +495,9 @@ export async function applyInvitationApiLimits(
         } else {
           const withId = {
             id:
-              (globalThis as any).crypto?.randomUUID
-                ? (globalThis as any).crypto.randomUUID()
-                : require('crypto').randomUUID(),
+              typeof globalThis !== 'undefined' && (globalThis as unknown as { crypto?: { randomUUID?: () => string } }).crypto?.randomUUID
+                ? (globalThis as unknown as { crypto?: { randomUUID?: () => string } }).crypto!.randomUUID!()
+                : nodeRandomUUID(),
             ...limitsData,
           };
           const { error: insErr } = await client.from('user_api_limits').insert(withId);

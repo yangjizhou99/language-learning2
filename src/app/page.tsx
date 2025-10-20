@@ -9,9 +9,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   BookOpen,
-  Target,
   AlignCenter,
-  FileText,
   GraduationCap,
   User,
   TrendingUp,
@@ -160,28 +158,12 @@ export default function Home() {
       show: true,
     },
     {
-      title: t.nav.cloze,
-      description: '完形填空，巩固语法和词汇',
-      icon: Target,
-      href: '/practice/cloze',
-      color: 'bg-green-500',
-      show: permissions.can_access_cloze,
-    },
-    {
       title: t.nav.alignment_practice,
       description: '对齐练习，理解语言结构',
       icon: AlignCenter,
       href: '/practice/alignment',
       color: 'bg-purple-500',
       show: permissions.can_access_alignment,
-    },
-    {
-      title: t.nav.wide_reading,
-      description: '广泛阅读，扩展知识面',
-      icon: FileText,
-      href: '/practice/wideread',
-      color: 'bg-orange-500',
-      show: permissions.can_access_articles,
     },
     {
       title: t.nav.vocabulary,
