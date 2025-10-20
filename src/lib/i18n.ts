@@ -300,6 +300,36 @@ export interface Translations {
     no_recordings: string;
     start_recording_text: string;
     practice_scoring: string;
+    mode_default: string;
+    mode_role: string;
+    role_mode_title: string;
+    role_mode_switcher_title: string;
+    role_mode_switcher_hint: string;
+    role_select_label: string;
+    role_current_role: string;
+    role_mode_hint: string;
+    role_start_button: string;
+    role_pause_button: string;
+    role_resume_button: string;
+    role_reset_button: string;
+    role_toast_great: string;
+    role_retry_sentence: string;
+    role_skip_sentence: string;
+    role_browser_unsupported: string;
+    role_recognition_error: string;
+    role_recording_hint: string;
+    role_partner_hint: string;
+    role_transcript_placeholder: string;
+    role_transcript_label: string;
+    role_transcript_empty: string;
+    role_missing_label: string;
+    role_extra_label: string;
+    role_round_complete: string;
+    role_no_segments: string;
+    role_mode_unavailable: string;
+    role_suggestion_text: string;
+    role_switch_now: string;
+    role_skipped: string;
     // 新增的按钮和界面文本翻译
     refresh_vocabulary: string;
     select_question_to_start: string;
@@ -880,6 +910,36 @@ const zh: Translations = {
     no_recordings: '还没有录音，点击"开始录音"开始练习',
     start_recording_text: '开始录音',
     practice_scoring: '练习评分',
+    mode_default: '逐句练习',
+    mode_role: '分角色对话',
+    role_mode_title: '分角色练习',
+    role_mode_switcher_title: '练习模式',
+    role_mode_switcher_hint: '可在普通逐句与分角色对话之间切换',
+    role_select_label: '选择角色',
+    role_current_role: '当前角色',
+    role_mode_hint: '轮到对方时自动播放，轮到你时会自动录音并分析。',
+    role_start_button: '开始角色练习',
+    role_pause_button: '暂停',
+    role_retry_sentence: '重练本句',
+    role_skip_sentence: '跳过此句',
+    role_browser_unsupported: '当前浏览器不支持自动录音，请使用最新版 Chrome 体验该功能。',
+    role_recognition_error: '语音识别失败，请检查麦克风权限或稍后重试。',
+    role_recording_hint: '正在录音',
+    role_partner_hint: '请倾听对方台词',
+    role_transcript_placeholder: '语音识别结果会显示在这里',
+    role_transcript_label: '你的转录',
+    role_transcript_empty: '（无识别结果）',
+    role_missing_label: '遗漏',
+    role_extra_label: '多余',
+    role_round_complete: '本轮练习已完成，选择其他角色再练习吧！',
+    role_no_segments: '当前材料暂不支持分角色练习。',
+    role_mode_unavailable: '当前素材暂不支持分角色练习',
+    role_suggestion_text: '切换到其他角色继续练习：',
+    role_switch_now: '立即切换',
+    role_skipped: '已跳过',
+    role_resume_button: '继续',
+    role_reset_button: '重新开始',
+    role_toast_great: '做得很好！这句练得不错 👍',
     // 新增的按钮和界面文本翻译
     refresh_vocabulary: '刷新题库',
     select_question_to_start: '选择题目开始练习',
@@ -1463,6 +1523,39 @@ const en: Translations = {
     no_recordings: 'No recordings yet, click "Start Recording" to begin practice',
     start_recording_text: 'Start Recording',
     practice_scoring: 'Practice Scoring',
+    mode_default: 'Sentence Practice',
+    mode_role: 'Role Dialogue',
+    role_mode_title: 'Role Practice',
+    role_mode_switcher_title: 'Practice Mode',
+    role_mode_switcher_hint: 'Switch between sentence practice and role-based dialogue',
+    role_select_label: 'Choose Role',
+    role_current_role: 'Current Role',
+    role_mode_hint:
+      'Partner lines play automatically; when it is your turn we will record automatically.',
+    role_start_button: 'Start Role Practice',
+    role_pause_button: 'Pause',
+    role_retry_sentence: 'Retry Sentence',
+    role_skip_sentence: 'Skip Sentence',
+    role_browser_unsupported:
+      'Automatic recording is not supported in this browser. Please use the latest Chrome.',
+    role_recognition_error:
+      'Speech recognition failed. Please check microphone permissions and try again.',
+    role_recording_hint: 'Recording...',
+    role_partner_hint: 'Listen to your partner',
+    role_transcript_placeholder: 'Speech recognition transcript will appear here',
+    role_transcript_label: 'Your transcript',
+    role_transcript_empty: '(No transcript)',
+    role_missing_label: 'Missing',
+    role_extra_label: 'Extra',
+    role_round_complete: 'Round finished! Choose another role to continue.',
+    role_no_segments: 'This material does not support role practice yet.',
+    role_mode_unavailable: 'Role practice is not available for this content',
+    role_suggestion_text: 'Switch to another role to continue:',
+    role_switch_now: 'Switch now',
+    role_skipped: 'Skipped',
+    role_resume_button: 'Resume',
+    role_reset_button: 'Restart',
+    role_toast_great: 'Great job! That line sounded solid 👍',
     // 新增的按钮和界面文本翻译
     refresh_vocabulary: 'Refresh Vocabulary',
     select_question_to_start: 'Select a question to start practice',
@@ -2046,6 +2139,38 @@ const ja: Translations = {
     no_recordings: 'まだ録音がありません。「録音開始」をクリックして練習を開始してください',
     start_recording_text: '録音開始',
     practice_scoring: '練習スコア',
+    mode_default: '文単位の練習',
+    mode_role: '役割別対話',
+    role_mode_title: '役割練習',
+    role_mode_switcher_title: '練習モード',
+    role_mode_switcher_hint: '通常の逐語練習と役割対話を切り替えられます',
+    role_select_label: '役割を選択',
+    role_current_role: '現在の役割',
+    role_mode_hint: '相手の番では自動再生、あなたの番では自動的に録音と分析を行います。',
+    role_start_button: '役割練習を開始',
+    role_pause_button: '一時停止',
+    role_retry_sentence: 'もう一度このセリフ',
+    role_skip_sentence: 'このセリフをスキップ',
+    role_browser_unsupported:
+      'このブラウザでは自動録音が利用できません。最新の Chrome をご利用ください。',
+    role_recognition_error:
+      '音声認識に失敗しました。マイク権限を確認して再試行してください。',
+    role_recording_hint: '録音中…',
+    role_partner_hint: '相手のセリフを聞きましょう',
+    role_transcript_placeholder: '音声認識結果がここに表示されます',
+    role_transcript_label: 'あなたの書き起こし',
+    role_transcript_empty: '（認識結果なし）',
+    role_missing_label: '不足',
+    role_extra_label: '余分',
+    role_round_complete: 'この役割の練習が完了しました。別の役割でも練習してみましょう！',
+    role_no_segments: 'この素材はまだ役割練習に対応していません。',
+    role_mode_unavailable: 'このコンテンツでは役割練習を利用できません',
+    role_suggestion_text: '別の役割で練習を続けましょう：',
+    role_switch_now: '切り替える',
+    role_skipped: 'スキップ済み',
+    role_resume_button: '再開',
+    role_reset_button: 'リセット',
+    role_toast_great: '素晴らしい！このセリフはとても良かったです 👍',
     // 新增的按钮和界面文本翻译
     refresh_vocabulary: 'シャドーイング试题库更新',
     select_question_to_start: '問題を選択して練習を開始',
