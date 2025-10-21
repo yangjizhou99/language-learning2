@@ -26,7 +26,7 @@ function buildThemePrompt({
   genre: string;
   count: number;
 }) {
-  const langNameMap = { en: 'English', ja: '日本語', zh: '简体中文' } as const;
+  const langNameMap = { en: 'English', ja: '日本語', zh: '简体中文', ko: '한국어' } as const;
   const L = langNameMap[lang as keyof typeof langNameMap] || 'English';
 
   // 针对不同学习语言，要求主题标题与说明用对应语言输出
@@ -35,16 +35,20 @@ function buildThemePrompt({
       ? 'Each theme title should be concise in English (≤ 8 words).'
       : lang === 'ja'
         ? '各テーマのタイトルは日本語で簡潔に（全角14字以内）。'
-        : '每个主题标题使用简体中文，简洁清晰（≤ 14 个汉字）。';
+        : lang === 'ko'
+          ? '각 테마 제목은 한국어로 간결하게 (14자 이내).'
+          : '每个主题标题使用简体中文，简洁清晰（≤ 14 个汉字）。';
   const rationaleGuidance =
     lang === 'en'
       ? 'Provide 1–2 sentences of rationale in English.'
       : lang === 'ja'
         ? '適合レベル／ジャンルの理由を日本語で1–2文記述。'
-        : '用中文写1–2句说明其为何适配该等级和体裁。';
-  const coverageLabel1 = lang === 'ja' ? '要点1' : lang === 'en' ? 'Point 1' : '要点1';
-  const coverageLabel2 = lang === 'ja' ? '要点2' : lang === 'en' ? 'Point 2' : '要点2';
-  const coverageLabel3 = lang === 'ja' ? '要点3' : lang === 'en' ? 'Point 3' : '要点3';
+        : lang === 'ko'
+          ? '해당 레벨/장르에 적합한 이유를 한국어로 1–2문장으로 설명.'
+          : '用中文写1–2句说明其为何适配该等级和体裁。';
+  const coverageLabel1 = lang === 'ja' ? '要点1' : lang === 'ko' ? '포인트1' : lang === 'en' ? 'Point 1' : '要点1';
+  const coverageLabel2 = lang === 'ja' ? '要点2' : lang === 'ko' ? '포인트2' : lang === 'en' ? 'Point 2' : '要点2';
+  const coverageLabel3 = lang === 'ja' ? '要点3' : lang === 'ko' ? '포인트3' : lang === 'en' ? 'Point 3' : '要点3';
 
   return `LANG=${L}
 LEVEL=L${level}

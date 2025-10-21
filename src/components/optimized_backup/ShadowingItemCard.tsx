@@ -9,7 +9,7 @@ import { LANG_LABEL } from '@/types/lang';
 
 interface ShadowingItem {
   id: string;
-  lang: 'ja' | 'en' | 'zh';
+  lang: 'ja' | 'en' | 'zh' | 'ko';
   level: number;
   title: string;
   text: string;

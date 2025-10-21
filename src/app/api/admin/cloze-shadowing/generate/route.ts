@@ -6,7 +6,7 @@ import { getServiceSupabase } from '@/lib/supabaseAdmin';
 import { splitSentencesWithIndex } from '@/lib/nlp/segment';
 import { chatJSON } from '@/lib/ai/client';
 
-type Lang = 'en' | 'ja' | 'zh';
+type Lang = 'en' | 'ja' | 'zh' | 'ko';
 
 // 删除旧版 buildPrompt（带 correct/distractor 参数）的实现
 
@@ -19,7 +19,7 @@ function buildPrompt({
   sentence: string;
   seed: string;
 }) {
-  const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : '简体中文';
+  const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : lang === 'ko' ? 'Korean/한국어' : '简体中文';
   return `You are creating a single-blank cloze question from a short passage (one or two sentences).
 LANG=${L}
 SEED=${seed}  // use deterministically, avoid randomness beyond seed
@@ -88,7 +88,7 @@ function buildFixedDistractorsPrompt({
   maskedText: string;
   referenceAnswer: string;
 }) {
-  const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : '简体中文';
+  const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : lang === 'ko' ? 'Korean/한국어' : '简体中文';
   const lenRule = lang === 'en' ? 'each option ≤ 20 characters' : '每个选项长度≤12字符';
   return `You are given a short passage with a single blank marked as [[BLANK]].
 LANG=${L}

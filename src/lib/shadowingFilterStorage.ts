@@ -1,5 +1,5 @@
 export type ShadowingFilterPersist = {
-  lang?: 'zh' | 'ja' | 'en';
+  lang?: 'zh' | 'ja' | 'en' | 'ko';
   level?: number | null;
   practiced?: 'all' | 'practiced' | 'unpracticed';
 };

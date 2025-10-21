@@ -34,6 +34,9 @@ export async function GET(req: NextRequest) {
         query = query.eq('language_code', 'en-US');
       } else if (lang === 'ja-JP' || lang === 'ja') {
         query = query.eq('language_code', 'ja-JP');
+      } else if (lang === 'ko-KR' || lang === 'ko') {
+        // 兼容韩语的短码/长码
+        query = query.eq('language_code', 'ko-KR');
       } else {
         query = query.eq('language_code', lang);
       }

@@ -43,6 +43,7 @@ const DEFAULTS: Record<string, string> = {
   en: 'en-US-Neural2-C',
   zh: 'cmn-CN-Standard-A',
   'zh-CN': 'cmn-CN-Standard-A',
+  ko: 'ko-KR-Neural2-A',
 };
 
 function extractLanguageCodeFromVoiceName(name?: string): string | undefined {

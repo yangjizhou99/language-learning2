@@ -9,7 +9,7 @@ import { chatJSON } from '@/lib/ai/client';
 
 const ExplainVocabSchema = z.object({
   entry_ids: z.array(z.string().uuid()).optional(),
-  native_lang: z.enum(['zh', 'en', 'ja']),
+  native_lang: z.enum(['zh', 'en', 'ja', 'ko']), // 添加韩语支持
   provider: z.string().default('deepseek'),
   model: z.string().default('deepseek-chat'),
   temperature: z.number().min(0).max(2).default(0.7),
@@ -126,12 +126,14 @@ export async function POST(request: NextRequest) {
       zh: '中文',
       en: 'English',
       ja: '日本語',
+      ko: '한국어', // 添加韩语
     };
 
     const targetLangNames = {
       en: 'English',
       ja: '日本語',
       zh: '中文',
+      ko: '한국어', // 添加韩语
     };
 
     const prompt = `你是一个专业的语言学习助手。请为以下生词生成详细的解释和例句。
@@ -147,6 +149,7 @@ export async function POST(request: NextRequest) {
 - 例句(example_target): 用生词的原语言
 - 例句说明(example_native): 用${nativeLangNames[native_lang]}解释例句含义
 - 搭配: 用生词的原语言
+- 发音: 韩语词必须使用罗马音（如 jeo-nyeok），不要使用韩文字母
 
 示例说明：
 如果生词是日语"尽力"：
@@ -159,11 +162,17 @@ export async function POST(request: NextRequest) {
 ✅ example_target: "I will make every effort to solve this problem"（英语例句）
 ✅ example_native: "我会尽一切努力解决这个问题"（中文翻译/说明）
 
+如果生词是韩语"저녁"：
+✅ pronunciation: "jeo-nyeok"（罗马音，不是韩文字母）
+✅ gloss_native: "傍晚；晚餐"（中文解释）
+✅ example_target: "오늘 저녁 맛있네요"（韩语例句）
+✅ example_native: "今天的晚餐真好吃"（中文翻译/说明）
+
 JSON格式要求：
 
 {
   "pos": "词性（${nativeLangNames[native_lang]}）",
-  "pronunciation": "发音（音标或假名）", 
+  "pronunciation": "发音（韩语用罗马音，其他语言用音标或假名）", 
   "gloss_native": "${nativeLangNames[native_lang]}解释",
   "senses": [
     {
@@ -193,6 +202,7 @@ ${entries
 - 确保所有 example_target 都用生词的原语言（例句用原语言）
 - 确保所有 example_native 都是${nativeLangNames[native_lang]}（例句翻译用母语）
 - 确保 collocations 用生词的原语言
+- 确保韩语词的 pronunciation 使用罗马音（如 jeo-nyeok），不要使用韩文字母
 
 请返回JSON数组，每个元素对应一个词条的解释。`;
 

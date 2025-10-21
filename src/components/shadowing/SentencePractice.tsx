@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-type Lang = 'ja' | 'en' | 'zh';
+type Lang = 'ja' | 'en' | 'zh' | 'ko';
 
 type WebSpeechRecognitionEvent = {
   resultIndex: number;
@@ -79,6 +79,8 @@ const mapLangToLocale = (lang: Lang): string => {
       return 'ja-JP';
     case 'zh':
       return 'zh-CN';
+    case 'ko':
+      return 'ko-KR';
     case 'en':
     default:
       return 'en-US';
@@ -235,7 +237,7 @@ const splitSentences = (text: string, language: Lang): string[] => {
       if (parts.length) return parts;
     }
   } catch {}
-  if (language === 'en') {
+  if (language === 'en' || language === 'ko') {
     return text
       .split(/(?<=[.!?])\s+/)
       .map((s) => s.trim())
@@ -256,6 +258,10 @@ const tokenize = (text: string, language: Lang): string[] => {
       .split(/\s+/)
       .filter(Boolean)
       .filter((w) => !EN_STOPWORDS.has(w));
+  }
+  // 韩语采用"非英文逐字"策略（MVP阶段足够）
+  if (language === 'ko') {
+    return Array.from(text.replace(/[\p{P}\p{S}\s]/gu, '')).filter(Boolean);
   }
   return Array.from(text.replace(/[\p{P}\p{S}\s]/gu, '')).filter(Boolean);
 };
@@ -574,7 +580,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     const rec = new SR();
     rec.continuous = true;
     rec.interimResults = true;
-    const langMap: Record<string, string> = { ja: 'ja-JP', zh: 'zh-CN', en: 'en-US' };
+    const langMap: Record<string, string> = { ja: 'ja-JP', zh: 'zh-CN', en: 'en-US', ko: 'ko-KR' };
     rec.lang = langMap[language] || 'en-US';
     rec.onstart = () => {
       setIsRecognizing(true);

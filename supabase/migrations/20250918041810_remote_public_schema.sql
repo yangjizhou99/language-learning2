@@ -364,7 +364,7 @@ CREATE TABLE IF NOT EXISTS "public"."alignment_materials" (
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "practice_scenario" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "standard_dialogue" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    CONSTRAINT "alignment_materials_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text"]))),
+    CONSTRAINT "alignment_materials_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text", 'ko'::"text"]))),
     CONSTRAINT "alignment_materials_review_status_check" CHECK (("review_status" = ANY (ARRAY['pending'::"text", 'approved'::"text", 'rejected'::"text"]))),
     CONSTRAINT "alignment_materials_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'pending_review'::"text", 'active'::"text", 'archived'::"text"]))),
     CONSTRAINT "alignment_materials_task_type_check" CHECK (("task_type" = ANY (ARRAY['dialogue'::"text", 'article'::"text", 'task_email'::"text", 'long_writing'::"text"])))
@@ -412,7 +412,7 @@ CREATE TABLE IF NOT EXISTS "public"."alignment_subtopics" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     CONSTRAINT "alignment_subtopics_genre_check" CHECK (("genre" = ANY (ARRAY['dialogue'::"text", 'article'::"text", 'task_email'::"text", 'long_writing'::"text"]))),
-    CONSTRAINT "alignment_subtopics_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text"]))),
+    CONSTRAINT "alignment_subtopics_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text", 'ko'::"text"]))),
     CONSTRAINT "alignment_subtopics_level_check" CHECK ((("level" >= 1) AND ("level" <= 6))),
     CONSTRAINT "alignment_subtopics_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'needs_review'::"text", 'active'::"text", 'archived'::"text"])))
 );
@@ -436,7 +436,7 @@ CREATE TABLE IF NOT EXISTS "public"."alignment_themes" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     CONSTRAINT "alignment_themes_genre_check" CHECK (("genre" = ANY (ARRAY['dialogue'::"text", 'article'::"text", 'task_email'::"text", 'long_writing'::"text"]))),
-    CONSTRAINT "alignment_themes_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text"]))),
+    CONSTRAINT "alignment_themes_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text", 'ko'::"text"]))),
     CONSTRAINT "alignment_themes_level_check" CHECK ((("level" >= 1) AND ("level" <= 6))),
     CONSTRAINT "alignment_themes_status_check" CHECK (("status" = ANY (ARRAY['draft'::"text", 'active'::"text", 'archived'::"text"])))
 );
@@ -580,7 +580,7 @@ CREATE TABLE IF NOT EXISTS "public"."cloze_shadowing_items" (
     "gen_seed" "text" NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"(),
     "is_published" boolean DEFAULT false NOT NULL,
-    CONSTRAINT "cloze_shadowing_items_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text"]))),
+    CONSTRAINT "cloze_shadowing_items_lang_check" CHECK (("lang" = ANY (ARRAY['en'::"text", 'ja'::"text", 'zh'::"text", 'ko'::"text"]))),
     CONSTRAINT "cloze_shadowing_items_level_check" CHECK ((("level" >= 1) AND ("level" <= 5)))
 );
 
@@ -1235,23 +1235,22 @@ ALTER TABLE "public"."vocab_entries" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."voices" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "id" "uuid" NOT NULL,
     "name" "text" NOT NULL,
     "language_code" "text" NOT NULL,
     "ssml_gender" "text",
     "natural_sample_rate_hertz" integer,
-    "pricing" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
-    "characteristics" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "pricing" "jsonb" NOT NULL,
+    "characteristics" "jsonb" NOT NULL,
     "display_name" "text",
     "category" "text" NOT NULL,
-    "is_active" boolean DEFAULT true,
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"(),
-    "provider" "text" DEFAULT 'google'::"text",
+    "is_active" boolean,
+    "created_at" timestamp with time zone,
+    "updated_at" timestamp with time zone,
+    "provider" "text",
     "usecase" "text",
-    "is_news_voice" boolean DEFAULT false,
-    "use_case" "text",
-    CONSTRAINT "voices_provider_check" CHECK (("provider" = ANY (ARRAY['google'::"text", 'gemini'::"text", 'xunfei'::"text"])))
+    "is_news_voice" boolean,
+    "use_case" "text"
 );
 
 
@@ -1434,41 +1433,13 @@ ALTER TABLE ONLY "public"."unit_alias"
 
 
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint c
-    JOIN pg_class t ON t.oid = c.conrelid
-    JOIN pg_namespace n ON n.oid = t.relnamespace
-    WHERE n.nspname = 'public'
-      AND t.relname = 'unit_catalog'
-      AND c.conname = 'unit_catalog_lang_symbol_key'
-  ) THEN
-    ALTER TABLE ONLY "public"."unit_catalog"
-      ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
-  END IF;
-END
-$$;
+ALTER TABLE ONLY "public"."unit_catalog"
+    ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
 
 
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint c
-    JOIN pg_class t ON t.oid = c.conrelid
-    JOIN pg_namespace n ON n.oid = t.relnamespace
-    WHERE n.nspname = 'public'
-      AND t.relname = 'unit_catalog'
-      AND c.conname = 'unit_catalog_pkey'
-  ) THEN
-    ALTER TABLE ONLY "public"."unit_catalog"
-      ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
-  END IF;
-END
-$$;
+ALTER TABLE ONLY "public"."unit_catalog"
+    ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
 
 
 
@@ -1514,16 +1485,6 @@ ALTER TABLE ONLY "public"."user_unit_stats"
 
 ALTER TABLE ONLY "public"."vocab_entries"
     ADD CONSTRAINT "vocab_entries_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."voices"
-    ADD CONSTRAINT "voices_name_key" UNIQUE ("name");
-
-
-
-ALTER TABLE ONLY "public"."voices"
-    ADD CONSTRAINT "voices_pkey" PRIMARY KEY ("id");
 
 
 
@@ -1617,6 +1578,14 @@ CREATE INDEX "idx_cloze_attempts_user_id" ON "public"."cloze_attempts" USING "bt
 
 
 CREATE INDEX "idx_cloze_shadowing_items_published" ON "public"."cloze_shadowing_items" USING "btree" ("source_item_id", "is_published");
+
+
+
+CREATE INDEX "idx_en_phoneme_units_category" ON "public"."en_phoneme_units" USING "btree" ("category");
+
+
+
+CREATE INDEX "idx_en_phoneme_units_subcategory" ON "public"."en_phoneme_units" USING "btree" ("subcategory");
 
 
 
@@ -1772,22 +1741,6 @@ CREATE INDEX "idx_vocab_entries_user_lang" ON "public"."vocab_entries" USING "bt
 
 
 
-CREATE INDEX "idx_voices_category" ON "public"."voices" USING "btree" ("category");
-
-
-
-CREATE INDEX "idx_voices_language_code" ON "public"."voices" USING "btree" ("language_code");
-
-
-
-CREATE INDEX "idx_voices_name" ON "public"."voices" USING "btree" ("name");
-
-
-
-CREATE INDEX "idx_voices_provider" ON "public"."voices" USING "btree" ("provider");
-
-
-
 CREATE INDEX "pronunciation_test_runs_admin_idx" ON "public"."pronunciation_test_runs" USING "btree" ("admin_id");
 
 
@@ -1821,10 +1774,6 @@ CREATE OR REPLACE TRIGGER "update_user_permissions_updated_at" BEFORE UPDATE ON 
 
 
 CREATE OR REPLACE TRIGGER "update_vocab_entries_updated_at" BEFORE UPDATE ON "public"."vocab_entries" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
-
-
-
-CREATE OR REPLACE TRIGGER "update_voices_updated_at" BEFORE UPDATE ON "public"."voices" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 
 
@@ -2328,13 +2277,6 @@ CREATE POLICY "user_unit_stats_own" ON "public"."user_unit_stats" USING (("auth"
 ALTER TABLE "public"."vocab_entries" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."voices" ENABLE ROW LEVEL SECURITY;
-
-
-CREATE POLICY "voices_select_all" ON "public"."voices" FOR SELECT USING (("is_active" = true));
-
-
-
 ALTER TABLE "public"."zh_pinyin_units" ENABLE ROW LEVEL SECURITY;
 
 
@@ -2445,111 +2387,111 @@ GRANT ALL ON FUNCTION "public"."validate_invitation_code"("code_text" "text") TO
 
 
 
-GRANT MAINTAIN ON TABLE "public"."alignment_attempts" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."alignment_attempts" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."alignment_attempts" TO "service_role";
+GRANT ALL ON TABLE "public"."alignment_attempts" TO "anon";
+GRANT ALL ON TABLE "public"."alignment_attempts" TO "authenticated";
+GRANT ALL ON TABLE "public"."alignment_attempts" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."alignment_materials" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."alignment_materials" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."alignment_materials" TO "service_role";
+GRANT ALL ON TABLE "public"."alignment_materials" TO "anon";
+GRANT ALL ON TABLE "public"."alignment_materials" TO "authenticated";
+GRANT ALL ON TABLE "public"."alignment_materials" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."alignment_packs" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."alignment_packs" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."alignment_packs" TO "service_role";
+GRANT ALL ON TABLE "public"."alignment_packs" TO "anon";
+GRANT ALL ON TABLE "public"."alignment_packs" TO "authenticated";
+GRANT ALL ON TABLE "public"."alignment_packs" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."alignment_subtopics" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."alignment_subtopics" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."alignment_subtopics" TO "service_role";
+GRANT ALL ON TABLE "public"."alignment_subtopics" TO "anon";
+GRANT ALL ON TABLE "public"."alignment_subtopics" TO "authenticated";
+GRANT ALL ON TABLE "public"."alignment_subtopics" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."alignment_themes" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."alignment_themes" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."alignment_themes" TO "service_role";
+GRANT ALL ON TABLE "public"."alignment_themes" TO "anon";
+GRANT ALL ON TABLE "public"."alignment_themes" TO "authenticated";
+GRANT ALL ON TABLE "public"."alignment_themes" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."api_limits" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."api_limits" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."api_limits" TO "service_role";
+GRANT ALL ON TABLE "public"."api_limits" TO "anon";
+GRANT ALL ON TABLE "public"."api_limits" TO "authenticated";
+GRANT ALL ON TABLE "public"."api_limits" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."api_usage_logs" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."api_usage_logs" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."api_usage_logs" TO "service_role";
+GRANT ALL ON TABLE "public"."api_usage_logs" TO "anon";
+GRANT ALL ON TABLE "public"."api_usage_logs" TO "authenticated";
+GRANT ALL ON TABLE "public"."api_usage_logs" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."article_batch_items" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."article_batch_items" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."article_batch_items" TO "service_role";
+GRANT ALL ON TABLE "public"."article_batch_items" TO "anon";
+GRANT ALL ON TABLE "public"."article_batch_items" TO "authenticated";
+GRANT ALL ON TABLE "public"."article_batch_items" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."article_batches" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."article_batches" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."article_batches" TO "service_role";
+GRANT ALL ON TABLE "public"."article_batches" TO "anon";
+GRANT ALL ON TABLE "public"."article_batches" TO "authenticated";
+GRANT ALL ON TABLE "public"."article_batches" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."cloze_attempts" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."cloze_attempts" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."cloze_attempts" TO "service_role";
+GRANT ALL ON TABLE "public"."cloze_attempts" TO "anon";
+GRANT ALL ON TABLE "public"."cloze_attempts" TO "authenticated";
+GRANT ALL ON TABLE "public"."cloze_attempts" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_article" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_article" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_article" TO "service_role";
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_article" TO "anon";
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_article" TO "authenticated";
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_article" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "service_role";
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "anon";
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "authenticated";
+GRANT ALL ON TABLE "public"."cloze_shadowing_attempts_sentence" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_items" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_items" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."cloze_shadowing_items" TO "service_role";
+GRANT ALL ON TABLE "public"."cloze_shadowing_items" TO "anon";
+GRANT ALL ON TABLE "public"."cloze_shadowing_items" TO "authenticated";
+GRANT ALL ON TABLE "public"."cloze_shadowing_items" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."default_user_permissions" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."default_user_permissions" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."default_user_permissions" TO "service_role";
+GRANT ALL ON TABLE "public"."default_user_permissions" TO "anon";
+GRANT ALL ON TABLE "public"."default_user_permissions" TO "authenticated";
+GRANT ALL ON TABLE "public"."default_user_permissions" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."en_phoneme_units" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."en_phoneme_units" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."en_phoneme_units" TO "service_role";
+GRANT ALL ON TABLE "public"."en_phoneme_units" TO "anon";
+GRANT ALL ON TABLE "public"."en_phoneme_units" TO "authenticated";
+GRANT ALL ON TABLE "public"."en_phoneme_units" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."invitation_codes" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."invitation_codes" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."invitation_codes" TO "service_role";
+GRANT ALL ON TABLE "public"."invitation_codes" TO "anon";
+GRANT ALL ON TABLE "public"."invitation_codes" TO "authenticated";
+GRANT ALL ON TABLE "public"."invitation_codes" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."invitation_uses" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."invitation_uses" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."invitation_uses" TO "service_role";
+GRANT ALL ON TABLE "public"."invitation_uses" TO "anon";
+GRANT ALL ON TABLE "public"."invitation_uses" TO "authenticated";
+GRANT ALL ON TABLE "public"."invitation_uses" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."ja_phoneme_units" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."ja_phoneme_units" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."ja_phoneme_units" TO "service_role";
+GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "anon";
+GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "authenticated";
+GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "service_role";
 
 
 
@@ -2565,8 +2507,8 @@ GRANT ALL ON SEQUENCE "public"."minimal_pairs_pair_id_seq" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."profiles" TO "anon";
-GRANT SELECT,MAINTAIN ON TABLE "public"."profiles" TO "authenticated";
+GRANT ALL ON TABLE "public"."profiles" TO "anon";
+GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."profiles" TO "service_role";
 
 
@@ -2583,9 +2525,9 @@ GRANT ALL ON SEQUENCE "public"."pron_sentences_sentence_id_seq" TO "service_role
 
 
 
-GRANT MAINTAIN ON TABLE "public"."pronunciation_test_runs" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."pronunciation_test_runs" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."pronunciation_test_runs" TO "service_role";
+GRANT ALL ON TABLE "public"."pronunciation_test_runs" TO "anon";
+GRANT ALL ON TABLE "public"."pronunciation_test_runs" TO "authenticated";
+GRANT ALL ON TABLE "public"."pronunciation_test_runs" TO "service_role";
 
 
 
@@ -2661,15 +2603,15 @@ GRANT ALL ON SEQUENCE "public"."unit_catalog_unit_id_seq" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."user_api_limits" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."user_api_limits" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."user_api_limits" TO "service_role";
+GRANT ALL ON TABLE "public"."user_api_limits" TO "anon";
+GRANT ALL ON TABLE "public"."user_api_limits" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_api_limits" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."user_permissions" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."user_permissions" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."user_permissions" TO "service_role";
+GRANT ALL ON TABLE "public"."user_permissions" TO "anon";
+GRANT ALL ON TABLE "public"."user_permissions" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_permissions" TO "service_role";
 
 
 
@@ -2709,15 +2651,15 @@ GRANT ALL ON TABLE "public"."user_unit_stats" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."vocab_entries" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."vocab_entries" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."vocab_entries" TO "service_role";
+GRANT ALL ON TABLE "public"."vocab_entries" TO "anon";
+GRANT ALL ON TABLE "public"."vocab_entries" TO "authenticated";
+GRANT ALL ON TABLE "public"."vocab_entries" TO "service_role";
 
 
 
-GRANT MAINTAIN ON TABLE "public"."voices" TO "anon";
-GRANT MAINTAIN ON TABLE "public"."voices" TO "authenticated";
-GRANT MAINTAIN ON TABLE "public"."voices" TO "service_role";
+GRANT ALL ON TABLE "public"."voices" TO "anon";
+GRANT ALL ON TABLE "public"."voices" TO "authenticated";
+GRANT ALL ON TABLE "public"."voices" TO "service_role";
 
 
 

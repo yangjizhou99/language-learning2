@@ -125,7 +125,7 @@ export interface Translations {
       lifestyle: string;
     };
     language_labels: Record<string, string>; // 动态语言列表显示名
-    date_locales: Record<'zh' | 'en' | 'ja', string>; // 用于 toLocaleDateString
+    date_locales: Record<'zh' | 'en' | 'ja' | 'ko', string>; // 用于 toLocaleDateString
     // 新增：资料完成度与字段提示
     progress_title: string;
     progress_tip_prefix: string; // e.g. 完善以下字段可达100%：
@@ -748,7 +748,7 @@ const zh: Translations = {
       pt: 'Português',
       ru: 'Русский',
     },
-    date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP' },
+    date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR' },
     progress_title: '资料完成度',
     progress_tip_prefix: '完善以下字段可达 100%：',
     hints: {
@@ -1360,7 +1360,7 @@ const en: Translations = {
       pt: 'Portuguese',
       ru: 'Russian',
     },
-    date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP' },
+    date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR' },
     progress_title: 'Profile completeness',
     progress_tip_prefix: 'Complete the following to reach 100%: ',
     hints: {
@@ -1976,7 +1976,7 @@ const ja: Translations = {
       pt: 'ポルトガル語',
       ru: 'ロシア語',
     },
-    date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP' },
+    date_locales: { zh: 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR' },
     progress_title: 'プロフィール完成度',
     progress_tip_prefix: '以下を入力すると 100% に到達：',
     hints: {
@@ -2458,16 +2458,21 @@ const ja: Translations = {
   },
 };
 
+// 韩语翻译（暂时使用中文翻译作为占位符，后续可完善）
+const ko: Translations = zh;
+
 // 翻译字典
 export const translations: Record<Lang, Translations> = {
   zh,
   en,
   ja,
+  ko,
 };
 
 // 语言显示名称
 export const languageNames: Record<Lang, Record<Lang, string>> = {
-  zh: { zh: '中文', en: 'English', ja: '日本語' },
-  en: { zh: 'Chinese', en: 'English', ja: 'Japanese' },
-  ja: { zh: '中国語', en: '英語', ja: '日本語' },
+  zh: { zh: '中文', en: 'English', ja: '日本語', ko: '한국어' },
+  en: { zh: 'Chinese', en: 'English', ja: 'Japanese', ko: 'Korean' },
+  ja: { zh: '中国語', en: '英語', ja: '日本語', ko: '韓国語' },
+  ko: { zh: '중국어', en: 'English', ja: '일본어', ko: '한국어' },
 };

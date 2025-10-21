@@ -35,7 +35,7 @@ import {
   X,
 } from 'lucide-react';
 
-type Lang = 'en' | 'ja' | 'zh' | 'all';
+type Lang = 'en' | 'ja' | 'zh' | 'ko' | 'all';
 type Genre = 'dialogue' | 'monologue' | 'news' | 'lecture' | 'all';
 
 const LANG_OPTIONS = [
@@ -43,6 +43,7 @@ const LANG_OPTIONS = [
   { value: 'ja', label: '日语' },
   { value: 'en', label: '英语' },
   { value: 'zh', label: '中文' },
+  { value: 'ko', label: '韩语' },
 ];
 
 const LEVEL_OPTIONS = [
@@ -89,9 +90,10 @@ const QUICK_CONFIGS = [
       en: { min: 90, max: 120 },
       ja: { min: 260, max: 360 },
       zh: { min: 240, max: 320 },
+      ko: { min: 250, max: 340 },
     },
     sentenceRange: { min: 7, max: 9 },
-    maxSentenceLength: { en: 16, ja: 45, zh: 45 },
+    maxSentenceLength: { en: 16, ja: 45, zh: 45, ko: 45 },
   },
   {
     name: 'L3独白',
@@ -107,9 +109,29 @@ const QUICK_CONFIGS = [
       en: { min: 120, max: 160 },
       ja: { min: 360, max: 480 },
       zh: { min: 320, max: 420 },
+      ko: { min: 340, max: 450 },
     },
     sentenceRange: { min: 8, max: 10 },
-    maxSentenceLength: { en: 20, ja: 55, zh: 55 },
+    maxSentenceLength: { en: 20, ja: 55, zh: 55, ko: 55 },
+  },
+  {
+    name: 'L2韩语对话',
+    lang: 'ko',
+    level: 2,
+    genre: 'dialogue',
+    provider: 'openrouter',
+    model: 'gpt-4o-mini',
+    temperature: 0.7,
+    genrePriority: 'dialogue/monologue',
+    themeBandwidth: '日常任务：购物、预约、住户问题、课程安排',
+    lengthTarget: {
+      en: { min: 90, max: 120 },
+      ja: { min: 260, max: 360 },
+      zh: { min: 240, max: 320 },
+      ko: { min: 250, max: 340 },
+    },
+    sentenceRange: { min: 7, max: 9 },
+    maxSentenceLength: { en: 16, ja: 45, zh: 45, ko: 45 },
   },
 ];
 

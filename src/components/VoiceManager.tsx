@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -97,7 +98,9 @@ export default function VoiceManager({
         ? 'ja-JP'
         : language === 'en'
           ? 'en-US'
-          : 'all',
+          : language === 'ko'
+            ? 'ko-KR'
+            : 'all',
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPriceRange, setSelectedPriceRange] = useState('all');
@@ -485,6 +488,63 @@ export default function VoiceManager({
     }
   };
 
+  // 获取认证头信息
+  const getAuthHeaders = async (): Promise<Record<string, string>> => {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    } catch (error) {
+      console.error('获取认证头失败:', error);
+      return {};
+    }
+  };
+
+  // 同步韩语音色
+  const syncKoreanVoices = async () => {
+    try {
+      setSyncing(true);
+      setError(null);
+
+      console.log('开始同步韩语音色...');
+      const response = await fetch('/api/admin/shadowing/sync-korean-voices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await getAuthHeaders()),
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log('韩语音色同步成功:', data.message);
+        console.log('同步数量:', data.count);
+
+        // 同步成功后重新获取音色列表
+        await fetchVoices(selectedLanguage, selectedCategory);
+
+        // 显示成功消息
+        setError(null);
+      } else {
+        console.error('韩语音色同步失败:', data.error);
+        setError(`韩语音色同步失败: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('韩语音色同步失败:', err);
+      setError(`韩语音色同步失败: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   // AI 推荐音色
   const recommendVoices = async () => {
     if (!recommendationText.trim()) return;
@@ -650,6 +710,7 @@ export default function VoiceManager({
                   <SelectItem value="cmn-CN">中文</SelectItem>
                   <SelectItem value="en-US">英语</SelectItem>
                   <SelectItem value="ja-JP">日语</SelectItem>
+                  <SelectItem value="ko-KR">韩语</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -800,6 +861,19 @@ export default function VoiceManager({
                 <RefreshCw className="h-4 w-4" />
               )}
               更新Google Cloud TTS
+            </Button>
+            <Button
+              onClick={syncKoreanVoices}
+              disabled={syncing || loading}
+              variant="outline"
+              className="bg-green-100 hover:bg-green-200"
+            >
+              {syncing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              同步韩语音色 (Google Cloud)
             </Button>
           </div>
         </CardContent>

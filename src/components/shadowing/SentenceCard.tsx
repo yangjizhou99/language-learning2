@@ -27,7 +27,7 @@ interface SentenceCardProps {
     extra: string[];
   } | null;
   isMobile: boolean;
-  language: 'ja' | 'en' | 'zh';
+  language: 'ja' | 'en' | 'zh' | 'ko';
   onToggleExpand: () => void;
   onSpeak: () => void;
   onStartPractice: () => void;

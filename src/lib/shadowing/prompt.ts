@@ -1,4 +1,4 @@
-export type Lang = 'en' | 'ja' | 'zh';
+export type Lang = 'en' | 'ja' | 'zh' | 'ko';
 export type Genre = 'dialogue' | 'monologue' | 'news' | 'lecture';
 
 export function shadowingLevelPresets(lang: Lang, level: 1 | 2 | 3 | 4 | 5 | 6, genre: Genre) {
@@ -14,6 +14,7 @@ export function shadowingLevelPresets(lang: Lang, level: 1 | 2 | 3 | 4 | 5 | 6, 
     en: [0, [60, 90], [90, 120], [120, 160], [160, 200], [200, 260], [260, 320]],
     ja: [0, [180, 260], [260, 360], [360, 480], [480, 620], [620, 780], [780, 980]],
     zh: [0, [160, 240], [240, 320], [320, 420], [420, 560], [560, 720], [720, 900]],
+    ko: [0, [170, 250], [250, 340], [340, 450], [450, 590], [590, 750], [750, 940]],
   };
 
   const lengthTarget = lenMap[lang][level];
@@ -42,7 +43,7 @@ export function buildShadowPrompt({
   seed?: string;
   one_line?: string;
 }) {
-  const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : '简体中文';
+  const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : lang === 'ko' ? '한국어' : '简体中文';
   const p = shadowingLevelPresets(lang, level, genre);
 
   const lenLine =
