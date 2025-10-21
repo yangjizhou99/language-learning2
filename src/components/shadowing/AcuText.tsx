@@ -187,7 +187,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
       
       // 基于原文逐字符渲染
       let currentPos = sentenceStart;
-      const elements: JSX.Element[] = [];
+      const elements: React.ReactElement[] = [];
       
       for (let i = 0; i < sortedUnits.length; i++) {
         const unit = sortedUnits[i];
