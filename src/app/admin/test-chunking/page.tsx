@@ -48,6 +48,12 @@ const testCases = [
     description: '中文技术文档，测试专业术语和长句的分块效果'
   },
   {
+    name: '英文对话',
+    text: 'A: Hey, what do you usually do after school? B: I love playing sports with friends. Soccer is my favorite! A: That sounds fun. I prefer music. I practice guitar to relax. B: Do you play with others too? A: Sometimes, but mostly alone. It helps me unwind. B: I should try that. Sports can be tiring sometimes. A: We could both try new hobbies together. B: Great idea! Maybe I\'ll learn an instrument.',
+    lang: 'en',
+    description: '英文对话，测试对话格式和日常词汇的分块效果'
+  },
+  {
     name: '英文文学',
     text: 'The old man sat by the window, watching the rain fall gently on the cobblestone street below. His weathered hands held a cup of tea that had long since gone cold, but he seemed not to notice, lost in memories of days gone by.',
     lang: 'en',
