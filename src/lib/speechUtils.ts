@@ -34,6 +34,7 @@ export const speakText = (text: string, lang: string, options: SpeechOptions = {
       en: 'en-US',
       ja: 'ja-JP',
       zh: 'zh-CN',
+      ko: 'ko-KR',
     }[lang] || 'en-US';
 
   utterance.lang = langCode;
@@ -123,6 +124,7 @@ export const getVoicesForLanguage = (lang: string) => {
       en: 'en-US',
       ja: 'ja-JP',
       zh: 'zh-CN',
+      ko: 'ko-KR',
     }[lang] || 'en-US';
 
   return voices.filter(

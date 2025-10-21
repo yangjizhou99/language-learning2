@@ -109,6 +109,7 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
             ja: 'ja-JP',
             zh: 'zh-CN',
             en: 'en-US',
+            ko: 'ko-KR',
           };
           const recognitionLang = langMap[language] || 'en-US';
           recognitionRef.current.lang = recognitionLang;
@@ -156,7 +157,7 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
           };
 
           recognitionRef.current.onerror = (event: { error?: string }) => {
-            console.error('实时语音识别错误:', event.error);
+            console.error('实时语音识别错误:', event.error, '语言设置:', recognitionLang);
             const errorType = event.error || 'unknown';
             
             // 只在严重错误时弹出提示

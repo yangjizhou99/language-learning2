@@ -95,8 +95,8 @@ export default function CandidateVoiceSelector({
         let allVoices: Voice[] = [];
 
         if (currentLang === 'all') {
-          // 获取所有语言的音色
-          const languages = ['zh', 'ja', 'en'];
+          // 获取所有语言的音色（包含韩语）
+          const languages = ['zh', 'ja', 'en', 'ko'];
           const promises = languages.map(async (lang) => {
             const response = await fetch(`/api/admin/shadowing/voices-db?lang=${lang}`);
             const data = await response.json();
@@ -355,6 +355,7 @@ export default function CandidateVoiceSelector({
                   <SelectItem value="zh">中文音色</SelectItem>
                   <SelectItem value="ja">日语音色</SelectItem>
                   <SelectItem value="en">英语音色</SelectItem>
+                  <SelectItem value="ko">韩语音色</SelectItem>
                   <SelectItem value="all">全部音色</SelectItem>
                 </SelectContent>
               </Select>

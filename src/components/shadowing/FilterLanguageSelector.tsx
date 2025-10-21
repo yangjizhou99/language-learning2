@@ -10,8 +10,8 @@ import {
 import { LANG_LABEL } from '@/types/lang';
 
 interface FilterLanguageSelectorProps {
-  value: 'ja' | 'en' | 'zh';
-  onChange: (lang: 'ja' | 'en' | 'zh') => void;
+  value: 'ja' | 'en' | 'zh' | 'ko';
+  onChange: (lang: 'ja' | 'en' | 'zh' | 'ko') => void;
   allowedLanguages: string[];
   className?: string;
 }
@@ -45,6 +45,11 @@ export default function FilterLanguageSelector({
           {allowedLanguages.includes('zh') && (
             <SelectItem value="zh" className="rounded-lg">
               {LANG_LABEL.zh}
+            </SelectItem>
+          )}
+          {allowedLanguages.includes('ko') && (
+            <SelectItem value="ko" className="rounded-lg">
+              {LANG_LABEL.ko}
             </SelectItem>
           )}
         </SelectContent>

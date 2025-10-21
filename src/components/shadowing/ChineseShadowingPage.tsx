@@ -71,7 +71,7 @@ import { loadFilters as loadShadowingFilters, saveFilters as saveShadowingFilter
 // 题目数据类型
 interface ShadowingItem {
   id: string;
-  lang: 'ja' | 'en' | 'zh';
+  lang: 'ja' | 'en' | 'zh' | 'ko';
   level: number;
   title: string;
   text: string;
@@ -276,7 +276,7 @@ export default function ShadowingPage() {
   const { user, authLoading, getAuthHeaders, profile } = useAuth();
 
   // 过滤和筛选状态
-  const [lang, setLang] = useState<'ja' | 'en' | 'zh'>('zh');
+  const [lang, setLang] = useState<'ja' | 'en' | 'zh' | 'ko'>('zh');
   const [level, setLevel] = useState<number | null>(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -317,8 +317,8 @@ export default function ShadowingPage() {
   useEffect(() => {
     const params = new URLSearchParams(navSearchParams?.toString() || '');
 
-    const urlLang = params.get('lang') as 'ja' | 'en' | 'zh' | null;
-    if (urlLang && ['ja', 'en', 'zh'].includes(urlLang)) {
+    const urlLang = params.get('lang') as 'ja' | 'en' | 'zh' | 'ko' | null;
+    if (urlLang && ['ja', 'en', 'zh', 'ko'].includes(urlLang)) {
       if (urlLang !== lang) setLang(urlLang);
     }
 
@@ -560,17 +560,19 @@ export default function ShadowingPage() {
 
   // 翻译相关状态
   const [showTranslation, setShowTranslation] = useState(false);
-  const [translationLang, setTranslationLang] = useState<'en' | 'ja' | 'zh'>('en');
+  const [translationLang, setTranslationLang] = useState<'en' | 'ja' | 'zh' | 'ko'>('en');
 
   // 获取目标语言
   const getTargetLanguages = (sourceLang: string): string[] => {
     switch (sourceLang) {
       case 'zh':
-        return ['en', 'ja'];
+        return ['en', 'ja', 'ko'];
       case 'en':
-        return ['ja', 'zh'];
+        return ['ja', 'zh', 'ko'];
       case 'ja':
-        return ['en', 'zh'];
+        return ['en', 'zh', 'ko'];
+      case 'ko':
+        return ['en', 'ja', 'zh'];
       default:
         return [];
     }
@@ -582,6 +584,7 @@ export default function ShadowingPage() {
       en: 'English',
       ja: '日本語',
       zh: '简体中文',
+      ko: '한국어',
     };
     return names[lang as keyof typeof names] || lang;
   };
@@ -712,7 +715,7 @@ export default function ShadowingPage() {
     if (!currentItem) return;
     const targetLangs = getTargetLanguages(currentItem.lang);
     if (targetLangs.length > 0) {
-      setTranslationLang(targetLangs[0] as 'en' | 'ja' | 'zh');
+      setTranslationLang(targetLangs[0] as 'en' | 'ja' | 'zh' | 'ko');
     }
   }, [currentItem]);
 
@@ -1032,8 +1035,8 @@ export default function ShadowingPage() {
     if (step === 4) {
       setShowTranslation(true);
       const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
-      const uiLang = (language as 'en' | 'ja' | 'zh');
-      const pref = (userProfile?.native_lang as 'en' | 'ja' | 'zh' | undefined) || undefined;
+      const uiLang = (language as 'en' | 'ja' | 'zh' | 'ko');
+      const pref = (userProfile?.native_lang as 'en' | 'ja' | 'zh' | 'ko' | undefined) || undefined;
       if (available.includes(uiLang)) {
         setTranslationLang(uiLang);
       } else if (pref && available.includes(pref)) {
@@ -1041,7 +1044,7 @@ export default function ShadowingPage() {
       } else {
         const targets = getTargetLanguages(currentItem.lang);
         if (targets.length > 0) {
-          setTranslationLang(targets[0] as 'en' | 'ja' | 'zh');
+          setTranslationLang(targets[0] as 'en' | 'ja' | 'zh' | 'ko');
         }
       }
     } else {
@@ -4566,7 +4569,7 @@ export default function ShadowingPage() {
                               className="h-11 px-4 py-2 bg-white border border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium w-full"
                               value={translationLang}
                               onChange={(e) =>
-                                setTranslationLang(e.target.value as 'en' | 'ja' | 'zh')
+                                setTranslationLang(e.target.value as 'en' | 'ja' | 'zh' | 'ko')
                               }
                             >
                               {getTargetLanguages(currentItem.lang).map((lang) => (
@@ -6142,7 +6145,7 @@ export default function ShadowingPage() {
                               className="h-11 px-4 py-2 bg-white border border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium"
                               value={translationLang}
                               onChange={(e) =>
-                                setTranslationLang(e.target.value as 'en' | 'ja' | 'zh')
+                                setTranslationLang(e.target.value as 'en' | 'ja' | 'zh' | 'ko')
                               }
                             >
                               {getTargetLanguages(currentItem.lang).map((lang) => (

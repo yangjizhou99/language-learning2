@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 
 interface SelectablePassageProps {
   text: string;
-  lang: 'en' | 'ja' | 'zh';
+  lang: 'en' | 'ja' | 'zh' | 'ko';
   onSelectionChange?: (selectedText: string, context: string) => void;
   disabled?: boolean;
   className?: string;

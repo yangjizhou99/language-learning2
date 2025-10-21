@@ -22,7 +22,7 @@ import CandidateVoiceSelector from '@/components/CandidateVoiceSelector';
 
 type Item = {
   id: string;
-  lang: 'en' | 'ja' | 'zh';
+  lang: 'en' | 'ja' | 'zh' | 'ko';
   level: number;
   genre: string;
   title: string;
@@ -127,7 +127,7 @@ function formatDialogueText(text: string, genre?: string): string {
 export default function ShadowingReviewList() {
   const [items, setItems] = useState<Item[]>([]);
   const [q, setQ] = useState('');
-  const [lang, setLang] = useState<'all' | 'en' | 'ja' | 'zh'>('all');
+  const [lang, setLang] = useState<'all' | 'en' | 'ja' | 'zh' | 'ko'>('all');
   const [genre, setGenre] = useState('all');
   const [level, setLevel] = useState<'all' | '1' | '2' | '3' | '4' | '5'>('all');
   const [status, setStatus] = useState<'all' | 'draft' | 'approved'>('draft');
@@ -162,6 +162,7 @@ export default function ShadowingReviewList() {
   const [transConcurrency, setTransConcurrency] = useState(18); // 后端并发，可以设置更高
   const [transRetries, setTransRetries] = useState(2);
   const [transThrottle, setTransThrottle] = useState(200);
+  const [transTargetLanguages, setTransTargetLanguages] = useState<string[]>([]);
   const [onlyMissing, setOnlyMissing] = useState(true);
   const [availableModels, setAvailableModels] = useState<Record<string, string[]>>({});
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -1522,6 +1523,12 @@ export default function ShadowingReviewList() {
       return;
     }
 
+    // 检查是否选择了目标语言
+    if (transTargetLanguages.length === 0) {
+      toast.error('请先选择目标语言');
+      return;
+    }
+
     try {
       setTransRunning(true);
       setTransProgress({ done: 0, total: 0 });
@@ -1547,6 +1554,7 @@ export default function ShadowingReviewList() {
           retries: transRetries,
           throttle_ms: transThrottle,
           onlyMissing,
+          targetLanguages: transTargetLanguages.length > 0 ? transTargetLanguages : undefined, // 传递目标语言
           selectedIds: Array.from(selected), // 传递选中的ID列表
           filters: {
             status: status === 'all' ? 'draft' : status,
@@ -1826,7 +1834,7 @@ export default function ShadowingReviewList() {
               <label className="text-sm font-medium">语言</label>
               <Select
                 value={lang}
-                onValueChange={(value) => setLang(value as 'all' | 'en' | 'ja' | 'zh')}
+                onValueChange={(value) => setLang(value as 'all' | 'en' | 'ja' | 'zh' | 'ko')}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -1836,6 +1844,7 @@ export default function ShadowingReviewList() {
                   <SelectItem value="en">English</SelectItem>
                   <SelectItem value="ja">日本語</SelectItem>
                   <SelectItem value="zh">简体中文</SelectItem>
+                  <SelectItem value="ko">한국어</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -2182,6 +2191,33 @@ export default function ShadowingReviewList() {
               </Select>
             </div>
             <div>
+              <label className="text-sm font-medium">目标语言 *</label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {['en', 'ja', 'zh', 'ko'].map((lang) => (
+                  <label key={lang} className="flex items-center gap-1 text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={transTargetLanguages.includes(lang)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setTransTargetLanguages([...transTargetLanguages, lang]);
+                        } else {
+                          setTransTargetLanguages(transTargetLanguages.filter(l => l !== lang));
+                        }
+                      }}
+                      className="mr-1"
+                    />
+                    <span className={transTargetLanguages.includes(lang) ? 'font-medium text-blue-600' : ''}>
+                      {lang === 'en' ? '英语' : lang === 'ja' ? '日语' : lang === 'zh' ? '中文' : '韩语'}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {transTargetLanguages.length === 0 && (
+                <p className="text-xs text-red-500 mt-1">请至少选择一个目标语言</p>
+              )}
+            </div>
+            <div>
               <label className="text-sm font-medium">模型</label>
               <Select
                 value={transModel}
@@ -2264,7 +2300,7 @@ export default function ShadowingReviewList() {
             <Button
               className={`px-3 py-1 rounded ${transRunning ? 'bg-gray-300' : 'bg-black text-white'}`}
               onClick={startBatchTranslation}
-              disabled={transRunning || selected.size === 0}
+              disabled={transRunning || selected.size === 0 || transTargetLanguages.length === 0}
             >
               开始批量翻译 {selected.size > 0 && `(${selected.size}个选中)`}
             </Button>
@@ -2369,7 +2405,7 @@ export default function ShadowingReviewList() {
         <VoiceManager
           onVoiceSelect={setSelectedVoice}
           selectedVoice={selectedVoice}
-          language={level === 'all' ? 'zh' : level}
+          language={lang === 'all' ? 'zh' : (lang as 'zh' | 'ja' | 'en' | 'ko')}
         />
       )}
 

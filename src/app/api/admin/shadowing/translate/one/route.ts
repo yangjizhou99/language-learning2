@@ -148,11 +148,13 @@ function getAPIKey(provider: string): string | null {
 function getTargetLanguages(sourceLang: string): string[] {
   switch (sourceLang) {
     case 'zh':
-      return ['en', 'ja'];
+      return ['en', 'ja', 'ko'];
     case 'en':
-      return ['ja', 'zh'];
+      return ['ja', 'zh', 'ko'];
     case 'ja':
-      return ['en', 'zh'];
+      return ['en', 'zh', 'ko'];
+    case 'ko':
+      return ['en', 'ja', 'zh'];
     default:
       throw new Error(`不支持的语言: ${sourceLang}`);
   }

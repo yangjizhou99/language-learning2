@@ -179,6 +179,10 @@ function getVoiceForSpeaker(speaker: string, lang: string): string {
       A: 'cmn-CN-Standard-A', // 女性声音
       B: 'cmn-CN-Standard-B', // 男性声音
     },
+    ko: {
+      A: 'ko-KR-Neural2-A', // 女性声音
+      B: 'ko-KR-Neural2-B', // 男性声音
+    },
   };
 
   return voices[lang]?.[speaker] || voices[lang]?.A || 'en-US-Standard-A';
@@ -201,6 +205,10 @@ function getVoiceParamsForSpeaker(
     zh: {
       A: { speakingRate: 1.0, pitch: 1.0 }, // 女性声音
       B: { speakingRate: 0.9, pitch: -1.0 }, // 男性声音
+    },
+    ko: {
+      A: { speakingRate: 1.0, pitch: 1.5 }, // 女性声音
+      B: { speakingRate: 0.95, pitch: -1.5 }, // 男性声音
     },
   };
 

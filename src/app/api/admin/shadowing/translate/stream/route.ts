@@ -408,11 +408,13 @@ function getAPIKey(provider: string): string | null {
 function getTargetLanguages(sourceLang: string): string[] {
   switch (sourceLang) {
     case 'zh':
-      return ['en', 'ja'];
+      return ['en', 'ja', 'ko'];
     case 'en':
-      return ['ja', 'zh'];
+      return ['ja', 'zh', 'ko'];
     case 'ja':
-      return ['en', 'zh'];
+      return ['en', 'zh', 'ko'];
+    case 'ko':
+      return ['en', 'ja', 'zh'];
     default:
       throw new Error(`不支持的语言: ${sourceLang}`);
   }
@@ -454,6 +456,7 @@ export async function POST(req: NextRequest) {
       throttle_ms = 200,
       onlyMissing = true, // 仅翻译缺失的项目
       selectedIds = [], // 选中的ID列表
+      targetLanguages = [], // 目标语言列表
       filters = {}, // 筛选条件
     } = body;
 
@@ -560,7 +563,11 @@ export async function POST(req: NextRequest) {
             // 并发处理当前批次
             const batchPromises = batch.map(async (item) => {
               try {
-                const targetLangs = getTargetLanguages(item.lang);
+                // 必须明确指定目标语言，不允许自动检测
+                if (targetLanguages.length === 0) {
+                  throw new Error('未指定目标语言');
+                }
+                const targetLangs = targetLanguages;
 
                 // 使用重试机制
                 const translations = await retry(

@@ -26,7 +26,7 @@ function buildSubtopicPrompt({
   themeTitle: string;
   count: number;
 }) {
-  const langMap = { en: 'English', ja: '日本語', zh: '简体中文' } as const;
+  const langMap = { en: 'English', ja: '日本語', zh: '简体中文', ko: '한국어' } as const;
   const L = langMap[lang as keyof typeof langMap] || 'English';
 
   const titleGuidance =
@@ -34,13 +34,17 @@ function buildSubtopicPrompt({
       ? 'Subtopic titles should be concise in English (≤ 8 words).'
       : lang === 'ja'
         ? 'サブトピックのタイトルは日本語で簡潔に（全角16字以内）。'
-        : '小主题标题用简体中文，简洁清晰（≤ 16 个汉字）。';
+        : lang === 'ko'
+          ? '하위 주제 제목은 한국어로 간결하게 (16자 이내).'
+          : '小主题标题用简体中文，简洁清晰（≤ 16 个汉字）。';
   const oneLineGuidance =
     lang === 'en'
       ? 'Provide a one-line intent/scene in English (12–30 words).'
       : lang === 'ja'
         ? '1行の意図・場面説明を日本語で（全角12–30字）。'
-        : '给出12–30字的一句话意图/场景说明（中文）。';
+        : lang === 'ko'
+          ? '한 줄의 의도/장면 설명을 한국어로 (12–30자).'
+          : '给出12–30字的一句话意图/场景说明（中文）。';
 
   return `LANG=${L}
 LEVEL=L${level}

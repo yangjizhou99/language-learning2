@@ -1,9 +1,10 @@
-type Lang = 'en' | 'ja' | 'zh';
+type Lang = 'en' | 'ja' | 'zh' | 'ko';
 
 const SENT_SPLIT = {
   en: /(?<=[.!?])\s+/,
   ja: /(?<=[。！？])/,
   zh: /(?<=[。！？；])/,
+  ko: /(?<=[.!?])\s+/, // 韩语使用英文标点切分规则
 };
 
 export function splitSentencesWithIndex(text: string, lang: Lang) {

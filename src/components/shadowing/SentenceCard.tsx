@@ -27,7 +27,7 @@ interface SentenceCardProps {
     extra: string[];
   } | null;
   isMobile: boolean;
-  language: 'ja' | 'en' | 'zh';
+  language: 'ja' | 'en' | 'zh' | 'ko';
   onToggleExpand: () => void;
   onSpeak: () => void;
   onStartPractice: () => void;
@@ -266,6 +266,7 @@ export default function SentenceCard({
         'ja': 'ja-JP',
         'zh': 'zh-CN',
         'en': 'en-US',
+        'ko': 'ko-KR',
       };
       utterance.lang = langMap[language] || 'zh-CN';
       utterance.rate = 0.5; // 很慢，便于仔细听清每个音

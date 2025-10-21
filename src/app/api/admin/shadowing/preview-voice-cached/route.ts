@@ -40,6 +40,7 @@ const PREVIEW_TEXTS = {
   'en-US': 'Hello! This is a preview of the voice quality.',
   'cmn-CN': '你好！这是音色质量的试听预览。',
   'ja-JP': 'こんにちは！これは音声品質のプレビューです。',
+  'ko-KR': '안녕하세요! 이것은 음색 미리 듣기입니다.',
   multi: 'Hello! 你好！こんにちは！This is a multilingual preview.',
 };
 
@@ -49,6 +50,7 @@ function getPreviewText(languageCode: string): string {
   if (languageCode.startsWith('cmn') || languageCode.startsWith('zh'))
     return PREVIEW_TEXTS['cmn-CN'];
   if (languageCode.startsWith('ja')) return PREVIEW_TEXTS['ja-JP'];
+  if (languageCode.startsWith('ko')) return PREVIEW_TEXTS['ko-KR'];
   return PREVIEW_TEXTS['multi'];
 }
 

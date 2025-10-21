@@ -39,7 +39,7 @@ import {
   X,
 } from 'lucide-react';
 
-type Lang = 'all' | 'en' | 'ja' | 'zh';
+type Lang = 'all' | 'en' | 'ja' | 'zh' | 'ko';
 type Genre = 'all' | 'dialogue' | 'monologue' | 'news' | 'lecture';
 
 const LANG_OPTIONS = [
@@ -47,6 +47,7 @@ const LANG_OPTIONS = [
   { value: 'ja', label: '日语' },
   { value: 'en', label: '英语' },
   { value: 'zh', label: '中文' },
+  { value: 'ko', label: '韩语' },
 ];
 
 const LEVEL_OPTIONS = ['all', 1, 2, 3, 4, 5, 6] as const;
@@ -85,12 +86,14 @@ const LEVEL_CONFIG: Record<
       en: { min: number; max: number };
       ja: { min: number; max: number };
       zh: { min: number; max: number };
+      ko: { min: number; max: number };
     };
     sentenceRange: { min: number; max: number };
     maxSentenceLength: {
       en: number;
       ja: number;
       zh: number;
+      ko: number;
     };
   }
 > = {
@@ -101,9 +104,10 @@ const LEVEL_CONFIG: Record<
       en: { min: 60, max: 90 },
       ja: { min: 180, max: 260 },
       zh: { min: 160, max: 240 },
+      ko: { min: 170, max: 250 },
     },
     sentenceRange: { min: 6, max: 8 },
-    maxSentenceLength: { en: 12, ja: 35, zh: 35 },
+    maxSentenceLength: { en: 12, ja: 35, zh: 35, ko: 35 },
   },
   2: {
     genrePriority: 'dialogue/monologue',
@@ -112,9 +116,10 @@ const LEVEL_CONFIG: Record<
       en: { min: 90, max: 120 },
       ja: { min: 260, max: 360 },
       zh: { min: 240, max: 320 },
+      ko: { min: 250, max: 340 },
     },
     sentenceRange: { min: 7, max: 9 },
-    maxSentenceLength: { en: 16, ja: 45, zh: 45 },
+    maxSentenceLength: { en: 16, ja: 45, zh: 45, ko: 45 },
   },
   3: {
     genrePriority: 'monologue/news-lite',
@@ -123,9 +128,10 @@ const LEVEL_CONFIG: Record<
       en: { min: 120, max: 160 },
       ja: { min: 360, max: 480 },
       zh: { min: 320, max: 420 },
+      ko: { min: 340, max: 450 },
     },
     sentenceRange: { min: 8, max: 10 },
-    maxSentenceLength: { en: 20, ja: 55, zh: 55 },
+    maxSentenceLength: { en: 20, ja: 55, zh: 55, ko: 55 },
   },
   4: {
     genrePriority: 'news/dialogue（formal）',
@@ -134,9 +140,10 @@ const LEVEL_CONFIG: Record<
       en: { min: 160, max: 200 },
       ja: { min: 480, max: 620 },
       zh: { min: 420, max: 560 },
+      ko: { min: 450, max: 590 },
     },
     sentenceRange: { min: 9, max: 11 },
-    maxSentenceLength: { en: 24, ja: 65, zh: 65 },
+    maxSentenceLength: { en: 24, ja: 65, zh: 65, ko: 65 },
   },
   5: {
     genrePriority: 'lecture/news（信息密度↑）',
@@ -145,9 +152,10 @@ const LEVEL_CONFIG: Record<
       en: { min: 200, max: 260 },
       ja: { min: 620, max: 780 },
       zh: { min: 560, max: 720 },
+      ko: { min: 590, max: 750 },
     },
     sentenceRange: { min: 10, max: 12 },
-    maxSentenceLength: { en: 28, ja: 75, zh: 75 },
+    maxSentenceLength: { en: 28, ja: 75, zh: 75, ko: 75 },
   },
   6: {
     genrePriority: 'lecture/editorial',
@@ -156,9 +164,10 @@ const LEVEL_CONFIG: Record<
       en: { min: 260, max: 320 },
       ja: { min: 780, max: 980 },
       zh: { min: 720, max: 900 },
+      ko: { min: 750, max: 940 },
     },
     sentenceRange: { min: 11, max: 13 },
-    maxSentenceLength: { en: 32, ja: 90, zh: 90 },
+    maxSentenceLength: { en: 32, ja: 90, zh: 90, ko: 90 },
   },
 };
 

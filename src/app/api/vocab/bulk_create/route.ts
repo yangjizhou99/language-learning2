@@ -9,8 +9,8 @@ import { randomUUID } from 'crypto';
 
 const CreateVocabEntrySchema = z.object({
   term: z.string().min(1).max(500), // 增加长度限制到500字符
-  lang: z.enum(['en', 'ja', 'zh']),
-  native_lang: z.enum(['zh', 'en', 'ja']),
+  lang: z.enum(['en', 'ja', 'zh', 'ko']), // 添加韩语支持
+  native_lang: z.enum(['zh', 'en', 'ja', 'ko']), // 添加韩语作为母语支持
   source: z.string().default('shadowing'),
   source_id: z.string().uuid().optional(),
   context: z.string().optional(),
