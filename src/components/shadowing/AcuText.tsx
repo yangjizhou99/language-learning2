@@ -179,11 +179,16 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
 
   // 渲染带格式的文本和ACU块 - 基于原文渲染
   const renderTextWithUnits = () => {
-    // 检查ACU数据是否过度分割（每个unit都很短且数量很多）
-    const isOverSegmented = units.length > text.length * 0.8; // 如果ACU数量接近文本长度，说明过度分割
+    // 检查是否为对话格式且所有unit都在同一个句子中（sid都是1）
+    const isDialogueInOneSentence = units.length > 0 && units.every(u => u.sid === 1) && 
+                                   text.includes('A:') && text.includes('B:');
     
-    if (isOverSegmented) {
-      console.warn('ACU数据过度分割，回退到显示原文:', units.length, 'units for', text.length, 'characters');
+    if (isDialogueInOneSentence) {
+      console.warn('ACU数据异常，回退到显示原文:', {
+        dialogueInOneSentence: isDialogueInOneSentence,
+        unitsCount: units.length,
+        textLength: text.length
+      });
       
       // 处理对话格式换行
       let formattedText = text;
@@ -361,9 +366,9 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
       {/* ACU 块显示 */}
       <div className="p-4 bg-gray-50 rounded-lg">
         <div className="text-sm text-gray-600 mb-2">
-          {units.length > text.length * 0.8 ? (
+          {units.length > 0 && units.every(u => u.sid === 1) && text.includes('A:') && text.includes('B:') ? (
             <>
-              <span className="text-orange-600 font-medium">⚠️ ACU数据过度分割，已回退到原文显示模式</span>
+              <span className="text-orange-600 font-medium">⚠️ ACU数据异常，已回退到原文显示模式</span>
               <br />
               <span className="text-xs text-gray-500">
                 💡 当前显示原文，请使用自由框选模式选择生词
