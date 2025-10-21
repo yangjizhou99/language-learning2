@@ -48,3 +48,14 @@ pnpm-lock.yaml
 # backups & temp
 *.sql.bak
 NUL
+backups/
+temp/
+*.dump
+*.sql
+
+# API keys and secrets
+*api*key*
+*secret*
+*password*
+*credential*
+*private*
