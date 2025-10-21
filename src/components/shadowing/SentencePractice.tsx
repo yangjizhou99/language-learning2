@@ -214,6 +214,8 @@ export function deriveRoleSegments(
 
 const splitSentences = (text: string, language: Lang): string[] => {
   if (!text || !text.trim()) return [];
+  
+  // 处理对话格式（A: / B: 开头的内容）
   const hasDialogue = /(?:^|\n)\s*[ABＡＢ]\s*[：:]/.test(text);
   if (hasDialogue) {
     let normalized = text;
@@ -225,28 +227,52 @@ const splitSentences = (text: string, language: Lang): string[] => {
       .filter(Boolean);
     if (parts.length) return parts;
   }
-  try {
-    const SegClass = (Intl as unknown as { Segmenter?: new (loc: string, opts: { granularity: 'sentence' }) => any }).Segmenter;
-    if (SegClass) {
-      const seg = new SegClass(language, { granularity: 'sentence' });
+
+  // 尝试使用 Intl.Segmenter 进行句子切分
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    try {
+      // 为韩语使用 ko-KR locale，其他语言使用对应的 locale
+      const locale = language === 'ko' ? 'ko-KR' : language === 'zh' ? 'zh-CN' : language === 'ja' ? 'ja-JP' : 'en-US';
+      const segmenter = new Intl.Segmenter(locale, { granularity: 'sentence' });
+      const segments = Array.from(segmenter.segment(text));
       const parts: string[] = [];
-      for (const { segment } of seg.segment(text) as any) {
-        const s = String(segment).trim();
-        if (s) parts.push(s);
+      
+      for (const segment of segments) {
+        const s = segment.segment.trim();
+        if (s) {
+          parts.push(s);
+        }
       }
-      if (parts.length) return parts;
+      
+      if (parts.length > 0) {
+        console.log(`使用 Intl.Segmenter 切分 ${language} 文本，得到 ${parts.length} 个句子`);
+        return parts;
+      }
+    } catch (error) {
+      console.warn(`Intl.Segmenter 切分失败，回退到标点切分:`, error);
     }
-  } catch {}
+  } else {
+    console.log(`浏览器不支持 Intl.Segmenter，使用标点切分`);
+  }
+
+  // 回退到标点符号切分
   if (language === 'en' || language === 'ko') {
-    return text
+    // 英语和韩语使用英文标点符号
+    const result = text
       .split(/(?<=[.!?])\s+/)
       .map((s) => s.trim())
       .filter(Boolean);
+    console.log(`使用英文标点切分 ${language} 文本，得到 ${result.length} 个句子`);
+    return result;
   }
-  return text
+  
+  // 中文和日文使用对应的标点符号
+  const result = text
     .split(/[。！？!?…]+/)
     .map((s) => s.trim())
     .filter(Boolean);
+  console.log(`使用中文标点切分 ${language} 文本，得到 ${result.length} 个句子`);
+  return result;
 };
 
 const tokenize = (text: string, language: Lang): string[] => {
