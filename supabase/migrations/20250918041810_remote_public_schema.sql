@@ -1433,11 +1433,15 @@ ALTER TABLE ONLY "public"."unit_alias"
 
 
 
+-- Ensure idempotency: drop the unique constraint if it exists before re-adding
+ALTER TABLE IF EXISTS "public"."unit_catalog" DROP CONSTRAINT IF EXISTS "unit_catalog_lang_symbol_key";
 ALTER TABLE ONLY "public"."unit_catalog"
     ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
 
 
 
+-- Ensure idempotency: drop the primary key if it exists before re-adding
+ALTER TABLE IF EXISTS "public"."unit_catalog" DROP CONSTRAINT IF EXISTS "unit_catalog_pkey";
 ALTER TABLE ONLY "public"."unit_catalog"
     ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
 
@@ -1581,10 +1585,14 @@ CREATE INDEX "idx_cloze_shadowing_items_published" ON "public"."cloze_shadowing_
 
 
 
+-- Ensure idempotency for local resets: drop index if it exists before re-creating
+DROP INDEX IF EXISTS "public"."idx_en_phoneme_units_category";
 CREATE INDEX "idx_en_phoneme_units_category" ON "public"."en_phoneme_units" USING "btree" ("category");
 
 
 
+-- Ensure idempotency for local resets: drop index if it exists before re-creating
+DROP INDEX IF EXISTS "public"."idx_en_phoneme_units_subcategory";
 CREATE INDEX "idx_en_phoneme_units_subcategory" ON "public"."en_phoneme_units" USING "btree" ("subcategory");
 
 
