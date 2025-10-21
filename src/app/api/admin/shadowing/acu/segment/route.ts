@@ -311,10 +311,25 @@ export async function POST(req: NextRequest) {
     // 如果传入了 id，更新数据库
     if (id) {
       try {
+        // 先获取现有的 notes 数据，避免覆盖
+        const { data: existingDraft, error: fetchError } = await auth.supabase
+          .from('shadowing_drafts')
+          .select('notes')
+          .eq('id', id)
+          .single();
+        
+        if (fetchError) {
+          console.error('获取现有数据失败:', fetchError);
+          return NextResponse.json({ error: '获取现有数据失败' }, { status: 500 });
+        }
+        
+        // 保留现有的 notes 数据，只更新 ACU 相关字段
+        const existingNotes = existingDraft?.notes || {};
         const { error } = await auth.supabase
           .from('shadowing_drafts')
           .update({
             notes: {
+              ...existingNotes,
               acu_marked: result.acu_marked,
               acu_units: result.units
             }
