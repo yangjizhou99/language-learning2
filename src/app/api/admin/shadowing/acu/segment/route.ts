@@ -242,21 +242,46 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '无法切分句子' }, { status: 400 });
     }
 
-    // 处理每个句子（串行处理，避免并发过高）
-    const processedSentences: string[] = [];
+    // 处理每个句子（支持并发处理）
+    const processedSentences: string[] = new Array(sentences.length);
     let successCount = 0;
     let failCount = 0;
     
-    for (const sentenceInfo of sentences) {
+    // 使用并发池处理句子
+    const processSentenceWithRetry = async (sentenceInfo: any, index: number) => {
       try {
         const processed = await processSentence(sentenceInfo.text, lang, auth.user?.id);
-        processedSentences.push(processed);
+        processedSentences[index] = processed;
         successCount++;
+        return { success: true, index };
       } catch (error) {
         console.error(`句子 ${sentenceInfo.sid} 处理失败:`, error);
         // 使用原句作为回退
-        processedSentences.push(sentenceInfo.text);
+        processedSentences[index] = sentenceInfo.text;
         failCount++;
+        return { success: false, index };
+      }
+    };
+
+    // 并发处理句子，使用传入的concurrency参数
+    const concurrencyLimit = Math.min(concurrency || 8, sentences.length);
+    const batches = [];
+    for (let i = 0; i < sentences.length; i += concurrencyLimit) {
+      const batch = sentences.slice(i, i + concurrencyLimit);
+      batches.push(batch);
+    }
+
+    for (const batch of batches) {
+      const promises = batch.map((sentenceInfo, batchIndex) => {
+        const globalIndex = sentences.indexOf(sentenceInfo);
+        return processSentenceWithRetry(sentenceInfo, globalIndex);
+      });
+      
+      await Promise.all(promises);
+      
+      // 批次间延迟，避免API限制
+      if (batches.indexOf(batch) < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
     
