@@ -38,8 +38,8 @@ export default function SelectablePassage({
       formatted = formatted.replace(/\\n/g, '\n');
     }
 
-    // 如果是英文且原文本没有换行，则按发言人 A:/B: 自动分行
-    if (lang === 'en' && !formatted.includes('\n')) {
+    // 如果是英文或韩语且原文本没有换行，则按发言人 A:/B: 自动分行
+    if ((lang === 'en' || lang === 'ko') && !formatted.includes('\n')) {
       const speakerPattern = /([A-Z]):\s*/g;
       const parts = formatted.split(speakerPattern);
       if (parts.length > 1) {

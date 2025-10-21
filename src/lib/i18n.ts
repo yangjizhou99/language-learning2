@@ -446,7 +446,6 @@ export interface Translations {
       blind_listen: string;
       read_text: string;
       select_words: string;
-      view_translation: string;
       record_scoring: string;
     };
     messages: {
@@ -484,6 +483,7 @@ export interface Translations {
       english: string;
       japanese: string;
       chinese: string;
+      korean: string;
       status: string;
       all_status: string;
       new_word: string;
@@ -613,6 +613,7 @@ export interface Translations {
       en: string;
       ja: string;
       zh: string;
+      ko: string;
     };
   };
 }
@@ -1053,9 +1054,8 @@ const zh: Translations = {
     translation_enable_hint: '勾选上方选项以显示翻译内容',
     step_labels: {
       blind_listen: '盲听',
-      read_text: '看原文',
+      read_text: '看原文+翻译',
       select_words: '选生词',
-      view_translation: '看翻译',
       record_scoring: '录音评分',
     },
     messages: {
@@ -1073,11 +1073,10 @@ const zh: Translations = {
     functionality_guide:
       '📚 题目选择：支持日英中三语，L1-L5难度等级，智能筛选\n🎤 录音练习：音频播放、实时录音、发音对比\n🎯 智能评分：语音识别、5级评分体系\n📖 生词管理：拖拽选择生词，自动保存到生词本\n💾 进度跟踪：练习状态管理，支持草稿保存',
     // 分步骤引导与完成卡片
-    step1_tip: 'Step 1 · 盲听：先完整听一遍，不看原文。准备好后点击“下一步”。',
-    step2_tip: 'Step 2 · 看原文跟读：现在可以看原文，再听一遍并跟读。',
+    step1_tip: 'Step 1 · 盲听：先完整听一遍，不看原文。准备好后点击"下一步"。',
+    step2_tip: 'Step 2 · 看原文+翻译跟读：现在可以看原文和翻译，再听一遍并跟读。',
     step3_tip: 'Step 3 · 生词选择：开启生词模式，点击原文选取生词，并点击 AI 解释。',
-    step4_tip: 'Step 4 · 查看翻译：优先显示你的母语翻译，一边看翻译一边播放理解含义。',
-    step5_tip: 'Step 5 · 录音评分：开始录音并评分，此时仅保留原文，其它模块隐藏。',
+    step4_tip: 'Step 4 · 录音评分：开始录音并评分，此时仅保留原文，其它模块隐藏。',
     practice_done_title: '练习已完成',
     practice_done_desc: '成绩与生词已保存，你可以选择继续提升',
     practice_again: '再练一次',
@@ -1092,6 +1091,7 @@ const zh: Translations = {
       english: '英语',
       japanese: '日语',
       chinese: '中文',
+      korean: '韩语',
       status: '状态',
       all_status: '全部状态',
       new_word: '新词',
@@ -1221,6 +1221,7 @@ const zh: Translations = {
       en: '英语',
       ja: '日语',
       zh: '中文',
+      ko: '韩语',
     },
   },
 };
@@ -1671,9 +1672,8 @@ const en: Translations = {
     translation_enable_hint: 'Check the option above to show translation',
     step_labels: {
       blind_listen: 'Blind Listen',
-      read_text: 'View Text',
+      read_text: 'View Text + Translation',
       select_words: 'Pick Words',
-      view_translation: 'View Translation',
       record_scoring: 'Record & Score',
     },
     messages: {
@@ -1692,10 +1692,9 @@ const en: Translations = {
       '📚 Question Selection: Japanese/English/Chinese, L1-L5 levels, smart filtering\n🎤 Recording Practice: Audio playback, real-time recording, pronunciation comparison\n🎯 Smart Scoring: Speech recognition, 5-level scoring system\n📖 Vocabulary Management: Drag to select words, auto-save to vocabulary\n💾 Progress Tracking: Practice status management, draft saving support',
     // Step tips and done card
     step1_tip: 'Step 1 · Blind listen: play once without reading. Click Next when ready.',
-    step2_tip: 'Step 2 · Read + shadow: view the text and read along with playback.',
+    step2_tip: 'Step 2 · Read + translation + shadow: view the text and translation, read along with playback.',
     step3_tip: 'Step 3 · Pick words: enable vocab mode, tap words, and generate AI explanations.',
-    step4_tip: 'Step 4 · View translation: show your native translation and listen while reading.',
-    step5_tip: 'Step 5 · Record & score: record and score; only original text is shown.',
+    step4_tip: 'Step 4 · Record & score: record and score; only original text is shown.',
     practice_done_title: 'Practice Completed',
     practice_done_desc: 'Scores and words saved. You can continue improving.',
     practice_again: 'Practice Again',
@@ -1710,6 +1709,7 @@ const en: Translations = {
       english: 'English',
       japanese: 'Japanese',
       chinese: 'Chinese',
+      korean: 'Korean',
       status: 'Status',
       all_status: 'All Status',
       new_word: 'New',
@@ -1840,6 +1840,7 @@ const en: Translations = {
       en: 'English',
       ja: 'Japanese',
       zh: 'Chinese',
+      ko: 'Korean',
     },
   },
 };
@@ -2285,9 +2286,8 @@ const ja: Translations = {
     translation_enable_hint: '上のオプションをチェックして翻訳を表示',
     step_labels: {
       blind_listen: '盲聴',
-      read_text: '原文を見る',
+      read_text: '原文+翻訳を見る',
       select_words: '単語選択',
-      view_translation: '翻訳を見る',
       record_scoring: '録音と採点',
     },
     messages: {
@@ -2306,10 +2306,9 @@ const ja: Translations = {
       '📚 問題選択：日英中三言語、L1-L5レベル、スマートフィルタリング\n🎤 録音練習：音声再生、リアルタイム録音、発音比較\n🎯 スマート採点：音声認識、5段階採点システム\n📖 単語管理：ドラッグで単語選択、自動保存\n💾 進捗追跡：練習状況管理、下書き保存対応',
     // ステップのヒントと完了カード
     step1_tip: 'Step 1 · 盲聴：まず原文を見ずに一度通して聞く。準備できたら「次へ」。',
-    step2_tip: 'Step 2 · 原文を見てシャドーイング：原文を見ながらもう一度再生して追い読み。',
+    step2_tip: 'Step 2 · 原文+翻訳を見てシャドーイング：原文と翻訳を見ながらもう一度再生して追い読み。',
     step3_tip: 'Step 3 · 単語選択：単語モードを有効化し、本文の単語をタップしてAI説明を生成。',
-    step4_tip: 'Step 4 · 翻訳表示：母語の翻訳を表示し、意味を確認しながら再生。',
-    step5_tip: 'Step 5 · 録音と採点：録音して採点。原文のみ表示、他モジュールは非表示。',
+    step4_tip: 'Step 4 · 録音と採点：録音して採点。原文のみ表示、他モジュールは非表示。',
     practice_done_title: '練習完了',
     practice_done_desc: 'スコアと単語は保存されました。さらに上達を目指しましょう。',
     practice_again: 'もう一度練習',
@@ -2324,6 +2323,7 @@ const ja: Translations = {
       english: '英語',
       japanese: '日本語',
       chinese: '中国語',
+      korean: '韓国語',
       status: 'ステータス',
       all_status: 'すべてのステータス',
       new_word: '新規',
@@ -2454,6 +2454,7 @@ const ja: Translations = {
       en: '英語',
       ja: '日本語',
       zh: '中国語',
+      ko: '韓国語',
     },
   },
 };
