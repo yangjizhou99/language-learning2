@@ -553,57 +553,96 @@ alter table "public"."voices" alter column "updated_at" set default now();
 
 alter table "public"."voices" enable row level security;
 
-CREATE INDEX idx_voices_category ON public.voices USING btree (category);
+CREATE INDEX IF NOT EXISTS idx_voices_category ON public.voices USING btree (category);
 
-CREATE INDEX idx_voices_language_code ON public.voices USING btree (language_code);
+CREATE INDEX IF NOT EXISTS idx_voices_language_code ON public.voices USING btree (language_code);
 
-CREATE INDEX idx_voices_name ON public.voices USING btree (name);
+CREATE INDEX IF NOT EXISTS idx_voices_name ON public.voices USING btree (name);
 
-CREATE INDEX idx_voices_provider ON public.voices USING btree (provider);
+CREATE INDEX IF NOT EXISTS idx_voices_provider ON public.voices USING btree (provider);
 
-alter table "public"."voices" add constraint "voices_provider_check" CHECK ((provider = ANY (ARRAY['google'::text, 'gemini'::text, 'xunfei'::text]))) not valid;
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'voices_provider_check') THEN
+        ALTER TABLE "public"."voices" ADD CONSTRAINT "voices_provider_check" CHECK ((provider = ANY (ARRAY['google'::text, 'gemini'::text, 'xunfei'::text]))) not valid;
+    END IF;
+END $$;
 
 alter table "public"."voices" validate constraint "voices_provider_check";
 
-alter table "public"."alignment_materials" add constraint "alignment_materials_lang_check" CHECK ((lang = ANY (ARRAY['en'::text, 'ja'::text, 'zh'::text, 'ko'::text]))) not valid;
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'alignment_materials_lang_check') THEN
+        ALTER TABLE "public"."alignment_materials" ADD CONSTRAINT "alignment_materials_lang_check" CHECK ((lang = ANY (ARRAY['en'::text, 'ja'::text, 'zh'::text, 'ko'::text]))) not valid;
+    END IF;
+END $$;
 
 alter table "public"."alignment_materials" validate constraint "alignment_materials_lang_check";
 
-alter table "public"."alignment_subtopics" add constraint "alignment_subtopics_lang_check" CHECK ((lang = ANY (ARRAY['en'::text, 'ja'::text, 'zh'::text, 'ko'::text]))) not valid;
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'alignment_subtopics_lang_check') THEN
+        ALTER TABLE "public"."alignment_subtopics" ADD CONSTRAINT "alignment_subtopics_lang_check" CHECK ((lang = ANY (ARRAY['en'::text, 'ja'::text, 'zh'::text, 'ko'::text]))) not valid;
+    END IF;
+END $$;
 
 alter table "public"."alignment_subtopics" validate constraint "alignment_subtopics_lang_check";
 
-alter table "public"."alignment_themes" add constraint "alignment_themes_lang_check" CHECK ((lang = ANY (ARRAY['en'::text, 'ja'::text, 'zh'::text, 'ko'::text]))) not valid;
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'alignment_themes_lang_check') THEN
+        ALTER TABLE "public"."alignment_themes" ADD CONSTRAINT "alignment_themes_lang_check" CHECK ((lang = ANY (ARRAY['en'::text, 'ja'::text, 'zh'::text, 'ko'::text]))) not valid;
+    END IF;
+END $$;
 
 alter table "public"."alignment_themes" validate constraint "alignment_themes_lang_check";
 
-alter table "public"."cloze_shadowing_items" add constraint "cloze_shadowing_items_lang_check" CHECK ((lang = ANY (ARRAY['en'::text, 'ja'::text, 'zh'::text, 'ko'::text]))) not valid;
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cloze_shadowing_items_lang_check') THEN
+        ALTER TABLE "public"."cloze_shadowing_items" ADD CONSTRAINT "cloze_shadowing_items_lang_check" CHECK ((lang = ANY (ARRAY['en'::text, 'ja'::text, 'zh'::text, 'ko'::text]))) not valid;
+    END IF;
+END $$;
 
 alter table "public"."cloze_shadowing_items" validate constraint "cloze_shadowing_items_lang_check";
 
-create policy "voices_select_all"
-on "public"."voices"
-as permissive
-for select
-to public
-using ((is_active = true));
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'voices_select_all' AND tablename = 'voices') THEN
+        CREATE POLICY "voices_select_all"
+        ON "public"."voices"
+        AS PERMISSIVE
+        FOR SELECT
+        TO public
+        USING ((is_active = true));
+    END IF;
+END $$;
 
 
-create policy "profiles_select_own"
-on "public"."profiles"
-as permissive
-for select
-to authenticated
-using ((( SELECT auth.uid() AS uid) = id));
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'profiles_select_own' AND tablename = 'profiles') THEN
+        CREATE POLICY "profiles_select_own"
+        ON "public"."profiles"
+        AS PERMISSIVE
+        FOR SELECT
+        TO authenticated
+        USING ((( SELECT auth.uid() AS uid) = id));
+    END IF;
+END $$;
 
-
-create policy "profiles_update_own"
-on "public"."profiles"
-as permissive
-for update
-to authenticated
-using ((( SELECT auth.uid() AS uid) = id))
-with check ((( SELECT auth.uid() AS uid) = id));
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'profiles_update_own' AND tablename = 'profiles') THEN
+        CREATE POLICY "profiles_update_own"
+        ON "public"."profiles"
+        AS PERMISSIVE
+        FOR UPDATE
+        TO authenticated
+        USING ((( SELECT auth.uid() AS uid) = id))
+        WITH CHECK ((( SELECT auth.uid() AS uid) = id));
+    END IF;
+END $$;
 
 
 -- =============================================
