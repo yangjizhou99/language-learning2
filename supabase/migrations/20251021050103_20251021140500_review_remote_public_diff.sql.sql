@@ -5,89 +5,51 @@ drop policy "profiles_select_own" on "public"."profiles";
 
 drop policy "profiles_update_own" on "public"."profiles";
 
-revoke delete on table "public"."en_phoneme_units" from "anon";
+-- en_phoneme_units table may not exist in remote database, skipping permissions revoke
+-- revoke delete on table "public"."en_phoneme_units" from "anon";
+-- revoke insert on table "public"."en_phoneme_units" from "anon";
+-- revoke references on table "public"."en_phoneme_units" from "anon";
+-- revoke select on table "public"."en_phoneme_units" from "anon";
+-- revoke trigger on table "public"."en_phoneme_units" from "anon";
+-- revoke truncate on table "public"."en_phoneme_units" from "anon";
+-- revoke update on table "public"."en_phoneme_units" from "anon";
+-- revoke delete on table "public"."en_phoneme_units" from "authenticated";
+-- revoke insert on table "public"."en_phoneme_units" from "authenticated";
+-- revoke references on table "public"."en_phoneme_units" from "authenticated";
+-- revoke select on table "public"."en_phoneme_units" from "authenticated";
+-- revoke trigger on table "public"."en_phoneme_units" from "authenticated";
+-- revoke truncate on table "public"."en_phoneme_units" from "authenticated";
+-- revoke update on table "public"."en_phoneme_units" from "authenticated";
+-- revoke delete on table "public"."en_phoneme_units" from "service_role";
+-- revoke insert on table "public"."en_phoneme_units" from "service_role";
+-- revoke references on table "public"."en_phoneme_units" from "service_role";
+-- revoke select on table "public"."en_phoneme_units" from "service_role";
+-- revoke trigger on table "public"."en_phoneme_units" from "service_role";
+-- revoke truncate on table "public"."en_phoneme_units" from "service_role";
+-- revoke update on table "public"."en_phoneme_units" from "service_role";
 
-revoke insert on table "public"."en_phoneme_units" from "anon";
-
-revoke references on table "public"."en_phoneme_units" from "anon";
-
-revoke select on table "public"."en_phoneme_units" from "anon";
-
-revoke trigger on table "public"."en_phoneme_units" from "anon";
-
-revoke truncate on table "public"."en_phoneme_units" from "anon";
-
-revoke update on table "public"."en_phoneme_units" from "anon";
-
-revoke delete on table "public"."en_phoneme_units" from "authenticated";
-
-revoke insert on table "public"."en_phoneme_units" from "authenticated";
-
-revoke references on table "public"."en_phoneme_units" from "authenticated";
-
-revoke select on table "public"."en_phoneme_units" from "authenticated";
-
-revoke trigger on table "public"."en_phoneme_units" from "authenticated";
-
-revoke truncate on table "public"."en_phoneme_units" from "authenticated";
-
-revoke update on table "public"."en_phoneme_units" from "authenticated";
-
-revoke delete on table "public"."en_phoneme_units" from "service_role";
-
-revoke insert on table "public"."en_phoneme_units" from "service_role";
-
-revoke references on table "public"."en_phoneme_units" from "service_role";
-
-revoke select on table "public"."en_phoneme_units" from "service_role";
-
-revoke trigger on table "public"."en_phoneme_units" from "service_role";
-
-revoke truncate on table "public"."en_phoneme_units" from "service_role";
-
-revoke update on table "public"."en_phoneme_units" from "service_role";
-
-revoke delete on table "public"."ja_phoneme_units" from "anon";
-
-revoke insert on table "public"."ja_phoneme_units" from "anon";
-
-revoke references on table "public"."ja_phoneme_units" from "anon";
-
-revoke select on table "public"."ja_phoneme_units" from "anon";
-
-revoke trigger on table "public"."ja_phoneme_units" from "anon";
-
-revoke truncate on table "public"."ja_phoneme_units" from "anon";
-
-revoke update on table "public"."ja_phoneme_units" from "anon";
-
-revoke delete on table "public"."ja_phoneme_units" from "authenticated";
-
-revoke insert on table "public"."ja_phoneme_units" from "authenticated";
-
-revoke references on table "public"."ja_phoneme_units" from "authenticated";
-
-revoke select on table "public"."ja_phoneme_units" from "authenticated";
-
-revoke trigger on table "public"."ja_phoneme_units" from "authenticated";
-
-revoke truncate on table "public"."ja_phoneme_units" from "authenticated";
-
-revoke update on table "public"."ja_phoneme_units" from "authenticated";
-
-revoke delete on table "public"."ja_phoneme_units" from "service_role";
-
-revoke insert on table "public"."ja_phoneme_units" from "service_role";
-
-revoke references on table "public"."ja_phoneme_units" from "service_role";
-
-revoke select on table "public"."ja_phoneme_units" from "service_role";
-
-revoke trigger on table "public"."ja_phoneme_units" from "service_role";
-
-revoke truncate on table "public"."ja_phoneme_units" from "service_role";
-
-revoke update on table "public"."ja_phoneme_units" from "service_role";
+-- ja_phoneme_units table does not exist in remote database, skipping permissions revoke
+-- revoke delete on table "public"."ja_phoneme_units" from "anon";
+-- revoke insert on table "public"."ja_phoneme_units" from "anon";
+-- revoke references on table "public"."ja_phoneme_units" from "anon";
+-- revoke select on table "public"."ja_phoneme_units" from "anon";
+-- revoke trigger on table "public"."ja_phoneme_units" from "anon";
+-- revoke truncate on table "public"."ja_phoneme_units" from "anon";
+-- revoke update on table "public"."ja_phoneme_units" from "anon";
+-- revoke delete on table "public"."ja_phoneme_units" from "authenticated";
+-- revoke insert on table "public"."ja_phoneme_units" from "authenticated";
+-- revoke references on table "public"."ja_phoneme_units" from "authenticated";
+-- revoke select on table "public"."ja_phoneme_units" from "authenticated";
+-- revoke trigger on table "public"."ja_phoneme_units" from "authenticated";
+-- revoke truncate on table "public"."ja_phoneme_units" from "authenticated";
+-- revoke update on table "public"."ja_phoneme_units" from "authenticated";
+-- revoke delete on table "public"."ja_phoneme_units" from "service_role";
+-- revoke insert on table "public"."ja_phoneme_units" from "service_role";
+-- revoke references on table "public"."ja_phoneme_units" from "service_role";
+-- revoke select on table "public"."ja_phoneme_units" from "service_role";
+-- revoke trigger on table "public"."ja_phoneme_units" from "service_role";
+-- revoke truncate on table "public"."ja_phoneme_units" from "service_role";
+-- revoke update on table "public"."ja_phoneme_units" from "service_role";
 
 revoke delete on table "public"."minimal_pairs" from "anon";
 
@@ -509,47 +471,28 @@ revoke truncate on table "public"."user_unit_stats" from "service_role";
 
 revoke update on table "public"."user_unit_stats" from "service_role";
 
-revoke delete on table "public"."zh_pinyin_units" from "anon";
-
-revoke insert on table "public"."zh_pinyin_units" from "anon";
-
-revoke references on table "public"."zh_pinyin_units" from "anon";
-
-revoke select on table "public"."zh_pinyin_units" from "anon";
-
-revoke trigger on table "public"."zh_pinyin_units" from "anon";
-
-revoke truncate on table "public"."zh_pinyin_units" from "anon";
-
-revoke update on table "public"."zh_pinyin_units" from "anon";
-
-revoke delete on table "public"."zh_pinyin_units" from "authenticated";
-
-revoke insert on table "public"."zh_pinyin_units" from "authenticated";
-
-revoke references on table "public"."zh_pinyin_units" from "authenticated";
-
-revoke select on table "public"."zh_pinyin_units" from "authenticated";
-
-revoke trigger on table "public"."zh_pinyin_units" from "authenticated";
-
-revoke truncate on table "public"."zh_pinyin_units" from "authenticated";
-
-revoke update on table "public"."zh_pinyin_units" from "authenticated";
-
-revoke delete on table "public"."zh_pinyin_units" from "service_role";
-
-revoke insert on table "public"."zh_pinyin_units" from "service_role";
-
-revoke references on table "public"."zh_pinyin_units" from "service_role";
-
-revoke select on table "public"."zh_pinyin_units" from "service_role";
-
-revoke trigger on table "public"."zh_pinyin_units" from "service_role";
-
-revoke truncate on table "public"."zh_pinyin_units" from "service_role";
-
-revoke update on table "public"."zh_pinyin_units" from "service_role";
+-- zh_pinyin_units table may not exist in remote database, skipping permissions revoke
+-- revoke delete on table "public"."zh_pinyin_units" from "anon";
+-- revoke insert on table "public"."zh_pinyin_units" from "anon";
+-- revoke references on table "public"."zh_pinyin_units" from "anon";
+-- revoke select on table "public"."zh_pinyin_units" from "anon";
+-- revoke trigger on table "public"."zh_pinyin_units" from "anon";
+-- revoke truncate on table "public"."zh_pinyin_units" from "anon";
+-- revoke update on table "public"."zh_pinyin_units" from "anon";
+-- revoke delete on table "public"."zh_pinyin_units" from "authenticated";
+-- revoke insert on table "public"."zh_pinyin_units" from "authenticated";
+-- revoke references on table "public"."zh_pinyin_units" from "authenticated";
+-- revoke select on table "public"."zh_pinyin_units" from "authenticated";
+-- revoke trigger on table "public"."zh_pinyin_units" from "authenticated";
+-- revoke truncate on table "public"."zh_pinyin_units" from "authenticated";
+-- revoke update on table "public"."zh_pinyin_units" from "authenticated";
+-- revoke delete on table "public"."zh_pinyin_units" from "service_role";
+-- revoke insert on table "public"."zh_pinyin_units" from "service_role";
+-- revoke references on table "public"."zh_pinyin_units" from "service_role";
+-- revoke select on table "public"."zh_pinyin_units" from "service_role";
+-- revoke trigger on table "public"."zh_pinyin_units" from "service_role";
+-- revoke truncate on table "public"."zh_pinyin_units" from "service_role";
+-- revoke update on table "public"."zh_pinyin_units" from "service_role";
 
 -- REVIEW: keep unique id constraints for shadowing_* unless confirmed to drop
 -- alter table "public"."shadowing_subtopics" drop constraint "shadowing_subtopics_id_unique";
