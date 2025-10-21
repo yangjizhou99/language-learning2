@@ -157,7 +157,7 @@ export default function UserPermissionsPage() {
           can_access_cloze: true,
           can_access_alignment: true,
           can_access_articles: true,
-          allowed_languages: ['en', 'ja', 'zh'],
+          allowed_languages: ['en', 'ja', 'zh', 'ko'],
           allowed_levels: [1, 2, 3, 4, 5],
           max_daily_attempts: 50,
           model_permissions: [
@@ -446,7 +446,7 @@ export default function UserPermissionsPage() {
                   <div>
                     <Label className="text-base font-medium">允许的语言</Label>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {['en', 'ja', 'zh'].map((lang) => (
+                      {['en', 'ja', 'zh', 'ko'].map((lang) => (
                         <div key={lang} className="flex items-center space-x-2">
                           <Checkbox
                             id={`lang-${lang}`}
@@ -466,7 +466,7 @@ export default function UserPermissionsPage() {
                             }}
                           />
                           <Label htmlFor={`lang-${lang}`} className="text-sm">
-                            {lang === 'en' ? '英语' : lang === 'ja' ? '日语' : '中文'}
+                            {lang === 'en' ? '英语' : lang === 'ja' ? '日语' : lang === 'zh' ? '中文' : '韩语'}
                           </Label>
                         </div>
                       ))}

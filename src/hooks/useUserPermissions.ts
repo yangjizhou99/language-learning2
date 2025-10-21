@@ -32,7 +32,7 @@ const defaultPermissions: UserPermissions = {
   can_access_cloze: true,
   can_access_alignment: true,
   can_access_articles: true,
-  allowed_languages: ['en', 'ja', 'zh'],
+  allowed_languages: ['en', 'ja', 'zh', 'ko'],
   allowed_levels: [1, 2, 3, 4, 5],
   max_daily_attempts: 50,
   model_permissions: [
@@ -93,7 +93,7 @@ export default function useUserPermissions() {
           // 规范化权限，避免字符串等级导致 includes(数字) 失败
           const normalizedAllowedLanguages = Array.isArray(userPermissions.allowed_languages)
             ? userPermissions.allowed_languages.map((l: any) => String(l)).filter(Boolean)
-            : ['en', 'ja', 'zh'];
+            : ['en', 'ja', 'zh', 'ko'];
           const normalizedAllowedLevels = Array.isArray(userPermissions.allowed_levels)
             ? userPermissions.allowed_levels
                 .map((lv: any) => (typeof lv === 'number' ? lv : parseInt(String(lv), 10)))

@@ -23,7 +23,7 @@ export default function AdminInvitationsPage() {
       can_access_cloze: true,
       can_access_alignment: true,
       can_access_articles: true,
-      allowed_languages: ['en', 'ja', 'zh'],
+      allowed_languages: ['en', 'ja', 'zh', 'ko'],
       allowed_levels: [1, 2, 3, 4, 5],
       max_daily_attempts: 50,
       ai_enabled: false,
@@ -114,7 +114,7 @@ export default function AdminInvitationsPage() {
           can_access_cloze: true,
           can_access_alignment: true,
           can_access_articles: true,
-          allowed_languages: ['en', 'ja', 'zh'],
+          allowed_languages: ['en', 'ja', 'zh', 'ko'],
           allowed_levels: [1, 2, 3, 4, 5],
           max_daily_attempts: 50,
           ai_enabled: false,
@@ -229,7 +229,7 @@ export default function AdminInvitationsPage() {
           can_access_cloze: data.can_access_cloze ?? true,
           can_access_alignment: data.can_access_alignment ?? true,
           can_access_articles: data.can_access_articles ?? true,
-          allowed_languages: data.allowed_languages || ['en', 'ja', 'zh'],
+          allowed_languages: data.allowed_languages || ['en', 'ja', 'zh', 'ko'],
           allowed_levels: data.allowed_levels || [1, 2, 3, 4, 5],
           max_daily_attempts: data.max_daily_attempts || 50,
           ai_enabled: data.ai_enabled || false,
@@ -617,7 +617,7 @@ export default function AdminInvitationsPage() {
                       <div>
                         <h4 className="text-sm font-medium text-gray-600 mb-2">允许的语言</h4>
                         <div className="flex gap-4">
-                          {['en', 'ja', 'zh'].map((lang) => (
+                          {['en', 'ja', 'zh', 'ko'].map((lang) => (
                             <label key={lang} className="flex items-center">
                               <input
                                 type="checkbox"
@@ -640,7 +640,7 @@ export default function AdminInvitationsPage() {
                                 }}
                                 className="mr-1"
                               />
-                              {lang === 'en' ? '英语' : lang === 'ja' ? '日语' : '中文'}
+                              {lang === 'en' ? '英语' : lang === 'ja' ? '日语' : lang === 'zh' ? '中文' : '韩语'}
                             </label>
                           ))}
                         </div>
