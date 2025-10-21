@@ -115,125 +115,122 @@ function shouldSkipPart(part: string): boolean {
  */
 export function splitSentences(text: string, lang: 'zh' | 'en' | 'ja' | 'ko', genre?: string): SentenceInfo[] {
   if (!text.trim()) return [];
-  
-  // 对话体裁：按行分句
-  if (genre === 'dialogue') {
-    const lines = text.split('\n').filter(line => line.trim());
+
+  // 统一换行符
+  const src = text.replace(/\r\n?/g, '\n');
+
+  // 轻量对话检测：当 genre 为 dialogue，或文本中出现 A:/B: 等说话人标记（即使没有换行）
+  const hasDialogueMarkers = /(?:^|\n)\s*[A-Za-zＡ-Ｚ][:：]\s*/.test(src) || /\s+[ABab][:：]\s*/.test(src);
+  const treatAsDialogue = genre === 'dialogue' || hasDialogueMarkers;
+
+  if (treatAsDialogue) {
     const sentences: SentenceInfo[] = [];
-    let currentPos = 0;
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (line) {
-        sentences.push({
-          text: line,
-          sid: i + 1,
-          sentenceAbsStart: currentPos
-        });
-        currentPos += line.length + 1; // +1 for newline
-      }
+    let sid = 1;
+
+    // 若已有换行，优先按行；否则按说话人标记切分
+    const lines = src.includes('\n')
+      ? src.split('\n').map((l) => l.trim()).filter(Boolean)
+      : (() => {
+          const indices: number[] = [];
+          // 改进对话标记检测：支持 A: 和 B: 格式（大小写不敏感）
+          const re = /[ABab][:：]\s*/g;
+          let m: RegExpExecArray | null;
+          while ((m = re.exec(src)) !== null) {
+            indices.push(m.index);
+          }
+          if (indices.length === 0) return [src.trim()];
+          const arr: string[] = [];
+          for (let i = 0; i < indices.length; i++) {
+            const start = indices[i];
+            const end = i + 1 < indices.length ? indices[i + 1] : src.length;
+            const seg = src.slice(start, end).trim();
+            if (seg) arr.push(seg);
+          }
+          return arr;
+        })();
+
+    // 计算每行在原文中的绝对位置
+    let cursor = 0;
+    for (const line of lines) {
+      // 在原文中查找该行的首次出现位置（从 cursor 开始，避免重复命中）
+      const pos = src.indexOf(line, cursor);
+      const sentenceAbsStart = pos !== -1 ? pos : cursor;
+      sentences.push({ text: line, sid: sid++, sentenceAbsStart });
+      cursor = sentenceAbsStart + line.length + 1; // 近似推进；+1 兼容换行
     }
-    
     return sentences;
   }
-  
+
   // 非对话体裁：按语言标点分句
   const sentences: SentenceInfo[] = [];
   let currentPos = 0;
   let sid = 1;
-  
+
   if (lang === 'zh') {
-    // 中文：按 。！？； 分句
-    const pattern = /[。！？；]+/g;
+    // 中文：兼容全角/半角标点
+    const pattern = /[。！？；.!?]+/g;
     let lastIndex = 0;
-    let match;
-    
-    while ((match = pattern.exec(text)) !== null) {
-      const sentence = text.slice(lastIndex, match.index + match[0].length).trim();
+    let match: RegExpExecArray | null;
+
+    while ((match = pattern.exec(src)) !== null) {
+      const sentence = src.slice(lastIndex, match.index + match[0].length).trim();
       if (sentence) {
-        sentences.push({
-          text: sentence,
-          sid: sid++,
-          sentenceAbsStart: currentPos
-        });
+        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
         currentPos += sentence.length;
       }
       lastIndex = match.index + match[0].length;
     }
-    
-    // 处理最后一句
-    if (lastIndex < text.length) {
-      const sentence = text.slice(lastIndex).trim();
+
+    if (lastIndex < src.length) {
+      const sentence = src.slice(lastIndex).trim();
       if (sentence) {
-        sentences.push({
-          text: sentence,
-          sid: sid++,
-          sentenceAbsStart: currentPos
-        });
+        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
       }
     }
   } else if (lang === 'en') {
-    // 英文：按 . ! ? 分句，保留缩写边界
-    const pattern = /(?<![A-Za-z])[.!?]+(?=\s|$)/g;
+    // 英文：按 . ! ? 分句
+    const pattern = /[.!?]+(?=\s|$)/g;
     let lastIndex = 0;
-    let match;
-    
-    while ((match = pattern.exec(text)) !== null) {
-      const sentence = text.slice(lastIndex, match.index + match[0].length).trim();
+    let match: RegExpExecArray | null;
+
+    while ((match = pattern.exec(src)) !== null) {
+      const sentence = src.slice(lastIndex, match.index + match[0].length).trim();
       if (sentence) {
-        sentences.push({
-          text: sentence,
-          sid: sid++,
-          sentenceAbsStart: currentPos
-        });
+        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
         currentPos += sentence.length;
       }
       lastIndex = match.index + match[0].length;
     }
-    
-    // 处理最后一句
-    if (lastIndex < text.length) {
-      const sentence = text.slice(lastIndex).trim();
+
+    if (lastIndex < src.length) {
+      const sentence = src.slice(lastIndex).trim();
       if (sentence) {
-        sentences.push({
-          text: sentence,
-          sid: sid++,
-          sentenceAbsStart: currentPos
-        });
+        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
       }
     }
   } else if (lang === 'ja' || lang === 'ko') {
-    // 日韩：按 。？！ 分句
-    const pattern = /[。？！]+/g;
+    // 日/韩：兼容全角与半角句末标点
+    const pattern = /[。．\.？！!?]+/g;
     let lastIndex = 0;
-    let match;
-    
-    while ((match = pattern.exec(text)) !== null) {
-      const sentence = text.slice(lastIndex, match.index + match[0].length).trim();
+    let match: RegExpExecArray | null;
+
+    while ((match = pattern.exec(src)) !== null) {
+      const sentence = src.slice(lastIndex, match.index + match[0].length).trim();
       if (sentence) {
-        sentences.push({
-          text: sentence,
-          sid: sid++,
-          sentenceAbsStart: currentPos
-        });
+        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
         currentPos += sentence.length;
       }
       lastIndex = match.index + match[0].length;
     }
-    
-    // 处理最后一句
-    if (lastIndex < text.length) {
-      const sentence = text.slice(lastIndex).trim();
+
+    if (lastIndex < src.length) {
+      const sentence = src.slice(lastIndex).trim();
       if (sentence) {
-        sentences.push({
-          text: sentence,
-          sid: sid++,
-          sentenceAbsStart: currentPos
-        });
+        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
       }
     }
   }
-  
+
   return sentences;
 }
 

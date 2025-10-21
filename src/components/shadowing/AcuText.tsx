@@ -110,15 +110,53 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
   // 获取上下文（该句的完整文本）
   const getContext = useCallback(() => {
     if (selectedUnits.length === 0) return '';
-    
+
     const firstUnit = selectedUnits[0].unit;
-    const sentenceUnits = units.filter(unit => unit.sid === firstUnit.sid);
-    
-    // 找到该句在原文中的位置
-    const sentenceStart = Math.min(...sentenceUnits.map(u => u.start));
-    const sentenceEnd = Math.max(...sentenceUnits.map(u => u.end));
-    
-    return text.slice(sentenceStart, sentenceEnd);
+    const sentenceUnits = units.filter((unit) => unit.sid === firstUnit.sid);
+
+    // 该句在原文中的内容范围（单位坐标基于原文）
+    let sentenceStart = Math.min(...sentenceUnits.map((u) => u.start));
+    const sentenceEnd = Math.max(...sentenceUnits.map((u) => u.end));
+
+    // 若该句前有对话标识符（A:/B: 等），将切片起点回溯到行首以包含标识符
+    const lineStart = Math.max(0, text.lastIndexOf('\n', sentenceStart - 1) + 1);
+    const prefix = text.slice(lineStart, sentenceStart);
+    if (/^[ABab][:：]\s*$/.test(prefix.trim())) {
+      sentenceStart = lineStart;
+    }
+
+    let contextRaw = text.slice(sentenceStart, sentenceEnd);
+
+    // 兜底：若切片范围异常大（疑似 sid 全文一致的旧数据），改为按就近标点推断一句
+    const spanLen = sentenceEnd - sentenceStart;
+    if (spanLen > Math.min(400, Math.floor(text.length * 0.7))) {
+      const firstStart = firstUnit.start;
+      const before = text.slice(0, firstStart);
+      const after = text.slice(firstUnit.end);
+      const punct = /[。．\.？！!?]/;
+      const prevP = (() => {
+        for (let i = before.length - 1; i >= 0; i--) {
+          if (punct.test(before[i])) return i;
+        }
+        return -1;
+      })();
+      const nextP = (() => {
+        for (let i = 0; i < after.length; i++) {
+          if (punct.test(after[i])) return firstUnit.end + i + 1;
+        }
+        return text.length;
+      })();
+      const fallbackStart = Math.max(0, prevP + 1);
+      const fallbackEnd = Math.min(text.length, nextP);
+
+      // 包含可能的对话标识符
+      const fbLineStart = Math.max(0, text.lastIndexOf('\n', fallbackStart - 1) + 1);
+      const fbPrefix = text.slice(fbLineStart, fallbackStart);
+      const fbStartIncl = /^[ABab][:：]\s*$/.test(fbPrefix.trim()) ? fbLineStart : fallbackStart;
+      contextRaw = text.slice(fbStartIncl, fallbackEnd);
+    }
+
+    return contextRaw;
   }, [selectedUnits, units, text]);
 
   // 处理确认
@@ -141,20 +179,68 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
 
   // 渲染带格式的文本和ACU块 - 基于原文渲染
   const renderTextWithUnits = () => {
-    // 如果ACU数据异常（只有对话标识符等），回退到显示原文
-    const hasValidAcuData = units.length > 2 && units.some(u => u.span.length > 3);
+    // 检查是否为对话格式且所有unit都在同一个句子中（sid都是1）
+    const isDialogueInOneSentence = units.length > 0 && units.every(u => u.sid === 1) && 
+                                   text.includes('A:') && text.includes('B:');
     
-    if (!hasValidAcuData) {
-      console.warn('ACU数据异常，回退到显示原文:', units);
+    if (isDialogueInOneSentence) {
+      console.warn('ACU数据异常，回退到显示原文:', {
+        dialogueInOneSentence: isDialogueInOneSentence,
+        unitsCount: units.length,
+        textLength: text.length
+      });
+      
+      // 处理对话格式换行
+      let formattedText = text;
+      if ((lang === 'ko' || lang === 'en') && formattedText.includes('A:') && formattedText.includes('B:') && !formattedText.includes('\n')) {
+        // 在 B: 前添加换行符
+        formattedText = formattedText.replace(/\s+B:/g, '\nB:');
+        // 在 A: 前添加换行符（除了第一个）
+        formattedText = formattedText.replace(/([^A])\s+A:/g, '$1\nA:');
+      }
+      
       return (
         <div className="text-gray-700 whitespace-pre-wrap">
-          {text.split('\n').map((line, i) => (
+          {formattedText.split('\n').map((line, i) => (
             <div key={i} className="mb-2">{line}</div>
           ))}
         </div>
       );
     }
     
+    // 如果ACU数据异常（只有对话标识符等），回退到显示原文
+    const hasValidAcuData = units.length > 2 && units.some(u => u.span.length > 3);
+    
+    if (!hasValidAcuData) {
+      console.warn('ACU数据异常，回退到显示原文:', units);
+      
+      // 处理对话格式换行
+      let formattedText = text;
+      if ((lang === 'ko' || lang === 'en') && formattedText.includes('A:') && formattedText.includes('B:') && !formattedText.includes('\n')) {
+        // 在 B: 前添加换行符
+        formattedText = formattedText.replace(/\s+B:/g, '\nB:');
+        // 在 A: 前添加换行符（除了第一个）
+        formattedText = formattedText.replace(/([^A])\s+A:/g, '$1\nA:');
+      }
+      
+      return (
+        <div className="text-gray-700 whitespace-pre-wrap">
+          {formattedText.split('\n').map((line, i) => (
+            <div key={i} className="mb-2">{line}</div>
+          ))}
+        </div>
+      );
+    }
+    
+    // 处理对话格式换行 - 在ACU渲染之前
+    let processedText = text;
+    if ((lang === 'ko' || lang === 'en') && processedText.includes('A:') && processedText.includes('B:') && !processedText.includes('\n')) {
+      // 在 B: 前添加换行符
+      processedText = processedText.replace(/\s+B:/g, '\nB:');
+      // 在 A: 前添加换行符（除了第一个）
+      processedText = processedText.replace(/([^A])\s+A:/g, '$1\nA:');
+    }
+
     // 简化渲染逻辑：直接基于原文和ACU units进行渲染
     // 按句子分组渲染，避免重复
     const sentences = units.reduce((acc, unit, index) => {
@@ -176,14 +262,14 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
       // 扩展句子结束位置以包含句尾标点符号
       // 查找句尾标点符号（。！？；等）
       const sentenceEndPattern = /[。！？；\s]*$/;
-      const remainingText = text.slice(sentenceEnd);
+      const remainingText = processedText.slice(sentenceEnd);
       const match = remainingText.match(sentenceEndPattern);
       if (match) {
         sentenceEnd += match[0].length;
       }
       
-      // 获取该句的原文
-      const sentenceText = text.slice(sentenceStart, sentenceEnd);
+      // 获取该句的原文（用于调试，暂时注释）
+      // const sentenceText = processedText.slice(sentenceStart, sentenceEnd);
       
       // 基于原文逐字符渲染
       let currentPos = sentenceStart;
@@ -195,13 +281,17 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         
         // 添加unit之前的内容（如果有）
         if (unit.start > currentPos) {
-          const beforeText = text.slice(currentPos, unit.start);
-          if (beforeText) {
-            elements.push(
-              <span key={`before-${i}`} className="text-gray-700">
-                {beforeText}
-              </span>
-            );
+          const beforeText = processedText.slice(currentPos, unit.start);
+          if (beforeText && beforeText.trim()) {
+            // 只过滤掉单个字母，保留标点符号和空格
+            const filteredText = beforeText.replace(/^[a-zA-Z]$/, '');
+            if (filteredText) {
+              elements.push(
+                <span key={`before-${i}`} className="text-gray-700">
+                  {filteredText}
+                </span>
+              );
+            }
           }
         }
         
@@ -210,46 +300,55 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         const isNonSelectableUnit = isNonSelectable(unit);
         const isAlreadySelectedWord = isAlreadySelected(unit);
         
-        elements.push(
-          <span
-            key={`unit-${i}`}
-            onClick={() => handleUnitClick(unit, unitIndex)}
-            className={`
-              inline-block px-1 py-0.5 mx-0.5 rounded transition-all
-              touch-manipulation select-none
-              ${isNonSelectableUnit 
-                ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-60' 
-                : isSelected 
-                  ? 'bg-blue-500 text-white border-blue-600 shadow-md cursor-pointer' 
-                  : isAlreadySelectedWord
-                    ? 'bg-yellow-200 text-yellow-800 border-yellow-400 hover:bg-yellow-300 cursor-pointer'
-                    : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 cursor-pointer'
+        // 只过滤掉单个字母，保留标点符号和其他内容
+        const shouldSkipUnit = /^[a-zA-Z]$/.test(unit.span) || unit.span.length === 0;
+        
+        if (!shouldSkipUnit) {
+          elements.push(
+            <span
+              key={`unit-${i}`}
+              onClick={() => handleUnitClick(unit, unitIndex)}
+              className={`
+                inline-block px-1 py-0.5 mx-0.5 rounded transition-all
+                touch-manipulation select-none
+                ${isNonSelectableUnit 
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-60' 
+                  : isSelected 
+                    ? 'bg-blue-500 text-white border-blue-600 shadow-md cursor-pointer' 
+                    : isAlreadySelectedWord
+                      ? 'bg-yellow-200 text-yellow-800 border-yellow-400 hover:bg-yellow-300 cursor-pointer'
+                      : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 cursor-pointer'
+                }
+              `}
+              title={
+                isNonSelectableUnit 
+                  ? '不可选中' 
+                  : isAlreadySelectedWord 
+                    ? `已选择的生词: ${unit.span}` 
+                    : `块 ${unitIndex + 1} (句子 ${unit.sid})`
               }
-            `}
-            title={
-              isNonSelectableUnit 
-                ? '不可选中' 
-                : isAlreadySelectedWord 
-                  ? `已选择的生词: ${unit.span}` 
-                  : `块 ${unitIndex + 1} (句子 ${unit.sid})`
-            }
-          >
-            {unit.span}
-          </span>
-        );
+            >
+              {unit.span}
+            </span>
+          );
+        }
         
         currentPos = unit.end;
       }
       
       // 添加最后一个unit之后的内容（如果有）
       if (currentPos < sentenceEnd) {
-        const afterText = text.slice(currentPos, sentenceEnd);
-        if (afterText) {
-          elements.push(
-            <span key={`after-${sid}`} className="text-gray-700">
-              {afterText}
-            </span>
-          );
+        const afterText = processedText.slice(currentPos, sentenceEnd);
+        if (afterText && afterText.trim()) {
+          // 只过滤掉单个字母，保留标点符号和空格
+          const filteredText = afterText.replace(/^[a-zA-Z]$/, '');
+          if (filteredText) {
+            elements.push(
+              <span key={`after-${sid}`} className="text-gray-700">
+                {filteredText}
+              </span>
+            );
+          }
         }
       }
       
@@ -261,47 +360,29 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
     });
   };
 
-  // 渲染单个 ACU 块（保留原函数以防其他地方使用）
-  const renderUnit = (unit: AcuUnit, index: number) => {
-    const isSelected = selectedUnits.some(su => su.index === index);
-    const isNonSelectableUnit = isNonSelectable(unit);
-    
-    return (
-      <span
-        key={index}
-        onClick={() => handleUnitClick(unit, index)}
-        className={`
-          inline px-1 py-0.5 rounded transition-all
-          touch-manipulation select-none
-          ${isNonSelectableUnit 
-            ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-60' // 不可选中的样式
-            : isSelected 
-              ? 'bg-blue-500 text-white border-blue-600 shadow-md cursor-pointer' 
-              : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 cursor-pointer'
-          }
-        `}
-        title={isNonSelectableUnit ? '不可选中' : `块 ${index + 1} (句子 ${unit.sid})`}
-        style={{ 
-          display: 'inline',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'keep-all'
-        }}
-      >
-        {unit.span}
-      </span>
-    );
-  };
 
   return (
     <div className="space-y-4">
       {/* ACU 块显示 */}
       <div className="p-4 bg-gray-50 rounded-lg">
         <div className="text-sm text-gray-600 mb-2">
-          点击选择 ACU 块（仅限同句相邻块）:
-          <br />
-          <span className="text-xs text-gray-500">
-            💡 灰色块（A:、B:、标点符号）不可选中，但会在合并时自动包含
-          </span>
+          {units.length > 0 && units.every(u => u.sid === 1) && text.includes('A:') && text.includes('B:') ? (
+            <>
+              <span className="text-orange-600 font-medium">⚠️ ACU数据异常，已回退到原文显示模式</span>
+              <br />
+              <span className="text-xs text-gray-500">
+                💡 当前显示原文，请使用自由框选模式选择生词
+              </span>
+            </>
+          ) : (
+            <>
+              点击选择 ACU 块（仅限同句相邻块）:
+              <br />
+              <span className="text-xs text-gray-500">
+                💡 灰色块（A:、B:、标点符号）不可选中，但会在合并时自动包含
+              </span>
+            </>
+          )}
         </div>
         <div className="whitespace-pre-wrap text-base leading-relaxed">
           {units.length === 0 ? (

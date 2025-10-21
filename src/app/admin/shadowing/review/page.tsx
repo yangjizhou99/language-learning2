@@ -132,6 +132,7 @@ export default function ShadowingReviewList() {
   const [level, setLevel] = useState<'all' | '1' | '2' | '3' | '4' | '5'>('all');
   const [status, setStatus] = useState<'all' | 'draft' | 'approved'>('draft');
   const [audioStatus, setAudioStatus] = useState<'all' | 'no_audio' | 'has_audio'>('all');
+  const [acuStatus, setAcuStatus] = useState<'all' | 'no_acu' | 'has_acu'>('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [ttsLoading, setTtsLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -197,6 +198,17 @@ export default function ShadowingReviewList() {
     avgResponseTime: 0,
     currentLoad: 0,
     recommendedConcurrency: 18,
+  });
+
+  // ACU生成专用监控状态
+  const [acuPerformanceStats, setAcuPerformanceStats] = useState({
+    totalAcuRequests: 0,
+    acuSuccessRate: 0,
+    avgAcuResponseTime: 0,
+    acuCurrentLoad: 0,
+    recommendedAcuConcurrency: 6,
+    actualConcurrency: 0,
+    batchProcessingTime: 0,
   });
 
   // 性能历史记录
@@ -277,13 +289,15 @@ export default function ShadowingReviewList() {
 
   useEffect(() => {
     (async () => {
-      // 处理音频状态筛选 - 需要获取所有数据然后在客户端筛选
+      // 处理音频状态和ACU状态筛选 - 需要获取所有数据然后在客户端筛选
       const isAudioStatusFilter = audioStatus === 'no_audio' || audioStatus === 'has_audio';
+      const isAcuStatusFilter = acuStatus === 'no_acu' || acuStatus === 'has_acu';
+      const isClientSideFilter = isAudioStatusFilter || isAcuStatusFilter;
 
       const params = new URLSearchParams({
         status: status === 'all' ? 'draft' : status,
-        page: isAudioStatusFilter ? '1' : currentPage.toString(), // 音频筛选时获取所有数据
-        pageSize: isAudioStatusFilter ? '1000' : pageSize.toString(), // 音频筛选时获取更多数据
+        page: isClientSideFilter ? '1' : currentPage.toString(), // 客户端筛选时获取所有数据
+        pageSize: isClientSideFilter ? '1000' : pageSize.toString(), // 客户端筛选时获取更多数据
       });
       if (lang !== 'all') params.set('lang', lang);
       if (genre !== 'all') params.set('genre', genre);
@@ -313,8 +327,15 @@ export default function ShadowingReviewList() {
         filteredItems = filteredItems.filter((item: Item) => item.notes?.audio_url);
       }
 
-      // 如果是音频状态筛选，需要重新计算分页
-      if (isAudioStatusFilter) {
+      // 客户端ACU状态筛选
+      if (acuStatus === 'no_acu') {
+        filteredItems = filteredItems.filter((item: Item) => !item.notes?.acu_units || item.notes?.acu_units?.length === 0);
+      } else if (acuStatus === 'has_acu') {
+        filteredItems = filteredItems.filter((item: Item) => item.notes?.acu_units && item.notes?.acu_units?.length > 0);
+      }
+
+      // 如果是客户端筛选，需要重新计算分页
+      if (isClientSideFilter) {
         const totalFiltered = filteredItems.length;
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize;
@@ -328,7 +349,7 @@ export default function ShadowingReviewList() {
 
       setItems(filteredItems);
     })();
-  }, [q, lang, genre, level, status, audioStatus, currentPage, pageSize]);
+  }, [q, lang, genre, level, status, audioStatus, acuStatus, currentPage, pageSize]);
 
   // 加载可用模型
   useEffect(() => {
@@ -338,7 +359,7 @@ export default function ShadowingReviewList() {
   // 当筛选条件改变时，重置到第一页
   useEffect(() => {
     setCurrentPage(1);
-  }, [q, lang, genre, level, status]);
+  }, [q, lang, genre, level, status, audioStatus, acuStatus]);
 
   // 分页控制函数
   const goToPage = (page: number) => {
@@ -458,20 +479,33 @@ export default function ShadowingReviewList() {
 
       // 分批处理
       const batchSize = Math.max(1, Math.min(concurrency, ids.length));
+      console.log(`批量删除并发控制: 总任务${ids.length}个, 批次大小${batchSize}, 并发数${concurrency}`);
+      
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
+        const batchNum = Math.floor(i / batchSize) + 1;
+        const totalBatches = Math.ceil(ids.length / batchSize);
+        
+        console.log(`删除批次 ${batchNum}/${totalBatches}: ${batch.length}个任务`);
+        appendLog(`🔄 删除批次 ${batchNum}/${totalBatches} (${batch.length}个任务)`);
+        
+        const startTime = Date.now();
         const batchFail = await processBatch(batch);
+        const batchTime = Date.now() - startTime;
+        
+        console.log(`删除批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
+        appendLog(`✅ 删除批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
+        
         fail += batchFail;
 
         // 节流延迟
         if (throttle > 0 && i + batchSize < ids.length) {
-          if (throttle > 0) {
-            await new Promise<void>((resolve) => {
-              (globalThis as any).setTimeout(() => {
-                resolve();
-              }, throttle);
-            });
-          }
+          console.log(`批次间延迟: ${throttle}ms`);
+          await new Promise<void>((resolve) => {
+            (globalThis as any).setTimeout(() => {
+              resolve();
+            }, throttle);
+          });
         }
       }
 
@@ -809,12 +843,36 @@ export default function ShadowingReviewList() {
       };
 
       const batchSize = Math.max(1, Math.min(concurrency, ids.length));
+      console.log(`ACU生成并发控制: 总任务${ids.length}个, 批次大小${batchSize}, 并发数${concurrency}`);
+      
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
+        const batchNum = Math.floor(i / batchSize) + 1;
+        const totalBatches = Math.ceil(ids.length / batchSize);
+        
+        console.log(`处理批次 ${batchNum}/${totalBatches}: ${batch.length}个任务`);
+        appendLog(`🔄 处理批次 ${batchNum}/${totalBatches} (${batch.length}个任务)`);
+        
+        const startTime = Date.now();
         const results = await Promise.all(batch.map((id) => generateOne(id)));
+        const batchTime = Date.now() - startTime;
+        
+        console.log(`批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
+        appendLog(`✅ 批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
+        
+        // 更新ACU性能统计
+        setAcuPerformanceStats(prev => ({
+          ...prev,
+          totalAcuRequests: prev.totalAcuRequests + batch.length,
+          actualConcurrency: batch.length,
+          batchProcessingTime: batchTime,
+          acuSuccessRate: results.filter(r => r).length / batch.length,
+        }));
+        
         fail += results.filter((ok) => !ok).length;
 
         if (throttle > 0 && i + batchSize < ids.length) {
+          console.log(`批次间延迟: ${throttle}ms`);
           await wait(throttle);
         }
       }
@@ -896,20 +954,33 @@ export default function ShadowingReviewList() {
 
       // 分批处理
       const batchSize = Math.max(1, Math.min(concurrency, ids.length));
+      console.log(`批量发布并发控制: 总任务${ids.length}个, 批次大小${batchSize}, 并发数${concurrency}`);
+      
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
+        const batchNum = Math.floor(i / batchSize) + 1;
+        const totalBatches = Math.ceil(ids.length / batchSize);
+        
+        console.log(`发布批次 ${batchNum}/${totalBatches}: ${batch.length}个任务`);
+        appendLog(`🔄 发布批次 ${batchNum}/${totalBatches} (${batch.length}个任务)`);
+        
+        const startTime = Date.now();
         const batchFail = await processBatch(batch);
+        const batchTime = Date.now() - startTime;
+        
+        console.log(`发布批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
+        appendLog(`✅ 发布批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
+        
         fail += batchFail;
 
         // 节流延迟
         if (throttle > 0 && i + batchSize < ids.length) {
-          if (throttle > 0) {
-            await new Promise<void>((resolve) => {
-              (globalThis as any).setTimeout(() => {
-                resolve();
-              }, throttle);
-            });
-          }
+          console.log(`批次间延迟: ${throttle}ms`);
+          await new Promise<void>((resolve) => {
+            (globalThis as any).setTimeout(() => {
+              resolve();
+            }, throttle);
+          });
         }
       }
 
@@ -2024,6 +2095,22 @@ export default function ShadowingReviewList() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <label className="text-sm font-medium">ACU状态</label>
+              <Select
+                value={acuStatus}
+                onValueChange={(value) => setAcuStatus(value as 'all' | 'no_acu' | 'has_acu')}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部</SelectItem>
+                  <SelectItem value="no_acu">未生成ACU</SelectItem>
+                  <SelectItem value="has_acu">已生成ACU</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -2074,6 +2161,37 @@ export default function ShadowingReviewList() {
                 </div>
               </div>
             </div>
+            
+            {/* ACU生成专用监控 */}
+            {acuPerformanceStats.totalAcuRequests > 0 && (
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="text-sm font-medium text-blue-800 mb-2">🎯 ACU生成监控</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <div className="text-gray-600">ACU请求数</div>
+                    <div className="font-medium">{acuPerformanceStats.totalAcuRequests}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-600">实际并发数</div>
+                    <div className="font-medium text-orange-600">
+                      {acuPerformanceStats.actualConcurrency}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-600">批次耗时</div>
+                    <div className="font-medium">
+                      {acuPerformanceStats.batchProcessingTime}ms
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-gray-600">ACU成功率</div>
+                    <div className="font-medium text-green-600">
+                      {(acuPerformanceStats.acuSuccessRate * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

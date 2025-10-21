@@ -42,10 +42,22 @@ const testCases = [
     description: '韩文商务会议，测试韩文敬语和商务词汇的分块效果'
   },
   {
+    name: '韩文对话',
+    text: 'A: 우리 가족을 소개할게요. B: 네, 궁금해요. A: 아빠는 선생님이세요. 나이는 쉰 살이에요. B: 엄마는요? A: 엄마는 간호사세요. 마흔여섯 살이에요. B: 형제는 있어요? A: 남동생이 한 명 있어요. 스물두 살이에요.',
+    lang: 'ko',
+    description: '韩文家庭对话，测试韩文对话格式和日常词汇的分块效果'
+  },
+  {
     name: '中文技术文档',
     text: '深度学习是机器学习的一个分支，它使用多层神经网络来模拟人脑的学习过程。通过反向传播算法，神经网络可以自动调整权重和偏置，从而实现对复杂数据模式的识别和预测。',
     lang: 'zh',
     description: '中文技术文档，测试专业术语和长句的分块效果'
+  },
+  {
+    name: '英文对话',
+    text: 'A: Hey, what do you usually do after school? B: I love playing sports with friends. Soccer is my favorite! A: That sounds fun. I prefer music. I practice guitar to relax. B: Do you play with others too? A: Sometimes, but mostly alone. It helps me unwind. B: I should try that. Sports can be tiring sometimes. A: We could both try new hobbies together. B: Great idea! Maybe I\'ll learn an instrument.',
+    lang: 'en',
+    description: '英文对话，测试对话格式和日常词汇的分块效果'
   },
   {
     name: '英文文学',

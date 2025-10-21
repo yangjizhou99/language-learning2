@@ -38,6 +38,14 @@ export default function SelectablePassage({
       formatted = formatted.replace(/\\n/g, '\n');
     }
 
+    // 特殊处理韩语：如果文本包含 A: 和 B: 但没有换行，强制添加换行
+    if (lang === 'ko' && formatted.includes('A:') && formatted.includes('B:') && !formatted.includes('\n')) {
+      // 在 B: 前添加换行符
+      formatted = formatted.replace(/\s+B:/g, '\nB:');
+      // 在 A: 前添加换行符（除了第一个）
+      formatted = formatted.replace(/([^A])\s+A:/g, '$1\nA:');
+    }
+
     // 如果是英文或韩语且原文本没有换行，则按发言人 A:/B: 自动分行
     if ((lang === 'en' || lang === 'ko') && !formatted.includes('\n')) {
       const speakerPattern = /([A-Z]):\s*/g;
