@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import SelectablePassage from '@/components/SelectablePassage';
+import AcuText from '@/components/shadowing/AcuText';
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
@@ -26,7 +27,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { LANG_LABEL } from '@/types/lang';
 import { useMobile } from '@/contexts/MobileContext';
 import FilterLanguageSelector from './FilterLanguageSelector';
-import PracticeStepper from './PracticeStepper';
+import PracticeStepper, { type StepIndex } from './PracticeStepper';
 import { speakText as speakTextUtil } from '@/lib/speechUtils';
 import CollapsibleFilterSection from './CollapsibleFilterSection';
 import CompactStatsCards from './CompactStatsCards';
@@ -97,6 +98,11 @@ interface ShadowingItem {
     id: string;
     title: string;
     one_line?: string;
+  };
+  notes?: {
+    acu_marked?: string;
+    acu_units?: Array<{ span: string; start: number; end: number; sid: number }>;
+    [key: string]: any;
   };
   stats: {
     recordingCount: number;
@@ -562,6 +568,17 @@ export default function ShadowingPage() {
   const [showTranslation, setShowTranslation] = useState(false);
   const [translationLang, setTranslationLang] = useState<'en' | 'ja' | 'zh' | 'ko'>('en');
 
+  // 用户生词本状态
+  const [userVocab, setUserVocab] = useState<Array<{
+    term: string;
+    explanation: {
+      gloss_native: string;
+      senses?: Array<{ example_target: string; example_native: string }>;
+    } | null;
+    id: string;
+    context?: string;
+  }>>([]);
+
   // 获取目标语言
   const getTargetLanguages = (sourceLang: string): string[] => {
     switch (sourceLang) {
@@ -719,6 +736,81 @@ export default function ShadowingPage() {
     }
   }, [currentItem]);
 
+  // 加载用户生词本 (当前语言)
+  useEffect(() => {
+    if (!currentItem?.lang || !user) return;
+    
+    const loadUserVocab = async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(
+          `/api/vocab/entries?lang=${currentItem.lang}&limit=1000`,
+          { headers }
+        );
+        const data = await response.json();
+        if (data.success) {
+          setUserVocab(data.entries || []);
+        }
+      } catch (error) {
+        console.error('加载生词本失败:', error);
+      }
+    };
+    
+    loadUserVocab();
+  }, [currentItem?.lang, user]);
+
+  // 刷新生词解释
+  const handleRefreshExplanation = async (word: string, vocabId?: string) => {
+    if (!vocabId) return;
+    
+    try {
+      setIsGeneratingExplanation(true);
+      const headers = await getAuthHeaders();
+      
+      // 重新生成解释
+      const response = await fetch('/api/vocab/explain', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          term: word,
+          lang: currentItem?.lang || lang,
+          native_lang: language,
+          context: currentItem?.text || ''
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.explanation) {
+          // 更新生词本中的解释
+          const updateResponse = await fetch('/api/vocab/entries', {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({
+              id: vocabId,
+              explanation: data.explanation
+            })
+          });
+          
+          if (updateResponse.ok) {
+            // 更新本地状态
+            setUserVocab(prev => prev.map(v => 
+              v.id === vocabId 
+                ? { ...v, explanation: data.explanation }
+                : v
+            ));
+            toast.success('解释已刷新');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('刷新解释失败:', error);
+      toast.error('刷新解释失败');
+    } finally {
+      setIsGeneratingExplanation(false);
+    }
+  };
+
   // （移除重复母语加载副作用，统一由"步骤切换时的联动"处理翻译语言）
 
   // 发音功能
@@ -735,6 +827,9 @@ export default function ShadowingPage() {
     word,
     explanation,
     children,
+    fromVocab = false,
+    vocabId,
+    onRefresh,
   }: {
     word: string;
     explanation?: {
@@ -742,6 +837,9 @@ export default function ShadowingPage() {
       senses?: Array<{ example_target: string; example_native: string }>;
     };
     children: React.ReactNode;
+    fromVocab?: boolean;
+    vocabId?: string;
+    onRefresh?: (word: string, vocabId?: string) => void;
   }) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [latestExplanation, setLatestExplanation] = useState(explanation);
@@ -779,6 +877,40 @@ export default function ShadowingPage() {
       if (abortRef.current) { try { abortRef.current.abort(); } catch {} abortRef.current = null; }
     };
 
+    // 点击发音功能
+    const handleClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // 切换tooltip显示状态
+      setShowTooltip(!showTooltip);
+      
+      // 调用浏览器发音
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        try {
+          // 停止当前正在播放的语音
+          window.speechSynthesis.cancel();
+          
+          const utterance = new SpeechSynthesisUtterance(word);
+          
+          // 根据当前语言设置语音
+          const langMap: Record<string, string> = {
+            'ja': 'ja-JP',
+            'zh': 'zh-CN', 
+            'en': 'en-US',
+            'ko': 'ko-KR',
+          };
+          utterance.lang = langMap[currentItem?.lang || 'zh'] || 'zh-CN';
+          utterance.rate = 0.6; // 稍慢的语速，便于听清
+          utterance.pitch = 1.0;
+          
+          window.speechSynthesis.speak(utterance);
+        } catch (error) {
+          console.error('语音合成失败:', error);
+        }
+      }
+    };
+
     useEffect(() => {
       return () => {
         if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
@@ -790,15 +922,30 @@ export default function ShadowingPage() {
 
     return (
       <span
-        className="bg-yellow-200 text-yellow-800 px-1 rounded font-medium cursor-help relative"
+        className="bg-yellow-200 text-yellow-800 px-1 rounded font-medium cursor-pointer relative hover:bg-yellow-300 transition-colors"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={() => setShowTooltip(!showTooltip)} // 手机端点击切换
+        onClick={handleClick}
+        title={`点击发音: ${word}`}
       >
         {children}
         {showTooltip && (
           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg w-32 z-50">
-            {tooltipText}
+            <div className="flex justify-between items-start mb-1">
+              <span>{tooltipText}</span>
+              {fromVocab && onRefresh && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRefresh(word, vocabId);
+                  }}
+                  className="text-xs underline ml-2 hover:text-blue-300"
+                  title="刷新解释"
+                >
+                  🔄
+                </button>
+              )}
+            </div>
             <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
           </div>
         )}
@@ -1012,18 +1159,20 @@ export default function ShadowingPage() {
 
   // 桌面端分步骤练习（仅在未完成状态下启用）
   // 桌面端分步骤练习（仅在未完成状态下启用）
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [highlightPlay, setHighlightPlay] = useState(false);
   const [highlightVocab, setHighlightVocab] = useState(false);
   const [highlightScore, setHighlightScore] = useState(false);
+
+  // ACU 模式状态
+  const [isACUMode, setIsACUMode] = useState(true); // 默认使用 ACU 模式
 
 
   const stepTips: Record<number, string> = {
     1: t.shadowing.step1_tip,
     2: t.shadowing.step2_tip,
     3: t.shadowing.step3_tip,
-    4: t.shadowing.step4_tip,
-    5: t.shadowing.step5_tip,
+    4: t.shadowing.step5_tip,
   };
 
   // 步骤切换时的联动：自动开/关生词模式与翻译偏好
@@ -1032,7 +1181,7 @@ export default function ShadowingPage() {
     // 仅在第3步开启生词模式，其余步骤一律关闭
     setIsVocabMode(step === 3);
 
-    if (step === 4) {
+    if (step === 2) {
       setShowTranslation(true);
       const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
       const uiLang = (language as 'en' | 'ja' | 'zh' | 'ko');
@@ -1063,7 +1212,7 @@ export default function ShadowingPage() {
     } else if (step === 3) {
       setHighlightVocab(true);
       timeoutId = window.setTimeout(() => setHighlightVocab(false), 2000);
-    } else if (step === 5) {
+    } else if (step === 4) {
       setHighlightScore(true);
       timeoutId = window.setTimeout(() => setHighlightScore(false), 2000);
     }
@@ -3375,7 +3524,7 @@ export default function ShadowingPage() {
       key: '5',
       description: '跳转到步骤5',
       category: '步骤导航',
-      action: () => setStep(5),
+      action: () => setStep(4),
     },
   ];
 
@@ -3492,19 +3641,18 @@ export default function ShadowingPage() {
                     currentStep={step}
                     onStepChange={(s)=> setStep(s)}
                     maxStepAllowed={step}
-                    labels={[t.shadowing.step1_tip, t.shadowing.step2_tip, t.shadowing.step3_tip, t.shadowing.step4_tip, t.shadowing.step5_tip].map(x=> String(x || 'Step'))}
+                    labels={[t.shadowing.step1_tip, t.shadowing.step2_tip, t.shadowing.step3_tip, t.shadowing.step5_tip].map(x=> String(x || 'Step'))}
                   />
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} disabled={step===1}>Back</Button>
-                    <Button size="sm" onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} disabled={step===5}>Next</Button>
+                    <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4))} disabled={step===1}>Back</Button>
+                    <Button size="sm" onClick={() => setStep((s)=> (Math.min(4, (s as number)+1) as 1|2|3|4))} disabled={step===4}>Next</Button>
                   </div>
                 </div>
                 <div className="mt-3 text-xs text-gray-700">
                   {step===1 && t.shadowing.step1_tip}
                   {step===2 && t.shadowing.step2_tip}
                   {step===3 && t.shadowing.step3_tip}
-                  {step===4 && t.shadowing.step4_tip}
-                  {step===5 && t.shadowing.step5_tip}
+                  {step===4 && t.shadowing.step5_tip}
                 </div>
               </Card>
             )}
@@ -3929,10 +4077,9 @@ export default function ShadowingPage() {
                       >
                         <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin">
                           <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===1?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>1 盲听</span>
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===2?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>2 原文</span>
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===2?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>2 原文+翻译</span>
                           <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===3?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>3 生词</span>
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===4?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>4 翻译</span>
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===5?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>5 录音</span>
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===4?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>4 录音</span>
                         </div>
                         <div className="flex items-center gap-2 ml-2">
                           <span className="text-xs text-gray-500">{stepTipExpanded ? '收起' : '展开'}</span>
@@ -3952,7 +4099,7 @@ export default function ShadowingPage() {
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))} 
+                              onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4))} 
                               disabled={step===1}
                               className="flex-1 h-8 text-xs"
                             >
@@ -3960,8 +4107,8 @@ export default function ShadowingPage() {
                             </Button>
                             <Button 
                               size="sm" 
-                              onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))} 
-                              disabled={step===5}
+                              onClick={() => setStep((s)=> (Math.min(4, (s as number)+1) as 1|2|3|4))} 
+                              disabled={step===4}
                               className="flex-1 h-8 text-xs"
                             >
                               下一步 →
@@ -4025,7 +4172,7 @@ export default function ShadowingPage() {
                           {isPlaying ? '暂停' : t.shadowing.play_audio}
                         </Button>
 
-                        <div className={`grid ${(!gatingActive || step === 5) ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                        <div className={`grid ${(!gatingActive || step === 4) ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
                           <Button
                             variant="outline"
                             size="lg"
@@ -4037,7 +4184,7 @@ export default function ShadowingPage() {
                             {saving ? t.common.loading : t.shadowing.save_draft}
                           </Button>
 
-                          {(!gatingActive || step === 5) && (
+                          {(!gatingActive || step === 4) && (
                             <Button
                               size="lg"
                               onClick={unifiedCompleteAndSave}
@@ -4054,7 +4201,7 @@ export default function ShadowingPage() {
 
                     {/* 生词选择模式切换（仅步骤3显示或完成后） */}
                     {(!gatingActive || step === 3) && (
-                    <div className="mb-4">
+                    <div className="mb-4 space-y-3">
                       <Button
                         variant={isVocabMode ? 'default' : 'outline'}
                         size="sm"
@@ -4063,12 +4210,34 @@ export default function ShadowingPage() {
                       >
                         {isVocabMode ? t.shadowing.vocab_mode_on : t.shadowing.vocab_mode_off}
                       </Button>
+                      
+                      {/* ACU 模式切换（仅在生词模式开启时显示） */}
+                      {isVocabMode && currentItem?.notes?.acu_units && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant={isACUMode ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setIsACUMode(!isACUMode)}
+                            className="flex-1"
+                          >
+                            {isACUMode ? 'ACU 选词' : '自由框选'}
+                          </Button>
+                        </div>
+                      )}
+                      
                       {isVocabMode && (
                         <div className="mt-2 space-y-2">
-                          <div className="p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-                            💡 <strong>选词提示：</strong>
-                            拖拽选择单词或短语，松开鼠标后稍等（不超过50个字符），选择完成后会显示确认按钮
-                          </div>
+                          {isACUMode && currentItem?.notes?.acu_units ? (
+                            <div className="p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+                              💡 <strong>ACU 选词模式：</strong>
+                              点击预分割的语义块来选择生词，支持多选相邻块合并
+                            </div>
+                          ) : (
+                            <div className="p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                              💡 <strong>选词提示：</strong>
+                              拖拽选择单词或短语，松开鼠标后稍等（不超过50个字符），选择完成后会显示确认按钮
+                            </div>
+                          )}
                           <p className="text-sm text-blue-600">
                             {t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}
                           </p>
@@ -4081,7 +4250,7 @@ export default function ShadowingPage() {
                     {(!gatingActive || step >= 2) && (
                     <div id="shadowing-text" className="relative">
                       <div className="px-6 py-4 bg-amber-50/30 rounded-xl max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                      {step === 4 && currentItem.translations && currentItem.translations[translationLang] && (
+                      {step === 2 && currentItem.translations && currentItem.translations[translationLang] && (
                         <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                           <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
                           <div className="whitespace-pre-wrap text-base text-gray-800">{currentItem.translations[translationLang]}</div>
@@ -4089,25 +4258,36 @@ export default function ShadowingPage() {
                       )}
                       {isVocabMode ? (
                         <>
-                          <SelectablePassage
-                            text={(() => {
-                              const normalize = (t: string) => {
-                                let s = (t || '')
-                                  .replace(/\r\n/g, '\n')
-                                  .replace(/\r/g, '\n')
-                                  .replace(/<br\s*\/?\s*>/gi, '\n')
-                                  .replace(/&#10;|&#13;/g, '\n');
-                                for (let i = 0; i < 3 && /\\\n/.test(s); i += 1) s = s.replace(/\\\n/g, '\n');
-                                return s;
-                              };
-                              return normalize(currentItem.text);
-                            })()}
-                            lang="zh"
-                            onSelectionChange={handleTextSelection}
-                            clearSelection={clearSelection}
-                            disabled={false}
-                            className="text-lg leading-loose"
-                          />
+                          {/* ACU 模式或自由框选模式 */}
+                          {isACUMode && currentItem?.notes?.acu_units ? (
+                            <AcuText
+                              text={currentItem.text}
+                              lang={currentItem.lang}
+                              units={currentItem.notes.acu_units}
+                              onConfirm={handleWordSelect}
+                              selectedWords={[...previousWords, ...selectedWords]}
+                            />
+                          ) : (
+                            <SelectablePassage
+                              text={(() => {
+                                const normalize = (t: string) => {
+                                  let s = (t || '')
+                                    .replace(/\r\n/g, '\n')
+                                    .replace(/\r/g, '\n')
+                                    .replace(/<br\s*\/?\s*>/gi, '\n')
+                                    .replace(/&#10;|&#13;/g, '\n');
+                                  for (let i = 0; i < 3 && /\\\n/.test(s); i += 1) s = s.replace(/\\\n/g, '\n');
+                                  return s;
+                                };
+                                return normalize(currentItem.text);
+                              })()}
+                              lang="zh"
+                              onSelectionChange={handleTextSelection}
+                              clearSelection={clearSelection}
+                              disabled={false}
+                              className="text-lg leading-loose"
+                            />
+                          )}
                           {selectedText && (
                             <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                               <div className="text-sm">
@@ -4194,8 +4374,26 @@ export default function ShadowingPage() {
 
                             const formattedText = formatDialogueText(currentItem.text);
 
-                            // 获取所有已选择的生词（包括之前的和本次的）
-                            const allSelectedWords = [...previousWords, ...selectedWords];
+                            // 获取所有已选择的生词（包括之前的、本次的和生词本中的）
+                            // 合并当前题目的临时生词和生词本中的词汇
+                            const picked = [...previousWords, ...selectedWords];
+                            const vocab = userVocab.map(v => ({
+                              word: v.term,
+                              explanation: v.explanation,
+                              fromVocab: true,
+                              vocabId: v.id
+                            }));
+                            
+                            // 去重：picked优先（上下文更准确）
+                            const wordMap = new Map();
+                            picked.forEach(w => wordMap.set(w.word, w));
+                            vocab.forEach(v => {
+                              if (!wordMap.has(v.word)) {
+                                wordMap.set(v.word, v);
+                              }
+                            });
+                            
+                            const allSelectedWords = Array.from(wordMap.values());
                             const selectedWordSet = new Set(
                               allSelectedWords.map((item) => item.word),
                             );
@@ -4290,7 +4488,14 @@ export default function ShadowingPage() {
                                     const explanation = wordData?.explanation;
 
                                     result.push(
-                                      <HoverExplanation key={`${lineIndex}-${i}`} word={word} explanation={explanation}>
+                                      <HoverExplanation 
+                                        key={`${lineIndex}-${i}`} 
+                                        word={word} 
+                                        explanation={explanation}
+                                        fromVocab={wordData?.fromVocab}
+                                        vocabId={wordData?.vocabId}
+                                        onRefresh={handleRefreshExplanation}
+                                      >
                                         {word}
                                       </HoverExplanation>,
                                     );
@@ -4536,8 +4741,8 @@ export default function ShadowingPage() {
                     </CollapsibleCard>
                   )}
 
-                  {/* 翻译模块 - 移动端（仅步骤4显示或完成后） */}
-                  {currentItem && (!gatingActive || step === 4) && (
+                  {/* 翻译模块 - 移动端（仅步骤2显示或完成后） */}
+                  {currentItem && (!gatingActive || step === 2) && (
                     <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
@@ -4613,10 +4818,10 @@ export default function ShadowingPage() {
                   )}
 
                   {/* 练习模式切换 */}
-                  {(!gatingActive || step >= 5) && renderPracticeModeSwitcher()}
+                  {(!gatingActive || step >= 4) && renderPracticeModeSwitcher()}
 
                   {/* 逐句/分角色练习 */}
-                  {(!gatingActive || step >= 5) && (
+                  {(!gatingActive || step >= 4) && (
                     <SentencePractice
                       originalText={currentItem?.text}
                       language={currentItem?.lang || 'ja'}
@@ -4650,7 +4855,7 @@ export default function ShadowingPage() {
                   )}
 
                   {/* 录音练习区域（移动端；仅步骤5或完成后） */}
-                  {practiceMode !== 'role' && (!gatingActive || step >= 5) && (
+                  {practiceMode !== 'role' && (!gatingActive || step >= 4) && (
                   <Card className="p-4">
                     <AudioRecorder
                       ref={audioRecorderRef}
@@ -4668,7 +4873,7 @@ export default function ShadowingPage() {
                   )}
 
                   {/* 评分区域（仅步骤5显示或完成后） */}
-                  {!scoringResult && practiceMode !== 'role' && (!gatingActive || step >= 5) && (
+                  {!scoringResult && practiceMode !== 'role' && (!gatingActive || step >= 4) && (
                     <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
@@ -5009,7 +5214,7 @@ export default function ShadowingPage() {
                         </div>
                       )}
 
-                      {!practiceComplete && (!gatingActive || step === 5) && (
+                      {!practiceComplete && (!gatingActive || step === 4) && (
                         <div className="flex items-center gap-2 w-full mt-2">
                           <Button
                             onClick={unifiedCompleteAndSave}
@@ -5085,7 +5290,7 @@ export default function ShadowingPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setStep((s) => (Math.max(1, (s as number) - 1) as 1 | 2 | 3 | 4 | 5))}
+                        onClick={() => setStep((s) => (Math.max(1, (s as number) - 1) as 1 | 2 | 3 | 4))}
                         disabled={step === 1}
                         className="flex items-center gap-2"
                         aria-label={t.shadowing.prev_step || '上一步'}
@@ -5111,8 +5316,8 @@ export default function ShadowingPage() {
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() => setStep((s) => (Math.min(5, (s as number) + 1) as 1 | 2 | 3 | 4 | 5))}
-                        disabled={step === 5}
+                        onClick={() => setStep((s) => (Math.min(4, (s as number) + 1) as 1 | 2 | 3 | 4))}
+                        disabled={step === 4}
                         className="flex items-center gap-2"
                         aria-label={t.shadowing.next_step || '下一步'}
                       >
@@ -5139,8 +5344,8 @@ export default function ShadowingPage() {
                 isRecording={false}
                 showPrevious={true}
                 showNext={true}
-                showRecord={step === 5 && !practiceComplete}
-                showComplete={(!gatingActive || step === 5) && !practiceComplete}
+                showRecord={step === 4 && !practiceComplete}
+                showComplete={(!gatingActive || step === 4) && !practiceComplete}
                 disabled={saving}
               />
             )}
@@ -5151,7 +5356,7 @@ export default function ShadowingPage() {
                 showVocabButton={step === 3 && !practiceComplete}
                 isVocabMode={isVocabMode}
                 onToggleVocabMode={() => setIsVocabMode(!isVocabMode)}
-                showTranslationButton={step === 4 && !practiceComplete}
+                showTranslationButton={step === 2 && !practiceComplete}
                 showTranslation={showTranslation}
                 onToggleTranslation={() => setShowTranslation(!showTranslation)}
                 showScrollToTop={scrollY > 300}
@@ -5671,9 +5876,8 @@ export default function ShadowingPage() {
                           maxStepAllowed={step}
                           labels={[
                             t.shadowing.step_labels?.blind_listen || '盲听',
-                            t.shadowing.step_labels?.read_text || '看原文',
+                            t.shadowing.step_labels?.read_text || '看原文+翻译',
                             t.shadowing.step_labels?.select_words || '选生词',
-                            t.shadowing.step_labels?.view_translation || '看翻译',
                             t.shadowing.step_labels?.record_scoring || '录音评分',
                           ]}
                         />
@@ -5681,14 +5885,14 @@ export default function ShadowingPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4|5))}
+                            onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4))}
                             disabled={step===1}
                             aria-label={t.shadowing.prev_step || '上一步'}
                           >{t.shadowing.prev_step || '上一步'}</Button>
                           <Button
                             size="sm"
-                            onClick={() => setStep((s)=> (Math.min(5, (s as number)+1) as 1|2|3|4|5))}
-                            disabled={step===5}
+                            onClick={() => setStep((s)=> (Math.min(4, (s as number)+1) as 1|2|3|4))}
+                            disabled={step===4}
                             aria-label={t.shadowing.next_step || '下一步'}
                           >{t.shadowing.next_step || '下一步'}</Button>
                         </div>
@@ -5712,11 +5916,12 @@ export default function ShadowingPage() {
                       )}
                       {step === 2 && (
                         <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">{t.shadowing.step_labels?.read_text || '看原文'} + {t.shadowing.follow_recording || '跟读'}：</div>
+                          <div className="font-medium">{t.shadowing.step_labels?.read_text || '看原文+翻译'} + {t.shadowing.follow_recording || '跟读'}：</div>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>{t.shadowing.guide_read_text_tip1 || '先快速浏览一遍原文结构与段落'}</li>
                             <li>{t.shadowing.guide_read_text_tip2 || '再次播放音频，对照原文跟读（注意连读/重音）'}</li>
                             <li>{t.shadowing.guide_read_text_tip3 || '跟读时轻声起步，逐步提升音量与流畅度'}</li>
+                            <li>可以同时查看翻译来理解内容含义</li>
                           </ul>
                         </div>
                       )}
@@ -5731,16 +5936,6 @@ export default function ShadowingPage() {
                         </div>
                       )}
                       {step === 4 && (
-                        <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">{t.shadowing.guide_view_translation_title || '查看翻译：'}</div>
-                          <ul className="list-disc pl-5 space-y-1">
-                            <li>{t.shadowing.guide_view_translation_tip1 || '优先显示你的母语翻译，理解语义与细节'}</li>
-                            <li>{t.shadowing.guide_view_translation_tip2 || '遇到不通顺的地方，回放原文定位比对'}</li>
-                            <li>{t.shadowing.guide_view_translation_tip3 || '理解后可返回原文再跟读一遍，强化记忆'}</li>
-                          </ul>
-                        </div>
-                      )}
-                      {step === 5 && (
                         <div className="text-sm text-gray-700 space-y-2">
                           <div className="font-medium">{t.shadowing.record_and_score_title || '录音与评分：'}</div>
                           <ul className="list-disc pl-5 space-y-1">
@@ -5796,7 +5991,7 @@ export default function ShadowingPage() {
                         )}
                       </div>
                       <div className="flex gap-3 flex-wrap">
-                        {!(gatingActive && step === 5) && (
+                        {!(gatingActive && step === 4) && (
                           <Button
                             onClick={playAudio}
                             variant="outline"
@@ -5823,7 +6018,7 @@ export default function ShadowingPage() {
                           {saving ? (t.shadowing.saving_modal_title || '保存中...') : (t.shadowing.save_draft || '保存草稿')}
                         </Button>
 
-                        {(!gatingActive || step === 5) && (
+                        {(!gatingActive || step === 4) && (
                           <div className="flex items-center gap-2">
                             <Button
                               size="sm"
@@ -5854,7 +6049,7 @@ export default function ShadowingPage() {
 
                     {/* 生词选择模式切换（仅步骤3显示；完成或移动端保持原样） */}
                     {(!gatingActive || step === 3) && (
-                      <div className="mb-4">
+                      <div className="mb-4 space-y-3">
                         <Button
                           variant={isVocabMode ? 'default' : 'outline'}
                           size="sm"
@@ -5865,9 +6060,28 @@ export default function ShadowingPage() {
                             ? (t.shadowing.vocab_mode_on || '退出选词模式')
                             : (t.shadowing.vocab_mode_off || '开启选词模式')}
                         </Button>
+                        
+                        {/* ACU 模式切换（仅在生词模式开启时显示） */}
+                        {isVocabMode && currentItem?.notes?.acu_units && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant={isACUMode ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setIsACUMode(!isACUMode)}
+                              className="flex-1"
+                            >
+                              {isACUMode ? 'ACU 选词' : '自由框选'}
+                            </Button>
+                          </div>
+                        )}
+                        
                         {isVocabMode && (
                           <div className="mt-2 space-y-2">
-                          <p className="text-sm text-blue-600">{t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}</p>
+                            {isACUMode && currentItem?.notes?.acu_units ? (
+                              <p className="text-sm text-green-600">ACU 选词模式：点击预分割的语义块来选择生词</p>
+                            ) : (
+                              <p className="text-sm text-blue-600">{t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}</p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -5879,7 +6093,7 @@ export default function ShadowingPage() {
                     {(!gatingActive || step >= 2) && (
                       <div className="p-4 bg-gray-50 rounded-lg">
                         {/* 桌面端第4步：在正文模块内部顶部显示黄色翻译框 */}
-                        {!actualIsMobile && step === 4 && showTranslation && currentItem && currentItem.translations && currentItem.translations[translationLang] && (
+                        {!actualIsMobile && step === 2 && showTranslation && currentItem && currentItem.translations && currentItem.translations[translationLang] && (
                           <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                             <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
                             <div className="whitespace-pre-wrap text-base text-gray-800">
@@ -5889,14 +6103,25 @@ export default function ShadowingPage() {
                         )}
                       {isVocabMode ? (
                         <>
-                          <SelectablePassage
-                            text={currentItem.text}
-                            lang={currentItem.lang}
-                            onSelectionChange={handleTextSelection}
-                            clearSelection={clearSelection}
-                            disabled={false}
-                            className="text-lg leading-relaxed"
-                          />
+                          {/* ACU 模式或自由框选模式 */}
+                          {isACUMode && currentItem?.notes?.acu_units ? (
+                            <AcuText
+                              text={currentItem.text}
+                              lang={currentItem.lang}
+                              units={currentItem.notes.acu_units}
+                              onConfirm={handleWordSelect}
+                              selectedWords={[...previousWords, ...selectedWords]}
+                            />
+                          ) : (
+                            <SelectablePassage
+                              text={currentItem.text}
+                              lang={currentItem.lang}
+                              onSelectionChange={handleTextSelection}
+                              clearSelection={clearSelection}
+                              disabled={false}
+                              className="text-lg leading-relaxed"
+                            />
+                          )}
                           {selectedText && (
                             <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                               <div className="text-sm">
@@ -5982,8 +6207,26 @@ export default function ShadowingPage() {
 
                             const formattedText = formatDialogueText(currentItem.text);
 
-                            // 获取所有已选择的生词（包括之前的和本次的）
-                            const allSelectedWords = [...previousWords, ...selectedWords];
+                            // 获取所有已选择的生词（包括之前的、本次的和生词本中的）
+                            // 合并当前题目的临时生词和生词本中的词汇
+                            const picked = [...previousWords, ...selectedWords];
+                            const vocab = userVocab.map(v => ({
+                              word: v.term,
+                              explanation: v.explanation,
+                              fromVocab: true,
+                              vocabId: v.id
+                            }));
+                            
+                            // 去重：picked优先（上下文更准确）
+                            const wordMap = new Map();
+                            picked.forEach(w => wordMap.set(w.word, w));
+                            vocab.forEach(v => {
+                              if (!wordMap.has(v.word)) {
+                                wordMap.set(v.word, v);
+                              }
+                            });
+                            
+                            const allSelectedWords = Array.from(wordMap.values());
                             const selectedWordSet = new Set(
                               allSelectedWords.map((item) => item.word),
                             );
@@ -6078,7 +6321,14 @@ export default function ShadowingPage() {
                                     const explanation = wordData?.explanation;
 
                                     result.push(
-                                      <HoverExplanation key={`${lineIndex}-${i}`} word={word} explanation={explanation}>
+                                      <HoverExplanation 
+                                        key={`${lineIndex}-${i}`} 
+                                        word={word} 
+                                        explanation={explanation}
+                                        fromVocab={wordData?.fromVocab}
+                                        vocabId={wordData?.vocabId}
+                                        onRefresh={handleRefreshExplanation}
+                                      >
                                         {word}
                                       </HoverExplanation>,
                                     );
@@ -6101,8 +6351,8 @@ export default function ShadowingPage() {
                       </div>
                     )}
 
-                    {/* 音频播放器（步骤5隐藏；完成或移动端保持原样） - 使用增强版 */}
-                    {currentItem.audio_url && (!gatingActive || step !== 5) && (
+                    {/* 音频播放器（步骤4隐藏；完成或移动端保持原样） - 使用增强版 */}
+                    {currentItem.audio_url && (!gatingActive || step !== 4) && (
                       <div className="mt-4">
                         <div className="mb-2 flex items-center gap-2">
                           <span className="text-sm font-medium text-blue-700">{t.shadowing.original_audio_text || '原文音频'}</span>
@@ -6116,8 +6366,8 @@ export default function ShadowingPage() {
                     )}
                   </Card>
 
-                  {/* 翻译模块（仅步骤4显示；完成或移动端保持原样） */}
-                  {currentItem && (!gatingActive || step === 4) && (
+                  {/* 翻译模块（仅步骤2显示；完成或移动端保持原样） */}
+                  {currentItem && (!gatingActive || step === 2) && (
                     <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
@@ -6389,10 +6639,10 @@ export default function ShadowingPage() {
                   {/* 取消第5步顶部额外播放器，沿用下方通用播放器 */}
 
                   {/* 练习模式切换 */}
-                  {(!gatingActive || step >= 5) && renderPracticeModeSwitcher()}
+                  {(!gatingActive || step >= 4) && renderPracticeModeSwitcher()}
 
                   {/* 逐句/分角色练习 */}
-                  {(!gatingActive || step >= 5) && (() => {
+                  {(!gatingActive || step >= 4) && (() => {
                     try {
                       if (currentItem && (!currentItem.audio_url || !(currentItem as unknown as { sentence_timeline?: unknown }).sentence_timeline)) {
                         (async () => {
@@ -6411,7 +6661,7 @@ export default function ShadowingPage() {
                     } catch {}
                     return null;
                   })()}
-                  {(!gatingActive || step >= 5) && (
+                  {(!gatingActive || step >= 4) && (
                     <SentencePractice
                       originalText={currentItem?.text}
                       language={currentItem?.lang || 'ja'}
@@ -6445,7 +6695,7 @@ export default function ShadowingPage() {
                   )}
 
                   {/* 录音练习区域（仅步骤5显示；完成或移动端保持原样） */}
-                  {practiceMode !== 'role' && (!gatingActive || step >= 5) && (
+                  {practiceMode !== 'role' && (!gatingActive || step >= 4) && (
                   <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-green-50 to-emerald-50">
                     <div className="mb-4">
                       <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -6468,7 +6718,7 @@ export default function ShadowingPage() {
                   )}
 
                   {/* 评分区域（仅步骤5显示；完成或移动端保持原样） */}
-                  {!scoringResult && practiceMode !== 'role' && (!gatingActive || step >= 5) && (
+                  {!scoringResult && practiceMode !== 'role' && (!gatingActive || step >= 4) && (
                     <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
@@ -6810,7 +7060,7 @@ export default function ShadowingPage() {
                         </div>
                       )}
 
-                      {!practiceComplete && (!gatingActive || step === 5) && (
+                      {!practiceComplete && (!gatingActive || step === 4) && (
                         <Button
                           onClick={unifiedCompleteAndSave}
                           className="bg-green-600 hover:bg-green-700"

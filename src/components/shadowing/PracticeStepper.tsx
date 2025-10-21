@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 
-type StepIndex = 1 | 2 | 3 | 4 | 5;
+export type StepIndex = 1 | 2 | 3 | 4;
 
 export interface PracticeStepperProps {
   currentStep: StepIndex;
@@ -12,7 +12,7 @@ export interface PracticeStepperProps {
   labels?: string[]; // 可选：自定义可访问名称
 }
 
-const steps: StepIndex[] = [1, 2, 3, 4, 5];
+const steps: StepIndex[] = [1, 2, 3, 4];
 
 export default function PracticeStepper({
   currentStep,

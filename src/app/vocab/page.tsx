@@ -1102,6 +1102,7 @@ export default function VocabPage() {
             en: 'en-US',
             ja: 'ja-JP',
             zh: 'zh-CN',
+            ko: 'ko-KR',
           }[lang] || 'en-US';
 
         utterance.lang = langCode;
@@ -1125,6 +1126,20 @@ export default function VocabPage() {
             if (japaneseVoices.length > 0) {
               // 优先选择本地日语语音引擎，避免使用错误的引擎
               utterance.voice = japaneseVoices[0];
+              return;
+            }
+          } else if (lang === 'ko') {
+            // 对于韩语，按优先级选择语音引擎
+            const koreanVoices = voices.filter(
+              (voice) =>
+                voice.lang.startsWith('ko') ||
+                voice.name.toLowerCase().includes('korean') ||
+                voice.name.toLowerCase().includes('korea'),
+            );
+
+            if (koreanVoices.length > 0) {
+              // 优先选择本地韩语语音引擎，避免使用错误的引擎
+              utterance.voice = koreanVoices[0];
               return;
             }
           }
@@ -1446,6 +1461,7 @@ export default function VocabPage() {
                     <SelectItem value="en">{t.vocabulary.filters.english}</SelectItem>
                     <SelectItem value="ja">{t.vocabulary.filters.japanese}</SelectItem>
                     <SelectItem value="zh">{t.vocabulary.filters.chinese}</SelectItem>
+                    <SelectItem value="ko">{t.vocabulary.filters.korean}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1630,6 +1646,7 @@ export default function VocabPage() {
                       <SelectItem value="zh">{t.vocabulary.language_labels.zh}</SelectItem>
                       <SelectItem value="en">{t.vocabulary.language_labels.en}</SelectItem>
                       <SelectItem value="ja">{t.vocabulary.language_labels.ja}</SelectItem>
+                      <SelectItem value="ko">{t.vocabulary.language_labels.ko}</SelectItem>
                     </SelectContent>
                   </Select>
                   {userProfile?.native_lang && (
@@ -2206,6 +2223,7 @@ export default function VocabPage() {
                 <SelectItem value="zh">{t.vocabulary.language_labels.zh}</SelectItem>
                 <SelectItem value="en">{t.vocabulary.language_labels.en}</SelectItem>
                 <SelectItem value="ja">{t.vocabulary.language_labels.ja}</SelectItem>
+                <SelectItem value="ko">{t.vocabulary.language_labels.ko}</SelectItem>
               </SelectContent>
             </Select>
             {userProfile?.native_lang && (
@@ -2431,7 +2449,7 @@ export default function VocabPage() {
                               : 'bg-green-100 text-green-700'
                         }`}
                       >
-                        {t.vocabulary.language_labels[cur.lang as 'en' | 'ja' | 'zh']}
+                        {t.vocabulary.language_labels[cur.lang as 'en' | 'ja' | 'zh' | 'ko']}
                       </span>
                       
                       {cur.explanation?.pronunciation && (
