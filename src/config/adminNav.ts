@@ -12,7 +12,7 @@ export type AdminNavSection = {
 };
 
 // 保持 SSR/CSR 一致，避免 hydration mismatch
-const showDebug = process.env.NEXT_PUBLIC_SHOW_DEBUG === '1';
+// const showDebug = process.env.NEXT_PUBLIC_SHOW_DEBUG === '1';
 
 export const ADMIN_SECTIONS: AdminNavSection[] = [
   {
@@ -81,6 +81,7 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
     items: [
       { href: '/admin/backup', label: '数据备份', icon: '💾' },
       { href: '/admin/pronunciation-test', label: '发音评测实验', icon: '🗣️', match: 'startsWith' },
+      { href: '/admin/test-chunking', label: '分块测试', icon: '🧪', match: 'startsWith' },
     ],
   },
   {

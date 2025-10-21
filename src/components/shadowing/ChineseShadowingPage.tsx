@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import SelectablePassage from '@/components/SelectablePassage';
+import AcuText from '@/components/shadowing/AcuText';
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
@@ -97,6 +98,11 @@ interface ShadowingItem {
     id: string;
     title: string;
     one_line?: string;
+  };
+  notes?: {
+    acu_marked?: string;
+    acu_units?: Array<{ span: string; start: number; end: number; sid: number }>;
+    [key: string]: any;
   };
   stats: {
     recordingCount: number;
@@ -1157,6 +1163,9 @@ export default function ShadowingPage() {
   const [highlightPlay, setHighlightPlay] = useState(false);
   const [highlightVocab, setHighlightVocab] = useState(false);
   const [highlightScore, setHighlightScore] = useState(false);
+
+  // ACU 模式状态
+  const [isACUMode, setIsACUMode] = useState(true); // 默认使用 ACU 模式
 
 
   const stepTips: Record<number, string> = {
@@ -4192,7 +4201,7 @@ export default function ShadowingPage() {
 
                     {/* 生词选择模式切换（仅步骤3显示或完成后） */}
                     {(!gatingActive || step === 3) && (
-                    <div className="mb-4">
+                    <div className="mb-4 space-y-3">
                       <Button
                         variant={isVocabMode ? 'default' : 'outline'}
                         size="sm"
@@ -4201,12 +4210,34 @@ export default function ShadowingPage() {
                       >
                         {isVocabMode ? t.shadowing.vocab_mode_on : t.shadowing.vocab_mode_off}
                       </Button>
+                      
+                      {/* ACU 模式切换（仅在生词模式开启时显示） */}
+                      {isVocabMode && currentItem?.notes?.acu_units && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant={isACUMode ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setIsACUMode(!isACUMode)}
+                            className="flex-1"
+                          >
+                            {isACUMode ? 'ACU 选词' : '自由框选'}
+                          </Button>
+                        </div>
+                      )}
+                      
                       {isVocabMode && (
                         <div className="mt-2 space-y-2">
-                          <div className="p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-                            💡 <strong>选词提示：</strong>
-                            拖拽选择单词或短语，松开鼠标后稍等（不超过50个字符），选择完成后会显示确认按钮
-                          </div>
+                          {isACUMode && currentItem?.notes?.acu_units ? (
+                            <div className="p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+                              💡 <strong>ACU 选词模式：</strong>
+                              点击预分割的语义块来选择生词，支持多选相邻块合并
+                            </div>
+                          ) : (
+                            <div className="p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                              💡 <strong>选词提示：</strong>
+                              拖拽选择单词或短语，松开鼠标后稍等（不超过50个字符），选择完成后会显示确认按钮
+                            </div>
+                          )}
                           <p className="text-sm text-blue-600">
                             {t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}
                           </p>
@@ -4227,25 +4258,36 @@ export default function ShadowingPage() {
                       )}
                       {isVocabMode ? (
                         <>
-                          <SelectablePassage
-                            text={(() => {
-                              const normalize = (t: string) => {
-                                let s = (t || '')
-                                  .replace(/\r\n/g, '\n')
-                                  .replace(/\r/g, '\n')
-                                  .replace(/<br\s*\/?\s*>/gi, '\n')
-                                  .replace(/&#10;|&#13;/g, '\n');
-                                for (let i = 0; i < 3 && /\\\n/.test(s); i += 1) s = s.replace(/\\\n/g, '\n');
-                                return s;
-                              };
-                              return normalize(currentItem.text);
-                            })()}
-                            lang="zh"
-                            onSelectionChange={handleTextSelection}
-                            clearSelection={clearSelection}
-                            disabled={false}
-                            className="text-lg leading-loose"
-                          />
+                          {/* ACU 模式或自由框选模式 */}
+                          {isACUMode && currentItem?.notes?.acu_units ? (
+                            <AcuText
+                              text={currentItem.text}
+                              lang={currentItem.lang}
+                              units={currentItem.notes.acu_units}
+                              onConfirm={handleWordSelect}
+                              selectedWords={[...previousWords, ...selectedWords]}
+                            />
+                          ) : (
+                            <SelectablePassage
+                              text={(() => {
+                                const normalize = (t: string) => {
+                                  let s = (t || '')
+                                    .replace(/\r\n/g, '\n')
+                                    .replace(/\r/g, '\n')
+                                    .replace(/<br\s*\/?\s*>/gi, '\n')
+                                    .replace(/&#10;|&#13;/g, '\n');
+                                  for (let i = 0; i < 3 && /\\\n/.test(s); i += 1) s = s.replace(/\\\n/g, '\n');
+                                  return s;
+                                };
+                                return normalize(currentItem.text);
+                              })()}
+                              lang="zh"
+                              onSelectionChange={handleTextSelection}
+                              clearSelection={clearSelection}
+                              disabled={false}
+                              className="text-lg leading-loose"
+                            />
+                          )}
                           {selectedText && (
                             <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                               <div className="text-sm">
@@ -6007,7 +6049,7 @@ export default function ShadowingPage() {
 
                     {/* 生词选择模式切换（仅步骤3显示；完成或移动端保持原样） */}
                     {(!gatingActive || step === 3) && (
-                      <div className="mb-4">
+                      <div className="mb-4 space-y-3">
                         <Button
                           variant={isVocabMode ? 'default' : 'outline'}
                           size="sm"
@@ -6018,9 +6060,28 @@ export default function ShadowingPage() {
                             ? (t.shadowing.vocab_mode_on || '退出选词模式')
                             : (t.shadowing.vocab_mode_off || '开启选词模式')}
                         </Button>
+                        
+                        {/* ACU 模式切换（仅在生词模式开启时显示） */}
+                        {isVocabMode && currentItem?.notes?.acu_units && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant={isACUMode ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setIsACUMode(!isACUMode)}
+                              className="flex-1"
+                            >
+                              {isACUMode ? 'ACU 选词' : '自由框选'}
+                            </Button>
+                          </div>
+                        )}
+                        
                         {isVocabMode && (
                           <div className="mt-2 space-y-2">
-                          <p className="text-sm text-blue-600">{t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}</p>
+                            {isACUMode && currentItem?.notes?.acu_units ? (
+                              <p className="text-sm text-green-600">ACU 选词模式：点击预分割的语义块来选择生词</p>
+                            ) : (
+                              <p className="text-sm text-blue-600">{t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}</p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -6042,14 +6103,25 @@ export default function ShadowingPage() {
                         )}
                       {isVocabMode ? (
                         <>
-                          <SelectablePassage
-                            text={currentItem.text}
-                            lang={currentItem.lang}
-                            onSelectionChange={handleTextSelection}
-                            clearSelection={clearSelection}
-                            disabled={false}
-                            className="text-lg leading-relaxed"
-                          />
+                          {/* ACU 模式或自由框选模式 */}
+                          {isACUMode && currentItem?.notes?.acu_units ? (
+                            <AcuText
+                              text={currentItem.text}
+                              lang={currentItem.lang}
+                              units={currentItem.notes.acu_units}
+                              onConfirm={handleWordSelect}
+                              selectedWords={[...previousWords, ...selectedWords]}
+                            />
+                          ) : (
+                            <SelectablePassage
+                              text={currentItem.text}
+                              lang={currentItem.lang}
+                              onSelectionChange={handleTextSelection}
+                              clearSelection={clearSelection}
+                              disabled={false}
+                              className="text-lg leading-relaxed"
+                            />
+                          )}
                           {selectedText && (
                             <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                               <div className="text-sm">

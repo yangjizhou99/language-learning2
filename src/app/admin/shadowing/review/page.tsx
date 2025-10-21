@@ -139,7 +139,7 @@ export default function ShadowingReviewList() {
   const [ttsDone, setTtsDone] = useState(0);
   const [ttsCurrent, setTtsCurrent] = useState('');
   const [currentOperation, setCurrentOperation] = useState<
-    'tts' | 'publish' | 'revert' | 'delete' | 'clear_audio'
+    'tts' | 'publish' | 'revert' | 'delete' | 'clear_audio' | 'acu'
   >('tts');
   // 移除ttsProvider状态，改为通过音色管理器选择
 
@@ -723,6 +723,116 @@ export default function ShadowingReviewList() {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       toast.error(`清除音频失败：${message}`);
+    } finally {
+      setTtsCurrent('');
+      setTtsLoading(false);
+      setCurrentOperation('tts');
+    }
+  }
+
+  // ACU 生成功能
+  async function generateACUSelected() {
+    if (selected.size === 0) {
+      toast.error('请先选择要生成 ACU 的草稿');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `确定要为选中 ${selected.size} 个草稿生成 ACU 吗？\n此操作将调用 DeepSeek API 进行文本分析，可能产生费用。`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setTtsLoading(true);
+    setCurrentOperation('acu');
+    setTtsTotal(selected.size);
+    setTtsDone(0);
+    setLog('开始生成 ACU...');
+
+    const ids = Array.from(selected);
+    let fail = 0;
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const generateOne = async (id: string) => {
+        const item = items.find((x) => x.id === id);
+        setTtsCurrent(`生成 ACU: ${item?.title || id}`);
+
+        try {
+          const response = await fetch('/api/admin/shadowing/acu/segment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              id,
+              text: item?.text || '',
+              lang: item?.lang || 'zh',
+              provider: 'deepseek',
+              model: 'deepseek-chat',
+              concurrency: 8,
+              retries: 2,
+              genre: item?.genre || 'monologue',
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP ${response.status}`);
+          }
+
+          const result = await response.json();
+          if (!result.success) {
+            throw new Error('ACU 生成失败');
+          }
+
+          appendLog(
+            `✅ ACU 生成成功 (${id}): ${item?.title || id} - ${result.sentenceCount} 句`,
+          );
+          return true;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          console.error('ACU 生成失败:', { id, message });
+          appendLog(`ACU 生成失败 (${id}): ${message}`);
+          fail++;
+          return false;
+        } finally {
+          setTtsDone((v) => v + 1);
+        }
+      };
+
+      const batchSize = Math.max(1, Math.min(concurrency, ids.length));
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        const results = await Promise.all(batch.map((id) => generateOne(id)));
+        fail += results.filter((ok) => !ok).length;
+
+        if (throttle > 0 && i + batchSize < ids.length) {
+          await wait(throttle);
+        }
+      }
+
+      if (fail === 0) {
+        toast.success(`ACU 生成完成：${ids.length}/${ids.length}`);
+      } else if (fail < ids.length) {
+        toast.success(`部分生成成功：${ids.length - fail}/${ids.length}`);
+        toast.error(`有 ${fail} 个草稿生成失败，请查看日志`);
+      } else {
+        toast.error('ACU 生成失败，请检查日志');
+      }
+
+      setSelected(new Set());
+      setQ((q) => q + ' ');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`ACU 生成失败：${message}`);
     } finally {
       setTtsCurrent('');
       setTtsLoading(false);
@@ -2379,6 +2489,14 @@ export default function ShadowingReviewList() {
               清除选中音频
             </Button>
             <Button
+              onClick={generateACUSelected}
+              disabled={ttsLoading || publishing || selected.size === 0}
+              variant="outline"
+              className="border-blue-300 text-blue-600 hover:bg-blue-50"
+            >
+              生成 ACU
+            </Button>
+            <Button
               onClick={publishSelected}
               disabled={publishing || selected.size === 0}
               variant="outline"
@@ -2421,6 +2539,7 @@ export default function ShadowingReviewList() {
                   {currentOperation === 'revert' && '批量撤回进度'}
                   {currentOperation === 'delete' && '批量删除进度'}
                   {currentOperation === 'clear_audio' && '清除音频进度'}
+                  {currentOperation === 'acu' && 'ACU 生成进度'}
                 </span>
                 <span>
                   {ttsDone}/{ttsTotal} ({Math.round((ttsDone / ttsTotal) * 100)}%)

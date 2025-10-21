@@ -2,6 +2,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import ACUPreview from '@/components/ACUPreview';
 
 export default function ShadowingReviewDetail() {
   const params = useParams<{ id: string }>();
@@ -21,6 +22,9 @@ export default function ShadowingReviewDetail() {
   const [transTemperature, setTransTemperature] = useState(0.3);
   const [availableModels, setAvailableModels] = useState<Record<string, string[]>>({});
   const [modelsLoading, setModelsLoading] = useState(false);
+
+  // ACU 相关状态
+  const [acuLoading, setAcuLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -243,6 +247,66 @@ export default function ShadowingReviewDetail() {
     }
   };
 
+  // ACU 生成函数（仅LLM方法）
+  async function generateACU() {
+    if (!draft) return;
+
+    try {
+      setAcuLoading(true);
+      setLog(`生成 ACU 中… (LLM)`);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const response = await fetch('/api/admin/shadowing/acu/segment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          id: draft.id,
+          text: draft.text,
+          lang: draft.lang,
+          genre: draft.genre,
+          provider: 'deepseek',
+          model: 'deepseek-chat',
+          concurrency: 8,
+          retries: 2,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error('ACU 生成失败');
+      }
+
+      // 更新本地状态
+      setDraft({
+        ...draft,
+        notes: {
+          ...(draft.notes || {}),
+          acu_marked: result.acu_marked,
+          acu_units: result.units,
+        },
+      });
+
+      setLog(`ACU 生成成功：${result.unitCount || result.units.length} 个块 (LLM)`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setLog(`ACU 生成失败：${message}`);
+    } finally {
+      setAcuLoading(false);
+    }
+  }
+
   if (!draft) return <div>加载中…</div>;
 
   return (
@@ -357,9 +421,41 @@ export default function ShadowingReviewDetail() {
                 placeholder="温度"
               />
             </div>
+        </div>
+
+        {/* ACU 预处理卡片 */}
+        <div className="bg-white rounded-lg shadow p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">ACU 预处理</h3>
+            <div className="flex items-center gap-2">
+              <button
+                className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:bg-gray-400"
+                onClick={generateACU}
+                disabled={acuLoading}
+              >
+                {acuLoading ? '生成中...' : '生成 ACU'}
+              </button>
+            </div>
           </div>
 
-          <div className="flex gap-2">
+          {draft.notes?.acu_marked && (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-700">ACU 预览:</div>
+              <div className="p-3 bg-gray-50 rounded border">
+                <ACUPreview 
+                  text={draft.text || ''} 
+                  acuMarked={draft.notes.acu_marked}
+                  units={draft.notes.acu_units || []}
+                />
+              </div>
+              <div className="text-xs text-gray-500">
+                句子数: {draft.notes.acu_units?.length || 0} 个块
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2">
             <button
               className="px-3 py-1 rounded bg-blue-600 text-white text-sm"
               onClick={() => generateTranslations(false)}
