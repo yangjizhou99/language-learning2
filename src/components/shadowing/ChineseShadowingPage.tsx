@@ -4981,7 +4981,7 @@ export default function ShadowingPage() {
                       icon={<BookOpen className="w-5 h-5 text-gray-600" />}
                       badge={<span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{previousWords.length}</span>}
                       summary={`${previousWords.length}个生词`}
-                      defaultOpen={false}
+                      defaultOpen={step === 3}
                       className="border-0 shadow-sm"
                       contentClassName="pt-2"
                     >
@@ -6880,12 +6880,15 @@ export default function ShadowingPage() {
 
                   {/* 之前的生词（步骤2和3显示；完成或移动端保持原样） */}
                   {previousWords.length > 0 && (!gatingActive || step >= 2) && (
-                    <Card className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-600">
-                          {(t.shadowing.previous_words_title || '之前的生词 ({count})').replace('{count}', String(previousWords.length))}
-                        </h3>
-                      </div>
+                    <CollapsibleCard
+                      title="之前的生词"
+                      icon={<BookOpen className="w-5 h-5 text-gray-600" />}
+                      badge={<span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{previousWords.length}</span>}
+                      summary={`${previousWords.length}个生词`}
+                      defaultOpen={step === 3}
+                      className="border-0 shadow-sm"
+                      contentClassName="pt-2"
+                    >
 
                       <div className="grid gap-3">
                         {previousWords.map((item, index) => (
@@ -6952,7 +6955,7 @@ export default function ShadowingPage() {
                           </div>
                         ))}
                       </div>
-                    </Card>
+                    </CollapsibleCard>
                   )}
 
                   {/* 本次选中的生词（步骤2和3显示；完成或移动端保持原样） */}
