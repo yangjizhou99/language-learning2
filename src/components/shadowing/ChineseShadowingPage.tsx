@@ -888,6 +888,7 @@ export default function ShadowingPage() {
     fromVocab = false,
     vocabId,
     onRefresh,
+    lang = 'zh',
   }: {
     word: string;
     explanation?: {
@@ -898,6 +899,7 @@ export default function ShadowingPage() {
     fromVocab?: boolean;
     vocabId?: string;
     onRefresh?: (word: string, vocabId?: string) => void;
+    lang?: string;
   }) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [latestExplanation, setLatestExplanation] = useState(explanation);
@@ -958,7 +960,7 @@ export default function ShadowingPage() {
             'en': 'en-US',
             'ko': 'ko-KR',
           };
-          utterance.lang = langMap[currentItem?.lang || 'zh'] || 'zh-CN';
+          utterance.lang = langMap[lang] || 'zh-CN';
           utterance.rate = 0.6; // 稍慢的语速，便于听清
           utterance.pitch = 1.0;
           
@@ -994,7 +996,7 @@ export default function ShadowingPage() {
           e.stopPropagation();
           // 直接调用发音功能，不传递事件参数
           if (word && word.trim()) {
-            speakWord(word, 'zh');
+            speakWord(word, lang);
           }
         }}
         title={`点击发音: ${word}`}
@@ -4539,6 +4541,7 @@ export default function ShadowingPage() {
                                         key={`${lineIndex}-${i}`}
                                         word={word}
                                         explanation={explanation}
+                                        lang={currentItem?.lang || 'zh'}
                                       >
                                         {word}
                                       </HoverExplanation>,
@@ -4604,6 +4607,7 @@ export default function ShadowingPage() {
                                           fromVocab={wordData?.fromVocab}
                                           vocabId={wordData?.vocabId}
                                           onRefresh={handleRefreshExplanation}
+                                          lang={currentItem?.lang || 'zh'}
                                         >
                                           {word}
                                         </HoverExplanation>,
@@ -4658,6 +4662,7 @@ export default function ShadowingPage() {
                                           fromVocab={wordData?.fromVocab}
                                           vocabId={wordData?.vocabId}
                                           onRefresh={handleRefreshExplanation}
+                                          lang={currentItem?.lang || 'zh'}
                                         >
                                           {word}
                                         </HoverExplanation>,
@@ -6437,6 +6442,7 @@ export default function ShadowingPage() {
                                         key={`${lineIndex}-${i}`}
                                         word={word}
                                         explanation={explanation}
+                                        lang={currentItem?.lang || 'zh'}
                                       >
                                         {word}
                                       </HoverExplanation>,
