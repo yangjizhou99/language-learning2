@@ -750,6 +750,42 @@ export default function ShadowingPage() {
         const data = await response.json();
         if (data.success) {
           setUserVocab(data.entries || []);
+          
+          // 筛选出不是从当前文章来源的单词，并检查是否在当前文章文本中存在
+          const filteredVocab = (data.entries || []).filter((entry: { source_id: string }) => 
+            entry.source_id !== currentItem.id
+          );
+          
+          if (filteredVocab.length > 0 && currentItem.text) {
+            // 检查哪些单词在当前文章文本中存在
+            const articleText = currentItem.text.toLowerCase();
+            const wordsInArticle = filteredVocab.filter((entry: { term: string }) => 
+              articleText.includes(entry.term.toLowerCase())
+            );
+            
+            if (wordsInArticle.length > 0) {
+              // 转换为 previousWords 格式
+              const vocabWords = wordsInArticle.map((entry: { term: string; context?: string; explanation?: object; id: string }) => ({
+                word: entry.term,
+                context: entry.context || '',
+                explanation: entry.explanation,
+                fromVocab: true,
+                vocabId: entry.id
+              }));
+              
+              // 获取当前已有的 previousWords，避免重复
+              setPreviousWords(prevWords => {
+                const existingWords = new Set(prevWords.map(w => w.word));
+                const newWords = vocabWords.filter((v: { word: string }) => !existingWords.has(v.word));
+                
+                if (newWords.length > 0) {
+                  console.log('从单词表自动加载生词（存在于当前文章中）:', newWords);
+                  return [...prevWords, ...newWords];
+                }
+                return prevWords;
+              });
+            }
+          }
         }
       } catch (error) {
         console.error('加载生词本失败:', error);
@@ -757,7 +793,7 @@ export default function ShadowingPage() {
     };
     
     loadUserVocab();
-  }, [currentItem?.lang, user]);
+  }, [currentItem?.lang, currentItem?.id, user]);
 
   // 刷新生词解释
   const handleRefreshExplanation = async (word: string, vocabId?: string) => {
