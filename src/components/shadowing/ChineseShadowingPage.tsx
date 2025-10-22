@@ -1,5 +1,27 @@
 'use client';
 import React, { useEffect, useState, useCallback, useRef, useMemo, useDeferredValue, RefObject } from 'react';
+
+// 韩语词边界检测函数
+const isKoreanWordBoundary = (
+  chars: string[], 
+  startIndex: number, 
+  wordLength: number, 
+  endIndex: number
+): boolean => {
+  // 检查词前边界
+  const beforeChar = startIndex > 0 ? chars[startIndex - 1] : '';
+  const isBeforeBoundary = startIndex === 0 || 
+    /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
+    !/[\uac00-\ud7af]/.test(beforeChar); // 非韩文字符
+  
+  // 检查词后边界
+  const afterChar = endIndex < chars.length ? chars[endIndex] : '';
+  const isAfterBoundary = endIndex === chars.length || 
+    /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
+    !/[\uac00-\ud7af]/.test(afterChar); // 非韩文字符
+  
+  return isBeforeBoundary && isAfterBoundary;
+};
 import { Virtuoso } from 'react-virtuoso';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -750,6 +772,41 @@ export default function ShadowingPage() {
         const data = await response.json();
         if (data.success) {
           setUserVocab(data.entries || []);
+          
+          // 筛选出不是从当前文章来源的单词，并检查是否在当前文章文本中存在
+          const filteredVocab = (data.entries || []).filter((entry: { source_id: string }) => 
+            entry.source_id !== currentItem.id
+          );
+          
+          if (filteredVocab.length > 0 && currentItem.text) {
+            // 检查哪些单词在当前文章文本中存在
+            const articleText = currentItem.text.toLowerCase();
+            const wordsInArticle = filteredVocab.filter((entry: { term: string }) => 
+              articleText.includes(entry.term.toLowerCase())
+            );
+            
+            if (wordsInArticle.length > 0) {
+              // 转换为 previousWords 格式
+              const vocabWords = wordsInArticle.map((entry: { term: string; context?: string; explanation?: object; id: string }) => ({
+                word: entry.term,
+                context: entry.context || '',
+                explanation: entry.explanation,
+                fromVocab: true,
+                vocabId: entry.id
+              }));
+              
+              // 获取当前已有的 previousWords，避免重复
+              setPreviousWords(prevWords => {
+                const existingWords = new Set(prevWords.map(w => w.word));
+                const newWords = vocabWords.filter((v: { word: string }) => !existingWords.has(v.word));
+                
+                if (newWords.length > 0) {
+                  return [...prevWords, ...newWords];
+                }
+                return prevWords;
+              });
+            }
+          }
         }
       } catch (error) {
         console.error('加载生词本失败:', error);
@@ -757,7 +814,7 @@ export default function ShadowingPage() {
     };
     
     loadUserVocab();
-  }, [currentItem?.lang, user]);
+  }, [currentItem?.lang, currentItem?.id, user]);
 
   // 刷新生词解释
   const handleRefreshExplanation = async (word: string, vocabId?: string) => {
@@ -830,6 +887,7 @@ export default function ShadowingPage() {
     fromVocab = false,
     vocabId,
     onRefresh,
+    lang = 'zh',
   }: {
     word: string;
     explanation?: {
@@ -840,6 +898,7 @@ export default function ShadowingPage() {
     fromVocab?: boolean;
     vocabId?: string;
     onRefresh?: (word: string, vocabId?: string) => void;
+    lang?: string;
   }) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [latestExplanation, setLatestExplanation] = useState(explanation);
@@ -900,7 +959,7 @@ export default function ShadowingPage() {
             'en': 'en-US',
             'ko': 'ko-KR',
           };
-          utterance.lang = langMap[currentItem?.lang || 'zh'] || 'zh-CN';
+          utterance.lang = langMap[lang] || 'zh-CN';
           utterance.rate = 0.6; // 稍慢的语速，便于听清
           utterance.pitch = 1.0;
           
@@ -926,6 +985,19 @@ export default function ShadowingPage() {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
+        onTouchStart={(e) => {
+          // 防止触摸时触发双击缩放
+          e.preventDefault();
+        }}
+        onTouchEnd={(e) => {
+          // 处理触摸结束事件
+          e.preventDefault();
+          e.stopPropagation();
+          // 直接调用发音功能，不传递事件参数
+          if (word && word.trim()) {
+            speakWord(word, lang);
+          }
+        }}
         title={`点击发音: ${word}`}
       >
         {children}
@@ -1000,12 +1072,12 @@ export default function ShadowingPage() {
         }
       | undefined
     >(explanationCache[word] || fallbackExplanation);
-    const [loading, setLoading] = useState(false);
+    const [explanationLoading, setExplanationLoading] = useState(false);
     const [hasInitialized, setHasInitialized] = useState(false);
 
     // 刷新解释函数 - 强制从数据库获取最新数据
     const refreshExplanation = useCallback(async () => {
-      setLoading(true);
+      setExplanationLoading(true);
       try {
         const headers = await getAuthHeaders();
         const response = await fetch(
@@ -1037,7 +1109,7 @@ export default function ShadowingPage() {
       } catch (error) {
         console.error(`获取 ${word} 解释失败:`, error);
       } finally {
-        setLoading(false);
+        setExplanationLoading(false);
       }
     }, [word]);
 
@@ -1048,7 +1120,7 @@ export default function ShadowingPage() {
         // 总是获取最新解释，不管缓存中是否有旧解释
         // 直接调用API，避免依赖refreshExplanation
         const fetchInitialExplanation = async () => {
-          setLoading(true);
+          setExplanationLoading(true);
           try {
             const headers = await getAuthHeaders();
             const response = await fetch(
@@ -1067,7 +1139,7 @@ export default function ShadowingPage() {
           } catch (error) {
             console.error(`获取 ${word} 解释失败:`, error);
           } finally {
-            setLoading(false);
+            setExplanationLoading(false);
           }
         };
         fetchInitialExplanation();
@@ -1141,6 +1213,8 @@ export default function ShadowingPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioPlayerRef = useRef<EnhancedAudioPlayerRef | null>(null);
   const [practiceComplete, setPracticeComplete] = useState(false);
+  // 移动端也启用步骤门控：仅在未完成时生效
+  const gatingActive = !practiceComplete;
   const [showSentenceComparison, setShowSentenceComparison] = useState(false);
   const [scoringResult, setScoringResult] = useState<{
     score?: number;
@@ -1178,7 +1252,7 @@ export default function ShadowingPage() {
   // 步骤切换时的联动：自动开/关生词模式与翻译偏好
   useEffect(() => {
     if (!currentItem) return;
-    // 仅在第3步开启生词模式，其余步骤一律关闭
+    // 只在第3步开启生词模式，其余步骤关闭
     setIsVocabMode(step === 3);
 
     if (step === 2) {
@@ -1278,6 +1352,7 @@ export default function ShadowingPage() {
         setItems(cached.items || []);
         setLoading(false);
         clearTimeout(timeoutId);
+        abortRef.current = null;
         return;
       }
 
@@ -1315,7 +1390,7 @@ export default function ShadowingPage() {
     } catch (error: any) {
       // 区分不同类型的错误
       if (error.name === 'AbortError') {
-        console.log('Request was cancelled or timed out');
+        // Request was cancelled or timed out
       } else {
         console.error('Failed to fetch items:', error);
       }
@@ -1375,9 +1450,24 @@ export default function ShadowingPage() {
     }, 50);
     
     return () => clearTimeout(t);
-    // 依赖筛选条件，确保条件变化时重新加载
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang, level, practiced, authLoading, user]);
+    // 依赖筛选条件和fetchItems函数，确保条件变化时重新加载
+  }, [lang, level, practiced, authLoading, user, fetchItems, fetchRecommendedLevel]);
+
+  // 组件卸载时清理资源
+  useEffect(() => {
+    return () => {
+      // 清理定时器
+      if (replaceTimerRef.current) clearTimeout(replaceTimerRef.current);
+      // 清理请求
+      if (abortRef.current) {
+        try {
+          abortRef.current.abort();
+        } catch {}
+        abortRef.current = null;
+      }
+    };
+  }, []);
+
 
   // 加载主题数据
   useEffect(() => {
@@ -1445,13 +1535,7 @@ export default function ShadowingPage() {
 
         // 大主题筛选（精确匹配）
         if (selectedThemeId !== 'all') {
-          // 调试日志
-          console.log('大主题筛选:', {
-            selectedThemeId,
-            itemThemeId: item.theme_id,
-            itemTitle: item.title,
-            match: item.theme_id === selectedThemeId,
-          });
+          // 大主题筛选逻辑
 
           if (!item.theme_id || item.theme_id !== selectedThemeId) {
             return false;
@@ -1553,15 +1637,14 @@ export default function ShadowingPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.session) {
-          console.log('加载到之前的会话数据:', data.session);
-          console.log('还原的生词:', data.session.picked_preview);
           setCurrentSession(data.session);
           if (data.session.status === 'completed') {
             setPracticeComplete(true);
           }
 
           // 将之前的生词设置为 previousWords
-          setPreviousWords(data.session.picked_preview || []);
+          const previousWordsData = data.session.picked_preview || [];
+          setPreviousWords(previousWordsData);
 
           // 还原AI解释 - 从数据库获取所有单词的最新解释
           // 注意：这里不再并行请求所有解释，而是让DynamicExplanation组件按需加载
@@ -1598,7 +1681,6 @@ export default function ShadowingPage() {
 
           setCurrentRecordings(recordingsWithValidUrls);
         } else {
-          console.log('没有找到之前的会话数据');
           setCurrentSession(null);
         }
       }
@@ -1737,8 +1819,6 @@ export default function ShadowingPage() {
             picked_preview: allWords,
           };
 
-          console.log('保存生词到数据库:', saveData);
-
           const response = await fetch('/api/shadowing/session', {
             method: 'POST',
             headers,
@@ -1746,7 +1826,7 @@ export default function ShadowingPage() {
           });
 
           if (response.ok) {
-            console.log('生词已保存到数据库');
+            // 生词已保存到数据库
           } else {
             console.error('保存生词失败');
           }
@@ -1774,8 +1854,6 @@ export default function ShadowingPage() {
           picked_preview: allWords,
         };
 
-        console.log('移除生词后保存到数据库:', saveData);
-
         const response = await fetch('/api/shadowing/session', {
           method: 'POST',
           headers,
@@ -1783,7 +1861,7 @@ export default function ShadowingPage() {
         });
 
         if (response.ok) {
-          console.log('生词移除已保存到数据库');
+          // 生词移除已保存到数据库
         } else {
           console.error('保存生词移除失败');
         }
@@ -1831,7 +1909,7 @@ export default function ShadowingPage() {
           });
 
           if (deleteResponse.ok) {
-            console.log('生词已从生词表中删除');
+            // 生词已从生词表中删除
           } else {
             console.error('从生词表删除失败');
           }
@@ -1853,8 +1931,6 @@ export default function ShadowingPage() {
           picked_preview: allWords,
         };
 
-        console.log('移除之前的生词后保存到数据库:', saveData);
-
         const response = await fetch('/api/shadowing/session', {
           method: 'POST',
           headers,
@@ -1862,7 +1938,7 @@ export default function ShadowingPage() {
         });
 
         if (response.ok) {
-          console.log('之前的生词移除已保存到数据库');
+          // 之前的生词移除已保存到数据库
         } else {
           console.error('保存之前的生词移除失败');
         }
@@ -1888,9 +1964,6 @@ export default function ShadowingPage() {
           picked_preview: [...previousWords, ...selectedWords], // 保存完整的单词对象
         };
 
-        console.log('保存录音数据到数据库:', saveData);
-        console.log('保存的生词:', selectedWords);
-
         const response = await fetch('/api/shadowing/session', {
           method: 'POST',
           headers,
@@ -1899,7 +1972,7 @@ export default function ShadowingPage() {
 
         if (response.ok) {
           const result = await response.json();
-          console.log('录音已自动保存到数据库:', result);
+          // 录音已自动保存到数据库
         } else {
           const errorText = await response.text();
           console.error('保存录音失败:', response.status, errorText);
@@ -1931,7 +2004,7 @@ export default function ShadowingPage() {
         });
 
         if (response.ok) {
-          console.log('录音删除已同步到数据库');
+          // 录音删除已同步到数据库
         } else {
           console.error('删除录音失败:', await response.text());
         }
@@ -1955,7 +2028,6 @@ export default function ShadowingPage() {
 
   // 处理录音选择（用于重新评分）
   const handleRecordingSelected = (recording: AudioRecording) => {
-    console.log('选择录音进行评分:', recording);
     if (recording.transcription) {
       setCurrentTranscription(recording.transcription);
       performScoring(recording.transcription);
@@ -2017,7 +2089,6 @@ export default function ShadowingPage() {
               ...prev,
               [word]: entry.explanation,
             }));
-            console.log(`从单词本找到解释: ${word}`, entry.explanation);
             return true;
           }
         }
@@ -2035,11 +2106,7 @@ export default function ShadowingPage() {
       const response = await fetch('/api/debug/vocab', { headers });
       if (response.ok) {
         const data = await response.json();
-        console.log('单词本数据:', data);
-        console.log(
-          '中秋节相关条目:',
-          data.entries.filter((entry: { term: string }) => entry.term.includes('中秋')),
-        );
+        // 单词本数据已加载
         toast.info(`单词本中有 ${data.entries.length} 个条目`);
       } else {
         console.error('获取单词本数据失败:', response.status);
@@ -2354,8 +2421,6 @@ export default function ShadowingPage() {
                 picked_preview: [...previousWords, ...updatedSelectedWords],
               };
 
-              console.log('保存AI解释到数据库:', saveData);
-
               const saveResponse = await fetch('/api/shadowing/session', {
                 method: 'POST',
                 headers,
@@ -2363,7 +2428,7 @@ export default function ShadowingPage() {
               });
 
               if (saveResponse.ok) {
-                console.log('AI解释已保存到数据库');
+                // AI解释已保存到数据库
               } else {
                 console.error('保存AI解释失败');
               }
@@ -2704,7 +2769,7 @@ export default function ShadowingPage() {
             // 将本次选中的生词移动到之前的生词中
             setPreviousWords((prev) => [...prev, ...selectedWords]);
             setSelectedWords([]);
-            console.log(`自动保存了 ${savedVocabCount} 个生词`);
+            // 自动保存了生词
           } else {
             console.warn('自动保存生词失败');
           }
@@ -2945,8 +3010,6 @@ export default function ShadowingPage() {
 
   // 移动端检测
   const { actualIsMobile } = useMobile();
-  // 移动端也启用步骤门控：仅在未完成时生效
-  const gatingActive = !practiceComplete;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   // 引导提示状态
@@ -4199,8 +4262,8 @@ export default function ShadowingPage() {
                       </div>
                     </div>
 
-                    {/* 生词选择模式切换（仅步骤3显示或完成后） */}
-                    {(!gatingActive || step === 3) && (
+                    {/* 生词选择模式切换（步骤2和3显示或完成后） */}
+                    {(!gatingActive || step >= 2) && (
                     <div className="mb-4 space-y-3">
                       <Button
                         variant={isVocabMode ? 'default' : 'outline'}
@@ -4440,6 +4503,7 @@ export default function ShadowingPage() {
                                         key={`${lineIndex}-${i}`}
                                         word={word}
                                         explanation={explanation}
+                                        lang={currentItem?.lang || 'zh'}
                                       >
                                         {word}
                                       </HoverExplanation>,
@@ -4458,59 +4522,126 @@ export default function ShadowingPage() {
                                 );
                               });
                             } else {
-                              // 英文文本也支持多词/整句短语高亮（按字符滑窗匹配）
-                              const lines = formattedText.split('\n');
+                              // 检查是否为韩语文本
+                              const isKorean = /[\uac00-\ud7af]/.test(formattedText);
+                              
+                              if (isKorean) {
+                                // 韩语文本处理：使用词边界检测
+                                const lines = formattedText.split('\n');
 
-                              return lines.map((line, lineIndex) => {
-                                const chars = line.split('');
-                                const result = [] as React.ReactNode[];
+                                return lines.map((line, lineIndex) => {
+                                  const chars = line.split('');
+                                  const result = [] as React.ReactNode[];
 
-                                for (let i = 0; i < chars.length; i++) {
-                                  let isHighlighted = false;
-                                  let highlightLength = 0;
+                                  for (let i = 0; i < chars.length; i++) {
+                                    let isHighlighted = false;
+                                    let highlightLength = 0;
 
-                                  for (const selectedWord of allSelectedWords) {
-                                    const w = selectedWord.word;
-                                    if (!w) continue;
-                                    if (i + w.length <= chars.length) {
-                                      const substring = chars.slice(i, i + w.length).join('');
-                                      if (substring === w) {
-                                        isHighlighted = true;
-                                        highlightLength = w.length;
-                                        break;
+                                    for (const selectedWord of allSelectedWords) {
+                                      const w = selectedWord.word;
+                                      if (!w) continue;
+                                      if (i + w.length <= chars.length) {
+                                        const substring = chars.slice(i, i + w.length).join('');
+                                        if (substring === w) {
+                                          // 韩语词边界检测：检查是否在词边界
+                                          const isAtWordBoundary = isKoreanWordBoundary(
+                                            chars, i, w.length, i + w.length
+                                          );
+                                          if (isAtWordBoundary) {
+                                            isHighlighted = true;
+                                            highlightLength = w.length;
+                                            break;
+                                          }
+                                        }
                                       }
+                                    }
+
+                                    if (isHighlighted && highlightLength > 0) {
+                                      const word = chars.slice(i, i + highlightLength).join('');
+                                      const wordData = allSelectedWords.find((item) => item.word === word);
+                                      const explanation = wordData?.explanation;
+
+                                      result.push(
+                                        <HoverExplanation 
+                                          key={`${lineIndex}-${i}`} 
+                                          word={word} 
+                                          explanation={explanation}
+                                          fromVocab={wordData?.fromVocab}
+                                          vocabId={wordData?.vocabId}
+                                          onRefresh={handleRefreshExplanation}
+                                          lang={currentItem?.lang || 'zh'}
+                                        >
+                                          {word}
+                                        </HoverExplanation>,
+                                      );
+                                      i += highlightLength - 1;
+                                    } else {
+                                      result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
                                     }
                                   }
 
-                                  if (isHighlighted && highlightLength > 0) {
-                                    const word = chars.slice(i, i + highlightLength).join('');
-                                    const wordData = allSelectedWords.find((item) => item.word === word);
-                                    const explanation = wordData?.explanation;
+                                  return (
+                                    <div key={lineIndex} className="mb-2">
+                                      {result}
+                                    </div>
+                                  );
+                                });
+                              } else {
+                                // 英文文本也支持多词/整句短语高亮（按字符滑窗匹配）
+                                const lines = formattedText.split('\n');
 
-                                    result.push(
-                                      <HoverExplanation 
-                                        key={`${lineIndex}-${i}`} 
-                                        word={word} 
-                                        explanation={explanation}
-                                        fromVocab={wordData?.fromVocab}
-                                        vocabId={wordData?.vocabId}
-                                        onRefresh={handleRefreshExplanation}
-                                      >
-                                        {word}
-                                      </HoverExplanation>,
-                                    );
-                                    i += highlightLength - 1;
-                                  } else {
-                                    result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                return lines.map((line, lineIndex) => {
+                                  const chars = line.split('');
+                                  const result = [] as React.ReactNode[];
+
+                                  for (let i = 0; i < chars.length; i++) {
+                                    let isHighlighted = false;
+                                    let highlightLength = 0;
+
+                                    for (const selectedWord of allSelectedWords) {
+                                      const w = selectedWord.word;
+                                      if (!w) continue;
+                                      if (i + w.length <= chars.length) {
+                                        const substring = chars.slice(i, i + w.length).join('');
+                                        if (substring === w) {
+                                          isHighlighted = true;
+                                          highlightLength = w.length;
+                                          break;
+                                        }
+                                      }
+                                    }
+
+                                    if (isHighlighted && highlightLength > 0) {
+                                      const word = chars.slice(i, i + highlightLength).join('');
+                                      const wordData = allSelectedWords.find((item) => item.word === word);
+                                      const explanation = wordData?.explanation;
+
+                                      result.push(
+                                        <HoverExplanation 
+                                          key={`${lineIndex}-${i}`} 
+                                          word={word} 
+                                          explanation={explanation}
+                                          fromVocab={wordData?.fromVocab}
+                                          vocabId={wordData?.vocabId}
+                                          onRefresh={handleRefreshExplanation}
+                                          lang={currentItem?.lang || 'zh'}
+                                        >
+                                          {word}
+                                        </HoverExplanation>,
+                                      );
+                                      i += highlightLength - 1;
+                                    } else {
+                                      result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                    }
                                   }
-                                }
 
-                                return (
-                                  <div key={lineIndex} className="mb-2">
-                                    {result}
-                                  </div>
-                                );
-                              });
+                                  return (
+                                    <div key={lineIndex} className="mb-2">
+                                      {result}
+                                    </div>
+                                  );
+                                });
+                              }
                             }
                           })()}
                         </div>
@@ -6047,8 +6178,8 @@ export default function ShadowingPage() {
                       </div>
                     </div>
 
-                    {/* 生词选择模式切换（仅步骤3显示；完成或移动端保持原样） */}
-                    {(!gatingActive || step === 3) && (
+                    {/* 生词选择模式切换（步骤2和3显示；完成或移动端保持原样） */}
+                    {(!gatingActive || step >= 2) && (
                       <div className="mb-4 space-y-3">
                         <Button
                           variant={isVocabMode ? 'default' : 'outline'}
@@ -6273,6 +6404,7 @@ export default function ShadowingPage() {
                                         key={`${lineIndex}-${i}`}
                                         word={word}
                                         explanation={explanation}
+                                        lang={currentItem?.lang || 'zh'}
                                       >
                                         {word}
                                       </HoverExplanation>,
@@ -6438,8 +6570,8 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 之前的生词（仅步骤3显示；完成或移动端保持原样） */}
-                  {previousWords.length > 0 && (!gatingActive || step === 3) && (
+                  {/* 之前的生词（步骤2和3显示；完成或移动端保持原样） */}
+                  {previousWords.length > 0 && (!gatingActive || step >= 2) && (
                     <Card className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-600">
@@ -6515,8 +6647,8 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 本次选中的生词（仅步骤3显示；完成或移动端保持原样） */}
-                  {selectedWords.length > 0 && (!gatingActive || step === 3) && (
+                  {/* 本次选中的生词（步骤2和3显示；完成或移动端保持原样） */}
+                  {selectedWords.length > 0 && (!gatingActive || step >= 2) && (
                     <Card className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-blue-600">
