@@ -298,6 +298,10 @@ const mergeTimelineWithText = (
     }));
 };
 
+// 全局词汇搜索缓存，避免重复请求
+const globalVocabCache = new Map<string, { data: { entries?: Array<{ explanation?: any }> }; timestamp: number }>();
+const CACHE_DURATION = 30000; // 30秒缓存
+
 export default function ShadowingPage() {
   const { t, language, setLanguageFromUserProfile } = useLanguage();
   const { permissions } = useUserPermissions();
@@ -909,8 +913,22 @@ export default function ShadowingPage() {
       setShowTooltip(true);
       if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
       if (abortRef.current) { try { abortRef.current.abort(); } catch {} abortRef.current = null; }
+      
+      // 增加防抖延迟到800ms，减少频繁请求
       tooltipTimerRef.current = setTimeout(async () => {
         try {
+          const cacheKey = word.toLowerCase().trim();
+          const now = Date.now();
+          
+          // 检查缓存
+          const cached = globalVocabCache.get(cacheKey);
+          if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+            if (cached.data.entries && cached.data.entries.length > 0 && cached.data.entries[0].explanation) {
+              setLatestExplanation(cached.data.entries[0].explanation);
+            }
+            return;
+          }
+          
           const headers = await getAuthHeaders();
           const controller = new AbortController();
           abortRef.current = controller;
@@ -919,6 +937,10 @@ export default function ShadowingPage() {
             { headers, signal: controller.signal },
           );
           const data = await response.json();
+          
+          // 更新缓存
+          globalVocabCache.set(cacheKey, { data, timestamp: now });
+          
           if (data.entries && data.entries.length > 0 && data.entries[0].explanation) {
             setLatestExplanation(data.entries[0].explanation);
           }
@@ -927,7 +949,7 @@ export default function ShadowingPage() {
         } finally {
           abortRef.current = null;
         }
-      }, 300);
+      }, 800); // 从300ms增加到800ms
     };
 
     const handleMouseLeave = () => {
