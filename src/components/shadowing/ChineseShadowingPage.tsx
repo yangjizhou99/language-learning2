@@ -801,7 +801,6 @@ export default function ShadowingPage() {
                 const newWords = vocabWords.filter((v: { word: string }) => !existingWords.has(v.word));
                 
                 if (newWords.length > 0) {
-                  console.log('从单词表自动加载生词（存在于当前文章中）:', newWords);
                   return [...prevWords, ...newWords];
                 }
                 return prevWords;
@@ -1391,7 +1390,7 @@ export default function ShadowingPage() {
     } catch (error: any) {
       // 区分不同类型的错误
       if (error.name === 'AbortError') {
-        console.log('Request was cancelled or timed out');
+        // Request was cancelled or timed out
       } else {
         console.error('Failed to fetch items:', error);
       }
@@ -1469,16 +1468,6 @@ export default function ShadowingPage() {
     };
   }, []);
 
-  // 调试：监控 previousWords 状态变化
-  useEffect(() => {
-    console.log('previousWords 状态变化:', {
-      length: previousWords.length,
-      words: previousWords.map(w => w.word),
-      step,
-      gatingActive,
-      shouldShow: previousWords.length > 0 && (!gatingActive || step >= 2)
-    });
-  }, [previousWords, step, gatingActive]);
 
   // 加载主题数据
   useEffect(() => {
@@ -1546,13 +1535,7 @@ export default function ShadowingPage() {
 
         // 大主题筛选（精确匹配）
         if (selectedThemeId !== 'all') {
-          // 调试日志
-          console.log('大主题筛选:', {
-            selectedThemeId,
-            itemThemeId: item.theme_id,
-            itemTitle: item.title,
-            match: item.theme_id === selectedThemeId,
-          });
+          // 大主题筛选逻辑
 
           if (!item.theme_id || item.theme_id !== selectedThemeId) {
             return false;
@@ -1654,8 +1637,6 @@ export default function ShadowingPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.session) {
-          console.log('加载到之前的会话数据:', data.session);
-          console.log('还原的生词:', data.session.picked_preview);
           setCurrentSession(data.session);
           if (data.session.status === 'completed') {
             setPracticeComplete(true);
@@ -1663,7 +1644,6 @@ export default function ShadowingPage() {
 
           // 将之前的生词设置为 previousWords
           const previousWordsData = data.session.picked_preview || [];
-          console.log('设置之前的生词:', previousWordsData);
           setPreviousWords(previousWordsData);
 
           // 还原AI解释 - 从数据库获取所有单词的最新解释
@@ -1701,7 +1681,6 @@ export default function ShadowingPage() {
 
           setCurrentRecordings(recordingsWithValidUrls);
         } else {
-          console.log('没有找到之前的会话数据');
           setCurrentSession(null);
         }
       }
@@ -1840,8 +1819,6 @@ export default function ShadowingPage() {
             picked_preview: allWords,
           };
 
-          console.log('保存生词到数据库:', saveData);
-
           const response = await fetch('/api/shadowing/session', {
             method: 'POST',
             headers,
@@ -1849,7 +1826,7 @@ export default function ShadowingPage() {
           });
 
           if (response.ok) {
-            console.log('生词已保存到数据库');
+            // 生词已保存到数据库
           } else {
             console.error('保存生词失败');
           }
@@ -1877,8 +1854,6 @@ export default function ShadowingPage() {
           picked_preview: allWords,
         };
 
-        console.log('移除生词后保存到数据库:', saveData);
-
         const response = await fetch('/api/shadowing/session', {
           method: 'POST',
           headers,
@@ -1886,7 +1861,7 @@ export default function ShadowingPage() {
         });
 
         if (response.ok) {
-          console.log('生词移除已保存到数据库');
+          // 生词移除已保存到数据库
         } else {
           console.error('保存生词移除失败');
         }
@@ -1934,7 +1909,7 @@ export default function ShadowingPage() {
           });
 
           if (deleteResponse.ok) {
-            console.log('生词已从生词表中删除');
+            // 生词已从生词表中删除
           } else {
             console.error('从生词表删除失败');
           }
@@ -1956,8 +1931,6 @@ export default function ShadowingPage() {
           picked_preview: allWords,
         };
 
-        console.log('移除之前的生词后保存到数据库:', saveData);
-
         const response = await fetch('/api/shadowing/session', {
           method: 'POST',
           headers,
@@ -1965,7 +1938,7 @@ export default function ShadowingPage() {
         });
 
         if (response.ok) {
-          console.log('之前的生词移除已保存到数据库');
+          // 之前的生词移除已保存到数据库
         } else {
           console.error('保存之前的生词移除失败');
         }
@@ -1991,9 +1964,6 @@ export default function ShadowingPage() {
           picked_preview: [...previousWords, ...selectedWords], // 保存完整的单词对象
         };
 
-        console.log('保存录音数据到数据库:', saveData);
-        console.log('保存的生词:', selectedWords);
-
         const response = await fetch('/api/shadowing/session', {
           method: 'POST',
           headers,
@@ -2002,7 +1972,7 @@ export default function ShadowingPage() {
 
         if (response.ok) {
           const result = await response.json();
-          console.log('录音已自动保存到数据库:', result);
+          // 录音已自动保存到数据库
         } else {
           const errorText = await response.text();
           console.error('保存录音失败:', response.status, errorText);
@@ -2034,7 +2004,7 @@ export default function ShadowingPage() {
         });
 
         if (response.ok) {
-          console.log('录音删除已同步到数据库');
+          // 录音删除已同步到数据库
         } else {
           console.error('删除录音失败:', await response.text());
         }
@@ -2058,7 +2028,6 @@ export default function ShadowingPage() {
 
   // 处理录音选择（用于重新评分）
   const handleRecordingSelected = (recording: AudioRecording) => {
-    console.log('选择录音进行评分:', recording);
     if (recording.transcription) {
       setCurrentTranscription(recording.transcription);
       performScoring(recording.transcription);
@@ -2120,7 +2089,6 @@ export default function ShadowingPage() {
               ...prev,
               [word]: entry.explanation,
             }));
-            console.log(`从单词本找到解释: ${word}`, entry.explanation);
             return true;
           }
         }
@@ -2138,11 +2106,7 @@ export default function ShadowingPage() {
       const response = await fetch('/api/debug/vocab', { headers });
       if (response.ok) {
         const data = await response.json();
-        console.log('单词本数据:', data);
-        console.log(
-          '中秋节相关条目:',
-          data.entries.filter((entry: { term: string }) => entry.term.includes('中秋')),
-        );
+        // 单词本数据已加载
         toast.info(`单词本中有 ${data.entries.length} 个条目`);
       } else {
         console.error('获取单词本数据失败:', response.status);
@@ -2457,8 +2421,6 @@ export default function ShadowingPage() {
                 picked_preview: [...previousWords, ...updatedSelectedWords],
               };
 
-              console.log('保存AI解释到数据库:', saveData);
-
               const saveResponse = await fetch('/api/shadowing/session', {
                 method: 'POST',
                 headers,
@@ -2466,7 +2428,7 @@ export default function ShadowingPage() {
               });
 
               if (saveResponse.ok) {
-                console.log('AI解释已保存到数据库');
+                // AI解释已保存到数据库
               } else {
                 console.error('保存AI解释失败');
               }
@@ -2807,7 +2769,7 @@ export default function ShadowingPage() {
             // 将本次选中的生词移动到之前的生词中
             setPreviousWords((prev) => [...prev, ...selectedWords]);
             setSelectedWords([]);
-            console.log(`自动保存了 ${savedVocabCount} 个生词`);
+            // 自动保存了生词
           } else {
             console.warn('自动保存生词失败');
           }

@@ -246,14 +246,13 @@ const splitSentences = (text: string, language: Lang): string[] => {
       }
       
       if (parts.length > 0) {
-        console.log(`使用 Intl.Segmenter 切分 ${language} 文本，得到 ${parts.length} 个句子`);
         return parts;
       }
     } catch (error) {
       console.warn(`Intl.Segmenter 切分失败，回退到标点切分:`, error);
     }
   } else {
-    console.log(`浏览器不支持 Intl.Segmenter，使用标点切分`);
+    // 浏览器不支持 Intl.Segmenter，使用标点切分
   }
 
   // 回退到标点符号切分
@@ -263,7 +262,6 @@ const splitSentences = (text: string, language: Lang): string[] => {
       .split(/(?<=[.!?])\s+/)
       .map((s) => s.trim())
       .filter(Boolean);
-    console.log(`使用英文标点切分 ${language} 文本，得到 ${result.length} 个句子`);
     return result;
   }
   
@@ -272,7 +270,6 @@ const splitSentences = (text: string, language: Lang): string[] => {
     .split(/[。！？!?…]+/)
     .map((s) => s.trim())
     .filter(Boolean);
-  console.log(`使用中文标点切分 ${language} 文本，得到 ${result.length} 个句子`);
   return result;
 };
 
@@ -636,8 +633,6 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       lastResultAtRef.current = Date.now();
       clearSilenceTimer();
       
-      console.log('录音开始，当前句子:', currentSentenceRef.current); // 调试日志
-      
       // 智能静默检测：根据完成度动态调整静默时间
       silenceTimerRef.current = window.setInterval(() => {
         const diff = Date.now() - lastResultAtRef.current;
@@ -647,7 +642,6 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         if (!targetSentence || targetSentence.trim() === '') {
           // 没有目标句子时，使用简单的静默检测（2秒）
           if (diff >= 2000) {
-            console.log('无目标句子，2秒后自动停止');
             try { rec.stop(); } catch {}
             clearSilenceTimer();
           }
@@ -673,8 +667,6 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           ? currentTokens.length / targetTokens.length 
           : 0;
         
-        console.log(`完成度: ${Math.round(completionRate * 100)}%, 静默: ${diff}ms, 目标tokens: ${targetTokens.length}, 当前tokens: ${currentTokens.length}, 文本: "${currentText}"`);
-        
         // 根据完成度动态调整静默时间
         let requiredSilence = 10000; // 默认10秒（<100%时）
         
@@ -685,13 +677,11 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         
         // 达到静默时间要求，自动停止
         if (diff >= requiredSilence) {
-          console.log(`完成度 ${Math.round(completionRate * 100)}% 且静默 ${requiredSilence}ms，自动停止`);
           try { rec.stop(); } catch {}
           clearSilenceTimer();
         }
         // 超过12秒强制兜底（防止卡住）
         else if (diff >= 12000) {
-          console.log('超过 12秒，强制兜底停止');
           try { rec.stop(); } catch {}
           clearSilenceTimer();
         }
@@ -721,7 +711,6 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       // 只要完整文本有变化就重置静默时间（包括interim变化）
       if (combined && combined !== tempCombinedTextRef.current) {
         lastResultAtRef.current = Date.now();
-        console.log('检测到新内容，重置静默时间:', combined);
       }
       
       // 保存final文本用于最终评分
