@@ -45,28 +45,15 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  webpack(config, { isServer }) {
-    if (isServer) {
-      const externalizeNodeRsJieba = (
-        { request }: { request?: string },
-        callback: (error?: Error | null, result?: string) => void,
-      ) => {
-        if (request && /@node-rs\/jieba/.test(request)) {
-          return callback(null, `commonjs ${request}`);
-        }
-        return callback();
-      };
-
-      if (Array.isArray(config.externals)) {
-        config.externals.push(externalizeNodeRsJieba);
-      } else if (config.externals) {
-        config.externals = [config.externals, externalizeNodeRsJieba];
-      } else {
-        config.externals = [externalizeNodeRsJieba];
-      }
-    }
-
-    return config;
+  // 使用 Turbopack 时，通过 serverExternalPackages 处理外部包
+  // 这替代了之前的 webpack 配置
+  turbopack: {
+    rules: {
+      '*.node': {
+        loaders: ['file-loader'],
+        as: '*.js',
+      },
+    },
   },
 };
 
