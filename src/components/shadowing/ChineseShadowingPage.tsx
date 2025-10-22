@@ -989,7 +989,7 @@ export default function ShadowingPage() {
     fromVocab = false,
     vocabId,
     onRefresh,
-    lang = 'zh',
+    lang = 'ko',
   }: {
     word: string;
     explanation?: {
@@ -1065,7 +1065,7 @@ export default function ShadowingPage() {
             'en': 'en-US',
             'ko': 'ko-KR',
           };
-          utterance.lang = langMap[lang] || 'zh-CN';
+          utterance.lang = langMap[lang] || 'ko-KR';
           utterance.rate = 0.8; // 优化语速，更自然
           utterance.pitch = 1.0;
           utterance.volume = 1.0;
@@ -4574,7 +4574,7 @@ export default function ShadowingPage() {
                                             fromVocab={wordData?.fromVocab}
                                             vocabId={wordData?.vocabId}
                                             onRefresh={handleRefreshExplanation}
-                                            lang={currentItem?.lang || 'zh'}
+                                            lang={currentItem?.lang || 'ko'}
                                           >
                                             {word}
                                           </HoverExplanation>,
@@ -4630,6 +4630,7 @@ export default function ShadowingPage() {
                                             fromVocab={wordData?.fromVocab}
                                             vocabId={wordData?.vocabId}
                                             onRefresh={handleRefreshExplanation}
+                                            lang={currentItem?.lang || 'ko'}
                                           >
                                             {word}
                                           </HoverExplanation>,
@@ -4806,7 +4807,7 @@ export default function ShadowingPage() {
                                         fromVocab={wordData?.fromVocab}
                                         vocabId={wordData?.vocabId}
                                         onRefresh={handleRefreshExplanation}
-                                        lang={currentItem?.lang || 'zh'}
+                                        lang={currentItem?.lang || 'ko'}
                                       >
                                         {word}
                                       </HoverExplanation>,
@@ -4872,7 +4873,7 @@ export default function ShadowingPage() {
                                           fromVocab={wordData?.fromVocab}
                                           vocabId={wordData?.vocabId}
                                           onRefresh={handleRefreshExplanation}
-                                          lang={currentItem?.lang || 'zh'}
+                                          lang={currentItem?.lang || 'ko'}
                                         >
                                           {word}
                                         </HoverExplanation>,
@@ -4927,7 +4928,7 @@ export default function ShadowingPage() {
                                           fromVocab={wordData?.fromVocab}
                                           vocabId={wordData?.vocabId}
                                           onRefresh={handleRefreshExplanation}
-                                          lang={currentItem?.lang || 'zh'}
+                                          lang={currentItem?.lang || 'ko'}
                                         >
                                           {word}
                                         </HoverExplanation>,
@@ -6711,7 +6712,7 @@ export default function ShadowingPage() {
                                         fromVocab={wordData?.fromVocab}
                                         vocabId={wordData?.vocabId}
                                         onRefresh={handleRefreshExplanation}
-                                        lang={currentItem?.lang || 'zh'}
+                                        lang={currentItem?.lang || 'ko'}
                                       >
                                         {word}
                                       </HoverExplanation>,
