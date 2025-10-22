@@ -301,14 +301,112 @@ const mergeTimelineWithText = (
 // 全局词汇搜索缓存，避免重复请求
 const globalVocabCache = new Map<string, { data: { entries?: Array<{ explanation?: any }> }; timestamp: number }>();
 const CACHE_DURATION = 30000; // 30秒缓存
+const pendingRequests = new Map<string, Promise<any>>(); // 请求去重
+
+// 增强的词汇搜索函数，包含请求去重和持久化缓存
+const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<HeadersInit>): Promise<any> => {
+  const cacheKey = word.toLowerCase().trim();
+  const now = Date.now();
+  
+  // 检查内存缓存
+  const cached = globalVocabCache.get(cacheKey);
+  if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+    return cached.data;
+  }
+  
+  // 检查sessionStorage缓存
+  try {
+    const sessionKey = `vocab_cache_${cacheKey}`;
+    const sessionCached = sessionStorage.getItem(sessionKey);
+    if (sessionCached) {
+      const { data, timestamp } = JSON.parse(sessionCached);
+      if (now - timestamp < CACHE_DURATION) {
+        // 更新内存缓存
+        globalVocabCache.set(cacheKey, { data, timestamp });
+        return data;
+      }
+    }
+  } catch (e) {
+    // sessionStorage可能不可用，忽略错误
+  }
+  
+  // 检查是否有正在进行的相同请求
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey);
+  }
+  
+  // 创建新的请求
+  const requestPromise = (async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(
+        `/api/vocab/search?term=${encodeURIComponent(word)}&_t=${Date.now()}`,
+        { headers }
+      );
+      const data = await response.json();
+      
+      // 更新缓存
+      globalVocabCache.set(cacheKey, { data, timestamp: now });
+      
+      // 更新sessionStorage缓存
+      try {
+        const sessionKey = `vocab_cache_${cacheKey}`;
+        sessionStorage.setItem(sessionKey, JSON.stringify({ data, timestamp: now }));
+      } catch (e) {
+        // sessionStorage可能不可用，忽略错误
+      }
+      
+      return data;
+    } finally {
+      // 请求完成后移除pending状态
+      pendingRequests.delete(cacheKey);
+    }
+  })();
+  
+  // 记录pending请求
+  pendingRequests.set(cacheKey, requestPromise);
+  
+  return requestPromise;
+};
 
 export default function ShadowingPage() {
   const { t, language, setLanguageFromUserProfile } = useLanguage();
   const { permissions } = useUserPermissions();
   const { user, authLoading, getAuthHeaders, profile } = useAuth();
+  
+  // 页面加载状态，用于延迟词汇搜索
+  const [pageLoaded, setPageLoaded] = useState(false);
 
   // 过滤和筛选状态
   const [lang, setLang] = useState<'ja' | 'en' | 'zh' | 'ko'>('zh');
+  
+  // 页面加载完成后才允许词汇搜索
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPageLoaded(true);
+    }, 2000); // 页面加载2秒后才允许词汇搜索
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  
+  // 语言切换时清理缓存，避免不同语言间的缓存冲突
+  useEffect(() => {
+    globalVocabCache.clear();
+    pendingRequests.clear();
+    
+    // 清理sessionStorage中的词汇缓存
+    try {
+      const keys = Object.keys(sessionStorage);
+      keys.forEach(key => {
+        if (key.startsWith('vocab_cache_')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    } catch (e) {
+      // sessionStorage可能不可用，忽略错误
+    }
+  }, [lang]);
   const [level, setLevel] = useState<number | null>(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -914,42 +1012,27 @@ export default function ShadowingPage() {
       if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
       if (abortRef.current) { try { abortRef.current.abort(); } catch {} abortRef.current = null; }
       
-      // 增加防抖延迟到800ms，减少频繁请求
+      // 优先使用本地缓存的解释
+      if (latestExplanation) {
+        return; // 如果已有解释，直接显示，不发起新请求
+      }
+      
+      // 只有在页面加载完成后才允许搜索
+      if (!pageLoaded) {
+        return;
+      }
+      
+      // 增加防抖延迟到1500ms，进一步减少频繁请求
       tooltipTimerRef.current = setTimeout(async () => {
         try {
-          const cacheKey = word.toLowerCase().trim();
-          const now = Date.now();
-          
-          // 检查缓存
-          const cached = globalVocabCache.get(cacheKey);
-          if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-            if (cached.data.entries && cached.data.entries.length > 0 && cached.data.entries[0].explanation) {
-              setLatestExplanation(cached.data.entries[0].explanation);
-            }
-            return;
-          }
-          
-          const headers = await getAuthHeaders();
-          const controller = new AbortController();
-          abortRef.current = controller;
-          const response = await fetch(
-            `/api/vocab/search?term=${encodeURIComponent(word)}&_t=${Date.now()}`,
-            { headers, signal: controller.signal },
-          );
-          const data = await response.json();
-          
-          // 更新缓存
-          globalVocabCache.set(cacheKey, { data, timestamp: now });
-          
-          if (data.entries && data.entries.length > 0 && data.entries[0].explanation) {
+          const data = await searchVocabWithCache(word, getAuthHeaders);
+          if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
             setLatestExplanation(data.entries[0].explanation);
           }
         } catch (error) {
           if ((error as any)?.name !== 'AbortError') console.error(`获取 ${word} 解释失败:`, error);
-        } finally {
-          abortRef.current = null;
         }
-      }, 800); // 从300ms增加到800ms
+      }, 1500); // 进一步增加防抖延迟到1500ms
     };
 
     const handleMouseLeave = () => {
@@ -1101,17 +1184,11 @@ export default function ShadowingPage() {
     const refreshExplanation = useCallback(async () => {
       setExplanationLoading(true);
       try {
-        const headers = await getAuthHeaders();
-        const response = await fetch(
-          `/api/vocab/search?term=${encodeURIComponent(word)}&_t=${Date.now()}`,
-          {
-            // 添加时间戳避免缓存
-            headers,
-          },
-        );
-        const data = await response.json();
+        // 清除缓存，强制重新获取
+        globalVocabCache.delete(word.toLowerCase().trim());
+        const data = await searchVocabWithCache(word, getAuthHeaders);
 
-        if (data.entries && data.entries.length > 0 && data.entries[0].explanation) {
+        if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
           const explanation = data.entries[0].explanation;
           setLatestExplanation(explanation);
           // 更新缓存
@@ -1133,30 +1210,25 @@ export default function ShadowingPage() {
       } finally {
         setExplanationLoading(false);
       }
-    }, [word]);
+    }, [word, searchVocabWithCache]);
 
     // 初始化时获取最新解释
     useEffect(() => {
       if (!hasInitialized) {
         setHasInitialized(true);
-        // 总是获取最新解释，不管缓存中是否有旧解释
-        // 直接调用API，避免依赖refreshExplanation
+        // 只有在页面加载完成后才允许搜索
+        if (!pageLoaded) {
+          return;
+        }
+        
+        // 使用全局缓存机制获取解释
         const fetchInitialExplanation = async () => {
           setExplanationLoading(true);
           try {
-            const headers = await getAuthHeaders();
-            const response = await fetch(
-              `/api/vocab/search?term=${encodeURIComponent(word)}&_t=${Date.now()}`,
-              {
-                headers,
-              },
-            );
-            const data = await response.json();
-
-            if (data.entries && data.entries.length > 0 && data.entries[0].explanation) {
+            const data = await searchVocabWithCache(word, getAuthHeaders);
+            if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
               const explanation = data.entries[0].explanation;
               setLatestExplanation(explanation);
-              // 不更新缓存，避免循环
             }
           } catch (error) {
             console.error(`获取 ${word} 解释失败:`, error);
@@ -1166,7 +1238,7 @@ export default function ShadowingPage() {
         };
         fetchInitialExplanation();
       }
-    }, [hasInitialized, word]);
+    }, [hasInitialized, word, pageLoaded, searchVocabWithCache]);
 
     // 当缓存更新时，同步更新显示
     const cachedExplanation = explanationCache[word];
@@ -2097,22 +2169,15 @@ export default function ShadowingPage() {
   // 检查生词是否已有AI解释
   const checkExistingExplanation = async (word: string) => {
     try {
-      const headers = await getAuthHeaders();
-      const response = await fetch(`/api/vocab/search?term=${encodeURIComponent(word)}`, {
-        headers,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.entries && data.entries.length > 0) {
-          const entry = data.entries[0];
-          if (entry.explanation) {
-            setWordExplanations((prev) => ({
-              ...prev,
-              [word]: entry.explanation,
-            }));
-            return true;
-          }
+      const data = await searchVocabWithCache(word, getAuthHeaders);
+      if (data?.entries && data.entries.length > 0) {
+        const entry = data.entries[0];
+        if (entry.explanation) {
+          setWordExplanations((prev) => ({
+            ...prev,
+            [word]: entry.explanation,
+          }));
+          return true;
         }
       }
     } catch (error) {
@@ -2369,18 +2434,13 @@ export default function ShadowingPage() {
       // 优先使用 entry_ids（写回生词本），找不到再回退到 word_info
       let entryId: string | null = null;
       try {
-        const searchRes = await fetch(`/api/vocab/search?term=${encodeURIComponent(word)}`, {
-          headers,
-        });
-        if (searchRes.ok) {
-          const data = await searchRes.json();
-          const entries = Array.isArray(data?.entries) ? data.entries : [];
-          const matched = entries.find(
-            (e: { id?: string; term?: string; lang?: string }) =>
-              e && e.id && e.term === word && (!wordLang || e.lang === wordLang),
-          );
-          if (matched?.id) entryId = matched.id as string;
-        }
+        const data = await searchVocabWithCache(word, getAuthHeaders);
+        const entries = Array.isArray(data?.entries) ? data.entries : [];
+        const matched = entries.find(
+          (e: { id?: string; term?: string; lang?: string }) =>
+            e && e.id && e.term === word && (!wordLang || e.lang === wordLang),
+        );
+        if (matched?.id) entryId = matched.id as string;
       } catch (e) {
         console.warn('搜索生词本条目失败，回退到 word_info 模式:', e);
       }
@@ -2944,6 +3004,31 @@ export default function ShadowingPage() {
     }
   };
 
+  // 批量获取词汇解释
+  const batchFetchExplanations = async (words: string[]) => {
+    const explanations: Record<string, any> = {};
+    
+    try {
+      // 并行获取所有词汇的解释
+      const promises = words.map(async (word) => {
+        try {
+          const data = await searchVocabWithCache(word, getAuthHeaders);
+          if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
+            explanations[word] = data.entries[0].explanation;
+          }
+        } catch (error) {
+          console.warn(`获取 ${word} 解释失败:`, error);
+        }
+      });
+      
+      await Promise.all(promises);
+    } catch (error) {
+      console.error('批量获取词汇解释失败:', error);
+    }
+    
+    return explanations;
+  };
+
   // 导入到生词本
   const importToVocab = async () => {
     if (selectedWords.length === 0) {
@@ -2953,7 +3038,17 @@ export default function ShadowingPage() {
 
     setIsImporting(true);
     try {
-      const entries = selectedWords.map((item) => ({
+      // 批量获取所有选中词汇的解释
+      const wordList = selectedWords.map(item => item.word);
+      const explanations = await batchFetchExplanations(wordList);
+      
+      // 更新选中词汇的解释
+      const updatedSelectedWords = selectedWords.map(item => ({
+        ...item,
+        explanation: item.explanation || explanations[item.word] || null
+      }));
+
+      const entries = updatedSelectedWords.map((item) => ({
         term: item.word,
         lang: item.lang,
         native_lang: language, // 使用界面语言作为母语
