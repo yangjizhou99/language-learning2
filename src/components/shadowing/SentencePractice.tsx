@@ -8,6 +8,7 @@ import SentencePracticeProgress from './SentencePracticeProgress';
 import SmartSuggestion from './SmartSuggestion';
 import { Toast } from './ScoreAnimation';
 import SentenceCard from './SentenceCard';
+import AudioSpeedControl from './AudioSpeedControl';
 import { useMobile } from '@/contexts/MobileContext';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -392,6 +393,10 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const [finalText, setFinalText] = useState('');
   const [sentenceScores, setSentenceScores] = useState<Record<number, SentenceScore>>({});
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'celebration' } | null>(null);
+  
+  // 音频播放速度控制状态
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
   const isRoleMode = practiceMode === 'role';
   const normalizedActiveRole = useMemo(() => normalizeSpeakerSymbol(activeRole || 'A'), [activeRole]);
@@ -509,12 +514,26 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           cancelAnimationFrame(rafRef.current);
           rafRef.current = null;
         }
+        setIsAudioPlaying(false);
+      });
+      audioRef.current.addEventListener('play', () => {
+        setIsAudioPlaying(true);
+      });
+      audioRef.current.addEventListener('ended', () => {
+        setIsAudioPlaying(false);
       });
     } else {
       audioRef.current.src = audioUrl;
       try { audioRef.current.load(); } catch {}
     }
   }, [audioUrl, sentenceTimeline]);
+
+  // 应用播放速度
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
 
   // 计算当前句子的评分
   const currentMetrics = useMemo(() => {
@@ -843,6 +862,27 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     }
   }, []);
 
+  // 音频控制函数
+  const handlePlayPause = useCallback(() => {
+    if (!audioRef.current) return;
+    if (isAudioPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(console.error);
+    }
+  }, [isAudioPlaying]);
+
+  const handleReset = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.pause();
+    }
+  }, []);
+
+  const handleRateChange = useCallback((rate: number) => {
+    setPlaybackRate(rate);
+  }, []);
+
   const speak = useCallback(async (index: number) => {
     if (!(audioUrl && sentenceTimeline && sentenceTimeline.length > 0)) {
       alert('未找到可用的生成音频或时间轴，无法播放该句。');
@@ -860,11 +900,18 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
             audioRef.current.pause();
             stopAtRef.current = null;
           }
-      });
+        });
+        // 设置初始播放速度
+        audioRef.current.playbackRate = playbackRate;
       } catch {}
     } else if (audioRef.current.src !== audioUrl) {
       audioRef.current.src = audioUrl;
       try { audioRef.current.load(); } catch {}
+      // 重新设置播放速度
+      audioRef.current.playbackRate = playbackRate;
+    } else {
+      // 确保当前音频的播放速度是最新的
+      audioRef.current.playbackRate = playbackRate;
     }
 
     const a = audioRef.current;
@@ -878,6 +925,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     if (isIOS && !iosUnlockedRef.current) {
       try {
         a.muted = true;
+        // 设置播放速度
+        a.playbackRate = playbackRate;
         // 不等待，以保留用户手势调用栈
         const p = a.play();
         if (p && typeof p.then === 'function') {
@@ -936,6 +985,9 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       });
 
       stopAtRef.current = targetStop;
+
+      // 设置播放速度
+      a.playbackRate = playbackRate;
 
       // 避免在 iOS 上同步 cancel 造成卡顿
       if (!isIOS) {
@@ -1018,6 +1070,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         (async () => {
           try {
             playbackAttempted = true;
+            // 确保播放速度设置正确
+            a.playbackRate = playbackRate;
             await a.play();
             playbackStarted = true;
           } catch (err) {
@@ -1029,7 +1083,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     } catch {}
 
     alert('未找到可用的生成音频或时间轴，无法播放该句。');
-  }, [audioUrl, sentenceTimeline, isIOS]);
+  }, [audioUrl, sentenceTimeline, isIOS, playbackRate]);
 
   const speakWithTTS = useCallback(async (text: string) => {
     if (typeof window === 'undefined') return;
@@ -1267,6 +1321,21 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           }}
         />
       </div>
+
+      {/* 音频播放速度控制 */}
+      {audioUrl && sentenceTimeline && sentenceTimeline.length > 0 && (
+        <div className="mb-4">
+          <AudioSpeedControl
+            playbackRate={playbackRate}
+            onRateChange={handleRateChange}
+            isPlaying={isAudioPlaying}
+            onPlay={handlePlayPause}
+            onPause={handlePlayPause}
+            onReset={handleReset}
+            className="w-full"
+          />
+        </div>
+      )}
 
       {/* 智能建议 */}
       <SmartSuggestion

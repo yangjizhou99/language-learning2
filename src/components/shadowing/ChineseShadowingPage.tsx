@@ -1,5 +1,27 @@
 'use client';
 import React, { useEffect, useState, useCallback, useRef, useMemo, useDeferredValue, RefObject } from 'react';
+
+// 韩语词边界检测函数
+const isKoreanWordBoundary = (
+  chars: string[], 
+  startIndex: number, 
+  wordLength: number, 
+  endIndex: number
+): boolean => {
+  // 检查词前边界
+  const beforeChar = startIndex > 0 ? chars[startIndex - 1] : '';
+  const isBeforeBoundary = startIndex === 0 || 
+    /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
+    !/[\uac00-\ud7af]/.test(beforeChar); // 非韩文字符
+  
+  // 检查词后边界
+  const afterChar = endIndex < chars.length ? chars[endIndex] : '';
+  const isAfterBoundary = endIndex === chars.length || 
+    /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
+    !/[\uac00-\ud7af]/.test(afterChar); // 非韩文字符
+  
+  return isBeforeBoundary && isAfterBoundary;
+};
 import { Virtuoso } from 'react-virtuoso';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -962,6 +984,19 @@ export default function ShadowingPage() {
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
+        onTouchStart={(e) => {
+          // 防止触摸时触发双击缩放
+          e.preventDefault();
+        }}
+        onTouchEnd={(e) => {
+          // 处理触摸结束事件
+          e.preventDefault();
+          e.stopPropagation();
+          // 直接调用发音功能，不传递事件参数
+          if (word && word.trim()) {
+            speakWord(word, 'zh');
+          }
+        }}
         title={`点击发音: ${word}`}
       >
         {children}
@@ -1216,8 +1251,8 @@ export default function ShadowingPage() {
   // 步骤切换时的联动：自动开/关生词模式与翻译偏好
   useEffect(() => {
     if (!currentItem) return;
-    // 在第2步和第3步开启生词模式，其余步骤关闭
-    setIsVocabMode(step === 2 || step === 3);
+    // 只在第3步开启生词模式，其余步骤关闭
+    setIsVocabMode(step === 3);
 
     if (step === 2) {
       setShowTranslation(true);
@@ -4522,59 +4557,124 @@ export default function ShadowingPage() {
                                 );
                               });
                             } else {
-                              // 英文文本也支持多词/整句短语高亮（按字符滑窗匹配）
-                              const lines = formattedText.split('\n');
+                              // 检查是否为韩语文本
+                              const isKorean = /[\uac00-\ud7af]/.test(formattedText);
+                              
+                              if (isKorean) {
+                                // 韩语文本处理：使用词边界检测
+                                const lines = formattedText.split('\n');
 
-                              return lines.map((line, lineIndex) => {
-                                const chars = line.split('');
-                                const result = [] as React.ReactNode[];
+                                return lines.map((line, lineIndex) => {
+                                  const chars = line.split('');
+                                  const result = [] as React.ReactNode[];
 
-                                for (let i = 0; i < chars.length; i++) {
-                                  let isHighlighted = false;
-                                  let highlightLength = 0;
+                                  for (let i = 0; i < chars.length; i++) {
+                                    let isHighlighted = false;
+                                    let highlightLength = 0;
 
-                                  for (const selectedWord of allSelectedWords) {
-                                    const w = selectedWord.word;
-                                    if (!w) continue;
-                                    if (i + w.length <= chars.length) {
-                                      const substring = chars.slice(i, i + w.length).join('');
-                                      if (substring === w) {
-                                        isHighlighted = true;
-                                        highlightLength = w.length;
-                                        break;
+                                    for (const selectedWord of allSelectedWords) {
+                                      const w = selectedWord.word;
+                                      if (!w) continue;
+                                      if (i + w.length <= chars.length) {
+                                        const substring = chars.slice(i, i + w.length).join('');
+                                        if (substring === w) {
+                                          // 韩语词边界检测：检查是否在词边界
+                                          const isAtWordBoundary = isKoreanWordBoundary(
+                                            chars, i, w.length, i + w.length
+                                          );
+                                          if (isAtWordBoundary) {
+                                            isHighlighted = true;
+                                            highlightLength = w.length;
+                                            break;
+                                          }
+                                        }
                                       }
+                                    }
+
+                                    if (isHighlighted && highlightLength > 0) {
+                                      const word = chars.slice(i, i + highlightLength).join('');
+                                      const wordData = allSelectedWords.find((item) => item.word === word);
+                                      const explanation = wordData?.explanation;
+
+                                      result.push(
+                                        <HoverExplanation 
+                                          key={`${lineIndex}-${i}`} 
+                                          word={word} 
+                                          explanation={explanation}
+                                          fromVocab={wordData?.fromVocab}
+                                          vocabId={wordData?.vocabId}
+                                          onRefresh={handleRefreshExplanation}
+                                        >
+                                          {word}
+                                        </HoverExplanation>,
+                                      );
+                                      i += highlightLength - 1;
+                                    } else {
+                                      result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
                                     }
                                   }
 
-                                  if (isHighlighted && highlightLength > 0) {
-                                    const word = chars.slice(i, i + highlightLength).join('');
-                                    const wordData = allSelectedWords.find((item) => item.word === word);
-                                    const explanation = wordData?.explanation;
+                                  return (
+                                    <div key={lineIndex} className="mb-2">
+                                      {result}
+                                    </div>
+                                  );
+                                });
+                              } else {
+                                // 英文文本也支持多词/整句短语高亮（按字符滑窗匹配）
+                                const lines = formattedText.split('\n');
 
-                                    result.push(
-                                      <HoverExplanation 
-                                        key={`${lineIndex}-${i}`} 
-                                        word={word} 
-                                        explanation={explanation}
-                                        fromVocab={wordData?.fromVocab}
-                                        vocabId={wordData?.vocabId}
-                                        onRefresh={handleRefreshExplanation}
-                                      >
-                                        {word}
-                                      </HoverExplanation>,
-                                    );
-                                    i += highlightLength - 1;
-                                  } else {
-                                    result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                return lines.map((line, lineIndex) => {
+                                  const chars = line.split('');
+                                  const result = [] as React.ReactNode[];
+
+                                  for (let i = 0; i < chars.length; i++) {
+                                    let isHighlighted = false;
+                                    let highlightLength = 0;
+
+                                    for (const selectedWord of allSelectedWords) {
+                                      const w = selectedWord.word;
+                                      if (!w) continue;
+                                      if (i + w.length <= chars.length) {
+                                        const substring = chars.slice(i, i + w.length).join('');
+                                        if (substring === w) {
+                                          isHighlighted = true;
+                                          highlightLength = w.length;
+                                          break;
+                                        }
+                                      }
+                                    }
+
+                                    if (isHighlighted && highlightLength > 0) {
+                                      const word = chars.slice(i, i + highlightLength).join('');
+                                      const wordData = allSelectedWords.find((item) => item.word === word);
+                                      const explanation = wordData?.explanation;
+
+                                      result.push(
+                                        <HoverExplanation 
+                                          key={`${lineIndex}-${i}`} 
+                                          word={word} 
+                                          explanation={explanation}
+                                          fromVocab={wordData?.fromVocab}
+                                          vocabId={wordData?.vocabId}
+                                          onRefresh={handleRefreshExplanation}
+                                        >
+                                          {word}
+                                        </HoverExplanation>,
+                                      );
+                                      i += highlightLength - 1;
+                                    } else {
+                                      result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                    }
                                   }
-                                }
 
-                                return (
-                                  <div key={lineIndex} className="mb-2">
-                                    {result}
-                                  </div>
-                                );
-                              });
+                                  return (
+                                    <div key={lineIndex} className="mb-2">
+                                      {result}
+                                    </div>
+                                  );
+                                });
+                              }
                             }
                           })()}
                         </div>

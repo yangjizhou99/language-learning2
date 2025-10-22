@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { type AcuUnit } from '@/lib/acu-utils';
 
 interface AcuTextProps {
@@ -20,7 +19,6 @@ interface SelectedUnit {
 
 export default function AcuText({ text, lang, units, onConfirm, selectedWords = [] }: AcuTextProps) {
   const [selectedUnits, setSelectedUnits] = useState<SelectedUnit[]>([]);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // 判断是否为对话标识符（标点符号现在可以选中）
   const isNonSelectable = useCallback((unit: AcuUnit) => {
@@ -33,10 +31,41 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
   // 检查ACU单元是否包含已选择的生词
   const isAlreadySelected = useCallback((unit: AcuUnit) => {
     const span = unit.span.trim();
-    return selectedWords.some(selectedWord => 
-      selectedWord.word === span || span.includes(selectedWord.word)
-    );
-  }, [selectedWords]);
+    return selectedWords.some(selectedWord => {
+      const selectedWordText = selectedWord.word;
+      
+      // 完全匹配
+      if (span === selectedWordText) {
+        return true;
+      }
+      
+      // 对于韩语，需要检查词边界
+      if (lang === 'ko' && span.includes(selectedWordText)) {
+        // 检查是否在词边界
+        const startIndex = span.indexOf(selectedWordText);
+        if (startIndex >= 0) {
+          const endIndex = startIndex + selectedWordText.length;
+          
+          // 检查词前边界
+          const beforeChar = startIndex > 0 ? span[startIndex - 1] : '';
+          const isBeforeBoundary = startIndex === 0 || 
+            /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
+            !/[\uac00-\ud7af]/.test(beforeChar); // 非韩文字符
+          
+          // 检查词后边界
+          const afterChar = endIndex < span.length ? span[endIndex] : '';
+          const isAfterBoundary = endIndex === span.length || 
+            /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
+            !/[\uac00-\ud7af]/.test(afterChar); // 非韩文字符
+          
+          return isBeforeBoundary && isAfterBoundary;
+        }
+      }
+      
+      // 对于其他语言，保持原有的包含匹配逻辑
+      return span.includes(selectedWordText);
+    });
+  }, [selectedWords, lang]);
 
   // 处理块点击
   const handleUnitClick = useCallback((unit: AcuUnit, index: number) => {
@@ -167,14 +196,12 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
     if (mergedText && context) {
       onConfirm(mergedText, context);
       setSelectedUnits([]);
-      setShowConfirmDialog(false);
     }
   }, [getMergedText, getContext, onConfirm]);
 
   // 处理取消
   const handleCancel = useCallback(() => {
     setSelectedUnits([]);
-    setShowConfirmDialog(false);
   }, []);
 
   // 渲染带格式的文本和ACU块 - 基于原文渲染
@@ -308,6 +335,16 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
             <span
               key={`unit-${i}`}
               onClick={() => handleUnitClick(unit, unitIndex)}
+              onTouchStart={(e) => {
+                // 防止触摸时触发双击缩放
+                e.preventDefault();
+              }}
+              onTouchEnd={(e) => {
+                // 处理触摸结束事件
+                e.preventDefault();
+                e.stopPropagation();
+                handleUnitClick(unit, unitIndex);
+              }}
               className={`
                 inline-block px-1 py-0.5 mx-0.5 rounded transition-all
                 touch-manipulation select-none
@@ -393,20 +430,21 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         </div>
       </div>
 
-      {/* 选中状态显示 */}
+      {/* 选中状态显示 - 采用和自由框选模式相同的样式 */}
       {selectedUnits.length > 0 && (
-        <Card className="p-4 bg-blue-50 border-blue-200">
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-blue-800">
-              已选择的文本: {getMergedText()}
+        <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="text-sm">
+            <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
+            <div className="text-blue-600 font-semibold mb-1">
+              {getMergedText()}
             </div>
-            <div className="text-xs text-blue-600">
-              上下文: {getContext()}
+            <div className="text-xs text-gray-600 mb-2">
+              {getContext()}
             </div>
             <div className="flex gap-2">
               <Button
                 size="sm"
-                onClick={() => setShowConfirmDialog(true)}
+                onClick={handleConfirm}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 确认添加到生词本
@@ -420,43 +458,6 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
               </Button>
             </div>
           </div>
-        </Card>
-      )}
-
-      {/* 确认对话框 */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="p-6 max-w-md mx-4">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">确认添加到生词本</h3>
-              <div className="space-y-2">
-                <div className="text-sm text-gray-600">选择的文本:</div>
-                <div className="p-2 bg-gray-100 rounded text-sm font-medium">
-                  {getMergedText()}
-                </div>
-                <div className="text-sm text-gray-600">上下文:</div>
-                <div className="p-2 bg-gray-100 rounded text-sm">
-                  {getContext()}
-                </div>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  size="sm"
-                  onClick={handleConfirm}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  确认添加
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCancel}
-                >
-                  取消
-                </Button>
-              </div>
-            </div>
-          </Card>
         </div>
       )}
     </div>
