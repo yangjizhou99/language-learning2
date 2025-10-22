@@ -1000,12 +1000,12 @@ export default function ShadowingPage() {
         }
       | undefined
     >(explanationCache[word] || fallbackExplanation);
-    const [loading, setLoading] = useState(false);
+    const [explanationLoading, setExplanationLoading] = useState(false);
     const [hasInitialized, setHasInitialized] = useState(false);
 
     // 刷新解释函数 - 强制从数据库获取最新数据
     const refreshExplanation = useCallback(async () => {
-      setLoading(true);
+      setExplanationLoading(true);
       try {
         const headers = await getAuthHeaders();
         const response = await fetch(
@@ -1037,7 +1037,7 @@ export default function ShadowingPage() {
       } catch (error) {
         console.error(`获取 ${word} 解释失败:`, error);
       } finally {
-        setLoading(false);
+        setExplanationLoading(false);
       }
     }, [word]);
 
@@ -1048,7 +1048,7 @@ export default function ShadowingPage() {
         // 总是获取最新解释，不管缓存中是否有旧解释
         // 直接调用API，避免依赖refreshExplanation
         const fetchInitialExplanation = async () => {
-          setLoading(true);
+          setExplanationLoading(true);
           try {
             const headers = await getAuthHeaders();
             const response = await fetch(
@@ -1067,7 +1067,7 @@ export default function ShadowingPage() {
           } catch (error) {
             console.error(`获取 ${word} 解释失败:`, error);
           } finally {
-            setLoading(false);
+            setExplanationLoading(false);
           }
         };
         fetchInitialExplanation();
@@ -1141,6 +1141,8 @@ export default function ShadowingPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioPlayerRef = useRef<EnhancedAudioPlayerRef | null>(null);
   const [practiceComplete, setPracticeComplete] = useState(false);
+  // 移动端也启用步骤门控：仅在未完成时生效
+  const gatingActive = !practiceComplete;
   const [showSentenceComparison, setShowSentenceComparison] = useState(false);
   const [scoringResult, setScoringResult] = useState<{
     score?: number;
@@ -1178,8 +1180,8 @@ export default function ShadowingPage() {
   // 步骤切换时的联动：自动开/关生词模式与翻译偏好
   useEffect(() => {
     if (!currentItem) return;
-    // 仅在第3步开启生词模式，其余步骤一律关闭
-    setIsVocabMode(step === 3);
+    // 在第2步和第3步开启生词模式，其余步骤关闭
+    setIsVocabMode(step === 2 || step === 3);
 
     if (step === 2) {
       setShowTranslation(true);
@@ -1278,6 +1280,7 @@ export default function ShadowingPage() {
         setItems(cached.items || []);
         setLoading(false);
         clearTimeout(timeoutId);
+        abortRef.current = null;
         return;
       }
 
@@ -1375,9 +1378,34 @@ export default function ShadowingPage() {
     }, 50);
     
     return () => clearTimeout(t);
-    // 依赖筛选条件，确保条件变化时重新加载
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang, level, practiced, authLoading, user]);
+    // 依赖筛选条件和fetchItems函数，确保条件变化时重新加载
+  }, [lang, level, practiced, authLoading, user, fetchItems, fetchRecommendedLevel]);
+
+  // 组件卸载时清理资源
+  useEffect(() => {
+    return () => {
+      // 清理定时器
+      if (replaceTimerRef.current) clearTimeout(replaceTimerRef.current);
+      // 清理请求
+      if (abortRef.current) {
+        try {
+          abortRef.current.abort();
+        } catch {}
+        abortRef.current = null;
+      }
+    };
+  }, []);
+
+  // 调试：监控 previousWords 状态变化
+  useEffect(() => {
+    console.log('previousWords 状态变化:', {
+      length: previousWords.length,
+      words: previousWords.map(w => w.word),
+      step,
+      gatingActive,
+      shouldShow: previousWords.length > 0 && (!gatingActive || step >= 2)
+    });
+  }, [previousWords, step, gatingActive]);
 
   // 加载主题数据
   useEffect(() => {
@@ -1561,7 +1589,9 @@ export default function ShadowingPage() {
           }
 
           // 将之前的生词设置为 previousWords
-          setPreviousWords(data.session.picked_preview || []);
+          const previousWordsData = data.session.picked_preview || [];
+          console.log('设置之前的生词:', previousWordsData);
+          setPreviousWords(previousWordsData);
 
           // 还原AI解释 - 从数据库获取所有单词的最新解释
           // 注意：这里不再并行请求所有解释，而是让DynamicExplanation组件按需加载
@@ -2945,8 +2975,6 @@ export default function ShadowingPage() {
 
   // 移动端检测
   const { actualIsMobile } = useMobile();
-  // 移动端也启用步骤门控：仅在未完成时生效
-  const gatingActive = !practiceComplete;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   // 引导提示状态
@@ -4199,8 +4227,8 @@ export default function ShadowingPage() {
                       </div>
                     </div>
 
-                    {/* 生词选择模式切换（仅步骤3显示或完成后） */}
-                    {(!gatingActive || step === 3) && (
+                    {/* 生词选择模式切换（步骤2和3显示或完成后） */}
+                    {(!gatingActive || step >= 2) && (
                     <div className="mb-4 space-y-3">
                       <Button
                         variant={isVocabMode ? 'default' : 'outline'}
@@ -6047,8 +6075,8 @@ export default function ShadowingPage() {
                       </div>
                     </div>
 
-                    {/* 生词选择模式切换（仅步骤3显示；完成或移动端保持原样） */}
-                    {(!gatingActive || step === 3) && (
+                    {/* 生词选择模式切换（步骤2和3显示；完成或移动端保持原样） */}
+                    {(!gatingActive || step >= 2) && (
                       <div className="mb-4 space-y-3">
                         <Button
                           variant={isVocabMode ? 'default' : 'outline'}
@@ -6438,8 +6466,8 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 之前的生词（仅步骤3显示；完成或移动端保持原样） */}
-                  {previousWords.length > 0 && (!gatingActive || step === 3) && (
+                  {/* 之前的生词（步骤2和3显示；完成或移动端保持原样） */}
+                  {previousWords.length > 0 && (!gatingActive || step >= 2) && (
                     <Card className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-600">
@@ -6515,8 +6543,8 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 本次选中的生词（仅步骤3显示；完成或移动端保持原样） */}
-                  {selectedWords.length > 0 && (!gatingActive || step === 3) && (
+                  {/* 本次选中的生词（步骤2和3显示；完成或移动端保持原样） */}
+                  {selectedWords.length > 0 && (!gatingActive || step >= 2) && (
                     <Card className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-blue-600">
