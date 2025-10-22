@@ -91,7 +91,7 @@ export default function CollapsibleCard({
         } overflow-hidden`}
       >
         <div className={`px-4 pb-4 ${contentClassName}`}>
-          {children}
+          {isOpen && children}
         </div>
       </div>
     </Card>

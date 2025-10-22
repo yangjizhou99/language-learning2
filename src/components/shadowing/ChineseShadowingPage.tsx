@@ -1004,6 +1004,7 @@ export default function ShadowingPage() {
   }) => {
     const [showTooltip, setShowTooltip] = useState(false);
     const [latestExplanation, setLatestExplanation] = useState(explanation);
+    const [isSpeaking, setIsSpeaking] = useState(false);
     const tooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const abortRef = useRef<AbortController | null>(null);
 
@@ -1046,12 +1047,12 @@ export default function ShadowingPage() {
       e.preventDefault();
       e.stopPropagation();
       
-      // 切换tooltip显示状态
-      setShowTooltip(!showTooltip);
+      // 只专注发音，不切换tooltip
       
       // 调用浏览器发音
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         try {
+          setIsSpeaking(true);
           // 停止当前正在播放的语音
           window.speechSynthesis.cancel();
           
@@ -1065,11 +1066,20 @@ export default function ShadowingPage() {
             'ko': 'ko-KR',
           };
           utterance.lang = langMap[lang] || 'zh-CN';
-          utterance.rate = 0.6; // 稍慢的语速，便于听清
+          utterance.rate = 0.8; // 优化语速，更自然
           utterance.pitch = 1.0;
+          utterance.volume = 1.0;
+          
+          // 添加状态监听
+          utterance.onend = () => setIsSpeaking(false);
+          utterance.onerror = () => {
+            setIsSpeaking(false);
+            console.error('TTS发音失败');
+          };
           
           window.speechSynthesis.speak(utterance);
         } catch (error) {
+          setIsSpeaking(false);
           console.error('语音合成失败:', error);
         }
       }
@@ -1086,7 +1096,11 @@ export default function ShadowingPage() {
 
     return (
       <span
-        className="bg-yellow-200 text-yellow-800 px-1 rounded font-medium cursor-pointer relative hover:bg-yellow-300 transition-colors"
+        className={`bg-yellow-200 text-yellow-800 px-1 rounded font-medium 
+                   cursor-pointer relative hover:bg-yellow-300 
+                   hover:shadow-md active:scale-95 
+                   transition-all duration-150
+                   ${isSpeaking ? 'animate-pulse ring-2 ring-yellow-400' : ''}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
@@ -1098,10 +1112,8 @@ export default function ShadowingPage() {
           // 处理触摸结束事件
           e.preventDefault();
           e.stopPropagation();
-          // 直接调用发音功能，不传递事件参数
-          if (word && word.trim()) {
-            speakWord(word, lang);
-          }
+          // 直接调用handleClick，保持逻辑一致
+          handleClick(e as unknown as React.MouseEvent);
         }}
         title={`点击发音: ${word}`}
       >
@@ -4379,8 +4391,8 @@ export default function ShadowingPage() {
                       </div>
                     </div>
 
-                    {/* 生词选择模式切换（步骤2和3显示或完成后） */}
-                    {(!gatingActive || step >= 2) && (
+                    {/* 生词选择模式切换（仅步骤3显示） */}
+                    {(!gatingActive || step === 3) && (
                     <div className="mb-4 space-y-3">
                       <Button
                         variant={isVocabMode ? 'default' : 'outline'}
@@ -4436,10 +4448,10 @@ export default function ShadowingPage() {
                           <div className="whitespace-pre-wrap text-base text-gray-800">{currentItem.translations[translationLang]}</div>
                         </div>
                       )}
-                      {isVocabMode ? (
+                      {(isVocabMode || step >= 2) ? (
                         <>
-                          {/* ACU 模式或自由框选模式 */}
-                          {isACUMode && currentItem?.notes?.acu_units ? (
+                          {/* ACU 模式或自由框选模式（仅在步骤3时显示ACU模式） */}
+                          {isACUMode && currentItem?.notes?.acu_units && step === 3 ? (
                             <AcuText
                               text={currentItem.text}
                               lang={currentItem.lang}
@@ -4448,25 +4460,195 @@ export default function ShadowingPage() {
                               selectedWords={[...previousWords, ...selectedWords]}
                             />
                           ) : (
-                            <SelectablePassage
-                              text={(() => {
-                                const normalize = (t: string) => {
-                                  let s = (t || '')
-                                    .replace(/\r\n/g, '\n')
-                                    .replace(/\r/g, '\n')
-                                    .replace(/<br\s*\/?\s*>/gi, '\n')
-                                    .replace(/&#10;|&#13;/g, '\n');
-                                  for (let i = 0; i < 3 && /\\\n/.test(s); i += 1) s = s.replace(/\\\n/g, '\n');
-                                  return s;
+                            <div className="text-lg leading-loose">
+                              {(() => {
+                                // 格式化对话文本，按说话者分行
+                                const formatDialogueText = (text: string): string => {
+                                  if (!text) return '';
+
+                                  // 处理AI返回的\n换行符
+                                  const formatted = text.replace(/\\n/g, '\n');
+
+                                  // 如果已经包含换行符，保持格式并清理
+                                  if (formatted.includes('\n')) {
+                                    return formatted
+                                      .split('\n')
+                                      .map((line) => line.trim())
+                                      .filter((line) => line.length > 0)
+                                      .join('\n');
+                                  }
+
+                                  // 尝试按说话者分割 - 匹配 A: 或 B: 等格式
+                                  const speakerPattern = /([A-Z]):\s*/g;
+                                  const parts = formatted.split(speakerPattern);
+
+                                  if (parts.length > 1) {
+                                    let result = '';
+                                    for (let i = 1; i < parts.length; i += 2) {
+                                      if (parts[i] && parts[i + 1]) {
+                                        const speaker = parts[i].trim();
+                                        const content = parts[i + 1].trim();
+                                        if (speaker && content) {
+                                          result += `${speaker}: ${content}\n`;
+                                        }
+                                      }
+                                    }
+                                    if (result.trim()) {
+                                      return result.trim();
+                                    }
+                                  }
+
+                                  // 默认返回原文本
+                                  return formatted;
                                 };
-                                return normalize(currentItem.text);
+
+                                const formattedText = formatDialogueText(currentItem.text);
+
+                                // 获取所有已选择的生词（包括之前的、本次的和生词本中的）
+                                // 合并当前题目的临时生词和生词本中的词汇
+                                const picked = [...previousWords, ...selectedWords];
+                                const vocab = userVocab.map(v => ({
+                                  word: v.term,
+                                  explanation: v.explanation,
+                                  fromVocab: true,
+                                  vocabId: v.id
+                                }));
+                                
+                                // 去重：picked优先（上下文更准确）
+                                const wordMap = new Map();
+                                picked.forEach(w => wordMap.set(w.word, w));
+                                vocab.forEach(v => {
+                                  if (!wordMap.has(v.word)) {
+                                    wordMap.set(v.word, v);
+                                  }
+                                });
+                                
+                                const allSelectedWords = Array.from(wordMap.values());
+                                const selectedWordSet = new Set(
+                                  allSelectedWords.map((item) => item.word),
+                                );
+
+
+                                // 检查是否为中文文本
+                                const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
+
+                                if (isChinese) {
+                                  // 中文处理：先按行分割，再按字符分割
+                                  const lines = formattedText.split('\n');
+
+                                  return lines.map((line, lineIndex) => {
+                                    const chars = line.split('');
+                                    const result = [];
+
+                                    for (let i = 0; i < chars.length; i++) {
+                                      let isHighlighted = false;
+                                      let highlightLength = 0;
+
+                                      // 检查从当前位置开始的多个字符是否组成已选择的生词
+                                      for (const selectedWord of allSelectedWords) {
+                                        if (i + selectedWord.word.length <= chars.length) {
+                                          const substring = chars
+                                            .slice(i, i + selectedWord.word.length)
+                                            .join('');
+                                          if (substring === selectedWord.word) {
+                                            isHighlighted = true;
+                                            highlightLength = selectedWord.word.length;
+                                            break;
+                                          }
+                                        }
+                                      }
+
+                                      if (isHighlighted && highlightLength > 0) {
+                                        // 高亮显示整个生词
+                                        const word = chars.slice(i, i + highlightLength).join('');
+                                        const wordData = allSelectedWords.find(
+                                          (item) => item.word === word,
+                                        );
+                                        const explanation = wordData?.explanation;
+
+                                        result.push(
+                                          <HoverExplanation
+                                            key={`${lineIndex}-${i}`}
+                                            word={word}
+                                            explanation={explanation}
+                                            fromVocab={wordData?.fromVocab}
+                                            vocabId={wordData?.vocabId}
+                                            onRefresh={handleRefreshExplanation}
+                                            lang={currentItem?.lang || 'zh'}
+                                          >
+                                            {word}
+                                          </HoverExplanation>,
+                                        );
+                                        i += highlightLength - 1; // 跳过已处理的字符
+                                      } else {
+                                        // 普通字符
+                                        result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                      }
+                                    }
+
+                                    return (
+                                      <div key={lineIndex} className="mb-2">
+                                        {result}
+                                      </div>
+                                    );
+                                  });
+                                } else {
+                                  // 英文处理：先按行分割，再按单词分割
+                                  const lines = formattedText.split('\n');
+
+                                  return lines.map((line, lineIndex) => {
+                                    const chars = line.split('');
+                                    const result = [] as React.ReactNode[];
+
+                                    for (let i = 0; i < chars.length; i++) {
+                                      let isHighlighted = false;
+                                      let highlightLength = 0;
+
+                                      for (const selectedWord of allSelectedWords) {
+                                        const w = selectedWord.word;
+                                        if (!w) continue;
+                                        if (i + w.length <= chars.length) {
+                                          const substring = chars.slice(i, i + w.length).join('');
+                                          if (substring === w) {
+                                            isHighlighted = true;
+                                            highlightLength = w.length;
+                                            break;
+                                          }
+                                        }
+                                      }
+
+                                      if (isHighlighted && highlightLength > 0) {
+                                        const word = chars.slice(i, i + highlightLength).join('');
+                                        const wordData = allSelectedWords.find((item) => item.word === word);
+                                        const explanation = wordData?.explanation;
+
+                                        result.push(
+                                          <HoverExplanation 
+                                            key={`${lineIndex}-${i}`} 
+                                            word={word} 
+                                            explanation={explanation}
+                                            fromVocab={wordData?.fromVocab}
+                                            vocabId={wordData?.vocabId}
+                                            onRefresh={handleRefreshExplanation}
+                                          >
+                                            {word}
+                                          </HoverExplanation>,
+                                        );
+                                        i += highlightLength - 1;
+                                      } else {
+                                        result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                      }
+                                    }
+
+                                    return (
+                                      <div key={lineIndex} className="mb-2">
+                                        {result}
+                                      </div>
+                                    );
+                                  });
+                                }
                               })()}
-                              lang="zh"
-                              onSelectionChange={handleTextSelection}
-                              clearSelection={clearSelection}
-                              disabled={false}
-                              className="text-lg leading-loose"
-                            />
+                            </div>
                           )}
                           {selectedText && (
                             <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -4578,6 +4760,7 @@ export default function ShadowingPage() {
                               allSelectedWords.map((item) => item.word),
                             );
 
+
                             // 检查是否为中文文本
                             const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
 
@@ -4620,6 +4803,9 @@ export default function ShadowingPage() {
                                         key={`${lineIndex}-${i}`}
                                         word={word}
                                         explanation={explanation}
+                                        fromVocab={wordData?.fromVocab}
+                                        vocabId={wordData?.vocabId}
+                                        onRefresh={handleRefreshExplanation}
                                         lang={currentItem?.lang || 'zh'}
                                       >
                                         {word}
@@ -6479,6 +6665,7 @@ export default function ShadowingPage() {
                               allSelectedWords.map((item) => item.word),
                             );
 
+
                             // 检查是否为中文文本
                             const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
 
@@ -6521,6 +6708,9 @@ export default function ShadowingPage() {
                                         key={`${lineIndex}-${i}`}
                                         word={word}
                                         explanation={explanation}
+                                        fromVocab={wordData?.fromVocab}
+                                        vocabId={wordData?.vocabId}
+                                        onRefresh={handleRefreshExplanation}
                                         lang={currentItem?.lang || 'zh'}
                                       >
                                         {word}
