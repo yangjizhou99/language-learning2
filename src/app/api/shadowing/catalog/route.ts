@@ -95,6 +95,7 @@ export async function GET(req: NextRequest) {
     const lang = url.searchParams.get('lang');
     const level = url.searchParams.get('level');
     const practiced = url.searchParams.get('practiced'); // 'true', 'false', or null (all)
+    const since = url.searchParams.get('since'); // for incremental syncing
     const limitParam = url.searchParams.get('limit');
     const offsetParam = url.searchParams.get('offset');
     const limit = limitParam ? Math.max(1, Math.min(200, parseInt(limitParam))) : null; // 缺省不分页
@@ -141,6 +142,7 @@ export async function GET(req: NextRequest) {
       }
 
       // 调用优化的数据库函数（使用 JOIN 和聚合，单次查询）
+      // 传递权限参数以在数据库层面完成过滤，确保分页正确
       const { data: rawItems, error } = await supabase.rpc('get_shadowing_catalog', {
         p_user_id: user.id,
         p_lang: lang || null,
@@ -148,6 +150,9 @@ export async function GET(req: NextRequest) {
         p_practiced: practiced || null,
         p_limit: limit || 100,
         p_offset: offset || 0,
+        p_since: since || null,
+        p_allowed_languages: lang ? null : permissions.allowed_languages,
+        p_allowed_levels: level ? null : permissions.allowed_levels,
       });
 
       if (process.env.NODE_ENV !== 'production') {
@@ -266,60 +271,27 @@ export async function GET(req: NextRequest) {
         };
       });
 
-      // 定义处理后的 item 类型
-      type ProcessedItem = ReturnType<typeof processedItems.map>[number];
-
-      // 如果没有指定语言或等级，需要在应用层过滤权限
-      let filteredItems: typeof processedItems = processedItems;
-
-      // 如果没有指定等级，过滤掉用户没有权限的等级
-      if (!level) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.log('Filtering by level permissions, allowed levels:', permissions.allowed_levels);
-        }
-        filteredItems = filteredItems.filter((item: ProcessedItem) => {
-          const hasPermission = checkLevelPermission(permissions, item.level);
-          if (!hasPermission && process.env.NODE_ENV !== 'production') {
-            console.log('Filtering out item with level:', item.level);
-          }
-          return hasPermission;
-        });
-      }
-
-      // 如果没有指定语言，过滤掉用户没有权限的语言
-      if (!lang) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.log(
-            'Filtering by language permissions, allowed languages:',
-            permissions.allowed_languages,
-          );
-        }
-        filteredItems = filteredItems.filter((item: ProcessedItem) => {
-          const hasPermission = checkLanguagePermission(permissions, item.lang);
-          if (!hasPermission && process.env.NODE_ENV !== 'production') {
-            console.log('Filtering out item with language:', item.lang);
-          }
-          return hasPermission;
-        });
-      }
-
+      // 权限过滤已在数据库层面完成，无需应用层过滤
+      // 这确保了分页的正确性：LIMIT/OFFSET 在过滤后的数据集上应用
+      
       const result = {
         success: true,
-        items: filteredItems,
-        total: filteredItems.length,
+        items: processedItems,
+        total: processedItems.length,
         limit: limit ?? undefined,
         offset: limit != null ? offset : undefined,
       } as const;
 
       if (process.env.NODE_ENV !== 'production') {
         console.log('Final result:', {
-          returnedItemsCount: filteredItems.length,
+          returnedItemsCount: processedItems.length,
           permissions: {
             can_access_shadowing: permissions.can_access_shadowing,
             allowed_languages: permissions.allowed_languages,
             allowed_levels: permissions.allowed_levels,
           },
           pagination: { limit, offset },
+          since: since || 'none',
         });
       }
 
