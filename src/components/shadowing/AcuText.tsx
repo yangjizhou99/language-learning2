@@ -310,8 +310,8 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         if (unit.start > currentPos) {
           const beforeText = processedText.slice(currentPos, unit.start);
           if (beforeText && beforeText.trim()) {
-            // 只过滤掉单个字母，保留标点符号和空格
-            const filteredText = beforeText.replace(/^[a-zA-Z]$/, '');
+            // 只过滤掉单个字母（除了"I"），保留标点符号和空格
+            const filteredText = beforeText.replace(/^(?![Ii]$)[a-zA-Z]$/, '');
             if (filteredText) {
               elements.push(
                 <span key={`before-${i}`} className="text-gray-700">
@@ -327,8 +327,8 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         const isNonSelectableUnit = isNonSelectable(unit);
         const isAlreadySelectedWord = isAlreadySelected(unit);
         
-        // 只过滤掉单个字母，保留标点符号和其他内容
-        const shouldSkipUnit = /^[a-zA-Z]$/.test(unit.span) || unit.span.length === 0;
+        // 只过滤掉单个字母（除了"I"），保留标点符号和其他内容
+        const shouldSkipUnit = /^(?![Ii]$)[a-zA-Z]$/.test(unit.span) || unit.span.length === 0;
         
         if (!shouldSkipUnit) {
           elements.push(
@@ -377,8 +377,8 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
       if (currentPos < sentenceEnd) {
         const afterText = processedText.slice(currentPos, sentenceEnd);
         if (afterText && afterText.trim()) {
-          // 只过滤掉单个字母，保留标点符号和空格
-          const filteredText = afterText.replace(/^[a-zA-Z]$/, '');
+          // 只过滤掉单个字母（除了"I"），保留标点符号和空格
+          const filteredText = afterText.replace(/^(?![Ii]$)[a-zA-Z]$/, '');
           if (filteredText) {
             elements.push(
               <span key={`after-${sid}`} className="text-gray-700">
