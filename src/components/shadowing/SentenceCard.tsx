@@ -2,15 +2,17 @@
 
 import React, { useRef, RefObject } from 'react';
 import { Button } from '@/components/ui/button';
-import { Square, Volume2, ChevronDown, ChevronUp, Mic, RotateCcw, Smile, Meh, Frown, AlertTriangle, XCircle } from 'lucide-react';
+import { Square, Volume2, ChevronDown, ChevronUp, Mic, RotateCcw, Smile, Meh, Frown, AlertTriangle, XCircle, ArrowRight, Minus, Plus } from 'lucide-react';
 import { useSentenceGesture } from '@/hooks/useSentenceGesture';
 import WaveformAnimation from './WaveformAnimation';
+import { AlignmentResult, AlignmentError } from '@/lib/alignment-utils';
 
 interface SentenceScore {
   score: number; // 综合相似度评分 (0-1范围)
   finalText: string;
   missing: string[];
   extra: string[];
+  alignmentResult?: AlignmentResult; // 新增：对齐分析结果
 }
 
 interface SentenceCardProps {
@@ -25,6 +27,7 @@ interface SentenceCardProps {
     score: number;
     missing: string[];
     extra: string[];
+    alignmentResult?: AlignmentResult;
   } | null;
   isMobile: boolean;
   language: 'ja' | 'en' | 'zh' | 'ko';
@@ -103,6 +106,7 @@ export default function SentenceCard({
     score: number;
     missing: string[];
     extra: string[];
+    alignmentResult?: AlignmentResult;
   } | null>(null);
 
   // 根据分数(0-100)计算颜色 - Pastel柔和渐变
@@ -572,12 +576,198 @@ export default function SentenceCard({
                 }
               `}} />
 
-              {/* 缺失和多读词汇 - Pastel柔和配色 */}
-              {(lastMetrics.missing.length > 0 || lastMetrics.extra.length > 0) && (
+              {/* 对齐错误分析 - 新的对比展示 */}
+              {lastMetrics.alignmentResult && (
+                lastMetrics.alignmentResult.extra.length > 0 || 
+                lastMetrics.alignmentResult.missing.length > 0 || 
+                lastMetrics.alignmentResult.substitution.length > 0
+              ) && (
+                <div className="space-y-3">
+                  {/* 多读错误 - 仅显示多读的内容 */}
+                  {lastMetrics.alignmentResult.extra.length > 0 && (
+                    <div 
+                      key={`extra-${scoreAnimKey}`}
+                      className={`p-3 rounded-xl border animate-gentle-reminder ${
+                        animatedScore >= 80 
+                          ? 'bg-emerald-50/60 border-emerald-200' 
+                          : animatedScore >= 60 
+                          ? 'bg-amber-50/60 border-amber-200'
+                          : 'bg-rose-50/60 border-rose-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Plus className={`w-5 h-5 flex-shrink-0 ${
+                          animatedScore >= 80 
+                            ? 'text-emerald-500' 
+                            : animatedScore >= 60 
+                            ? 'text-amber-500'
+                            : 'text-rose-500'
+                        }`} />
+                        <span className="text-sm font-medium text-gray-700">多读的内容</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {lastMetrics.alignmentResult.extra.map((error: AlignmentError, idx: number) => (
+                          <button
+                            key={`extra-${idx}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              speakWord(error.actual);
+                            }}
+                            className={`px-2 py-1 rounded-full flex-shrink-0 transition-all cursor-pointer inline-flex items-center gap-1 hover:scale-105 text-xs ${
+                              animatedScore >= 80
+                                ? 'bg-emerald-100/80 border border-emerald-200 text-emerald-700 hover:bg-emerald-200/90 hover:border-emerald-300 active:bg-emerald-200'
+                                : animatedScore >= 60
+                                ? 'bg-amber-100/80 border border-amber-200 text-amber-700 hover:bg-amber-200/90 hover:border-amber-300 active:bg-amber-200'
+                                : 'bg-rose-100/80 border border-rose-200 text-rose-700 hover:bg-rose-200/90 hover:border-rose-300 active:bg-rose-200'
+                            }`}
+                            title={`Play: ${error.actual}`}
+                          >
+                            <Volume2 className="w-3 h-3" />
+                            <span className="font-medium">{error.actual}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 少读错误 - 显示完整ACU块与用户少读形式的对比 */}
+                  {lastMetrics.alignmentResult.missing.length > 0 && (
+                    <div 
+                      key={`missing-${scoreAnimKey}`}
+                      className={`p-3 rounded-xl border animate-gentle-reminder ${
+                        animatedScore >= 80 
+                          ? 'bg-emerald-50/60 border-emerald-200' 
+                          : animatedScore >= 60 
+                          ? 'bg-amber-50/60 border-amber-200'
+                          : 'bg-rose-50/60 border-rose-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Minus className={`w-5 h-5 flex-shrink-0 ${
+                          animatedScore >= 80 
+                            ? 'text-emerald-500' 
+                            : animatedScore >= 60 
+                            ? 'text-amber-500'
+                            : 'text-rose-500'
+                        }`} />
+                        <span className="text-sm font-medium text-gray-700">少读的内容</span>
+                      </div>
+                      <div className="space-y-2">
+                        {lastMetrics.alignmentResult.missing.map((error: AlignmentError, idx: number) => (
+                          <div key={`missing-${idx}`} className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-2'} p-2 bg-white/50 rounded-lg`}>
+                            {/* 左侧：完整的ACU块 */}
+                            <div className="flex-1">
+                              <div className="text-xs text-gray-500 mb-1">完整ACU块</div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  speakWord(error.acuContext || error.expected || '');
+                                }}
+                                className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-200 transition-colors inline-flex items-center gap-1"
+                                title={`Play: ${error.acuContext || error.expected || ''}`}
+                              >
+                                <Volume2 className="w-3 h-3" />
+                                {error.acuContext || error.expected || ''}
+                              </button>
+                            </div>
+                            
+                            {/* 箭头分隔符 - 桌面端显示 */}
+                            {!isMobile && <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+                            
+                            {/* 右侧：用户少读的形式 */}
+                            <div className="flex-1">
+                              <div className="text-xs text-gray-500 mb-1">你读的</div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  speakWord(error.actual || '');
+                                }}
+                                className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors inline-flex items-center gap-1"
+                                title={`Play: ${error.actual || ''}`}
+                              >
+                                <Volume2 className="w-3 h-3" />
+                                {error.actual}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 读错错误 - 显示正确形式与用户读错形式的对比 */}
+                  {lastMetrics.alignmentResult.substitution.length > 0 && (
+                    <div 
+                      key={`substitution-${scoreAnimKey}`}
+                      className={`p-3 rounded-xl border animate-gentle-reminder ${
+                        animatedScore >= 80 
+                          ? 'bg-emerald-50/60 border-emerald-200' 
+                          : animatedScore >= 60 
+                          ? 'bg-amber-50/60 border-amber-200'
+                          : 'bg-rose-50/60 border-rose-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${
+                          animatedScore >= 80 
+                            ? 'text-emerald-500' 
+                            : animatedScore >= 60 
+                            ? 'text-amber-500'
+                            : 'text-rose-500'
+                        }`} />
+                        <span className="text-sm font-medium text-gray-700">读错的内容</span>
+                      </div>
+                      <div className="space-y-2">
+                        {lastMetrics.alignmentResult.substitution.map((error: AlignmentError, idx: number) => (
+                          <div key={`substitution-${idx}`} className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-2'} p-2 bg-white/50 rounded-lg`}>
+                            {/* 左侧：正确的形式 */}
+                            <div className="flex-1">
+                              <div className="text-xs text-gray-500 mb-1">正确</div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  speakWord(error.expected || '');
+                                }}
+                                className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition-colors inline-flex items-center gap-1"
+                                title={`Play: ${error.expected || ''}`}
+                              >
+                                <Volume2 className="w-3 h-3" />
+                                {error.expected || ''}
+                              </button>
+                            </div>
+                            
+                            {/* 箭头分隔符 - 桌面端显示 */}
+                            {!isMobile && <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+                            
+                            {/* 右侧：用户读错的形式 */}
+                            <div className="flex-1">
+                              <div className="text-xs text-gray-500 mb-1">你读的</div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  speakWord(error.actual);
+                                }}
+                                className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors inline-flex items-center gap-1"
+                                title={`Play: ${error.actual}`}
+                              >
+                                <Volume2 className="w-3 h-3" />
+                                {error.actual}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 回退到原有展示（当没有对齐数据时） */}
+              {!lastMetrics.alignmentResult && (lastMetrics.missing.length > 0 || lastMetrics.extra.length > 0) && (
                 <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
                   {lastMetrics.missing.length > 0 && (
                     <div 
-                      key={`missing-${scoreAnimKey}`}
+                      key={`missing-fallback-${scoreAnimKey}`}
                       className={`p-2 rounded-xl border animate-gentle-reminder ${
                         animatedScore >= 80 
                           ? 'bg-emerald-50/60 border-emerald-200' 
@@ -596,7 +786,7 @@ export default function SentenceCard({
                         }`} />
                         {lastMetrics.missing.map((group, idx) => (
                           <button
-                            key={`miss-${idx}`}
+                            key={`miss-fallback-${idx}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               speakWord(group);
@@ -619,7 +809,7 @@ export default function SentenceCard({
                   )}
                   {lastMetrics.extra.length > 0 && (
                     <div 
-                      key={`extra-${scoreAnimKey}`}
+                      key={`extra-fallback-${scoreAnimKey}`}
                       className={`p-2 rounded-xl border animate-gentle-reminder ${
                         animatedScore >= 80 
                           ? 'bg-emerald-50/60 border-emerald-200' 
@@ -638,7 +828,7 @@ export default function SentenceCard({
                         }`} />
                         {lastMetrics.extra.map((group, idx) => (
                           <button
-                            key={`extra-${idx}`}
+                            key={`extra-fallback-${idx}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               speakWord(group);

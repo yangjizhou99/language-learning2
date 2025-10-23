@@ -593,6 +593,9 @@ export default function ShadowingPage() {
   
   // 请求中止控制器
   const abortRef = useRef<AbortController | null>(null);
+  
+  // 首次数据加载标记，用于避免认证完成和筛选条件变化时的重复加载
+  const initialLoadRef = useRef(false);
 
   // AI解释相关状态
   const [wordExplanations, setWordExplanations] = useState<
@@ -1541,23 +1544,35 @@ export default function ShadowingPage() {
 
   // 鉴权由 AuthContext 统一处理
 
-  // 加载题库（初始加载和筛选条件变化时）
+  // 首次加载：确保认证完成后自动触发数据加载
   useEffect(() => {
-    // 等待认证完成且用户已登录
-    if (authLoading || !user) return;
-    
-    // 防抖延迟，避免快速切换时多次请求
-    const t = setTimeout(() => {
+    // 当认证完成且之前未加载过数据时，触发首次加载
+    if (!authLoading && user && !initialLoadRef.current) {
+      initialLoadRef.current = true;
       fetchItems();
       // 只在初始加载时获取推荐等级（level为null时）
       if (level === null) {
         fetchRecommendedLevel();
       }
+    }
+  }, [authLoading, user, fetchItems, fetchRecommendedLevel, level]);
+
+  // 加载题库（筛选条件变化时）
+  useEffect(() => {
+    // 等待认证完成且用户已登录
+    if (authLoading || !user) return;
+    
+    // 如果是首次加载，已经由上面的 effect 处理，避免重复
+    if (!initialLoadRef.current) return;
+    
+    // 防抖延迟，避免快速切换时多次请求
+    const t = setTimeout(() => {
+      fetchItems();
     }, 50);
     
     return () => clearTimeout(t);
     // 依赖筛选条件和fetchItems函数，确保条件变化时重新加载
-  }, [lang, level, practiced, authLoading, user, fetchItems, fetchRecommendedLevel]);
+  }, [lang, level, practiced, authLoading, user, fetchItems]);
 
   // 组件卸载时清理资源
   useEffect(() => {
@@ -5268,6 +5283,7 @@ export default function ShadowingPage() {
                       activeRole={selectedRole}
                       roleSegments={roleSegments}
                       onRoleRoundComplete={handleRoleRoundComplete}
+                      acuUnits={currentItem?.notes?.acu_units}
                     />
                   )}
 
@@ -7116,6 +7132,7 @@ export default function ShadowingPage() {
                       activeRole={selectedRole}
                       roleSegments={roleSegments}
                       onRoleRoundComplete={handleRoleRoundComplete}
+                      acuUnits={currentItem?.notes?.acu_units}
                     />
                   )}
 

@@ -13,6 +13,7 @@ import { useMobile } from '@/contexts/MobileContext';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { performAlignment, calculateSimilarityScore, AlignmentResult, AcuUnit } from '@/lib/alignment-utils';
 
 type Lang = 'ja' | 'en' | 'zh' | 'ko';
 
@@ -60,6 +61,7 @@ interface SentenceScore {
   finalText: string;
   missing: string[];
   extra: string[];
+  alignmentResult?: AlignmentResult; // 新增：对齐分析结果
 }
 
 interface SentencePracticeProps {
@@ -72,6 +74,7 @@ interface SentencePracticeProps {
   activeRole?: string;
   roleSegments?: RolePracticeSegment[];
   onRoleRoundComplete?: (results: RoleSentenceScore[]) => void;
+  acuUnits?: AcuUnit[]; // 新增：ACU 单元数据
 }
 
 const mapLangToLocale = (lang: Lang): string => {
@@ -382,7 +385,7 @@ const computeRoleScore = (target: string, said: string, lang: Lang) => {
   };
 };
 
-function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete }: SentencePracticeProps) {
+function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits }: SentencePracticeProps) {
   const { t } = useLanguage();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
@@ -544,25 +547,57 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
 
     const targetTokens = filterSpeaker(targetRaw);
     const saidTokens = filterSpeaker(saidRaw);
-    const cov = targetTokens.length > 0 ? Math.min(1, saidTokens.length / targetTokens.length) : 0;
-    const dist = levenshtein(targetTokens, saidTokens);
-    const maxLen = Math.max(targetTokens.length, saidTokens.length, 1);
-    const sim = 1 - dist / maxLen;
     
-    // 找出缺失和多余的token
-    const missingTokensRaw = unique(targetTokens.filter((t) => !saidTokens.includes(t)));
-    const extraTokensRaw = unique(saidTokens.filter((t) => !targetTokens.includes(t)));
+    // 使用传入的 ACU 数据
     
-    // 将连续的token分组（中文/日文直接连接，英文用空格连接）
-    const separator = language === 'en' ? ' ' : '';
-    const missingGroups = groupConsecutiveTokens(missingTokensRaw, targetTokens, separator);
-    const extraGroups = groupConsecutiveTokens(extraTokensRaw, saidTokens, separator);
+    // 使用新的对齐算法（如果有 ACU 数据）
+    let alignmentResult;
+    let comprehensiveScore;
+    let missingGroups;
+    let extraGroups;
     
-    // 合并覆盖度和相似度为综合得分
-    const comprehensiveScore = (cov + sim) / 2;
+    if (acuUnits && acuUnits.length > 0) {
+      alignmentResult = performAlignment(
+        targetTokens,
+        saidTokens,
+        acuUnits,
+        currentSentence
+      );
+      
+      // 计算综合评分
+      comprehensiveScore = calculateSimilarityScore(targetTokens, saidTokens, alignmentResult);
+      
+      // 为了向后兼容，保留原有的 missing 和 extra 格式
+      missingGroups = alignmentResult.missing.map(err => err.expected || '');
+      extraGroups = alignmentResult.extra.map(err => err.actual);
+    } else {
+      // 回退到原有的简单匹配算法
+      const cov = targetTokens.length > 0 ? Math.min(1, saidTokens.length / targetTokens.length) : 0;
+      const dist = levenshtein(targetTokens, saidTokens);
+      const maxLen = Math.max(targetTokens.length, saidTokens.length, 1);
+      const sim = 1 - dist / maxLen;
+      
+      // 找出缺失和多余的token
+      const missingTokensRaw = unique(targetTokens.filter((t) => !saidTokens.includes(t)));
+      const extraTokensRaw = unique(saidTokens.filter((t) => !targetTokens.includes(t)));
+      
+      // 将连续的token分组（中文/日文直接连接，英文用空格连接）
+      const separator = language === 'en' ? ' ' : '';
+      missingGroups = groupConsecutiveTokens(missingTokensRaw, targetTokens, separator);
+      extraGroups = groupConsecutiveTokens(extraTokensRaw, saidTokens, separator);
+      
+      // 合并覆盖度和相似度为综合得分
+      comprehensiveScore = (cov + sim) / 2;
+      alignmentResult = undefined;
+    }
     
-    return { score: comprehensiveScore, missing: missingGroups, extra: extraGroups };
-  }, [currentSentence, finalText, language, expandedIndex, isConversation]);
+    return { 
+      score: comprehensiveScore, 
+      missing: missingGroups, 
+      extra: extraGroups,
+      alignmentResult 
+    };
+  }, [currentSentence, finalText, language, expandedIndex, isConversation, originalText]);
 
   // 保存评分当finalText更新时
   useEffect(() => {
@@ -589,6 +624,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       finalText: finalText,
       missing: currentMetrics.missing,
       extra: currentMetrics.extra,
+      alignmentResult: currentMetrics.alignmentResult,
     };
 
     setSentenceScores(prev => ({
