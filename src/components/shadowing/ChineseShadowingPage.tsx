@@ -5283,6 +5283,7 @@ export default function ShadowingPage() {
                       activeRole={selectedRole}
                       roleSegments={roleSegments}
                       onRoleRoundComplete={handleRoleRoundComplete}
+                      acuUnits={currentItem?.notes?.acu_units}
                     />
                   )}
 
@@ -7131,6 +7132,7 @@ export default function ShadowingPage() {
                       activeRole={selectedRole}
                       roleSegments={roleSegments}
                       onRoleRoundComplete={handleRoleRoundComplete}
+                      acuUnits={currentItem?.notes?.acu_units}
                     />
                   )}
 
