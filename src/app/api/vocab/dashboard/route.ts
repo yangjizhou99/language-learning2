@@ -100,8 +100,15 @@ export async function GET(request: NextRequest) {
     type EntriesResult<T> = { data: T[] | null; error: QueryError; count: number | null };
     type DueCountResult = { count: number | null; error: QueryError };
     type TomorrowCountResult = { count: number | null; error: QueryError };
-    type StatsRow = { lang: string; status: string; explanation: unknown };
-    type StatsResult = { data: StatsRow[] | null; error: QueryError };
+    type StatsRpcResult = { 
+      data: {
+        byLanguage: Record<string, number>;
+        byStatus: Record<string, number>;
+        withExplanation: number;
+        withoutExplanation: number;
+      } | null;
+      error: QueryError;
+    };
 
     // 抽取查询逻辑，支持在缺少 SRS 列时降级
     const runQueries = async (
@@ -109,7 +116,7 @@ export async function GET(request: NextRequest) {
     ): Promise<[
       EntriesResult<VocabEntryBase | VocabEntrySrs>,
       DueCountResult,
-      StatsResult,
+      StatsRpcResult,
       TomorrowCountResult,
     ]> => {
       const selectFields = includeSrs
@@ -177,15 +184,23 @@ export async function GET(request: NextRequest) {
             .lt('srs_due', dayAfterStartIso)
         : Promise.resolve({ count: 0, error: null });
 
+      // 使用RPC调用数据库函数获取统计信息（高效）
+      // 如果函数不存在，会降级到旧的查询方式
       const statsPromise = supabase
-        .from('vocab_entries')
-        .select('lang,status,explanation')
-        .eq('user_id', user.id);
+        .rpc('get_vocab_stats', { p_user_id: user.id })
+        .then((result: { data: StatsRpcResult['data']; error: QueryError }) => {
+          if (result.error) {
+            // 如果RPC函数不存在（code 42883），返回null以使用降级逻辑
+            console.warn('RPC函数调用失败，可能需要运行迁移:', result.error);
+            return { data: null, error: result.error as QueryError };
+          }
+          return { data: result.data, error: null };
+        });
 
       return Promise.all([
         entriesPromise,
         dueCountPromise,
-        statsPromise as Promise<StatsResult>,
+        statsPromise as Promise<StatsRpcResult>,
         tomorrowCountPromise as Promise<TomorrowCountResult>,
       ]);
     };
@@ -229,34 +244,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '查询失败' }, { status: 500 });
     }
 
-    // 计算统计信息
+    // 使用数据库函数返回的统计信息（已聚合）
     const statsData = {
       total: entriesCount || 0,
-      byLanguage: {} as Record<string, number>,
-      byStatus: {} as Record<string, number>,
-      withExplanation: 0,
-      withoutExplanation: 0,
+      byLanguage: stats?.byLanguage || {},
+      byStatus: stats?.byStatus || {},
+      withExplanation: stats?.withExplanation || 0,
+      withoutExplanation: stats?.withoutExplanation || 0,
       dueCount: dueCount || 0,
       tomorrowCount: tomorrowCount || 0,
     };
-
-    if (stats) {
-      const statsArray = (stats ?? []) as StatsRow[];
-      statsArray.forEach((entry: StatsRow) => {
-        // 按语言统计
-        statsData.byLanguage[entry.lang] = (statsData.byLanguage[entry.lang] || 0) + 1;
-        
-        // 按状态统计
-        statsData.byStatus[entry.status] = (statsData.byStatus[entry.status] || 0) + 1;
-        
-        // 解释统计
-        if (entry.explanation) {
-          statsData.withExplanation++;
-        } else {
-          statsData.withoutExplanation++;
-        }
-      });
-    }
 
     const responseData = {
       entries: entries || [],

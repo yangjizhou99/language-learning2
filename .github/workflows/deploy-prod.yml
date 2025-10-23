@@ -5,9 +5,15 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# 防止同时部署到生产环境（关键安全措施）
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -18,46 +24,76 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 缓存 Supabase CLI 和配置
+      - name: Cache Supabase CLI
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.supabase
+          key: ${{ runner.os }}-supabase-cli-${{ hashFiles('supabase/config.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-supabase-cli-
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Validate Supabase Project Ref (production)
+      - name: Validate environment (production)
         run: |
-          echo "Validating SUPABASE_PROJECT_ID format..."
-          if [[ ! "$SUPABASE_PROJECT_ID" =~ ^[a-z0-9]{20}$ ]]; then
-            echo "Invalid project ref format. Must be like 'abcdefghijklmnopqrst' (20 lowercase letters/numbers)." >&2
+          echo "🔒 Validating production environment variables..."
+          if [[ -z "$SUPABASE_PROJECT_ID" ]]; then
+            echo "❌ PROD_PROJECT_ID is not set" >&2
             exit 1
           fi
+          if [[ ! "$SUPABASE_PROJECT_ID" =~ ^[a-z0-9]{20}$ ]]; then
+            echo "❌ Invalid project ref format. Must be like 'abcdefghijklmnopqrst' (20 lowercase letters/numbers)." >&2
+            exit 1
+          fi
+          echo "✅ Production environment validated"
 
       - name: Link remote (production)
         run: |
-          echo "Linking to production project..."
+          echo "📡 Linking to PRODUCTION project ($SUPABASE_PROJECT_ID)..."
           supabase link --debug --project-ref $SUPABASE_PROJECT_ID --password $SUPABASE_DB_PASSWORD
+          echo "✅ Linked successfully"
 
-      - name: Push migrations
+      - name: Push migrations with retry (production)
         run: |
-          echo "Pushing migrations to production..."
-          # 允许将本地存在但时间早于远端最后一次的迁移一并应用
-          supabase db push --include-all
+          echo "🚀 Pushing migrations to PRODUCTION..."
+          echo "⚠️  Using --include-all flag to apply all local migrations"
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          
+          until supabase db push --include-all || [ $RETRY_COUNT -eq $MAX_RETRIES ]; do
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            echo "⚠️  Push failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+            sleep 10
+          done
+          
+          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo "❌ Failed to push migrations after $MAX_RETRIES attempts"
+            exit 1
+          fi
+          echo "✅ Migrations pushed successfully to production"
 
-      - name: Verify zero drift (production)
+      - name: Verify deployment (production)
         run: |
-          echo "Checking schema drift on production..."
+          echo "🔍 Verifying schema integrity on production..."
           supabase db diff --schema public > schema_diff_prod.sql || true
           if [ -s schema_diff_prod.sql ]; then
-            echo "Schema drift detected on production:";
-            cat schema_diff_prod.sql;
-            exit 1;
+            echo "⚠️  Schema drift detected on production:"
+            cat schema_diff_prod.sql
+            exit 1
           else
-            echo "No schema drift on production (OK).";
+            echo "✅ No schema drift - production deployment verified"
           fi
-
-      - name: Verify deployment
-        run: |
-          echo "Verifying production deployment..."
-          supabase projects list
-          echo "Production deployment completed successfully!"
+          
+          echo ""
+          echo "🎉 Production Deployment Summary:"
+          echo "   Environment: PRODUCTION"
+          echo "   Project: $SUPABASE_PROJECT_ID"
+          echo "   Status: ✅ SUCCESS"
+          echo "   Time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
 
 

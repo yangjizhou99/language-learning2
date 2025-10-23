@@ -265,6 +265,15 @@ export default function VocabPage() {
     }
   };
 
+  // 延迟加载AI模型列表
+  const handleOpenAiSettings = async () => {
+    setAiSettingsSheetOpen(true);
+    // 仅在模型列表为空时才加载
+    if (Object.keys(availableModels).length === 0) {
+      await fetchAvailableModels();
+    }
+  };
+
   // 检查缓存是否有效
   const isCacheValid = (cacheData: any, currentFilters: any, currentLimit: number) => {
     if (!cacheData) return false;
@@ -648,11 +657,14 @@ export default function VocabPage() {
     fetchEntries(page, itemsPerPage, false);
   };
 
-  // 初始加载
+  // 初始加载 - 仅在组件挂载时执行一次
   useEffect(() => {
     fetchUserProfile();
-    fetchAvailableModels();
-    // 合并数据获取，减少API调用
+    // 延迟加载：模型列表仅在需要时获取
+  }, []);
+
+  // 筛选条件变化时重新获取生词列表
+  useEffect(() => {
     fetchEntries();
   }, [filters]);
 
@@ -2170,9 +2182,7 @@ export default function VocabPage() {
                 )}
               </Button>
               <Button
-                onClick={() => {
-                  setAiSettingsSheetOpen(true);
-                }}
+                onClick={handleOpenAiSettings}
                 disabled={isGenerating}
                 className="flex-1 h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
               >
