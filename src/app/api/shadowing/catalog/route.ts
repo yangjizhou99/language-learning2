@@ -205,6 +205,7 @@ export async function GET(req: NextRequest) {
         vocab_count: number;
         practice_time_seconds: number;
         is_practiced: boolean;
+        total_count: string | number; // Window function returns bigint
       };
 
       // 转换数据库函数返回的扁平结构为前端期望的嵌套结构
@@ -274,10 +275,15 @@ export async function GET(req: NextRequest) {
       // 权限过滤已在数据库层面完成，无需应用层过滤
       // 这确保了分页的正确性：LIMIT/OFFSET 在过滤后的数据集上应用
       
+      // 获取总记录数（从任意一条记录中获取，所有记录的 total_count 都相同）
+      const totalCount = rawItems && rawItems.length > 0 
+        ? parseInt(String(rawItems[0].total_count))
+        : 0;
+      
       const result = {
         success: true,
         items: processedItems,
-        total: processedItems.length,
+        total: totalCount, // 使用窗口函数计算的真实总数
         limit: limit ?? undefined,
         offset: limit != null ? offset : undefined,
       } as const;
@@ -285,6 +291,7 @@ export async function GET(req: NextRequest) {
       if (process.env.NODE_ENV !== 'production') {
         console.log('Final result:', {
           returnedItemsCount: processedItems.length,
+          totalCount: totalCount,
           permissions: {
             can_access_shadowing: permissions.can_access_shadowing,
             allowed_languages: permissions.allowed_languages,

@@ -63,66 +63,49 @@ RETURNS TABLE(
   recording_count int,
   vocab_count int,
   practice_time_seconds int,
-  is_practiced boolean
+  is_practiced boolean,
+  
+  -- 总记录数（所有页的总数）
+  total_count bigint
 ) AS $$
 BEGIN
   RETURN QUERY
-  SELECT 
-    -- shadowing_items 所有字段
-    i.id,
-    i.lang,
-    i.level,
-    i.title,
-    i.text,
-    i.audio_url,
-    i.audio_bucket,
-    i.audio_path,
-    i.sentence_timeline,
-    i.topic,
-    i.genre,
-    i.register,
-    i.notes,
-    i.translations,
-    i.trans_updated_at,
-    i.ai_provider,
-    i.ai_model,
-    i.ai_usage,
-    i.status,
-    i.theme_id,
-    i.subtopic_id,
-    i.created_at,
-    i.updated_at,
-    
-    -- theme 信息
-    t.title as theme_title,
-    t.desc as theme_desc,
-    
-    -- subtopic 信息
-    st.title as subtopic_title,
-    st.one_line as subtopic_one_line,
-    
-    -- session 状态和统计
-    s.status as session_status,
-    s.created_at as last_practiced,
-    COALESCE(jsonb_array_length(s.recordings), 0)::int as recording_count,
-    COALESCE(jsonb_array_length(s.picked_preview), 0)::int as vocab_count,
-    
-    -- 计算总练习时长（毫秒转秒）
-    (
-      COALESCE(
-        (
-          SELECT SUM((rec->>'duration')::int)
-          FROM jsonb_array_elements(COALESCE(s.recordings, '[]'::jsonb)) as rec
-          WHERE (rec->>'duration') IS NOT NULL
-        ), 
-        0
-      ) / 1000
-    )::int as practice_time_seconds,
-    
-    -- 是否已练习
-    (s.status = 'completed')::boolean as is_practiced
-    
-  FROM shadowing_items i
+  WITH filtered_items AS (
+    SELECT 
+      i.id,
+      i.lang,
+      i.level,
+      i.title,
+      i.text,
+      i.audio_url,
+      i.audio_bucket,
+      i.audio_path,
+      i.sentence_timeline,
+      i.topic,
+      i.genre,
+      i.register,
+      i.notes,
+      i.translations,
+      i.trans_updated_at,
+      i.ai_provider,
+      i.ai_model,
+      i.ai_usage,
+      i.status,
+      i.theme_id,
+      i.subtopic_id,
+      i.created_at,
+      i.updated_at,
+      t.title as theme_title,
+      t.desc as theme_desc,
+      st.title as subtopic_title,
+      st.one_line as subtopic_one_line,
+      s.status as session_status,
+      s.created_at as last_practiced,
+      s.recordings,
+      s.picked_preview,
+      -- 使用窗口函数计算总数（所有符合条件的记录，不受LIMIT/OFFSET影响）
+      COUNT(*) OVER() as total_count
+    FROM shadowing_items i
   
   -- 左连接 themes（可能为空）
   LEFT JOIN shadowing_themes t ON i.theme_id = t.id
@@ -159,13 +142,60 @@ BEGIN
     -- 增量同步：只返回指定时间之后更新的记录
     AND (p_since IS NULL OR i.updated_at > p_since)
     
-  -- 按更新时间或创建时间排序（增量同步时按更新时间升序）
-  ORDER BY 
-    CASE WHEN p_since IS NOT NULL THEN i.updated_at ELSE i.created_at END DESC
-  
-  -- 分页（在所有过滤之后应用）
-  LIMIT p_limit
-  OFFSET p_offset;
+    -- 按更新时间或创建时间排序（增量同步时按更新时间升序）
+    ORDER BY 
+      CASE WHEN p_since IS NOT NULL THEN i.updated_at ELSE i.created_at END DESC
+    
+    -- 分页（在所有过滤之后应用）
+    LIMIT p_limit
+    OFFSET p_offset
+  )
+  SELECT 
+    f.id,
+    f.lang,
+    f.level,
+    f.title,
+    f.text,
+    f.audio_url,
+    f.audio_bucket,
+    f.audio_path,
+    f.sentence_timeline,
+    f.topic,
+    f.genre,
+    f.register,
+    f.notes,
+    f.translations,
+    f.trans_updated_at,
+    f.ai_provider,
+    f.ai_model,
+    f.ai_usage,
+    f.status,
+    f.theme_id,
+    f.subtopic_id,
+    f.created_at,
+    f.updated_at,
+    f.theme_title,
+    f.theme_desc,
+    f.subtopic_title,
+    f.subtopic_one_line,
+    f.session_status,
+    f.last_practiced,
+    COALESCE(jsonb_array_length(f.recordings), 0)::int as recording_count,
+    COALESCE(jsonb_array_length(f.picked_preview), 0)::int as vocab_count,
+    -- 计算总练习时长
+    (
+      COALESCE(
+        (
+          SELECT SUM((rec->>'duration')::int)
+          FROM jsonb_array_elements(COALESCE(f.recordings, '[]'::jsonb)) as rec
+          WHERE (rec->>'duration') IS NOT NULL
+        ), 
+        0
+      ) / 1000
+    )::int as practice_time_seconds,
+    (f.session_status = 'completed')::boolean as is_practiced,
+    f.total_count
+  FROM filtered_items f;
 END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
