@@ -3,43 +3,68 @@ name: CI (Supabase local verify)
 on:
   pull_request:
     branches: [develop, main]
-  # 额外增加 push 触发，解决 PR 合并性计算异常导致的检查“0/挂起”问题
+    paths:
+      - 'supabase/**'
+      - 'scripts/**/*db*'
+      - 'scripts/**/sync*.js'
+      - '.github/workflows/ci.yml'
+  # 额外增加 push 触发，解决 PR 合并性计算异常导致的检查"0/挂起"问题
   # 避免和生产部署重复，这里忽略 main；如需更严格也可加 develop
   push:
     branches-ignore:
       - main
+    paths:
+      - 'supabase/**'
+      - 'scripts/**/*db*'
+      - 'scripts/**/sync*.js'
+      - '.github/workflows/ci.yml'
   workflow_dispatch:
+
+# 并发控制：同一分支只运行一个工作流，取消进行中的旧任务
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # 缓存 Supabase CLI 和 Docker 数据
+      - name: Cache Supabase
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.supabase
+            /home/runner/.docker
+          key: ${{ runner.os }}-supabase-${{ hashFiles('supabase/config.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-supabase-
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Start local stack & apply migrations
+      - name: Start local stack & verify migrations
         run: |
           echo "Starting Supabase local development environment..."
+          # supabase db start 会自动应用迁移，无需单独 reset
           supabase db start
 
-          echo "Resetting database with migrations..."
-          supabase db reset
-
           echo "Verifying migrations applied successfully..."
-          # Generate diff; expect no drift after a clean reset
+          # Generate diff; expect no drift after a clean start
           supabase db diff --schema public > schema_diff.sql || true
           if [ -s schema_diff.sql ]; then
-            echo "Schema drift detected after reset (should be empty):";
+            echo "❌ Schema drift detected (should be empty after migration):";
             cat schema_diff.sql;
             exit 1;
           else
-            echo "No schema drift detected (OK).";
+            echo "✅ No schema drift detected. Migrations applied correctly.";
           fi
 
       - name: Stop local stack
