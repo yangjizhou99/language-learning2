@@ -977,11 +977,7 @@ export default function ShadowingPage() {
 
   // 发音功能
   const speakWord = (word: string, lang: string) => {
-    speakTextUtil(word, lang, {
-      rate: 0.6, // 统一语速设置
-      pitch: 1,
-      volume: 1,
-    });
+    speakTextUtil(word, lang);
   };
 
   // 悬停/点击解释组件
