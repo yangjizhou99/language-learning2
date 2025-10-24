@@ -498,34 +498,52 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!audioUrl || !sentenceTimeline || sentenceTimeline.length === 0) return;
-    if (!audioRef.current) {
-      audioRef.current = new Audio(audioUrl);
-      audioRef.current.preload = 'auto';
-      try { audioRef.current.load(); } catch {}
-      audioRef.current.addEventListener('timeupdate', () => {
-        const stopAt = stopAtRef.current;
-        if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
-          audioRef.current.pause();
-          stopAtRef.current = null;
-        }
-      });
-      audioRef.current.addEventListener('pause', () => {
-        if (rafRef.current) {
-          cancelAnimationFrame(rafRef.current);
-          rafRef.current = null;
-        }
-        setIsAudioPlaying(false);
-      });
-      audioRef.current.addEventListener('play', () => {
-        setIsAudioPlaying(true);
-      });
-      audioRef.current.addEventListener('ended', () => {
-        setIsAudioPlaying(false);
-      });
-    } else {
-      audioRef.current.src = audioUrl;
-      try { audioRef.current.load(); } catch {}
+    
+    // 清理旧的音频实例
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
     }
+    
+    const audio = new Audio(audioUrl);
+    audio.preload = 'auto';
+    
+    const handleTimeUpdate = () => {
+      const stopAt = stopAtRef.current;
+      if (typeof stopAt === 'number' && audio.currentTime >= stopAt) {
+        audio.pause();
+        stopAtRef.current = null;
+      }
+    };
+    
+    const handlePause = () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      setIsAudioPlaying(false);
+    };
+    
+    const handlePlay = () => setIsAudioPlaying(true);
+    const handleEnded = () => setIsAudioPlaying(false);
+    
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('ended', handleEnded);
+    
+    try { audio.load(); } catch {}
+    audioRef.current = audio;
+    
+    // 清理函数
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('ended', handleEnded);
+      audio.pause();
+      audio.src = '';
+    };
   }, [audioUrl, sentenceTimeline]);
 
   // 应用播放速度
@@ -914,18 +932,21 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       return;
     }
 
+    // 清理之前的播放状态
+    if (audioRef.current) {
+      audioRef.current.pause();
+      stopAtRef.current = null;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    }
+
     if (!audioRef.current) {
       try {
         audioRef.current = new Audio(audioUrl);
         audioRef.current.preload = 'auto';
         try { audioRef.current.load(); } catch {}
-        audioRef.current.addEventListener('timeupdate', () => {
-          const stopAt = stopAtRef.current;
-          if (typeof stopAt === 'number' && audioRef.current && audioRef.current.currentTime >= stopAt) {
-            audioRef.current.pause();
-            stopAtRef.current = null;
-          }
-        });
         // 设置初始播放速度
         audioRef.current.playbackRate = playbackRate;
       } catch {}
