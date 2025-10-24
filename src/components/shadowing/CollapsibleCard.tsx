@@ -87,8 +87,8 @@ export default function CollapsibleCard({
       {/* 卡片内容 - 可展开 */}
       <div
         className={`transition-all duration-200 ease-in-out ${
-          isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
-        } overflow-hidden`}
+          isOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+        } overflow-y-auto`}
       >
         <div className={`px-4 pb-4 ${contentClassName}`}>
           {isOpen && children}

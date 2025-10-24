@@ -38,51 +38,9 @@ export const speakText = (text: string, lang: string, options: SpeechOptions = {
     }[lang] || 'en-US';
 
   utterance.lang = langCode;
-  utterance.rate = options.rate || 0.8;
+  utterance.rate = options.rate || 0.6;
   utterance.pitch = options.pitch || 1;
   utterance.volume = options.volume || 1;
-
-  // 选择最合适的语音引擎
-  const selectBestVoice = () => {
-    const voices = window.speechSynthesis.getVoices();
-
-    if (lang === 'ja') {
-      // 对于日语，按优先级选择语音引擎
-      const japaneseVoices = voices.filter(
-        (voice) =>
-          voice.lang.startsWith('ja') ||
-          voice.name.toLowerCase().includes('japanese') ||
-          voice.name.toLowerCase().includes('japan'),
-      );
-
-      if (japaneseVoices.length > 0) {
-        // 优先选择本地日语语音引擎，避免使用错误的引擎
-        utterance.voice = japaneseVoices[0];
-        return;
-      }
-    }
-
-    // 如果没有找到特定语言的语音，尝试匹配语言代码
-    const matchingVoices = voices.filter(
-      (voice) => voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0]),
-    );
-
-    if (matchingVoices.length > 0) {
-      utterance.voice = matchingVoices[0];
-    }
-  };
-
-  // 尝试选择最佳语音引擎
-  selectBestVoice();
-
-  // 如果语音列表还没有加载完成，等待加载
-  if (window.speechSynthesis.getVoices().length === 0) {
-    const handleVoicesChanged = () => {
-      selectBestVoice();
-      window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-    };
-    window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-  }
 
   // 开始播放
   window.speechSynthesis.speak(utterance);
