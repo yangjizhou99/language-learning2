@@ -1103,25 +1103,47 @@ export default function ShadowingPage() {
                    cursor-pointer relative hover:bg-yellow-300 
                    hover:shadow-md active:scale-95 
                    transition-all duration-150
-                   ${isSpeaking ? 'animate-pulse ring-2 ring-yellow-400' : ''}`}
+                   ${isSpeaking ? 'animate-pulse ring-2 ring-yellow-400' : ''}
+                   ${actualIsMobile ? 'touch-manipulation select-none' : ''}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={handleClick}
         onTouchStart={(e) => {
           // 防止触摸时触发双击缩放
           e.preventDefault();
         }}
-        onTouchEnd={(e) => {
-          // 处理触摸结束事件
+        onClick={(e) => {
+          // 处理点击事件（移动端和桌面端都使用）
           e.preventDefault();
           e.stopPropagation();
-          // 直接调用handleClick，保持逻辑一致
-          handleClick(e as unknown as React.MouseEvent);
+          
+          // 移动端：先显示意思，延迟触发发音
+          if (actualIsMobile) {
+            // 检查是否点击的是同一个词
+            if (mobileExplanation?.word === word) {
+              // 如果是同一个词，关闭解释
+              setMobileExplanation(null);
+            } else {
+              // 如果是不同的词，显示新词的解释
+              setMobileExplanation({
+                word,
+                explanation: latestExplanation || { gloss_native: '已选择的生词' },
+                fromVocab,
+                vocabId,
+              });
+            }
+            // 延迟触发发音，使用与生词模块相同的发音函数
+            setTimeout(() => {
+              speakWord(word, currentItem?.lang || 'ko');
+            }, 200);
+          } else {
+            // 桌面端：只触发发音
+            handleClick(e);
+          }
         }}
         title={`点击发音: ${word}`}
       >
         {children}
-        {showTooltip && (
+        {showTooltip && !actualIsMobile && (
           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg w-32 z-50">
             <div className="flex justify-between items-start mb-1">
               <span>{tooltipText}</span>
@@ -3174,6 +3196,35 @@ export default function ShadowingPage() {
   // 顶部导航栏显示状态
   const [showHeader, setShowHeader] = useState(true);
   
+  // 移动端底部解释区域状态
+  const [mobileExplanation, setMobileExplanation] = useState<{
+    word: string;
+    explanation: {
+      gloss_native: string;
+      senses?: Array<{ example_target: string; example_native: string }>;
+    };
+    fromVocab: boolean;
+    vocabId?: string;
+  } | null>(null);
+
+  // 点击其他地方关闭移动端解释
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mobileExplanation && actualIsMobile) {
+        const target = event.target as HTMLElement;
+        // 如果点击的不是标黄字，关闭解释
+        if (!target.closest('.bg-yellow-200')) {
+          setMobileExplanation(null);
+        }
+      }
+    };
+
+    if (actualIsMobile) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [mobileExplanation, actualIsMobile]);
+  
   // 更新顶部导航栏显示状态
   useEffect(() => {
     if (!actualIsMobile) {
@@ -3298,153 +3349,129 @@ export default function ShadowingPage() {
 
         {/* 过滤器 */}
         <div className="p-6 bg-gray-50/50 space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Filter className="w-3 h-3 text-blue-600" />
-            </div>
-            <span className="text-sm font-semibold text-gray-700">{t.shadowing.filter}</span>
-          </div>
-
-          <FilterLanguageSelector
-            value={lang}
-            onChange={setLang}
-            allowedLanguages={permissions.allowed_languages}
-            className="h-10"
-          />
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">{t.shadowing.level}</Label>
-            <Select
-              value={level?.toString() || 'all'}
-              onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
-            >
-              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                <SelectValue placeholder="全部等级" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                <SelectItem value="all" className="rounded-lg">全部等级</SelectItem>
-                {permissions.allowed_levels.includes(1) && <SelectItem value="1" className="rounded-lg">L1 - 初级</SelectItem>}
-                {permissions.allowed_levels.includes(2) && <SelectItem value="2" className="rounded-lg">L2 - 初中级</SelectItem>}
-                {permissions.allowed_levels.includes(3) && <SelectItem value="3" className="rounded-lg">L3 - 中级</SelectItem>}
-                {permissions.allowed_levels.includes(4) && <SelectItem value="4" className="rounded-lg">L4 - 中高级</SelectItem>}
-                {permissions.allowed_levels.includes(5) && <SelectItem value="5" className="rounded-lg">L5 - 高级</SelectItem>}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {recommendedLevel && (
-            <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-200 shadow-md overflow-hidden animate-pulse">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/30 to-amber-200/30 rounded-full blur-2xl" />
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                    <Star className="w-4 h-4 text-white fill-white" />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Sparkles className="w-4 h-4 text-amber-600" />
-                    <span className="text-sm font-bold text-amber-900">为你推荐</span>
-                  </div>
-                </div>
-                <div className="text-lg font-bold text-amber-900 flex items-baseline gap-2 mb-2">
-                  <span>等级</span>
-                  <span className="text-2xl text-orange-600">L{recommendedLevel}</span>
-                </div>
-                <p className="text-xs text-amber-700 mb-3">根据你的学习进度推荐</p>
-                {level !== recommendedLevel && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setLevel(recommendedLevel)}
-                    className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-sm"
-                  >
-                    使用推荐等级
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">{t.shadowing.practice_status}</Label>
-            <Select
-              value={practiced}
-              onValueChange={(v: 'all' | 'practiced' | 'unpracticed') => setPracticed(v)}
-            >
-              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                <SelectItem value="all" className="rounded-lg">全部</SelectItem>
-                <SelectItem value="unpracticed" className="rounded-lg">未练习</SelectItem>
-                <SelectItem value="practiced" className="rounded-lg">已练习</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">{t.shadowing.genre}</Label>
-            <Select value={theme} onValueChange={setTheme}>
-              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                {GENRE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value} className="rounded-lg">
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">{t.shadowing.major_theme}</Label>
-            <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
-              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                <SelectItem value="all" className="rounded-lg">全部大主题</SelectItem>
-                {themes.map((theme) => (
-                  <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
-                    {theme.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">{t.shadowing.minor_theme}</Label>
-            <Select
-              value={selectedSubtopicId}
-              onValueChange={setSelectedSubtopicId}
-              disabled={selectedThemeId === 'all'}
-            >
-              <SelectTrigger className={`h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}>
-                <SelectValue placeholder={selectedThemeId === 'all' ? '请先选择大主题' : '选择小主题'} />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                <SelectItem value="all" className="rounded-lg">全部小主题</SelectItem>
-                {subtopics.map((subtopic) => (
-                  <SelectItem key={subtopic.id} value={subtopic.id} className="rounded-lg">
-                    {subtopic.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">{t.shadowing.search || '搜索'}</Label>
-            <Input
-              placeholder={t.shadowing.search_placeholder || '搜索标题、主题...'}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          {/* 基础筛选 - 默认展开 */}
+          <CollapsibleFilterSection
+            title={t.shadowing.filter || '筛选'}
+            icon={<Filter className="w-3 h-3 text-blue-600" />}
+            defaultOpen={true}
+          >
+            <FilterLanguageSelector
+              value={lang}
+              onChange={setLang}
+              allowedLanguages={permissions.allowed_languages}
+              className="h-10"
             />
-          </div>
 
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">{t.shadowing.level}</Label>
+              <Select
+                value={level?.toString() || 'all'}
+                onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
+              >
+                <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <SelectValue placeholder="全部等级" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                  <SelectItem value="all" className="rounded-lg">全部等级</SelectItem>
+                  {permissions.allowed_levels.includes(1) && <SelectItem value="1" className="rounded-lg">L1 - 初级</SelectItem>}
+                  {permissions.allowed_levels.includes(2) && <SelectItem value="2" className="rounded-lg">L2 - 初中级</SelectItem>}
+                  {permissions.allowed_levels.includes(3) && <SelectItem value="3" className="rounded-lg">L3 - 中级</SelectItem>}
+                  {permissions.allowed_levels.includes(4) && <SelectItem value="4" className="rounded-lg">L4 - 中高级</SelectItem>}
+                  {permissions.allowed_levels.includes(5) && <SelectItem value="5" className="rounded-lg">L5 - 高级</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
+          </CollapsibleFilterSection>
+
+          {/* 高级筛选 - 默认折叠 */}
+          <CollapsibleFilterSection
+            title="高级筛选"
+            icon={<Target className="w-3 h-3 text-blue-600" />}
+            defaultOpen={false}
+          >
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">{t.shadowing.practice_status}</Label>
+              <Select
+                value={practiced}
+                onValueChange={(v: 'all' | 'practiced' | 'unpracticed') => setPracticed(v)}
+              >
+                <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                  <SelectItem value="all" className="rounded-lg">全部</SelectItem>
+                  <SelectItem value="unpracticed" className="rounded-lg">未练习</SelectItem>
+                  <SelectItem value="practiced" className="rounded-lg">已练习</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">{t.shadowing.genre}</Label>
+              <Select value={theme} onValueChange={setTheme}>
+                <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                  {GENRE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value} className="rounded-lg">
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">{t.shadowing.major_theme}</Label>
+              <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
+                <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                  <SelectItem value="all" className="rounded-lg">全部大主题</SelectItem>
+                  {themes.map((theme) => (
+                    <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
+                      {theme.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">{t.shadowing.minor_theme}</Label>
+              <Select
+                value={selectedSubtopicId}
+                onValueChange={setSelectedSubtopicId}
+                disabled={selectedThemeId === 'all'}
+              >
+                <SelectTrigger className={`h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}>
+                  <SelectValue placeholder={selectedThemeId === 'all' ? '请先选择大主题' : '选择小主题'} />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                  <SelectItem value="all" className="rounded-lg">全部小主题</SelectItem>
+                  {subtopics.map((subtopic) => (
+                    <SelectItem key={subtopic.id} value={subtopic.id} className="rounded-lg">
+                      {subtopic.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">{t.shadowing.search || '搜索'}</Label>
+              <Input
+                placeholder={t.shadowing.search_placeholder || '搜索标题、主题...'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </CollapsibleFilterSection>
+
+          {/* 快捷操作 */}
           <div className="flex gap-3">
             <Button
               size="sm"
@@ -5814,6 +5841,54 @@ export default function ShadowingPage() {
                 onScrollToTop={scrollToTop}
               />
             )}
+
+            {/* 移动端底部解释区域 */}
+            {mobileExplanation && (
+              <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl transform transition-all duration-300 ease-in-out animate-in slide-in-from-bottom">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-lg text-blue-600">{mobileExplanation.word}</span>
+                      <button
+                        onClick={() => {
+                          // 触发发音 - 使用与生词模块相同的发音函数
+                          speakWord(mobileExplanation.word, currentItem?.lang || 'ko');
+                        }}
+                        className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 active:scale-95 transition-all duration-150 touch-manipulation"
+                        title="发音"
+                      >
+                        🔊
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setMobileExplanation(null)}
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all duration-150 active:scale-95 touch-manipulation"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="text-gray-700 mb-3">
+                    {mobileExplanation.explanation.gloss_native}
+                  </div>
+                  {mobileExplanation.fromVocab && (
+                    <button
+                      onClick={() => {
+                        // 刷新解释功能
+                        handleRefreshExplanation(mobileExplanation.word, mobileExplanation.vocabId);
+                        // 刷新后更新解释
+                        setMobileExplanation(prev => prev ? {
+                          ...prev,
+                          explanation: { ...prev.explanation, gloss_native: '刷新中...' }
+                        } : null);
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 underline"
+                    >
+                      🔄 刷新解释
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* 桌面端布局 - 优化滚动体验 */
@@ -5880,222 +5955,192 @@ export default function ShadowingPage() {
                   <>
                     {/* 过滤器 */}
                     <div className="p-6 bg-gray-50/50 space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <Filter className="w-3 h-3 text-blue-600" />
-                        </div>
-                        <span className="text-sm font-semibold text-gray-700">
-                          {t.shadowing.filter}
-                        </span>
-                      </div>
-
-                      {/* 语言选择 */}
-                      <FilterLanguageSelector
-                        value={lang}
-                        onChange={setLang}
-                        allowedLanguages={permissions.allowed_languages}
-                        className="h-10"
-                      />
-
-                      {/* 等级选择 */}
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">
-                          {t.shadowing.level}
-                        </Label>
-                        <Select
-                          value={level?.toString() || 'all'}
-                          onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
-                        >
-                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                            <SelectValue placeholder="全部等级" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                            <SelectItem value="all" className="rounded-lg">
-                              全部等级
-                            </SelectItem>
-                            {permissions.allowed_levels.includes(1) && (
-                              <SelectItem value="1" className="rounded-lg">
-                                L1 - 初级
-                              </SelectItem>
-                            )}
-                            {permissions.allowed_levels.includes(2) && (
-                              <SelectItem value="2" className="rounded-lg">
-                                L2 - 初中级
-                              </SelectItem>
-                            )}
-                            {permissions.allowed_levels.includes(3) && (
-                              <SelectItem value="3" className="rounded-lg">
-                                L3 - 中级
-                              </SelectItem>
-                            )}
-                            {permissions.allowed_levels.includes(4) && (
-                              <SelectItem value="4" className="rounded-lg">
-                                L4 - 中高级
-                              </SelectItem>
-                            )}
-                            {permissions.allowed_levels.includes(5) && (
-                              <SelectItem value="5" className="rounded-lg">
-                                L5 - 高级
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 推荐等级显示 - 美化版 */}
-                      {recommendedLevel && (
-                        <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-200 shadow-md overflow-hidden animate-pulse">
-                          {/* 装饰性闪光效果 */}
-                          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/30 to-amber-200/30 rounded-full blur-2xl" />
-                          
-                          <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                                <Star className="w-4 h-4 text-white fill-white" />
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Sparkles className="w-4 h-4 text-amber-600" />
-                                <span className="text-sm font-bold text-amber-900">为你推荐</span>
-                              </div>
-                            </div>
-                            <div className="text-lg font-bold text-amber-900 flex items-baseline gap-2 mb-2">
-                              <span>等级</span>
-                              <span className="text-2xl text-orange-600">L{recommendedLevel}</span>
-                            </div>
-                            <p className="text-xs text-amber-700 mb-3">根据你的学习进度推荐</p>
-                            {level !== recommendedLevel && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setLevel(recommendedLevel)}
-                                className="h-8 text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 shadow-sm"
-                              >
-                                使用推荐等级
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 练习状态 */}
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">
-                          {t.shadowing.practice_status}
-                        </Label>
-                        <Select
-                          value={practiced}
-                          onValueChange={(v: 'all' | 'practiced' | 'unpracticed') =>
-                            setPracticed(v)
-                          }
-                        >
-                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                            <SelectItem value="all" className="rounded-lg">
-                              全部
-                            </SelectItem>
-                            <SelectItem value="unpracticed" className="rounded-lg">
-                              未练习
-                            </SelectItem>
-                            <SelectItem value="practiced" className="rounded-lg">
-                              已练习
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 体裁筛选 */}
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">
-                          {t.shadowing.genre}
-                        </Label>
-                        <Select value={theme} onValueChange={setTheme}>
-                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                            {GENRE_OPTIONS.map((option) => (
-                              <SelectItem
-                                key={option.value}
-                                value={option.value}
-                                className="rounded-lg"
-                              >
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 大主题筛选 */}
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">
-                          {t.shadowing.major_theme}
-                        </Label>
-                        <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
-                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                            <SelectItem value="all" className="rounded-lg">
-                              全部大主题
-                            </SelectItem>
-                            {themes.map((theme) => (
-                              <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
-                                {theme.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 小主题筛选 */}
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">
-                          {t.shadowing.minor_theme}
-                        </Label>
-                        <Select
-                          value={selectedSubtopicId}
-                          onValueChange={setSelectedSubtopicId}
-                          disabled={selectedThemeId === 'all'}
-                        >
-                          <SelectTrigger
-                            className={`h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}
-                          >
-                            <SelectValue
-                              placeholder={
-                                selectedThemeId === 'all' ? '请先选择大主题' : '选择小主题'
-                              }
-                            />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                            <SelectItem value="all" className="rounded-lg">
-                              全部小主题
-                            </SelectItem>
-                            {subtopics.map((subtopic) => (
-                              <SelectItem
-                                key={subtopic.id}
-                                value={subtopic.id}
-                                className="rounded-lg"
-                              >
-                                {subtopic.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 搜索 */}
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium text-gray-700">{t.shadowing.search || '搜索'}</Label>
-                        <Input
-                          placeholder={t.shadowing.search_placeholder || '搜索标题、主题...'}
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      {/* 基础筛选 - 默认展开 */}
+                      <CollapsibleFilterSection
+                        title={t.shadowing.filter || '筛选'}
+                        icon={<Filter className="w-3 h-3 text-blue-600" />}
+                        defaultOpen={true}
+                      >
+                        {/* 语言选择 */}
+                        <FilterLanguageSelector
+                          value={lang}
+                          onChange={setLang}
+                          allowedLanguages={permissions.allowed_languages}
+                          className="h-10"
                         />
-                      </div>
+
+                        {/* 等级选择 */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            {t.shadowing.level}
+                          </Label>
+                          <Select
+                            value={level?.toString() || 'all'}
+                            onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
+                          >
+                            <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                              <SelectValue placeholder="全部等级" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                              <SelectItem value="all" className="rounded-lg">
+                                全部等级
+                              </SelectItem>
+                              {permissions.allowed_levels.includes(1) && (
+                                <SelectItem value="1" className="rounded-lg">
+                                  L1 - 初级
+                                </SelectItem>
+                              )}
+                              {permissions.allowed_levels.includes(2) && (
+                                <SelectItem value="2" className="rounded-lg">
+                                  L2 - 初中级
+                                </SelectItem>
+                              )}
+                              {permissions.allowed_levels.includes(3) && (
+                                <SelectItem value="3" className="rounded-lg">
+                                  L3 - 中级
+                                </SelectItem>
+                              )}
+                              {permissions.allowed_levels.includes(4) && (
+                                <SelectItem value="4" className="rounded-lg">
+                                  L4 - 中高级
+                                </SelectItem>
+                              )}
+                              {permissions.allowed_levels.includes(5) && (
+                                <SelectItem value="5" className="rounded-lg">
+                                  L5 - 高级
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </CollapsibleFilterSection>
+
+                      {/* 高级筛选 - 默认折叠 */}
+                      <CollapsibleFilterSection
+                        title="高级筛选"
+                        icon={<Target className="w-3 h-3 text-blue-600" />}
+                        defaultOpen={false}
+                      >
+                        {/* 练习状态 */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            {t.shadowing.practice_status}
+                          </Label>
+                          <Select
+                            value={practiced}
+                            onValueChange={(v: 'all' | 'practiced' | 'unpracticed') =>
+                              setPracticed(v)
+                            }
+                          >
+                            <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                              <SelectItem value="all" className="rounded-lg">
+                                全部
+                              </SelectItem>
+                              <SelectItem value="unpracticed" className="rounded-lg">
+                                未练习
+                              </SelectItem>
+                              <SelectItem value="practiced" className="rounded-lg">
+                                已练习
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* 体裁筛选 */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            {t.shadowing.genre}
+                          </Label>
+                          <Select value={theme} onValueChange={setTheme}>
+                            <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                              {GENRE_OPTIONS.map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                  className="rounded-lg"
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* 大主题筛选 */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            {t.shadowing.major_theme}
+                          </Label>
+                          <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
+                            <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                              <SelectItem value="all" className="rounded-lg">
+                                全部大主题
+                              </SelectItem>
+                              {themes.map((theme) => (
+                                <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
+                                  {theme.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* 小主题筛选 */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">
+                            {t.shadowing.minor_theme}
+                          </Label>
+                          <Select
+                            value={selectedSubtopicId}
+                            onValueChange={setSelectedSubtopicId}
+                            disabled={selectedThemeId === 'all'}
+                          >
+                            <SelectTrigger
+                              className={`h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}
+                            >
+                              <SelectValue
+                                placeholder={
+                                  selectedThemeId === 'all' ? '请先选择大主题' : '选择小主题'
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                              <SelectItem value="all" className="rounded-lg">
+                                全部小主题
+                              </SelectItem>
+                              {subtopics.map((subtopic) => (
+                                <SelectItem
+                                  key={subtopic.id}
+                                  value={subtopic.id}
+                                  className="rounded-lg"
+                                >
+                                  {subtopic.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* 搜索 */}
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium text-gray-700">{t.shadowing.search || '搜索'}</Label>
+                          <Input
+                            placeholder={t.shadowing.search_placeholder || '搜索标题、主题...'}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </CollapsibleFilterSection>
 
                       {/* 快捷操作 */}
                       <div className="flex gap-3">
@@ -6121,65 +6166,41 @@ export default function ShadowingPage() {
                     </div>
 
                     {/* 统计信息 - 卡片化设计 */}
-                    <div className="p-4 space-y-3 bg-gray-50/50">
-                      {/* 总题数卡片 */}
-                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
-                        <div className="flex items-center justify-between">
-                          <div>
+                    <div className="p-4 bg-gray-50/50">
+                      {/* 紧凑横排统计信息 */}
+                      <div className="grid grid-cols-4 gap-3">
+                        {/* 总题数 */}
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-lg p-3 border border-blue-200">
+                          <div className="text-center">
                             <p className="text-xs text-blue-600 font-medium mb-1">总题数</p>
-                            <p className="text-2xl font-bold text-blue-900">{filteredItems.length}</p>
-                          </div>
-                          <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                            <BookOpen className="w-5 h-5 text-blue-600" />
+                            <p className="text-xl font-bold text-blue-900">{filteredItems.length}</p>
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* 已完成卡片 */}
-                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
+                        
+                        {/* 已完成 */}
+                        <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-lg p-3 border border-green-200">
+                          <div className="text-center">
                             <p className="text-xs text-green-600 font-medium mb-1">已完成</p>
-                            <p className="text-2xl font-bold text-green-900">{filteredItems.filter((item) => item.isPracticed).length}</p>
-                          </div>
-                          <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                            <CheckCircle className="w-5 h-5 text-green-600" />
+                            <p className="text-xl font-bold text-green-900">{filteredItems.filter((item) => item.isPracticed).length}</p>
+                            <p className="text-xs text-green-600 mt-1">
+                              {filteredItems.length > 0 ? Math.round((filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100) : 0}%
+                            </p>
                           </div>
                         </div>
-                        {/* 进度条 */}
-                        <div className="w-full bg-green-200/50 rounded-full h-1.5 overflow-hidden">
-                          <div 
-                            className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500"
-                            style={{ width: `${filteredItems.length > 0 ? (filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100 : 0}%` }}
-                          />
-                        </div>
-                        <p className="text-xs text-green-600 mt-1">
-                          {filteredItems.length > 0 ? Math.round((filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100) : 0}%
-                        </p>
-                      </div>
-                      
-                      {/* 草稿中卡片 */}
-                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
-                        <div className="flex items-center justify-between">
-                          <div>
+                        
+                        {/* 草稿中 */}
+                        <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg p-3 border border-amber-200">
+                          <div className="text-center">
                             <p className="text-xs text-amber-600 font-medium mb-1">草稿中</p>
-                            <p className="text-2xl font-bold text-amber-900">{filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}</p>
-                          </div>
-                          <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                            <FileEdit className="w-5 h-5 text-amber-600" />
+                            <p className="text-xl font-bold text-amber-900">{filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}</p>
                           </div>
                         </div>
-                      </div>
-                      
-                      {/* 未开始卡片 */}
-                      <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-gray-50 to-gray-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
-                        <div className="flex items-center justify-between">
-                          <div>
+                        
+                        {/* 未开始 */}
+                        <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-lg p-3 border border-gray-200">
+                          <div className="text-center">
                             <p className="text-xs text-gray-600 font-medium mb-1">未开始</p>
-                            <p className="text-2xl font-bold text-gray-900">{filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}</p>
-                          </div>
-                          <div className="w-10 h-10 rounded-full bg-gray-500/10 flex items-center justify-center">
-                            <Circle className="w-5 h-5 text-gray-600" />
+                            <p className="text-xl font-bold text-gray-900">{filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}</p>
                           </div>
                         </div>
                       </div>
