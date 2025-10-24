@@ -978,7 +978,7 @@ export default function ShadowingPage() {
   // 发音功能
   const speakWord = (word: string, lang: string) => {
     speakTextUtil(word, lang, {
-      rate: 0.8, // 稍慢一点，便于学习
+      rate: 0.6, // 统一语速设置
       pitch: 1,
       volume: 1,
     });

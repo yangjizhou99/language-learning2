@@ -38,13 +38,54 @@ export const speakText = (text: string, lang: string, options: SpeechOptions = {
     }[lang] || 'en-US';
 
   utterance.lang = langCode;
-  utterance.rate = options.rate || 0.8;
-  utterance.pitch = options.pitch || 1;
-  utterance.volume = options.volume || 1;
+  
+  // iPad设备韩语语音特殊处理
+  const isIPad = /iPad/.test(navigator.userAgent);
+  if (lang === 'ko' && isIPad) {
+    // iPad韩语优化：保持正常音调
+    utterance.rate = options.rate || 0.6;
+    utterance.pitch = options.pitch || 1.0; // 正常音调
+    utterance.volume = options.volume || 1;
+  } else {
+    utterance.rate = options.rate || 0.6;
+    utterance.pitch = options.pitch || 1;
+    utterance.volume = options.volume || 1;
+  }
 
   // 选择最合适的语音引擎
   const selectBestVoice = () => {
     const voices = window.speechSynthesis.getVoices();
+    
+    if (lang === 'ko' && isIPad) {
+      // iPad韩语语音引擎选择 - 优先选择女性语音
+      const koreanVoices = voices.filter(voice => 
+        voice.lang.startsWith('ko') || 
+        voice.name.toLowerCase().includes('korean') ||
+        voice.name.toLowerCase().includes('korea') ||
+        voice.name.toLowerCase().includes('한국어')
+      );
+
+      if (koreanVoices.length > 0) {
+        // 优先选择女性韩语语音引擎
+        const femaleVoices = koreanVoices.filter(voice => 
+          voice.name.toLowerCase().includes('female') ||
+          voice.name.toLowerCase().includes('woman') ||
+          voice.name.toLowerCase().includes('여성') ||
+          voice.name.toLowerCase().includes('yuna') ||
+          voice.name.toLowerCase().includes('sora') ||
+          voice.name.toLowerCase().includes('female')
+        );
+        
+        if (femaleVoices.length > 0) {
+          utterance.voice = femaleVoices[0];
+          return;
+        }
+        
+        // 如果没有女性语音，选择第一个可用的韩语语音
+        utterance.voice = koreanVoices[0];
+        return;
+      }
+    }
 
     if (lang === 'ja') {
       // 对于日语，按优先级选择语音引擎
@@ -61,7 +102,6 @@ export const speakText = (text: string, lang: string, options: SpeechOptions = {
         return;
       }
     }
-
 
     // 如果没有找到特定语言的语音，尝试匹配语言代码
     const matchingVoices = voices.filter(
