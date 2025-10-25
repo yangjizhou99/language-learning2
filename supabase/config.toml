@@ -7,7 +7,7 @@ project_id = "language-learning2"
 [api]
 enabled = true
 # Port to use for the API URL.
-port = 54341
+port = 55433
 # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
 # endpoints. `public` and `graphql_public` schemas are included by default.
 schemas = ["public", "graphql_public"]
@@ -23,9 +23,9 @@ enabled = false
 
 [db]
 # Port to use for the local database URL.
-port = 54340
+port = 55432
 # Port used by db diff command to initialize the shadow database.
-shadow_port = 54320
+shadow_port = 55436
 # The database major version to use. This has to be the same as your remote database's. Run `SHOW
 # server_version;` on the remote database to check.
 major_version = 17
@@ -79,9 +79,9 @@ enabled = true
 [studio]
 enabled = true
 # Port to use for Supabase Studio.
-port = 54342
+port = 55434
 # External URL of the API server that frontend connects to.
-api_url = "http://192.168.31.25"
+api_url = "http://127.0.0.1:55433"
 # OpenAI API Key to use for Supabase AI in the Supabase Studio.
 openai_api_key = "env(OPENAI_API_KEY)"
 
@@ -90,7 +90,7 @@ openai_api_key = "env(OPENAI_API_KEY)"
 [inbucket]
 enabled = true
 # Port to use for the email testing server web interface.
-port = 54343
+port = 55435
 # Uncomment to expose additional ports for testing user applications that send emails.
 # smtp_port = 54325
 # pop3_port = 54326
@@ -119,7 +119,7 @@ enabled = true
 # in emails.
 site_url = "http://192.168.31.25:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://192.168.31.25:3000", "https://192.168.31.25:3000"]
+additional_redirect_urls = ["http://192.168.31.25:3000", "https://192.168.31.25:3000", "http://localhost:3000", "http://127.0.0.1:3000"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # Path to JWT signing key. DO NOT commit your signing keys file to git.
@@ -317,7 +317,7 @@ deno_version = 2
 
 [analytics]
 enabled = true
-port = 54350
+port = 55437
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 

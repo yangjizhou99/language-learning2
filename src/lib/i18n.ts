@@ -28,6 +28,7 @@ export interface Translations {
     close: string;
     expand: string;
     collapse: string;
+    loading_dots: string; // 新增：带省略号的加载文本
   };
 
   // 首页
@@ -471,6 +472,33 @@ export interface Translations {
     practice_done_desc: string;
     practice_again: string;
     back_to_catalog: string;
+    // 新增：警告消息
+    alert_messages: {
+      microphone_permission_https: string;
+      microphone_permission_settings: string;
+      audio_capture_failed: string;
+      speech_recognition_unavailable: string;
+      browser_not_supported: string;
+      audio_timeline_not_found: string;
+      select_adjacent_segments: string;
+      max_acu_blocks: string;
+      no_content: string;
+      // 新增：麦克风权限相关
+      microphone_permission_denied_mobile: string;
+      microphone_permission_denied_desktop: string;
+      microphone_audio_capture_error: string;
+      microphone_service_not_allowed: string;
+      speech_recognition_not_supported: string;
+      no_audio_or_timeline: string;
+      no_content_message: string; // 新增：无内容提示消息
+    };
+    // 新增：ACU文本相关
+    acu_text: {
+      select_adjacent_units: string;
+      max_5_units: string;
+      confirm_add_to_vocab: string;
+      cancel: string;
+    };
   };
 
   // 词汇页面
@@ -645,6 +673,7 @@ const zh: Translations = {
     close: '关闭',
     expand: '展开',
     collapse: '折叠',
+    loading_dots: '加载中...',
   },
   home: {
     brand: 'Lang Trainer',
@@ -1022,7 +1051,7 @@ const zh: Translations = {
     unknown_error: '未知错误',
     // Guides
     guide_blind_listen_title: '如何高效盲听：',
-    guide_blind_listen_tip1: '准备好后点击“下一步”，再看原文跟读',
+    guide_blind_listen_tip1: '准备好后点击"下一步"，再看原文跟读',
     guide_select_words_title: '选生词 + AI 解释：',
     guide_view_translation_title: '查看翻译：',
     search_adjust_filters_hint: '试试调整筛选条件或搜索关键词',
@@ -1037,7 +1066,7 @@ const zh: Translations = {
     guide_read_text_tip2: '再次播放音频，对照原文跟读（注意连读/重音）',
     guide_read_text_tip3: '跟读时轻声起步，逐步提升音量与流畅度',
     guide_select_words_tip1: '点击原文中的词语即可加入生词',
-    guide_select_words_tip2: '点击“AI解释”为生词生成本地化释义与例句',
+    guide_select_words_tip2: '点击"AI解释"为生词生成本地化释义与例句',
     guide_select_words_tip3: '建议聚焦于影响理解的关键词汇，避免一次选太多',
     guide_view_translation_tip1: '优先显示你的母语翻译，理解语义与细节',
     guide_view_translation_tip2: '遇到不通顺的地方，回放原文定位比对',
@@ -1082,6 +1111,33 @@ const zh: Translations = {
     practice_done_desc: '成绩与生词已保存，你可以选择继续提升',
     practice_again: '再练一次',
     back_to_catalog: '返回题库',
+    // 新增：警告消息
+    alert_messages: {
+      microphone_permission_https: '请确保您的浏览器支持HTTPS连接，否则录音功能可能无法正常工作。',
+      microphone_permission_settings: '请检查您的麦克风权限设置，确保录音功能已启用。',
+      audio_capture_failed: '录音过程中出现错误，请检查麦克风或网络连接。',
+      speech_recognition_unavailable: '语音识别功能不可用，请检查网络连接或稍后再试。',
+      browser_not_supported: '当前浏览器不支持录音功能，请使用最新版Chrome浏览器。',
+      audio_timeline_not_found: '未找到音频时间线，请检查录音文件是否完整。',
+      select_adjacent_segments: '请选择相邻的音频段落进行录音。',
+      max_acu_blocks: '录音文件超过最大限制，请分段录音。',
+      no_content: '录音文件为空，请重新录音。',
+      // 新增：麦克风权限相关
+      microphone_permission_denied_mobile: '您的移动设备未授权录音权限，请在设置中启用录音权限。',
+      microphone_permission_denied_desktop: '您的桌面设备未授权录音权限，请在设置中启用录音权限。',
+      microphone_audio_capture_error: '录音过程中出现错误，请检查麦克风或网络连接。',
+      microphone_service_not_allowed: '录音服务未被允许，请检查麦克风权限设置。',
+      speech_recognition_not_supported: '当前浏览器不支持语音识别功能，请使用最新版Chrome浏览器。',
+      no_audio_or_timeline: '未检测到音频或音频时间线，请检查录音文件是否完整。',
+      no_content_message: '录音文件为空，请重新录音。', // 新增：无内容提示消息
+    },
+    // 新增：ACU文本相关
+    acu_text: {
+      select_adjacent_units: '选择相邻的单元',
+      max_5_units: '最多5个单元',
+      confirm_add_to_vocab: '确认添加到生词本',
+      cancel: '取消',
+    },
   },
   vocabulary: {
     title: '生词本',
@@ -1254,6 +1310,7 @@ const en: Translations = {
     close: 'Close',
     expand: 'Expand',
     collapse: 'Collapse',
+    loading_dots: 'Loading...',
   },
   home: {
     brand: 'Lang Trainer',
@@ -1627,7 +1684,7 @@ const en: Translations = {
       mind_word_pronunciation: 'Mind the pronunciation of words',
       slow_down: 'Try slowing down your speaking rate',
       listen_before_practice: 'Listen several times before practicing',
-      each_word_pronunciation: 'Focus on each word’s pronunciation',
+      each_word_pronunciation: 'Focus on each word\'s pronunciation',
       practice_in_sections: 'Practice in sections',
       practice_more: 'Practice more for better results',
       transcription_too_short: 'Transcription is too short; consider re-recording',
@@ -1641,7 +1698,7 @@ const en: Translations = {
     unknown_error: 'Unknown error',
     // Guides
     guide_blind_listen_title: 'How to blind-listen effectively:',
-    guide_blind_listen_tip1: 'Click “Next” when ready, then read along with text',
+    guide_blind_listen_tip1: 'Click "Next" when ready, then read along with text',
     guide_select_words_title: 'Pick words + AI explanation:',
     guide_view_translation_title: 'View translation:',
     search_adjust_filters_hint: 'Try adjusting filters or search keywords',
@@ -1656,7 +1713,7 @@ const en: Translations = {
     guide_read_text_tip2: 'Play again and shadow with the text (watch linking/stress)',
     guide_read_text_tip3: 'Start softly and gradually increase volume and fluency',
     guide_select_words_tip1: 'Click words in the text to add to vocabulary',
-    guide_select_words_tip2: 'Click “AI Explanation” to generate localized gloss and examples',
+    guide_select_words_tip2: 'Click "AI Explanation" to generate localized gloss and examples',
     guide_select_words_tip3: 'Focus on key words; avoid selecting too many at once',
     guide_view_translation_tip1: 'Prefer your native translation to understand meaning and details',
     guide_view_translation_tip2: 'Replay the original to compare when something feels unclear',
@@ -1701,6 +1758,33 @@ const en: Translations = {
     practice_done_desc: 'Scores and words saved. You can continue improving.',
     practice_again: 'Practice Again',
     back_to_catalog: 'Back to Catalog',
+    // 新增：警告消息
+    alert_messages: {
+      microphone_permission_https: 'Please ensure your browser supports HTTPS connections, otherwise the recording feature may not work properly.',
+      microphone_permission_settings: 'Please check your microphone permissions settings to ensure the recording feature is enabled.',
+      audio_capture_failed: 'An error occurred while recording audio. Please check your microphone or network connection and try again.',
+      speech_recognition_unavailable: 'Speech recognition is not available in your browser. Please try again later or use a different browser.',
+      browser_not_supported: 'This browser does not support the recording feature. Please use the latest version of Chrome.',
+      audio_timeline_not_found: 'Audio timeline not found. Please try again or check your recording file.',
+      select_adjacent_segments: 'Please select adjacent audio segments for recording.',
+      max_acu_blocks: 'Recording file exceeds maximum limit. Please split the recording into smaller segments.',
+      no_content: 'Recording file is empty. Please try again or check your microphone.',
+      // 新增：麦克风权限相关
+      microphone_permission_denied_mobile: 'Your mobile device has not granted microphone permission. Please check your settings and try again.',
+      microphone_permission_denied_desktop: 'Your desktop device has not granted microphone permission. Please check your settings and try again.',
+      microphone_audio_capture_error: 'An error occurred while capturing audio. Please check your microphone or network connection and try again.',
+      microphone_service_not_allowed: 'The microphone service is not allowed. Please check your settings and try again.',
+      speech_recognition_not_supported: 'Speech recognition is not supported in your browser. Please use the latest version of Chrome.',
+      no_audio_or_timeline: 'No audio detected or audio timeline not found. Please check your recording file and try again.',
+      no_content_message: 'Recording file is empty. Please try again or check your microphone.', // 新增：无内容提示消息
+    },
+    // 新增：ACU文本相关
+    acu_text: {
+      select_adjacent_units: 'Select adjacent units',
+      max_5_units: 'Max 5 units',
+      confirm_add_to_vocab: 'Confirm Add to Vocabulary',
+      cancel: 'Cancel',
+    },
   },
   vocabulary: {
     title: 'Vocabulary',
@@ -1807,14 +1891,14 @@ const en: Translations = {
       generation_preparing: 'Preparing to start generation...',
       generation_sending_request: 'Sending request to AI service...',
       generation_processing: 'AI is analyzing and processing {count} words...',
-      generation_generating: 'Generating explanations... {progress}%',
-      generation_finalizing: 'Almost done, organizing results...',
+      generation_generating: '正在生成解释... {progress}%',
+      generation_finalizing: '即将完成，正在整理结果...',
       generation_completed: 'Successfully generated explanations for {count} words!',
-      generation_failed_status: 'Generation failed: {error}',
+      generation_failed_status: '生成失败：{error}',
       // 页面描述
       page_description: 'Manage your vocabulary collection and improve language learning efficiency',
       review_count_placeholder: 'Review count',
-      review_count_all: 'All',
+      review_count_all: '全部',
       review_count_10: '10 items',
       review_count_20: '20 items',
       review_count_30: '30 items',
@@ -1830,7 +1914,7 @@ const en: Translations = {
       update_status_failed: 'Failed to update word status',
       delete_failed_unknown: 'Unknown error',
       batch_delete_partial_failed: ', but {count} words failed to delete, please retry',
-      batch_delete_retry: ', {count} failed',
+      batch_delete_retry: '，失败 {count} 个',
       generation_details: 'Details: ',
     },
     status_labels: {
@@ -1874,6 +1958,7 @@ const ja: Translations = {
     close: '閉じる',
     expand: '展開',
     collapse: '折りたたむ',
+    loading_dots: '読み込み中...',
   },
   home: {
     brand: 'Lang Trainer',
@@ -2239,83 +2324,110 @@ const ja: Translations = {
       clearer_pronunciation: 'より明瞭な発音を心がけましょう',
       intonation_rhythm: 'イントネーションとリズムに注意',
       listen_more: '原文を数回聞くことをおすすめします',
-      mind_word_pronunciation: '単語の発音に注意',
-      slow_down: '話す速度を少し落としてみましょう',
-      listen_before_practice: '練習前に数回聞いてみましょう',
-      each_word_pronunciation: '各単語の発音に注意',
-      practice_in_sections: 'セクションごとに練習',
-      practice_more: '回数を重ねるとより良くなります',
-      transcription_too_short: '文字起こしが少なすぎます。再録音を検討してください',
-      transcription_incomplete: '文字起こしが不完全です。再録音を検討してください',
+      mind_word_pronunciation: '注意单词的发音',
+      slow_down: '可以尝试放慢语速',
+      listen_before_practice: '建议先听几遍原文再练习',
+      each_word_pronunciation: '注意每个单词的发音',
+      practice_in_sections: '可以分段练习',
+      practice_more: '多练习几次会更好',
+      transcription_too_short: '转录内容较少，建议重新录音',
+      transcription_incomplete: '转录内容不完整，建议重新录音',
     },
-    issue_missing_chars: '欠落文字: {items}',
-    issue_missing_words: '欠落単語: {items}',
-    issue_most_missing: 'ほとんどの内容が発話されていません',
-    pronounced_as: '"{original}" を "{error}" と発音しました',
-    scoring_failed: '採点に失敗しました: {error}',
-    unknown_error: '不明なエラー',
+    issue_missing_chars: '遗漏字符: {items}',
+    issue_missing_words: '遗漏单词: {items}',
+    issue_most_missing: '大部分内容未说出',
+    pronounced_as: '"{original}" 说成了 "{error}"',
+    scoring_failed: '评分失败: {error}',
+    unknown_error: '未知错误',
     // Guides
-    guide_blind_listen_title: '効果的な盲聴のコツ：',
-    guide_blind_listen_tip1: '準備ができたら「次へ」をクリックし、原文を見ながら練習',
-    guide_select_words_title: '単語選択 + AI説明：',
-    guide_view_translation_title: '翻訳を見る：',
-    search_adjust_filters_hint: 'フィルターや検索キーワードを調整してみてください',
-    guide_view_translation_tip3: '理解したら原文に戻ってもう一度シャドーイングし、記憶を強化',
-    record_and_score_title: '録音と採点：',
-    guide_record_tip1: '原文に合わせて一文ずつ録音し、リズムと間を意識',
-    guide_record_tip2: '録音保存後に採点をクリックし、全体と文ごとの分析を確認',
-    guide_record_tip3: '指摘事項に基づいて再練習するとスコアが大幅に向上',
-    previous_words_title: '以前の単語 ({count})',
-    duration_seconds: '再生時間: {seconds}秒',
-    guide_read_text_tip1: 'まず原文の構成と段落をざっと確認',
-    guide_read_text_tip2: 'もう一度再生し、原文を見ながらシャドーイング（連結や強勢に注意）',
-    guide_read_text_tip3: '小さな声から始め、徐々に音量と流暢さを上げる',
-    guide_select_words_tip1: '本文の単語をクリックして単語帳に追加',
-    guide_select_words_tip2: '「AI説明」をクリックしてローカライズされた解説と例文を生成',
-    guide_select_words_tip3: '理解に影響するキーワードに集中し、一度に選びすぎない',
-    guide_view_translation_tip1: '母語の翻訳を優先して意味と細部を理解',
-    guide_view_translation_tip2: '不自然な箇所は原文を再生して照合',
-    // よく使う操作/ヒント（新規）
-    refresh_explanation: '説明を更新',
+    guide_blind_listen_title: '如何高效盲听：',
+    guide_blind_listen_tip1: '准备好后点击"下一步"，再看原文跟读',
+    guide_select_words_title: '选生词 + AI 解释：',
+    guide_view_translation_title: '查看翻译：',
+    search_adjust_filters_hint: '试试调整筛选条件或搜索关键词',
+    guide_view_translation_tip3: '理解后可返回原文再跟读一遍，强化记忆',
+    record_and_score_title: '录音与评分：',
+    guide_record_tip1: '对照原文逐句录音，尽量贴合节奏与停顿',
+    guide_record_tip2: '录完保存后点击评分，查看整体与逐句分析',
+    guide_record_tip3: '根据问题提示再次练习可显著提升分数',
+    previous_words_title: '之前的生词 ({count})',
+    duration_seconds: '时长: {seconds}秒',
+    guide_read_text_tip1: '先快速浏览一遍原文结构与段落',
+    guide_read_text_tip2: '再次播放音频，对照原文跟读（注意连读/重音）',
+    guide_read_text_tip3: '跟读时轻声起步，逐步提升音量与流畅度',
+    guide_select_words_tip1: '点击原文中的词语即可加入生词',
+    guide_select_words_tip2: '点击"AI解释"为生词生成本地化释义与例句',
+    guide_select_words_tip3: '建议聚焦于影响理解的关键词汇，避免一次选太多',
+    guide_view_translation_tip1: '优先显示你的母语翻译，理解语义与细节',
+    guide_view_translation_tip2: '遇到不通顺的地方，回放原文定位比对',
+    // 常用动作/提示（本轮新增）
+    refresh_explanation: '刷新解释',
     generating: '生成中...',
-    ai_explanation_button: 'AI説明',
-    ai_explanation_batch_button: '一括AI説明',
-    ai_explanation_generation_progress: 'AI説明の生成進捗',
-    translation_support_hint: '多言語翻訳サポート',
-    translation_none_title: '翻訳はありません',
-    translation_none_desc: '翻訳がまだ生成されていない可能性があります',
-    translation_enable_action: '翻訳を有効化',
-    translation_enable_hint: '上のオプションをチェックして翻訳を表示',
+    ai_explanation_button: 'AI解释',
+    ai_explanation_batch_button: '一键AI解释',
+    ai_explanation_generation_progress: 'AI解释生成进度',
+    translation_support_hint: '多语言翻译支持',
+    translation_none_title: '暂无翻译',
+    translation_none_desc: 'Translation may not be generated yet',
+    translation_enable_action: '开启翻译功能',
+    translation_enable_hint: '勾选上方选项以显示翻译内容',
     step_labels: {
-      blind_listen: '盲聴',
-      read_text: '原文+翻訳を見る',
-      select_words: '単語選択',
-      record_scoring: '録音と採点',
+      blind_listen: '盲听',
+      read_text: '看原文+翻译',
+      select_words: '选生词',
+      record_scoring: '录音评分',
     },
     messages: {
-      add_vocab_failed: '単語の追加に失敗しました。もう一度お試しください',
-      batch_ai_explanation_none_success: 'AI説明が生成されませんでした。再試行してください',
-      batch_ai_explanation_failed: '一括AI説明の生成に失敗しました：{error}',
-      generate_explanation_failed: '説明の生成に失敗しました。再試行してください',
-      practice_completed_delayed_sync: '練習は完了しましたが、一部のデータ同期に時間がかかる場合があります',
-      confirm_delete_vocab: '単語 "{word}" を単語帳から削除しますか？この操作は元に戻せません。',
+      add_vocab_failed: '添加生词失败，请重试',
+      batch_ai_explanation_none_success: '没有成功生成任何AI解释，请重试',
+      batch_ai_explanation_failed: '批量生成AI解释失败：{error}',
+      generate_explanation_failed: '生成解释失败，请重试',
+      practice_completed_delayed_sync: '练习已完成，但部分数据同步可能延迟',
+      confirm_delete_vocab: '确定要删除生词 "{word}" 吗？这将从生词表中永久删除。',
     },
     // 保存弹窗
     saving_modal_title: '保存中...',
-    saving_modal_description: '練習データを保存中です。お待ちください',
+    saving_modal_description: '正在保存练习数据，请稍候',
     // 功能说明
     functionality_guide:
-      '📚 問題選択：日英中三言語、L1-L5レベル、スマートフィルタリング\n🎤 録音練習：音声再生、リアルタイム録音、発音比較\n🎯 スマート採点：音声認識、5段階採点システム\n📖 単語管理：ドラッグで単語選択、自動保存\n💾 進捗追跡：練習状況管理、下書き保存対応',
-    // ステップのヒントと完了カード
-    step1_tip: 'Step 1 · 盲聴：まず原文を見ずに一度通して聞く。準備できたら「次へ」。',
-    step2_tip: 'Step 2 · 原文+翻訳を見てシャドーイング：原文と翻訳を見ながらもう一度再生して追い読み。',
-    step3_tip: 'Step 3 · 単語選択：単語モードを有効化し、本文の単語をタップしてAI説明を生成。',
-    step4_tip: 'Step 4 · 録音と採点：録音して採点。原文のみ表示、他モジュールは非表示。',
-    step5_tip: 'Step 5 · 完了：練習が完了しました。スコアを確認するか、再練習できます。',
-    practice_done_title: '練習完了',
-    practice_done_desc: 'スコアと単語は保存されました。さらに上達を目指しましょう。',
-    practice_again: 'もう一度練習',
-    back_to_catalog: '題庫に戻る',
+      '📚 题目选择：支持日英中三语，L1-L5难度等级，智能筛选\n🎤 录音练习：音频播放、实时录音、发音对比\n🎯 智能评分：语音识别、5级评分体系\n📖 生词管理：拖拽选择生词，自动保存到生词本\n💾 进度跟踪：练习状态管理，支持草稿保存',
+    // 分步骤引导与完成卡片
+    step1_tip: 'Step 1 · 盲听：先完整听一遍，不看原文。准备好后点击"下一步"。',
+    step2_tip: 'Step 2 · 看原文+翻译跟读：现在可以看原文和翻译，再听一遍并跟读。',
+    step3_tip: 'Step 3 · 生词选择：开启生词模式，点击原文选取生词，并点击 AI 解释。',
+    step4_tip: 'Step 4 · 录音评分：开始录音并评分，此时仅保留原文，其它模块隐藏。',
+    step5_tip: 'Step 5 · 完成：练习已完成，可以查看评分结果或重新练习。',
+    practice_done_title: '练习已完成',
+    practice_done_desc: '成绩与生词已保存，你可以选择继续提升',
+    practice_again: '再练一次',
+    back_to_catalog: '返回题库',
+    // 新增：警告消息
+    alert_messages: {
+      microphone_permission_https: '请确保您的浏览器支持HTTPS连接，否则录音功能可能无法正常工作。',
+      microphone_permission_settings: '请检查您的麦克风权限设置，确保录音功能已启用。',
+      audio_capture_failed: '录音过程中出现错误，请检查麦克风或网络连接。',
+      speech_recognition_unavailable: '语音识别功能不可用，请检查网络连接或稍后再试。',
+      browser_not_supported: '当前浏览器不支持录音功能，请使用最新版Chrome浏览器。',
+      audio_timeline_not_found: '未找到音频时间线，请检查录音文件是否完整。',
+      select_adjacent_segments: '请选择相邻的音频段落进行录音。',
+      max_acu_blocks: '录音文件超过最大限制，请分段录音。',
+      no_content: '录音文件为空，请重新录音。',
+      // 新增：麦克风权限相关
+      microphone_permission_denied_mobile: '您的移动设备未授权录音权限，请在设置中启用录音权限。',
+      microphone_permission_denied_desktop: '您的桌面设备未授权录音权限，请在设置中启用录音权限。',
+      microphone_audio_capture_error: '录音过程中出现错误，请检查麦克风或网络连接。',
+      microphone_service_not_allowed: '录音服务未被允许，请检查麦克风权限设置。',
+      speech_recognition_not_supported: '当前浏览器不支持语音识别功能，请使用最新版Chrome浏览器。',
+      no_audio_or_timeline: '未检测到音频或音频时间线，请检查录音文件是否完整。',
+      no_content_message: '录音文件为空，请重新录音。', // 新增：无内容提示消息
+    },
+    // 新增：ACU文本相关
+    acu_text: {
+      select_adjacent_units: '隣接するユニットを選択してください',
+      max_5_units: '最大5つのユニットまで選択できます',
+      confirm_add_to_vocab: '単語帳に追加を確認',
+      cancel: 'キャンセル',
+    },
   },
   vocabulary: {
     title: '単語帳',
@@ -2429,7 +2541,7 @@ const ja: Translations = {
       // 页面描述
       page_description: '単語コレクションを管理し、言語学習効率を向上',
       review_count_placeholder: '復習数',
-      review_count_all: 'すべて',
+      review_count_all: '全部',
       review_count_10: '10 語',
       review_count_20: '20 語',
       review_count_30: '30 語',
