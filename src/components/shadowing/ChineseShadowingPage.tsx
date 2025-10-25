@@ -53,7 +53,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
-const SelectablePassage = dynamic(() => import('@/components/SelectablePassage'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
+const SelectablePassage = dynamic(() => import('@/components/SelectablePassage'), { ssr: false, loading: () => <div className="p-2 text-gray-500">{t.common.loading_dots}</div> });
 const AcuText = dynamic(() => import('@/components/shadowing/AcuText'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
@@ -70,7 +70,7 @@ import CollapsibleFilterSection from './CollapsibleFilterSection';
 import CompactStatsCards from './CompactStatsCards';
 import EnhancedAudioPlayer, { type EnhancedAudioPlayerRef } from './EnhancedAudioPlayer';
 import DesktopThreeColumnLayout from './DesktopThreeColumnLayout';
-const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
+const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">{t.common.loading_dots}</div> });
 import ShortcutsHelpModal from './ShortcutsHelpModal';
 import DesktopLayout from './DesktopLayout';
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/hooks/useKeyboardShortcuts';
@@ -383,7 +383,6 @@ const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<
   
   return requestPromise;
 };
-
 export default function ShadowingPage() {
   const { t, language, setLanguageFromUserProfile } = useLanguage();
   const { permissions } = useUserPermissions();
@@ -1952,7 +1951,6 @@ export default function ShadowingPage() {
   const handleTextSelection = (word: string, context: string) => {
     setSelectedText({ word, context });
   };
-
   // 确认添加选中的文本到生词本
   const confirmAddToVocab = async () => {
     if (selectedText && !isAddingToVocab) {
@@ -1961,7 +1959,7 @@ export default function ShadowingPage() {
         await handleWordSelect(selectedText.word, selectedText.context);
 
         // 显示成功提示
-        const message = `"${selectedText.word}" 已成功添加到生词本！`;
+        const message = `${t.shadowing.messages?.added_to_vocab || '已添加到生词本'}："${selectedText.word}"`;
         setSuccessMessage(message);
         setShowSuccessToast(true);
 
@@ -2649,7 +2647,6 @@ export default function ShadowingPage() {
     if (!currentItem?.audio_url) return;
     audioPlayerRef.current?.toggle();
   };
-
   // 评分功能（支持转录文字和逐句对比）
   const performScoring = async (transcription?: string) => {
     if (!currentItem) {
@@ -2683,68 +2680,39 @@ export default function ShadowingPage() {
       const suggestions = [];
 
       if (scorePercentage >= 80) {
-        feedback = `发音准确率: ${scorePercentage}%，非常棒！`;
-        suggestions.push('继续保持这个水平！');
+        feedback = `${t.shadowing.feedback_great || '发音准确率: {percent}%，非常棒！'}.replace('{percent}', String(scorePercentage))`;
+        suggestions.push(t.shadowing.suggestions?.keep_level || '继续保持这个水平！');
       } else if (scorePercentage >= 60) {
-        feedback = `发音准确率: ${scorePercentage}%，很好！`;
-        suggestions.push('可以尝试更清晰地发音');
-        suggestions.push('注意语调和节奏');
+        feedback = `${t.shadowing.feedback_good || '发音准确率: {percent}%，很好！'}.replace('{percent}', String(scorePercentage))`;
+        suggestions.push(t.shadowing.suggestions?.clearer_pronunciation || '可以尝试更清晰地发音');
+        suggestions.push(t.shadowing.suggestions?.intonation_rhythm || '注意语调和节奏');
       } else if (scorePercentage >= 40) {
-        feedback = `发音准确率: ${scorePercentage}%，还不错`;
-        suggestions.push('建议多听几遍原文');
-        suggestions.push('注意单词的发音');
-        suggestions.push('可以尝试放慢语速');
+        feedback = `${t.shadowing.feedback_ok || '发音准确率: {percent}%，还不错'}.replace('{percent}', String(scorePercentage))`;
+        suggestions.push(t.shadowing.suggestions?.listen_more || '建议多听几遍原文');
+        suggestions.push(t.shadowing.suggestions?.mind_word_pronunciation || '注意单词的发音');
+        suggestions.push(t.shadowing.suggestions?.slow_down || '可以尝试放慢语速');
       } else {
-        feedback = `发音准确率: ${scorePercentage}%，需要加强练习`;
-        suggestions.push('建议先听几遍原文再练习');
-        suggestions.push('注意每个单词的发音');
-        suggestions.push('可以分段练习');
-        suggestions.push('多练习几次会更好');
+        feedback = `${t.shadowing.feedback_need_improvement || '发音准确率: {percent}%，需要加强练习'}.replace('{percent}', String(scorePercentage))`;
+        suggestions.push(t.shadowing.suggestions?.listen_before_practice || '建议先听几遍原文再练习');
+        suggestions.push(t.shadowing.suggestions?.each_word_pronunciation || '注意每个单词的发音');
+        suggestions.push(t.shadowing.suggestions?.practice_in_sections || '可以分段练习');
+        suggestions.push(t.shadowing.suggestions?.practice_more || '多练习几次会更好');
       }
 
       // 添加转录质量提示
       if (textToScore.length < originalText.length * 0.3) {
-        suggestions.push('转录内容较少，建议重新录音');
+        suggestions.push(t.shadowing.suggestions?.transcription_too_short || '转录内容较少，建议重新录音');
       } else if (textToScore.length < originalText.length * 0.6) {
-        suggestions.push('转录内容不完整，建议重新录音');
+        suggestions.push(t.shadowing.suggestions?.transcription_incomplete || '转录内容不完整，建议重新录音');
       }
 
       const fullFeedback =
-        feedback + (suggestions.length > 0 ? '\n\n建议：\n• ' + suggestions.join('\n• ') : '');
-
-      // Recompute feedback via i18n to avoid hardcoded copy
-      let feedback2 = '';
-      const suggestions2: string[] = [];
-      if (scorePercentage >= 80) {
-        feedback2 = (t.shadowing.feedback_great || '发音准确率: {percent}%，非常棒！').replace('{percent}', String(scorePercentage));
-        suggestions2.push(t.shadowing.suggestions?.keep_level || '继续保持这个水平！');
-      } else if (scorePercentage >= 60) {
-        feedback2 = (t.shadowing.feedback_good || '发音准确率: {percent}%，很好！').replace('{percent}', String(scorePercentage));
-        suggestions2.push(t.shadowing.suggestions?.clearer_pronunciation || '可以尝试更清晰地发音');
-        suggestions2.push(t.shadowing.suggestions?.intonation_rhythm || '注意语调和节奏');
-      } else if (scorePercentage >= 40) {
-        feedback2 = (t.shadowing.feedback_ok || '发音准确率: {percent}%，还不错').replace('{percent}', String(scorePercentage));
-        suggestions2.push(t.shadowing.suggestions?.listen_more || '建议多听几遍原文');
-        suggestions2.push(t.shadowing.suggestions?.mind_word_pronunciation || '注意单词的发音');
-        suggestions2.push(t.shadowing.suggestions?.slow_down || '可以尝试放慢语速');
-      } else {
-        feedback2 = (t.shadowing.feedback_need_improvement || '发音准确率: {percent}%，需要加强练习').replace('{percent}', String(scorePercentage));
-        suggestions2.push(t.shadowing.suggestions?.listen_before_practice || '建议先听几遍原文再练习');
-        suggestions2.push(t.shadowing.suggestions?.each_word_pronunciation || '注意每个单词的发音');
-        suggestions2.push(t.shadowing.suggestions?.practice_in_sections || '可以分段练习');
-        suggestions2.push(t.shadowing.suggestions?.practice_more || '多练习几次会更好');
-      }
-      if (textToScore.length < originalText.length * 0.3) {
-        suggestions2.push(t.shadowing.suggestions?.transcription_too_short || '转录内容较少，建议重新录音');
-      } else if (textToScore.length < originalText.length * 0.6) {
-        suggestions2.push(t.shadowing.suggestions?.transcription_incomplete || '转录内容不完整，建议重新录音');
-      }
-      const fullFeedback_i18n = feedback2 + (suggestions2.length > 0 ? `\n\n${t.shadowing.suggestions_title_text || '建议：'}\n• ` + suggestions2.join('\n• ') : '');
+        feedback + (suggestions.length > 0 ? `\n\n${t.shadowing.suggestions_title_text || '建议：'}\n• ` + suggestions.join('\n• ') : '');
 
       const scoringResult = {
         score: scorePercentage,
         accuracy: normalizedAccuracy,
-        feedback: fullFeedback_i18n,
+        feedback: fullFeedback,
         transcription: textToScore,
         originalText: originalText,
       };
@@ -3368,7 +3336,6 @@ export default function ShadowingPage() {
     setShowGuide(false);
     localStorage.setItem('shadowing-guide-seen', 'true');
   };
-
   // 渲染左侧题库面板内容（桌面端）
   const renderLeftPanelContent = () => {
     return (
@@ -3876,7 +3843,6 @@ export default function ShadowingPage() {
       </main>
     );
   }
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       <Container>
@@ -4787,10 +4753,10 @@ export default function ShadowingPage() {
                                     {isAddingToVocab ? (
                                       <>
                                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                                        添加中...
+                                        {t.shadowing.adding_to_vocab || '添加中...'}
                                       </>
                                     ) : (
-                                      '确认添加到生词本'
+                                      t.shadowing.confirm_add_to_vocab || '确认添加到生词本'
                                     )}
                                   </Button>
                                   <Button
@@ -4800,7 +4766,7 @@ export default function ShadowingPage() {
                                     disabled={isAddingToVocab}
                                     className="disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    取消
+                                    {t.shadowing.cancel || '取消'}
                                   </Button>
                                 </div>
                               </div>
@@ -5180,7 +5146,6 @@ export default function ShadowingPage() {
                       </div>
                     </CollapsibleCard>
                   )}
-
                   {/* 本次选中的生词 - 折叠式 */}
                   {selectedWords.length > 0 && (
                     <CollapsibleCard
@@ -6406,7 +6371,6 @@ export default function ShadowingPage() {
                 )}
               </Card>
             </div>
-
             {/* 右侧练习区域 */}
             <div className="flex-1 overflow-y-auto max-h-[85vh]">
               {!currentItem ? (
@@ -6471,7 +6435,7 @@ export default function ShadowingPage() {
                           <ul className="list-disc pl-5 space-y-1">
                             <li>放松不要急，先整体感知节奏与停顿</li>
                             <li>不要看原文，尝试抓关键词与语气</li>
-                            <li>{t.shadowing.guide_blind_listen_tip1 || '准备好后点击“下一步”，再看原文跟读'}</li>
+                            <li>{t.shadowing.guide_blind_listen_tip1 || '准备好后点击"下一步"，再看原文跟读'}</li>
                           </ul>
                         </div>
                       )}
@@ -6491,7 +6455,7 @@ export default function ShadowingPage() {
                           <div className="font-medium">{t.shadowing.guide_select_words_title || '选生词 + AI 解释：'}</div>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>{t.shadowing.guide_select_words_tip1 || '点击原文中的词语即可加入生词'}</li>
-                            <li>{t.shadowing.guide_select_words_tip2 || `点击“${t.shadowing.ai_explanation_button || 'AI解释'}”为生词生成本地化释义与例句`}</li>
+                            <li>{t.shadowing.guide_select_words_tip2 || `点击"${t.shadowing.ai_explanation_button || 'AI解释'}"为生词生成本地化释义与例句`}</li>
                             <li>{t.shadowing.guide_select_words_tip3 || '建议聚焦于影响理解的关键词汇，避免一次选太多'}</li>
                           </ul>
                         </div>
@@ -6703,10 +6667,10 @@ export default function ShadowingPage() {
                                     {isAddingToVocab ? (
                                       <>
                                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                                        添加中...
+                                        {t.shadowing.adding_to_vocab || '添加中...'}
                                       </>
                                     ) : (
-                                      '确认添加到生词本'
+                                      t.shadowing.confirm_add_to_vocab || '确认添加到生词本'
                                     )}
                                   </Button>
                                   <Button
@@ -6716,7 +6680,7 @@ export default function ShadowingPage() {
                                     disabled={isAddingToVocab}
                                     className="disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    取消
+                                    {t.shadowing.cancel || '取消'}
                                   </Button>
                                 </div>
                               </div>
