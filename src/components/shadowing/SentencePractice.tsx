@@ -946,13 +946,11 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       try {
         audioRef.current = new Audio(audioUrl);
         audioRef.current.preload = 'auto';
-        try { audioRef.current.load(); } catch {}
         // 设置初始播放速度
         audioRef.current.playbackRate = playbackRate;
       } catch {}
     } else if (audioRef.current.src !== audioUrl) {
       audioRef.current.src = audioUrl;
-      try { audioRef.current.load(); } catch {}
       // 重新设置播放速度
       audioRef.current.playbackRate = playbackRate;
     } else {
@@ -996,7 +994,6 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         };
         a.addEventListener('loadedmetadata', onLoaded, { once: true });
         a.addEventListener('canplay', onLoaded, { once: true });
-        try { a.load(); } catch {}
       });
 
       const START_EPS = 0.005;
