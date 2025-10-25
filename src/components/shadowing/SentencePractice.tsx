@@ -722,12 +722,14 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           : 0;
         
         // 根据完成度动态调整静默时间
-        let requiredSilence = 10000; // 默认10秒（<100%时）
+        let requiredSilence = 10000; // 默认10秒（<80%时）
         
         if (completionRate >= 1.0) {
           requiredSilence = 1000; // 完成度 >= 100%：1秒
+        } else if (completionRate >= 0.8) {
+          requiredSilence = 1500; // 完成度在80%-99%：1.5秒
         }
-        // else: 完成度 < 100%：保持默认10秒
+        // else: 完成度 < 80%：保持默认10秒
         
         // 达到静默时间要求，自动停止
         if (diff >= requiredSilence) {
