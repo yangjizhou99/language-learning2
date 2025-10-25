@@ -53,6 +53,11 @@ interface AudioRecorderHandle {
   uploadCurrentRecording: () => Promise<void>;
   hasUnsavedRecording: () => boolean | string | null;
   stopPlayback: () => void;
+  /**
+   * 在开始外部音频播放前调用，主动释放麦克风相关资源，
+   * 以避免 iOS Safari 在同时捕获麦克风时对页面音频进行系统降噪/压低音量（ducking）。
+   */
+  suspendMicForPlayback: () => void;
 }
 
 const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
@@ -83,6 +88,7 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
     const [uploadError, setUploadError] = useState<string | null>(null);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const mediaStreamRef = useRef<MediaStream | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const currentRecordingBlobRef = useRef<Blob | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -214,12 +220,41 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
           alert('当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
           return;
         }
-        
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // iOS Safari 在启用回声消除/降噪/自动增益时，系统会将页面其它音频音量压低（ducking）。
+        // 这里在 iOS 上关闭这些处理以降低触发 ducking 的概率；其他平台保持更强的处理能力。
+        const isIOS = (() => {
+          if (typeof navigator === 'undefined') return false;
+          const ua: string = navigator.userAgent || '';
+          const navPlatform: string = ((navigator as Navigator & { platform?: string }).platform) || '';
+          const isiOSUA = /iPad|iPhone|iPod/.test(ua);
+          const hasTouchEnd: boolean = 'ontouchend' in (window as Window & { ontouchend?: unknown });
+          const isIPadOS13Plus = /Mac/.test(navPlatform) && hasTouchEnd;
+          return isiOSUA || isIPadOS13Plus;
+        })();
+
+        const audioConstraints: MediaTrackConstraints | boolean = isIOS
+          ? {
+              channelCount: 1,
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+            }
+          : {
+              channelCount: 1,
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            };
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+        mediaStreamRef.current = stream;
 
         // 选择最合适、浏览器支持的音频编码格式
-        const MR = typeof window !== 'undefined' ? window.MediaRecorder : undefined;
-        const isSupported = (t: string) => {
+        const MR: typeof MediaRecorder | undefined =
+          typeof window !== 'undefined'
+            ? ((window as unknown as { MediaRecorder?: typeof MediaRecorder }).MediaRecorder)
+            : undefined;
+        const isSupported = (t: string): boolean => {
           try {
             return typeof MR?.isTypeSupported === 'function' ? MR.isTypeSupported(t) : false;
           } catch { return false; }
@@ -233,7 +268,7 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
         ];
         const selectedMime = mimeCandidates.find(isSupported);
 
-        const mediaRecorder = selectedMime
+        const mediaRecorder: MediaRecorder = selectedMime
           ? new MediaRecorder(stream, { mimeType: selectedMime })
           : new MediaRecorder(stream);
 
@@ -256,6 +291,7 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
 
           // Stop all tracks to release microphone
           stream.getTracks().forEach((track) => track.stop());
+          mediaStreamRef.current = null;
         };
 
         // 周期性触发 dataavailable，提升兼容性（部分浏览器仅在分片时才写出数据）
@@ -396,6 +432,23 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
           if (audioRef.current) {
             audioRef.current.pause();
           }
+          // 预播放前主动释放麦克风，避免 iOS ducking
+          try {
+            // 停止语音识别与录音，释放 MediaStream
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+              try { (mediaRecorderRef.current as MediaRecorder & { requestData?: () => void }).requestData?.(); } catch {}
+              try { mediaRecorderRef.current.stop(); } catch {}
+              setIsRecording(false);
+            }
+            try { recognitionRef.current?.stop(); } catch {}
+            try {
+              const s = mediaStreamRef.current;
+              if (s) {
+                s.getTracks().forEach(t => { try { t.stop(); } catch {} });
+                mediaStreamRef.current = null;
+              }
+            } catch {}
+          } catch {}
 
           audioRef.current = new Audio(url);
           audioRef.current.onended = () => setIsPlaying(null);
@@ -526,6 +579,29 @@ const AudioRecorder = React.forwardRef<AudioRecorderHandle, AudioRecorderProps>(
               recognitionRef.current.stop();
             } catch {}
           }
+        },
+        suspendMicForPlayback: () => {
+          // 若正在录音，尽快停止录音并释放麦克风，避免 iOS 发生 ducking
+          try {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+              try { (mediaRecorderRef.current as MediaRecorder & { requestData?: () => void }).requestData?.(); } catch {}
+              try { mediaRecorderRef.current.stop(); } catch {}
+              setIsRecording(false);
+            }
+          } catch {}
+
+          // 停止语音识别（它也会占用麦克风）
+          try { recognitionRef.current?.stop(); } catch {}
+
+          // 主动释放底层 MediaStream
+          try {
+            if (mediaStreamRef.current) {
+              mediaStreamRef.current.getTracks().forEach(t => {
+                try { t.stop(); } catch {}
+              });
+              mediaStreamRef.current = null;
+            }
+          } catch {}
         },
       }),
       [uploadCurrentRecording, currentRecordingUrl],

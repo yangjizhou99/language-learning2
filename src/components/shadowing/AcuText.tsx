@@ -62,6 +62,22 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         }
       }
       
+      // 对于英文，加入大小写不敏感的词边界判断，避免 though 命中 thought
+      if (lang === 'en' && span.toLowerCase().includes(selectedWordText.toLowerCase())) {
+        const lowerSpan = span.toLowerCase();
+        const lowerWord = selectedWordText.toLowerCase();
+        const startIndex = lowerSpan.indexOf(lowerWord);
+        if (startIndex >= 0) {
+          const endIndex = startIndex + selectedWordText.length;
+          const isLetter = (ch: string) => /[A-Za-z]/.test(ch);
+          const beforeChar = startIndex > 0 ? span[startIndex - 1] : '';
+          const isBeforeBoundary = startIndex === 0 || !isLetter(beforeChar);
+          const afterChar = endIndex < span.length ? span[endIndex] : '';
+          const isAfterBoundary = endIndex === span.length || !isLetter(afterChar);
+          return isBeforeBoundary && isAfterBoundary;
+        }
+      }
+      
       // 对于其他语言，保持原有的包含匹配逻辑
       return span.includes(selectedWordText);
     });
@@ -311,7 +327,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
           const beforeText = processedText.slice(currentPos, unit.start);
           if (beforeText && beforeText.trim()) {
             // 只过滤掉单个字母（除了"I"），保留标点符号和空格
-            const filteredText = beforeText.replace(/^(?![Ii]$)[a-zA-Z]$/, '');
+            const filteredText = beforeText.replace(/^(?!I$)[a-zA-Z]$/, '');
             if (filteredText) {
               elements.push(
                 <span key={`before-${i}`} className="text-gray-700">
@@ -328,7 +344,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         const isAlreadySelectedWord = isAlreadySelected(unit);
         
         // 只过滤掉单个字母（除了"I"），保留标点符号和其他内容
-        const shouldSkipUnit = /^(?![Ii]$)[a-zA-Z]$/.test(unit.span) || unit.span.length === 0;
+        const shouldSkipUnit = /^(?!I$)[a-zA-Z]$/.test(unit.span) || unit.span.length === 0;
         
         if (!shouldSkipUnit) {
           elements.push(
@@ -378,7 +394,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         const afterText = processedText.slice(currentPos, sentenceEnd);
         if (afterText && afterText.trim()) {
           // 只过滤掉单个字母（除了"I"），保留标点符号和空格
-          const filteredText = afterText.replace(/^(?![Ii]$)[a-zA-Z]$/, '');
+          const filteredText = afterText.replace(/^(?!I$)[a-zA-Z]$/, '');
           if (filteredText) {
             elements.push(
               <span key={`after-${sid}`} className="text-gray-700">

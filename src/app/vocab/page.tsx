@@ -127,8 +127,7 @@ export default function VocabPage() {
   const [reviewAmount, setReviewAmount] = useState<string>('all');
   const [clickedButton, setClickedButton] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [pendingReviews, setPendingReviews] = useState<Array<{id: string, rating: string}>>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   
   // 缓存相关状态
   const [cache, setCache] = useState<{
@@ -511,78 +510,45 @@ export default function VocabPage() {
     }
   };
 
-  // 批量提交复习结果
-  const submitPendingReviews = async () => {
-    if (pendingReviews.length === 0 || isSubmitting) return;
-
-    setIsSubmitting(true);
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
-
-      // 使用批量API提交所有待处理的复习结果
-      const response = await fetch(`/api/vocab/review/batch`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ reviews: pendingReviews }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log(`成功提交 ${result.processed} 个复习结果`);
-        // 清空待处理列表
-        setPendingReviews([]);
-      } else {
-        const error = await response.json();
-        console.error('批量提交失败:', error);
-        // 如果批量提交失败，尝试单个提交
-        await submitIndividualReviews();
-      }
-    } catch (error) {
-      console.error('批量提交复习结果失败:', error);
-      // 如果批量提交失败，尝试单个提交
-      await submitIndividualReviews();
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // 单个提交作为备用方案
-  const submitIndividualReviews = async () => {
-    if (pendingReviews.length === 0) return;
-
+  // 单条提交复习结果
+  const submitSingleReview = async (
+    id: string,
+    rating: 'again' | 'hard' | 'good' | 'easy'
+  ) => {
     const {
       data: { session },
     } = await supabase.auth.getSession();
     const headers: HeadersInit = { 'Content-Type': 'application/json' };
     if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
 
-    const promises = pendingReviews.map(review => 
-      fetch(`/api/vocab/review/answer`, {
+    const attempt = async () => {
+      const res = await fetch(`/api/vocab/review/answer`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ id: review.id, rating: review.rating }),
-      })
-    );
+        body: JSON.stringify({ id, rating }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        try {
+          const data = JSON.parse(text) as { error?: string };
+          throw new Error(data.error || '提交复习结果失败');
+        } catch {
+          throw new Error('提交复习结果失败');
+        }
+      }
+      return res.json();
+    };
 
-    const results = await Promise.allSettled(promises);
-    
-    const failedCount = results.filter(result => 
-      result.status === 'rejected' || 
-      (result.status === 'fulfilled' && !result.value.ok)
-    ).length;
-
-    if (failedCount > 0) {
-      console.warn(`${failedCount} 个复习结果提交失败`);
-    } else {
-      setPendingReviews([]);
+    try {
+      return await attempt();
+    } catch {
+      // 简单重试一次
+      await new Promise(r => setTimeout(r, 500));
+      return await attempt();
     }
   };
 
-  // 提交复习打分
+  // 提交复习打分（改为：单条立即提交）
   const answerReview = async (rating: 'again' | 'hard' | 'good' | 'easy') => {
     const cur = reviewList[reviewIndex];
     if (!cur) return;
@@ -600,8 +566,10 @@ export default function VocabPage() {
     // 播放音效
     playButtonSound(rating);
 
-    // 添加到待处理列表，而不是立即提交
-    setPendingReviews(prev => [...prev, { id: cur.id, rating }]);
+    // 立即提交当前复习结果（不阻塞UI，错误仅记录）
+    submitSingleReview(cur.id, rating).catch((e) => {
+      console.error('单条复习提交失败:', e);
+    });
 
     // 延迟一下让用户看到反馈效果
     setTimeout(() => {
@@ -618,8 +586,7 @@ export default function VocabPage() {
           }
         }, 300);
       } else {
-        // 复习完成，提交所有待处理的结果
-        submitPendingReviews();
+        // 复习完成
         setReviewing(false);
         setReviewList([]);
         setReviewIndex(0);
@@ -684,31 +651,7 @@ export default function VocabPage() {
   //   }
   // }, [pagination.page, itemsPerPage, cache]);
 
-  // 定时提交待处理的复习结果
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (pendingReviews.length > 0 && !isSubmitting) {
-        submitPendingReviews();
-      }
-    }, 5000); // 每5秒检查一次
-
-    return () => clearInterval(interval);
-  }, [pendingReviews.length, isSubmitting]);
-
-  // 页面卸载时保存待处理的复习结果
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (pendingReviews.length > 0) {
-        // 同步提交，确保数据不丢失
-        navigator.sendBeacon('/api/vocab/review/batch', JSON.stringify({
-          reviews: pendingReviews
-        }));
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [pendingReviews]);
+  // 取消批量与卸载时提交逻辑，改为每次答题即提交
 
   // 组件卸载时停止语音播放
   useEffect(() => {

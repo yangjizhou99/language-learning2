@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState, useCallback, useRef, useMemo, useDeferredValue, RefObject } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo, useDeferredValue, RefObject, startTransition } from 'react';
 
 // 韩语词边界检测函数
 const isKoreanWordBoundary = (
@@ -22,6 +22,21 @@ const isKoreanWordBoundary = (
   
   return isBeforeBoundary && isAfterBoundary;
 };
+
+// 英语词边界检测函数（仅把 A-Z 视为单词字符，避免将 though 命中 thought）
+const isEnglishWordBoundary = (
+  chars: string[],
+  startIndex: number,
+  wordLength: number,
+  endIndex: number
+): boolean => {
+  const isLetter = (ch: string) => /[A-Za-z]/.test(ch);
+  const beforeChar = startIndex > 0 ? chars[startIndex - 1] : '';
+  const isBeforeBoundary = startIndex === 0 || !isLetter(beforeChar);
+  const afterChar = endIndex < chars.length ? chars[endIndex] : '';
+  const isAfterBoundary = endIndex === chars.length || !isLetter(afterChar);
+  return isBeforeBoundary && isAfterBoundary;
+};
 import { Virtuoso } from 'react-virtuoso';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -38,8 +53,8 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
-import SelectablePassage from '@/components/SelectablePassage';
-import AcuText from '@/components/shadowing/AcuText';
+const SelectablePassage = dynamic(() => import('@/components/SelectablePassage'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
+const AcuText = dynamic(() => import('@/components/shadowing/AcuText'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
@@ -55,7 +70,7 @@ import CollapsibleFilterSection from './CollapsibleFilterSection';
 import CompactStatsCards from './CompactStatsCards';
 import EnhancedAudioPlayer, { type EnhancedAudioPlayerRef } from './EnhancedAudioPlayer';
 import DesktopThreeColumnLayout from './DesktopThreeColumnLayout';
-import RightPanelTabs from './RightPanelTabs';
+const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
 import ShortcutsHelpModal from './ShortcutsHelpModal';
 import DesktopLayout from './DesktopLayout';
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/hooks/useKeyboardShortcuts';
@@ -589,6 +604,7 @@ export default function ShadowingPage() {
     uploadCurrentRecording: () => Promise<void>;
     hasUnsavedRecording: () => boolean;
     stopPlayback: () => void;
+    suspendMicForPlayback: () => void;
   } | null>(null);
   
   // 请求中止控制器
@@ -1573,7 +1589,7 @@ export default function ShadowingPage() {
         fetchRecommendedLevel();
       }
     }
-  }, [authLoading, user, fetchItems, fetchRecommendedLevel, level]);
+  }, [authLoading, user?.id, fetchItems, fetchRecommendedLevel, level]);
 
   // 加载题库（筛选条件变化时）
   useEffect(() => {
@@ -1590,7 +1606,7 @@ export default function ShadowingPage() {
     
     return () => clearTimeout(t);
     // 依赖筛选条件和fetchItems函数，确保条件变化时重新加载
-  }, [lang, level, practiced, authLoading, user, fetchItems]);
+  }, [lang, level, practiced, authLoading, user?.id, fetchItems]);
 
   // 组件卸载时清理资源
   useEffect(() => {
@@ -1613,7 +1629,7 @@ export default function ShadowingPage() {
     if (!authLoading && user) {
       loadThemes();
     }
-  }, [lang, level, authLoading, user, loadThemes]);
+  }, [lang, level, authLoading, user?.id, loadThemes]);
 
   // 当选择大主题时，加载对应的子主题
   useEffect(() => {
@@ -1628,6 +1644,18 @@ export default function ShadowingPage() {
   // 搜索值延迟，降低频繁输入导致的重算
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
+  // 为搜索建立轻量索引，避免在 filter 中重复对长文本 toLowerCase
+  const searchIndex = useMemo(() => {
+    const map = new Map<string, { title: string; text: string }>();
+    for (const it of items) {
+      const tl = (it.title || '').toLowerCase();
+      // 限制参与搜索的正文长度，避免大文本拖慢过滤
+      const xl = (it.text || '').slice(0, 800).toLowerCase();
+      map.set(it.id, { title: tl, text: xl });
+    }
+    return map;
+  }, [items]);
+
   // 过滤显示的题目（记忆化）
   const filteredItems = useMemo(() => {
     const list = items
@@ -1635,8 +1663,10 @@ export default function ShadowingPage() {
         // 搜索筛选
         if (deferredSearchQuery) {
           const query = deferredSearchQuery.toLowerCase();
-          const matchesSearch =
-            item.title.toLowerCase().includes(query) || item.text.toLowerCase().includes(query);
+          const idx = searchIndex.get(item.id);
+          const matchesSearch = idx
+            ? (idx.title.includes(query) || idx.text.includes(query))
+            : ((item.title || '').toLowerCase().includes(query) || (item.text || '').toLowerCase().includes(query));
           if (!matchesSearch) return false;
         }
 
@@ -1723,7 +1753,43 @@ export default function ShadowingPage() {
       });
 
     return list;
-  }, [items, deferredSearchQuery, theme, selectedThemeId, selectedSubtopicId]);
+  }, [items, deferredSearchQuery, theme, selectedThemeId, selectedSubtopicId, searchIndex]);
+
+  // 列表统计一次性计算，避免多处重复 filter
+  const listStats = useMemo(() => {
+    const stats = { totalCount: filteredItems.length, completedCount: 0, draftCount: 0, unstartedCount: 0 };
+    for (const it of filteredItems) {
+      if (it.isPracticed) stats.completedCount += 1;
+      else if (it.status === 'draft') stats.draftCount += 1;
+      else stats.unstartedCount += 1;
+    }
+    return stats;
+  }, [filteredItems]);
+
+  // 批量进度节流（rAF + 100ms），减少频繁 setState 抖动
+  const progressThrottleRef = useRef<{ last: number; raf: number | null }>({ last: 0, raf: null });
+  const updateProgressThrottled = useCallback((updater: Parameters<typeof setBatchExplanationProgress>[0]) => {
+    const now = Date.now();
+    const since = now - progressThrottleRef.current.last;
+    const commit = () => {
+      setBatchExplanationProgress(updater as any);
+      progressThrottleRef.current.last = Date.now();
+      progressThrottleRef.current.raf = null;
+    };
+    if (since >= 100) {
+      commit();
+      return;
+    }
+    if (progressThrottleRef.current.raf != null) {
+      try { cancelAnimationFrame(progressThrottleRef.current.raf as number); } catch {}
+    }
+    try {
+      const id = requestAnimationFrame(commit);
+      progressThrottleRef.current.raf = id;
+    } catch {
+      commit();
+    }
+  }, []);
 
   // 随机选择未练习的题目
   const getRandomUnpracticed = () => {
@@ -2369,11 +2435,12 @@ export default function ShadowingPage() {
           }
         > = {};
 
-        successfulResults.forEach((result) => {
-          if (result) {
-            newExplanations[result.word] = result.explanation;
+        // 节流：在批量循环中避免频繁 setState，这里只汇总一次
+        for (const r of successfulResults as Array<{ word: string; explanation: any }> ) {
+          if (r) {
+            newExplanations[r.word] = r.explanation;
           }
-        });
+        }
 
         setWordExplanations((prev) => ({
           ...prev,
@@ -3461,7 +3528,10 @@ export default function ShadowingPage() {
               <Input
                 placeholder={t.shadowing.search_placeholder || '搜索标题、主题...'}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  startTransition(() => setSearchQuery(v));
+                }}
                 className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -3589,6 +3659,8 @@ export default function ShadowingPage() {
               <Virtuoso
                 customScrollParent={desktopListScrollRef.current ?? undefined}
                 data={filteredItems}
+                computeItemKey={(index, item) => (item as any).id}
+                increaseViewportBy={{ top: 300, bottom: 600 }}
                 itemContent={(index, item) => {
                   const it = item as any;
                   return (
@@ -4150,7 +4222,7 @@ export default function ShadowingPage() {
                         <Input
                           placeholder={t.shadowing.search_placeholder}
                           value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onChange={(e) => startTransition(() => setSearchQuery(e.target.value))}
                           className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
@@ -4181,10 +4253,10 @@ export default function ShadowingPage() {
 
                   {/* 统计信息 - 紧凑横向卡片 */}
                   <CompactStatsCards
-                    totalCount={filteredItems.length}
-                    completedCount={filteredItems.filter((item) => item.isPracticed).length}
-                    draftCount={filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}
-                    unstartedCount={filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}
+                    totalCount={listStats.totalCount}
+                    completedCount={listStats.completedCount}
+                    draftCount={listStats.draftCount}
+                    unstartedCount={listStats.unstartedCount}
                   />
 
                   {/* 题目列表 */}
@@ -4218,6 +4290,8 @@ export default function ShadowingPage() {
                         <Virtuoso
                           customScrollParent={mobileListScrollRef.current ?? undefined}
                           data={filteredItems}
+                          computeItemKey={(index, item) => (item as any).id}
+                          increaseViewportBy={{ top: 200, bottom: 400 }}
                           itemContent={(index, item) => {
                             const it = item as any;
                             return (
@@ -4645,12 +4719,16 @@ export default function ShadowingPage() {
                                       for (const selectedWord of allSelectedWords) {
                                         const w = selectedWord.word;
                                         if (!w) continue;
+                                        const wLower = w.toLowerCase();
                                         if (i + w.length <= chars.length) {
                                           const substring = chars.slice(i, i + w.length).join('');
-                                          if (substring === w) {
-                                            isHighlighted = true;
-                                            highlightLength = w.length;
-                                            break;
+                                          if (substring.toLowerCase() === wLower) {
+                                            const isAtWordBoundary = isEnglishWordBoundary(chars, i, w.length, i + w.length);
+                                            if (isAtWordBoundary) {
+                                              isHighlighted = true;
+                                              highlightLength = w.length;
+                                              break;
+                                            }
                                           }
                                         }
                                       }
@@ -4943,12 +5021,16 @@ export default function ShadowingPage() {
                                     for (const selectedWord of allSelectedWords) {
                                       const w = selectedWord.word;
                                       if (!w) continue;
+                                      const wLower = w.toLowerCase();
                                       if (i + w.length <= chars.length) {
                                         const substring = chars.slice(i, i + w.length).join('');
-                                        if (substring === w) {
-                                          isHighlighted = true;
-                                          highlightLength = w.length;
-                                          break;
+                                        if (substring.toLowerCase() === wLower) {
+                                          const isAtWordBoundary = isEnglishWordBoundary(chars, i, w.length, i + w.length);
+                                          if (isAtWordBoundary) {
+                                            isHighlighted = true;
+                                            highlightLength = w.length;
+                                            break;
+                                          }
                                         }
                                       }
                                     }
@@ -5005,7 +5087,16 @@ export default function ShadowingPage() {
                         <EnhancedAudioPlayer
                           ref={audioPlayerRef}
                           audioUrl={currentItem.audio_url}
-                          onPlayStateChange={(playing) => setIsPlaying(playing)}
+                          onPlayStateChange={(playing) => {
+                            setIsPlaying(playing);
+                            if (playing) {
+                              try {
+                                if (audioRecorderRef.current && typeof audioRecorderRef.current.suspendMicForPlayback === 'function') {
+                                  audioRecorderRef.current.suspendMicForPlayback();
+                                }
+                              } catch {}
+                            }
+                          }}
                           duration_ms={currentItem.duration_ms}
                         />
                       </div>
@@ -6132,7 +6223,7 @@ export default function ShadowingPage() {
                           <Input
                             placeholder={t.shadowing.search_placeholder || '搜索标题、主题...'}
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => startTransition(() => setSearchQuery(e.target.value))}
                             className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>
@@ -6238,9 +6329,11 @@ export default function ShadowingPage() {
                         </div>
                       ) : (
                         <div className="p-2">
-                          <Virtuoso
-                            customScrollParent={desktopListScrollRef.current ?? undefined}
-                            data={filteredItems}
+              <Virtuoso
+                customScrollParent={desktopListScrollRef.current ?? undefined}
+                data={filteredItems}
+                computeItemKey={(index, item) => (item as any).id}
+                increaseViewportBy={{ top: 300, bottom: 600 }}
                             itemContent={(index, item) => {
                               const it = item as any;
                               return (
@@ -6833,7 +6926,16 @@ export default function ShadowingPage() {
                         <EnhancedAudioPlayer
                           audioUrl={currentItem.audio_url}
                           duration_ms={currentItem.duration_ms}
-                          onPlayStateChange={(playing) => setIsPlaying(playing)}
+                          onPlayStateChange={(playing) => {
+                            setIsPlaying(playing);
+                            if (playing) {
+                              try {
+                                if (audioRecorderRef.current && typeof audioRecorderRef.current.suspendMicForPlayback === 'function') {
+                                  audioRecorderRef.current.suspendMicForPlayback();
+                                }
+                              } catch {}
+                            }
+                          }}
                         />
                       </div>
                     )}
