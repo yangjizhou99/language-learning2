@@ -604,6 +604,7 @@ export default function ShadowingPage() {
     uploadCurrentRecording: () => Promise<void>;
     hasUnsavedRecording: () => boolean;
     stopPlayback: () => void;
+    suspendMicForPlayback: () => void;
   } | null>(null);
   
   // 请求中止控制器
@@ -1588,7 +1589,7 @@ export default function ShadowingPage() {
         fetchRecommendedLevel();
       }
     }
-  }, [authLoading, user, fetchItems, fetchRecommendedLevel, level]);
+  }, [authLoading, user?.id, fetchItems, fetchRecommendedLevel, level]);
 
   // 加载题库（筛选条件变化时）
   useEffect(() => {
@@ -1605,7 +1606,7 @@ export default function ShadowingPage() {
     
     return () => clearTimeout(t);
     // 依赖筛选条件和fetchItems函数，确保条件变化时重新加载
-  }, [lang, level, practiced, authLoading, user, fetchItems]);
+  }, [lang, level, practiced, authLoading, user?.id, fetchItems]);
 
   // 组件卸载时清理资源
   useEffect(() => {
@@ -1628,7 +1629,7 @@ export default function ShadowingPage() {
     if (!authLoading && user) {
       loadThemes();
     }
-  }, [lang, level, authLoading, user, loadThemes]);
+  }, [lang, level, authLoading, user?.id, loadThemes]);
 
   // 当选择大主题时，加载对应的子主题
   useEffect(() => {
@@ -5028,7 +5029,16 @@ export default function ShadowingPage() {
                         <EnhancedAudioPlayer
                           ref={audioPlayerRef}
                           audioUrl={currentItem.audio_url}
-                          onPlayStateChange={(playing) => setIsPlaying(playing)}
+                          onPlayStateChange={(playing) => {
+                            setIsPlaying(playing);
+                            if (playing) {
+                              try {
+                                if (audioRecorderRef.current && typeof audioRecorderRef.current.suspendMicForPlayback === 'function') {
+                                  audioRecorderRef.current.suspendMicForPlayback();
+                                }
+                              } catch {}
+                            }
+                          }}
                           duration_ms={currentItem.duration_ms}
                         />
                       </div>
@@ -6856,7 +6866,16 @@ export default function ShadowingPage() {
                         <EnhancedAudioPlayer
                           audioUrl={currentItem.audio_url}
                           duration_ms={currentItem.duration_ms}
-                          onPlayStateChange={(playing) => setIsPlaying(playing)}
+                          onPlayStateChange={(playing) => {
+                            setIsPlaying(playing);
+                            if (playing) {
+                              try {
+                                if (audioRecorderRef.current && typeof audioRecorderRef.current.suspendMicForPlayback === 'function') {
+                                  audioRecorderRef.current.suspendMicForPlayback();
+                                }
+                              } catch {}
+                            }
+                          }}
                         />
                       </div>
                     )}

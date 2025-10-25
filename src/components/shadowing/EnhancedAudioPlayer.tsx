@@ -178,6 +178,7 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
           src={audioUrl}
           controls
           preload="metadata"
+          playsInline
           className="w-full h-12"
           style={{
             borderRadius: '8px',
