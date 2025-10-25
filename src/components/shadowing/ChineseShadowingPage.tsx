@@ -22,6 +22,21 @@ const isKoreanWordBoundary = (
   
   return isBeforeBoundary && isAfterBoundary;
 };
+
+// 英语词边界检测函数（仅把 A-Z 视为单词字符，避免将 though 命中 thought）
+const isEnglishWordBoundary = (
+  chars: string[],
+  startIndex: number,
+  wordLength: number,
+  endIndex: number
+): boolean => {
+  const isLetter = (ch: string) => /[A-Za-z]/.test(ch);
+  const beforeChar = startIndex > 0 ? chars[startIndex - 1] : '';
+  const isBeforeBoundary = startIndex === 0 || !isLetter(beforeChar);
+  const afterChar = endIndex < chars.length ? chars[endIndex] : '';
+  const isAfterBoundary = endIndex === chars.length || !isLetter(afterChar);
+  return isBeforeBoundary && isAfterBoundary;
+};
 import { Virtuoso } from 'react-virtuoso';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -4645,12 +4660,16 @@ export default function ShadowingPage() {
                                       for (const selectedWord of allSelectedWords) {
                                         const w = selectedWord.word;
                                         if (!w) continue;
+                                        const wLower = w.toLowerCase();
                                         if (i + w.length <= chars.length) {
                                           const substring = chars.slice(i, i + w.length).join('');
-                                          if (substring === w) {
-                                            isHighlighted = true;
-                                            highlightLength = w.length;
-                                            break;
+                                          if (substring.toLowerCase() === wLower) {
+                                            const isAtWordBoundary = isEnglishWordBoundary(chars, i, w.length, i + w.length);
+                                            if (isAtWordBoundary) {
+                                              isHighlighted = true;
+                                              highlightLength = w.length;
+                                              break;
+                                            }
                                           }
                                         }
                                       }
@@ -4943,12 +4962,16 @@ export default function ShadowingPage() {
                                     for (const selectedWord of allSelectedWords) {
                                       const w = selectedWord.word;
                                       if (!w) continue;
+                                      const wLower = w.toLowerCase();
                                       if (i + w.length <= chars.length) {
                                         const substring = chars.slice(i, i + w.length).join('');
-                                        if (substring === w) {
-                                          isHighlighted = true;
-                                          highlightLength = w.length;
-                                          break;
+                                        if (substring.toLowerCase() === wLower) {
+                                          const isAtWordBoundary = isEnglishWordBoundary(chars, i, w.length, i + w.length);
+                                          if (isAtWordBoundary) {
+                                            isHighlighted = true;
+                                            highlightLength = w.length;
+                                            break;
+                                          }
                                         }
                                       }
                                     }
