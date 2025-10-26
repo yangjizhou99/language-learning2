@@ -15,7 +15,7 @@ interface UseSentenceGestureOptions {
  * 用于检测滑动和双击手势
  */
 export function useSentenceGesture(
-  elementRef: RefObject<HTMLElement>,
+  elementRef: RefObject<HTMLElement | null>,
   options: UseSentenceGestureOptions = {}
 ) {
   const {

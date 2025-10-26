@@ -195,8 +195,10 @@ export function useSegmentAudio(
             safetyId = null;
           }
           stopAtRef.current = null;
-          a.removeEventListener('ended', onEnded);
-          a.removeEventListener('pause', onPause);
+          if (a) {
+            a.removeEventListener('ended', onEnded);
+            a.removeEventListener('pause', onPause);
+          }
         }
         function finish() {
           if (finished) return;
@@ -216,6 +218,7 @@ export function useSegmentAudio(
           finish();
         }
         function watch() {
+          if (!a) return;
           const stopAt = stopAtRef.current;
           if (typeof stopAt === 'number' && a.currentTime >= stopAt) {
             try { a.pause(); } catch {}

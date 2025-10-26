@@ -36,6 +36,7 @@ interface SentenceCardProps {
   onStartPractice: () => void;
   onStopPractice: () => void;
   onRetry: () => void;
+  highlightReview?: boolean;
 }
 
 // 根据评分获取颜色方案 - Pastel柔和配色
@@ -89,6 +90,7 @@ export default function SentenceCard({
   onStartPractice,
   onStopPractice,
   onRetry,
+  highlightReview = false,
 }: SentenceCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const colors = getScoreColor(score);
@@ -301,7 +303,15 @@ export default function SentenceCard({
     <div
       id={`sentence-${index}`}
       ref={cardRef}
-      className={`border-2 rounded-2xl transition-all shadow-sm hover:shadow-md ${colors.border} ${colors.bg}`}
+      className={`rounded-2xl border-2 transition-all duration-300 ease-out ${
+        isExpanded ? 'shadow-lg scale-[1.01]' : 'hover:shadow-md'
+      } ${
+        highlightReview
+          ? 'border-amber-200 bg-amber-50/40 shadow-amber-100'
+          : isExpanded
+          ? 'border-blue-200 bg-blue-50/30 shadow-blue-100'
+          : colors.border + ' ' + colors.bg
+      }`}
     >
       {/* 句子标题栏 */}
       <div className={`w-full px-3 py-2 flex items-center gap-2 hover:bg-white/50 transition-colors ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>

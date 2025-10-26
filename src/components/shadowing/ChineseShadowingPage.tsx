@@ -53,8 +53,8 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
-const SelectablePassage = dynamic(() => import('@/components/SelectablePassage'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
-const AcuText = dynamic(() => import('@/components/shadowing/AcuText'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
+const SelectablePassage = dynamic(() => import('@/components/SelectablePassage'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
+const AcuText = dynamic(() => import('@/components/shadowing/AcuText'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
@@ -71,7 +71,7 @@ import CompactStatsCards from './CompactStatsCards';
 import EnhancedAudioPlayer, { type EnhancedAudioPlayerRef } from './EnhancedAudioPlayer';
 import SentenceInlinePlayer from './SentenceInlinePlayer';
 import DesktopThreeColumnLayout from './DesktopThreeColumnLayout';
-const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
+const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
 import ShortcutsHelpModal from './ShortcutsHelpModal';
 import DesktopLayout from './DesktopLayout';
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/hooks/useKeyboardShortcuts';
@@ -1916,7 +1916,6 @@ export default function ShadowingPage() {
       setCurrentSession(null);
     }
   };
-
   // 深链支持：?item=&autostart=1 直接加载题目
   const searchParams = useSearchParams();
   const pendingItemIdRef = useRef<string | null>(null);
@@ -2716,7 +2715,6 @@ export default function ShadowingPage() {
       setIsGeneratingBatchExplanation(false);
     }
   };
-
   // 生成AI解释
   const generateWordExplanation = async (word: string, context: string, wordLang: string) => {
     if (isGeneratingExplanation) return;
@@ -3510,7 +3508,6 @@ export default function ShadowingPage() {
       scrollToTop();
     }
   };
-  
   // 检查是否首次访问，显示引导提示
   useEffect(() => {
     const hasSeenGuide = localStorage.getItem('shadowing-guide-seen');
@@ -4959,7 +4956,7 @@ export default function ShadowingPage() {
                                         {t.shadowing.adding_to_vocab || '添加中...'}
                                       </>
                                     ) : (
-                                      t.shadowing.confirm_add_to_vocab || '确认添加到生词本'
+                                      t.shadowing.acu_text?.confirm_add_to_vocab || '确认添加到生词本'
                                     )}
                                   </Button>
                                   <Button
@@ -4969,7 +4966,7 @@ export default function ShadowingPage() {
                                     disabled={isAddingToVocab}
                                     className="disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    {t.shadowing.cancel || '取消'}
+                                    {t.shadowing.acu_text?.cancel || '取消'}
                                   </Button>
                                 </div>
                               </div>
@@ -5376,7 +5373,7 @@ export default function ShadowingPage() {
                             {t.shadowing.clear || '清空'}
                           </Button>
                           <Button size="sm" onClick={importToVocab} disabled={isImporting}>
-                            {isImporting ? (t.shadowing.importing || '导入中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
+                            {isImporting ? (t.shadowing.adding_to_vocab || '添加中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
                           </Button>
                         </div>
 
@@ -6873,7 +6870,7 @@ export default function ShadowingPage() {
                                         {t.shadowing.adding_to_vocab || '添加中...'}
                                       </>
                                     ) : (
-                                      t.shadowing.confirm_add_to_vocab || '确认添加到生词本'
+                                      t.shadowing.acu_text?.confirm_add_to_vocab || '确认添加到生词本'
                                     )}
                                   </Button>
                                   <Button
@@ -6883,7 +6880,7 @@ export default function ShadowingPage() {
                                     disabled={isAddingToVocab}
                                     className="disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    {t.shadowing.cancel || '取消'}
+                                    {t.shadowing.acu_text?.cancel || '取消'}
                                   </Button>
                                 </div>
                               </div>
@@ -7294,7 +7291,7 @@ export default function ShadowingPage() {
                             {t.shadowing.clear || '清空'}
                           </Button>
                           <Button size="sm" onClick={importToVocab} disabled={isImporting}>
-                            {isImporting ? (t.shadowing.importing || '导入中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
+                            {isImporting ? (t.shadowing.adding_to_vocab || '添加中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
                           </Button>
                         </div>
                       </div>

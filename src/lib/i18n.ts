@@ -380,6 +380,7 @@ export interface Translations {
     imported: string;
     selected_words_title: string; // with {count}
     no_new_words_to_import: string;
+    adding_to_vocab: string;
     ai_scoring_subtitle: string;
     ai_analysis_done: string;
     play: string;
@@ -450,6 +451,8 @@ export interface Translations {
       record_scoring: string;
     };
     messages: {
+      adding_to_vocab: string;
+      added_to_vocab: string;
       add_vocab_failed: string;
       batch_ai_explanation_none_success: string;
       batch_ai_explanation_failed: string; // accepts {error}
@@ -895,6 +898,7 @@ const zh: Translations = {
     selected_words: '本次选中的生词',
     clear: '清空',
     import_to_vocab: '导入到生词本',
+    adding_to_vocab: '添加中...',
     importing: '导入中...',
     remove: '移除',
     import_success: '成功导入 {count} 个生词到生词本！',
@@ -1088,6 +1092,8 @@ const zh: Translations = {
       record_scoring: '录音评分',
     },
     messages: {
+      adding_to_vocab: '添加中...',
+      added_to_vocab: '已添加到生词本',
       add_vocab_failed: '添加生词失败，请重试',
       batch_ai_explanation_none_success: '没有成功生成任何AI解释，请重试',
       batch_ai_explanation_failed: '批量生成AI解释失败：{error}',
@@ -1666,6 +1672,7 @@ const en: Translations = {
     imported: 'Imported',
     selected_words_title: 'Selected words this time ({count})',
     no_new_words_to_import: 'No new words to import',
+    adding_to_vocab: 'Adding...',
     ai_scoring_subtitle: 'AI scoring with precise pronunciation analysis',
     ai_analysis_done: 'AI analysis completed',
     play: 'Play',
@@ -1735,6 +1742,8 @@ const en: Translations = {
       record_scoring: 'Record & Score',
     },
     messages: {
+      adding_to_vocab: 'Adding...',
+      added_to_vocab: 'Added to vocabulary',
       add_vocab_failed: 'Failed to add vocabulary, please try again',
       batch_ai_explanation_none_success: 'No AI explanations were generated, please retry',
       batch_ai_explanation_failed: 'Batch AI explanation failed: {error}',
@@ -2360,6 +2369,7 @@ const ja: Translations = {
     guide_select_words_tip3: '建议聚焦于影响理解的关键词汇，避免一次选太多',
     guide_view_translation_tip1: '优先显示你的母语翻译，理解语义与细节',
     guide_view_translation_tip2: '遇到不通顺的地方，回放原文定位比对',
+    adding_to_vocab: '添加中...',
     // 常用动作/提示（本轮新增）
     refresh_explanation: '刷新解释',
     generating: '生成中...',
@@ -2378,6 +2388,8 @@ const ja: Translations = {
       record_scoring: '录音评分',
     },
     messages: {
+      adding_to_vocab: '添加中...',
+      added_to_vocab: '已添加到生词本',
       add_vocab_failed: '添加生词失败，请重试',
       batch_ai_explanation_none_success: '没有成功生成任何AI解释，请重试',
       batch_ai_explanation_failed: '批量生成AI解释失败：{error}',

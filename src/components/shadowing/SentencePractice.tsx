@@ -795,14 +795,14 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
                            window.location.hostname !== 'localhost' &&
                            !window.location.hostname.startsWith('127.');
         if (isNonSecure) {
-          alert(t.shadowing?.microphone_permission_denied_mobile || '麦克风权限被拒绝。\n\n移动端需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问，或部署到Vercel等平台测试。');
+          alert(t.shadowing?.alert_messages?.microphone_permission_denied_mobile || '麦克风权限被拒绝。\n\n移动端需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问，或部署到Vercel等平台测试。');
         } else {
-          alert(t.shadowing?.microphone_permission_denied_desktop || '麦克风权限被拒绝。\n\n请在浏览器设置中允许本网站使用麦克风。\n\n步骤：\n1. 点击地址栏的锁图标\n2. 找到麦克风权限\n3. 设置为"允许"\n4. 刷新页面');
+          alert(t.shadowing?.alert_messages?.microphone_permission_denied_desktop || '麦克风权限被拒绝。\n\n请在浏览器设置中允许本网站使用麦克风。\n\n步骤：\n1. 点击地址栏的锁图标\n2. 找到麦克风权限\n3. 设置为"允许"\n4. 刷新页面');
         }
       } else if (errorType === 'audio-capture') {
-        alert(t.shadowing?.microphone_audio_capture_error || '无法捕获音频。\n\n可能原因：\n1. 麦克风被其他应用占用\n2. 麦克风硬件故障');
+        alert(t.shadowing?.alert_messages?.microphone_audio_capture_error || '无法捕获音频。\n\n可能原因：\n1. 麦克风被其他应用占用\n2. 麦克风硬件故障');
       } else if (errorType === 'service-not-allowed') {
-        alert(t.shadowing?.microphone_service_not_allowed || '语音识别服务不可用。\n\n请确保使用支持Web Speech API的浏览器（如Chrome）。');
+        alert(t.shadowing?.alert_messages?.microphone_service_not_allowed || '语音识别服务不可用。\n\n请确保使用支持Web Speech API的浏览器（如Chrome）。');
       }
       // no-speech等其他错误不提示，静默处理
       
@@ -855,11 +855,11 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       recognitionRef.current = null;
       clearSilenceTimer();
     };
-  }, [language, t.shadowing?.microphone_permission_denied_mobile, t.shadowing?.microphone_permission_denied_desktop, t.shadowing?.microphone_audio_capture_error, t.shadowing?.microphone_service_not_allowed]);
+  }, [language, t.shadowing?.alert_messages?.microphone_permission_denied_mobile, t.shadowing?.alert_messages?.microphone_permission_denied_desktop, t.shadowing?.alert_messages?.microphone_audio_capture_error, t.shadowing?.alert_messages?.microphone_service_not_allowed]);
 
   const start = useCallback(() => {
     if (!recognitionRef.current) {
-      alert(t.shadowing?.speech_recognition_not_supported || '当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
+      alert(t.shadowing?.alert_messages?.speech_recognition_not_supported || '当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
       return;
     }
     
@@ -875,7 +875,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       const errorMsg = error instanceof Error ? error.message : String(error);
       alert(`无法开始语音识别：${errorMsg}\n\n请检查麦克风权限。`);
     }
-  }, [t.shadowing?.speech_recognition_not_supported]);
+  }, [t.shadowing?.alert_messages?.speech_recognition_not_supported]);
 
   const stop = useCallback(() => {
     try {
@@ -927,7 +927,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
 
   const speak = useCallback(async (index: number) => {
     if (!(audioUrl && sentenceTimeline && sentenceTimeline.length > 0)) {
-      alert(t.shadowing?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
+      alert(t.shadowing?.alert_messages?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
       return;
     }
 
@@ -960,7 +960,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     const a = audioRef.current;
     const seg = sentenceTimeline.find((s) => s.index === index) || sentenceTimeline[index];
     if (!(seg && a)) {
-      alert(t.shadowing?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
+      alert(t.shadowing?.alert_messages?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
       return;
     }
 
@@ -1124,8 +1124,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       return;
     } catch {}
 
-    alert(t.shadowing?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
-  }, [audioUrl, sentenceTimeline, isIOS, playbackRate, t.shadowing?.no_audio_or_timeline]);
+    alert(t.shadowing?.alert_messages?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
+  }, [audioUrl, sentenceTimeline, isIOS, playbackRate, t.shadowing?.alert_messages?.no_audio_or_timeline]);
 
   const speakWithTTS = useCallback(async (text: string) => {
     if (typeof window === 'undefined') return;
@@ -1458,7 +1458,9 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           })}
         </div>
       ) : (
-        <div className="text-gray-500 text-center py-8">{t.shadowing?.no_content_message || '暂无内容'}</div>
+        <div className="text-gray-500 text-center py-8">
+          {t.shadowing?.alert_messages?.no_content_message || '暂无内容'}
+        </div>
       )}
 
       {/* Toast 通知 */}
