@@ -19,17 +19,17 @@ const MobileContext = createContext<MobileContextType | undefined>(undefined);
 export function MobileProvider({ children }: { children: React.ReactNode }) {
   const { isMobile, isTablet, isDesktop, screenWidth, screenHeight, userAgent } =
     useMobileDetection();
-  const [forceMobileMode, setForceMobileMode] = useState(false);
+  const [forceMobileMode, setForceMobileMode] = useState(() => {
+    try {
+      if (typeof window === 'undefined') return false;
+      const saved = localStorage.getItem('forceMobileMode');
+      return saved !== null ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
+  });
 
   const actualIsMobile = isMobile || forceMobileMode;
-
-  // 将状态保存到localStorage，这样刷新页面后状态不会丢失
-  useEffect(() => {
-    const saved = localStorage.getItem('forceMobileMode');
-    if (saved !== null) {
-      setForceMobileMode(JSON.parse(saved));
-    }
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('forceMobileMode', JSON.stringify(forceMobileMode));

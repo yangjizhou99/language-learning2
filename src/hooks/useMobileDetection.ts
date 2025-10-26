@@ -11,13 +11,40 @@ interface MobileDetectionResult {
 }
 
 export default function useMobileDetection(): MobileDetectionResult {
-  const [detection, setDetection] = useState<MobileDetectionResult>({
-    isMobile: false,
-    isTablet: false,
-    isDesktop: true,
-    screenWidth: 0,
-    screenHeight: 0,
-    userAgent: '',
+  const [detection, setDetection] = useState<MobileDetectionResult>(() => {
+    if (typeof window === 'undefined') {
+      return {
+        isMobile: false,
+        isTablet: false,
+        isDesktop: true,
+        screenWidth: 0,
+        screenHeight: 0,
+        userAgent: '',
+      };
+    }
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const userAgent = navigator.userAgent.toLowerCase();
+
+    const isMobileWidth = width < 768;
+    const isTabletWidth = width >= 768 && width < 1024;
+    const isMobileUA = /android|webos|iphone|ipod|blackberry|iemobile|opera mini/i.test(
+      userAgent,
+    );
+    const isTabletUA = /ipad|android(?!.*mobile)/i.test(userAgent);
+    const isMobile = isMobileWidth || (isMobileUA && !isTabletUA);
+    const isTablet = isTabletWidth || (isTabletUA && !isMobile);
+    const isDesktop = !isMobile && !isTablet;
+
+    return {
+      isMobile,
+      isTablet,
+      isDesktop,
+      screenWidth: width,
+      screenHeight: height,
+      userAgent,
+    };
   });
 
   useEffect(() => {

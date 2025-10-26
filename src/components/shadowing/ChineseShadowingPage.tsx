@@ -1840,10 +1840,20 @@ export default function ShadowingPage() {
       const params = new URLSearchParams(navSearchParams?.toString() || '');
       params.set('item', item.id);
       params.set('autostart', '1');
+      // 移除来源标记，避免后续错误回退（如 src=daily 再次触发每日回退）
+      params.delete('src');
       const next = `${pathname}?${params.toString()}`;
       const current = `${pathname}?${navSearchParams?.toString() || ''}`;
       if (next !== current) {
         router.replace(next, { scroll: false });
+      }
+    } catch {}
+
+    // 将当前题目写入本地存储（按语言分桶），用于无 URL 参数时的兜底恢复
+    try {
+      const keyLang = (item as any)?.lang || lang;
+      if (typeof window !== 'undefined' && keyLang) {
+        localStorage.setItem(`shadowing:lastItem:${keyLang}`, item.id);
       }
     } catch {}
 
@@ -1909,17 +1919,25 @@ export default function ShadowingPage() {
 
   // 深链支持：?item=&autostart=1 直接加载题目
   const searchParams = useSearchParams();
+  const pendingItemIdRef = useRef<string | null>(null);
+  const lastLoadedItemIdRef = useRef<string | null>(null);
+  const explicitItemRef = useRef<boolean>(false);
   useEffect(() => {
     (async () => {
       try {
-        if (!user) return;
         const itemId = searchParams?.get('item');
+        explicitItemRef.current = !!itemId;
         const auto = searchParams?.get('autostart') === '1';
-        if (!itemId || !auto) return;
+        if (!itemId) return;
+        // 记录待自动进入的题目，若立即加载失败，待题库就绪后再尝试
+        pendingItemIdRef.current = itemId;
         let target = items.find((x) => x.id === itemId) || null;
         if (!target) {
-          const headers = await getAuthHeaders();
-          let resp = await fetch(`/api/shadowing/item?id=${itemId}`, { headers, credentials: 'include' });
+          let headers: HeadersInit | undefined = undefined;
+          try {
+            if (user) headers = await getAuthHeaders();
+          } catch {}
+          const resp = await fetch(`/api/shadowing/item?id=${itemId}`, { headers, credentials: 'include' });
           if (resp.ok) {
             const data = await resp.json();
             if (data?.item) {
@@ -1934,21 +1952,182 @@ export default function ShadowingPage() {
               });
             }
           } else if (resp.status === 404) {
-            // 回退到每日一题接口，保证能打开今日题
-            resp = await fetch(`/api/shadowing/daily?lang=${lang}`, { headers, credentials: 'include' });
-            if (resp.ok) {
-              const data = await resp.json();
-              if (data?.item) {
-                target = {
-                  ...data.item,
-                  isPracticed: false,
-                  stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
-                } as ShadowingItem;
-                setItems((prev) => {
-                  const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
-                  return exists ? prev : [target as ShadowingItem, ...prev];
-                });
+            // 显式每日入口（src=daily）且首次加载失败时，回退到每日一题接口一次
+            try {
+              const src = searchParams?.get('src');
+              const urlLang = (searchParams?.get('lang') as 'zh' | 'ja' | 'en' | 'ko') || lang;
+              if (src === 'daily' && !currentItem && !lastLoadedItemIdRef.current && urlLang) {
+                const dailyResp = await fetch(`/api/shadowing/daily?lang=${urlLang}`, { headers, credentials: 'include' });
+                if (dailyResp.ok) {
+                  const dailyData = await dailyResp.json();
+                  if (dailyData?.item) {
+                    target = {
+                      ...dailyData.item,
+                      isPracticed: false,
+                      stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+                    } as ShadowingItem;
+                    setItems((prev) => {
+                      const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                      return exists ? prev : [target as ShadowingItem, ...prev];
+                    });
+                  }
+                }
               }
+
+              // 非显式每日入口，且 URL 未显式指定 item 时，才尝试本地兜底
+              if (!explicitItemRef.current) {
+                const lastId = typeof window !== 'undefined' ? localStorage.getItem(`shadowing:lastItem:${lang}`) : null;
+                if (lastId && lastId !== itemId) {
+                  const altResp = await fetch(`/api/shadowing/item?id=${encodeURIComponent(lastId)}`, { headers, credentials: 'include' });
+                  if (altResp.ok) {
+                    const altData = await altResp.json();
+                    if (altData?.item) {
+                      target = {
+                        ...altData.item,
+                        isPracticed: false,
+                        stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+                      } as ShadowingItem;
+                      setItems((prev) => {
+                        const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                        return exists ? prev : [target as ShadowingItem, ...prev];
+                      });
+                    }
+                  }
+                }
+              }
+            } catch {}
+          }
+        }
+        if (target) {
+          await loadItem(target);
+          pendingItemIdRef.current = null;
+          lastLoadedItemIdRef.current = itemId;
+        }
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 当题库列表加载后，如果还未进入题目且存在待选题目ID，则从列表中自动选中
+  useEffect(() => {
+    try {
+      if (currentItem) return;
+      const pendingId = pendingItemIdRef.current;
+      if (!pendingId) return;
+      const target = items.find((x) => x.id === pendingId) || null;
+      if (target) {
+        loadItem(target);
+        pendingItemIdRef.current = null;
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
+
+  // 监听 URL 中的 item 变化，确保任何时候 URL 指向某题时都自动进入
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(navSearchParams?.toString() || '');
+      const itemId = params.get('item');
+      if (!itemId) return;
+      if (lastLoadedItemIdRef.current === itemId) return;
+
+      let target = items.find((x) => x.id === itemId) || null;
+      const run = async () => {
+        if (!target) {
+          let headers: HeadersInit | undefined = undefined;
+          try {
+            if (user) headers = await getAuthHeaders();
+          } catch {}
+          const resp = await fetch(`/api/shadowing/item?id=${encodeURIComponent(itemId)}`, { headers, credentials: 'include' });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data?.item) {
+              target = {
+                ...data.item,
+                isPracticed: false,
+                stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+              } as ShadowingItem;
+              setItems((prev) => {
+                const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                return exists ? prev : [target as ShadowingItem, ...prev];
+              });
+            }
+          }
+        }
+        if (target) {
+          await loadItem(target);
+          lastLoadedItemIdRef.current = itemId;
+          pendingItemIdRef.current = null;
+        }
+      };
+      run();
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navSearchParams]);
+
+  // 当用户对象就绪后，如果仍存在待进入题目且尚未进入，则带鉴权头重试一次
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!user) return;
+        if (currentItem) return;
+        const pendingId = pendingItemIdRef.current;
+        if (!pendingId) return;
+        let headers: HeadersInit | undefined = undefined;
+        try {
+          headers = await getAuthHeaders();
+        } catch {}
+        const resp = await fetch(`/api/shadowing/item?id=${encodeURIComponent(pendingId)}`, { headers, credentials: 'include' });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data?.item) {
+            const target = {
+              ...data.item,
+              isPracticed: false,
+              stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+            } as ShadowingItem;
+            setItems((prev) => {
+              const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+              return exists ? prev : [target as ShadowingItem, ...prev];
+            });
+            await loadItem(target);
+            lastLoadedItemIdRef.current = pendingId;
+            pendingItemIdRef.current = null;
+          }
+        }
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, currentItem]);
+
+  // 兜底恢复：当 URL 没有 item 参数时，尝试从本地存储读取上次练习的题目
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!user) return;
+        const hasParamItem = searchParams?.get('item');
+        if (hasParamItem) return;
+
+        const keyLang = lang;
+        const lastId = typeof window !== 'undefined' ? localStorage.getItem(`shadowing:lastItem:${keyLang}`) : null;
+        if (!lastId) return;
+
+        let target = items.find((x) => x.id === lastId) || null;
+        if (!target) {
+          const headers = await getAuthHeaders();
+          const resp = await fetch(`/api/shadowing/item?id=${encodeURIComponent(lastId)}`, { headers, credentials: 'include' });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data?.item) {
+              target = {
+                ...data.item,
+                isPracticed: false,
+                stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+              } as ShadowingItem;
+              setItems((prev) => {
+                const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                return exists ? prev : [target as ShadowingItem, ...prev];
+              });
             }
           }
         }
@@ -1958,7 +2137,7 @@ export default function ShadowingPage() {
       } catch {}
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, lang]);
 
   // 处理文本选择（当用户选择文本时）
   const handleTextSelection = (word: string, context: string) => {

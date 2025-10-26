@@ -389,7 +389,7 @@ export default function Home() {
                     daily?.item ? (
                       <Link
                         className="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                        href={`/practice/shadowing?lang=${daily.lang}&item=${daily.item.id}&autostart=1`}
+                        href={`/practice/shadowing?lang=${daily.lang}&item=${daily.item.id}&autostart=1&src=daily`}
                       >
                         {t.home.daily_quick_start}
                         <Play className="w-4 h-4 ml-2" />
