@@ -53,7 +53,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
-const SelectablePassage = dynamic(() => import('@/components/SelectablePassage'), { ssr: false, loading: () => <div className="p-2 text-gray-500">{t.common.loading_dots}</div> });
+const SelectablePassage = dynamic(() => import('@/components/SelectablePassage'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
 const AcuText = dynamic(() => import('@/components/shadowing/AcuText'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
@@ -71,7 +71,7 @@ import CompactStatsCards from './CompactStatsCards';
 import EnhancedAudioPlayer, { type EnhancedAudioPlayerRef } from './EnhancedAudioPlayer';
 import SentenceInlinePlayer from './SentenceInlinePlayer';
 import DesktopThreeColumnLayout from './DesktopThreeColumnLayout';
-const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">{t.common.loading_dots}</div> });
+const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
 import ShortcutsHelpModal from './ShortcutsHelpModal';
 import DesktopLayout from './DesktopLayout';
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/hooks/useKeyboardShortcuts';
@@ -1834,6 +1834,18 @@ export default function ShadowingPage() {
     setStep(1);
     setScoringResult(null);
     setShowSentenceComparison(false);
+
+    // 将当前题目写入 URL，支持刷新后自动恢复
+    try {
+      const params = new URLSearchParams(navSearchParams?.toString() || '');
+      params.set('item', item.id);
+      params.set('autostart', '1');
+      const next = `${pathname}?${params.toString()}`;
+      const current = `${pathname}?${navSearchParams?.toString() || ''}`;
+      if (next !== current) {
+        router.replace(next, { scroll: false });
+      }
+    } catch {}
 
     // 尝试加载之前的会话数据（不管是否标记为已练习）
     try {
