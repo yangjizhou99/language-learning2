@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Check, X, RotateCcw } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { type AcuUnit } from '@/lib/acu-utils';
 
 interface AcuTextProps {
@@ -19,6 +22,7 @@ interface SelectedUnit {
 
 export default function AcuText({ text, lang, units, onConfirm, selectedWords = [] }: AcuTextProps) {
   const [selectedUnits, setSelectedUnits] = useState<SelectedUnit[]>([]);
+  const { t } = useLanguage();
 
   // 判断是否为对话标识符（标点符号现在可以选中）
   const isNonSelectable = useCallback((unit: AcuUnit) => {
@@ -105,14 +109,14 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
           
           if (!isAdjacent || !isSameSentence) {
             // 跨句或不相邻，提示用户
-            alert('请选择同一句的相邻片段');
+            alert(t.shadowing.acu_text.select_adjacent_units);
             return prev;
           }
         }
         
         // 限制最多选择 5 个块
         if (prev.length >= 5) {
-          alert('最多只能选择 5 个相邻的 ACU 块');
+          alert(t.shadowing.acu_text.max_5_units);
           return prev;
         }
         
@@ -120,7 +124,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         return [...prev, { unit, index }];
       }
     });
-  }, [isNonSelectable]);
+  }, [isNonSelectable, t]);
 
   // 获取合并后的文本
   const getMergedText = useCallback(() => {
@@ -463,14 +467,14 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
                 onClick={handleConfirm}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                确认添加到生词本
+                {t.shadowing.acu_text.confirm_add_to_vocab}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleCancel}
               >
-                取消
+                {t.shadowing.acu_text.cancel}
               </Button>
             </div>
           </div>

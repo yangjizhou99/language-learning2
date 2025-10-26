@@ -53,8 +53,8 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
-const SelectablePassage = dynamic(() => import('@/components/SelectablePassage'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
-const AcuText = dynamic(() => import('@/components/shadowing/AcuText'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
+const SelectablePassage = dynamic(() => import('@/components/SelectablePassage'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
+const AcuText = dynamic(() => import('@/components/shadowing/AcuText'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
@@ -69,8 +69,9 @@ import { speakText as speakTextUtil } from '@/lib/speechUtils';
 import CollapsibleFilterSection from './CollapsibleFilterSection';
 import CompactStatsCards from './CompactStatsCards';
 import EnhancedAudioPlayer, { type EnhancedAudioPlayerRef } from './EnhancedAudioPlayer';
+import SentenceInlinePlayer from './SentenceInlinePlayer';
 import DesktopThreeColumnLayout from './DesktopThreeColumnLayout';
-const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">Loading…</div> });
+const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
 import ShortcutsHelpModal from './ShortcutsHelpModal';
 import DesktopLayout from './DesktopLayout';
 import { useKeyboardShortcuts, type KeyboardShortcut } from '@/hooks/useKeyboardShortcuts';
@@ -383,7 +384,6 @@ const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<
   
   return requestPromise;
 };
-
 export default function ShadowingPage() {
   const { t, language, setLanguageFromUserProfile } = useLanguage();
   const { permissions } = useUserPermissions();
@@ -1835,6 +1835,28 @@ export default function ShadowingPage() {
     setScoringResult(null);
     setShowSentenceComparison(false);
 
+    // 将当前题目写入 URL，支持刷新后自动恢复
+    try {
+      const params = new URLSearchParams(navSearchParams?.toString() || '');
+      params.set('item', item.id);
+      params.set('autostart', '1');
+      // 移除来源标记，避免后续错误回退（如 src=daily 再次触发每日回退）
+      params.delete('src');
+      const next = `${pathname}?${params.toString()}`;
+      const current = `${pathname}?${navSearchParams?.toString() || ''}`;
+      if (next !== current) {
+        router.replace(next, { scroll: false });
+      }
+    } catch {}
+
+    // 将当前题目写入本地存储（按语言分桶），用于无 URL 参数时的兜底恢复
+    try {
+      const keyLang = (item as any)?.lang || lang;
+      if (typeof window !== 'undefined' && keyLang) {
+        localStorage.setItem(`shadowing:lastItem:${keyLang}`, item.id);
+      }
+    } catch {}
+
     // 尝试加载之前的会话数据（不管是否标记为已练习）
     try {
       const headers = await getAuthHeaders();
@@ -1894,20 +1916,27 @@ export default function ShadowingPage() {
       setCurrentSession(null);
     }
   };
-
   // 深链支持：?item=&autostart=1 直接加载题目
   const searchParams = useSearchParams();
+  const pendingItemIdRef = useRef<string | null>(null);
+  const lastLoadedItemIdRef = useRef<string | null>(null);
+  const explicitItemRef = useRef<boolean>(false);
   useEffect(() => {
     (async () => {
       try {
-        if (!user) return;
         const itemId = searchParams?.get('item');
+        explicitItemRef.current = !!itemId;
         const auto = searchParams?.get('autostart') === '1';
-        if (!itemId || !auto) return;
+        if (!itemId) return;
+        // 记录待自动进入的题目，若立即加载失败，待题库就绪后再尝试
+        pendingItemIdRef.current = itemId;
         let target = items.find((x) => x.id === itemId) || null;
         if (!target) {
-          const headers = await getAuthHeaders();
-          let resp = await fetch(`/api/shadowing/item?id=${itemId}`, { headers, credentials: 'include' });
+          let headers: HeadersInit | undefined = undefined;
+          try {
+            if (user) headers = await getAuthHeaders();
+          } catch {}
+          const resp = await fetch(`/api/shadowing/item?id=${itemId}`, { headers, credentials: 'include' });
           if (resp.ok) {
             const data = await resp.json();
             if (data?.item) {
@@ -1922,21 +1951,182 @@ export default function ShadowingPage() {
               });
             }
           } else if (resp.status === 404) {
-            // 回退到每日一题接口，保证能打开今日题
-            resp = await fetch(`/api/shadowing/daily?lang=${lang}`, { headers, credentials: 'include' });
-            if (resp.ok) {
-              const data = await resp.json();
-              if (data?.item) {
-                target = {
-                  ...data.item,
-                  isPracticed: false,
-                  stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
-                } as ShadowingItem;
-                setItems((prev) => {
-                  const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
-                  return exists ? prev : [target as ShadowingItem, ...prev];
-                });
+            // 显式每日入口（src=daily）且首次加载失败时，回退到每日一题接口一次
+            try {
+              const src = searchParams?.get('src');
+              const urlLang = (searchParams?.get('lang') as 'zh' | 'ja' | 'en' | 'ko') || lang;
+              if (src === 'daily' && !currentItem && !lastLoadedItemIdRef.current && urlLang) {
+                const dailyResp = await fetch(`/api/shadowing/daily?lang=${urlLang}`, { headers, credentials: 'include' });
+                if (dailyResp.ok) {
+                  const dailyData = await dailyResp.json();
+                  if (dailyData?.item) {
+                    target = {
+                      ...dailyData.item,
+                      isPracticed: false,
+                      stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+                    } as ShadowingItem;
+                    setItems((prev) => {
+                      const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                      return exists ? prev : [target as ShadowingItem, ...prev];
+                    });
+                  }
+                }
               }
+
+              // 非显式每日入口，且 URL 未显式指定 item 时，才尝试本地兜底
+              if (!explicitItemRef.current) {
+                const lastId = typeof window !== 'undefined' ? localStorage.getItem(`shadowing:lastItem:${lang}`) : null;
+                if (lastId && lastId !== itemId) {
+                  const altResp = await fetch(`/api/shadowing/item?id=${encodeURIComponent(lastId)}`, { headers, credentials: 'include' });
+                  if (altResp.ok) {
+                    const altData = await altResp.json();
+                    if (altData?.item) {
+                      target = {
+                        ...altData.item,
+                        isPracticed: false,
+                        stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+                      } as ShadowingItem;
+                      setItems((prev) => {
+                        const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                        return exists ? prev : [target as ShadowingItem, ...prev];
+                      });
+                    }
+                  }
+                }
+              }
+            } catch {}
+          }
+        }
+        if (target) {
+          await loadItem(target);
+          pendingItemIdRef.current = null;
+          lastLoadedItemIdRef.current = itemId;
+        }
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 当题库列表加载后，如果还未进入题目且存在待选题目ID，则从列表中自动选中
+  useEffect(() => {
+    try {
+      if (currentItem) return;
+      const pendingId = pendingItemIdRef.current;
+      if (!pendingId) return;
+      const target = items.find((x) => x.id === pendingId) || null;
+      if (target) {
+        loadItem(target);
+        pendingItemIdRef.current = null;
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
+
+  // 监听 URL 中的 item 变化，确保任何时候 URL 指向某题时都自动进入
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(navSearchParams?.toString() || '');
+      const itemId = params.get('item');
+      if (!itemId) return;
+      if (lastLoadedItemIdRef.current === itemId) return;
+
+      let target = items.find((x) => x.id === itemId) || null;
+      const run = async () => {
+        if (!target) {
+          let headers: HeadersInit | undefined = undefined;
+          try {
+            if (user) headers = await getAuthHeaders();
+          } catch {}
+          const resp = await fetch(`/api/shadowing/item?id=${encodeURIComponent(itemId)}`, { headers, credentials: 'include' });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data?.item) {
+              target = {
+                ...data.item,
+                isPracticed: false,
+                stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+              } as ShadowingItem;
+              setItems((prev) => {
+                const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                return exists ? prev : [target as ShadowingItem, ...prev];
+              });
+            }
+          }
+        }
+        if (target) {
+          await loadItem(target);
+          lastLoadedItemIdRef.current = itemId;
+          pendingItemIdRef.current = null;
+        }
+      };
+      run();
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navSearchParams]);
+
+  // 当用户对象就绪后，如果仍存在待进入题目且尚未进入，则带鉴权头重试一次
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!user) return;
+        if (currentItem) return;
+        const pendingId = pendingItemIdRef.current;
+        if (!pendingId) return;
+        let headers: HeadersInit | undefined = undefined;
+        try {
+          headers = await getAuthHeaders();
+        } catch {}
+        const resp = await fetch(`/api/shadowing/item?id=${encodeURIComponent(pendingId)}`, { headers, credentials: 'include' });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data?.item) {
+            const target = {
+              ...data.item,
+              isPracticed: false,
+              stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+            } as ShadowingItem;
+            setItems((prev) => {
+              const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+              return exists ? prev : [target as ShadowingItem, ...prev];
+            });
+            await loadItem(target);
+            lastLoadedItemIdRef.current = pendingId;
+            pendingItemIdRef.current = null;
+          }
+        }
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, currentItem]);
+
+  // 兜底恢复：当 URL 没有 item 参数时，尝试从本地存储读取上次练习的题目
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!user) return;
+        const hasParamItem = searchParams?.get('item');
+        if (hasParamItem) return;
+
+        const keyLang = lang;
+        const lastId = typeof window !== 'undefined' ? localStorage.getItem(`shadowing:lastItem:${keyLang}`) : null;
+        if (!lastId) return;
+
+        let target = items.find((x) => x.id === lastId) || null;
+        if (!target) {
+          const headers = await getAuthHeaders();
+          const resp = await fetch(`/api/shadowing/item?id=${encodeURIComponent(lastId)}`, { headers, credentials: 'include' });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data?.item) {
+              target = {
+                ...data.item,
+                isPracticed: false,
+                stats: { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+              } as ShadowingItem;
+              setItems((prev) => {
+                const exists = prev.some((p) => p.id === (target as ShadowingItem).id);
+                return exists ? prev : [target as ShadowingItem, ...prev];
+              });
             }
           }
         }
@@ -1946,13 +2136,12 @@ export default function ShadowingPage() {
       } catch {}
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, lang]);
 
   // 处理文本选择（当用户选择文本时）
   const handleTextSelection = (word: string, context: string) => {
     setSelectedText({ word, context });
   };
-
   // 确认添加选中的文本到生词本
   const confirmAddToVocab = async () => {
     if (selectedText && !isAddingToVocab) {
@@ -1961,7 +2150,7 @@ export default function ShadowingPage() {
         await handleWordSelect(selectedText.word, selectedText.context);
 
         // 显示成功提示
-        const message = `"${selectedText.word}" 已成功添加到生词本！`;
+        const message = `${t.shadowing.messages?.added_to_vocab || '已添加到生词本'}："${selectedText.word}"`;
         setSuccessMessage(message);
         setShowSuccessToast(true);
 
@@ -2526,7 +2715,6 @@ export default function ShadowingPage() {
       setIsGeneratingBatchExplanation(false);
     }
   };
-
   // 生成AI解释
   const generateWordExplanation = async (word: string, context: string, wordLang: string) => {
     if (isGeneratingExplanation) return;
@@ -2649,7 +2837,6 @@ export default function ShadowingPage() {
     if (!currentItem?.audio_url) return;
     audioPlayerRef.current?.toggle();
   };
-
   // 评分功能（支持转录文字和逐句对比）
   const performScoring = async (transcription?: string) => {
     if (!currentItem) {
@@ -2683,68 +2870,39 @@ export default function ShadowingPage() {
       const suggestions = [];
 
       if (scorePercentage >= 80) {
-        feedback = `发音准确率: ${scorePercentage}%，非常棒！`;
-        suggestions.push('继续保持这个水平！');
+        feedback = `${t.shadowing.feedback_great || '发音准确率: {percent}%，非常棒！'}.replace('{percent}', String(scorePercentage))`;
+        suggestions.push(t.shadowing.suggestions?.keep_level || '继续保持这个水平！');
       } else if (scorePercentage >= 60) {
-        feedback = `发音准确率: ${scorePercentage}%，很好！`;
-        suggestions.push('可以尝试更清晰地发音');
-        suggestions.push('注意语调和节奏');
+        feedback = `${t.shadowing.feedback_good || '发音准确率: {percent}%，很好！'}.replace('{percent}', String(scorePercentage))`;
+        suggestions.push(t.shadowing.suggestions?.clearer_pronunciation || '可以尝试更清晰地发音');
+        suggestions.push(t.shadowing.suggestions?.intonation_rhythm || '注意语调和节奏');
       } else if (scorePercentage >= 40) {
-        feedback = `发音准确率: ${scorePercentage}%，还不错`;
-        suggestions.push('建议多听几遍原文');
-        suggestions.push('注意单词的发音');
-        suggestions.push('可以尝试放慢语速');
+        feedback = `${t.shadowing.feedback_ok || '发音准确率: {percent}%，还不错'}.replace('{percent}', String(scorePercentage))`;
+        suggestions.push(t.shadowing.suggestions?.listen_more || '建议多听几遍原文');
+        suggestions.push(t.shadowing.suggestions?.mind_word_pronunciation || '注意单词的发音');
+        suggestions.push(t.shadowing.suggestions?.slow_down || '可以尝试放慢语速');
       } else {
-        feedback = `发音准确率: ${scorePercentage}%，需要加强练习`;
-        suggestions.push('建议先听几遍原文再练习');
-        suggestions.push('注意每个单词的发音');
-        suggestions.push('可以分段练习');
-        suggestions.push('多练习几次会更好');
+        feedback = `${t.shadowing.feedback_need_improvement || '发音准确率: {percent}%，需要加强练习'}.replace('{percent}', String(scorePercentage))`;
+        suggestions.push(t.shadowing.suggestions?.listen_before_practice || '建议先听几遍原文再练习');
+        suggestions.push(t.shadowing.suggestions?.each_word_pronunciation || '注意每个单词的发音');
+        suggestions.push(t.shadowing.suggestions?.practice_in_sections || '可以分段练习');
+        suggestions.push(t.shadowing.suggestions?.practice_more || '多练习几次会更好');
       }
 
       // 添加转录质量提示
       if (textToScore.length < originalText.length * 0.3) {
-        suggestions.push('转录内容较少，建议重新录音');
+        suggestions.push(t.shadowing.suggestions?.transcription_too_short || '转录内容较少，建议重新录音');
       } else if (textToScore.length < originalText.length * 0.6) {
-        suggestions.push('转录内容不完整，建议重新录音');
+        suggestions.push(t.shadowing.suggestions?.transcription_incomplete || '转录内容不完整，建议重新录音');
       }
 
       const fullFeedback =
-        feedback + (suggestions.length > 0 ? '\n\n建议：\n• ' + suggestions.join('\n• ') : '');
-
-      // Recompute feedback via i18n to avoid hardcoded copy
-      let feedback2 = '';
-      const suggestions2: string[] = [];
-      if (scorePercentage >= 80) {
-        feedback2 = (t.shadowing.feedback_great || '发音准确率: {percent}%，非常棒！').replace('{percent}', String(scorePercentage));
-        suggestions2.push(t.shadowing.suggestions?.keep_level || '继续保持这个水平！');
-      } else if (scorePercentage >= 60) {
-        feedback2 = (t.shadowing.feedback_good || '发音准确率: {percent}%，很好！').replace('{percent}', String(scorePercentage));
-        suggestions2.push(t.shadowing.suggestions?.clearer_pronunciation || '可以尝试更清晰地发音');
-        suggestions2.push(t.shadowing.suggestions?.intonation_rhythm || '注意语调和节奏');
-      } else if (scorePercentage >= 40) {
-        feedback2 = (t.shadowing.feedback_ok || '发音准确率: {percent}%，还不错').replace('{percent}', String(scorePercentage));
-        suggestions2.push(t.shadowing.suggestions?.listen_more || '建议多听几遍原文');
-        suggestions2.push(t.shadowing.suggestions?.mind_word_pronunciation || '注意单词的发音');
-        suggestions2.push(t.shadowing.suggestions?.slow_down || '可以尝试放慢语速');
-      } else {
-        feedback2 = (t.shadowing.feedback_need_improvement || '发音准确率: {percent}%，需要加强练习').replace('{percent}', String(scorePercentage));
-        suggestions2.push(t.shadowing.suggestions?.listen_before_practice || '建议先听几遍原文再练习');
-        suggestions2.push(t.shadowing.suggestions?.each_word_pronunciation || '注意每个单词的发音');
-        suggestions2.push(t.shadowing.suggestions?.practice_in_sections || '可以分段练习');
-        suggestions2.push(t.shadowing.suggestions?.practice_more || '多练习几次会更好');
-      }
-      if (textToScore.length < originalText.length * 0.3) {
-        suggestions2.push(t.shadowing.suggestions?.transcription_too_short || '转录内容较少，建议重新录音');
-      } else if (textToScore.length < originalText.length * 0.6) {
-        suggestions2.push(t.shadowing.suggestions?.transcription_incomplete || '转录内容不完整，建议重新录音');
-      }
-      const fullFeedback_i18n = feedback2 + (suggestions2.length > 0 ? `\n\n${t.shadowing.suggestions_title_text || '建议：'}\n• ` + suggestions2.join('\n• ') : '');
+        feedback + (suggestions.length > 0 ? `\n\n${t.shadowing.suggestions_title_text || '建议：'}\n• ` + suggestions.join('\n• ') : '');
 
       const scoringResult = {
         score: scorePercentage,
         accuracy: normalizedAccuracy,
-        feedback: fullFeedback_i18n,
+        feedback: fullFeedback,
         transcription: textToScore,
         originalText: originalText,
       };
@@ -3350,7 +3508,6 @@ export default function ShadowingPage() {
       scrollToTop();
     }
   };
-  
   // 检查是否首次访问，显示引导提示
   useEffect(() => {
     const hasSeenGuide = localStorage.getItem('shadowing-guide-seen');
@@ -3368,7 +3525,6 @@ export default function ShadowingPage() {
     setShowGuide(false);
     localStorage.setItem('shadowing-guide-seen', 'true');
   };
-
   // 渲染左侧题库面板内容（桌面端）
   const renderLeftPanelContent = () => {
     return (
@@ -3876,7 +4032,6 @@ export default function ShadowingPage() {
       </main>
     );
   }
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       <Container>
@@ -4573,7 +4728,17 @@ export default function ShadowingPage() {
                             />
                           ) : (
                             <div className="text-lg leading-loose">
-                              {(() => {
+                              {/* 移动端第2步：原文行内逐句播放 */}
+                              {step === 2 && currentItem?.audio_url ? (
+                                <SentenceInlinePlayer
+                                  text={currentItem.text}
+                                  language={currentItem.lang}
+                                  audioUrl={currentItem.audio_url}
+                                  sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
+                                  onSegmentPlayStart={() => audioPlayerRef.current?.pause()}
+                                />
+                              ) : (
+                              (() => {
                                 // 格式化对话文本，按说话者分行
                                 const formatDialogueText = (text: string): string => {
                                   if (!text) return '';
@@ -4764,7 +4929,8 @@ export default function ShadowingPage() {
                                     );
                                   });
                                 }
-                              })()}
+                              })()
+                              )}
                             </div>
                           )}
                           {selectedText && (
@@ -4787,10 +4953,10 @@ export default function ShadowingPage() {
                                     {isAddingToVocab ? (
                                       <>
                                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                                        添加中...
+                                        {t.shadowing.adding_to_vocab || '添加中...'}
                                       </>
                                     ) : (
-                                      '确认添加到生词本'
+                                      t.shadowing.acu_text?.confirm_add_to_vocab || '确认添加到生词本'
                                     )}
                                   </Button>
                                   <Button
@@ -4800,7 +4966,7 @@ export default function ShadowingPage() {
                                     disabled={isAddingToVocab}
                                     className="disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    取消
+                                    {t.shadowing.acu_text?.cancel || '取消'}
                                   </Button>
                                 </div>
                               </div>
@@ -5180,7 +5346,6 @@ export default function ShadowingPage() {
                       </div>
                     </CollapsibleCard>
                   )}
-
                   {/* 本次选中的生词 - 折叠式 */}
                   {selectedWords.length > 0 && (
                     <CollapsibleCard
@@ -5208,7 +5373,7 @@ export default function ShadowingPage() {
                             {t.shadowing.clear || '清空'}
                           </Button>
                           <Button size="sm" onClick={importToVocab} disabled={isImporting}>
-                            {isImporting ? (t.shadowing.importing || '导入中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
+                            {isImporting ? (t.shadowing.adding_to_vocab || '添加中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
                           </Button>
                         </div>
 
@@ -6406,7 +6571,6 @@ export default function ShadowingPage() {
                 )}
               </Card>
             </div>
-
             {/* 右侧练习区域 */}
             <div className="flex-1 overflow-y-auto max-h-[85vh]">
               {!currentItem ? (
@@ -6471,7 +6635,7 @@ export default function ShadowingPage() {
                           <ul className="list-disc pl-5 space-y-1">
                             <li>放松不要急，先整体感知节奏与停顿</li>
                             <li>不要看原文，尝试抓关键词与语气</li>
-                            <li>{t.shadowing.guide_blind_listen_tip1 || '准备好后点击“下一步”，再看原文跟读'}</li>
+                            <li>{t.shadowing.guide_blind_listen_tip1 || '准备好后点击"下一步"，再看原文跟读'}</li>
                           </ul>
                         </div>
                       )}
@@ -6491,7 +6655,7 @@ export default function ShadowingPage() {
                           <div className="font-medium">{t.shadowing.guide_select_words_title || '选生词 + AI 解释：'}</div>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>{t.shadowing.guide_select_words_tip1 || '点击原文中的词语即可加入生词'}</li>
-                            <li>{t.shadowing.guide_select_words_tip2 || `点击“${t.shadowing.ai_explanation_button || 'AI解释'}”为生词生成本地化释义与例句`}</li>
+                            <li>{t.shadowing.guide_select_words_tip2 || `点击"${t.shadowing.ai_explanation_button || 'AI解释'}"为生词生成本地化释义与例句`}</li>
                             <li>{t.shadowing.guide_select_words_tip3 || '建议聚焦于影响理解的关键词汇，避免一次选太多'}</li>
                           </ul>
                         </div>
@@ -6703,10 +6867,10 @@ export default function ShadowingPage() {
                                     {isAddingToVocab ? (
                                       <>
                                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                                        添加中...
+                                        {t.shadowing.adding_to_vocab || '添加中...'}
                                       </>
                                     ) : (
-                                      '确认添加到生词本'
+                                      t.shadowing.acu_text?.confirm_add_to_vocab || '确认添加到生词本'
                                     )}
                                   </Button>
                                   <Button
@@ -6716,7 +6880,7 @@ export default function ShadowingPage() {
                                     disabled={isAddingToVocab}
                                     className="disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    取消
+                                    {t.shadowing.acu_text?.cancel || '取消'}
                                   </Button>
                                 </div>
                               </div>
@@ -6725,7 +6889,17 @@ export default function ShadowingPage() {
                         </>
                       ) : (
                         <div className="text-lg leading-relaxed">
-                          {(() => {
+                          {/* 第2步原文行内逐句播放 */}
+                          {step === 2 && currentItem?.audio_url ? (
+                            <SentenceInlinePlayer
+                              text={currentItem.text}
+                              language={currentItem.lang}
+                              audioUrl={currentItem.audio_url}
+                              sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
+                              onSegmentPlayStart={() => audioPlayerRef.current?.pause()}
+                            />
+                          ) : (
+                          (() => {
                             // 格式化对话文本，按说话者分行
                             const formatDialogueText = (text: string): string => {
                               if (!text) return '';
@@ -6911,7 +7085,8 @@ export default function ShadowingPage() {
                                 );
                               });
                             }
-                          })()}
+                          })()
+                          )}
                         </div>
                       )}
                       </div>
@@ -7116,7 +7291,7 @@ export default function ShadowingPage() {
                             {t.shadowing.clear || '清空'}
                           </Button>
                           <Button size="sm" onClick={importToVocab} disabled={isImporting}>
-                            {isImporting ? (t.shadowing.importing || '导入中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
+                            {isImporting ? (t.shadowing.adding_to_vocab || '添加中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
                           </Button>
                         </div>
                       </div>

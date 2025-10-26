@@ -393,6 +393,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const [finalText, setFinalText] = useState('');
   const [sentenceScores, setSentenceScores] = useState<Record<number, SentenceScore>>({});
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'celebration' } | null>(null);
+  const [highlightUnperfect, setHighlightUnperfect] = useState(false);
   
   // 音频播放速度控制状态
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -789,29 +790,19 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       
       // 只在严重错误时弹出提示
       if (errorType === 'not-allowed' || errorType === 'permission-denied') {
-        // 检查是否是HTTPS问题
         const isNonSecure = typeof window !== 'undefined' && 
                            window.location.protocol !== 'https:' && 
                            window.location.hostname !== 'localhost' &&
                            !window.location.hostname.startsWith('127.');
-        
         if (isNonSecure) {
-          setTimeout(() => {
-            alert('麦克风权限被拒绝。\n\n移动端需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问，或部署到Vercel等平台测试。');
-          }, 100);
+          alert(t.shadowing?.alert_messages?.microphone_permission_denied_mobile || '麦克风权限被拒绝。\n\n移动端需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问，或部署到Vercel等平台测试。');
         } else {
-          setTimeout(() => {
-            alert('麦克风权限被拒绝。\n\n请在浏览器设置中允许本网站使用麦克风。\n\n步骤：\n1. 点击地址栏的锁图标\n2. 找到麦克风权限\n3. 设置为"允许"\n4. 刷新页面');
-          }, 100);
+          alert(t.shadowing?.alert_messages?.microphone_permission_denied_desktop || '麦克风权限被拒绝。\n\n请在浏览器设置中允许本网站使用麦克风。\n\n步骤：\n1. 点击地址栏的锁图标\n2. 找到麦克风权限\n3. 设置为"允许"\n4. 刷新页面');
         }
       } else if (errorType === 'audio-capture') {
-        setTimeout(() => {
-          alert('无法捕获音频。\n\n可能原因：\n1. 麦克风被其他应用占用\n2. 麦克风硬件故障');
-        }, 100);
+        alert(t.shadowing?.alert_messages?.microphone_audio_capture_error || '无法捕获音频。\n\n可能原因：\n1. 麦克风被其他应用占用\n2. 麦克风硬件故障');
       } else if (errorType === 'service-not-allowed') {
-        setTimeout(() => {
-          alert('语音识别服务不可用。\n\n请确保使用支持Web Speech API的浏览器（如Chrome）。');
-        }, 100);
+        alert(t.shadowing?.alert_messages?.microphone_service_not_allowed || '语音识别服务不可用。\n\n请确保使用支持Web Speech API的浏览器（如Chrome）。');
       }
       // no-speech等其他错误不提示，静默处理
       
@@ -821,7 +812,10 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         if (rolePendingResolveRef.current) {
           const resolve = rolePendingResolveRef.current;
           rolePendingResolveRef.current = null;
-          resolve();
+          // 展示评分后延迟1.5秒再推进（仅用户回合会设置该回调）
+          setTimeout(() => {
+            try { resolve(); } catch {}
+          }, 1500);
         }
       };
       if (tempFinalTextRef.current) {
@@ -840,7 +834,10 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         if (rolePendingResolveRef.current) {
           const resolve = rolePendingResolveRef.current;
           rolePendingResolveRef.current = null;
-          resolve();
+          // 展示评分后延迟1.5秒再推进（仅用户回合会设置该回调）
+          setTimeout(() => {
+            try { resolve(); } catch {}
+          }, 1500);
         }
       };
       if (tempFinalTextRef.current) {
@@ -858,11 +855,11 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       recognitionRef.current = null;
       clearSilenceTimer();
     };
-  }, [language]);
+  }, [language, t.shadowing?.alert_messages?.microphone_permission_denied_mobile, t.shadowing?.alert_messages?.microphone_permission_denied_desktop, t.shadowing?.alert_messages?.microphone_audio_capture_error, t.shadowing?.alert_messages?.microphone_service_not_allowed]);
 
   const start = useCallback(() => {
     if (!recognitionRef.current) {
-      alert('当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
+      alert(t.shadowing?.alert_messages?.speech_recognition_not_supported || '当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
       return;
     }
     
@@ -878,7 +875,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       const errorMsg = error instanceof Error ? error.message : String(error);
       alert(`无法开始语音识别：${errorMsg}\n\n请检查麦克风权限。`);
     }
-  }, []);
+  }, [t.shadowing?.alert_messages?.speech_recognition_not_supported]);
 
   const stop = useCallback(() => {
     try {
@@ -930,7 +927,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
 
   const speak = useCallback(async (index: number) => {
     if (!(audioUrl && sentenceTimeline && sentenceTimeline.length > 0)) {
-      alert('未找到可用的生成音频或时间轴，无法播放该句。');
+      alert(t.shadowing?.alert_messages?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
       return;
     }
 
@@ -963,7 +960,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     const a = audioRef.current;
     const seg = sentenceTimeline.find((s) => s.index === index) || sentenceTimeline[index];
     if (!(seg && a)) {
-      alert('未找到可用的生成音频或时间轴，无法播放该句。');
+      alert(t.shadowing?.alert_messages?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
       return;
     }
 
@@ -1127,8 +1124,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       return;
     } catch {}
 
-    alert('未找到可用的生成音频或时间轴，无法播放该句。');
-  }, [audioUrl, sentenceTimeline, isIOS, playbackRate]);
+    alert(t.shadowing?.alert_messages?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
+  }, [audioUrl, sentenceTimeline, isIOS, playbackRate, t.shadowing?.alert_messages?.no_audio_or_timeline]);
 
   const speakWithTTS = useCallback(async (text: string) => {
     if (typeof window === 'undefined') return;
@@ -1190,7 +1187,12 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       roleIndexRef.current = 0;
     }
     const target = segments[roleIndexRef.current];
-    setExpandedIndex(target.index ?? roleIndexRef.current);
+    const targetIsUserTurn = normalizeSpeakerSymbol(target.speaker) === normalizedActiveRole;
+    if (targetIsUserTurn) {
+      setExpandedIndex(target.index ?? roleIndexRef.current);
+    } else {
+      setExpandedIndex(null);
+    }
     setRoleAutoStarted(true);
     setIsRecognizing(false);
     setDisplayText('');
@@ -1201,6 +1203,25 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     setRoleAutoState('running');
     setRoleStepSignal((x) => x + 1);
   }, [derivedRoleSegments, isRoleMode, roleAutoStarted, setToast, t.shadowing?.role_no_segments]);
+
+  // 分角色模式下：手动开始/停止/重试包装（复用逐句练习管线）
+  const startManualPractice = useCallback(() => {
+    if (isRoleMode) {
+      stopRoleAutomation();
+    }
+    cleanupAudio();
+    start();
+  }, [cleanupAudio, isRoleMode, start, stopRoleAutomation]);
+
+  const stopManualPractice = useCallback(() => {
+    stop();
+  }, [stop]);
+
+  const retryManualPractice = useCallback(() => {
+    setDisplayText('');
+    setFinalText('');
+    setTimeout(() => startManualPractice(), 100);
+  }, [startManualPractice]);
 
   useEffect(() => {
     if (!isRoleMode) return;
@@ -1231,14 +1252,17 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         });
         onRoleRoundComplete(results);
       }
+      // 轮次结束：触发未满分高亮提示（6秒后自动关闭）
+      setHighlightUnperfect(true);
+      setTimeout(() => setHighlightUnperfect(false), 6000);
       return;
     }
 
     const segment = segments[roleIndexRef.current];
     const isUserTurn = normalizeSpeakerSymbol(segment.speaker) === normalizedActiveRole;
-    setExpandedIndex(segment.index ?? roleIndexRef.current);
 
     if (isUserTurn) {
+      setExpandedIndex(segment.index ?? roleIndexRef.current);
       rolePendingResolveRef.current = () => {
         rolePendingResolveRef.current = null;
         if (roleCancelledRef.current) return;
@@ -1252,6 +1276,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       lastFinalTextRef.current = '';
       start();
     } else {
+      // 电脑回合：不展开
+      setExpandedIndex(null);
       setDisplayText('');
       setFinalText('');
       tempFinalTextRef.current = '';
@@ -1417,21 +1443,24 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
                 language={language}
                 onToggleExpand={() => handleSentenceClick(index)}
                 onSpeak={() => speak(index)}
-                onStartPractice={isRoleMode ? (() => {}) : start}
-                onStopPractice={isRoleMode ? (() => {}) : stop}
+                onStartPractice={isRoleMode ? startManualPractice : start}
+                onStopPractice={stop}
                 onRetry={isRoleMode
-                  ? () => {}
+                  ? retryManualPractice
                   : () => {
                       setDisplayText('');
                       setFinalText('');
                       setTimeout(() => start(), 100);
                     }}
+                highlightReview={highlightUnperfect && !!score && Math.round((score.score || 0) * 100) < 100}
               />
             );
           })}
         </div>
       ) : (
-        <div className="text-gray-500 text-center py-8">暂无内容</div>
+        <div className="text-gray-500 text-center py-8">
+          {t.shadowing?.alert_messages?.no_content_message || '暂无内容'}
+        </div>
       )}
 
       {/* Toast 通知 */}

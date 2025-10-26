@@ -224,6 +224,9 @@ export async function GET(req: NextRequest) {
           one_line: item.subtopic_one_line,
         } : null;
 
+        // 计算展示用状态：优先使用用户 session 状态（可为 draft|completed）
+        const effectiveStatus = (item.session_status as string | null) || (item.status as string | null) || null;
+
         // 构建最终的 item 对象
         return {
           id: item.id,
@@ -241,7 +244,7 @@ export async function GET(req: NextRequest) {
           ai_provider: item.ai_provider,
           ai_model: item.ai_model,
           ai_usage: item.ai_usage,
-          status: item.status,
+          status: effectiveStatus,
           theme_id: item.theme_id,
           subtopic_id: item.subtopic_id,
           created_at: item.created_at,
