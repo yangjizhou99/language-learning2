@@ -69,6 +69,7 @@ import { speakText as speakTextUtil } from '@/lib/speechUtils';
 import CollapsibleFilterSection from './CollapsibleFilterSection';
 import CompactStatsCards from './CompactStatsCards';
 import EnhancedAudioPlayer, { type EnhancedAudioPlayerRef } from './EnhancedAudioPlayer';
+import SentenceInlinePlayer from './SentenceInlinePlayer';
 import DesktopThreeColumnLayout from './DesktopThreeColumnLayout';
 const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">{t.common.loading_dots}</div> });
 import ShortcutsHelpModal from './ShortcutsHelpModal';
@@ -4539,7 +4540,17 @@ export default function ShadowingPage() {
                             />
                           ) : (
                             <div className="text-lg leading-loose">
-                              {(() => {
+                              {/* 移动端第2步：原文行内逐句播放 */}
+                              {step === 2 && currentItem?.audio_url ? (
+                                <SentenceInlinePlayer
+                                  text={currentItem.text}
+                                  language={currentItem.lang}
+                                  audioUrl={currentItem.audio_url}
+                                  sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
+                                  onSegmentPlayStart={() => audioPlayerRef.current?.pause()}
+                                />
+                              ) : (
+                              (() => {
                                 // 格式化对话文本，按说话者分行
                                 const formatDialogueText = (text: string): string => {
                                   if (!text) return '';
@@ -4730,7 +4741,8 @@ export default function ShadowingPage() {
                                     );
                                   });
                                 }
-                              })()}
+                              })()
+                              )}
                             </div>
                           )}
                           {selectedText && (
@@ -6689,7 +6701,17 @@ export default function ShadowingPage() {
                         </>
                       ) : (
                         <div className="text-lg leading-relaxed">
-                          {(() => {
+                          {/* 第2步原文行内逐句播放 */}
+                          {step === 2 && currentItem?.audio_url ? (
+                            <SentenceInlinePlayer
+                              text={currentItem.text}
+                              language={currentItem.lang}
+                              audioUrl={currentItem.audio_url}
+                              sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
+                              onSegmentPlayStart={() => audioPlayerRef.current?.pause()}
+                            />
+                          ) : (
+                          (() => {
                             // 格式化对话文本，按说话者分行
                             const formatDialogueText = (text: string): string => {
                               if (!text) return '';
@@ -6875,7 +6897,8 @@ export default function ShadowingPage() {
                                 );
                               });
                             }
-                          })()}
+                          })()
+                          )}
                         </div>
                       )}
                       </div>

@@ -14,7 +14,16 @@ interface DesktopLayoutProps {
   leftPanelContent: React.ReactNode;
   
   // 当前选中的题目
-  currentItem: any | null;
+  currentItem: {
+    title?: string;
+    lang?: 'en' | 'ja' | 'zh' | 'ko';
+    level?: number;
+    cefr?: string;
+    tokens?: number;
+    duration_ms?: number;
+    audio_url?: string | null;
+    isPracticed?: boolean;
+  } | null;
   
   // 音频相关
   isPlaying: boolean;
@@ -44,8 +53,8 @@ interface DesktopLayoutProps {
   sentenceContent: React.ReactNode;
   
   // 翻译相关
-  t: any;
-  currentSession: any;
+  t: { shadowing?: Record<string, string> };
+  currentSession: { created_at?: string } | null;
   highlightPlay: boolean;
 }
 
@@ -132,9 +141,11 @@ export default function DesktopLayout({
                 <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
                   <CheckCircle className="w-5 h-5 text-green-600" />
                   <span className="text-sm font-medium text-green-700">已完成练习</span>
-                  <span className="text-xs text-green-600">
-                    ({new Date(currentSession.created_at).toLocaleString()})
-                  </span>
+                  {currentSession?.created_at ? (
+                    <span className="text-xs text-green-600">
+                      ({new Date(currentSession.created_at).toLocaleString()})
+                    </span>
+                  ) : null}
                 </div>
               )}
             </div>
