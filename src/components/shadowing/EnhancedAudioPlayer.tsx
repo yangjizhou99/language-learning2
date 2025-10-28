@@ -98,11 +98,12 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
+    const audioEl: HTMLAudioElement = a;
 
     function watch() {
       const stopAt = stopAtRef.current;
-      if (typeof stopAt === 'number' && a.currentTime >= stopAt) {
-        try { a.pause(); } catch {}
+      if (typeof stopAt === 'number' && audioEl.currentTime >= stopAt) {
+        try { audioEl.pause(); } catch {}
         stopAtRef.current = null;
         if (rafRef.current) {
           cancelAnimationFrame(rafRef.current);
@@ -123,11 +124,11 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
         rafRef.current = null;
       }
     };
-    a.addEventListener('play', onPlay);
-    a.addEventListener('pause', onPause);
+    audioEl.addEventListener('play', onPlay);
+    audioEl.addEventListener('pause', onPause);
     return () => {
-      a.removeEventListener('play', onPlay);
-      a.removeEventListener('pause', onPause);
+      audioEl.removeEventListener('play', onPlay);
+      audioEl.removeEventListener('pause', onPause);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
@@ -177,17 +178,18 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
     playSegment: async (start: number, end: number) => {
       const a = audioRef.current;
       if (!a) return;
+      const audioEl: HTMLAudioElement = a;
 
       // 等待元数据
       await new Promise<void>((resolve) => {
-        if (a.readyState >= 1) return resolve();
+        if (audioEl.readyState >= 1) return resolve();
         const onLoaded = () => {
-          a.removeEventListener('loadedmetadata', onLoaded);
-          a.removeEventListener('canplay', onLoaded);
+          audioEl.removeEventListener('loadedmetadata', onLoaded);
+          audioEl.removeEventListener('canplay', onLoaded);
           resolve();
         };
-        a.addEventListener('loadedmetadata', onLoaded, { once: true });
-        a.addEventListener('canplay', onLoaded, { once: true });
+        audioEl.addEventListener('loadedmetadata', onLoaded, { once: true });
+        audioEl.addEventListener('canplay', onLoaded, { once: true });
       });
 
       const START_EPS = 0.005;
@@ -197,13 +199,13 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
 
       // 定位
       try {
-        const anyAudio = a as any;
+        const anyAudio = audioEl as any;
         if (typeof anyAudio.fastSeek === 'function') {
           anyAudio.fastSeek(targetStart);
         } else {
-          a.currentTime = targetStart;
+          audioEl.currentTime = targetStart;
         }
-      } catch { a.currentTime = targetStart; }
+      } catch { audioEl.currentTime = targetStart; }
 
       // 等待 seek 完成
       await new Promise<void>((resolve) => {
@@ -212,16 +214,16 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
         const onSeeked = () => finish();
         const onCanPlay = () => finish();
         const cleanup = () => {
-          a.removeEventListener('seeked', onSeeked);
-          a.removeEventListener('canplay', onCanPlay);
+          audioEl.removeEventListener('seeked', onSeeked);
+          audioEl.removeEventListener('canplay', onCanPlay);
         };
-        a.addEventListener('seeked', onSeeked, { once: true });
-        a.addEventListener('canplay', onCanPlay, { once: true });
+        audioEl.addEventListener('seeked', onSeeked, { once: true });
+        audioEl.addEventListener('canplay', onCanPlay, { once: true });
         setTimeout(finish, 800);
       });
 
       stopAtRef.current = targetStop;
-      a.playbackRate = playbackRate;
+      audioEl.playbackRate = playbackRate;
 
       await new Promise<void>((resolve, reject) => {
         let finished = false;
@@ -235,8 +237,8 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
           if (finished) return;
           finished = true;
           if (safetyId) { clearTimeout(safetyId); safetyId = null; }
-          a.removeEventListener('ended', onEnded);
-          a.removeEventListener('pause', onPause);
+          audioEl.removeEventListener('ended', onEnded);
+          audioEl.removeEventListener('pause', onPause);
           stopAtRef.current = null;
           resolve();
         }
@@ -244,17 +246,17 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
           if (finished) return;
           finished = true;
           if (safetyId) { clearTimeout(safetyId); safetyId = null; }
-          a.removeEventListener('ended', onEnded);
-          a.removeEventListener('pause', onPause);
+          audioEl.removeEventListener('ended', onEnded);
+          audioEl.removeEventListener('pause', onPause);
           stopAtRef.current = null;
           reject(err);
         }
-        a.addEventListener('ended', onEnded, { once: true });
-        a.addEventListener('pause', onPause);
+        audioEl.addEventListener('ended', onEnded, { once: true });
+        audioEl.addEventListener('pause', onPause);
         safetyId = setTimeout(() => finish(), Math.max((targetStop - targetStart) * 1000 + 1500, 1500));
         (async () => {
           try {
-            await a.play();
+            await audioEl.play();
           } catch (e) {
             fail(e);
           }
