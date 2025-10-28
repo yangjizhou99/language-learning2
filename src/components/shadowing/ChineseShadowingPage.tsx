@@ -1355,6 +1355,7 @@ export default function ShadowingPage() {
   const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioPlayerRef = useRef<EnhancedAudioPlayerRef | null>(null);
+  const mainAudioContainerRef = useRef<HTMLDivElement | null>(null);
   const [practiceComplete, setPracticeComplete] = useState(false);
   // 移动端也启用步骤门控：仅在未完成时生效
   const gatingActive = !practiceComplete;
@@ -1374,9 +1375,27 @@ export default function ShadowingPage() {
   const [isScoring, setIsScoring] = useState(false);
   const [currentTranscription, setCurrentTranscription] = useState<string>('');
 
+  // 统一分段播放：由底部 EnhancedAudioPlayer 控制
+  const playSentenceByIndex = (index: number) => {
+    const timeline = (currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline;
+    if (!timeline || !Array.isArray(timeline) || !timeline.length) return;
+    const seg = timeline.find(s => s.index === index) || timeline[index];
+    if (!seg) return;
+    try { audioPlayerRef.current?.playSegment(seg.start, seg.end); } catch {}
+  };
+
+  // 桌面端显示播放器：已在渲染层保证展示，如需自动滚动可在后续交互中触发
+
   // 桌面端分步骤练习（仅在未完成状态下启用）
   // 桌面端分步骤练习（仅在未完成状态下启用）
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  useEffect(() => {
+    if (step === 4) {
+      try {
+        mainAudioContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch {}
+    }
+  }, [step]);
   const [highlightPlay, setHighlightPlay] = useState(false);
   const [highlightVocab, setHighlightVocab] = useState(false);
   const [highlightScore, setHighlightScore] = useState(false);
@@ -4733,9 +4752,8 @@ export default function ShadowingPage() {
                                 <SentenceInlinePlayer
                                   text={currentItem.text}
                                   language={currentItem.lang}
-                                  audioUrl={currentItem.audio_url}
                                   sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
-                                  onSegmentPlayStart={() => audioPlayerRef.current?.pause()}
+                                  onPlaySentence={(i) => playSentenceByIndex(i)}
                                 />
                               ) : (
                               (() => {
@@ -4864,7 +4882,7 @@ export default function ShadowingPage() {
                                     }
 
                                     return (
-                                      <div key={lineIndex} className="mb-2">
+                                      <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
                                         {result}
                                       </div>
                                     );
@@ -4923,7 +4941,7 @@ export default function ShadowingPage() {
                                     }
 
                                     return (
-                                      <div key={lineIndex} className="mb-2">
+                                      <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
                                         {result}
                                       </div>
                                     );
@@ -5102,7 +5120,7 @@ export default function ShadowingPage() {
                                 }
 
                                 return (
-                                  <div key={lineIndex} className="mb-2">
+                                  <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
                                     {result}
                                   </div>
                                 );
@@ -5167,7 +5185,7 @@ export default function ShadowingPage() {
                                   }
 
                                   return (
-                                    <div key={lineIndex} className="mb-2">
+                                    <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
                                       {result}
                                     </div>
                                   );
@@ -5226,7 +5244,7 @@ export default function ShadowingPage() {
                                   }
 
                                   return (
-                                    <div key={lineIndex} className="mb-2">
+                                    <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
                                       {result}
                                     </div>
                                   );
@@ -5244,7 +5262,7 @@ export default function ShadowingPage() {
 
                     {/* 音频播放器 - 优化版 */}
                     {currentItem.audio_url && (
-                      <div className="mt-4">
+                      <div className="mt-4" ref={mainAudioContainerRef}>
                         <div className="mb-2 px-1">
                           <span className="text-sm font-medium text-gray-700">
                             {t.shadowing.original_audio_text || '原音频'}
@@ -6894,9 +6912,8 @@ export default function ShadowingPage() {
                             <SentenceInlinePlayer
                               text={currentItem.text}
                               language={currentItem.lang}
-                              audioUrl={currentItem.audio_url}
                               sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
-                              onSegmentPlayStart={() => audioPlayerRef.current?.pause()}
+                              onPlaySentence={(i) => playSentenceByIndex(i)}
                             />
                           ) : (
                           (() => {
@@ -7025,7 +7042,7 @@ export default function ShadowingPage() {
                                 }
 
                                 return (
-                                  <div key={lineIndex} className="mb-2">
+                                  <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
                                     {result}
                                   </div>
                                 );
@@ -7079,7 +7096,7 @@ export default function ShadowingPage() {
                                 }
 
                                 return (
-                                  <div key={lineIndex} className="mb-2">
+                                  <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
                                     {result}
                                   </div>
                                 );
@@ -7092,13 +7109,14 @@ export default function ShadowingPage() {
                       </div>
                     )}
 
-                    {/* 音频播放器（步骤4隐藏；完成或移动端保持原样） - 使用增强版 */}
-                    {currentItem.audio_url && (!gatingActive || step !== 4) && (
+                    {/* 音频播放器 - 使用增强版（第4步显示） */}
+                    {currentItem.audio_url && (
                       <div className="mt-4">
                         <div className="mb-2 flex items-center gap-2">
                           <span className="text-sm font-medium text-blue-700">{t.shadowing.original_audio_text || '原文音频'}</span>
                         </div>
                         <EnhancedAudioPlayer
+                          ref={audioPlayerRef}
                           audioUrl={currentItem.audio_url}
                           duration_ms={currentItem.duration_ms}
                           onPlayStateChange={(playing) => {
@@ -7427,6 +7445,7 @@ export default function ShadowingPage() {
                       roleSegments={roleSegments}
                       onRoleRoundComplete={handleRoleRoundComplete}
                       acuUnits={currentItem?.notes?.acu_units}
+                      onPlaySentence={(i) => playSentenceByIndex(i)}
                     />
                   )}
 
@@ -7825,7 +7844,6 @@ export default function ShadowingPage() {
                       )}
                     </Card>
                   )}
-
                   {/* 练习总结区域 */}
                   {scoringResult && showSentenceComparison && currentItem && (
                     <Card className="p-6">

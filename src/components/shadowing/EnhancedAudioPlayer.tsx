@@ -23,6 +23,9 @@ export interface EnhancedAudioPlayerRef {
   pause: () => void;
   toggle: () => void;
   reset: () => void;
+  seek: (seconds: number) => void;
+  setPlaybackRate: (rate: number) => void;
+  playSegment: (start: number, end: number) => Promise<void>;
 }
 
 const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlayerProps>(({
@@ -34,6 +37,8 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
+  const stopAtRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -89,6 +94,48 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
     }
   };
 
+  // 监控分段播放自动停止
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const audioEl: HTMLAudioElement = a;
+
+    function watch() {
+      const stopAt = stopAtRef.current;
+      if (typeof stopAt === 'number' && audioEl.currentTime >= stopAt) {
+        try { audioEl.pause(); } catch {}
+        stopAtRef.current = null;
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+        return;
+      }
+      rafRef.current = requestAnimationFrame(watch);
+    }
+
+    const onPlay = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(watch);
+    };
+    const onPause = () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+    audioEl.addEventListener('play', onPlay);
+    audioEl.addEventListener('pause', onPause);
+    return () => {
+      audioEl.removeEventListener('play', onPlay);
+      audioEl.removeEventListener('pause', onPause);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [audioRef.current]);
+
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     play: () => {
@@ -108,6 +155,113 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
     },
     reset: () => {
       resetAudio();
+    },
+    seek: (seconds: number) => {
+      if (!audioRef.current) return;
+      try {
+        const anyAudio = audioRef.current as any;
+        if (typeof anyAudio.fastSeek === 'function') {
+          anyAudio.fastSeek(Math.max(0, seconds));
+        } else {
+          audioRef.current.currentTime = Math.max(0, seconds);
+        }
+      } catch {
+        try { audioRef.current.currentTime = Math.max(0, seconds); } catch {}
+      }
+    },
+    setPlaybackRate: (rate: number) => {
+      setPlaybackRate(rate);
+      if (audioRef.current) {
+        audioRef.current.playbackRate = rate;
+      }
+    },
+    playSegment: async (start: number, end: number) => {
+      const a = audioRef.current;
+      if (!a) return;
+      const audioEl: HTMLAudioElement = a;
+
+      // 等待元数据
+      await new Promise<void>((resolve) => {
+        if (audioEl.readyState >= 1) return resolve();
+        const onLoaded = () => {
+          audioEl.removeEventListener('loadedmetadata', onLoaded);
+          audioEl.removeEventListener('canplay', onLoaded);
+          resolve();
+        };
+        audioEl.addEventListener('loadedmetadata', onLoaded, { once: true });
+        audioEl.addEventListener('canplay', onLoaded, { once: true });
+      });
+
+      const START_EPS = 0.005;
+      const STOP_EPS = 0.08;
+      const targetStart = Math.max(0, start + START_EPS);
+      const targetStop = Math.max(start, end - STOP_EPS);
+
+      // 定位
+      try {
+        const anyAudio = audioEl as any;
+        if (typeof anyAudio.fastSeek === 'function') {
+          anyAudio.fastSeek(targetStart);
+        } else {
+          audioEl.currentTime = targetStart;
+        }
+      } catch { audioEl.currentTime = targetStart; }
+
+      // 等待 seek 完成
+      await new Promise<void>((resolve) => {
+        let done = false;
+        const finish = () => { if (!done) { done = true; cleanup(); resolve(); } };
+        const onSeeked = () => finish();
+        const onCanPlay = () => finish();
+        const cleanup = () => {
+          audioEl.removeEventListener('seeked', onSeeked);
+          audioEl.removeEventListener('canplay', onCanPlay);
+        };
+        audioEl.addEventListener('seeked', onSeeked, { once: true });
+        audioEl.addEventListener('canplay', onCanPlay, { once: true });
+        setTimeout(finish, 800);
+      });
+
+      stopAtRef.current = targetStop;
+      audioEl.playbackRate = playbackRate;
+
+      await new Promise<void>((resolve, reject) => {
+        let finished = false;
+        let safetyId: ReturnType<typeof setTimeout> | null = null;
+        const onEnded = () => finish();
+        const onPause = () => {
+          // 分段结束或用户暂停，均视为完成
+          finish();
+        };
+        function finish() {
+          if (finished) return;
+          finished = true;
+          if (safetyId) { clearTimeout(safetyId); safetyId = null; }
+          audioEl.removeEventListener('ended', onEnded);
+          audioEl.removeEventListener('pause', onPause);
+          stopAtRef.current = null;
+          resolve();
+        }
+        function fail(err?: unknown) {
+          if (finished) return;
+          finished = true;
+          if (safetyId) { clearTimeout(safetyId); safetyId = null; }
+          audioEl.removeEventListener('ended', onEnded);
+          audioEl.removeEventListener('pause', onPause);
+          stopAtRef.current = null;
+          reject(err);
+        }
+        audioEl.addEventListener('ended', onEnded, { once: true });
+        audioEl.addEventListener('pause', onPause);
+        safetyId = setTimeout(() => finish(), Math.max((targetStop - targetStart) * 1000 + 1500, 1500));
+        (async () => {
+          try {
+            await audioEl.play();
+          } catch (e) {
+            fail(e);
+          }
+        })();
+      });
     },
   }));
 
