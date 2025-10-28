@@ -1,9 +1,7 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, X, RotateCcw } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { type AcuUnit } from '@/lib/acu-utils';
 
@@ -306,13 +304,11 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
       const sentenceStart = Math.min(...sortedUnits.map(u => u.start));
       let sentenceEnd = Math.max(...sortedUnits.map(u => u.end));
       
-      // 扩展句子结束位置以包含句尾标点符号
-      // 查找句尾标点符号（。！？；等）
-      const sentenceEndPattern = /[。！？；\s]*$/;
+      // 扩展句子结束位置以包含句尾标点符号（仅匹配当前位置之后的前缀）
       const remainingText = processedText.slice(sentenceEnd);
-      const match = remainingText.match(sentenceEndPattern);
-      if (match) {
-        sentenceEnd += match[0].length;
+      const trailing = remainingText.match(/^[。！？；.!?…\s]+/);
+      if (trailing) {
+        sentenceEnd += trailing[0].length;
       }
       
       // 获取该句的原文（用于调试，暂时注释）
@@ -329,13 +325,13 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         // 添加unit之前的内容（如果有）
         if (unit.start > currentPos) {
           const beforeText = processedText.slice(currentPos, unit.start);
-          if (beforeText && beforeText.trim()) {
-            // 只过滤掉单个字母（除了"I"），保留标点符号和空格
-            const filteredText = beforeText.replace(/^(?!I$)[a-zA-Z]$/, '');
-            if (filteredText) {
+          if (beforeText) {
+            // 仅在间隙完全由空白或标点组成时渲染，避免与下一个 unit 重复字母
+            const isOnlyPunctOrSpace = /^[\s\p{P}\p{S}]+$/u.test(beforeText);
+            if (isOnlyPunctOrSpace) {
               elements.push(
                 <span key={`before-${i}`} className="text-gray-700">
-                  {filteredText}
+                  {beforeText}
                 </span>
               );
             }
@@ -347,8 +343,8 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         const isNonSelectableUnit = isNonSelectable(unit);
         const isAlreadySelectedWord = isAlreadySelected(unit);
         
-        // 只过滤掉单个字母（除了"I"），保留标点符号和其他内容
-        const shouldSkipUnit = /^(?!I$)[a-zA-Z]$/.test(unit.span) || unit.span.length === 0;
+        // 不再跳过单字母块，保证缩写如 I'm / it's 能完整显示
+        const shouldSkipUnit = unit.span.length === 0;
         
         if (!shouldSkipUnit) {
           elements.push(
@@ -396,13 +392,13 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
       // 添加最后一个unit之后的内容（如果有）
       if (currentPos < sentenceEnd) {
         const afterText = processedText.slice(currentPos, sentenceEnd);
-        if (afterText && afterText.trim()) {
-          // 只过滤掉单个字母（除了"I"），保留标点符号和空格
-          const filteredText = afterText.replace(/^(?!I$)[a-zA-Z]$/, '');
-          if (filteredText) {
+        if (afterText) {
+          // 仅在间隙完全由空白或标点组成时渲染
+          const isOnlyPunctOrSpace = /^[\s\p{P}\p{S}]+$/u.test(afterText);
+          if (isOnlyPunctOrSpace) {
             elements.push(
               <span key={`after-${sid}`} className="text-gray-700">
-                {filteredText}
+                {afterText}
               </span>
             );
           }

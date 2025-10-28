@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useRef, useState } from 'react';
-import { useSegmentAudio, type SentenceSegment } from '@/hooks/useSegmentAudio';
+import type { SentenceSegment } from '@/hooks/useSegmentAudio';
 import { useMobile } from '@/contexts/MobileContext';
 import { Button } from '@/components/ui/button';
 import { Play, Square } from 'lucide-react';
@@ -12,9 +12,10 @@ type Lang = 'en' | 'ja' | 'zh' | 'ko';
 interface SentenceInlinePlayerProps {
   text: string;
   language: Lang;
-  audioUrl?: string | null;
   sentenceTimeline?: SentenceSegment[] | null;
-  onSegmentPlayStart?: (index: number) => void;
+  onPlaySentence?: (index: number) => void;
+  activeIndex?: number | null;
+  isPlaying?: boolean;
   className?: string;
 }
 
@@ -58,9 +59,10 @@ function normalizeSpeakerLabel(speaker?: string): string | undefined {
 export default function SentenceInlinePlayer({
   text,
   language,
-  audioUrl,
   sentenceTimeline,
-  onSegmentPlayStart,
+  onPlaySentence,
+  activeIndex = null,
+  isPlaying = false,
   className = '',
 }: SentenceInlinePlayerProps) {
   const { actualIsMobile } = useMobile();
@@ -79,45 +81,22 @@ export default function SentenceInlinePlayer({
     return arr.map((line, idx) => ({ display: line, keyIndex: idx }));
   }, [sentenceTimeline, text, language]);
 
-  const canPlay = !!audioUrl && Array.isArray(sentenceTimeline) && sentenceTimeline.length > 0;
+  const canPlay = Array.isArray(sentenceTimeline) && sentenceTimeline.length > 0;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [lastTapKeyIndex, setLastTapKeyIndex] = useState<number | null>(null);
-  const { speak, stop, currentIndex, playbackRate, setPlaybackRate, isPlaying } = useSegmentAudio(
-    audioUrl || null,
-    sentenceTimeline || null,
-    { onSegmentPlayStart },
-  );
 
   // 统一双击/双触手势：重播最近点击的句子
   useSentenceGesture(containerRef, {
     onDoubleTap: () => {
-      if (lastTapKeyIndex !== null) speak(lastTapKeyIndex);
+      if (lastTapKeyIndex !== null) onPlaySentence?.(lastTapKeyIndex);
     },
     enabled: true,
   });
 
   return (
     <div className={`space-y-3 ${className}`} ref={containerRef}>
-      {/* 变速控制：滑动调节，0.1 步进 */}
-      {canPlay && (
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-gray-600">倍速</span>
-          <span className="text-gray-500">0.5x</span>
-          <input
-            type="range"
-            min={0.5}
-            max={2}
-            step={0.1}
-            value={playbackRate}
-            onChange={(e) => setPlaybackRate(parseFloat(e.target.value))}
-            aria-label="播放速度"
-            className="flex-1 h-2 rounded-lg cursor-pointer"
-          />
-          <span className="text-gray-600 font-medium">{playbackRate.toFixed(1)}x</span>
-          <span className="text-gray-500">2.0x</span>
-        </div>
-      )}
+      {/* 倍速控制移除：统一使用主播放器 */}
 
       {/* 行内逐句列表 */}
       <div className="space-y-2">
@@ -126,7 +105,7 @@ export default function SentenceInlinePlayer({
         ) : (
           sentenceItems.map((item, i) => {
             const keyIndex = item.keyIndex ?? i;
-            const active = currentIndex === keyIndex;
+            const active = activeIndex === keyIndex;
             return (
               <div
                 key={i}
@@ -136,11 +115,11 @@ export default function SentenceInlinePlayer({
                 <div className={`pt-1 ${actualIsMobile ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}> 
                   {canPlay ? (
                     active && isPlaying ? (
-                      <Button variant="ghost" size="icon" onClick={() => stop()} aria-label="停止">
+                      <Button variant="ghost" size="icon" onClick={() => onPlaySentence?.(keyIndex)} aria-label="停止">
                         <Square className="w-4 h-4" />
                       </Button>
                     ) : (
-                      <Button variant="ghost" size="icon" onClick={() => speak(keyIndex)} aria-label="播放">
+                      <Button variant="ghost" size="icon" onClick={() => onPlaySentence?.(keyIndex)} aria-label="播放">
                         <Play className="w-4 h-4" />
                       </Button>
                     )
@@ -153,7 +132,7 @@ export default function SentenceInlinePlayer({
                   className={`text-left flex-1 leading-relaxed ${active ? 'text-blue-800' : 'text-gray-800'}`}
                   onClick={() => {
                     setLastTapKeyIndex(keyIndex);
-                    if (canPlay) speak(keyIndex);
+                    if (canPlay) onPlaySentence?.(keyIndex);
                   }}
                 >
                   {item.display}
@@ -166,5 +145,4 @@ export default function SentenceInlinePlayer({
     </div>
   );
 }
-
 

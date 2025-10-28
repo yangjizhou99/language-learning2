@@ -75,6 +75,7 @@ interface SentencePracticeProps {
   roleSegments?: RolePracticeSegment[];
   onRoleRoundComplete?: (results: RoleSentenceScore[]) => void;
   acuUnits?: AcuUnit[]; // 新增：ACU 单元数据
+  onPlaySentence?: (index: number) => void; // 新增：统一用主播放器播放分段
 }
 
 const mapLangToLocale = (lang: Lang): string => {
@@ -385,7 +386,7 @@ const computeRoleScore = (target: string, said: string, lang: Lang) => {
   };
 };
 
-function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits }: SentencePracticeProps) {
+function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits, onPlaySentence }: SentencePracticeProps) {
   const { t } = useLanguage();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
@@ -926,6 +927,11 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   }, []);
 
   const speak = useCallback(async (index: number) => {
+    // 优先使用父层主播放器播放
+    if (typeof onPlaySentence === 'function') {
+      try { onPlaySentence(index); } catch {}
+      return;
+    }
     if (!(audioUrl && sentenceTimeline && sentenceTimeline.length > 0)) {
       alert(t.shadowing?.alert_messages?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
       return;
@@ -1125,7 +1131,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     } catch {}
 
     alert(t.shadowing?.alert_messages?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
-  }, [audioUrl, sentenceTimeline, isIOS, playbackRate, t.shadowing?.alert_messages?.no_audio_or_timeline]);
+  }, [audioUrl, sentenceTimeline, isIOS, playbackRate, t.shadowing?.alert_messages?.no_audio_or_timeline, onPlaySentence]);
 
   const speakWithTTS = useCallback(async (text: string) => {
     if (typeof window === 'undefined') return;
@@ -1396,15 +1402,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       {/* 音频播放速度控制 */}
       {audioUrl && sentenceTimeline && sentenceTimeline.length > 0 && (
         <div className="mb-4">
-          <AudioSpeedControl
-            playbackRate={playbackRate}
-            onRateChange={handleRateChange}
-            isPlaying={isAudioPlaying}
-            onPlay={handlePlayPause}
-            onPause={handlePlayPause}
-            onReset={handleReset}
-            className="w-full"
-          />
+          {/* 倍速与播放控制已由底部主播放器统一管理，此处仅保留占位/提示或可移除 */}
         </div>
       )}
 
