@@ -905,6 +905,15 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     }
   }, []);
 
+  // 确保麦克风资源已释放的安全栅栏（默认500ms）
+  const ensureMicReleased = useCallback(async (ms: number = 500) => {
+    try { stop(); } catch {}
+    try { cleanupRecognition(); } catch {}
+    if (ms > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, ms));
+    }
+  }, [stop, cleanupRecognition]);
+
   // 音频控制函数
   const handlePlayPause = useCallback(() => {
     if (!audioRef.current) return;
@@ -1280,6 +1289,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       tempFinalTextRef.current = '';
       tempCombinedTextRef.current = '';
       lastFinalTextRef.current = '';
+      cleanupAudio();
       start();
     } else {
       // 电脑回合：不展开
@@ -1292,6 +1302,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       let cancelled = false;
       (async () => {
         try {
+          await ensureMicReleased(500);
           await playRolePartnerSegment(segment);
         } catch {}
         if (cancelled || roleCancelledRef.current) return;
