@@ -1084,6 +1084,16 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         function finish() {
           if (finished) return;
           finished = true;
+          // 兜底：强制在段末处暂停，防止继续播放到下一句
+          try {
+            if (a && !a.paused) {
+              const stopAt = stopAtRef.current;
+              if (typeof stopAt === 'number') {
+                try { a.currentTime = Math.min(stopAt, a.currentTime); } catch {}
+              }
+              try { a.pause(); } catch {}
+            }
+          } catch {}
           cleanup();
           resolve();
         }

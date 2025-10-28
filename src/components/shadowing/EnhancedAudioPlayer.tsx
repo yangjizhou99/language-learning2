@@ -236,6 +236,16 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
         function finish() {
           if (finished) return;
           finished = true;
+          // 兜底：强制在段末停住，防止继续到下一句
+          try {
+            if (audioEl && !audioEl.paused) {
+              const stopAt = stopAtRef.current;
+              if (typeof stopAt === 'number') {
+                try { audioEl.currentTime = Math.min(stopAt, audioEl.currentTime); } catch {}
+              }
+              try { audioEl.pause(); } catch {}
+            }
+          } catch {}
           if (safetyId) { clearTimeout(safetyId); safetyId = null; }
           audioEl.removeEventListener('ended', onEnded);
           audioEl.removeEventListener('pause', onPause);
