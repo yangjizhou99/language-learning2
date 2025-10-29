@@ -79,6 +79,12 @@ export interface Translations {
     goals_empty_desc: string;
     goals_fill_button: string;
     goals_char_limit_hint: string;
+    // 每日任务 - 生词复习
+    tasks_vocab_title: string;
+    tasks_vocab_due: string; // with {count}
+    tasks_vocab_done: string;
+    tasks_go_review: string;
+    tasks_completed_badge: string;
   };
 
   // 个人资料页面
@@ -688,7 +694,7 @@ const zh: Translations = {
     cta_signup: '立即注册',
     cta_start_learning: '开始学习',
     cta_browse_features: '浏览功能',
-    daily_title: '每日一题（Shadowing）',
+    daily_title: '每日任务',
     daily_desc: '根据您的目标语言与水平，每天固定一道题进行练习',
     daily_language: '语言：',
     daily_duration: '时长：{seconds} 秒',
@@ -703,6 +709,12 @@ const zh: Translations = {
     daily_cleared: '恭喜清空题库！可进入练习页随机练习',
     set_target_language: '尚未设置目标语言，请先',
     go_set_target_language: '去设置目标语言',
+    // 每日任务-生词复习
+    tasks_vocab_title: '复习单词',
+    tasks_vocab_due: '今日需复习 {count} 个单词',
+    tasks_vocab_done: '今日复习已完成',
+    tasks_go_review: '去复习',
+    tasks_completed_badge: '已完成',
     learn_overview: '学习概览',
     learn_overview_desc: '您的学习进度和成就',
     quick_start: '快速开始',
@@ -1329,7 +1341,7 @@ const en: Translations = {
     cta_signup: 'Sign Up',
     cta_start_learning: 'Start Learning',
     cta_browse_features: 'Browse Features',
-    daily_title: 'Daily Question (Shadowing)',
+    daily_title: 'Daily Tasks',
     daily_desc: 'One fixed practice per day based on your target language and level',
     daily_language: 'Language: ',
     daily_duration: 'Duration: {seconds} sec',
@@ -1344,6 +1356,12 @@ const en: Translations = {
     daily_cleared: 'Congrats! Catalog cleared. Go to practice for random exercises.',
     set_target_language: 'Target language not set, please',
     go_set_target_language: 'Set target language',
+    // Daily tasks - vocabulary review
+    tasks_vocab_title: 'Review Vocabulary',
+    tasks_vocab_due: '{count} words due today',
+    tasks_vocab_done: 'Today\'s review completed',
+    tasks_go_review: 'Go Review',
+    tasks_completed_badge: 'Completed',
     learn_overview: 'Learning Overview',
     learn_overview_desc: 'Your learning progress and achievements',
     quick_start: 'Quick Start',
@@ -1980,7 +1998,7 @@ const ja: Translations = {
     cta_signup: '今すぐ登録',
     cta_start_learning: '学習を開始',
     cta_browse_features: '機能を見る',
-    daily_title: '毎日一題（シャドーイング）',
+    daily_title: '毎日のタスク',
     daily_desc: '目標言語とレベルに応じて、毎日1問を出題',
     daily_language: '言語：',
     daily_duration: '所要時間：{seconds} 秒',
@@ -1995,6 +2013,12 @@ const ja: Translations = {
     daily_cleared: 'おめでとうございます！題庫をクリアしました。ランダム練習へ',
     set_target_language: '目標言語が未設定、まずは',
     go_set_target_language: '目標言語を設定',
+    // デイリータスク - 単語復習
+    tasks_vocab_title: '単語復習',
+    tasks_vocab_due: '今日復習すべき単語 {count} 個',
+    tasks_vocab_done: '今日の復習は完了しました',
+    tasks_go_review: '復習へ',
+    tasks_completed_badge: '完了',
     learn_overview: '学習概要',
     learn_overview_desc: 'あなたの学習進捗と実績',
     quick_start: 'クイックスタート',

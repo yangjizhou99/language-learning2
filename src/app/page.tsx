@@ -56,7 +56,7 @@ export default function Home() {
   });
   const [statsLoaded, setStatsLoaded] = useState(false);
 
-  // 每日一题状态
+  // 每日任务 - Shadowing（主语言/次语言）与复习数
   const [daily, setDaily] = useState<{
     lang: 'zh' | 'ja' | 'en';
     level: number;
@@ -71,7 +71,25 @@ export default function Home() {
       subtopic?: { id: string; title: string; one_line?: string };
     } | null;
     error?: string;
+    today_done?: boolean;
   } | null>(null);
+  const [dailySecond, setDailySecond] = useState<{
+    lang: 'zh' | 'ja' | 'en';
+    level: number;
+    phase?: 'unpracticed' | 'unfinished' | 'cleared';
+    item?: {
+      id: string;
+      title: string;
+      duration_ms?: number;
+      tokens?: number;
+      cefr?: string;
+      theme?: { id: string; title: string; desc?: string };
+      subtopic?: { id: string; title: string; one_line?: string };
+    } | null;
+    error?: string;
+    today_done?: boolean;
+  } | null>(null);
+  const [dueCount, setDueCount] = useState<number>(0);
 
   useEffect(() => {
     const loadForUser = async () => {
@@ -99,23 +117,89 @@ export default function Home() {
     if (mapped) setLanguage(mapped as Lang);
   }, [authUser, profile?.native_lang, setLanguage]);
 
-  // 资料或权限准备好后再拉取每日一题，避免早期为空
+  // 资料或权限准备好后再拉取每日任务（主/次目标语言），避免早期为空
   useEffect(() => {
     (async () => {
       if (!authUser || !permissions.can_access_shadowing) return;
       const preferred = (profile?.target_langs?.[0] as 'zh' | 'ja' | 'en') || null;
-      if (!preferred) { setDaily(null); return; }
+      const second = (profile?.target_langs?.[1] as 'zh' | 'ja' | 'en') || null;
+      if (!preferred) { setDaily(null); setDailySecond(null); return; }
       try {
         const headers = await getAuthHeaders();
-        const resp = await fetch(`/api/shadowing/daily?lang=${preferred}`, { cache: 'no-store', credentials: 'include', headers });
-        const data = await resp.json();
-        if (resp.ok) setDaily(data);
-        else setDaily({ lang: preferred, level: 2, error: data?.error || 'failed' });
+        const fetchDaily = async (lang: 'zh' | 'ja' | 'en') => {
+          const r = await fetch(`/api/shadowing/daily?lang=${lang}`, { cache: 'no-store', credentials: 'include', headers });
+          const d = await r.json();
+          return { ok: r.ok, data: d } as const;
+        };
+        const [pRes, sRes] = await Promise.all([
+          fetchDaily(preferred),
+          second ? fetchDaily(second) : Promise.resolve(null),
+        ]);
+        if (pRes?.ok) setDaily(pRes.data);
+        else setDaily({ lang: preferred, level: 2, error: pRes?.data?.error || 'failed' });
+
+        if (second && sRes) {
+          if (sRes.ok) setDailySecond(sRes.data);
+          else setDailySecond({ lang: second, level: 2, error: sRes.data?.error || 'failed' });
+        } else {
+          setDailySecond(null);
+        }
       } catch {
         setDaily({ lang: preferred, level: 2, error: 'network' });
+        if (second) setDailySecond({ lang: second, level: 2, error: 'network' });
       }
     })();
   }, [authUser, permissions.can_access_shadowing, profile?.target_langs, getAuthHeaders]);
+
+  // 拉取今日需复习的生词数量（分页 total）
+  useEffect(() => {
+    (async () => {
+      if (!authUser) return;
+      try {
+        const headers = await getAuthHeaders();
+        const r = await fetch(`/api/vocab/review/due?page=1&limit=1`, { cache: 'no-store', credentials: 'include', headers });
+        if (!r.ok) { setDueCount(0); return; }
+        const d = await r.json();
+        const total = d?.pagination?.total ?? 0;
+        setDueCount(typeof total === 'number' ? total : 0);
+      } catch {
+        setDueCount(0);
+      }
+    })();
+  }, [authUser, getAuthHeaders]);
+
+  // 窗口聚焦时刷新每日任务与复习数量
+  useEffect(() => {
+    if (!authUser) return;
+    const onFocus = () => {
+      // 触发依赖变更以复用已有 effect：使用时间戳 state 会更复杂，这里直接调用内部逻辑
+      (async () => {
+        try {
+          const headers = await getAuthHeaders();
+          const preferred = (profile?.target_langs?.[0] as 'zh' | 'ja' | 'en') || null;
+          const second = (profile?.target_langs?.[1] as 'zh' | 'ja' | 'en') || null;
+          if (preferred) {
+            const r = await fetch(`/api/shadowing/daily?lang=${preferred}`, { cache: 'no-store', credentials: 'include', headers });
+            const d = await r.json();
+            setDaily(r.ok ? d : { lang: preferred, level: 2, error: d?.error || 'failed' });
+          }
+          if (second) {
+            const r2 = await fetch(`/api/shadowing/daily?lang=${second}`, { cache: 'no-store', credentials: 'include', headers });
+            const d2 = await r2.json();
+            setDailySecond(r2.ok ? d2 : { lang: second, level: 2, error: d2?.error || 'failed' });
+          }
+          const vr = await fetch(`/api/vocab/review/due?page=1&limit=1`, { cache: 'no-store', credentials: 'include', headers });
+          if (vr.ok) {
+            const vd = await vr.json();
+            const total = vd?.pagination?.total ?? 0;
+            setDueCount(typeof total === 'number' ? total : 0);
+          }
+        } catch {}
+      })();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [authUser, getAuthHeaders, profile?.target_langs]);
 
   const fetchUserStats = async (userId: string) => {
     try {
@@ -321,13 +405,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 每日一题（登录且有Shadowing权限才显示） */}
+      {/* 每日任务（登录且有Shadowing权限才显示） */}
       {authUser && permissions.can_access_shadowing && (
         <FadeInWhenVisible>
           <section className="py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <motion.div
-                animate={daily?.item && daily?.phase !== 'cleared' ? { scale: [1, 1.01, 1] } : {}}
+                animate={daily?.item && daily?.phase !== 'cleared' && !daily?.today_done ? { scale: [1, 1.01, 1] } : {}}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               >
                 <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 shadow-lg backdrop-blur">
@@ -337,81 +421,137 @@ export default function Home() {
                       {t.home.daily_desc}
                     </CardDescription>
                   </CardHeader>
-              <CardContent className="flex items-start justify-between gap-6">
-                <div className="flex-1 min-w-0">
-                  {!profile?.target_langs?.[0] ? (
-                    <div className="text-sm text-gray-600 dark:text-slate-400">
-                      {t.home.set_target_language}
-                      <Link href="/profile" className="text-blue-600 underline ml-1 dark:text-blue-400">{t.home.complete_profile}</Link>
-                    </div>
-                  ) : daily?.item ? (
-                    <>
-                      <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white flex items-center justify-center text-xl font-bold">
-                          L{daily.level}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-lg font-semibold truncate text-gray-900 dark:text-slate-100" title={daily.item.title}>{daily.item.title}</div>
-                          <div className="text-sm text-gray-600 dark:text-slate-400 mt-1 flex items-center flex-wrap gap-x-3 gap-y-1">
-                            <span>{t.home.daily_language}{daily.lang?.toUpperCase()}</span>
-                            {typeof daily.item.duration_ms === 'number' && (
-                              <span>{t.home.daily_duration.replace('{seconds}', String(Math.round((daily.item.duration_ms || 0) / 1000)))}</span>
-                            )}
-                            {daily.item.tokens != null && (
-                              <span>{t.home.daily_length.replace('{tokens}', String(daily.item.tokens))}</span>
-                            )}
-                            {daily.item.cefr && <span>{t.home.daily_cefr.replace('{level}', daily.item.cefr)}</span>}
-                            {daily?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400">{t.home.daily_last_unfinished}</span>}
+                  <CardContent className="flex flex-col gap-5">
+                    {/* 提示设置目标语言 */}
+                    {!profile?.target_langs?.[0] && (
+                      <div className="text-sm text-gray-600 dark:text-slate-400">
+                        {t.home.set_target_language}
+                        <Link href="/profile" className="text-blue-600 underline ml-1 dark:text-blue-400">{t.home.complete_profile}</Link>
+                      </div>
+                    )}
+
+                    {/* 任务 1：主目标语言 Shadowing */}
+                    {profile?.target_langs?.[0] && (
+                      <div className="flex items-start justify-between gap-6">
+                        <div className="flex items-start gap-4 min-w-0 flex-1">
+                          <div className={`flex-shrink-0 w-16 h-16 rounded-xl ${daily?.today_done ? 'bg-gray-200 text-gray-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-blue-500 to-indigo-500 text-white'} flex items-center justify-center text-xl font-bold`} aria-label={daily?.today_done ? t.home.tasks_completed_badge : undefined}>
+                            {daily?.item ? `L${daily.level}` : '--'}
                           </div>
-                          <div className="mt-2 text-sm text-gray-600 dark:text-slate-400 flex items-center gap-2 flex-wrap">
-                            {daily.item.theme?.title && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-900/30">
-                                {t.home.daily_main_theme.replace('{title}', daily.item.theme.title)}
-                              </span>
+                          <div className="min-w-0 flex-1">
+                            <div className={`text-lg font-semibold truncate ${daily?.today_done ? 'text-gray-500 dark:text-slate-400' : 'text-gray-900 dark:text-slate-100'}`} title={daily?.item?.title || ''}>
+                              {daily?.item?.title || (daily?.phase === 'cleared' ? t.home.daily_cleared : t.home.daily_fetching.replace('{hint}', daily?.error ? `（${daily.error}）` : '...'))}
+                            </div>
+                            {daily?.item && (
+                              <div className="text-sm text-gray-600 dark:text-slate-400 mt-1 flex items-center flex-wrap gap-x-3 gap-y-1">
+                                <span>{t.home.daily_language}{daily.lang?.toUpperCase()}</span>
+                                {typeof daily.item.duration_ms === 'number' && (
+                                  <span>{t.home.daily_duration.replace('{seconds}', String(Math.round((daily.item.duration_ms || 0) / 1000)))}</span>
+                                )}
+                                {daily.item.tokens != null && (
+                                  <span>{t.home.daily_length.replace('{tokens}', String(daily.item.tokens))}</span>
+                                )}
+                                {daily.item.cefr && <span>{t.home.daily_cefr.replace('{level}', daily.item.cefr)}</span>}
+                                {daily?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400">{t.home.daily_last_unfinished}</span>}
+                              </div>
                             )}
-                            {daily.item.subtopic?.title && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-900/30">
-                                {t.home.daily_sub_theme.replace('{title}', daily.item.subtopic.title)}
-                              </span>
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {daily?.today_done ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-900/30">{t.home.tasks_completed_badge}</span>
+                          ) : daily?.item ? (
+                            <Link
+                              className="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                              href={`/practice/shadowing?lang=${daily.lang}&item=${daily.item.id}&autostart=1&src=daily`}
+                            >
+                              {t.home.daily_quick_start}
+                              <Play className="w-4 h-4 ml-2" />
+                            </Link>
+                          ) : (
+                            <Link
+                              className="inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                              href={profile?.target_langs?.[0] ? `/practice/shadowing?lang=${profile.target_langs[0] as 'zh' | 'ja' | 'en'}` : '/practice/shadowing'}
+                            >
+                              {t.home.daily_open_practice}
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 任务 2：次目标语言 Shadowing（如有） */}
+                    {profile?.target_langs?.[1] && dailySecond && (
+                      <div className="flex items-start justify-between gap-6">
+                        <div className="flex items-start gap-4 min-w-0 flex-1">
+                          <div className={`flex-shrink-0 w-16 h-16 rounded-xl ${dailySecond?.today_done ? 'bg-gray-200 text-gray-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white'} flex items-center justify-center text-xl font-bold`} aria-label={dailySecond?.today_done ? t.home.tasks_completed_badge : undefined}>
+                            {dailySecond?.item ? `L${dailySecond.level}` : '--'}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className={`text-lg font-semibold truncate ${dailySecond?.today_done ? 'text-gray-500 dark:text-slate-400' : 'text-gray-900 dark:text-slate-100'}`} title={dailySecond?.item?.title || ''}>
+                              {dailySecond?.item?.title || (dailySecond?.phase === 'cleared' ? t.home.daily_cleared : t.home.daily_fetching.replace('{hint}', dailySecond?.error ? `（${dailySecond.error}）` : '...'))}
+                            </div>
+                            {dailySecond?.item && (
+                              <div className="text-sm text-gray-600 dark:text-slate-400 mt-1 flex items-center flex-wrap gap-x-3 gap-y-1">
+                                <span>{t.home.daily_language}{dailySecond.lang?.toUpperCase()}</span>
+                                {typeof dailySecond.item.duration_ms === 'number' && (
+                                  <span>{t.home.daily_duration.replace('{seconds}', String(Math.round((dailySecond.item.duration_ms || 0) / 1000)))}</span>
+                                )}
+                                {dailySecond.item.tokens != null && (
+                                  <span>{t.home.daily_length.replace('{tokens}', String(dailySecond.item.tokens))}</span>
+                                )}
+                                {dailySecond.item.cefr && <span>{t.home.daily_cefr.replace('{level}', dailySecond.item.cefr)}</span>}
+                                {dailySecond?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400">{t.home.daily_last_unfinished}</span>}
+                              </div>
                             )}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {dailySecond?.today_done ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-900/30">{t.home.tasks_completed_badge}</span>
+                          ) : dailySecond?.item ? (
+                            <Link
+                              className="inline-flex items-center px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
+                              href={`/practice/shadowing?lang=${dailySecond.lang}&item=${dailySecond.item.id}&autostart=1&src=daily`}
+                            >
+                              {t.home.daily_quick_start}
+                              <Play className="w-4 h-4 ml-2" />
+                            </Link>
+                          ) : (
+                            <Link
+                              className="inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                              href={profile?.target_langs?.[1] ? `/practice/shadowing?lang=${profile.target_langs[1] as 'zh' | 'ja' | 'en'}` : '/practice/shadowing'}
+                            >
+                              {t.home.daily_open_practice}
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 任务 3：生词复习 */}
+                    <div className="flex items-center justify-between gap-6">
+                      <div className="flex items-center gap-4 min-w-0 flex-1">
+                        <div className={`flex-shrink-0 w-16 h-16 rounded-xl ${dueCount === 0 ? 'bg-gray-200 text-gray-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-emerald-500 to-green-600 text-white'} flex items-center justify-center text-xl font-bold`} aria-label={dueCount === 0 ? t.home.tasks_completed_badge : undefined}>
+                          📚
+                        </div>
+                        <div className="min-w-0">
+                          <div className={`text-lg font-semibold truncate ${dueCount === 0 ? 'text-gray-500 dark:text-slate-400' : 'text-gray-900 dark:text-slate-100'}`}>{t.home.tasks_vocab_title}</div>
+                          <div className="text-sm text-gray-600 dark:text-slate-400 mt-1">
+                            {dueCount > 0 ? t.home.tasks_vocab_due.replace('{count}', String(dueCount)) : t.home.tasks_vocab_done}
                           </div>
                         </div>
                       </div>
-                    </>
-                  ) : daily?.phase === 'cleared' ? (
-                    <div className="text-sm text-gray-700 dark:text-slate-300">{t.home.daily_cleared}</div>
-                  ) : (
-                    <div className="text-sm text-gray-600 dark:text-slate-400">{t.home.daily_fetching.replace('{hint}', daily?.error ? `（${daily.error}）` : '...')}</div>
-                  )}
-                </div>
-                <div className="flex-shrink-0">
-                  {profile?.target_langs?.[0] ? (
-                    daily?.item ? (
-                      <Link
-                        className="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                        href={`/practice/shadowing?lang=${daily.lang}&item=${daily.item.id}&autostart=1&src=daily`}
-                      >
-                        {t.home.daily_quick_start}
-                        <Play className="w-4 h-4 ml-2" />
-                      </Link>
-                    ) : (
-                      <Link
-                        className="inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                        href={profile?.target_langs?.[0] ? `/practice/shadowing?lang=${profile.target_langs[0] as 'zh' | 'ja' | 'en'}` : '/practice/shadowing'}
-                      >
-                        {t.home.daily_open_practice}
-                      </Link>
-                    )
-                  ) : (
-                    <Link
-                      className="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                      href="/profile"
-                    >
-                      {t.home.go_set_target_language}
-                    </Link>
-                  )}
-                </div>
-              </CardContent>
+                      <div className="flex-shrink-0">
+                        {dueCount > 0 ? (
+                          <Link className="inline-flex items-center px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm" href="/vocab">
+                            {t.home.tasks_go_review}
+                          </Link>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-900/30">{t.home.tasks_completed_badge}</span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
                 </Card>
               </motion.div>
             </div>

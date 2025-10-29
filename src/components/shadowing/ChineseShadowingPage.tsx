@@ -316,7 +316,7 @@ const mergeTimelineWithText = (
 
 // 全局词汇搜索缓存，避免重复请求
 const globalVocabCache = new Map<string, { data: { entries?: Array<{ explanation?: any }> }; timestamp: number }>();
-const CACHE_DURATION = 30000; // 30秒缓存
+const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7天缓存
 const pendingRequests = new Map<string, Promise<any>>(); // 请求去重
 
 // 增强的词汇搜索函数，包含请求去重和持久化缓存
@@ -635,6 +635,7 @@ export default function ShadowingPage() {
     total: 0,
     status: '',
   });
+  const [isRefreshingAllPrev, setIsRefreshingAllPrev] = useState(false);
 
   // 解释缓存
   const [explanationCache, setExplanationCache] = useState<
@@ -710,6 +711,27 @@ export default function ShadowingPage() {
   // 翻译相关状态
   const [showTranslation, setShowTranslation] = useState(false);
   const [translationLang, setTranslationLang] = useState<'en' | 'ja' | 'zh' | 'ko'>('en');
+
+  // 读音注音开关（zh/ja 默认开启），带本地持久化
+  const [showRubyPronunciation, setShowRubyPronunciation] = useState<boolean>(false);
+  useEffect(() => {
+    const lang = currentItem?.lang;
+    if (lang === 'zh' || lang === 'ja' || lang === 'ko') {
+      // 中文/日语场景：默认始终开启注音
+      setShowRubyPronunciation(true);
+      return;
+    }
+    // 其他语言保留用户偏好
+    try {
+      const stored = typeof window !== 'undefined' ? window.localStorage.getItem('shadowing.showRubyPronunciation') : null;
+      if (stored !== null) {
+        setShowRubyPronunciation(stored === 'true');
+      }
+    } catch {}
+  }, [currentItem?.lang]);
+  useEffect(() => {
+    try { if (typeof window !== 'undefined') window.localStorage.setItem('shadowing.showRubyPronunciation', String(showRubyPronunciation)); } catch {}
+  }, [showRubyPronunciation]);
 
   // 用户生词本状态
   const [userVocab, setUserVocab] = useState<Array<{
@@ -1009,6 +1031,8 @@ export default function ShadowingPage() {
     word: string;
     explanation?: {
       gloss_native: string;
+      pronunciation?: string;
+      pos?: string;
       senses?: Array<{ example_target: string; example_native: string }>;
     };
     children: React.ReactNode;
@@ -1022,6 +1046,12 @@ export default function ShadowingPage() {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const tooltipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const abortRef = useRef<AbortController | null>(null);
+    const pron =
+      explanation?.pronunciation ||
+      latestExplanation?.pronunciation ||
+      (wordExplanations?.[word]?.pronunciation) ||
+      (explanationCache?.[word]?.pronunciation);
+    const shouldRuby = ((lang === 'zh' || lang === 'ja' || lang === 'ko') && showRubyPronunciation && !!pron);
 
     const handleMouseEnter = async () => {
       setShowTooltip(true);
@@ -1111,8 +1141,8 @@ export default function ShadowingPage() {
 
     return (
       <span
-        className={`bg-yellow-200 text-yellow-800 px-1 rounded font-medium 
-                   cursor-pointer relative hover:bg-yellow-300 
+        className={`relative z-10 text-yellow-800 font-medium 
+                   cursor-pointer relative 
                    hover:shadow-md active:scale-95 
                    transition-all duration-150
                    ${isSpeaking ? 'animate-pulse ring-2 ring-yellow-400' : ''}
@@ -1154,7 +1184,14 @@ export default function ShadowingPage() {
         }}
         title={`点击发音: ${word}`}
       >
-        {children}
+        {shouldRuby ? (
+          <ruby className="align-baseline">
+            <span className="bg-yellow-200">{children}</span>
+            <rt className="relative -top-[3px] text-[10px] leading-3 text-gray-700">{pron}</rt>
+          </ruby>
+        ) : (
+          <span className="bg-yellow-200">{children}</span>
+        )}
         {showTooltip && !actualIsMobile && (
           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg w-32 z-50">
             <div className="flex justify-between items-start mb-1">
@@ -1234,7 +1271,15 @@ export default function ShadowingPage() {
       setExplanationLoading(true);
       try {
         // 清除缓存，强制重新获取
-        globalVocabCache.delete(word.toLowerCase().trim());
+        const key = word.toLowerCase().trim();
+        globalVocabCache.delete(key);
+        try {
+          const sessionKey = `vocab_cache_${key}`;
+          sessionStorage.removeItem(sessionKey);
+        } catch (_) {
+          // sessionStorage 可能不可用，忽略
+        }
+
         const data = await searchVocabWithCache(word, getAuthHeaders);
 
         if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
@@ -1261,16 +1306,11 @@ export default function ShadowingPage() {
       }
     }, [word, searchVocabWithCache]);
 
-    // 初始化时获取最新解释
+    // 初始化时获取最新解释（等待页面加载完成）
     useEffect(() => {
-      if (!hasInitialized) {
+      if (!hasInitialized && pageLoaded) {
         setHasInitialized(true);
-        // 只有在页面加载完成后才允许搜索
-        if (!pageLoaded) {
-          return;
-        }
-        
-        // 使用全局缓存机制获取解释
+
         const fetchInitialExplanation = async () => {
           setExplanationLoading(true);
           try {
@@ -1287,7 +1327,7 @@ export default function ShadowingPage() {
         };
         fetchInitialExplanation();
       }
-    }, [hasInitialized, word, pageLoaded, searchVocabWithCache]);
+    }, [hasInitialized, pageLoaded, word, searchVocabWithCache]);
 
     // 当缓存更新时，同步更新显示
     const cachedExplanation = explanationCache[word];
@@ -4746,14 +4786,74 @@ export default function ShadowingPage() {
                               selectedWords={[...previousWords, ...selectedWords]}
                             />
                           ) : (
-                            <div className="text-lg leading-loose">
+                            <div className="text-lg leading-[2.05]">
                               {/* 移动端第2步：原文行内逐句播放 */}
-                              {step === 2 && currentItem?.audio_url ? (
+                              {step === 2 && currentItem?.audio_url && actualIsMobile ? (
                                 <SentenceInlinePlayer
                                   text={currentItem.text}
                                   language={currentItem.lang}
                                   sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
                                   onPlaySentence={(i) => playSentenceByIndex(i)}
+                                  renderText={(line: string) => {
+                                    // 基于当前已选与生词本构造 allSelectedWords
+                                    const picked = [...previousWords, ...selectedWords];
+                                    const vocab = userVocab.map(v => ({
+                                      word: v.term,
+                                      explanation: v.explanation,
+                                      fromVocab: true,
+                                      vocabId: v.id,
+                                    }));
+                                    const wordMap = new Map<string, any>();
+                                    picked.forEach(w => wordMap.set(w.word, w));
+                                    vocab.forEach(v => { if (!wordMap.has(v.word)) wordMap.set(v.word, v); });
+                                    const allSelectedWords = Array.from(wordMap.values());
+
+                                    // 按中/日/韩处理：韩语也开启匹配
+                                    const isZh = currentItem?.lang === 'zh';
+                                    const isJa = currentItem?.lang === 'ja';
+                                    const isKo = currentItem?.lang === 'ko';
+                                    if (!isZh && !isJa && !isKo) return line;
+                                    const chars = line.split('');
+                                    const result: React.ReactNode[] = [];
+                                    for (let i = 0; i < chars.length; i++) {
+                                      let isHighlighted = false;
+                                      let highlightLength = 0;
+                                      for (const selectedWord of allSelectedWords) {
+                                        const w = selectedWord.word;
+                                        if (!w) continue;
+                                        if (i + w.length <= chars.length) {
+                                          const substring = chars.slice(i, i + w.length).join('');
+                                          if (substring === w) {
+                                            isHighlighted = true;
+                                            highlightLength = w.length;
+                                            break;
+                                          }
+                                        }
+                                      }
+                                      if (isHighlighted && highlightLength > 0) {
+                                        const word = chars.slice(i, i + highlightLength).join('');
+                                        const wordData = allSelectedWords.find((item) => item.word === word);
+                                        const explanation = wordData?.explanation;
+                                        result.push(
+                                          <HoverExplanation
+                                            key={`inline-${line}-${i}`}
+                                            word={word}
+                                            explanation={explanation}
+                                            fromVocab={wordData?.fromVocab}
+                                            vocabId={wordData?.vocabId}
+                                            onRefresh={handleRefreshExplanation}
+                                            lang={currentItem?.lang || 'ja'}
+                                          >
+                                            {word}
+                                          </HoverExplanation>
+                                        );
+                                        i += highlightLength - 1;
+                                      } else {
+                                        result.push(<span key={`c-${i}`}>{chars[i]}</span>);
+                                      }
+                                    }
+                                    return <span>{result}</span>;
+                                  }}
                                 />
                               ) : (
                               (() => {
@@ -4869,7 +4969,7 @@ export default function ShadowingPage() {
                                             fromVocab={wordData?.fromVocab}
                                             vocabId={wordData?.vocabId}
                                             onRefresh={handleRefreshExplanation}
-                                            lang={currentItem?.lang || 'ko'}
+                                            lang={'zh'}
                                           >
                                             {word}
                                           </HoverExplanation>,
@@ -4929,7 +5029,7 @@ export default function ShadowingPage() {
                                             fromVocab={wordData?.fromVocab}
                                             vocabId={wordData?.vocabId}
                                             onRefresh={handleRefreshExplanation}
-                                            lang={currentItem?.lang || 'ko'}
+                                            lang={currentItem?.lang || 'ja'}
                                           >
                                             {word}
                                           </HoverExplanation>,
@@ -5107,7 +5207,7 @@ export default function ShadowingPage() {
                                         fromVocab={wordData?.fromVocab}
                                         vocabId={wordData?.vocabId}
                                         onRefresh={handleRefreshExplanation}
-                                        lang={currentItem?.lang || 'ko'}
+                                        lang={'zh'}
                                       >
                                         {word}
                                       </HoverExplanation>,
@@ -5173,7 +5273,7 @@ export default function ShadowingPage() {
                                           fromVocab={wordData?.fromVocab}
                                           vocabId={wordData?.vocabId}
                                           onRefresh={handleRefreshExplanation}
-                                          lang={currentItem?.lang || 'ko'}
+                                        lang={currentItem?.lang || 'ja'}
                                         >
                                           {word}
                                         </HoverExplanation>,
@@ -5232,7 +5332,7 @@ export default function ShadowingPage() {
                                           fromVocab={wordData?.fromVocab}
                                           vocabId={wordData?.vocabId}
                                           onRefresh={handleRefreshExplanation}
-                                          lang={currentItem?.lang || 'ko'}
+                                        lang={currentItem?.lang || 'ja'}
                                         >
                                           {word}
                                         </HoverExplanation>,
@@ -5514,6 +5614,17 @@ export default function ShadowingPage() {
                             />
                             <span className="font-medium">
                               {t.shadowing.show_translation || '显示翻译'}
+                            </span>
+                          </label>
+                          <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg-white transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={showRubyPronunciation}
+                              onChange={(e) => setShowRubyPronunciation(e.target.checked)}
+                              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            />
+                            <span className="font-medium">
+                              {'显示读音注音（zh/ja/ko）'}
                             </span>
                           </label>
                           {showTranslation && (
@@ -7029,7 +7140,7 @@ export default function ShadowingPage() {
                                         fromVocab={wordData?.fromVocab}
                                         vocabId={wordData?.vocabId}
                                         onRefresh={handleRefreshExplanation}
-                                        lang={currentItem?.lang || 'ko'}
+                                        lang={'zh'}
                                       >
                                         {word}
                                       </HoverExplanation>,
@@ -7158,6 +7269,15 @@ export default function ShadowingPage() {
                             />
                             <span className="font-medium">显示翻译</span>
                           </label>
+                          <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg-white transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={showRubyPronunciation}
+                              onChange={(e) => setShowRubyPronunciation(e.target.checked)}
+                              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                            />
+                            <span className="font-medium">{'显示读音注音（zh/ja/ko）'}</span>
+                          </label>
                           {showTranslation && (
                             <select
                               className="h-11 px-4 py-2 bg-white border border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium"
@@ -7217,6 +7337,63 @@ export default function ShadowingPage() {
                       className="border-0 shadow-sm"
                       contentClassName="pt-2"
                     >
+                      <div className="flex items-center justify-end mb-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={isRefreshingAllPrev}
+                          onClick={async () => {
+                            if (isRefreshingAllPrev) return;
+                            setIsRefreshingAllPrev(true);
+                            try {
+                              const headers = await getAuthHeaders();
+                              // 逐个清理缓存并拉取最新解释
+                              const tasks = previousWords.map(async (item) => {
+                                const key = item.word.toLowerCase().trim();
+                                globalVocabCache.delete(key);
+                                try {
+                                  const sessionKey = `vocab_cache_${key}`;
+                                  sessionStorage.removeItem(sessionKey);
+                                } catch {}
+                                try {
+                                  const res = await fetch(`/api/vocab/search?term=${encodeURIComponent(item.word)}`, { headers });
+                                  if (res.ok) {
+                                    const data = await res.json();
+                                    const explanation = Array.isArray(data?.entries) && data.entries[0]?.explanation ? data.entries[0].explanation : undefined;
+                                    return { word: item.word, explanation };
+                                  }
+                                } catch {
+                                  // ignore single failure
+                                }
+                                return { word: item.word, explanation: undefined };
+                              });
+                              const results = await Promise.all(tasks);
+                              // 合并更新 explanationCache
+                              setExplanationCache((prev) => {
+                                const next: Record<
+                                  string,
+                                  {
+                                    gloss_native: string;
+                                    pronunciation?: string;
+                                    pos?: string;
+                                    senses?: Array<{ example_target: string; example_native: string }>;
+                                  }
+                                > = { ...prev };
+                                for (const r of results) {
+                                  if (r.explanation) next[r.word] = r.explanation;
+                                  else delete next[r.word];
+                                }
+                                return next;
+                              });
+                            } finally {
+                              setIsRefreshingAllPrev(false);
+                            }
+                          }}
+                          className="text-xs"
+                        >
+                          {isRefreshingAllPrev ? '刷新中…' : '刷新全部解释'}
+                        </Button>
+                      </div>
 
                       <div className="grid gap-3">
                         {previousWords.map((item, index) => (
