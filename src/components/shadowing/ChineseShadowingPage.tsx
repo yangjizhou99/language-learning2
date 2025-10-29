@@ -1186,7 +1186,7 @@ export default function ShadowingPage() {
       >
         {shouldRuby ? (
           <ruby className="align-baseline">
-            <rb className="bg-yellow-200">{children}</rb>
+            <span className="bg-yellow-200">{children}</span>
             <rt className="relative -top-[3px] text-[10px] leading-3 text-gray-700">{pron}</rt>
           </ruby>
         ) : (
