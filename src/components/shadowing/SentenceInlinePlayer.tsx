@@ -17,6 +17,7 @@ interface SentenceInlinePlayerProps {
   activeIndex?: number | null;
   isPlaying?: boolean;
   className?: string;
+  renderText?: (text: string) => React.ReactNode;
 }
 
 function splitTextFallback(text: string, language: Lang): string[] {
@@ -64,6 +65,7 @@ export default function SentenceInlinePlayer({
   activeIndex = null,
   isPlaying = false,
   className = '',
+  renderText,
 }: SentenceInlinePlayerProps) {
   const { actualIsMobile } = useMobile();
 
@@ -129,13 +131,13 @@ export default function SentenceInlinePlayer({
                 {/* 句子文本（可点击触发） */}
                 <button
                   type="button"
-                  className={`text-left flex-1 leading-relaxed ${active ? 'text-blue-800' : 'text-gray-800'}`}
+                  className={`text-left flex-1 leading-[2.1] ${active ? 'text-blue-800' : 'text-gray-800'}`}
                   onClick={() => {
                     setLastTapKeyIndex(keyIndex);
                     if (canPlay) onPlaySentence?.(keyIndex);
                   }}
                 >
-                  {item.display}
+                  {renderText ? renderText(item.display) : item.display}
                 </button>
               </div>
             );
