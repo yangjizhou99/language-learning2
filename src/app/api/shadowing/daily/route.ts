@@ -142,6 +142,12 @@ export async function GET(req: NextRequest) {
 
     const unpracticed = allItems.filter((i) => !sessionByItem.has(i.id));
     const unfinished = allItems.filter((i) => sessionByItem.get(i.id) === 'draft');
+
+    // 计算“当日种子题”完成态（独立于池挑选逻辑，便于前端展示今日是否完成）
+    const seedAll = `${user.id}:${lang}:${new Date().toISOString().slice(0, 10)}`;
+    const idxAll = parseInt(crypto.createHash('sha1').update(seedAll).digest('hex').slice(0, 8), 16) % allItems.length;
+    const rawToday = allItems[idxAll] as Record<string, any>;
+    const todayDone = !!rawToday && sessionByItem.get(rawToday.id) === 'completed';
     const hasChoice = (arr: unknown[]) => Array.isArray(arr) && arr.length > 0;
 
     let pool = unpracticed;
@@ -152,7 +158,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (phase === 'cleared') {
-      return NextResponse.json({ lang, level, phase: 'cleared', message: '恭喜清空题库' });
+      return NextResponse.json({ lang, level, phase: 'cleared', message: '恭喜清空题库', today_done: todayDone });
     }
 
     const seed = `${user.id}:${lang}:${new Date().toISOString().slice(0, 10)}`;
@@ -202,7 +208,7 @@ export async function GET(req: NextRequest) {
       subtopic,
     };
 
-    return NextResponse.json({ lang, level, phase, item });
+    return NextResponse.json({ lang, level, phase, item, today_done: todayDone });
   } catch (e) {
     console.error('daily api failed', e);
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
