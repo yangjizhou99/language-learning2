@@ -163,7 +163,6 @@ export function splitSentences(text: string, lang: 'zh' | 'en' | 'ja' | 'ko', ge
 
   // 非对话体裁：按语言标点分句
   const sentences: SentenceInfo[] = [];
-  let currentPos = 0;
   let sid = 1;
 
   if (lang === 'zh') {
@@ -173,18 +172,24 @@ export function splitSentences(text: string, lang: 'zh' | 'en' | 'ja' | 'ko', ge
     let match: RegExpExecArray | null;
 
     while ((match = pattern.exec(src)) !== null) {
-      const sentence = src.slice(lastIndex, match.index + match[0].length).trim();
-      if (sentence) {
-        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
-        currentPos += sentence.length;
+      const matchEnd = match.index + match[0].length;
+      const raw = src.slice(lastIndex, matchEnd);
+      const trimmed = raw.trim();
+      if (trimmed) {
+        const trimStartDelta = raw.length - raw.trimStart().length;
+        const sentenceAbsStart = lastIndex + trimStartDelta;
+        sentences.push({ text: trimmed, sid: sid++, sentenceAbsStart });
       }
-      lastIndex = match.index + match[0].length;
+      lastIndex = matchEnd;
     }
 
     if (lastIndex < src.length) {
-      const sentence = src.slice(lastIndex).trim();
-      if (sentence) {
-        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
+      const raw = src.slice(lastIndex);
+      const trimmed = raw.trim();
+      if (trimmed) {
+        const trimStartDelta = raw.length - raw.trimStart().length;
+        const sentenceAbsStart = lastIndex + trimStartDelta;
+        sentences.push({ text: trimmed, sid: sid++, sentenceAbsStart });
       }
     }
   } else if (lang === 'en') {
@@ -194,18 +199,24 @@ export function splitSentences(text: string, lang: 'zh' | 'en' | 'ja' | 'ko', ge
     let match: RegExpExecArray | null;
 
     while ((match = pattern.exec(src)) !== null) {
-      const sentence = src.slice(lastIndex, match.index + match[0].length).trim();
-      if (sentence) {
-        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
-        currentPos += sentence.length;
+      const matchEnd = match.index + match[0].length;
+      const raw = src.slice(lastIndex, matchEnd);
+      const trimmed = raw.trim();
+      if (trimmed) {
+        const trimStartDelta = raw.length - raw.trimStart().length;
+        const sentenceAbsStart = lastIndex + trimStartDelta;
+        sentences.push({ text: trimmed, sid: sid++, sentenceAbsStart });
       }
-      lastIndex = match.index + match[0].length;
+      lastIndex = matchEnd;
     }
 
     if (lastIndex < src.length) {
-      const sentence = src.slice(lastIndex).trim();
-      if (sentence) {
-        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
+      const raw = src.slice(lastIndex);
+      const trimmed = raw.trim();
+      if (trimmed) {
+        const trimStartDelta = raw.length - raw.trimStart().length;
+        const sentenceAbsStart = lastIndex + trimStartDelta;
+        sentences.push({ text: trimmed, sid: sid++, sentenceAbsStart });
       }
     }
   } else if (lang === 'ja' || lang === 'ko') {
@@ -215,18 +226,24 @@ export function splitSentences(text: string, lang: 'zh' | 'en' | 'ja' | 'ko', ge
     let match: RegExpExecArray | null;
 
     while ((match = pattern.exec(src)) !== null) {
-      const sentence = src.slice(lastIndex, match.index + match[0].length).trim();
-      if (sentence) {
-        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
-        currentPos += sentence.length;
+      const matchEnd = match.index + match[0].length;
+      const raw = src.slice(lastIndex, matchEnd);
+      const trimmed = raw.trim();
+      if (trimmed) {
+        const trimStartDelta = raw.length - raw.trimStart().length;
+        const sentenceAbsStart = lastIndex + trimStartDelta;
+        sentences.push({ text: trimmed, sid: sid++, sentenceAbsStart });
       }
-      lastIndex = match.index + match[0].length;
+      lastIndex = matchEnd;
     }
 
     if (lastIndex < src.length) {
-      const sentence = src.slice(lastIndex).trim();
-      if (sentence) {
-        sentences.push({ text: sentence, sid: sid++, sentenceAbsStart: currentPos });
+      const raw = src.slice(lastIndex);
+      const trimmed = raw.trim();
+      if (trimmed) {
+        const trimStartDelta = raw.length - raw.trimStart().length;
+        const sentenceAbsStart = lastIndex + trimStartDelta;
+        sentences.push({ text: trimmed, sid: sid++, sentenceAbsStart });
       }
     }
   }

@@ -112,12 +112,6 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
           }
         }
         
-        // 限制最多选择 5 个块
-        if (prev.length >= 5) {
-          alert(t.shadowing.acu_text.max_5_units);
-          return prev;
-        }
-        
         // 添加选中
         return [...prev, { unit, index }];
       }
