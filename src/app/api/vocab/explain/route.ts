@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
 - 例句说明(example_native): 用${nativeLangNames[native_lang]}解释例句含义
 - 搭配: 用生词的原语言
 - 发音: 韩语词必须使用罗马音（如 jeo-nyeok），不要使用韩文字母
+- 发音: 日语词的发音必须使用全平假名（ひらがな），不得包含罗马字、空格或连字符；若为片假名请转换为平假名。
 
 示例说明：
 如果生词是日语"尽力"：
@@ -172,7 +173,7 @@ JSON格式要求：
 
 {
   "pos": "词性（${nativeLangNames[native_lang]}）",
-  "pronunciation": "发音（韩语用罗马音，其他语言用音标或假名）", 
+  "pronunciation": "发音（韩语用罗马音；日语用全平假名、不可含空格/连字符/罗马字；其他语言用合适的本地记音）", 
   "gloss_native": "${nativeLangNames[native_lang]}解释",
   "senses": [
     {
@@ -203,6 +204,7 @@ ${entries
 - 确保所有 example_native 都是${nativeLangNames[native_lang]}（例句翻译用母语）
 - 确保 collocations 用生词的原语言
 - 确保韩语词的 pronunciation 使用罗马音（如 jeo-nyeok），不要使用韩文字母
+ - 确保日语词的 pronunciation 仅使用平假名，不要使用片假名、空格、连字符或罗马字
 
 请返回JSON数组，每个元素对应一个词条的解释。`;
 

@@ -106,6 +106,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getCached, setCached } from '@/lib/clientCache';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { loadFilters as loadShadowingFilters, saveFilters as saveShadowingFilters } from '@/lib/shadowingFilterStorage';
+import { deriveKanjiFuriganaSegments, sanitizeJapaneseReadingToHiragana } from '@/lib/japanese/furigana';
 
 // 题目数据类型
 interface ShadowingItem {
@@ -1051,7 +1052,12 @@ export default function ShadowingPage() {
       latestExplanation?.pronunciation ||
       (wordExplanations?.[word]?.pronunciation) ||
       (explanationCache?.[word]?.pronunciation);
-    const shouldRuby = ((lang === 'zh' || lang === 'ja' || lang === 'ko') && showRubyPronunciation && !!pron);
+    const shouldRuby = (
+      // 移动端第4步（日语）强制仅汉字注音显示
+      ((lang === 'ja') && actualIsMobile && step === 4 && !!pron) ||
+      // 其他情况走用户开关
+      ((lang === 'zh' || lang === 'ja' || lang === 'ko') && showRubyPronunciation && !!pron)
+    );
 
     const handleMouseEnter = async () => {
       setShowTooltip(true);
@@ -1185,10 +1191,34 @@ export default function ShadowingPage() {
         title={`点击发音: ${word}`}
       >
         {shouldRuby ? (
-          <ruby className="align-baseline">
-            <span className="bg-yellow-200">{children}</span>
-            <rt className="relative -top-[3px] text-[10px] leading-3 text-gray-700">{pron}</rt>
-          </ruby>
+          lang === 'ja' ? (
+            (() => {
+              const pronSan = sanitizeJapaneseReadingToHiragana(pron || '');
+              if (!pronSan) {
+                return <span className="bg-yellow-200">{children}</span>;
+              }
+              const segs = deriveKanjiFuriganaSegments(String(word), pronSan);
+              return (
+                <span className="bg-yellow-200">
+                  {segs.map((seg, idx) =>
+                    seg.type === 'kanji' && seg.rt ? (
+                      <ruby key={`ja-ruby-${word}-${idx}`} className="align-baseline">
+                        <span>{seg.text}</span>
+                        <rt className="relative -top-[3px] text-[10px] leading-3 text-gray-700">{seg.rt}</rt>
+                      </ruby>
+                    ) : (
+                      <span key={`ja-plain-${word}-${idx}`}>{seg.text}</span>
+                    ),
+                  )}
+                </span>
+              );
+            })()
+          ) : (
+            <ruby className="align-baseline">
+              <span className="bg-yellow-200">{children}</span>
+              <rt className="relative -top-[3px] text-[10px] leading-3 text-gray-700">{pron}</rt>
+            </ruby>
+          )
         ) : (
           <span className="bg-yellow-200">{children}</span>
         )}
@@ -1232,9 +1262,13 @@ export default function ShadowingPage() {
       <div className="flex items-center gap-2">
         <span className="font-medium text-gray-700">{word}</span>
         {explanation?.pronunciation && (
-          <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs text-gray-600">
-            {explanation.pronunciation}
-          </span>
+          (() => {
+            const san = sanitizeJapaneseReadingToHiragana(explanation.pronunciation || '');
+            const toShow = san || explanation.pronunciation;
+            return (
+              <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs text-gray-600">{toShow}</span>
+            );
+          })()
         )}
       </div>
     );
@@ -4969,7 +5003,7 @@ export default function ShadowingPage() {
                                             fromVocab={wordData?.fromVocab}
                                             vocabId={wordData?.vocabId}
                                             onRefresh={handleRefreshExplanation}
-                                            lang={'zh'}
+                                            lang={currentItem?.lang || 'ja'}
                                           >
                                             {word}
                                           </HoverExplanation>,
@@ -5022,7 +5056,7 @@ export default function ShadowingPage() {
                                         const explanation = wordData?.explanation;
 
                                         result.push(
-                                          <HoverExplanation 
+                                          <HoverExplanation
                                             key={`${lineIndex}-${i}`} 
                                             word={word} 
                                             explanation={explanation}
@@ -5207,7 +5241,7 @@ export default function ShadowingPage() {
                                         fromVocab={wordData?.fromVocab}
                                         vocabId={wordData?.vocabId}
                                         onRefresh={handleRefreshExplanation}
-                                        lang={'zh'}
+                                        lang={currentItem?.lang || 'ja'}
                                       >
                                         {word}
                                       </HoverExplanation>,
@@ -7025,6 +7059,50 @@ export default function ShadowingPage() {
                               language={currentItem.lang}
                               sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
                               onPlaySentence={(i) => playSentenceByIndex(i)}
+                              renderText={(line) => {
+                                // 复用行内高亮与注音逻辑（仅对选中/生词本词条生效）
+                                const picked = [...previousWords, ...selectedWords];
+                                const vocab = userVocab.map(v => ({ word: v.term, explanation: v.explanation, fromVocab: true, vocabId: v.id }));
+                                const wordMap = new Map<string, any>();
+                                picked.forEach(w => wordMap.set(w.word, w));
+                                vocab.forEach(v => { if (!wordMap.has(v.word)) wordMap.set(v.word, v); });
+                                const allSelectedWords = Array.from(wordMap.values());
+                                const chars = line.split('');
+                                const nodes: React.ReactNode[] = [];
+                                for (let i = 0; i < chars.length; i++) {
+                                  let matched = false;
+                                  for (const selectedWord of allSelectedWords) {
+                                    const w = selectedWord.word;
+                                    if (!w) continue;
+                                    if (i + w.length <= chars.length) {
+                                      const sub = chars.slice(i, i + w.length).join('');
+                                      if (sub === w) {
+                                        const wordData = selectedWord;
+                                        nodes.push(
+                                          <HoverExplanation
+                                            key={`inline-line-${i}`}
+                                            word={w}
+                                            explanation={wordData?.explanation}
+                                            fromVocab={wordData?.fromVocab}
+                                            vocabId={wordData?.vocabId}
+                                            onRefresh={handleRefreshExplanation}
+                                            lang={currentItem?.lang || 'ja'}
+                                          >
+                                            {w}
+                                          </HoverExplanation>
+                                        );
+                                        i += w.length - 1;
+                                        matched = true;
+                                        break;
+                                      }
+                                    }
+                                  }
+                                  if (!matched) {
+                                    nodes.push(<span key={`inline-ch-${i}`}>{chars[i]}</span>);
+                                  }
+                                }
+                                return <>{nodes}</>;
+                              }}
                             />
                           ) : (
                           (() => {
@@ -7140,7 +7218,7 @@ export default function ShadowingPage() {
                                         fromVocab={wordData?.fromVocab}
                                         vocabId={wordData?.vocabId}
                                         onRefresh={handleRefreshExplanation}
-                                        lang={'zh'}
+                                        lang={currentItem?.lang || 'ja'}
                                       >
                                         {word}
                                       </HoverExplanation>,

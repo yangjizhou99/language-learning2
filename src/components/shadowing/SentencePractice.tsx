@@ -76,6 +76,7 @@ interface SentencePracticeProps {
   onRoleRoundComplete?: (results: RoleSentenceScore[]) => void;
   acuUnits?: AcuUnit[]; // 新增：ACU 单元数据
   onPlaySentence?: (index: number) => void; // 新增：统一用主播放器播放分段
+  renderText?: (text: string) => React.ReactNode; // 可选：自定义句子渲染（用于注音）
 }
 
 const mapLangToLocale = (lang: Lang): string => {
@@ -386,7 +387,7 @@ const computeRoleScore = (target: string, said: string, lang: Lang) => {
   };
 };
 
-function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits, onPlaySentence }: SentencePracticeProps) {
+function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits, onPlaySentence, renderText }: SentencePracticeProps) {
   const { t } = useLanguage();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
@@ -1472,6 +1473,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
                       setTimeout(() => start(), 100);
                     }}
                 highlightReview={highlightUnperfect && !!score && Math.round((score.score || 0) * 100) < 100}
+                renderText={renderText}
               />
             );
           })}

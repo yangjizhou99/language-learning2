@@ -37,6 +37,7 @@ interface SentenceCardProps {
   onStopPractice: () => void;
   onRetry: () => void;
   highlightReview?: boolean;
+  renderText?: (text: string) => React.ReactNode;
 }
 
 // 根据评分获取颜色方案 - Pastel柔和配色
@@ -91,6 +92,7 @@ export default function SentenceCard({
   onStopPractice,
   onRetry,
   highlightReview = false,
+  renderText,
 }: SentenceCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const colors = getScoreColor(score);
@@ -346,7 +348,7 @@ export default function SentenceCard({
           
           {/* 句子文本 */}
           <span className={`${colors.text} text-sm flex-1 ${isExpanded ? '' : 'line-clamp-1'}`}>
-            {sentence}
+            {renderText ? renderText(sentence) : sentence}
           </span>
         </button>
         
