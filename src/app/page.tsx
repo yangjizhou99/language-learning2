@@ -292,44 +292,44 @@ export default function Home() {
       <section className="relative overflow-hidden">
         {/* 背景装饰 */}
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-          <ParticleCanvas className="absolute inset-0 opacity-60 dark:opacity-40" maxParticles={120} />
-          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-gradient-to-br from-blue-400/30 to-indigo-400/30 blur-3xl dark:from-blue-700/20 dark:to-indigo-700/20 animate-float-slow" style={{ animationDelay: '0s' }} />
-          <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-gradient-to-br from-indigo-400/30 to-purple-400/30 blur-3xl dark:from-indigo-700/20 dark:to-purple-700/20 animate-float-slow" style={{ animationDelay: '2s' }} />
+          <ParticleCanvas className="absolute inset-0 opacity-50 dark:opacity-30" maxParticles={120} />
+          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-gradient-to-br from-blue-400/25 to-indigo-400/25 blur-3xl dark:from-blue-700/15 dark:to-indigo-700/15 animate-float-slow" style={{ animationDelay: '0s' }} />
+          <div className="absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-gradient-to-br from-indigo-400/25 to-purple-400/25 blur-3xl dark:from-indigo-700/15 dark:to-purple-700/15 animate-float-slow" style={{ animationDelay: '2s' }} />
 
           {/* 波浪背景 */}
           <div className="absolute inset-x-0 bottom-0 overflow-hidden">
-            <svg className="wave-animate w-[200%] h-24 sm:h-32 opacity-70 dark:opacity-40" viewBox="0 0 1800 160" preserveAspectRatio="none">
+            <svg className="wave-animate w-[200%] h-24 sm:h-32 opacity-60 dark:opacity-30" viewBox="0 0 1800 160" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="waveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.35" />
-                  <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.35" />
+                  <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0.3" />
                 </linearGradient>
               </defs>
               <path d="M0,64 C300,0 600,128 900,64 C1200,0 1500,128 1800,64 L1800,160 L0,160 Z" fill="url(#waveGradient)" />
             </svg>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
           <div className="text-center">
             <motion.div
-              className="flex items-center justify-center mb-6"
+              className="flex items-center justify-center mb-4 sm:mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
             >
               <motion.div
-                className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mr-4"
+                className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mr-3 sm:mr-4"
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 transition={{ type: 'spring', stiffness: 300 }}
               >
-                <span className="text-white font-bold text-2xl">LT</span>
+                <span className="text-white font-bold text-xl sm:text-2xl">LT</span>
               </motion.div>
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">
                 {t.home.hero_title}
               </h1>
             </motion.div>
             <motion.p
-              className="text-xl text-gray-600 dark:text-slate-300 mb-8 max-w-2xl mx-auto"
+              className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 mb-6 sm:mb-8 max-w-2xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
@@ -339,11 +339,11 @@ export default function Home() {
 
             {/* 顶部横幅：引导完善资料（不可关闭） */}
             {authUser && !isProfileComplete && (
-              <div className="w-full mb-8">
+              <div className="w-full mb-6 sm:mb-8">
                 <div className="mx-auto max-w-7xl">
-                  <div className="relative rounded-xl border border-blue-200/70 bg-blue-50/80 dark:bg-blue-900/20 dark:border-blue-800/50 backdrop-blur p-4 sm:p-5 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-sm">
+                  <div className="relative rounded-xl border border-blue-200/70 dark:border-blue-800/50 bg-blue-50/90 dark:bg-blue-900/25 backdrop-blur-md p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-sm flex-shrink-0">
                         <User className="w-5 h-5" />
                       </div>
                       <div className="min-w-0">
@@ -355,8 +355,8 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex-shrink-0 ml-4">
-                      <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <div className="flex-shrink-0 w-full sm:w-auto">
+                      <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
                         <Link href="/profile">{t.home.complete_profile}</Link>
                       </Button>
                     </div>
@@ -367,20 +367,20 @@ export default function Home() {
 
             {/* Hero CTA */}
             <motion.div
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-2"
+              className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-4 sm:mt-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
             >
               {!authUser ? (
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3 shadow-sm">
+                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-base sm:text-lg px-6 sm:px-8 py-2.5 sm:py-3 shadow-lg min-h-[44px]">
                     <Link href="/auth">{t.home.cta_signup}</Link>
                   </Button>
                 </motion.div>
               ) : (
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3 shadow-sm">
+                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-base sm:text-lg px-6 sm:px-8 py-2.5 sm:py-3 shadow-lg min-h-[44px]">
                     <Link href="/practice/shadowing">
                       <Play className="w-5 h-5 mr-2" />
                       {t.home.cta_start_learning}
@@ -389,7 +389,7 @@ export default function Home() {
                 </motion.div>
               )}
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button asChild variant="outline" size="lg" className="text-lg px-8 py-3 border-slate-300 dark:border-slate-700">
+                <Button asChild variant="outline" size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-2.5 sm:py-3 border-slate-300 dark:border-slate-700 min-h-[44px]">
                   <Link href="#quick-start">{t.home.cta_browse_features}</Link>
                 </Button>
               </motion.div>
@@ -397,7 +397,7 @@ export default function Home() {
 
             {/* 学习目标卡片（靠上、醒目显示，仅登录用户可见） */}
             {authUser && (
-              <div className="mt-8">
+              <div className="mt-6 sm:mt-8">
                 <GoalCard goals={profile?.goals} maxChars={500} variant="hero" />
               </div>
             )}
@@ -408,23 +408,23 @@ export default function Home() {
       {/* 每日任务（登录且有Shadowing权限才显示） */}
       {authUser && permissions.can_access_shadowing && (
         <FadeInWhenVisible>
-          <section className="py-8">
+          <section className="py-6 sm:py-8 lg:py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <motion.div
                 animate={daily?.item && daily?.phase !== 'cleared' && !daily?.today_done ? { scale: [1, 1.01, 1] } : {}}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               >
-                <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 shadow-lg backdrop-blur">
+                <Card className="bg-white/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 shadow-lg backdrop-blur">
                   <CardHeader>
-                    <CardTitle className="text-gray-900 dark:text-slate-100">{t.home.daily_title}</CardTitle>
-                    <CardDescription className="text-gray-600 dark:text-slate-400">
+                    <CardTitle className="text-slate-900 dark:text-slate-50 text-xl sm:text-2xl">{t.home.daily_title}</CardTitle>
+                    <CardDescription className="text-slate-600 dark:text-slate-300">
                       {t.home.daily_desc}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="flex flex-col gap-5">
+                  <CardContent className="flex flex-col gap-4 sm:gap-6">
                     {/* 提示设置目标语言 */}
                     {!profile?.target_langs?.[0] && (
-                      <div className="text-sm text-gray-600 dark:text-slate-400">
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
                         {t.home.set_target_language}
                         <Link href="/profile" className="text-blue-600 underline ml-1 dark:text-blue-400">{t.home.complete_profile}</Link>
                       </div>
@@ -432,17 +432,17 @@ export default function Home() {
 
                     {/* 任务 1：主目标语言 Shadowing */}
                     {profile?.target_langs?.[0] && (
-                      <div className="flex items-start justify-between gap-6">
-                        <div className="flex items-start gap-4 min-w-0 flex-1">
-                          <div className={`flex-shrink-0 w-16 h-16 rounded-xl ${daily?.today_done ? 'bg-gray-200 text-gray-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-blue-500 to-indigo-500 text-white'} flex items-center justify-center text-xl font-bold`} aria-label={daily?.today_done ? t.home.tasks_completed_badge : undefined}>
+                      <div className="flex items-start justify-between gap-4 sm:gap-6 pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
+                          <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl ${daily?.today_done ? 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-blue-500 to-indigo-500 text-white'} flex items-center justify-center text-lg sm:text-xl font-bold shadow-sm`} aria-label={daily?.today_done ? t.home.tasks_completed_badge : undefined}>
                             {daily?.item ? `L${daily.level}` : '--'}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className={`text-lg font-semibold truncate ${daily?.today_done ? 'text-gray-500 dark:text-slate-400' : 'text-gray-900 dark:text-slate-100'}`} title={daily?.item?.title || ''}>
+                            <div className={`text-base sm:text-lg font-semibold truncate ${daily?.today_done ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-50'}`} title={daily?.item?.title || ''}>
                               {daily?.item?.title || (daily?.phase === 'cleared' ? t.home.daily_cleared : t.home.daily_fetching.replace('{hint}', daily?.error ? `（${daily.error}）` : '...'))}
                             </div>
                             {daily?.item && (
-                              <div className="text-sm text-gray-600 dark:text-slate-400 mt-1 flex items-center flex-wrap gap-x-3 gap-y-1">
+                              <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 flex items-center flex-wrap gap-x-3 gap-y-1">
                                 <span>{t.home.daily_language}{daily.lang?.toUpperCase()}</span>
                                 {typeof daily.item.duration_ms === 'number' && (
                                   <span>{t.home.daily_duration.replace('{seconds}', String(Math.round((daily.item.duration_ms || 0) / 1000)))}</span>
@@ -451,17 +451,17 @@ export default function Home() {
                                   <span>{t.home.daily_length.replace('{tokens}', String(daily.item.tokens))}</span>
                                 )}
                                 {daily.item.cefr && <span>{t.home.daily_cefr.replace('{level}', daily.item.cefr)}</span>}
-                                {daily?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400">{t.home.daily_last_unfinished}</span>}
+                                {daily?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400 font-medium">{t.home.daily_last_unfinished}</span>}
                               </div>
                             )}
                           </div>
                         </div>
                         <div className="flex-shrink-0">
                           {daily?.today_done ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-900/30">{t.home.tasks_completed_badge}</span>
+                            <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 text-sm font-medium shadow-sm">{t.home.tasks_completed_badge}</span>
                           ) : daily?.item ? (
                             <Link
-                              className="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                              className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all min-h-[44px] text-sm sm:text-base font-medium"
                               href={`/practice/shadowing?lang=${daily.lang}&item=${daily.item.id}&autostart=1&src=daily`}
                             >
                               {t.home.daily_quick_start}
@@ -469,7 +469,7 @@ export default function Home() {
                             </Link>
                           ) : (
                             <Link
-                              className="inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                              className="inline-flex items-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shadow-sm min-h-[44px] text-sm sm:text-base font-medium"
                               href={profile?.target_langs?.[0] ? `/practice/shadowing?lang=${profile.target_langs[0] as 'zh' | 'ja' | 'en'}` : '/practice/shadowing'}
                             >
                               {t.home.daily_open_practice}
@@ -481,17 +481,17 @@ export default function Home() {
 
                     {/* 任务 2：次目标语言 Shadowing（如有） */}
                     {profile?.target_langs?.[1] && dailySecond && (
-                      <div className="flex items-start justify-between gap-6">
-                        <div className="flex items-start gap-4 min-w-0 flex-1">
-                          <div className={`flex-shrink-0 w-16 h-16 rounded-xl ${dailySecond?.today_done ? 'bg-gray-200 text-gray-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white'} flex items-center justify-center text-xl font-bold`} aria-label={dailySecond?.today_done ? t.home.tasks_completed_badge : undefined}>
+                      <div className="flex items-start justify-between gap-4 sm:gap-6 pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
+                          <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl ${dailySecond?.today_done ? 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white'} flex items-center justify-center text-lg sm:text-xl font-bold shadow-sm`} aria-label={dailySecond?.today_done ? t.home.tasks_completed_badge : undefined}>
                             {dailySecond?.item ? `L${dailySecond.level}` : '--'}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className={`text-lg font-semibold truncate ${dailySecond?.today_done ? 'text-gray-500 dark:text-slate-400' : 'text-gray-900 dark:text-slate-100'}`} title={dailySecond?.item?.title || ''}>
+                            <div className={`text-base sm:text-lg font-semibold truncate ${dailySecond?.today_done ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-50'}`} title={dailySecond?.item?.title || ''}>
                               {dailySecond?.item?.title || (dailySecond?.phase === 'cleared' ? t.home.daily_cleared : t.home.daily_fetching.replace('{hint}', dailySecond?.error ? `（${dailySecond.error}）` : '...'))}
                             </div>
                             {dailySecond?.item && (
-                              <div className="text-sm text-gray-600 dark:text-slate-400 mt-1 flex items-center flex-wrap gap-x-3 gap-y-1">
+                              <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 flex items-center flex-wrap gap-x-3 gap-y-1">
                                 <span>{t.home.daily_language}{dailySecond.lang?.toUpperCase()}</span>
                                 {typeof dailySecond.item.duration_ms === 'number' && (
                                   <span>{t.home.daily_duration.replace('{seconds}', String(Math.round((dailySecond.item.duration_ms || 0) / 1000)))}</span>
@@ -500,17 +500,17 @@ export default function Home() {
                                   <span>{t.home.daily_length.replace('{tokens}', String(dailySecond.item.tokens))}</span>
                                 )}
                                 {dailySecond.item.cefr && <span>{t.home.daily_cefr.replace('{level}', dailySecond.item.cefr)}</span>}
-                                {dailySecond?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400">{t.home.daily_last_unfinished}</span>}
+                                {dailySecond?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400 font-medium">{t.home.daily_last_unfinished}</span>}
                               </div>
                             )}
                           </div>
                         </div>
                         <div className="flex-shrink-0">
                           {dailySecond?.today_done ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-900/30">{t.home.tasks_completed_badge}</span>
+                            <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 text-sm font-medium shadow-sm">{t.home.tasks_completed_badge}</span>
                           ) : dailySecond?.item ? (
                             <Link
-                              className="inline-flex items-center px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
+                              className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg transition-all min-h-[44px] text-sm sm:text-base font-medium"
                               href={`/practice/shadowing?lang=${dailySecond.lang}&item=${dailySecond.item.id}&autostart=1&src=daily`}
                             >
                               {t.home.daily_quick_start}
@@ -518,7 +518,7 @@ export default function Home() {
                             </Link>
                           ) : (
                             <Link
-                              className="inline-flex items-center px-4 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                              className="inline-flex items-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shadow-sm min-h-[44px] text-sm sm:text-base font-medium"
                               href={profile?.target_langs?.[1] ? `/practice/shadowing?lang=${profile.target_langs[1] as 'zh' | 'ja' | 'en'}` : '/practice/shadowing'}
                             >
                               {t.home.daily_open_practice}
@@ -529,25 +529,25 @@ export default function Home() {
                     )}
 
                     {/* 任务 3：生词复习 */}
-                    <div className="flex items-center justify-between gap-6">
-                      <div className="flex items-center gap-4 min-w-0 flex-1">
-                        <div className={`flex-shrink-0 w-16 h-16 rounded-xl ${dueCount === 0 ? 'bg-gray-200 text-gray-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-emerald-500 to-green-600 text-white'} flex items-center justify-center text-xl font-bold`} aria-label={dueCount === 0 ? t.home.tasks_completed_badge : undefined}>
+                    <div className="flex items-center justify-between gap-4 sm:gap-6 pt-2 border-t border-slate-200 dark:border-slate-700">
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                        <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl ${dueCount === 0 ? 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-emerald-500 to-green-600 text-white'} flex items-center justify-center text-lg sm:text-xl font-bold shadow-sm`} aria-label={dueCount === 0 ? t.home.tasks_completed_badge : undefined}>
                           📚
                         </div>
                         <div className="min-w-0">
-                          <div className={`text-lg font-semibold truncate ${dueCount === 0 ? 'text-gray-500 dark:text-slate-400' : 'text-gray-900 dark:text-slate-100'}`}>{t.home.tasks_vocab_title}</div>
-                          <div className="text-sm text-gray-600 dark:text-slate-400 mt-1">
+                          <div className={`text-base sm:text-lg font-semibold truncate ${dueCount === 0 ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-50'}`}>{t.home.tasks_vocab_title}</div>
+                          <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5">
                             {dueCount > 0 ? t.home.tasks_vocab_due.replace('{count}', String(dueCount)) : t.home.tasks_vocab_done}
                           </div>
                         </div>
                       </div>
                       <div className="flex-shrink-0">
                         {dueCount > 0 ? (
-                          <Link className="inline-flex items-center px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm" href="/vocab">
+                          <Link className="inline-flex items-center px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-md hover:shadow-lg transition-all min-h-[44px] text-sm sm:text-base font-medium" href="/vocab">
                             {t.home.tasks_go_review}
                           </Link>
                         ) : (
-                          <span className="inline-flex items-center px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-900/30">{t.home.tasks_completed_badge}</span>
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 text-sm font-medium shadow-sm">{t.home.tasks_completed_badge}</span>
                         )}
                       </div>
                     </div>
@@ -562,14 +562,14 @@ export default function Home() {
       {/* 学习统计 */}
       {authUser && (
         <FadeInWhenVisible>
-          <section className="py-12 bg-white/50 dark:bg-white/0">
+          <section className="py-8 sm:py-12 lg:py-16 bg-white/50 dark:bg-white/0">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-2">{t.home.learn_overview}</h2>
-                <p className="text-gray-600 dark:text-slate-400">{t.home.learn_overview_desc}</p>
+              <div className="text-center mb-6 sm:mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50 mb-2">{t.home.learn_overview}</h2>
+                <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300">{t.home.learn_overview_desc}</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {progressData.map((item, index) => {
                   const displayValue = index === 0 ? animatedStudyTime : index === 1 ? animatedWeekDays : animatedVocab;
                   return (
@@ -578,35 +578,35 @@ export default function Home() {
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.3 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      transition={{ duration: 0.6, delay: index * 0.1, ease: [0.25, 0.1, 0.25, 1] }}
                     >
                       <motion.div whileHover={{ y: -5 }} transition={{ type: 'spring', stiffness: 300 }}>
-                        <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 shadow-lg backdrop-blur">
-                          <CardContent className="p-6">
+                        <Card className="bg-white/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-shadow backdrop-blur">
+                          <CardContent className="p-5 sm:p-6">
                             <div className="flex items-center justify-between mb-4">
-                              <div>
-                                <p className="text-sm font-medium text-gray-600 dark:text-slate-400">{item.label}</p>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">{item.label}</p>
+                                <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50">
                                   {displayValue} / {item.total} {item.unit}
                                 </p>
                               </div>
                               <motion.div
-                                className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center"
+                                className="w-11 h-11 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0 ml-3"
                                 whileHover={{ scale: 1.1, rotate: 10 }}
                                 transition={{ type: 'spring', stiffness: 400 }}
                               >
-                                {index === 0 && <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
-                                {index === 1 && <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />}
-                                {index === 2 && <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />}
+                                {index === 0 && <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />}
+                                {index === 1 && <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />}
+                                {index === 2 && <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />}
                               </motion.div>
                             </div>
                             <motion.div
                               initial={{ width: 0 }}
                               whileInView={{ width: '100%' }}
                               viewport={{ once: true }}
-                              transition={{ duration: 1, delay: index * 0.1 + 0.3 }}
+                              transition={{ duration: 1, delay: index * 0.1 + 0.3, ease: [0.25, 0.1, 0.25, 1] }}
                             >
-                              <Progress value={(displayValue / item.total) * 100} className="h-2" />
+                              <Progress value={(displayValue / item.total) * 100} className="h-2.5" />
                             </motion.div>
                           </CardContent>
                         </Card>
@@ -622,16 +622,16 @@ export default function Home() {
 
       {/* 快速入口 */}
       <FadeInWhenVisible>
-        <section id="quick-start" className="py-16">
+        <section id="quick-start" className="py-12 sm:py-16 lg:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-4">{t.home.quick_start}</h2>
-              <p className="text-lg text-gray-600 dark:text-slate-400 max-w-2xl mx-auto">
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50 mb-3 sm:mb-4">{t.home.quick_start}</h2>
+              <p className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
                 {t.home.quick_start_desc}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {quickAccessItems.map(
                 (item, index) =>
                   item.show && (
@@ -640,7 +640,7 @@ export default function Home() {
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
                       viewport={{ once: true, amount: 0.2 }}
-                      transition={{ duration: 0.5, delay: index * 0.05 }}
+                      transition={{ duration: 0.6, delay: index * 0.05, ease: [0.25, 0.1, 0.25, 1] }}
                     >
                       <Link
                         href={item.href}
@@ -648,33 +648,34 @@ export default function Home() {
                         aria-label={`打开 ${item.title}`}
                       >
                         <motion.div
-                          whileHover={{ y: -8, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                          whileHover={{ y: -6, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04)' }}
                           whileTap={{ scale: 0.98 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
+                          transition={{ type: 'spring', stiffness: 300, duration: 0.3 }}
                         >
-                          <Card className="bg-white/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 shadow-lg backdrop-blur">
+                          <Card className="bg-white/90 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-shadow backdrop-blur">
                             <CardHeader className="pb-4">
-                              <div className="flex items-center space-x-4">
+                              <div className="flex items-center space-x-3 sm:space-x-4">
                                 <motion.div
-                                  className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center`}
+                                  className={`w-11 h-11 sm:w-12 sm:h-12 ${item.color} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm`}
                                   whileHover={{ scale: 1.15, rotate: 10 }}
-                                  transition={{ type: 'spring', stiffness: 400 }}
+                                  transition={{ type: 'spring', stiffness: 400, duration: 0.3 }}
                                 >
-                                  <item.icon className="w-6 h-6 text-white" />
+                                  <item.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                                 </motion.div>
-                                <div className="flex-1">
-                                  <CardTitle className="text-lg text-gray-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                <div className="flex-1 min-w-0">
+                                  <CardTitle className="text-base sm:text-lg text-slate-900 dark:text-slate-50 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                                     {item.title}
                                   </CardTitle>
-                                  <CardDescription className="text-sm text-gray-600 dark:text-slate-400">
+                                  <CardDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-0.5">
                                     {item.description}
                                   </CardDescription>
                                 </div>
                                 <motion.div
-                                  animate={{ x: [0, 5, 0] }}
+                                  animate={{ x: [0, 4, 0] }}
                                   transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                                  className="flex-shrink-0"
                                 >
-                                  <ArrowRight className="w-5 h-5 text-gray-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                                  <ArrowRight className="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
                                 </motion.div>
                               </div>
                             </CardHeader>
@@ -691,16 +692,16 @@ export default function Home() {
 
       {/* 功能特色 */}
       <FadeInWhenVisible>
-        <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+        <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">{t.home.why_choose}</h2>
-              <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+            <div className="text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">{t.home.why_choose}</h2>
+              <p className="text-base sm:text-lg lg:text-xl text-blue-50 max-w-2xl mx-auto">
                 {t.home.why_lead}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
               {[
                 { icon: Zap, title: t.home.smart_learning, desc: t.home.smart_learning_desc },
                 { icon: BarChart3, title: t.home.progress_tracking, desc: t.home.progress_tracking_desc },
@@ -712,17 +713,17 @@ export default function Home() {
                   initial={{ opacity: 0, y: 40 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.6, delay: index * 0.15 }}
+                  transition={{ duration: 0.6, delay: index * 0.15, ease: [0.25, 0.1, 0.25, 1] }}
                 >
                   <motion.div
-                    className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                    className="w-14 h-14 sm:w-16 sm:h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg"
                     whileHover={{ scale: 1.1, rotate: 5, backgroundColor: 'rgba(255,255,255,0.3)' }}
-                    transition={{ type: 'spring', stiffness: 300 }}
+                    transition={{ type: 'spring', stiffness: 300, duration: 0.3 }}
                   >
-                    <feature.icon className="w-8 h-8" />
+                    <feature.icon className="w-7 h-7 sm:w-8 sm:h-8" />
                   </motion.div>
-                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-blue-100">{feature.desc}</p>
+                  <h3 className="text-lg sm:text-xl font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-sm sm:text-base text-blue-50 leading-relaxed">{feature.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -732,28 +733,28 @@ export default function Home() {
 
       {/* 开始学习按钮 */}
       <FadeInWhenVisible>
-        <section className="py-16">
+        <section className="py-12 sm:py-16 lg:py-20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-4">{t.home.ready_to_start}</h2>
-            <p className="text-lg text-gray-600 dark:text-slate-400 mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50 mb-3 sm:mb-4">{t.home.ready_to_start}</h2>
+            <p className="text-sm sm:text-base lg:text-lg text-slate-600 dark:text-slate-300 mb-6 sm:mb-8">
               {t.home.ready_desc}
             </p>
             <motion.div
-              className="flex flex-col sm:flex-row gap-4 justify-center"
+              className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
             >
               {!authUser ? (
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
+                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-base sm:text-lg px-6 sm:px-8 py-2.5 sm:py-3 shadow-lg min-h-[44px]">
                     <Link href="/auth">{t.home.cta_signup}</Link>
                   </Button>
                 </motion.div>
               ) : (
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
+                  <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-base sm:text-lg px-6 sm:px-8 py-2.5 sm:py-3 shadow-lg min-h-[44px]">
                     <Link href="/practice/shadowing">
                       <Play className="w-5 h-5 mr-2" />
                       {t.home.cta_start_learning}
@@ -762,7 +763,7 @@ export default function Home() {
                 </motion.div>
               )}
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button asChild variant="outline" size="lg" className="text-lg px-8 py-3 border-slate-300 dark:border-slate-700">
+                <Button asChild variant="outline" size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-2.5 sm:py-3 border-slate-300 dark:border-slate-700 min-h-[44px]">
                   <Link href="/profile">{t.home.learn_more}</Link>
                 </Button>
               </motion.div>
