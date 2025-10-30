@@ -285,8 +285,7 @@ const tokenize = (text: string, language: Lang): string[] => {
       .toLowerCase()
       .replace(/[^a-z0-9\s'-]/g, ' ')
       .split(/\s+/)
-      .filter(Boolean)
-      .filter((w) => !EN_STOPWORDS.has(w));
+      .filter(Boolean);
   }
   // 韩语采用"非英文逐字"策略（MVP阶段足够）
   if (language === 'ko') {
@@ -463,6 +462,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const stopAtRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
   const iosUnlockedRef = useRef(false);
+  const isStartingRef = useRef(false);
   
   // 临时存储识别结果，只在录音真正停止时才提交
   const tempFinalTextRef = useRef<string>('');
@@ -682,6 +682,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     const langMap: Record<string, string> = { ja: 'ja-JP', zh: 'zh-CN', en: 'en-US', ko: 'ko-KR' };
     rec.lang = langMap[language] || 'en-US';
     rec.onstart = () => {
+      isStartingRef.current = false;
       setIsRecognizing(true);
       setDisplayText('');
       setFinalText('');
@@ -830,6 +831,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       }
     };
     rec.onend = () => {
+      isStartingRef.current = false;
       setIsRecognizing(false);
       clearSilenceTimer();
       const maybeResolve = () => {
@@ -866,18 +868,44 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     }
     
     try {
+      if (isStartingRef.current || isRecognizing) {
+        // 已在启动中或正在识别，避免重复调用
+        return;
+      }
+      isStartingRef.current = true;
       setDisplayText('');
       setFinalText('');
       tempFinalTextRef.current = '';
       tempCombinedTextRef.current = '';
       lastFinalTextRef.current = '';
-      recognitionRef.current.start();
+      try {
+        recognitionRef.current.start();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        // 避免在“已启动”情况下弹框，进行一次无提示的安全重试
+        if (msg && msg.toLowerCase().includes('already started')) {
+          try { recognitionRef.current.stop(); } catch {}
+          setTimeout(() => {
+            try {
+              if (!isRecognizing) {
+                recognitionRef.current?.start?.();
+              }
+            } catch {}
+          }, 350);
+          return;
+        }
+        throw err;
+      }
     } catch (error) {
       console.error('语音识别启动错误:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
-      alert(`无法开始语音识别：${errorMsg}\n\n请检查麦克风权限。`);
+      // 对于非“已启动”错误才提示用户
+      if (!errorMsg.toLowerCase().includes('already started')) {
+        alert(`无法开始语音识别：${errorMsg}\n\n请检查麦克风权限。`);
+      }
+      isStartingRef.current = false;
     }
-  }, [t.shadowing?.alert_messages?.speech_recognition_not_supported]);
+  }, [isRecognizing, t.shadowing?.alert_messages?.speech_recognition_not_supported]);
 
   const stop = useCallback(() => {
     try {
@@ -887,6 +915,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       // 立即清理状态
       clearSilenceTimer();
       setIsRecognizing(false);
+      isStartingRef.current = false;
       // 手动停止时也要提交结果，延迟到按钮状态更新后
       if (tempFinalTextRef.current) {
         setTimeout(() => {

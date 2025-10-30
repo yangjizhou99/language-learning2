@@ -36,6 +36,17 @@ export interface AlignmentResult {
 }
 
 /**
+ * 智能连接 token：
+ * - 若检测到包含英文字母的 token，则使用空格连接（英文保留单词空格）
+ * - 否则使用无分隔连接（适用于中日等字符级 token）
+ */
+function joinTokensSmart(tokens: Array<string | undefined>): string {
+  const safe = (tokens || []).filter((t): t is string => Boolean(t));
+  const hasLatin = safe.some((t) => /[A-Za-z]/.test(t));
+  return hasLatin ? safe.join(' ') : safe.join('');
+}
+
+/**
  * 计算编辑距离并返回操作路径
  */
 export function levenshteinWithAlignment(target: string[], said: string[]): {
@@ -226,7 +237,7 @@ export function analyzeAlignment(
       case 'I': {
         // 插入操作 -> 多读
         const actualTokens = group.map(op => op.saidToken).filter(Boolean);
-        const actualText = actualTokens.join('');
+        const actualText = joinTokensSmart(actualTokens);
         
         extra.push({
           type: 'extra',
@@ -239,7 +250,7 @@ export function analyzeAlignment(
       case 'D': {
         // 删除操作 -> 少读
         const expectedTokens = group.map(op => op.targetToken).filter(Boolean);
-        const expectedText = expectedTokens.join('');
+        const expectedText = joinTokensSmart(expectedTokens);
         
         // 查找对应的 ACU 单元
         const acuUnit = findAcuUnit(
@@ -254,7 +265,7 @@ export function analyzeAlignment(
         if (acuUnit && acuUnit.span) {
           // 如果ACU单元存在，尝试找到用户实际读到的部分
           const acuSpan = acuUnit.span;
-          const userSaidText = said.join('');
+          const userSaidText = joinTokensSmart(said);
           
           // 检查用户是否读了ACU单元的部分内容
           for (let i = 0; i < acuSpan.length; i++) {
@@ -280,8 +291,8 @@ export function analyzeAlignment(
         // 替换操作 -> 读错
         const expectedTokens = group.map(op => op.targetToken).filter(Boolean);
         const actualTokens = group.map(op => op.saidToken).filter(Boolean);
-        const expectedText = expectedTokens.join('');
-        const actualText = actualTokens.join('');
+        const expectedText = joinTokensSmart(expectedTokens);
+        const actualText = joinTokensSmart(actualTokens);
         
         // 查找对应的 ACU 单元
         const acuUnit = findAcuUnit(
@@ -298,10 +309,10 @@ export function analyzeAlignment(
           const acuLength = acuUnit.span.length;
           if (actualText.length < acuLength) {
             // 如果用户读的内容比ACU单元短，尝试从用户输入中找到更长的匹配
-            const userInput = said.join('');
+            const userInput = joinTokensSmart(said);
             const startPos = firstOp.saidIdx || 0;
             const endPos = Math.min(startPos + acuLength, said.length);
-            fullActualText = said.slice(startPos, endPos).join('');
+            fullActualText = joinTokensSmart(said.slice(startPos, endPos));
           }
         }
         
