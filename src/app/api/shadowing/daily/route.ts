@@ -161,9 +161,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ lang, level, phase: 'cleared', message: '恭喜清空题库', today_done: todayDone });
     }
 
-    const seed = `${user.id}:${lang}:${new Date().toISOString().slice(0, 10)}`;
-    const idx = parseInt(crypto.createHash('sha1').update(seed).digest('hex').slice(0, 8), 16) % pool.length;
-    const raw = pool[idx] as Record<string, any>;
+    // 当日内固定题目：使用基于日期种子的 rawToday，避免完成后换题
+    const raw = rawToday as Record<string, any>;
     // 读取主题与小主题信息（如有）
     let theme: { id: string; title: string; desc?: string } | undefined;
     let subtopic: { id: string; title: string; one_line?: string } | undefined;
