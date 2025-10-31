@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { type AcuUnit } from '@/lib/acu-utils';
+import { toast } from 'sonner';
 
 interface AcuTextProps {
   text: string;
@@ -173,7 +174,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
           
           if (!isAdjacent || !isSameSentence) {
             // 跨句或不相邻，提示用户
-            alert(t.shadowing.acu_text.select_adjacent_units);
+            toast.error(t.shadowing.acu_text.select_adjacent_units);
             return prev;
           }
         }

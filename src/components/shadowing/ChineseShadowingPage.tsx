@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState, useCallback, useRef, useMemo, useDeferredValue, RefObject, startTransition } from 'react';
+import pLimit from 'p-limit';
 
 // 韩语词边界检测函数
 const isKoreanWordBoundary = (
@@ -99,6 +100,7 @@ import { getCached, setCached } from '@/lib/clientCache';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { loadFilters as loadShadowingFilters, saveFilters as saveShadowingFilters } from '@/lib/shadowingFilterStorage';
 import { deriveKanjiFuriganaSegments, sanitizeJapaneseReadingToHiragana } from '@/lib/japanese/furigana';
+import { performSimpleAnalysis } from '@/lib/shadowing/simpleAnalysis';
 
 // 题目数据类型
 interface ShadowingItem {
@@ -308,13 +310,35 @@ const mergeTimelineWithText = (
 };
 
 // 全局词汇搜索缓存，避免重复请求
+// 使用 LRU 缓存策略，限制最大条目数
+const MAX_CACHE_SIZE = 200; // 最大缓存条目数
 const globalVocabCache = new Map<string, { data: { entries?: Array<{ explanation?: any }> }; timestamp: number }>();
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7天缓存
 const pendingRequests = new Map<string, Promise<any>>(); // 请求去重
 
+// LRU 缓存清理：当缓存超过最大大小时，删除最旧的条目
+const cleanupLRUCache = () => {
+  if (globalVocabCache.size <= MAX_CACHE_SIZE) return;
+  
+  // 按时间戳排序，删除最旧的条目
+  const entries = Array.from(globalVocabCache.entries())
+    .sort((a, b) => a[1].timestamp - b[1].timestamp);
+  
+  const toDelete = entries.slice(0, globalVocabCache.size - MAX_CACHE_SIZE);
+  toDelete.forEach(([key]) => {
+    globalVocabCache.delete(key);
+  });
+};
+
 // 增强的词汇搜索函数，包含请求去重和持久化缓存
-const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<HeadersInit>): Promise<any> => {
-  const cacheKey = word.toLowerCase().trim();
+// lang 参数用于区分不同语言的缓存
+const searchVocabWithCache = async (
+  word: string, 
+  lang: 'ja' | 'en' | 'zh' | 'ko',
+  getAuthHeaders: () => Promise<HeadersInit>
+): Promise<any> => {
+  // 缓存 key 包含语言代码，避免跨语言缓存冲突
+  const cacheKey = `vocab:${lang}:${word.toLowerCase().trim()}`;
   const now = Date.now();
   
   // 检查内存缓存
@@ -332,6 +356,7 @@ const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<
       if (now - timestamp < CACHE_DURATION) {
         // 更新内存缓存
         globalVocabCache.set(cacheKey, { data, timestamp });
+        cleanupLRUCache(); // 检查并清理缓存
         return data;
       }
     }
@@ -349,13 +374,14 @@ const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(
-        `/api/vocab/search?term=${encodeURIComponent(word)}&_t=${Date.now()}`,
+        `/api/vocab/search?term=${encodeURIComponent(word)}&lang=${lang}&_t=${Date.now()}`,
         { headers }
       );
       const data = await response.json();
       
       // 更新缓存
       globalVocabCache.set(cacheKey, { data, timestamp: now });
+      cleanupLRUCache(); // 检查并清理缓存
       
       // 更新sessionStorage缓存
       try {
@@ -377,6 +403,21 @@ const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<
   
   return requestPromise;
 };
+
+/**
+ * Shadowing 跟读练习页面 - 统一多语言实现
+ * 
+ * 此组件作为所有语言（日语、英语、中文、韩语）的统一实现，
+ * 通过 URL 参数 `lang` 和本地持久化来支持多语言切换。
+ * 虽然组件名为 `ChineseShadowingPage`，但实际上支持所有语言。
+ * 
+ * 主要功能：
+ * - 题库加载、筛选与搜索
+ * - 分步骤跟读流程（盲听 → 生词 → 原文+翻译 → 录音评分）
+ * - 音频控制与播放
+ * - 词汇查询与导入
+ * - 生词解释缓存
+ */
 export default function ShadowingPage() {
   const { t, language, setLanguageFromUserProfile } = useLanguage();
   const { permissions } = useUserPermissions();
@@ -398,23 +439,8 @@ export default function ShadowingPage() {
   }, []);
   
   
-  // 语言切换时清理缓存，避免不同语言间的缓存冲突
-  useEffect(() => {
-    globalVocabCache.clear();
-    pendingRequests.clear();
-    
-    // 清理sessionStorage中的词汇缓存
-    try {
-      const keys = Object.keys(sessionStorage);
-      keys.forEach(key => {
-        if (key.startsWith('vocab_cache_')) {
-          sessionStorage.removeItem(key);
-        }
-      });
-    } catch (e) {
-      // sessionStorage可能不可用，忽略错误
-    }
-  }, [lang]);
+  // 注意：由于缓存 key 已包含 lang，语言切换时不再需要清空缓存
+  // 这样可以避免跨语言切换时的"冷启动"问题
   const [level, setLevel] = useState<number | null>(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -1069,7 +1095,7 @@ export default function ShadowingPage() {
       // 增加防抖延迟到1500ms，进一步减少频繁请求
       tooltipTimerRef.current = setTimeout(async () => {
         try {
-          const data = await searchVocabWithCache(word, getAuthHeaders);
+          const data = await searchVocabWithCache(word, lang as 'ja' | 'en' | 'zh' | 'ko', getAuthHeaders);
           if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
             setLatestExplanation(data.entries[0].explanation);
           }
@@ -1276,7 +1302,7 @@ export default function ShadowingPage() {
       setExplanationLoading(true);
       try {
         // 清除缓存，强制重新获取
-        const key = word.toLowerCase().trim();
+        const key = `vocab:${currentItem?.lang || lang}:${word.toLowerCase().trim()}`;
         globalVocabCache.delete(key);
         try {
           const sessionKey = `vocab_cache_${key}`;
@@ -1285,7 +1311,7 @@ export default function ShadowingPage() {
           // sessionStorage 可能不可用，忽略
         }
 
-        const data = await searchVocabWithCache(word, getAuthHeaders);
+        const data = await searchVocabWithCache(word, (currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko', getAuthHeaders);
 
         if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
           const explanation = data.entries[0].explanation;
@@ -1319,7 +1345,7 @@ export default function ShadowingPage() {
         const fetchInitialExplanation = async () => {
           setExplanationLoading(true);
           try {
-            const data = await searchVocabWithCache(word, getAuthHeaders);
+            const data = await searchVocabWithCache(word, (currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko', getAuthHeaders);
             if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
               const explanation = data.entries[0].explanation;
               setLatestExplanation(explanation);
@@ -2539,7 +2565,7 @@ export default function ShadowingPage() {
   // 检查生词是否已有AI解释
   const checkExistingExplanation = async (word: string) => {
     try {
-      const data = await searchVocabWithCache(word, getAuthHeaders);
+      const data = await searchVocabWithCache(word, (currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko', getAuthHeaders);
       if (data?.entries && data.entries.length > 0) {
         const entry = data.entries[0];
         if (entry.explanation) {
@@ -2804,7 +2830,7 @@ export default function ShadowingPage() {
       // 优先使用 entry_ids（写回生词本），找不到再回退到 word_info
       let entryId: string | null = null;
       try {
-        const data = await searchVocabWithCache(word, getAuthHeaders);
+        const data = await searchVocabWithCache(word, (wordLang || currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko', getAuthHeaders);
         const entries = Array.isArray(data?.entries) ? data.entries : [];
         const matched = entries.find(
           (e: { id?: string; term?: string; lang?: string }) =>
@@ -2891,11 +2917,11 @@ export default function ShadowingPage() {
         }
       } else {
         const errorData = await response.json();
-        alert(`${t.shadowing.messages?.generate_explanation_failed || '生成解释失败，请重试'}：${errorData.error}`);
+        toast.error(`${t.shadowing.messages?.generate_explanation_failed || '生成解释失败，请重试'}：${errorData.error}`);
       }
     } catch (error) {
       console.error('生成解释失败:', error);
-      alert(t.shadowing.messages?.generate_explanation_failed || '生成解释失败，请重试');
+      toast.error(t.shadowing.messages?.generate_explanation_failed || '生成解释失败，请重试');
     } finally {
       setIsGeneratingExplanation(false);
       setGeneratingWord(null);
@@ -2920,7 +2946,7 @@ export default function ShadowingPage() {
 
       if (!textToScore) {
         console.error('没有找到转录文字');
-        alert(t.shadowing.no_recording_yet || '还没有录音');
+        toast.error(t.shadowing.no_recording_yet || '还没有录音');
         return;
       }
 
@@ -2928,7 +2954,7 @@ export default function ShadowingPage() {
       const originalText = currentItem.text;
 
       // 使用句子分析计算整体评分
-      const simpleAnalysis = performSimpleAnalysis(originalText, textToScore);
+      const simpleAnalysis = performSimpleAnalysis(originalText, textToScore, t);
       const { overallScore } = simpleAnalysis;
 
       // 确保准确率在0-1之间
@@ -2982,152 +3008,12 @@ export default function ShadowingPage() {
     } catch (error) {
       console.error('评分失败:', error);
       const errMsg = error instanceof Error ? error.message : (t.shadowing.unknown_error || '未知错误');
-      alert((t.shadowing.scoring_failed || '评分失败: {error}').replace('{error}', errMsg));
+      toast.error((t.shadowing.scoring_failed || '评分失败: {error}').replace('{error}', errMsg));
     } finally {
       setIsScoring(false);
     }
   };
 
-  // 简单直观的句子对比分析
-  const performSimpleAnalysis = (originalText: string, transcribedText: string) => {
-    // 检查是否为中文
-    const isChinese = /[\u4e00-\u9fff]/.test(originalText);
-
-    let originalSentences: string[];
-    let cleanTranscribed: string[];
-
-    if (isChinese) {
-      // 中文处理：按A:, B:分割对话
-      originalSentences = originalText
-        .split(/(?=[AB]:)/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      // 清理转录文本（中文）
-      cleanTranscribed = transcribedText
-        .replace(/[。！？、，\s]+/g, '')
-        .split('')
-        .filter((c) => c.length > 0);
-    } else {
-      // 英文处理：按A:, B:分割
-      originalSentences = originalText
-        .split(/(?=[A-Z]:)/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      // 清理转录文本（英文）
-      cleanTranscribed = transcribedText
-        .replace(/[.!?,\s]+/g, ' ')
-        .split(' ')
-        .map((w) => w.toLowerCase().trim())
-        .filter((w) => w.length > 0);
-    }
-
-    const sentenceAnalysis: Array<{
-      sentence: string;
-      status: 'correct' | 'partial' | 'missing';
-      issues: string[];
-      score: number;
-    }> = [];
-
-    // 分析每个句子
-    for (const sentence of originalSentences) {
-      let cleanSentence: string[];
-
-      if (isChinese) {
-        // 中文处理：按字符分割，移除角色标识符
-        cleanSentence = sentence
-          .replace(/^[AB]:\s*/, '') // 移除角色标识符
-          .replace(/[。！？、，\s]+/g, '')
-          .split('')
-          .filter((c) => c.length > 0);
-      } else {
-        // 英文处理：按单词分割
-        cleanSentence = sentence
-          .replace(/^[A-Z]:\s*/, '') // 移除角色标识符
-          .replace(/[.!?,\s]+/g, ' ')
-          .split(' ')
-          .map((w) => w.toLowerCase().trim())
-          .filter((w) => w.length > 0);
-      }
-
-      // 计算句子匹配度
-      const matchedItems = cleanSentence.filter((item) => cleanTranscribed.includes(item));
-
-      const matchRatio = cleanSentence.length > 0 ? matchedItems.length / cleanSentence.length : 0;
-
-      let status: 'correct' | 'partial' | 'missing';
-      const issues: string[] = [];
-
-      if (matchRatio >= 0.9) {
-        status = 'correct';
-      } else if (matchRatio >= 0.5) {
-        status = 'partial';
-        // 找出遗漏的内容
-        const missingItems = cleanSentence.filter((item) => !cleanTranscribed.includes(item));
-        if (missingItems.length > 0) {
-          if (isChinese) {
-            issues.push((t.shadowing.issue_missing_chars || '遗漏字符: {items}').replace('{items}', missingItems.join('')));
-          } else {
-            issues.push((t.shadowing.issue_missing_words || '遗漏单词: {items}').replace('{items}', missingItems.join(', ')));
-          }
-        }
-      } else {
-        status = 'missing';
-        issues.push(t.shadowing.issue_most_missing || '大部分内容未说出');
-      }
-
-      // 检查发音错误（仅英文）
-      if (!isChinese) {
-        const pronunciationErrors = checkPronunciationErrors(cleanSentence, cleanTranscribed);
-        if (pronunciationErrors.length > 0) {
-          issues.push(...pronunciationErrors);
-        }
-      }
-
-      sentenceAnalysis.push({
-        sentence: sentence.replace(/^[AB]:\s*/, ''), // 移除角色标识符
-        status,
-        issues,
-        score: Math.round(matchRatio * 100),
-      });
-    }
-
-    const overallScore =
-      sentenceAnalysis.length > 0
-        ? Math.round(
-            sentenceAnalysis.reduce((sum, s) => sum + s.score, 0) / sentenceAnalysis.length,
-          )
-        : 0;
-
-    return { sentenceAnalysis, overallScore };
-  };
-
-  // 检查发音错误
-  const checkPronunciationErrors = (originalWords: string[], transcribedWords: string[]) => {
-    const errors: string[] = [];
-
-    // 常见发音错误检查
-    const commonErrors = [
-      { original: 'today', error: 'tomorrow' },
-      { original: 'tomorrow', error: 'today' },
-      { original: 'no', error: 'now' },
-      { original: 'now', error: 'no' },
-      { original: 'it', error: 'is' },
-      { original: 'is', error: 'it' },
-    ];
-
-    for (const error of commonErrors) {
-      if (originalWords.includes(error.original) && transcribedWords.includes(error.error)) {
-        const msg = (t.shadowing.pronounced_as || '"{original}" 说成了 "{error}"')
-          .replace('{original}', error.original)
-          .replace('{error}', error.error);
-        errors.push(msg);
-      }
-    }
-
-    return errors;
-  };
 
   // 统一的完成并保存函数 - 整合session保存和练习结果记录
   const unifiedCompleteAndSave = async () => {
@@ -3264,6 +3150,15 @@ export default function ShadowingPage() {
       if (sessionResponse.ok) {
         const sessionData = await sessionResponse.json();
         setCurrentSession(sessionData.session);
+        
+        // 如果服务端返回了更新后的item状态，直接合并到本地状态
+        if (sessionData.item) {
+          setItems((prev) =>
+            prev.map((item) =>
+              item.id === currentItem.id ? { ...item, ...sessionData.item } : item,
+            ),
+          );
+        }
       } else {
         const errorText = await sessionResponse.text();
         console.error('保存练习session失败:', {
@@ -3315,30 +3210,28 @@ export default function ShadowingPage() {
         message += ` (已保存: ${details.join(', ')})`;
       }
 
-      alert(message);
+      toast.success(message);
 
       // 7. 清除相关缓存并刷新题库列表以确保数据同步
-      // 等待一小段时间确保数据库写入完成，然后清除缓存并刷新
-      setTimeout(async () => {
-        try {
-          // 清除shadowing:catalog相关的缓存
-          await fetch('/api/cache/invalidate', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              pattern: 'shadowing:catalog*',
-            }),
-          });
-        } catch (cacheError) {
-          console.warn('Failed to clear cache:', cacheError);
-        }
-        // 刷新题库列表
-        fetchItems();
-      }, 500);
+      // 直接清除缓存并刷新，不依赖 setTimeout 延迟
+      try {
+        // 清除shadowing:catalog相关的缓存
+        await fetch('/api/cache/invalidate', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            pattern: 'shadowing:catalog*',
+          }),
+        });
+      } catch (cacheError) {
+        console.warn('Failed to clear cache:', cacheError);
+      }
+      // 刷新题库列表
+      fetchItems();
     } catch (error) {
       console.error('Failed to save practice data:', error);
       // 即使保存失败，本地状态已经更新，用户体验不受影响
-      alert(t.shadowing.messages?.practice_completed_delayed_sync || '练习已完成，但部分数据同步可能延迟');
+      toast.warning(t.shadowing.messages?.practice_completed_delayed_sync || '练习已完成，但部分数据同步可能延迟');
     } finally {
       setSaving(false);
     }
@@ -3347,19 +3240,25 @@ export default function ShadowingPage() {
   // 批量获取词汇解释
   const batchFetchExplanations = async (words: string[]) => {
     const explanations: Record<string, any> = {};
+    const itemLang = (currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko';
     
     try {
-      // 并行获取所有词汇的解释
-      const promises = words.map(async (word) => {
-        try {
-          const data = await searchVocabWithCache(word, getAuthHeaders);
-          if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
-            explanations[word] = data.entries[0].explanation;
+      // 使用 p-limit 限制并发数为 5，避免过多并发请求导致抖动和失败
+      const limit = pLimit(5);
+      
+      // 并行获取所有词汇的解释，但限制并发数
+      const promises = words.map((word) =>
+        limit(async () => {
+          try {
+            const data = await searchVocabWithCache(word, itemLang, getAuthHeaders);
+            if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
+              explanations[word] = data.entries[0].explanation;
+            }
+          } catch (error) {
+            console.warn(`获取 ${word} 解释失败:`, error);
           }
-        } catch (error) {
-          console.warn(`获取 ${word} 解释失败:`, error);
-        }
-      });
+        })
+      );
       
       await Promise.all(promises);
     } catch (error) {
@@ -3372,7 +3271,7 @@ export default function ShadowingPage() {
   // 导入到生词本
   const importToVocab = async () => {
     if (selectedWords.length === 0) {
-      alert(t.shadowing.no_new_words_to_import || '没有新的生词可以导入');
+      toast.info(t.shadowing.no_new_words_to_import || '没有新的生词可以导入');
       return;
     }
 
@@ -3407,7 +3306,7 @@ export default function ShadowingPage() {
       });
 
       if (response.ok) {
-        alert((t.shadowing.import_success || '成功导入 {count} 个生词到生词本！').replace('{count}', String(entries.length)));
+        toast.success((t.shadowing.import_success || '成功导入 {count} 个生词到生词本！').replace('{count}', String(entries.length)));
 
         // 将本次选中的生词移动到之前的生词中
         setPreviousWords((prev) => [...prev, ...selectedWords]);
@@ -3440,11 +3339,11 @@ export default function ShadowingPage() {
         }
       } else {
         const errorData = await response.json();
-        alert((t.shadowing.import_failed || '导入失败: {error}').replace('{error}', String(errorData.error)));
+        toast.error((t.shadowing.import_failed || '导入失败: {error}').replace('{error}', String(errorData.error)));
       }
     } catch (error) {
       console.error('导入生词失败:', error);
-      alert((t.shadowing.import_failed || '导入失败: {error}').replace('{error}', String((error as Error)?.message || '')));
+      toast.error((t.shadowing.import_failed || '导入失败: {error}').replace('{error}', String((error as Error)?.message || '')));
     } finally {
       setIsImporting(false);
     }
@@ -3927,10 +3826,11 @@ export default function ShadowingPage() {
                         <Virtuoso
                           customScrollParent={mobileListScrollRef.current ?? undefined}
                           data={filteredItems}
-                          computeItemKey={(index, item) => (item as any).id}
+                          computeItemKey={(index, item) => (item as ShadowingItem).id}
                           increaseViewportBy={{ top: 200, bottom: 400 }}
+                          overscan={5}
                           itemContent={(index, item) => {
-                            const it = item as any;
+                            const it = item as ShadowingItem;
                             return (
                               <div
                                 key={it.id}
@@ -4118,6 +4018,9 @@ export default function ShadowingPage() {
                           size="lg"
                           onClick={saveDraft}
                           disabled={saving}
+                          aria-busy={saving}
+                          aria-disabled={saving}
+                          aria-label={saving ? '保存草稿中' : '保存草稿'}
                           className="h-14 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 hover:from-yellow-100 hover:to-amber-100 hover:border-yellow-300 rounded-xl shadow-sm hover:shadow-md transition-all"
                         >
                           <Save className="w-5 h-5 mr-2" />
@@ -4129,6 +4032,9 @@ export default function ShadowingPage() {
                             size="lg"
                             onClick={unifiedCompleteAndSave}
                             disabled={saving}
+                            aria-busy={saving}
+                            aria-disabled={saving}
+                            aria-label={saving ? '完成并保存中' : '完成练习'}
                             className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
                           >
                             <CheckCircle className="w-5 h-5 mr-2" />
@@ -5183,6 +5089,9 @@ export default function ShadowingPage() {
                           <Button
                             onClick={() => performScoring()}
                             disabled={isScoring}
+                            aria-busy={isScoring}
+                            aria-disabled={isScoring}
+                            aria-label={isScoring ? '评分进行中' : '开始评分'}
                             className={`h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all w-full ${highlightScore ? 'animate-pulse ring-2 ring-purple-400' : ''}`}
                           >
                             {isScoring ? (
@@ -5232,6 +5141,9 @@ export default function ShadowingPage() {
                         <Button
                           onClick={() => performScoring(currentTranscription)}
                           disabled={isScoring}
+                          aria-busy={isScoring}
+                          aria-disabled={isScoring}
+                          aria-label={isScoring ? '重新评分进行中' : '重新评分'}
                           variant="outline"
                           size="sm"
                           className="h-8 bg-white hover:bg-gray-50 border-gray-200 text-gray-700 rounded-lg"
@@ -5242,7 +5154,7 @@ export default function ShadowingPage() {
                         </Button>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="grid grid-cols-2 gap-4 mb-6" aria-live="polite" aria-atomic="true">
                         <div className="p-4 bg-white rounded-xl border border-green-200 shadow-sm">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
@@ -5336,6 +5248,7 @@ export default function ShadowingPage() {
                                   const simpleAnalysis = performSimpleAnalysis(
                                     scoringResult.originalText,
                                     scoringResult.transcription,
+                                    t,
                                   );
                                   const { sentenceAnalysis, overallScore } = simpleAnalysis;
 

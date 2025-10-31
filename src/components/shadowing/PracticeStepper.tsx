@@ -45,6 +45,7 @@ export default function PracticeStepper({
             key={s}
             role="tab"
             aria-selected={active}
+            aria-current={active ? 'step' : undefined}
             aria-label={ariaLabel}
             disabled={disabled}
             onClick={() => !disabled && onStepChange(s)}
