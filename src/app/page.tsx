@@ -58,7 +58,7 @@ export default function Home() {
 
   // 每日任务 - Shadowing（主语言/次语言）与复习数
   const [daily, setDaily] = useState<{
-    lang: 'zh' | 'ja' | 'en';
+    lang: 'zh' | 'ja' | 'en' | 'ko';
     level: number;
     phase?: 'unpracticed' | 'unfinished' | 'cleared';
     item?: {
@@ -74,7 +74,23 @@ export default function Home() {
     today_done?: boolean;
   } | null>(null);
   const [dailySecond, setDailySecond] = useState<{
-    lang: 'zh' | 'ja' | 'en';
+    lang: 'zh' | 'ja' | 'en' | 'ko';
+    level: number;
+    phase?: 'unpracticed' | 'unfinished' | 'cleared';
+    item?: {
+      id: string;
+      title: string;
+      duration_ms?: number;
+      tokens?: number;
+      cefr?: string;
+      theme?: { id: string; title: string; desc?: string };
+      subtopic?: { id: string; title: string; one_line?: string };
+    } | null;
+    error?: string;
+    today_done?: boolean;
+  } | null>(null);
+  const [dailyKorean, setDailyKorean] = useState<{
+    lang: 'ko';
     level: number;
     phase?: 'unpracticed' | 'unfinished' | 'cleared';
     item?: {
@@ -121,20 +137,26 @@ export default function Home() {
   useEffect(() => {
     (async () => {
       if (!authUser || !permissions.can_access_shadowing) return;
-      const preferred = (profile?.target_langs?.[0] as 'zh' | 'ja' | 'en') || null;
-      const second = (profile?.target_langs?.[1] as 'zh' | 'ja' | 'en') || null;
-      if (!preferred) { setDaily(null); setDailySecond(null); return; }
+      const preferred = (profile?.target_langs?.[0] as 'zh' | 'ja' | 'en' | 'ko') || null;
+      const second = (profile?.target_langs?.[1] as 'zh' | 'ja' | 'en' | 'ko') || null;
+      const hasKorean = profile?.target_langs?.includes('ko') || false;
+      const koreanIsThird = hasKorean && preferred !== 'ko' && second !== 'ko';
+      
+      if (!preferred) { setDaily(null); setDailySecond(null); setDailyKorean(null); return; }
       try {
         const headers = await getAuthHeaders();
-        const fetchDaily = async (lang: 'zh' | 'ja' | 'en') => {
+        const fetchDaily = async (lang: 'zh' | 'ja' | 'en' | 'ko') => {
           const r = await fetch(`/api/shadowing/daily?lang=${lang}`, { cache: 'no-store', credentials: 'include', headers });
           const d = await r.json();
           return { ok: r.ok, data: d } as const;
         };
-        const [pRes, sRes] = await Promise.all([
+        const promises = [
           fetchDaily(preferred),
           second ? fetchDaily(second) : Promise.resolve(null),
-        ]);
+          koreanIsThird ? fetchDaily('ko') : Promise.resolve(null),
+        ];
+        const [pRes, sRes, kRes] = await Promise.all(promises);
+        
         if (pRes?.ok) setDaily(pRes.data);
         else setDaily({ lang: preferred, level: 2, error: pRes?.data?.error || 'failed' });
 
@@ -144,9 +166,17 @@ export default function Home() {
         } else {
           setDailySecond(null);
         }
+
+        if (koreanIsThird && kRes) {
+          if (kRes.ok) setDailyKorean(kRes.data);
+          else setDailyKorean({ lang: 'ko', level: 2, error: kRes.data?.error || 'failed' });
+        } else {
+          setDailyKorean(null);
+        }
       } catch {
         setDaily({ lang: preferred, level: 2, error: 'network' });
         if (second) setDailySecond({ lang: second, level: 2, error: 'network' });
+        if (koreanIsThird) setDailyKorean({ lang: 'ko', level: 2, error: 'network' });
       }
     })();
   }, [authUser, permissions.can_access_shadowing, profile?.target_langs, getAuthHeaders]);
@@ -176,8 +206,11 @@ export default function Home() {
       (async () => {
         try {
           const headers = await getAuthHeaders();
-          const preferred = (profile?.target_langs?.[0] as 'zh' | 'ja' | 'en') || null;
-          const second = (profile?.target_langs?.[1] as 'zh' | 'ja' | 'en') || null;
+          const preferred = (profile?.target_langs?.[0] as 'zh' | 'ja' | 'en' | 'ko') || null;
+          const second = (profile?.target_langs?.[1] as 'zh' | 'ja' | 'en' | 'ko') || null;
+          const hasKorean = profile?.target_langs?.includes('ko') || false;
+          const koreanIsThird = hasKorean && preferred !== 'ko' && second !== 'ko';
+          
           if (preferred) {
             const r = await fetch(`/api/shadowing/daily?lang=${preferred}`, { cache: 'no-store', credentials: 'include', headers });
             const d = await r.json();
@@ -187,6 +220,11 @@ export default function Home() {
             const r2 = await fetch(`/api/shadowing/daily?lang=${second}`, { cache: 'no-store', credentials: 'include', headers });
             const d2 = await r2.json();
             setDailySecond(r2.ok ? d2 : { lang: second, level: 2, error: d2?.error || 'failed' });
+          }
+          if (koreanIsThird) {
+            const r3 = await fetch(`/api/shadowing/daily?lang=ko`, { cache: 'no-store', credentials: 'include', headers });
+            const d3 = await r3.json();
+            setDailyKorean(r3.ok ? d3 : { lang: 'ko', level: 2, error: d3?.error || 'failed' });
           }
           const vr = await fetch(`/api/vocab/review/due?page=1&limit=1`, { cache: 'no-store', credentials: 'include', headers });
           if (vr.ok) {
@@ -470,7 +508,7 @@ export default function Home() {
                           ) : (
                             <Link
                               className="inline-flex items-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shadow-sm min-h-[44px] text-sm sm:text-base font-medium"
-                              href={profile?.target_langs?.[0] ? `/practice/shadowing?lang=${profile.target_langs[0] as 'zh' | 'ja' | 'en'}` : '/practice/shadowing'}
+                              href={profile?.target_langs?.[0] ? `/practice/shadowing?lang=${profile.target_langs[0] as 'zh' | 'ja' | 'en' | 'ko'}` : '/practice/shadowing'}
                             >
                               {t.home.daily_open_practice}
                             </Link>
@@ -519,7 +557,7 @@ export default function Home() {
                           ) : (
                             <Link
                               className="inline-flex items-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shadow-sm min-h-[44px] text-sm sm:text-base font-medium"
-                              href={profile?.target_langs?.[1] ? `/practice/shadowing?lang=${profile.target_langs[1] as 'zh' | 'ja' | 'en'}` : '/practice/shadowing'}
+                              href={profile?.target_langs?.[1] ? `/practice/shadowing?lang=${profile.target_langs[1] as 'zh' | 'ja' | 'en' | 'ko'}` : '/practice/shadowing'}
                             >
                               {t.home.daily_open_practice}
                             </Link>
@@ -528,7 +566,56 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* 任务 3：生词复习 */}
+                    {/* 任务 3：韩语 Shadowing（如目标语言包含韩语但不在前两个位置） */}
+                    {dailyKorean && (
+                      <div className="flex items-start justify-between gap-4 sm:gap-6 pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
+                          <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl ${dailyKorean?.today_done ? 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-pink-500 to-rose-500 text-white'} flex items-center justify-center text-lg sm:text-xl font-bold shadow-sm`} aria-label={dailyKorean?.today_done ? t.home.tasks_completed_badge : undefined}>
+                            {dailyKorean?.item ? `L${dailyKorean.level}` : '--'}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className={`text-base sm:text-lg font-semibold truncate ${dailyKorean?.today_done ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-50'}`} title={dailyKorean?.item?.title || ''}>
+                              {dailyKorean?.item?.title || (dailyKorean?.phase === 'cleared' ? t.home.daily_cleared : t.home.daily_fetching.replace('{hint}', dailyKorean?.error ? `（${dailyKorean.error}）` : '...'))}
+                            </div>
+                            {dailyKorean?.item && (
+                              <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 flex items-center flex-wrap gap-x-3 gap-y-1">
+                                <span>{t.home.daily_language}{dailyKorean.lang?.toUpperCase()}</span>
+                                {typeof dailyKorean.item.duration_ms === 'number' && (
+                                  <span>{t.home.daily_duration.replace('{seconds}', String(Math.round((dailyKorean.item.duration_ms || 0) / 1000)))}</span>
+                                )}
+                                {dailyKorean.item.tokens != null && (
+                                  <span>{t.home.daily_length.replace('{tokens}', String(dailyKorean.item.tokens))}</span>
+                                )}
+                                {dailyKorean.item.cefr && <span>{t.home.daily_cefr.replace('{level}', dailyKorean.item.cefr)}</span>}
+                                {dailyKorean?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400 font-medium">{t.home.daily_last_unfinished}</span>}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          {dailyKorean?.today_done ? (
+                            <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 text-sm font-medium shadow-sm">{t.home.tasks_completed_badge}</span>
+                          ) : dailyKorean?.item ? (
+                            <Link
+                              className="inline-flex items-center px-4 py-2 rounded-lg bg-pink-600 text-white hover:bg-pink-700 shadow-md hover:shadow-lg transition-all min-h-[44px] text-sm sm:text-base font-medium"
+                              href={`/practice/shadowing?lang=${dailyKorean.lang}&item=${dailyKorean.item.id}&autostart=1&src=daily`}
+                            >
+                              {t.home.daily_quick_start}
+                              <Play className="w-4 h-4 ml-2" />
+                            </Link>
+                          ) : (
+                            <Link
+                              className="inline-flex items-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shadow-sm min-h-[44px] text-sm sm:text-base font-medium"
+                              href="/practice/shadowing?lang=ko"
+                            >
+                              {t.home.daily_open_practice}
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 任务 4：生词复习 */}
                     <div className="flex items-center justify-between gap-4 sm:gap-6 pt-2 border-t border-slate-200 dark:border-slate-700">
                       <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                         <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl ${dueCount === 0 ? 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-emerald-500 to-green-600 text-white'} flex items-center justify-center text-lg sm:text-xl font-bold shadow-sm`} aria-label={dueCount === 0 ? t.home.tasks_completed_badge : undefined}>

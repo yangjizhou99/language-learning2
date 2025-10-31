@@ -134,7 +134,7 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
         rafRef.current = null;
       }
     };
-  }, [audioRef.current]);
+  }, [audioUrl]); // 使用 audioUrl 作为依赖，而不是 audioRef.current
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -287,6 +287,7 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
             onClick={() => skipTime(-15)}
             className="h-10 px-3 rounded-xl bg-white hover:bg-blue-50 border-blue-200"
             title="后退15秒"
+            aria-label="后退15秒"
           >
             <SkipBack className="w-4 h-4 mr-1" />
             <span className="text-xs">-15s</span>
@@ -298,6 +299,7 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
             onClick={() => skipTime(15)}
             className="h-10 px-3 rounded-xl bg-white hover:bg-blue-50 border-blue-200"
             title="前进15秒"
+            aria-label="前进15秒"
           >
             <span className="text-xs">+15s</span>
             <SkipForward className="w-4 h-4 ml-1" />
@@ -309,6 +311,7 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
             onClick={resetAudio}
             className="h-10 px-3 rounded-xl bg-white hover:bg-blue-50 border-blue-200"
             title="重新开始"
+            aria-label="重置音频到开始位置"
           >
             <RotateCcw className="w-4 h-4 mr-1" />
             <span className="text-xs hidden sm:inline">重置</span>
@@ -319,7 +322,7 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-600 font-medium">倍速</span>
           <Select value={playbackRate.toString()} onValueChange={handleRateChange}>
-            <SelectTrigger className="h-9 w-[88px] bg-white border-blue-200 text-sm">
+            <SelectTrigger className="h-9 w-[88px] bg-white border-blue-200 text-sm" aria-label="选择播放速度">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState, useCallback, useRef, useMemo, useDeferredValue, RefObject, startTransition } from 'react';
+import pLimit from 'p-limit';
 
 // 韩语词边界检测函数
 const isKoreanWordBoundary = (
@@ -70,16 +71,8 @@ import CollapsibleFilterSection from './CollapsibleFilterSection';
 import CompactStatsCards from './CompactStatsCards';
 import EnhancedAudioPlayer, { type EnhancedAudioPlayerRef } from './EnhancedAudioPlayer';
 import SentenceInlinePlayer from './SentenceInlinePlayer';
-import DesktopThreeColumnLayout from './DesktopThreeColumnLayout';
 const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
-import ShortcutsHelpModal from './ShortcutsHelpModal';
-import DesktopLayout from './DesktopLayout';
-import { useKeyboardShortcuts, type KeyboardShortcut } from '@/hooks/useKeyboardShortcuts';
-import { useScrollDirection } from '@/hooks/useScrollDirection';
-import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import CollapsibleCard from './CollapsibleCard';
-import FloatingActionButtons from './FloatingActionButtons';
-import BottomNavBar from './BottomNavBar';
 // import { getAuthHeaders } from "@/lib/supabase";
 import {
   Shuffle,
@@ -107,6 +100,7 @@ import { getCached, setCached } from '@/lib/clientCache';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { loadFilters as loadShadowingFilters, saveFilters as saveShadowingFilters } from '@/lib/shadowingFilterStorage';
 import { deriveKanjiFuriganaSegments, sanitizeJapaneseReadingToHiragana } from '@/lib/japanese/furigana';
+import { performSimpleAnalysis } from '@/lib/shadowing/simpleAnalysis';
 
 // 题目数据类型
 interface ShadowingItem {
@@ -316,13 +310,35 @@ const mergeTimelineWithText = (
 };
 
 // 全局词汇搜索缓存，避免重复请求
+// 使用 LRU 缓存策略，限制最大条目数
+const MAX_CACHE_SIZE = 200; // 最大缓存条目数
 const globalVocabCache = new Map<string, { data: { entries?: Array<{ explanation?: any }> }; timestamp: number }>();
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7天缓存
 const pendingRequests = new Map<string, Promise<any>>(); // 请求去重
 
+// LRU 缓存清理：当缓存超过最大大小时，删除最旧的条目
+const cleanupLRUCache = () => {
+  if (globalVocabCache.size <= MAX_CACHE_SIZE) return;
+  
+  // 按时间戳排序，删除最旧的条目
+  const entries = Array.from(globalVocabCache.entries())
+    .sort((a, b) => a[1].timestamp - b[1].timestamp);
+  
+  const toDelete = entries.slice(0, globalVocabCache.size - MAX_CACHE_SIZE);
+  toDelete.forEach(([key]) => {
+    globalVocabCache.delete(key);
+  });
+};
+
 // 增强的词汇搜索函数，包含请求去重和持久化缓存
-const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<HeadersInit>): Promise<any> => {
-  const cacheKey = word.toLowerCase().trim();
+// lang 参数用于区分不同语言的缓存
+const searchVocabWithCache = async (
+  word: string, 
+  lang: 'ja' | 'en' | 'zh' | 'ko',
+  getAuthHeaders: () => Promise<HeadersInit>
+): Promise<any> => {
+  // 缓存 key 包含语言代码，避免跨语言缓存冲突
+  const cacheKey = `vocab:${lang}:${word.toLowerCase().trim()}`;
   const now = Date.now();
   
   // 检查内存缓存
@@ -340,6 +356,7 @@ const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<
       if (now - timestamp < CACHE_DURATION) {
         // 更新内存缓存
         globalVocabCache.set(cacheKey, { data, timestamp });
+        cleanupLRUCache(); // 检查并清理缓存
         return data;
       }
     }
@@ -357,13 +374,14 @@ const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(
-        `/api/vocab/search?term=${encodeURIComponent(word)}&_t=${Date.now()}`,
+        `/api/vocab/search?term=${encodeURIComponent(word)}&lang=${lang}&_t=${Date.now()}`,
         { headers }
       );
       const data = await response.json();
       
       // 更新缓存
       globalVocabCache.set(cacheKey, { data, timestamp: now });
+      cleanupLRUCache(); // 检查并清理缓存
       
       // 更新sessionStorage缓存
       try {
@@ -385,6 +403,21 @@ const searchVocabWithCache = async (word: string, getAuthHeaders: () => Promise<
   
   return requestPromise;
 };
+
+/**
+ * Shadowing 跟读练习页面 - 统一多语言实现
+ * 
+ * 此组件作为所有语言（日语、英语、中文、韩语）的统一实现，
+ * 通过 URL 参数 `lang` 和本地持久化来支持多语言切换。
+ * 虽然组件名为 `ChineseShadowingPage`，但实际上支持所有语言。
+ * 
+ * 主要功能：
+ * - 题库加载、筛选与搜索
+ * - 分步骤跟读流程（盲听 → 生词 → 原文+翻译 → 录音评分）
+ * - 音频控制与播放
+ * - 词汇查询与导入
+ * - 生词解释缓存
+ */
 export default function ShadowingPage() {
   const { t, language, setLanguageFromUserProfile } = useLanguage();
   const { permissions } = useUserPermissions();
@@ -406,23 +439,8 @@ export default function ShadowingPage() {
   }, []);
   
   
-  // 语言切换时清理缓存，避免不同语言间的缓存冲突
-  useEffect(() => {
-    globalVocabCache.clear();
-    pendingRequests.clear();
-    
-    // 清理sessionStorage中的词汇缓存
-    try {
-      const keys = Object.keys(sessionStorage);
-      keys.forEach(key => {
-        if (key.startsWith('vocab_cache_')) {
-          sessionStorage.removeItem(key);
-        }
-      });
-    } catch (e) {
-      // sessionStorage可能不可用，忽略错误
-    }
-  }, [lang]);
+  // 注意：由于缓存 key 已包含 lang，语言切换时不再需要清空缓存
+  // 这样可以避免跨语言切换时的"冷启动"问题
   const [level, setLevel] = useState<number | null>(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -1053,8 +1071,8 @@ export default function ShadowingPage() {
       (wordExplanations?.[word]?.pronunciation) ||
       (explanationCache?.[word]?.pronunciation);
     const shouldRuby = (
-      // 移动端第4步（日语）强制仅汉字注音显示
-      ((lang === 'ja') && actualIsMobile && step === 4 && !!pron) ||
+      // 步骤4（日语）强制仅汉字注音显示
+      ((lang === 'ja') && step === 4 && !!pron) ||
       // 其他情况走用户开关
       ((lang === 'zh' || lang === 'ja' || lang === 'ko') && showRubyPronunciation && !!pron)
     );
@@ -1077,7 +1095,7 @@ export default function ShadowingPage() {
       // 增加防抖延迟到1500ms，进一步减少频繁请求
       tooltipTimerRef.current = setTimeout(async () => {
         try {
-          const data = await searchVocabWithCache(word, getAuthHeaders);
+          const data = await searchVocabWithCache(word, lang as 'ja' | 'en' | 'zh' | 'ko', getAuthHeaders);
           if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
             setLatestExplanation(data.entries[0].explanation);
           }
@@ -1152,7 +1170,7 @@ export default function ShadowingPage() {
                    hover:shadow-md active:scale-95 
                    transition-all duration-150
                    ${isSpeaking ? 'animate-pulse ring-2 ring-yellow-400' : ''}
-                   ${actualIsMobile ? 'touch-manipulation select-none' : ''}`}
+                   touch-manipulation select-none`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onTouchStart={(e) => {
@@ -1164,29 +1182,8 @@ export default function ShadowingPage() {
           e.preventDefault();
           e.stopPropagation();
           
-          // 移动端：先显示意思，延迟触发发音
-          if (actualIsMobile) {
-            // 检查是否点击的是同一个词
-            if (mobileExplanation?.word === word) {
-              // 如果是同一个词，关闭解释
-              setMobileExplanation(null);
-            } else {
-              // 如果是不同的词，显示新词的解释
-              setMobileExplanation({
-                word,
-                explanation: latestExplanation || { gloss_native: '已选择的生词' },
-                fromVocab,
-                vocabId,
-              });
-            }
-            // 延迟触发发音，使用与生词模块相同的发音函数
-            setTimeout(() => {
-              speakWord(word, currentItem?.lang || 'ko');
-            }, 200);
-          } else {
-            // 桌面端：只触发发音
-            handleClick(e);
-          }
+          // 统一处理：只触发发音
+          handleClick(e);
         }}
         title={`点击发音: ${word}`}
       >
@@ -1222,8 +1219,8 @@ export default function ShadowingPage() {
         ) : (
           <span className="bg-yellow-200">{children}</span>
         )}
-        {showTooltip && !actualIsMobile && (
-          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg w-32 z-50">
+        {showTooltip && (
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg w-32 z-50 hidden md:block">
             <div className="flex justify-between items-start mb-1">
               <span>{tooltipText}</span>
               {fromVocab && onRefresh && (
@@ -1305,7 +1302,7 @@ export default function ShadowingPage() {
       setExplanationLoading(true);
       try {
         // 清除缓存，强制重新获取
-        const key = word.toLowerCase().trim();
+        const key = `vocab:${currentItem?.lang || lang}:${word.toLowerCase().trim()}`;
         globalVocabCache.delete(key);
         try {
           const sessionKey = `vocab_cache_${key}`;
@@ -1314,7 +1311,7 @@ export default function ShadowingPage() {
           // sessionStorage 可能不可用，忽略
         }
 
-        const data = await searchVocabWithCache(word, getAuthHeaders);
+        const data = await searchVocabWithCache(word, (currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko', getAuthHeaders);
 
         if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
           const explanation = data.entries[0].explanation;
@@ -1348,7 +1345,7 @@ export default function ShadowingPage() {
         const fetchInitialExplanation = async () => {
           setExplanationLoading(true);
           try {
-            const data = await searchVocabWithCache(word, getAuthHeaders);
+            const data = await searchVocabWithCache(word, (currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko', getAuthHeaders);
             if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
               const explanation = data.entries[0].explanation;
               setLatestExplanation(explanation);
@@ -1425,8 +1422,9 @@ export default function ShadowingPage() {
   const [saving, setSaving] = useState(false);
 
   // UI 状态
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
+  // 统一侧边栏状态：所有设备都使用抽屉式
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { actualIsMobile } = useMobile();
   const [isPlaying, setIsPlaying] = useState(false);
   const audioPlayerRef = useRef<EnhancedAudioPlayerRef | null>(null);
   const mainAudioContainerRef = useRef<HTMLDivElement | null>(null);
@@ -1488,10 +1486,10 @@ export default function ShadowingPage() {
   // 步骤切换时的联动：自动开/关生词模式与翻译偏好
   useEffect(() => {
     if (!currentItem) return;
-    // 只在第3步开启生词模式，其余步骤关闭
-    setIsVocabMode(step === 3);
+    // 只在第2步开启生词模式，其余步骤关闭
+    setIsVocabMode(step === 2);
 
-    if (step === 2) {
+    if (step === 3) {
       setShowTranslation(true);
       const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
       const uiLang = (language as 'en' | 'ja' | 'zh' | 'ko');
@@ -1519,7 +1517,7 @@ export default function ShadowingPage() {
     if (step === 1) {
       setHighlightPlay(true);
       timeoutId = window.setTimeout(() => setHighlightPlay(false), 2000);
-    } else if (step === 3) {
+    } else if (step === 2) {
       setHighlightVocab(true);
       timeoutId = window.setTimeout(() => setHighlightVocab(false), 2000);
     } else if (step === 4) {
@@ -1534,29 +1532,6 @@ export default function ShadowingPage() {
   // 认证头由 useAuth 提供的 getAuthHeaders 统一处理
 
   // 重复定义的 loadThemes/loadSubtopics 已移除（保留下方新版本）
-  // 获取推荐等级
-  const fetchRecommendedLevel = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      let headers = await getAuthHeaders();
-      let response = await fetch(`/api/shadowing/recommended?lang=${lang}`, { headers });
-      if (response.status === 401) {
-        try {
-          await supabase.auth.refreshSession();
-          headers = await getAuthHeaders();
-          response = await fetch(`/api/shadowing/recommended?lang=${lang}`, { headers });
-        } catch {}
-      }
-      if (response.ok) {
-        const data = await response.json();
-        setRecommendedLevel(data.recommended);
-      }
-    } catch (error) {
-      console.error('Failed to fetch recommended level:', error);
-    }
-  }, [lang, user, getAuthHeaders]);
-
   // 获取题库列表
   const fetchItems = useCallback(async () => {
     // 取消之前的请求
@@ -1644,30 +1619,50 @@ export default function ShadowingPage() {
       const params = new URLSearchParams();
       if (lang) params.set('lang', lang);
       if (level) params.set('level', level?.toString() || '');
-      const response = await fetch(`/api/admin/shadowing/themes?${params.toString()}`, { credentials: 'include' });
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/shadowing/themes?${params.toString()}`, { 
+        headers,
+        credentials: 'include' 
+      });
       if (response.ok) {
         const data = await response.json();
         setThemes((data.items || data.themes) ?? []);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to load themes:', response.status, errorText);
+        setThemes([]);
       }
     } catch (error) {
       console.error('Failed to load themes:', error);
+      setThemes([]);
     }
-  }, [lang, level]);
+  }, [lang, level, getAuthHeaders]);
 
   // 加载某主题下的小主题
   const loadSubtopics = useCallback(async (themeId: string) => {
     try {
       const params = new URLSearchParams();
       params.set('theme_id', themeId);
-      const response = await fetch(`/api/admin/shadowing/subtopics?${params.toString()}`, { credentials: 'include' });
+      if (lang) params.set('lang', lang);
+      if (level) params.set('level', level?.toString() || '');
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/shadowing/subtopics?${params.toString()}`, { 
+        headers,
+        credentials: 'include' 
+      });
       if (response.ok) {
         const data = await response.json();
         setSubtopics((data.items || data.subtopics) ?? []);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to load subtopics:', response.status, errorText);
+        setSubtopics([]);
       }
     } catch (error) {
       console.error('Failed to load subtopics:', error);
+      setSubtopics([]);
     }
-  }, []);
+  }, [lang, level, getAuthHeaders]);
 
   // 鉴权由 AuthContext 统一处理
 
@@ -1677,12 +1672,8 @@ export default function ShadowingPage() {
     if (!authLoading && user && !initialLoadRef.current) {
       initialLoadRef.current = true;
       fetchItems();
-      // 只在初始加载时获取推荐等级（level为null时）
-      if (level === null) {
-        fetchRecommendedLevel();
-      }
     }
-  }, [authLoading, user?.id, fetchItems, fetchRecommendedLevel, level]);
+  }, [authLoading, user?.id, fetchItems]);
 
   // 加载题库（筛选条件变化时）
   useEffect(() => {
@@ -1723,6 +1714,18 @@ export default function ShadowingPage() {
       loadThemes();
     }
   }, [lang, level, authLoading, user?.id, loadThemes]);
+
+  // 当大主题列表更新时，检查当前选择是否仍然有效
+  useEffect(() => {
+    if (selectedThemeId !== 'all' && themes.length > 0) {
+      const themeExists = themes.some((theme) => theme.id === selectedThemeId);
+      if (!themeExists) {
+        setSelectedThemeId('all');
+        setSelectedSubtopicId('all');
+        setSubtopics([]);
+      }
+    }
+  }, [themes, selectedThemeId]);
 
   // 当选择大主题时，加载对应的子主题
   useEffect(() => {
@@ -2562,7 +2565,7 @@ export default function ShadowingPage() {
   // 检查生词是否已有AI解释
   const checkExistingExplanation = async (word: string) => {
     try {
-      const data = await searchVocabWithCache(word, getAuthHeaders);
+      const data = await searchVocabWithCache(word, (currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko', getAuthHeaders);
       if (data?.entries && data.entries.length > 0) {
         const entry = data.entries[0];
         if (entry.explanation) {
@@ -2827,7 +2830,7 @@ export default function ShadowingPage() {
       // 优先使用 entry_ids（写回生词本），找不到再回退到 word_info
       let entryId: string | null = null;
       try {
-        const data = await searchVocabWithCache(word, getAuthHeaders);
+        const data = await searchVocabWithCache(word, (wordLang || currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko', getAuthHeaders);
         const entries = Array.isArray(data?.entries) ? data.entries : [];
         const matched = entries.find(
           (e: { id?: string; term?: string; lang?: string }) =>
@@ -2914,11 +2917,11 @@ export default function ShadowingPage() {
         }
       } else {
         const errorData = await response.json();
-        alert(`${t.shadowing.messages?.generate_explanation_failed || '生成解释失败，请重试'}：${errorData.error}`);
+        toast.error(`${t.shadowing.messages?.generate_explanation_failed || '生成解释失败，请重试'}：${errorData.error}`);
       }
     } catch (error) {
       console.error('生成解释失败:', error);
-      alert(t.shadowing.messages?.generate_explanation_failed || '生成解释失败，请重试');
+      toast.error(t.shadowing.messages?.generate_explanation_failed || '生成解释失败，请重试');
     } finally {
       setIsGeneratingExplanation(false);
       setGeneratingWord(null);
@@ -2943,7 +2946,7 @@ export default function ShadowingPage() {
 
       if (!textToScore) {
         console.error('没有找到转录文字');
-        alert(t.shadowing.no_recording_yet || '还没有录音');
+        toast.error(t.shadowing.no_recording_yet || '还没有录音');
         return;
       }
 
@@ -2951,7 +2954,7 @@ export default function ShadowingPage() {
       const originalText = currentItem.text;
 
       // 使用句子分析计算整体评分
-      const simpleAnalysis = performSimpleAnalysis(originalText, textToScore);
+      const simpleAnalysis = performSimpleAnalysis(originalText, textToScore, t);
       const { overallScore } = simpleAnalysis;
 
       // 确保准确率在0-1之间
@@ -3005,152 +3008,12 @@ export default function ShadowingPage() {
     } catch (error) {
       console.error('评分失败:', error);
       const errMsg = error instanceof Error ? error.message : (t.shadowing.unknown_error || '未知错误');
-      alert((t.shadowing.scoring_failed || '评分失败: {error}').replace('{error}', errMsg));
+      toast.error((t.shadowing.scoring_failed || '评分失败: {error}').replace('{error}', errMsg));
     } finally {
       setIsScoring(false);
     }
   };
 
-  // 简单直观的句子对比分析
-  const performSimpleAnalysis = (originalText: string, transcribedText: string) => {
-    // 检查是否为中文
-    const isChinese = /[\u4e00-\u9fff]/.test(originalText);
-
-    let originalSentences: string[];
-    let cleanTranscribed: string[];
-
-    if (isChinese) {
-      // 中文处理：按A:, B:分割对话
-      originalSentences = originalText
-        .split(/(?=[AB]:)/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      // 清理转录文本（中文）
-      cleanTranscribed = transcribedText
-        .replace(/[。！？、，\s]+/g, '')
-        .split('')
-        .filter((c) => c.length > 0);
-    } else {
-      // 英文处理：按A:, B:分割
-      originalSentences = originalText
-        .split(/(?=[A-Z]:)/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      // 清理转录文本（英文）
-      cleanTranscribed = transcribedText
-        .replace(/[.!?,\s]+/g, ' ')
-        .split(' ')
-        .map((w) => w.toLowerCase().trim())
-        .filter((w) => w.length > 0);
-    }
-
-    const sentenceAnalysis: Array<{
-      sentence: string;
-      status: 'correct' | 'partial' | 'missing';
-      issues: string[];
-      score: number;
-    }> = [];
-
-    // 分析每个句子
-    for (const sentence of originalSentences) {
-      let cleanSentence: string[];
-
-      if (isChinese) {
-        // 中文处理：按字符分割，移除角色标识符
-        cleanSentence = sentence
-          .replace(/^[AB]:\s*/, '') // 移除角色标识符
-          .replace(/[。！？、，\s]+/g, '')
-          .split('')
-          .filter((c) => c.length > 0);
-      } else {
-        // 英文处理：按单词分割
-        cleanSentence = sentence
-          .replace(/^[A-Z]:\s*/, '') // 移除角色标识符
-          .replace(/[.!?,\s]+/g, ' ')
-          .split(' ')
-          .map((w) => w.toLowerCase().trim())
-          .filter((w) => w.length > 0);
-      }
-
-      // 计算句子匹配度
-      const matchedItems = cleanSentence.filter((item) => cleanTranscribed.includes(item));
-
-      const matchRatio = cleanSentence.length > 0 ? matchedItems.length / cleanSentence.length : 0;
-
-      let status: 'correct' | 'partial' | 'missing';
-      const issues: string[] = [];
-
-      if (matchRatio >= 0.9) {
-        status = 'correct';
-      } else if (matchRatio >= 0.5) {
-        status = 'partial';
-        // 找出遗漏的内容
-        const missingItems = cleanSentence.filter((item) => !cleanTranscribed.includes(item));
-        if (missingItems.length > 0) {
-          if (isChinese) {
-            issues.push((t.shadowing.issue_missing_chars || '遗漏字符: {items}').replace('{items}', missingItems.join('')));
-          } else {
-            issues.push((t.shadowing.issue_missing_words || '遗漏单词: {items}').replace('{items}', missingItems.join(', ')));
-          }
-        }
-      } else {
-        status = 'missing';
-        issues.push(t.shadowing.issue_most_missing || '大部分内容未说出');
-      }
-
-      // 检查发音错误（仅英文）
-      if (!isChinese) {
-        const pronunciationErrors = checkPronunciationErrors(cleanSentence, cleanTranscribed);
-        if (pronunciationErrors.length > 0) {
-          issues.push(...pronunciationErrors);
-        }
-      }
-
-      sentenceAnalysis.push({
-        sentence: sentence.replace(/^[AB]:\s*/, ''), // 移除角色标识符
-        status,
-        issues,
-        score: Math.round(matchRatio * 100),
-      });
-    }
-
-    const overallScore =
-      sentenceAnalysis.length > 0
-        ? Math.round(
-            sentenceAnalysis.reduce((sum, s) => sum + s.score, 0) / sentenceAnalysis.length,
-          )
-        : 0;
-
-    return { sentenceAnalysis, overallScore };
-  };
-
-  // 检查发音错误
-  const checkPronunciationErrors = (originalWords: string[], transcribedWords: string[]) => {
-    const errors: string[] = [];
-
-    // 常见发音错误检查
-    const commonErrors = [
-      { original: 'today', error: 'tomorrow' },
-      { original: 'tomorrow', error: 'today' },
-      { original: 'no', error: 'now' },
-      { original: 'now', error: 'no' },
-      { original: 'it', error: 'is' },
-      { original: 'is', error: 'it' },
-    ];
-
-    for (const error of commonErrors) {
-      if (originalWords.includes(error.original) && transcribedWords.includes(error.error)) {
-        const msg = (t.shadowing.pronounced_as || '"{original}" 说成了 "{error}"')
-          .replace('{original}', error.original)
-          .replace('{error}', error.error);
-        errors.push(msg);
-      }
-    }
-
-    return errors;
-  };
 
   // 统一的完成并保存函数 - 整合session保存和练习结果记录
   const unifiedCompleteAndSave = async () => {
@@ -3287,6 +3150,15 @@ export default function ShadowingPage() {
       if (sessionResponse.ok) {
         const sessionData = await sessionResponse.json();
         setCurrentSession(sessionData.session);
+        
+        // 如果服务端返回了更新后的item状态，直接合并到本地状态
+        if (sessionData.item) {
+          setItems((prev) =>
+            prev.map((item) =>
+              item.id === currentItem.id ? { ...item, ...sessionData.item } : item,
+            ),
+          );
+        }
       } else {
         const errorText = await sessionResponse.text();
         console.error('保存练习session失败:', {
@@ -3338,30 +3210,28 @@ export default function ShadowingPage() {
         message += ` (已保存: ${details.join(', ')})`;
       }
 
-      alert(message);
+      toast.success(message);
 
       // 7. 清除相关缓存并刷新题库列表以确保数据同步
-      // 等待一小段时间确保数据库写入完成，然后清除缓存并刷新
-      setTimeout(async () => {
-        try {
-          // 清除shadowing:catalog相关的缓存
-          await fetch('/api/cache/invalidate', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              pattern: 'shadowing:catalog*',
-            }),
-          });
-        } catch (cacheError) {
-          console.warn('Failed to clear cache:', cacheError);
-        }
-        // 刷新题库列表
-        fetchItems();
-      }, 500);
+      // 直接清除缓存并刷新，不依赖 setTimeout 延迟
+      try {
+        // 清除shadowing:catalog相关的缓存
+        await fetch('/api/cache/invalidate', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            pattern: 'shadowing:catalog*',
+          }),
+        });
+      } catch (cacheError) {
+        console.warn('Failed to clear cache:', cacheError);
+      }
+      // 刷新题库列表
+      fetchItems();
     } catch (error) {
       console.error('Failed to save practice data:', error);
       // 即使保存失败，本地状态已经更新，用户体验不受影响
-      alert(t.shadowing.messages?.practice_completed_delayed_sync || '练习已完成，但部分数据同步可能延迟');
+      toast.warning(t.shadowing.messages?.practice_completed_delayed_sync || '练习已完成，但部分数据同步可能延迟');
     } finally {
       setSaving(false);
     }
@@ -3370,19 +3240,25 @@ export default function ShadowingPage() {
   // 批量获取词汇解释
   const batchFetchExplanations = async (words: string[]) => {
     const explanations: Record<string, any> = {};
+    const itemLang = (currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko';
     
     try {
-      // 并行获取所有词汇的解释
-      const promises = words.map(async (word) => {
-        try {
-          const data = await searchVocabWithCache(word, getAuthHeaders);
-          if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
-            explanations[word] = data.entries[0].explanation;
+      // 使用 p-limit 限制并发数为 5，避免过多并发请求导致抖动和失败
+      const limit = pLimit(5);
+      
+      // 并行获取所有词汇的解释，但限制并发数
+      const promises = words.map((word) =>
+        limit(async () => {
+          try {
+            const data = await searchVocabWithCache(word, itemLang, getAuthHeaders);
+            if (data?.entries && data.entries.length > 0 && data.entries[0].explanation) {
+              explanations[word] = data.entries[0].explanation;
+            }
+          } catch (error) {
+            console.warn(`获取 ${word} 解释失败:`, error);
           }
-        } catch (error) {
-          console.warn(`获取 ${word} 解释失败:`, error);
-        }
-      });
+        })
+      );
       
       await Promise.all(promises);
     } catch (error) {
@@ -3395,7 +3271,7 @@ export default function ShadowingPage() {
   // 导入到生词本
   const importToVocab = async () => {
     if (selectedWords.length === 0) {
-      alert(t.shadowing.no_new_words_to_import || '没有新的生词可以导入');
+      toast.info(t.shadowing.no_new_words_to_import || '没有新的生词可以导入');
       return;
     }
 
@@ -3430,7 +3306,7 @@ export default function ShadowingPage() {
       });
 
       if (response.ok) {
-        alert((t.shadowing.import_success || '成功导入 {count} 个生词到生词本！').replace('{count}', String(entries.length)));
+        toast.success((t.shadowing.import_success || '成功导入 {count} 个生词到生词本！').replace('{count}', String(entries.length)));
 
         // 将本次选中的生词移动到之前的生词中
         setPreviousWords((prev) => [...prev, ...selectedWords]);
@@ -3463,11 +3339,11 @@ export default function ShadowingPage() {
         }
       } else {
         const errorData = await response.json();
-        alert((t.shadowing.import_failed || '导入失败: {error}').replace('{error}', String(errorData.error)));
+        toast.error((t.shadowing.import_failed || '导入失败: {error}').replace('{error}', String(errorData.error)));
       }
     } catch (error) {
       console.error('导入生词失败:', error);
-      alert((t.shadowing.import_failed || '导入失败: {error}').replace('{error}', String((error as Error)?.message || '')));
+      toast.error((t.shadowing.import_failed || '导入失败: {error}').replace('{error}', String((error as Error)?.message || '')));
     } finally {
       setIsImporting(false);
     }
@@ -3488,119 +3364,30 @@ export default function ShadowingPage() {
     return out;
   };
 
-  // 移动端检测
-  const { actualIsMobile } = useMobile();
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  // 统一侧边栏状态：移动端使用抽屉式，桌面端默认打开（通过CSS控制）
   
   // 引导提示状态
   const [showGuide, setShowGuide] = useState(false);
   
-  // 快捷键帮助弹窗状态
-  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
-  
   // 步骤提示展开状态
   const [stepTipExpanded, setStepTipExpanded] = useState(false);
   
-  // 滚动方向检测（用于智能隐藏顶部导航）
-  const { scrollDirection, scrollY } = useScrollDirection({
-    threshold: 10,
-    enabled: actualIsMobile,
-  });
-  
-  // 顶部导航栏显示状态
-  const [showHeader, setShowHeader] = useState(true);
-  
-  // 移动端底部解释区域状态
-  const [mobileExplanation, setMobileExplanation] = useState<{
-    word: string;
-    explanation: {
-      gloss_native: string;
-      senses?: Array<{ example_target: string; example_native: string }>;
-    };
-    fromVocab: boolean;
-    vocabId?: string;
-  } | null>(null);
-
-  // 点击其他地方关闭移动端解释
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (mobileExplanation && actualIsMobile) {
-        const target = event.target as HTMLElement;
-        // 如果点击的不是标黄字，关闭解释
-        if (!target.closest('.bg-yellow-200')) {
-          setMobileExplanation(null);
-        }
-      }
-    };
-
-    if (actualIsMobile) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [mobileExplanation, actualIsMobile]);
-  
-  // 更新顶部导航栏显示状态
-  useEffect(() => {
-    if (!actualIsMobile) {
-      setShowHeader(true);
-      return;
-    }
-    
-    // 在顶部时始终显示
-    if (scrollY < 50) {
-      setShowHeader(true);
-      return;
-    }
-    
-    // 根据滚动方向决定显示/隐藏
-    if (scrollDirection === 'down') {
-      setShowHeader(false);
-    } else if (scrollDirection === 'up') {
-      setShowHeader(true);
-    }
-  }, [scrollDirection, scrollY, actualIsMobile]);
-  
-  // 主内容区域引用（用于手势检测）
+  // 主内容区域引用
   const mainContentRef = useRef<HTMLDivElement>(null);
   
-  // 手势检测：左右滑动切换题目
-  useSwipeGesture(mainContentRef as RefObject<HTMLElement>, {
-    enabled: actualIsMobile && !!currentItem,
-    threshold: 80,
-    onSwipeLeft: () => {
-      // 向左滑动：下一题
-      handleNext();
-    },
-    onSwipeRight: () => {
-      // 向右滑动：上一题
-      handlePrev();
-    },
-  });
-  
-  // 返回顶部
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  
-  // 切换到下一题
-  const handleNext = () => {
-    if (!filteredItems.length || !currentItem) return;
-    const currentIndex = filteredItems.findIndex((item) => item.id === currentItem.id);
-    if (currentIndex < filteredItems.length - 1) {
-      loadItem(filteredItems[currentIndex + 1]);
-      scrollToTop();
+  // 桌面端初始化时自动打开侧边栏（但如果从每日一题进入或已指定题目，则不自动打开）
+  useEffect(() => {
+    if (!actualIsMobile) {
+      // 检查是否从每日一题进入（src=daily）或已指定题目（item参数存在）
+      const src = navSearchParams?.get('src');
+      const itemId = navSearchParams?.get('item');
+      // 如果是从每日一题进入或已指定题目，不自动打开侧边栏
+      if (src !== 'daily' && !itemId) {
+        setMobileSidebarOpen(true);
+      }
     }
-  };
-  
-  // 切换到上一题
-  const handlePrev = () => {
-    if (!filteredItems.length || !currentItem) return;
-    const currentIndex = filteredItems.findIndex((item) => item.id === currentItem.id);
-    if (currentIndex > 0) {
-      loadItem(filteredItems[currentIndex - 1]);
-      scrollToTop();
-    }
-  };
+  }, [actualIsMobile, navSearchParams]);
+
   // 检查是否首次访问，显示引导提示
   useEffect(() => {
     const hasSeenGuide = localStorage.getItem('shadowing-guide-seen');
@@ -3618,472 +3405,6 @@ export default function ShadowingPage() {
     setShowGuide(false);
     localStorage.setItem('shadowing-guide-seen', 'true');
   };
-  // 渲染左侧题库面板内容（桌面端）
-  const renderLeftPanelContent = () => {
-    return (
-      <Card className={`min-h-full flex flex-col bg-white/80 backdrop-blur-sm border-0 rounded-2xl relative transition-all ${
-        showGuide && !currentItem && !sidebarCollapsed
-          ? 'shadow-[0_0_30px_rgba(139,92,246,0.4)] ring-2 ring-violet-400/30'
-          : 'shadow-xl'
-      }`}>
-        {/* 柔和呼吸光效 */}
-        {showGuide && !currentItem && !sidebarCollapsed && (
-          <div className="absolute inset-0 rounded-2xl animate-pulse pointer-events-none z-10">
-            <div className="absolute inset-0 rounded-2xl bg-violet-400/15 blur-xl"></div>
-          </div>
-        )}
-        
-        {/* 标题和折叠按钮 */}
-        <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-                  {t.shadowing.shadowing_vocabulary || 'Shadowing 题库'}
-                </h3>
-                <p className="text-xs text-white/80 mt-0.5">{t.shadowing.shadowing_practice || 'Shadowing 练习'}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => fetchItems()}
-              className="text-white/80 hover:text-white p-2.5 rounded-lg hover:bg-white/20 transition-all ml-2 hover:shadow-md"
-              title={t.shadowing.refresh_vocabulary || '刷新题库'}
-              disabled={loading}
-            >
-              <div className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}>🔄</div>
-            </button>
-          </div>
-        </div>
-
-        {/* 过滤器 */}
-        <div className="p-6 bg-gray-50/50 space-y-6">
-          {/* 基础筛选 - 默认展开 */}
-          <CollapsibleFilterSection
-            title={t.shadowing.filter || '筛选'}
-            icon={<Filter className="w-3 h-3 text-blue-600" />}
-            defaultOpen={true}
-          >
-            <FilterLanguageSelector
-              value={lang}
-              onChange={setLang}
-              allowedLanguages={permissions.allowed_languages}
-              className="h-10"
-            />
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t.shadowing.level}</Label>
-              <Select
-                value={level?.toString() || 'all'}
-                onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
-              >
-                <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <SelectValue placeholder="全部等级" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                  <SelectItem value="all" className="rounded-lg">全部等级</SelectItem>
-                  {permissions.allowed_levels.includes(1) && <SelectItem value="1" className="rounded-lg">L1 - 初级</SelectItem>}
-                  {permissions.allowed_levels.includes(2) && <SelectItem value="2" className="rounded-lg">L2 - 初中级</SelectItem>}
-                  {permissions.allowed_levels.includes(3) && <SelectItem value="3" className="rounded-lg">L3 - 中级</SelectItem>}
-                  {permissions.allowed_levels.includes(4) && <SelectItem value="4" className="rounded-lg">L4 - 中高级</SelectItem>}
-                  {permissions.allowed_levels.includes(5) && <SelectItem value="5" className="rounded-lg">L5 - 高级</SelectItem>}
-                </SelectContent>
-              </Select>
-            </div>
-          </CollapsibleFilterSection>
-
-          {/* 高级筛选 - 默认折叠 */}
-          <CollapsibleFilterSection
-            title="高级筛选"
-            icon={<Target className="w-3 h-3 text-blue-600" />}
-            defaultOpen={false}
-          >
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t.shadowing.practice_status}</Label>
-              <Select
-                value={practiced}
-                onValueChange={(v: 'all' | 'practiced' | 'unpracticed') => setPracticed(v)}
-              >
-                <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                  <SelectItem value="all" className="rounded-lg">全部</SelectItem>
-                  <SelectItem value="unpracticed" className="rounded-lg">未练习</SelectItem>
-                  <SelectItem value="practiced" className="rounded-lg">已练习</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t.shadowing.genre}</Label>
-              <Select value={theme} onValueChange={setTheme}>
-                <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                  {GENRE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="rounded-lg">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t.shadowing.major_theme}</Label>
-              <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
-                <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                  <SelectItem value="all" className="rounded-lg">全部大主题</SelectItem>
-                  {themes.map((theme) => (
-                    <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
-                      {theme.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t.shadowing.minor_theme}</Label>
-              <Select
-                value={selectedSubtopicId}
-                onValueChange={setSelectedSubtopicId}
-                disabled={selectedThemeId === 'all'}
-              >
-                <SelectTrigger className={`h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}>
-                  <SelectValue placeholder={selectedThemeId === 'all' ? '请先选择大主题' : '选择小主题'} />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                  <SelectItem value="all" className="rounded-lg">全部小主题</SelectItem>
-                  {subtopics.map((subtopic) => (
-                    <SelectItem key={subtopic.id} value={subtopic.id} className="rounded-lg">
-                      {subtopic.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">{t.shadowing.search || '搜索'}</Label>
-              <Input
-                placeholder={t.shadowing.search_placeholder || '搜索标题、主题...'}
-                value={searchQuery}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  startTransition(() => setSearchQuery(v));
-                }}
-                className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </CollapsibleFilterSection>
-
-          {/* 快捷操作 */}
-          <div className="flex gap-3">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={getRandomUnpracticed}
-              className="flex-1 h-10 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100 hover:border-green-300 rounded-xl shadow-sm hover:shadow-md transition-all"
-            >
-              <Shuffle className="w-4 h-4 mr-2" />
-              {t.shadowing.random}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={getNextUnpracticed}
-              className="flex-1 h-10 bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-violet-100 hover:border-purple-300 rounded-xl shadow-sm hover:shadow-md transition-all"
-            >
-              <ArrowRight className="w-4 h-4 mr-2" />
-              {t.shadowing.next_question}
-            </Button>
-          </div>
-        </div>
-
-        {/* 统计信息 */}
-        <div className="p-4 space-y-3 bg-gray-50/50">
-          <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-blue-600 font-medium mb-1">总题数</p>
-                <p className="text-2xl font-bold text-blue-900">{filteredItems.length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-blue-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-xs text-green-600 font-medium mb-1">已完成</p>
-                <p className="text-2xl font-bold text-green-900">{filteredItems.filter((item) => item.isPracticed).length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              </div>
-            </div>
-            <div className="w-full bg-green-200/50 rounded-full h-1.5 overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500"
-                style={{ width: `${filteredItems.length > 0 ? (filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100 : 0}%` }}
-              />
-            </div>
-            <p className="text-xs text-green-600 mt-1">
-              {filteredItems.length > 0 ? Math.round((filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100) : 0}%
-            </p>
-          </div>
-          
-          <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-amber-600 font-medium mb-1">草稿中</p>
-                <p className="text-2xl font-bold text-amber-900">{filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
-                <FileEdit className="w-5 h-5 text-amber-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="group relative overflow-hidden rounded-xl border bg-gradient-to-br from-gray-50 to-gray-100/50 p-3 transition-all hover:shadow-md hover:scale-105">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-600 font-medium mb-1">未开始</p>
-                <p className="text-2xl font-bold text-gray-900">{filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gray-500/10 flex items-center justify-center">
-                <Circle className="w-5 h-5 text-gray-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 题目列表 */}
-        <div className="flex-1 overflow-y-auto" ref={desktopListScrollRef}>
-          {loading ? (
-            <div className="p-6 text-center">
-              <div className="animate-spin w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-sm text-gray-600 font-medium animate-pulse">加载中...</p>
-            </div>
-          ) : filteredItems.length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                <BookOpen className="w-10 h-10 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {t.shadowing.no_questions_found || '没有找到题目'}
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">{t.shadowing.search_adjust_filters_hint || '试试调整筛选条件或搜索关键词'}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setLang('zh');
-                  setLevel(null);
-                  setPracticed('all');
-                  setTheme('all');
-                  setSelectedThemeId('all');
-                  setSelectedSubtopicId('all');
-                  setSearchQuery('');
-                }}
-                className="hover:bg-violet-50 hover:border-violet-300"
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                重置筛选
-              </Button>
-            </div>
-          ) : (
-            <div className="p-2">
-              <Virtuoso
-                customScrollParent={desktopListScrollRef.current ?? undefined}
-                data={filteredItems}
-                computeItemKey={(index, item) => (item as any).id}
-                increaseViewportBy={{ top: 300, bottom: 600 }}
-                itemContent={(index, item) => {
-                  const it = item as any;
-                  return (
-                    <div
-                      key={it.id}
-                      className={`p-3 mb-2 rounded border cursor-pointer transition-colors ${
-                        currentItem?.id === it.id
-                          ? 'bg-blue-50 border-blue-200'
-                          : it.isPracticed
-                            ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                            : it.status === 'draft'
-                              ? 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100'
-                              : 'hover:bg-gray-50'
-                      }`}
-                      onClick={() => loadItem(it)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            {it.isPracticed ? (
-                              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                            ) : it.status === 'draft' ? (
-                              <FileText className="w-4 h-4 text-yellow-600 flex-shrink-0" />
-                            ) : (
-                              <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                            )}
-                            <span className="text-sm text-gray-500 font-medium min-w-[1.5rem]">{index + 1}.</span>
-                            <span className="text-sm font-medium truncate">
-                              {it.subtopic ? it.subtopic.title : it.title}
-                              {it.isPracticed && (<span className="ml-1 text-green-600">✓</span>)}
-                              {it.status === 'draft' && (<span className="ml-1 text-yellow-600">📝</span>)}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {(LANG_LABEL as any)[it.lang]} • L{it.level}
-                            {it.cefr && ` • ${it.cefr}`}
-                            {it.isPracticed && (
-                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{t.shadowing.completed}</span>
-                            )}
-                            {it.status === 'draft' && !it.isPracticed && (
-                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">{t.shadowing.draft}</span>
-                            )}
-                          </div>
-                          {it.isPracticed && (
-                            <div className="mt-2">
-                              <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
-                                <span className="flex items-center gap-1"><Mic className="w-3 h-3" /> {it.stats.recordingCount} 录音</span>
-                                <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> {it.stats.vocabCount} 生词</span>
-                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(it.stats.practiceTime)}</span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-1.5"><div className="bg-green-500 h-1.5 rounded-full" style={{ width: '100%' }} /></div>
-                            </div>
-                          )}
-                          {!it.isPracticed && (
-                            <div className="mt-2">
-                              <div className="w-full bg-gray-200 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${it.status === 'draft' ? 'bg-yellow-500' : 'bg-gray-300'}`} style={{ width: it.status === 'draft' ? '50%' : '0%' }} /></div>
-                              <div className="text-xs text-gray-400 mt-1">{it.status === 'draft' ? t.shadowing.draft : t.shadowing.not_started}</div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }}
-              />
-            </div>
-          )}
-        </div>
-      </Card>
-    );
-  };
-
-  // 键盘快捷键配置
-  const keyboardShortcuts: KeyboardShortcut[] = [
-    {
-      key: ' ',
-      description: '播放/暂停音频',
-      category: '音频控制',
-      action: () => {
-        playAudio();
-      },
-    },
-    {
-      key: 'ArrowLeft',
-      description: '上一题',
-      category: '导航',
-      action: () => {
-        const currentIndex = filteredItems.findIndex((item) => item.id === currentItem?.id);
-        if (currentIndex > 0) {
-          loadItem(filteredItems[currentIndex - 1]);
-        }
-      },
-    },
-    {
-      key: 'ArrowRight',
-      description: '下一题',
-      category: '导航',
-      action: () => {
-        const currentIndex = filteredItems.findIndex((item) => item.id === currentItem?.id);
-        if (currentIndex >= 0 && currentIndex < filteredItems.length - 1) {
-          loadItem(filteredItems[currentIndex + 1]);
-        }
-      },
-    },
-    {
-      key: 't',
-      description: '切换翻译显示',
-      category: '显示控制',
-      action: () => setShowTranslation((prev) => !prev),
-    },
-    {
-      key: 'v',
-      description: '切换生词模式',
-      category: '显示控制',
-      action: () => setIsVocabMode((prev) => !prev),
-    },
-    {
-      key: 's',
-      description: '保存草稿',
-      category: '操作',
-      action: saveDraft,
-    },
-    {
-      key: 'Enter',
-      ctrl: true,
-      cmd: true,
-      description: '完成并保存',
-      category: '操作',
-      action: unifiedCompleteAndSave,
-    },
-    {
-      key: '?',
-      shift: true,
-      description: '显示快捷键帮助',
-      category: '帮助',
-      action: () => setShowShortcutsHelp(true),
-    },
-    {
-      key: '1',
-      description: '跳转到步骤1',
-      category: '步骤导航',
-      action: () => setStep(1),
-    },
-    {
-      key: '2',
-      description: '跳转到步骤2',
-      category: '步骤导航',
-      action: () => setStep(2),
-    },
-    {
-      key: '3',
-      description: '跳转到步骤3',
-      category: '步骤导航',
-      action: () => setStep(3),
-    },
-    {
-      key: '4',
-      description: '跳转到步骤4',
-      category: '步骤导航',
-      action: () => setStep(4),
-    },
-    {
-      key: '5',
-      description: '跳转到步骤5',
-      category: '步骤导航',
-      action: () => setStep(4),
-    },
-  ];
-
-  // 使用键盘快捷键（仅在桌面端启用）
-  useKeyboardShortcuts({
-    shortcuts: keyboardShortcuts,
-    enabled: !actualIsMobile && !!currentItem,
-  });
 
   // 如果正在检查认证或用户未登录，显示相应提示
   if (authLoading) {
@@ -4130,17 +3451,11 @@ export default function ShadowingPage() {
       <Container>
         <Breadcrumbs items={[{ href: '/', label: t.nav.home }, { label: t.shadowing.title }]} />
 
-        {/* 移动端布局 */}
-        {actualIsMobile ? (
-          <div className="space-y-6" ref={mainContentRef} style={{ willChange: 'scroll-position' }}>
-            {/* 手机端顶部工具栏 - 智能隐藏版 */}
-            <div 
-              className={`sticky top-0 z-30 transition-transform duration-300 ${
-                showHeader ? 'translate-y-0' : '-translate-y-full'
-              }`}
-              style={{ willChange: 'transform' }}
-            >
-              <div className="flex items-center justify-between bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-lg border border-white/20">
+        {/* 统一响应式布局 */}
+        <div className="space-y-6" ref={mainContentRef}>
+          {/* 顶部工具栏 - 所有设备显示 */}
+          <div className="sticky top-0 z-30">
+            <div className="flex items-center justify-between bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-lg border border-white/20">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
                   <BookOpen className="w-4 h-4 text-white" />
@@ -4152,7 +3467,7 @@ export default function ShadowingPage() {
                 </div>
               </div>
               
-              {/* 题库按钮 - 柔和光效引导 */}
+              {/* 题库按钮 */}
               <div className="relative">
                 <Button
                   variant="outline"
@@ -4179,48 +3494,48 @@ export default function ShadowingPage() {
                   </div>
                 )}
               </div>
-              </div>
             </div>
+          </div>
 
-            {/* 移动端步骤栏与提示（置于标题下方） */}
-            {gatingActive && (
-              <Card className="p-4 bg-white border-0 shadow-sm">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <PracticeStepper
-                    size="sm"
-                    currentStep={step}
-                    onStepChange={(s)=> setStep(s)}
-                    maxStepAllowed={step}
-                    labels={[t.shadowing.step1_tip, t.shadowing.step2_tip, t.shadowing.step3_tip, t.shadowing.step5_tip].map(x=> String(x || 'Step'))}
-                  />
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4))} disabled={step===1}>Back</Button>
-                    <Button size="sm" onClick={() => setStep((s)=> (Math.min(4, (s as number)+1) as 1|2|3|4))} disabled={step===4}>Next</Button>
-                  </div>
+          {/* 步骤栏 - 移动端显示 */}
+          {gatingActive && (
+            <Card className="p-4 bg-white border-0 shadow-sm md:hidden">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <PracticeStepper
+                  size="sm"
+                  currentStep={step}
+                  onStepChange={(s)=> setStep(s)}
+                  maxStepAllowed={step}
+                  labels={[t.shadowing.step1_tip, t.shadowing.step2_tip, t.shadowing.step3_tip, t.shadowing.step5_tip].map(x=> String(x || 'Step'))}
+                />
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4))} disabled={step===1}>Back</Button>
+                  <Button size="sm" onClick={() => setStep((s)=> (Math.min(4, (s as number)+1) as 1|2|3|4))} disabled={step===4}>Next</Button>
                 </div>
-                <div className="mt-3 text-xs text-gray-700">
-                  {step===1 && t.shadowing.step1_tip}
-                  {step===2 && t.shadowing.step2_tip}
-                  {step===3 && t.shadowing.step3_tip}
-                  {step===4 && t.shadowing.step5_tip}
-                </div>
-              </Card>
-            )}
+              </div>
+              <div className="mt-3 text-xs text-gray-700">
+                {step===1 && t.shadowing.step1_tip}
+                {step===2 && t.shadowing.step2_tip}
+                {step===3 && t.shadowing.step3_tip}
+                {step===4 && t.shadowing.step5_tip}
+              </div>
+            </Card>
+          )}
 
-            {/* 手机端侧边栏遮罩 */}
-            {mobileSidebarOpen && (
-              <div
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
-                onClick={() => setMobileSidebarOpen(false)}
-              />
-            )}
-
-            {/* 手机端侧边栏 - 优化宽度 */}
+          {/* 侧边栏遮罩 */}
+          {mobileSidebarOpen && (
             <div
-              className={`fixed top-0 left-0 h-full w-[90vw] max-w-[360px] bg-white/95 backdrop-blur-xl z-50 transform transition-all duration-300 shadow-2xl border-r border-white/20 ${
-                mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-              }`}
-            >
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
+              onClick={() => setMobileSidebarOpen(false)}
+            />
+          )}
+
+          {/* 侧边栏 - 统一抽屉式 */}
+          <div
+            className={`fixed top-0 left-0 h-full w-[90vw] max-w-[360px] bg-white/95 backdrop-blur-xl z-50 transform transition-all duration-300 shadow-2xl border-r border-white/20 ${
+              mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
               <div className="h-full flex flex-col">
                 {/* 侧边栏头部 - 美化 */}
                 <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
@@ -4257,7 +3572,7 @@ export default function ShadowingPage() {
                 </div>
 
                 {/* 侧边栏内容 - 优化版 */}
-                <div className="flex-1 overflow-y-auto bg-gray-50/50">
+                <div className="flex-1 overflow-y-auto bg-gray-50/50" ref={mobileListScrollRef}>
                   {/* 过滤器 - 使用折叠式布局 */}
                   <div className="p-4 space-y-4">
                     {/* 基础筛选 - 默认展开 */}
@@ -4318,33 +3633,6 @@ export default function ShadowingPage() {
                           </SelectContent>
                         </Select>
                       </div>
-
-                      {/* 推荐等级显示 - 紧凑版 */}
-                      {recommendedLevel && (
-                        <div className="relative p-3 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border border-amber-200 overflow-hidden">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
-                                <Star className="w-3 h-3 text-white fill-white" />
-                              </div>
-                              <div>
-                                <p className="text-xs font-bold text-amber-900">推荐 L{recommendedLevel}</p>
-                                <p className="text-[10px] text-amber-600">根据学习进度</p>
-                              </div>
-                            </div>
-                            {level !== recommendedLevel && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setLevel(recommendedLevel)}
-                                className="h-7 text-xs px-2 bg-amber-500 hover:bg-amber-600 text-white border-0"
-                              >
-                                使用
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )}
 
                       {/* 练习状态 */}
                       <div className="space-y-2">
@@ -4508,7 +3796,7 @@ export default function ShadowingPage() {
                   />
 
                   {/* 题目列表 */}
-                  <div className="flex-1 overflow-y-auto" ref={mobileListScrollRef}>
+                  <div>
                     {loading ? (
                       <div className="space-y-3 p-4">
                         {Array.from({ length: 8 }).map((_, i) => (
@@ -4538,10 +3826,11 @@ export default function ShadowingPage() {
                         <Virtuoso
                           customScrollParent={mobileListScrollRef.current ?? undefined}
                           data={filteredItems}
-                          computeItemKey={(index, item) => (item as any).id}
+                          computeItemKey={(index, item) => (item as ShadowingItem).id}
                           increaseViewportBy={{ top: 200, bottom: 400 }}
+                          overscan={5}
                           itemContent={(index, item) => {
-                            const it = item as any;
+                            const it = item as ShadowingItem;
                             return (
                               <div
                                 key={it.id}
@@ -4601,8 +3890,8 @@ export default function ShadowingPage() {
               </div>
             </div>
 
-            {/* 手机端主内容区域 */}
-            <div className="space-y-4">
+            {/* 主内容区域 */}
+            <div className="space-y-4 md:space-y-6">
               {!currentItem ? (
                 <Card className="p-8 bg-gradient-to-br from-white to-gray-50 border-0 shadow-xl rounded-3xl">
                   <div className="text-center">
@@ -4629,8 +3918,8 @@ export default function ShadowingPage() {
                       >
                         <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin">
                           <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===1?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>1 盲听</span>
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===2?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>2 原文+翻译</span>
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===3?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>3 生词</span>
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===2?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>2 生词</span>
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===3?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>3 原文+翻译</span>
                           <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===4?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>4 录音</span>
                         </div>
                         <div className="flex items-center gap-2 ml-2">
@@ -4670,8 +3959,8 @@ export default function ShadowingPage() {
                       </div>
                     </Card>
                   )}
-                  {/* 题目信息 - 手机端优化 */}
-                  <Card className="p-4 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg rounded-2xl">
+                  {/* 题目信息 */}
+                  <Card className="p-4 md:p-8 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg rounded-2xl">
                     <div className="mb-4">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
@@ -4708,8 +3997,8 @@ export default function ShadowingPage() {
                         </div>
                       </div>
 
-                      {/* 手机端操作按钮 - 统一高度h-14 */}
-                      <div className="grid grid-cols-1 gap-3">
+                      {/* 操作按钮 */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <Button
                           onClick={playAudio}
                           variant="outline"
@@ -4724,35 +4013,38 @@ export default function ShadowingPage() {
                           {isPlaying ? '暂停' : t.shadowing.play_audio}
                         </Button>
 
-                        <div className={`grid ${(!gatingActive || step === 4) ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          onClick={saveDraft}
+                          disabled={saving}
+                          aria-busy={saving}
+                          aria-disabled={saving}
+                          aria-label={saving ? '保存草稿中' : '保存草稿'}
+                          className="h-14 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 hover:from-yellow-100 hover:to-amber-100 hover:border-yellow-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                        >
+                          <Save className="w-5 h-5 mr-2" />
+                          {saving ? t.common.loading : t.shadowing.save_draft}
+                        </Button>
+
+                        {(!gatingActive || step === 4) && (
                           <Button
-                            variant="outline"
                             size="lg"
-                            onClick={saveDraft}
+                            onClick={unifiedCompleteAndSave}
                             disabled={saving}
-                            className="h-14 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 hover:from-yellow-100 hover:to-amber-100 hover:border-yellow-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                            aria-busy={saving}
+                            aria-disabled={saving}
+                            aria-label={saving ? '完成并保存中' : '完成练习'}
+                            className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
                           >
-                            <Save className="w-5 h-5 mr-2" />
-                            {saving ? t.common.loading : t.shadowing.save_draft}
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            {saving ? (t.shadowing.saving_modal_title || '保存中...') : '完成'}
                           </Button>
-
-                          {(!gatingActive || step === 4) && (
-                            <Button
-                              size="lg"
-                              onClick={unifiedCompleteAndSave}
-                              disabled={saving}
-                              className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                            >
-                              <CheckCircle className="w-5 h-5 mr-2" />
-            {saving ? (t.shadowing.saving_modal_title || '保存中...') : '完成'}
-                            </Button>
-                          )}
-                        </div>
+                        )}
                       </div>
-                    </div>
 
-                    {/* 生词选择模式切换（仅步骤3显示） */}
-                    {(!gatingActive || step === 3) && (
+                    {/* 生词选择模式切换（仅步骤2显示） */}
+                    {(!gatingActive || step === 2) && (
                     <div className="mb-4 space-y-3">
                       <Button
                         variant={isVocabMode ? 'default' : 'outline'}
@@ -4802,7 +4094,7 @@ export default function ShadowingPage() {
                     {(!gatingActive || step >= 2) && (
                     <div id="shadowing-text" className="relative">
                       <div className="px-6 py-4 bg-amber-50/30 rounded-xl max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                      {step === 2 && currentItem.translations && currentItem.translations[translationLang] && (
+                      {step === 3 && currentItem.translations && currentItem.translations[translationLang] && (
                         <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                           <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
                           <div className="whitespace-pre-wrap text-base text-gray-800">{currentItem.translations[translationLang]}</div>
@@ -4810,8 +4102,8 @@ export default function ShadowingPage() {
                       )}
                       {(isVocabMode || step >= 2) ? (
                         <>
-                          {/* ACU 模式或自由框选模式（仅在步骤3时显示ACU模式） */}
-                          {isACUMode && currentItem?.notes?.acu_units && step === 3 ? (
+                          {/* ACU 模式或自由框选模式（仅在步骤2时显示ACU模式） */}
+                          {isACUMode && currentItem?.notes?.acu_units && step === 2 ? (
                             <AcuText
                               text={currentItem.text}
                               lang={currentItem.lang}
@@ -4821,8 +4113,8 @@ export default function ShadowingPage() {
                             />
                           ) : (
                             <div className="text-lg leading-[2.05]">
-                              {/* 移动端第2步：原文行内逐句播放 */}
-                              {step === 2 && currentItem?.audio_url && actualIsMobile ? (
+                              {/* 第3步：原文行内逐句播放 */}
+                              {step === 3 && currentItem?.audio_url ? (
                                 <SentenceInlinePlayer
                                   text={currentItem.text}
                                   language={currentItem.lang}
@@ -5388,11 +4680,12 @@ export default function ShadowingPage() {
                           })()}
                         </div>
                       )}
-                      </div>
                       {/* 底部渐变遮罩提示有更多内容 */}
                       <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 to-transparent pointer-events-none rounded-b-xl"></div>
                     </div>
+                    </div>
                     )}
+                    </div>
 
                     {/* 音频播放器 - 优化版 */}
                     {currentItem.audio_url && (
@@ -5421,14 +4714,14 @@ export default function ShadowingPage() {
                     )}
                   </Card>
 
-                  {/* 生词区域 - 手机端优化 - 折叠式 */}
+                  {/* 生词区域 - 折叠式 */}
                   {previousWords.length > 0 && (
                     <CollapsibleCard
                       title="之前的生词"
                       icon={<BookOpen className="w-5 h-5 text-gray-600" />}
                       badge={<span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{previousWords.length}</span>}
                       summary={`${previousWords.length}个生词`}
-                      defaultOpen={step === 3}
+                      defaultOpen={step === 2}
                       className="border-0 shadow-sm"
                       contentClassName="pt-2"
                     >
@@ -5622,8 +4915,8 @@ export default function ShadowingPage() {
                     </CollapsibleCard>
                   )}
 
-                  {/* 翻译模块 - 移动端（仅步骤2显示或完成后） */}
-                  {currentItem && (!gatingActive || step === 2) && (
+                  {/* 翻译模块 */}
+                  {currentItem && (!gatingActive || step === 3) && (
                     <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
@@ -5747,7 +5040,7 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 录音练习区域（移动端；仅步骤5或完成后） */}
+                  {/* 录音练习区域 */}
                   {practiceMode !== 'role' && (!gatingActive || step >= 4) && (
                   <Card className="p-4">
                     <AudioRecorder
@@ -5796,6 +5089,9 @@ export default function ShadowingPage() {
                           <Button
                             onClick={() => performScoring()}
                             disabled={isScoring}
+                            aria-busy={isScoring}
+                            aria-disabled={isScoring}
+                            aria-label={isScoring ? '评分进行中' : '开始评分'}
                             className={`h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all w-full ${highlightScore ? 'animate-pulse ring-2 ring-purple-400' : ''}`}
                           >
                             {isScoring ? (
@@ -5845,6 +5141,9 @@ export default function ShadowingPage() {
                         <Button
                           onClick={() => performScoring(currentTranscription)}
                           disabled={isScoring}
+                          aria-busy={isScoring}
+                          aria-disabled={isScoring}
+                          aria-label={isScoring ? '重新评分进行中' : '重新评分'}
                           variant="outline"
                           size="sm"
                           className="h-8 bg-white hover:bg-gray-50 border-gray-200 text-gray-700 rounded-lg"
@@ -5855,7 +5154,7 @@ export default function ShadowingPage() {
                         </Button>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="grid grid-cols-2 gap-4 mb-6" aria-live="polite" aria-atomic="true">
                         <div className="p-4 bg-white rounded-xl border border-green-200 shadow-sm">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
@@ -5949,6 +5248,7 @@ export default function ShadowingPage() {
                                   const simpleAnalysis = performSimpleAnalysis(
                                     scoringResult.originalText,
                                     scoringResult.transcription,
+                                    t,
                                   );
                                   const { sentenceAnalysis, overallScore } = simpleAnalysis;
 
@@ -6134,8 +5434,8 @@ export default function ShadowingPage() {
                     </Card>
                   )}
 
-                  {/* 完成后成功状态卡片：再练一次 / 返回题库（仅桌面端） */}
-                  {practiceComplete && !actualIsMobile && (
+                  {/* 完成后成功状态卡片 */}
+                  {practiceComplete && (
                     <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
@@ -6173,1961 +5473,8 @@ export default function ShadowingPage() {
                 </div>
               )}
             </div>
-            {/* 底部悬浮迷你控制条（移动端；步骤<5显示） */}
-            {currentItem && gatingActive && step < 5 && (
-              <>
-                <div className="h-16" />
-                <div className="fixed bottom-3 left-0 right-0 z-40 px-4">
-                  <div className="mx-auto max-w-[680px]">
-                    <div className="bg-white/90 backdrop-blur border border-gray-200 shadow-lg rounded-2xl p-2 flex items-center justify-between">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setStep((s) => (Math.max(1, (s as number) - 1) as 1 | 2 | 3 | 4))}
-                        disabled={step === 1}
-                        className="flex items-center gap-2"
-                        aria-label={t.shadowing.prev_step || '上一步'}
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                        {t.shadowing.prev_step || '上一步'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={playAudio}
-                        className="px-6"
-                        aria-label={isPlaying ? (t.shadowing.pause || '暂停') : (t.shadowing.play || '播放')}
-                      >
-                        {isPlaying ? (
-                          <>
-                            <Pause className="w-4 h-4 mr-2" /> {t.shadowing.pause || '暂停'}
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4 mr-2" /> {t.shadowing.play || '播放'}
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => setStep((s) => (Math.min(4, (s as number) + 1) as 1 | 2 | 3 | 4))}
-                        disabled={step === 4}
-                        className="flex items-center gap-2"
-                        aria-label={t.shadowing.next_step || '下一步'}
-                      >
-                        {t.shadowing.next_step || '下一步'}
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
 
-            {/* 底部导航栏 - 仅在有题目时显示 */}
-            {currentItem && (
-              <BottomNavBar
-                onPrevious={handlePrev}
-                onNext={handleNext}
-                onRecord={() => {
-                  // 滚动到录音区域
-                  const recordingSection = document.getElementById('recording-section');
-                  recordingSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }}
-                onComplete={unifiedCompleteAndSave}
-                isRecording={false}
-                showPrevious={true}
-                showNext={true}
-                showRecord={step === 4 && !practiceComplete}
-                showComplete={(!gatingActive || step === 4) && !practiceComplete}
-                disabled={saving}
-              />
-            )}
-
-            {/* 浮动操作按钮 */}
-            {currentItem && (
-              <FloatingActionButtons
-                showVocabButton={step === 3 && !practiceComplete}
-                isVocabMode={isVocabMode}
-                onToggleVocabMode={() => setIsVocabMode(!isVocabMode)}
-                showTranslationButton={step === 2 && !practiceComplete}
-                showTranslation={showTranslation}
-                onToggleTranslation={() => setShowTranslation(!showTranslation)}
-                showScrollToTop={scrollY > 300}
-                onScrollToTop={scrollToTop}
-              />
-            )}
-
-            {/* 移动端底部解释区域 */}
-            {mobileExplanation && (
-              <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl transform transition-all duration-300 ease-in-out animate-in slide-in-from-bottom">
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-lg text-blue-600">{mobileExplanation.word}</span>
-                      <button
-                        onClick={() => {
-                          // 触发发音 - 使用与生词模块相同的发音函数
-                          speakWord(mobileExplanation.word, currentItem?.lang || 'ko');
-                        }}
-                        className="p-2 bg-blue-100 rounded-full hover:bg-blue-200 active:scale-95 transition-all duration-150 touch-manipulation"
-                        title="发音"
-                      >
-                        🔊
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => setMobileExplanation(null)}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all duration-150 active:scale-95 touch-manipulation"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div className="text-gray-700 mb-3">
-                    {mobileExplanation.explanation.gloss_native}
-                  </div>
-                  {mobileExplanation.fromVocab && (
-                    <button
-                      onClick={() => {
-                        // 刷新解释功能
-                        handleRefreshExplanation(mobileExplanation.word, mobileExplanation.vocabId);
-                        // 刷新后更新解释
-                        setMobileExplanation(prev => prev ? {
-                          ...prev,
-                          explanation: { ...prev.explanation, gloss_native: '刷新中...' }
-                        } : null);
-                      }}
-                      className="text-sm text-blue-600 hover:text-blue-800 underline"
-                    >
-                      🔄 刷新解释
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
-        ) : (
-          /* 桌面端布局 - 优化滚动体验 */
-          <div className="flex gap-6 min-h-[700px]">
-            {/* 左侧题库列表 */}
-            <div
-              className={`${sidebarCollapsed ? 'w-16' : 'w-72'} flex-shrink-0 transition-all duration-300 max-h-[85vh] overflow-y-auto`}
-            >
-              <Card className={`min-h-full flex flex-col bg-white/80 backdrop-blur-sm border-0 rounded-2xl relative transition-all ${
-                showGuide && !currentItem && !sidebarCollapsed
-                  ? 'shadow-[0_0_30px_rgba(139,92,246,0.4)] ring-2 ring-violet-400/30'
-                  : 'shadow-xl'
-              }`}>
-                {/* 柔和呼吸光效 */}
-                {showGuide && !currentItem && !sidebarCollapsed && (
-                  <div className="absolute inset-0 rounded-2xl animate-pulse pointer-events-none z-10">
-                    <div className="absolute inset-0 rounded-2xl bg-violet-400/15 blur-xl"></div>
-                  </div>
-                )}
-                {/* 标题和折叠按钮 - 美化版 */}
-                <div className="p-6 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl relative overflow-hidden">
-                  {/* 装饰性背景光晕 */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-                  
-                  <div className="relative z-10 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {!sidebarCollapsed && (
-                        <>
-                          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm">
-                            <BookOpen className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-xl bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-                              {t.shadowing.shadowing_vocabulary || 'Shadowing 题库'}
-                            </h3>
-                          <p className="text-xs text-white/80 mt-0.5">{t.shadowing.shadowing_practice || 'Shadowing 练习'}</p>
-                          </div>
-                        </>
-                      )}
-                      {!sidebarCollapsed && (
-                        <button
-                          onClick={() => fetchItems()}
-                          className="text-white/80 hover:text-white p-2.5 rounded-lg hover:bg-white/20 transition-all ml-2 hover:shadow-md"
-                          title={t.shadowing.refresh_vocabulary || '刷新题库'}
-                          disabled={loading}
-                        >
-                          <div className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}>🔄</div>
-                        </button>
-                      )}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                      className="text-white hover:bg-white/20 hover:shadow-md transition-all"
-                      aria-label={sidebarCollapsed ? (t.common.expand || '展开') : (t.common.collapse || '折叠')}
-                    >
-                      {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
-                    </Button>
-                  </div>
-                </div>
-
-                {!sidebarCollapsed && (
-                  <>
-                    {/* 过滤器 */}
-                    <div className="p-6 bg-gray-50/50 space-y-6">
-                      {/* 基础筛选 - 默认展开 */}
-                      <CollapsibleFilterSection
-                        title={t.shadowing.filter || '筛选'}
-                        icon={<Filter className="w-3 h-3 text-blue-600" />}
-                        defaultOpen={true}
-                      >
-                        {/* 语言选择 */}
-                        <FilterLanguageSelector
-                          value={lang}
-                          onChange={setLang}
-                          allowedLanguages={permissions.allowed_languages}
-                          className="h-10"
-                        />
-
-                        {/* 等级选择 */}
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-gray-700">
-                            {t.shadowing.level}
-                          </Label>
-                          <Select
-                            value={level?.toString() || 'all'}
-                            onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
-                          >
-                            <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                              <SelectValue placeholder="全部等级" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                              <SelectItem value="all" className="rounded-lg">
-                                全部等级
-                              </SelectItem>
-                              {permissions.allowed_levels.includes(1) && (
-                                <SelectItem value="1" className="rounded-lg">
-                                  L1 - 初级
-                                </SelectItem>
-                              )}
-                              {permissions.allowed_levels.includes(2) && (
-                                <SelectItem value="2" className="rounded-lg">
-                                  L2 - 初中级
-                                </SelectItem>
-                              )}
-                              {permissions.allowed_levels.includes(3) && (
-                                <SelectItem value="3" className="rounded-lg">
-                                  L3 - 中级
-                                </SelectItem>
-                              )}
-                              {permissions.allowed_levels.includes(4) && (
-                                <SelectItem value="4" className="rounded-lg">
-                                  L4 - 中高级
-                                </SelectItem>
-                              )}
-                              {permissions.allowed_levels.includes(5) && (
-                                <SelectItem value="5" className="rounded-lg">
-                                  L5 - 高级
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </CollapsibleFilterSection>
-
-                      {/* 高级筛选 - 默认折叠 */}
-                      <CollapsibleFilterSection
-                        title="高级筛选"
-                        icon={<Target className="w-3 h-3 text-blue-600" />}
-                        defaultOpen={false}
-                      >
-                        {/* 练习状态 */}
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-gray-700">
-                            {t.shadowing.practice_status}
-                          </Label>
-                          <Select
-                            value={practiced}
-                            onValueChange={(v: 'all' | 'practiced' | 'unpracticed') =>
-                              setPracticed(v)
-                            }
-                          >
-                            <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                              <SelectItem value="all" className="rounded-lg">
-                                全部
-                              </SelectItem>
-                              <SelectItem value="unpracticed" className="rounded-lg">
-                                未练习
-                              </SelectItem>
-                              <SelectItem value="practiced" className="rounded-lg">
-                                已练习
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* 体裁筛选 */}
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-gray-700">
-                            {t.shadowing.genre}
-                          </Label>
-                          <Select value={theme} onValueChange={setTheme}>
-                            <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                              {GENRE_OPTIONS.map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value}
-                                  className="rounded-lg"
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* 大主题筛选 */}
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-gray-700">
-                            {t.shadowing.major_theme}
-                          </Label>
-                          <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
-                            <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                              <SelectItem value="all" className="rounded-lg">
-                                全部大主题
-                              </SelectItem>
-                              {themes.map((theme) => (
-                                <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
-                                  {theme.title}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* 小主题筛选 */}
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-gray-700">
-                            {t.shadowing.minor_theme}
-                          </Label>
-                          <Select
-                            value={selectedSubtopicId}
-                            onValueChange={setSelectedSubtopicId}
-                            disabled={selectedThemeId === 'all'}
-                          >
-                            <SelectTrigger
-                              className={`h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}
-                            >
-                              <SelectValue
-                                placeholder={
-                                  selectedThemeId === 'all' ? '请先选择大主题' : '选择小主题'
-                                }
-                              />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                              <SelectItem value="all" className="rounded-lg">
-                                全部小主题
-                              </SelectItem>
-                              {subtopics.map((subtopic) => (
-                                <SelectItem
-                                  key={subtopic.id}
-                                  value={subtopic.id}
-                                  className="rounded-lg"
-                                >
-                                  {subtopic.title}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* 搜索 */}
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-gray-700">{t.shadowing.search || '搜索'}</Label>
-                          <Input
-                            placeholder={t.shadowing.search_placeholder || '搜索标题、主题...'}
-                            value={searchQuery}
-                            onChange={(e) => startTransition(() => setSearchQuery(e.target.value))}
-                            className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                      </CollapsibleFilterSection>
-
-                      {/* 快捷操作 */}
-                      <div className="flex gap-3">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={getRandomUnpracticed}
-                          className="flex-1 h-10 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100 hover:border-green-300 rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                          <Shuffle className="w-4 h-4 mr-2" />
-                          {t.shadowing.random}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={getNextUnpracticed}
-                          className="flex-1 h-10 bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-violet-100 hover:border-purple-300 rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                          <ArrowRight className="w-4 h-4 mr-2" />
-                          {t.shadowing.next_question}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* 统计信息 - 卡片化设计 */}
-                    <div className="p-4 bg-gray-50/50">
-                      {/* 紧凑横排统计信息 */}
-                      <div className="grid grid-cols-4 gap-3">
-                        {/* 总题数 */}
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-lg p-3 border border-blue-200">
-                          <div className="text-center">
-                            <p className="text-xs text-blue-600 font-medium mb-1">总题数</p>
-                            <p className="text-xl font-bold text-blue-900">{filteredItems.length}</p>
-                          </div>
-                        </div>
-                        
-                        {/* 已完成 */}
-                        <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-lg p-3 border border-green-200">
-                          <div className="text-center">
-                            <p className="text-xs text-green-600 font-medium mb-1">已完成</p>
-                            <p className="text-xl font-bold text-green-900">{filteredItems.filter((item) => item.isPracticed).length}</p>
-                            <p className="text-xs text-green-600 mt-1">
-                              {filteredItems.length > 0 ? Math.round((filteredItems.filter((item) => item.isPracticed).length / filteredItems.length) * 100) : 0}%
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {/* 草稿中 */}
-                        <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-lg p-3 border border-amber-200">
-                          <div className="text-center">
-                            <p className="text-xs text-amber-600 font-medium mb-1">草稿中</p>
-                            <p className="text-xl font-bold text-amber-900">{filteredItems.filter((item) => item.status === 'draft' && !item.isPracticed).length}</p>
-                          </div>
-                        </div>
-                        
-                        {/* 未开始 */}
-                        <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-lg p-3 border border-gray-200">
-                          <div className="text-center">
-                            <p className="text-xs text-gray-600 font-medium mb-1">未开始</p>
-                            <p className="text-xl font-bold text-gray-900">{filteredItems.filter((item) => !item.isPracticed && item.status !== 'draft').length}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 题目列表 */}
-                    <div className="flex-1" ref={desktopListScrollRef}>
-                      {loading ? (
-                        <div className="p-6 text-center">
-                          <div className="animate-spin w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-                          <p className="text-sm text-gray-600 font-medium animate-pulse">加载中...</p>
-                        </div>
-                      ) : filteredItems.length === 0 ? (
-                        <div className="p-8 text-center">
-                          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                            <BookOpen className="w-10 h-10 text-gray-400" />
-                          </div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            {t.shadowing.no_questions_found || '没有找到题目'}
-                          </h3>
-                            <p className="text-sm text-gray-500 mb-4">{t.shadowing.search_adjust_filters_hint || '试试调整筛选条件或搜索关键词'}</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setLang('zh');
-                              setLevel(null);
-                              setPracticed('all');
-                              setTheme('all');
-                              setSelectedThemeId('all');
-                              setSelectedSubtopicId('all');
-                              setSearchQuery('');
-                            }}
-                            className="hover:bg-violet-50 hover:border-violet-300"
-                          >
-                            <Filter className="w-4 h-4 mr-2" />
-                            重置筛选
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="p-2">
-              <Virtuoso
-                customScrollParent={desktopListScrollRef.current ?? undefined}
-                data={filteredItems}
-                computeItemKey={(index, item) => (item as any).id}
-                increaseViewportBy={{ top: 300, bottom: 600 }}
-                            itemContent={(index, item) => {
-                              const it = item as any;
-                              return (
-                                <div
-                                  key={it.id}
-                                  className={`p-3 mb-2 rounded border cursor-pointer transition-colors ${
-                                    currentItem?.id === it.id
-                                      ? 'bg-blue-50 border-blue-200'
-                                      : it.isPracticed
-                                        ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                                        : it.status === 'draft'
-                                          ? 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100'
-                                          : 'hover:bg-gray-50'
-                                  }`}
-                                  onClick={() => loadItem(it)}
-                                >
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        {it.isPracticed ? (
-                                          <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                                        ) : it.status === 'draft' ? (
-                                          <FileText className="w-4 h-4 text-yellow-600 flex-shrink-0" />
-                                        ) : (
-                                          <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                        )}
-                                        <span className="text-sm text-gray-500 font-medium min-w-[1.5rem]">{index + 1}.</span>
-                                        <span className="text-sm font-medium truncate">
-                                          {it.subtopic ? it.subtopic.title : it.title}
-                                          {it.isPracticed && (<span className="ml-1 text-green-600">✓</span>)}
-                                          {it.status === 'draft' && (<span className="ml-1 text-yellow-600">📝</span>)}
-                                        </span>
-                                      </div>
-                                      <div className="text-xs text-gray-500 mt-1">
-                                        {(LANG_LABEL as any)[it.lang]} • L{it.level}
-                                        {it.cefr && ` • ${it.cefr}`}
-                                        {it.isPracticed && (
-                                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{t.shadowing.completed}</span>
-                                        )}
-                                        {it.status === 'draft' && !it.isPracticed && (
-                                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">{t.shadowing.draft}</span>
-                                        )}
-                                      </div>
-                                      {it.isPracticed && (
-                                        <div className="mt-2">
-                                          <div className="flex items-center gap-3 text-xs text-gray-500 mb-1">
-                                            <span className="flex items-center gap-1"><Mic className="w-3 h-3" /> {it.stats.recordingCount} 录音</span>
-                                            <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> {it.stats.vocabCount} 生词</span>
-                                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(it.stats.practiceTime)}</span>
-                                          </div>
-                                          <div className="w-full bg-gray-200 rounded-full h-1.5"><div className="bg-green-500 h-1.5 rounded-full" style={{ width: '100%' }} /></div>
-                                        </div>
-                                      )}
-                                      {!it.isPracticed && (
-                                        <div className="mt-2">
-                                          <div className="w-full bg-gray-200 rounded-full h-1.5"><div className={`h-1.5 rounded-full ${it.status === 'draft' ? 'bg-yellow-500' : 'bg-gray-300'}`} style={{ width: it.status === 'draft' ? '50%' : '0%' }} /></div>
-                                          <div className="text-xs text-gray-400 mt-1">{it.status === 'draft' ? t.shadowing.draft : t.shadowing.not_started}</div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </Card>
-            </div>
-            {/* 右侧练习区域 */}
-            <div className="flex-1 overflow-y-auto max-h-[85vh]">
-              {!currentItem ? (
-                <Card className="h-full flex items-center justify-center bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl">
-                  <div className="text-center p-8">
-                    <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <BookOpen className="w-12 h-12 text-blue-600" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                      {t.shadowing.select_question_to_start || '选择题目开始练习'}
-                    </h3>
-                    <p className="text-gray-600 leading-relaxed max-w-md">
-                      {t.shadowing.select_from_left_vocabulary ||
-                        '从左侧题库中选择一个题目开始 Shadowing 练习'}
-                    </p>
-                  </div>
-                </Card>
-              ) : (
-                <div className="space-y-6">
-                  {/* 步骤导航与提示（仅桌面端未完成时显示） */}
-                  {gatingActive && (
-                    <Card className="p-4 bg-white border-0 shadow-sm">
-                      <div className="flex items-center justify-between flex-wrap gap-3">
-                        <PracticeStepper
-                          size="md"
-                          currentStep={step}
-                          onStepChange={(s)=> setStep(s)}
-                          maxStepAllowed={step}
-                          labels={[
-                            t.shadowing.step_labels?.blind_listen || '盲听',
-                            t.shadowing.step_labels?.read_text || '看原文+翻译',
-                            t.shadowing.step_labels?.select_words || '选生词',
-                            t.shadowing.step_labels?.record_scoring || '录音评分',
-                          ]}
-                        />
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4))}
-                            disabled={step===1}
-                            aria-label={t.shadowing.prev_step || '上一步'}
-                          >{t.shadowing.prev_step || '上一步'}</Button>
-                          <Button
-                            size="sm"
-                            onClick={() => setStep((s)=> (Math.min(4, (s as number)+1) as 1|2|3|4))}
-                            disabled={step===4}
-                            aria-label={t.shadowing.next_step || '下一步'}
-                          >{t.shadowing.next_step || '下一步'}</Button>
-                        </div>
-                      </div>
-                      <div className="mt-3 text-sm text-gray-700">{stepTips[step]}</div>
-                    </Card>
-                  )}
-
-                  {/* 步骤详细引导（仅桌面端未完成时显示） */}
-                  {gatingActive && (
-                    <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-0 shadow-sm">
-                      {step === 1 && (
-                        <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">{t.shadowing.guide_blind_listen_title || '如何高效盲听：'}</div>
-                          <ul className="list-disc pl-5 space-y-1">
-                            <li>放松不要急，先整体感知节奏与停顿</li>
-                            <li>不要看原文，尝试抓关键词与语气</li>
-                            <li>{t.shadowing.guide_blind_listen_tip1 || '准备好后点击"下一步"，再看原文跟读'}</li>
-                          </ul>
-                        </div>
-                      )}
-                      {step === 2 && (
-                        <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">{t.shadowing.step_labels?.read_text || '看原文+翻译'} + {t.shadowing.follow_recording || '跟读'}：</div>
-                          <ul className="list-disc pl-5 space-y-1">
-                            <li>{t.shadowing.guide_read_text_tip1 || '先快速浏览一遍原文结构与段落'}</li>
-                            <li>{t.shadowing.guide_read_text_tip2 || '再次播放音频，对照原文跟读（注意连读/重音）'}</li>
-                            <li>{t.shadowing.guide_read_text_tip3 || '跟读时轻声起步，逐步提升音量与流畅度'}</li>
-                            <li>可以同时查看翻译来理解内容含义</li>
-                          </ul>
-                        </div>
-                      )}
-                      {step === 3 && (
-                        <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">{t.shadowing.guide_select_words_title || '选生词 + AI 解释：'}</div>
-                          <ul className="list-disc pl-5 space-y-1">
-                            <li>{t.shadowing.guide_select_words_tip1 || '点击原文中的词语即可加入生词'}</li>
-                            <li>{t.shadowing.guide_select_words_tip2 || `点击"${t.shadowing.ai_explanation_button || 'AI解释'}"为生词生成本地化释义与例句`}</li>
-                            <li>{t.shadowing.guide_select_words_tip3 || '建议聚焦于影响理解的关键词汇，避免一次选太多'}</li>
-                          </ul>
-                        </div>
-                      )}
-                      {step === 4 && (
-                        <div className="text-sm text-gray-700 space-y-2">
-                          <div className="font-medium">{t.shadowing.record_and_score_title || '录音与评分：'}</div>
-                          <ul className="list-disc pl-5 space-y-1">
-                            <li>{t.shadowing.guide_record_tip1 || '对照原文逐句录音，尽量贴合节奏与停顿'}</li>
-                            <li>{t.shadowing.guide_record_tip2 || '录完保存后点击评分，查看整体与逐句分析'}</li>
-                            <li>{t.shadowing.guide_record_tip3 || '根据问题提示再次练习可显著提升分数'}</li>
-                          </ul>
-                        </div>
-                      )}
-                    </Card>
-                  )}
-                  {/* 题目信息 */}
-                  <Card className="p-8 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-xl rounded-2xl">
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="flex-1">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4 leading-tight">
-                          {currentItem.title}
-                        </h2>
-                        <div className="flex items-center gap-4 flex-wrap mb-4">
-                          <span
-                            className={`px-4 py-2 rounded-full text-sm font-medium ${
-                              currentItem.lang === 'en'
-                                ? 'bg-blue-100 text-blue-700'
-                                : currentItem.lang === 'ja'
-                                  ? 'bg-red-100 text-red-700'
-                                  : 'bg-green-100 text-green-700'
-                            }`}
-                          >
-                            {LANG_LABEL[currentItem.lang]}
-                          </span>
-                          <span className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-                            {t.shadowing.level} L{currentItem.level}
-                          </span>
-                          {currentItem.cefr && (
-                            <span className="px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                              {currentItem.cefr}
-                            </span>
-                          )}
-                          {currentItem.tokens && (
-                            <span className="px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-                              {currentItem.tokens} {t.shadowing.words || '词'}
-                            </span>
-                          )}
-                        </div>
-                        {currentItem.isPracticed && currentSession && (
-                          <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                            <span className="text-sm font-medium text-green-700">已完成练习</span>
-                            <span className="text-xs text-green-600">
-                              ({new Date(currentSession.created_at).toLocaleString()})
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-3 flex-wrap">
-                        {!(gatingActive && step === 4) && (
-                          <Button
-                            onClick={playAudio}
-                            variant="outline"
-                            size="sm"
-                            className={`h-11 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all ${highlightPlay ? 'animate-pulse ring-2 ring-blue-400' : ''}`}
-                          >
-                            {isPlaying ? (
-                              <Pause className="w-5 h-5 mr-2" />
-                            ) : (
-                              <Play className="w-5 h-5 mr-2" />
-                            )}
-                            {isPlaying ? '暂停' : '播放音频'}
-                          </Button>
-                        )}
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={saveDraft}
-                          disabled={saving}
-                          className="h-11 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 hover:from-yellow-100 hover:to-amber-100 hover:border-yellow-300 rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                          <Save className="w-5 h-5 mr-2" />
-                          {saving ? (t.shadowing.saving_modal_title || '保存中...') : (t.shadowing.save_draft || '保存草稿')}
-                        </Button>
-
-                        {(!gatingActive || step === 4) && (
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              onClick={unifiedCompleteAndSave}
-                              disabled={saving}
-                              className="h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                            >
-                              <CheckCircle className="w-5 h-5 mr-2" />
-                              {saving ? t.common.loading : t.shadowing.complete_and_save}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setPracticeComplete(false);
-                                setStep(1);
-                                setScoringResult(null);
-                                setIsVocabMode(false);
-                                setShowTranslation(false);
-                              }}
-                            >
-                              {t.shadowing.practice_again}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 生词选择模式切换（步骤2和3显示；完成或移动端保持原样） */}
-                    {(!gatingActive || step >= 2) && (
-                      <div className="mb-4 space-y-3">
-                        <Button
-                          variant={isVocabMode ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setIsVocabMode(!isVocabMode)}
-                          className={highlightVocab ? 'animate-pulse ring-2 ring-amber-400' : ''}
-                        >
-                          {isVocabMode
-                            ? (t.shadowing.vocab_mode_on || '退出选词模式')
-                            : (t.shadowing.vocab_mode_off || '开启选词模式')}
-                        </Button>
-                        
-                        {/* ACU 模式切换（仅在生词模式开启时显示） */}
-                        {isVocabMode && currentItem?.notes?.acu_units && (
-                          <div className="flex gap-2">
-                            <Button
-                              variant={isACUMode ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => setIsACUMode(!isACUMode)}
-                              className="flex-1"
-                            >
-                              {isACUMode ? 'ACU 选词' : '自由框选'}
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {isVocabMode && (
-                          <div className="mt-2 space-y-2">
-                            {isACUMode && currentItem?.notes?.acu_units ? (
-                              <p className="text-sm text-green-600">ACU 选词模式：点击预分割的语义块来选择生词</p>
-                            ) : (
-                              <p className="text-sm text-blue-600">{t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* 桌面端第4步翻译外置卡片移除，改为内嵌到正文模块顶部的黄色框 */}
-
-                    {/* 文本内容（步骤>=2显示；完成或移动端保持原样；步骤5也需显示原文以便录音评分） */}
-                    {(!gatingActive || step >= 2) && (
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        {/* 桌面端第4步：在正文模块内部顶部显示黄色翻译框 */}
-                        {!actualIsMobile && step === 2 && showTranslation && currentItem && currentItem.translations && currentItem.translations[translationLang] && (
-                          <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                            <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
-                            <div className="whitespace-pre-wrap text-base text-gray-800">
-                              {formatSpeakerBreaks(currentItem.translations[translationLang])}
-                            </div>
-                          </div>
-                        )}
-                      {isVocabMode ? (
-                        <>
-                          {/* ACU 模式或自由框选模式 */}
-                          {isACUMode && currentItem?.notes?.acu_units ? (
-                            <AcuText
-                              text={currentItem.text}
-                              lang={currentItem.lang}
-                              units={currentItem.notes.acu_units}
-                              onConfirm={handleWordSelect}
-                              selectedWords={[...previousWords, ...selectedWords]}
-                            />
-                          ) : (
-                            <SelectablePassage
-                              text={currentItem.text}
-                              lang={currentItem.lang}
-                              onSelectionChange={handleTextSelection}
-                              clearSelection={clearSelection}
-                              disabled={false}
-                              className="text-lg leading-relaxed"
-                            />
-                          )}
-                          {selectedText && (
-                            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                              <div className="text-sm">
-                                <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
-                                <div className="text-blue-600 font-semibold mb-1">
-                                  {selectedText.word}
-                                </div>
-                                <div className="text-xs text-gray-600 mb-2">
-                                  {selectedText.context}
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={confirmAddToVocab}
-                                    disabled={isAddingToVocab}
-                                    className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {isAddingToVocab ? (
-                                      <>
-                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                                        {t.shadowing.adding_to_vocab || '添加中...'}
-                                      </>
-                                    ) : (
-                                      t.shadowing.acu_text?.confirm_add_to_vocab || '确认添加到生词本'
-                                    )}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={cancelSelection}
-                                    disabled={isAddingToVocab}
-                                    className="disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {t.shadowing.acu_text?.cancel || '取消'}
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="text-lg leading-relaxed">
-                          {/* 第2步原文行内逐句播放 */}
-                          {step === 2 && currentItem?.audio_url ? (
-                            <SentenceInlinePlayer
-                              text={currentItem.text}
-                              language={currentItem.lang}
-                              sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
-                              onPlaySentence={(i) => playSentenceByIndex(i)}
-                              renderText={(line) => {
-                                // 复用行内高亮与注音逻辑（仅对选中/生词本词条生效）
-                                const picked = [...previousWords, ...selectedWords];
-                                const vocab = userVocab.map(v => ({ word: v.term, explanation: v.explanation, fromVocab: true, vocabId: v.id }));
-                                const wordMap = new Map<string, any>();
-                                picked.forEach(w => wordMap.set(w.word, w));
-                                vocab.forEach(v => { if (!wordMap.has(v.word)) wordMap.set(v.word, v); });
-                                const allSelectedWords = Array.from(wordMap.values());
-                                const chars = line.split('');
-                                const nodes: React.ReactNode[] = [];
-                                for (let i = 0; i < chars.length; i++) {
-                                  let matched = false;
-                                  for (const selectedWord of allSelectedWords) {
-                                    const w = selectedWord.word;
-                                    if (!w) continue;
-                                    if (i + w.length <= chars.length) {
-                                      const sub = chars.slice(i, i + w.length).join('');
-                                      if (sub === w) {
-                                        const wordData = selectedWord;
-                                        nodes.push(
-                                          <HoverExplanation
-                                            key={`inline-line-${i}`}
-                                            word={w}
-                                            explanation={wordData?.explanation}
-                                            fromVocab={wordData?.fromVocab}
-                                            vocabId={wordData?.vocabId}
-                                            onRefresh={handleRefreshExplanation}
-                                            lang={currentItem?.lang || 'ja'}
-                                          >
-                                            {w}
-                                          </HoverExplanation>
-                                        );
-                                        i += w.length - 1;
-                                        matched = true;
-                                        break;
-                                      }
-                                    }
-                                  }
-                                  if (!matched) {
-                                    nodes.push(<span key={`inline-ch-${i}`}>{chars[i]}</span>);
-                                  }
-                                }
-                                return <>{nodes}</>;
-                              }}
-                            />
-                          ) : (
-                          (() => {
-                            // 格式化对话文本，按说话者分行
-                            const formatDialogueText = (text: string): string => {
-                              if (!text) return '';
-
-                              // 处理AI返回的\n换行符
-                              const formatted = text.replace(/\\n/g, '\n');
-
-                              // 如果已经包含换行符，保持格式并清理
-                              if (formatted.includes('\n')) {
-                                return formatted
-                                  .split('\n')
-                                  .map((line) => line.trim())
-                                  .filter((line) => line.length > 0)
-                                  .join('\n');
-                              }
-
-                              // 尝试按说话者分割 - 匹配 A: 或 B: 等格式
-                              const speakerPattern = /([A-Z]):\s*/g;
-                              const parts = formatted.split(speakerPattern);
-
-                              if (parts.length > 1) {
-                                let result = '';
-                                for (let i = 1; i < parts.length; i += 2) {
-                                  if (parts[i] && parts[i + 1]) {
-                                    const speaker = parts[i].trim();
-                                    const content = parts[i + 1].trim();
-                                    if (speaker && content) {
-                                      result += `${speaker}: ${content}\n`;
-                                    }
-                                  }
-                                }
-                                if (result.trim()) {
-                                  return result.trim();
-                                }
-                              }
-
-                              // 默认返回原文本
-                              return formatted;
-                            };
-
-                            const formattedText = formatDialogueText(currentItem.text);
-
-                            // 获取所有已选择的生词（包括之前的、本次的和生词本中的）
-                            // 合并当前题目的临时生词和生词本中的词汇
-                            const picked = [...previousWords, ...selectedWords];
-                            const vocab = userVocab.map(v => ({
-                              word: v.term,
-                              explanation: v.explanation,
-                              fromVocab: true,
-                              vocabId: v.id
-                            }));
-                            
-                            // 去重：picked优先（上下文更准确）
-                            const wordMap = new Map();
-                            picked.forEach(w => wordMap.set(w.word, w));
-                            vocab.forEach(v => {
-                              if (!wordMap.has(v.word)) {
-                                wordMap.set(v.word, v);
-                              }
-                            });
-                            
-                            const allSelectedWords = Array.from(wordMap.values());
-                            const selectedWordSet = new Set(
-                              allSelectedWords.map((item) => item.word),
-                            );
-
-
-                            // 检查是否为中文文本
-                            const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
-
-                            if (isChinese) {
-                              // 中文处理：先按行分割，再按字符分割
-                              const lines = formattedText.split('\n');
-
-                              return lines.map((line, lineIndex) => {
-                                const chars = line.split('');
-                                const result = [];
-
-                                for (let i = 0; i < chars.length; i++) {
-                                  let isHighlighted = false;
-                                  let highlightLength = 0;
-
-                                  // 检查从当前位置开始的多个字符是否组成已选择的生词
-                                  for (const selectedWord of allSelectedWords) {
-                                    if (i + selectedWord.word.length <= chars.length) {
-                                      const substring = chars
-                                        .slice(i, i + selectedWord.word.length)
-                                        .join('');
-                                      if (substring === selectedWord.word) {
-                                        isHighlighted = true;
-                                        highlightLength = selectedWord.word.length;
-                                        break;
-                                      }
-                                    }
-                                  }
-
-                                  if (isHighlighted && highlightLength > 0) {
-                                    // 高亮显示整个生词
-                                    const word = chars.slice(i, i + highlightLength).join('');
-                                    const wordData = allSelectedWords.find(
-                                      (item) => item.word === word,
-                                    );
-                                    const explanation = wordData?.explanation;
-
-                                    result.push(
-                                      <HoverExplanation
-                                        key={`${lineIndex}-${i}`}
-                                        word={word}
-                                        explanation={explanation}
-                                        fromVocab={wordData?.fromVocab}
-                                        vocabId={wordData?.vocabId}
-                                        onRefresh={handleRefreshExplanation}
-                                        lang={currentItem?.lang || 'ja'}
-                                      >
-                                        {word}
-                                      </HoverExplanation>,
-                                    );
-                                    i += highlightLength - 1; // 跳过已处理的字符
-                                  } else {
-                                    // 普通字符
-                                    result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
-                                  }
-                                }
-
-                                return (
-                                  <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
-                                    {result}
-                                  </div>
-                                );
-                              });
-                            } else {
-                              // 英文处理：先按行分割，再按单词分割
-                              const lines = formattedText.split('\n');
-
-                              return lines.map((line, lineIndex) => {
-                                const chars = line.split('');
-                                const result = [] as React.ReactNode[];
-
-                                for (let i = 0; i < chars.length; i++) {
-                                  let isHighlighted = false;
-                                  let highlightLength = 0;
-
-                                  for (const selectedWord of allSelectedWords) {
-                                    const w = selectedWord.word;
-                                    if (!w) continue;
-                                    if (i + w.length <= chars.length) {
-                                      const substring = chars.slice(i, i + w.length).join('');
-                                      if (substring === w) {
-                                        isHighlighted = true;
-        								highlightLength = w.length;
-                                        break;
-                                      }
-                                    }
-                                  }
-
-                                  if (isHighlighted && highlightLength > 0) {
-                                    const word = chars.slice(i, i + highlightLength).join('');
-                                    const wordData = allSelectedWords.find((item) => item.word === word);
-                                    const explanation = wordData?.explanation;
-
-                                    result.push(
-                                      <HoverExplanation 
-                                        key={`${lineIndex}-${i}`} 
-                                        word={word} 
-                                        explanation={explanation}
-                                        fromVocab={wordData?.fromVocab}
-                                        vocabId={wordData?.vocabId}
-                                        onRefresh={handleRefreshExplanation}
-                                      >
-                                        {word}
-                                      </HoverExplanation>,
-                                    );
-                                    i += highlightLength - 1;
-                                  } else {
-                                    result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
-                                  }
-                                }
-
-                                return (
-                                  <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
-                                    {result}
-                                  </div>
-                                );
-                              });
-                            }
-                          })()
-                          )}
-                        </div>
-                      )}
-                      </div>
-                    )}
-
-                    {/* 音频播放器 - 使用增强版（第4步显示） */}
-                    {currentItem.audio_url && (
-                      <div className="mt-4">
-                        <div className="mb-2 flex items-center gap-2">
-                          <span className="text-sm font-medium text-blue-700">{t.shadowing.original_audio_text || '原文音频'}</span>
-                        </div>
-                        <EnhancedAudioPlayer
-                          ref={audioPlayerRef}
-                          audioUrl={currentItem.audio_url}
-                          duration_ms={currentItem.duration_ms}
-                          onPlayStateChange={(playing) => {
-                            setIsPlaying(playing);
-                            if (playing) {
-                              try {
-                                if (audioRecorderRef.current && typeof audioRecorderRef.current.suspendMicForPlayback === 'function') {
-                                  audioRecorderRef.current.suspendMicForPlayback();
-                                }
-                              } catch {}
-                            }
-                          }}
-                        />
-                      </div>
-                    )}
-                  </Card>
-
-                  {/* 翻译模块（仅步骤2显示；完成或移动端保持原样） */}
-                  {currentItem && (!gatingActive || step === 2) && (
-                    <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                          <span className="text-white text-lg">🌐</span>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900">翻译</h3>
-                          <p className="text-sm text-gray-600">{t.shadowing.translation_support_hint || '多语言翻译支持'}</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-4">
-                          <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg-white transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={showTranslation}
-                              onChange={(e) => setShowTranslation(e.target.checked)}
-                              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            <span className="font-medium">显示翻译</span>
-                          </label>
-                          <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg-white transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={showRubyPronunciation}
-                              onChange={(e) => setShowRubyPronunciation(e.target.checked)}
-                              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            <span className="font-medium">{'显示读音注音（zh/ja/ko）'}</span>
-                          </label>
-                          {showTranslation && (
-                            <select
-                              className="h-11 px-4 py-2 bg-white border border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium"
-                              value={translationLang}
-                              onChange={(e) =>
-                                setTranslationLang(e.target.value as 'en' | 'ja' | 'zh' | 'ko')
-                              }
-                            >
-                              {getTargetLanguages(currentItem.lang).map((lang) => (
-                                <option key={lang} value={lang}>
-                                  {getLangName(lang)}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                        </div>
-
-                        {showTranslation &&
-                        currentItem.translations &&
-                        currentItem.translations[translationLang] ? (
-                          <div className="p-4 bg-white rounded-xl border border-indigo-200 shadow-sm">
-                            <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
-                              {currentItem.translations[translationLang]}
-                            </div>
-                          </div>
-                        ) : showTranslation ? (
-                          <div className="text-center py-8">
-                            <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <span className="text-2xl">📝</span>
-                            </div>
-                            <h3 className="text-lg font-semibold text-gray-700 mb-2">{t.shadowing.translation_none_title || '暂无翻译'}</h3>
-                            <p className="text-gray-500">可能尚未生成翻译内容</p>
-                          </div>
-                        ) : (
-                          <div className="text-center py-8">
-                            <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <span className="text-2xl">🌐</span>
-                            </div>
-                            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                              {t.shadowing.translation_enable_action || '开启翻译功能'}
-                            </h3>
-                            <p className="text-gray-500">{t.shadowing.translation_enable_hint || '勾选上方选项以显示翻译内容'}</p>
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* 之前的生词（步骤2和3显示；完成或移动端保持原样） */}
-                  {previousWords.length > 0 && (!gatingActive || step >= 2) && (
-                    <CollapsibleCard
-                      title="之前的生词"
-                      icon={<BookOpen className="w-5 h-5 text-gray-600" />}
-                      badge={<span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{previousWords.length}</span>}
-                      summary={`${previousWords.length}个生词`}
-                      defaultOpen={step === 3}
-                      className="border-0 shadow-sm"
-                      contentClassName="pt-2"
-                    >
-                      <div className="flex items-center justify-end mb-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={isRefreshingAllPrev}
-                          onClick={async () => {
-                            if (isRefreshingAllPrev) return;
-                            setIsRefreshingAllPrev(true);
-                            try {
-                              const headers = await getAuthHeaders();
-                              // 逐个清理缓存并拉取最新解释
-                              const tasks = previousWords.map(async (item) => {
-                                const key = item.word.toLowerCase().trim();
-                                globalVocabCache.delete(key);
-                                try {
-                                  const sessionKey = `vocab_cache_${key}`;
-                                  sessionStorage.removeItem(sessionKey);
-                                } catch {}
-                                try {
-                                  const res = await fetch(`/api/vocab/search?term=${encodeURIComponent(item.word)}`, { headers });
-                                  if (res.ok) {
-                                    const data = await res.json();
-                                    const explanation = Array.isArray(data?.entries) && data.entries[0]?.explanation ? data.entries[0].explanation : undefined;
-                                    return { word: item.word, explanation };
-                                  }
-                                } catch {
-                                  // ignore single failure
-                                }
-                                return { word: item.word, explanation: undefined };
-                              });
-                              const results = await Promise.all(tasks);
-                              // 合并更新 explanationCache
-                              setExplanationCache((prev) => {
-                                const next: Record<
-                                  string,
-                                  {
-                                    gloss_native: string;
-                                    pronunciation?: string;
-                                    pos?: string;
-                                    senses?: Array<{ example_target: string; example_native: string }>;
-                                  }
-                                > = { ...prev };
-                                for (const r of results) {
-                                  if (r.explanation) next[r.word] = r.explanation;
-                                  else delete next[r.word];
-                                }
-                                return next;
-                              });
-                            } finally {
-                              setIsRefreshingAllPrev(false);
-                            }
-                          }}
-                          className="text-xs"
-                        >
-                          {isRefreshingAllPrev ? '刷新中…' : '刷新全部解释'}
-                        </Button>
-                      </div>
-
-                      <div className="grid gap-3">
-                        {previousWords.map((item, index) => (
-                          <div
-                            key={`prev-${index}`}
-                            className="p-3 bg-gray-50 rounded border border-gray-200"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <WordWithPronunciation
-                                    word={item.word}
-                                    explanation={item.explanation || wordExplanations[item.word]}
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => speakWord(item.word, currentItem?.lang || 'en')}
-                                    className="text-blue-500 hover:text-blue-700 p-1"
-                                    title={t.shadowing.pronounce || '发音'}
-                                  >
-                                    🔊
-                                  </Button>
-                                </div>
-                                <div className="text-sm text-gray-600 mt-1">{item.context}</div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <div className="text-xs text-gray-500">{t.shadowing.imported || '已导入'}</div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    generateWordExplanation(
-                                      item.word,
-                                      item.context,
-                                      currentItem?.lang || 'en',
-                                    )
-                                  }
-                                  disabled={isGeneratingExplanation}
-                                  className="text-xs"
-                                >
-                                  {generatingWord === item.word
-                                    ? (t.shadowing.generating || '生成中...')
-                                    : (t.shadowing.ai_explanation_button || 'AI解释')}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removePreviousWord(index)}
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  {t.shadowing.remove || '删除'}
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* AI解释显示 */}
-                            <div className="mt-3 p-3 bg-white rounded border border-gray-100">
-                              <DynamicExplanation
-                                word={item.word}
-                                fallbackExplanation={item.explanation}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CollapsibleCard>
-                  )}
-
-                  {/* 本次选中的生词（步骤2和3显示；完成或移动端保持原样） */}
-                  {selectedWords.length > 0 && (!gatingActive || step >= 2) && (
-                    <Card className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-blue-600">
-                          {(t.shadowing.selected_words_title || '本次选中的生词 ({count})').replace('{count}', String(selectedWords.length))}
-                        </h3>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={generateBatchExplanations}
-                            disabled={isGeneratingBatchExplanation}
-                            className="text-green-600 hover:text-green-800 border-green-300"
-                          >
-                            {isGeneratingBatchExplanation
-                              ? (t.shadowing.generating || '生成中...')
-                              : (t.shadowing.ai_explanation_batch_button || '一键AI解释')}
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => setSelectedWords([])}>
-                            {t.shadowing.clear || '清空'}
-                          </Button>
-                          <Button size="sm" onClick={importToVocab} disabled={isImporting}>
-                            {isImporting ? (t.shadowing.adding_to_vocab || '添加中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* 批量AI解释进度显示 */}
-                      {isGeneratingBatchExplanation && batchExplanationProgress.total > 0 && (
-                        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="font-medium text-green-700">{t.shadowing.ai_explanation_generation_progress || 'AI解释生成进度'}</span>
-                              <span className="text-green-600">
-                                {batchExplanationProgress.current} /{' '}
-                                {batchExplanationProgress.total}
-                              </span>
-                            </div>
-                            <div className="w-full bg-green-200 rounded-full h-2">
-                              <div
-                                className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${(batchExplanationProgress.current / batchExplanationProgress.total) * 100}%`,
-                                }}
-                              ></div>
-                            </div>
-                            <div className="text-sm text-green-600">
-                              {batchExplanationProgress.status}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="grid gap-3">
-                        {selectedWords.map((item, index) => (
-                          <div
-                            key={`selected-${item.word}-${index}`}
-                            className="p-3 bg-blue-50 rounded border border-blue-200"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <WordWithPronunciation
-                                    word={item.word}
-                                    explanation={item.explanation || wordExplanations[item.word]}
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => speakWord(item.word, item.lang)}
-                                    className="text-blue-500 hover:text-blue-700 p-1"
-                                    title={t.shadowing.pronounce || '发音'}
-                                  >
-                                    🔊
-                                  </Button>
-                                </div>
-                                <div className="text-sm text-blue-600 mt-1">{item.context}</div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    generateWordExplanation(item.word, item.context, item.lang)
-                                  }
-                                  disabled={isGeneratingExplanation}
-                                  className="text-xs"
-                                >
-                                  {generatingWord === item.word
-                                    ? (t.shadowing.generating || '生成中...')
-                                    : (t.shadowing.ai_explanation_button || 'AI解释')}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeSelectedWord(index)}
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  移除
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* AI解释显示 */}
-                            {(item.explanation || wordExplanations[item.word]) && (
-                              <div className="mt-3 p-3 bg-white rounded border border-blue-100">
-                                <DynamicExplanation
-                                  word={item.word}
-                                  fallbackExplanation={
-                                    item.explanation || wordExplanations[item.word]
-                                  }
-                                />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* 取消第5步顶部额外播放器，沿用下方通用播放器 */}
-
-                  {/* 练习模式切换 */}
-                  {(!gatingActive || step >= 4) && renderPracticeModeSwitcher()}
-
-                  {/* 逐句/分角色练习 */}
-                  {(!gatingActive || step >= 4) && (() => {
-                    try {
-                      if (currentItem && (!currentItem.audio_url || !(currentItem as unknown as { sentence_timeline?: unknown }).sentence_timeline)) {
-                        (async () => {
-                          try {
-                            const headers = await getAuthHeaders();
-                            const r = await fetch(`/api/shadowing/item?id=${currentItem!.id}`, { headers, credentials: 'include' });
-                            if (r.ok) {
-                              const data = await r.json();
-                              if (data?.item && data.item.id === currentItem!.id) {
-                                setCurrentItem((prev) => (prev && prev.id === data.item.id ? { ...prev, ...data.item } as any : prev));
-                              }
-                            }
-                          } catch {}
-                        })();
-                      }
-                    } catch {}
-                    return null;
-                  })()}
-                  {(!gatingActive || step >= 4) && (
-                    <SentencePractice
-                      originalText={currentItem?.text}
-                      language={currentItem?.lang || 'ja'}
-                      audioUrl={currentItem?.audio_url || null}
-                      sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
-                        ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
-                        : undefined}
-                      practiceMode={practiceMode}
-                      activeRole={selectedRole}
-                      roleSegments={roleSegments}
-                      onRoleRoundComplete={handleRoleRoundComplete}
-                      acuUnits={currentItem?.notes?.acu_units}
-                      onPlaySentence={(i) => playSentenceByIndex(i)}
-                    />
-                  )}
-
-                  {practiceMode === 'role' && nextRoleSuggestion && (
-                    <Card className="p-4 border border-emerald-200 bg-emerald-50 text-emerald-700 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div>
-                        {t.shadowing?.role_suggestion_text || '切换到其他角色继续练习：'}
-                        <span className="font-semibold ml-1">{nextRoleSuggestion}</span>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRole(nextRoleSuggestion);
-                          setNextRoleSuggestion(null);
-                        }}
-                      >
-                        {t.shadowing?.role_switch_now || '立即切换'}
-                      </Button>
-                    </Card>
-                  )}
-
-                  {/* 录音练习区域（仅步骤5显示；完成或移动端保持原样） */}
-                  {practiceMode !== 'role' && (!gatingActive || step >= 4) && (
-                  <Card className="p-4 md:p-6 border-0 shadow-sm bg-gradient-to-r from-green-50 to-emerald-50">
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <span className="text-green-600">🎤</span>
-                        {t.shadowing.recording_practice}
-                      </h3>
-                    </div>
-                    <AudioRecorder
-                      ref={audioRecorderRef}
-                      sessionId={currentSession?.id}
-                      existingRecordings={currentRecordings}
-                      onRecordingAdded={handleRecordingAdded}
-                      onRecordingDeleted={handleRecordingDeleted}
-                      onTranscriptionReady={handleTranscriptionReady}
-                      onRecordingSelected={handleRecordingSelected}
-                      originalText={currentItem?.text}
-                      language={currentItem?.lang || 'ja'}
-                    />
-                  </Card>
-                  )}
-
-                  {/* 评分区域（仅步骤5显示；完成或移动端保持原样） */}
-                  {!scoringResult && practiceMode !== 'role' && (!gatingActive || step >= 4) && (
-                    <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
-                          <span className="text-white text-lg">📊</span>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900">
-                            {t.shadowing.practice_scoring || '练习评分'}
-                          </h3>
-                          <p className="text-sm text-gray-600">{t.shadowing.ai_scoring_subtitle || 'AI智能评分，精准分析发音'}</p>
-                        </div>
-                      </div>
-
-                      {currentRecordings.length > 0 ? (
-                        <div className="text-center space-y-4">
-                          <div className="p-4 bg-white/80 rounded-xl border border-purple-200">
-                            <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                              <CheckCircle className="w-8 h-8 text-green-600" />
-                            </div>
-                            <p className="text-gray-700 font-medium mb-2">
-                              {t.shadowing.recording_completed}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {t.shadowing.recording_completed_message}
-                            </p>
-                          </div>
-                          <Button
-                            onClick={() => performScoring()}
-                            disabled={isScoring}
-                            className="h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all w-full"
-                          >
-                            {isScoring ? (
-                              <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                {t.shadowing.scoring_in_progress || '评分中...'}
-                              </>
-                            ) : (
-                              <>
-                                <span className="mr-2">🚀</span>
-                                开始评分
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Mic className="w-10 h-10 text-gray-400" />
-                          </div>
-                          <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                            {t.shadowing.no_recording_yet}
-                          </h3>
-                          <p className="text-gray-500 leading-relaxed">
-                            {t.shadowing.complete_recording_first}
-                          </p>
-                        </div>
-                      )}
-                    </Card>
-                  )}
-
-                  {/* 评分结果区域 */}
-                  {practiceMode !== 'role' && scoringResult && (
-                    <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                            <span className="text-white text-lg">🎯</span>
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900">
-                              {t.shadowing.scoring_result || '评分结果'}
-                            </h3>
-                            <p className="text-sm text-gray-600">{t.shadowing.ai_analysis_done || 'AI智能分析完成'}</p>
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() => performScoring(currentTranscription)}
-                          disabled={isScoring}
-                          variant="outline"
-                          size="sm"
-                          className="h-8 bg-white hover:bg-gray-50 border-gray-200 text-gray-700 rounded-lg"
-                        >
-                          {isScoring ? (t.shadowing.re_scoring_in_progress || '重新评分中...') : (t.shadowing.re_score || '重新评分')}
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div className="p-4 bg-white rounded-xl border border-green-200 shadow-sm">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
-                              <span className="text-green-600 text-sm">🏆</span>
-                            </div>
-                            <div className="text-sm font-medium text-green-700">
-                              {t.shadowing.overall_score}
-                            </div>
-                          </div>
-                          <div className="text-3xl font-bold text-green-600">
-                            {(scoringResult.score || 0).toFixed(1)}%
-                          </div>
-                        </div>
-                        <div className="p-4 bg-white rounded-xl border border-blue-200 shadow-sm">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-                              <span className="text-blue-600 text-sm">🎯</span>
-                            </div>
-                            <div className="text-sm font-medium text-blue-700">
-                              {t.shadowing.pronunciation_accuracy}
-                            </div>
-                          </div>
-                          <div className="text-3xl font-bold text-blue-600">
-                            {(scoringResult.score || 0).toFixed(1)}%
-                          </div>
-                        </div>
-                      </div>
-
-                      {scoringResult.feedback && (
-                        <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200 shadow-sm mb-6">
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center">
-                              <span className="text-yellow-600 text-sm">💡</span>
-                            </div>
-                            <div className="text-sm font-medium text-yellow-700">
-                              {t.shadowing.improvement_suggestions}
-                            </div>
-                          </div>
-                          <p className="text-yellow-800 text-sm leading-relaxed">
-                            {scoringResult.feedback}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* 转录文字和原文对比 */}
-                      {scoringResult.transcription && scoringResult.originalText && (
-                        <div className="mt-6">
-                          <h4 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
-                            <span className="text-indigo-600">📝</span>
-                            {t.shadowing.practice_comparison}
-                          </h4>
-                          <div className="space-y-4">
-                            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <div className="text-sm text-gray-600 mb-3 flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
-                                    {t.shadowing.original_text}
-                                  </div>
-                                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm leading-relaxed">
-                                    {scoringResult.originalText}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-600 mb-3 flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                    {t.shadowing.your_pronunciation}
-                                  </div>
-                                  <div
-                                    className={`p-3 rounded-lg border text-sm leading-relaxed ${
-                                      (scoringResult.score || 0) >= 80
-                                        ? 'bg-green-50 border-green-200'
-                                        : (scoringResult.score || 0) >= 60
-                                          ? 'bg-yellow-50 border-yellow-200'
-                                          : 'bg-red-50 border-red-200'
-                                    }`}
-                                  >
-                                    {scoringResult.transcription}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* 详细对比分析 */}
-                              <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200 shadow-sm">
-                                <div className="text-sm text-blue-600 mb-3 flex items-center gap-2">
-                                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                  {t.shadowing.detailed_analysis}
-                                </div>
-                                <div className="text-sm text-gray-700">
-                                  {(() => {
-                                    // 处理中文文本，按字符分割而不是按单词分割
-
-                                    // 使用简单句子分析（支持中文和英文）
-                                    const simpleAnalysis = performSimpleAnalysis(
-                                      scoringResult.originalText,
-                                      scoringResult.transcription,
-                                    );
-                                    const { sentenceAnalysis, overallScore } = simpleAnalysis;
-
-                                    return (
-                                      <div>
-                                        {/* 整体评分 */}
-                                        <div className="mb-4 p-3 bg-white rounded border">
-                                          <div className="text-sm font-medium mb-2">
-                                            {t.shadowing.overall_score}:
-                                          </div>
-                                          <div className="text-2xl font-bold text-blue-600">
-                                            {overallScore}%
-                                          </div>
-                                        </div>
-
-                                        {/* 句子分析 */}
-                                        <div className="space-y-3">
-                                          {sentenceAnalysis.map((sentence, idx) => (
-                                            <div
-                                              key={`sentence-${idx}-${sentence.sentence.substring(0, 20)}`}
-                                              className={`p-3 rounded border ${
-                                                sentence.status === 'correct'
-                                                  ? 'bg-green-50 border-green-200'
-                                                  : sentence.status === 'partial'
-                                                    ? 'bg-yellow-50 border-yellow-200'
-                                                    : 'bg-red-50 border-red-200'
-                                              }`}
-                                            >
-                                              <div className="flex items-center justify-between mb-2">
-                                                <div className="text-sm font-medium">
-                                                  {sentence.status === 'correct' && '✓ '}
-                                                  {sentence.status === 'partial' && '⚠ '}
-                                                  {sentence.status === 'missing' && '❌ '}
-                                                  {t.shadowing.sentence || '句子'} {idx + 1}
-                                                </div>
-                                                <div className="text-sm font-bold">
-                                                  {sentence.score}%
-                                                </div>
-                                              </div>
-
-                                              <div className="text-sm mb-2">
-                                                <span className="font-medium">
-                                                  {t.shadowing.original_text}:
-                                                </span>
-                                                <span className="text-gray-700">
-                                                  &ldquo;{sentence.sentence}&rdquo;
-                                                </span>
-                                              </div>
-
-                                              {sentence.issues.length > 0 && (
-                                                <div className="text-sm text-red-600">
-                                                  <div className="font-medium">
-                                                    {t.shadowing.issues || '问题'}:
-                                                  </div>
-                                                  <ul className="list-disc list-inside space-y-1">
-                                                    {sentence.issues.map((issue, issueIdx) => (
-                                                      <li
-                                                        key={`issue-${issueIdx}-${issue.substring(0, 20)}`}
-                                                      >
-                                                        {issue}
-                                                      </li>
-                                                    ))}
-                                                  </ul>
-                                                </div>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-
-                                        <div className="mt-4 text-xs text-gray-500">
-                                          💡{' '}
-                                          {t.shadowing.analysis_based_on_sentence_level ||
-                                            '分析基于句子级别，更直观地显示发音问题'}
-                                        </div>
-                                      </div>
-                                    );
-
-                                    return (
-                                      <div>
-                                        {/* 整体评分 */}
-                                        <div className="mb-4 p-3 bg-white rounded border">
-                                          <div className="text-sm font-medium mb-2">
-                                            {t.shadowing.overall_score}:
-                                          </div>
-                                          <div className="text-2xl font-bold text-blue-600">
-                                            {overallScore}%
-                                          </div>
-                                        </div>
-
-                                        {/* 句子分析 */}
-                                        <div className="space-y-3">
-                                          {sentenceAnalysis.map((sentence, idx) => (
-                                            <div
-                                              key={idx}
-                                              className={`p-3 rounded border ${
-                                                sentence.status === 'correct'
-                                                  ? 'bg-green-50 border-green-200'
-                                                  : sentence.status === 'partial'
-                                                    ? 'bg-yellow-50 border-yellow-200'
-                                                    : 'bg-red-50 border-red-200'
-                                              }`}
-                                            >
-                                              <div className="flex items-center justify-between mb-2">
-                                                <div className="text-sm font-medium">
-                                                  {sentence.status === 'correct' && '✓ '}
-                                                  {sentence.status === 'partial' && '⚠ '}
-                                                  {sentence.status === 'missing' && '❌ '}
-                                                  {t.shadowing.sentence || '句子'} {idx + 1}
-                                                </div>
-                                                <div className="text-sm font-bold">
-                                                  {sentence.score}%
-                                                </div>
-                                              </div>
-
-                                              <div className="text-sm mb-2">
-                                                <span className="font-medium">
-                                                  {t.shadowing.original_text}:
-                                                </span>
-                                                <span className="text-gray-700">
-                                                  &ldquo;{sentence.sentence}&rdquo;
-                                                </span>
-                                              </div>
-
-                                              {sentence.issues.length > 0 && (
-                                                <div className="text-xs">
-                                                  <span className="font-medium text-red-600">
-                                                    {t.shadowing.issues || '问题'}:
-                                                  </span>
-                                                  <ul className="mt-1 space-y-1">
-                                                    {sentence.issues.map((issue, issueIdx) => (
-                                                      <li
-                                                        key={`issue-${issueIdx}-${issue.substring(0, 20)}`}
-                                                        className="text-red-600"
-                                                      >
-                                                        • {issue}
-                                                      </li>
-                                                    ))}
-                                                  </ul>
-                                                </div>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-
-                                        <div className="mt-3 text-xs text-gray-600">
-                                          💡{' '}
-                                          {t.shadowing.analysis_based_on_sentence_level ||
-                                            '分析基于句子级别，更直观地显示发音问题'}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {!practiceComplete && (!gatingActive || step === 4) && (
-                        <Button
-                          onClick={unifiedCompleteAndSave}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          {t.shadowing.complete_and_save}
-                        </Button>
-                      )}
-                    </Card>
-                  )}
-                  {/* 练习总结区域 */}
-                  {scoringResult && showSentenceComparison && currentItem && (
-                    <Card className="p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold">练习总结</h3>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowSentenceComparison(false)}
-                        >
-                          隐藏
-                        </Button>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="font-medium mb-2 text-green-700">练习内容</h4>
-                          <div className="bg-green-50 p-3 rounded-lg">
-                            <p className="text-sm leading-relaxed">{currentItem.text}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </Container>
 
       {/* 成功提示Toast */}
@@ -8144,14 +5491,6 @@ export default function ShadowingPage() {
         </div>
       )}
       
-      {/* 快捷键帮助弹窗 */}
-      {!actualIsMobile && (
-        <ShortcutsHelpModal
-          isOpen={showShortcutsHelp}
-          onClose={() => setShowShortcutsHelp(false)}
-          shortcuts={keyboardShortcuts}
-        />
-      )}
     </main>
   );
 }

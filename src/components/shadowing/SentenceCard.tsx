@@ -3,7 +3,6 @@
 import React, { useRef, RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { Square, Volume2, ChevronDown, ChevronUp, Mic, RotateCcw, Smile, Meh, Frown, AlertTriangle, XCircle, ArrowRight, Minus, Plus } from 'lucide-react';
-import { useSentenceGesture } from '@/hooks/useSentenceGesture';
 import WaveformAnimation from './WaveformAnimation';
 import { AlignmentResult, AlignmentError } from '@/lib/alignment-utils';
 
@@ -285,21 +284,6 @@ export default function SentenceCard({
       console.error('语音合成失败:', error);
     }
   };
-
-  // 手势支持（仅移动端且未展开时）
-  useSentenceGesture(cardRef as RefObject<HTMLElement>, {
-    enabled: isMobile && !isExpanded,
-    onSwipeRight: onSpeak, // 右滑朗读
-    onSwipeLeft: () => {
-      onToggleExpand();
-      setTimeout(onStartPractice, 300);
-    }, // 左滑展开并练习
-    onDoubleTap: () => {
-      if (score) {
-        onRetry();
-      }
-    }, // 双击重练
-  });
 
   return (
     <div

@@ -330,6 +330,54 @@
       scroll-behavior: auto !important;
     }
   }
+
+  /* Cloze-Shadowing 练习动画 */
+  @keyframes opt-pop {
+    0% { transform: scale(0.94); }
+    60% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .animate-opt-pop { 
+    animation: opt-pop 150ms ease-out; 
+  }
+
+  @keyframes opt-out {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.95); opacity: 0.75; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .animate-opt-out { 
+    animation: opt-out 140ms ease-in-out; 
+  }
+
+  @keyframes card-shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    50% { transform: translateX(2px); }
+    75% { transform: translateX(-1px); }
+    100% { transform: translateX(0); }
+  }
+  .animate-card-shake { 
+    animation: card-shake 220ms ease-in-out; 
+  }
+
+  @keyframes answer-correct {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.0); }
+    50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.15); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.0); }
+  }
+  .animate-answer-correct { 
+    animation: answer-correct 280ms ease-out; 
+  }
+
+  @keyframes answer-wrong {
+    0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.0); }
+    50% { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0.12); }
+    100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.0); }
+  }
+  .animate-answer-wrong { 
+    animation: answer-wrong 280ms ease-out; 
+  }
 }
 
 /* Framer Motion性能优化 */
