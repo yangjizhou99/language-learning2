@@ -3472,12 +3472,18 @@ export default function ShadowingPage() {
   // 主内容区域引用
   const mainContentRef = useRef<HTMLDivElement>(null);
   
-  // 桌面端初始化时自动打开侧边栏
+  // 桌面端初始化时自动打开侧边栏（但如果从每日一题进入或已指定题目，则不自动打开）
   useEffect(() => {
     if (!actualIsMobile) {
-      setMobileSidebarOpen(true);
+      // 检查是否从每日一题进入（src=daily）或已指定题目（item参数存在）
+      const src = navSearchParams?.get('src');
+      const itemId = navSearchParams?.get('item');
+      // 如果是从每日一题进入或已指定题目，不自动打开侧边栏
+      if (src !== 'daily' && !itemId) {
+        setMobileSidebarOpen(true);
+      }
     }
-  }, [actualIsMobile]);
+  }, [actualIsMobile, navSearchParams]);
 
   // 检查是否首次访问，显示引导提示
   useEffect(() => {
