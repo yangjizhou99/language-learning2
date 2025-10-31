@@ -1460,10 +1460,10 @@ export default function ShadowingPage() {
   // 步骤切换时的联动：自动开/关生词模式与翻译偏好
   useEffect(() => {
     if (!currentItem) return;
-    // 只在第3步开启生词模式，其余步骤关闭
-    setIsVocabMode(step === 3);
+    // 只在第2步开启生词模式，其余步骤关闭
+    setIsVocabMode(step === 2);
 
-    if (step === 2) {
+    if (step === 3) {
       setShowTranslation(true);
       const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
       const uiLang = (language as 'en' | 'ja' | 'zh' | 'ko');
@@ -1491,7 +1491,7 @@ export default function ShadowingPage() {
     if (step === 1) {
       setHighlightPlay(true);
       timeoutId = window.setTimeout(() => setHighlightPlay(false), 2000);
-    } else if (step === 3) {
+    } else if (step === 2) {
       setHighlightVocab(true);
       timeoutId = window.setTimeout(() => setHighlightVocab(false), 2000);
     } else if (step === 4) {
@@ -3986,8 +3986,8 @@ export default function ShadowingPage() {
                       >
                         <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin">
                           <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===1?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>1 盲听</span>
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===2?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>2 原文+翻译</span>
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===3?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>3 生词</span>
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===2?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>2 生词</span>
+                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===3?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>3 原文+翻译</span>
                           <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===4?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>4 录音</span>
                         </div>
                         <div className="flex items-center gap-2 ml-2">
@@ -4105,8 +4105,8 @@ export default function ShadowingPage() {
                         )}
                       </div>
 
-                    {/* 生词选择模式切换（仅步骤3显示） */}
-                    {(!gatingActive || step === 3) && (
+                    {/* 生词选择模式切换（仅步骤2显示） */}
+                    {(!gatingActive || step === 2) && (
                     <div className="mb-4 space-y-3">
                       <Button
                         variant={isVocabMode ? 'default' : 'outline'}
@@ -4156,7 +4156,7 @@ export default function ShadowingPage() {
                     {(!gatingActive || step >= 2) && (
                     <div id="shadowing-text" className="relative">
                       <div className="px-6 py-4 bg-amber-50/30 rounded-xl max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                      {step === 2 && currentItem.translations && currentItem.translations[translationLang] && (
+                      {step === 3 && currentItem.translations && currentItem.translations[translationLang] && (
                         <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                           <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
                           <div className="whitespace-pre-wrap text-base text-gray-800">{currentItem.translations[translationLang]}</div>
@@ -4164,8 +4164,8 @@ export default function ShadowingPage() {
                       )}
                       {(isVocabMode || step >= 2) ? (
                         <>
-                          {/* ACU 模式或自由框选模式（仅在步骤3时显示ACU模式） */}
-                          {isACUMode && currentItem?.notes?.acu_units && step === 3 ? (
+                          {/* ACU 模式或自由框选模式（仅在步骤2时显示ACU模式） */}
+                          {isACUMode && currentItem?.notes?.acu_units && step === 2 ? (
                             <AcuText
                               text={currentItem.text}
                               lang={currentItem.lang}
@@ -4175,8 +4175,8 @@ export default function ShadowingPage() {
                             />
                           ) : (
                             <div className="text-lg leading-[2.05]">
-                              {/* 第2步：原文行内逐句播放 */}
-                              {step === 2 && currentItem?.audio_url ? (
+                              {/* 第3步：原文行内逐句播放 */}
+                              {step === 3 && currentItem?.audio_url ? (
                                 <SentenceInlinePlayer
                                   text={currentItem.text}
                                   language={currentItem.lang}
@@ -4783,7 +4783,7 @@ export default function ShadowingPage() {
                       icon={<BookOpen className="w-5 h-5 text-gray-600" />}
                       badge={<span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{previousWords.length}</span>}
                       summary={`${previousWords.length}个生词`}
-                      defaultOpen={step === 3}
+                      defaultOpen={step === 2}
                       className="border-0 shadow-sm"
                       contentClassName="pt-2"
                     >
@@ -4978,7 +4978,7 @@ export default function ShadowingPage() {
                   )}
 
                   {/* 翻译模块 */}
-                  {currentItem && (!gatingActive || step === 2) && (
+                  {currentItem && (!gatingActive || step === 3) && (
                     <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
                       <div className="flex items-center gap-3 mb-6">
                         <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
