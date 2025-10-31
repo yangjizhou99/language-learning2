@@ -130,76 +130,6 @@ export default function ClozeShadowingPracticePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [articleId]);
 
-  // 键盘快捷键处理
-  useEffect(() => {
-    if (showSolution || loading) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // 忽略在输入框中的按键
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      // Backspace: 撤销当前聚焦句子的最近一次选择
-      if (e.key === 'Backspace' && focusedSentenceIndex !== null) {
-        e.preventDefault();
-        const s = sentences.find((s) => s.index === focusedSentenceIndex);
-        if (s && !s.is_placeholder) {
-          const current = answersByIndex[focusedSentenceIndex] || [];
-          const need = needCountForSentence(s);
-          if (current.length > 0 && current.length < need) {
-            handleUndo(focusedSentenceIndex);
-          }
-        }
-        return;
-      }
-
-      // Enter: 跳到下一未完成题目
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (firstIncompleteIndex !== null) {
-          scrollToIndex(firstIncompleteIndex);
-          setFocusedSentenceIndex(firstIncompleteIndex);
-        }
-        return;
-      }
-
-      // 数字键 1-9: 选择当前聚焦句子的第 N 个选项
-      if (e.key >= '1' && e.key <= '9' && focusedSentenceIndex !== null) {
-        e.preventDefault();
-        const s = sentences.find((s) => s.index === focusedSentenceIndex);
-        if (s && !s.is_placeholder && s.options.length > 0) {
-          const optionIndex = parseInt(e.key) - 1;
-          if (optionIndex < s.options.length) {
-            handleSelect(focusedSentenceIndex, s.options[optionIndex]);
-          }
-        }
-        return;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [showSolution, loading, focusedSentenceIndex, sentences, answersByIndex, firstIncompleteIndex, handleUndo, handleSelect, scrollToIndex]);
-
-  const handleUndo = useCallback((sIndex: number) => {
-    setAnswersByIndex((prev) => {
-      const current = prev[sIndex] || [];
-      if (current.length === 0) return prev;
-      const s = sentences.find((s) => s.index === sIndex);
-      if (!s) return prev;
-      const need = needCountForSentence(s);
-      // 仅在未达到所需项数时允许撤销
-      if (current.length >= need) return prev;
-      const next = current.slice(0, -1);
-      // 清除反馈
-      setFeedbackByIndex((prevFb) => ({ ...prevFb, [sIndex]: null }));
-      return { ...prev, [sIndex]: next };
-    });
-  }, [sentences]);
-
   const checkImmediateFeedback = useCallback(async (sIndex: number, picked: string[]) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -264,31 +194,75 @@ export default function ClozeShadowingPracticePage() {
     });
   }, [sentences, articleId, checkImmediateFeedback]);
 
-  const checkImmediateFeedback = useCallback(async (sIndex: number, picked: string[]) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const res = await fetch('/api/cloze-shadowing/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ article_id: articleId, sentence_index: sIndex, selected_options: picked }),
-      });
-      const data = await res.json();
-      if (res.ok && data?.success) {
-        const isCorrect = data.is_correct;
-        setFeedbackByIndex((prevFb) => ({ ...prevFb, [sIndex]: isCorrect ? 'correct' : 'wrong' }));
-        // 错误时触发震动动画
-        if (!isCorrect) {
-          setShaking((prev) => ({ ...prev, [sIndex]: true }));
-          setTimeout(() => {
-            setShaking((prev) => ({ ...prev, [sIndex]: false }));
-          }, 220);
-        }
+  const handleUndo = useCallback((sIndex: number) => {
+    setAnswersByIndex((prev) => {
+      const current = prev[sIndex] || [];
+      if (current.length === 0) return prev;
+      const s = sentences.find((s) => s.index === sIndex);
+      if (!s) return prev;
+      const need = needCountForSentence(s);
+      // 仅在未达到所需项数时允许撤销
+      if (current.length >= need) return prev;
+      const next = current.slice(0, -1);
+      // 清除反馈
+      setFeedbackByIndex((prevFb) => ({ ...prevFb, [sIndex]: null }));
+      return { ...prev, [sIndex]: next };
+    });
+  }, [sentences]);
+
+  // 键盘快捷键处理
+  useEffect(() => {
+    if (showSolution || loading) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 忽略在输入框中的按键
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
       }
-    } catch (e) {
-      // 忽略错误，避免打断用户流程
-    }
-  };
+
+      // Backspace: 撤销当前聚焦句子的最近一次选择
+      if (e.key === 'Backspace' && focusedSentenceIndex !== null) {
+        e.preventDefault();
+        const s = sentences.find((s) => s.index === focusedSentenceIndex);
+        if (s && !s.is_placeholder) {
+          const current = answersByIndex[focusedSentenceIndex] || [];
+          const need = needCountForSentence(s);
+          if (current.length > 0 && current.length < need) {
+            handleUndo(focusedSentenceIndex);
+          }
+        }
+        return;
+      }
+
+      // Enter: 跳到下一未完成题目
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (firstIncompleteIndex !== null) {
+          scrollToIndex(firstIncompleteIndex);
+          setFocusedSentenceIndex(firstIncompleteIndex);
+        }
+        return;
+      }
+
+      // 数字键 1-9: 选择当前聚焦句子的第 N 个选项
+      if (e.key >= '1' && e.key <= '9' && focusedSentenceIndex !== null) {
+        e.preventDefault();
+        const s = sentences.find((s) => s.index === focusedSentenceIndex);
+        if (s && !s.is_placeholder && s.options.length > 0) {
+          const optionIndex = parseInt(e.key) - 1;
+          if (optionIndex < s.options.length) {
+            handleSelect(focusedSentenceIndex, s.options[optionIndex]);
+          }
+        }
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showSolution, loading, focusedSentenceIndex, sentences, answersByIndex, firstIncompleteIndex, handleUndo, handleSelect, scrollToIndex]);
 
   const submitAll = async () => {
     if (!articleId || sentences.length === 0) return;
