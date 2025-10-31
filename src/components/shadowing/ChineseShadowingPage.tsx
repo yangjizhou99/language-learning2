@@ -1399,7 +1399,6 @@ export default function ShadowingPage() {
   // 统一侧边栏状态：所有设备都使用抽屉式
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { actualIsMobile } = useMobile();
-  const [recommendedLevel, setRecommendedLevel] = useState<number>(2);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioPlayerRef = useRef<EnhancedAudioPlayerRef | null>(null);
   const mainAudioContainerRef = useRef<HTMLDivElement | null>(null);
@@ -1507,29 +1506,6 @@ export default function ShadowingPage() {
   // 认证头由 useAuth 提供的 getAuthHeaders 统一处理
 
   // 重复定义的 loadThemes/loadSubtopics 已移除（保留下方新版本）
-  // 获取推荐等级
-  const fetchRecommendedLevel = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      let headers = await getAuthHeaders();
-      let response = await fetch(`/api/shadowing/recommended?lang=${lang}`, { headers });
-      if (response.status === 401) {
-        try {
-          await supabase.auth.refreshSession();
-          headers = await getAuthHeaders();
-          response = await fetch(`/api/shadowing/recommended?lang=${lang}`, { headers });
-        } catch {}
-      }
-      if (response.ok) {
-        const data = await response.json();
-        setRecommendedLevel(data.recommended);
-      }
-    } catch (error) {
-      console.error('Failed to fetch recommended level:', error);
-    }
-  }, [lang, user, getAuthHeaders]);
-
   // 获取题库列表
   const fetchItems = useCallback(async () => {
     // 取消之前的请求
@@ -1650,12 +1626,8 @@ export default function ShadowingPage() {
     if (!authLoading && user && !initialLoadRef.current) {
       initialLoadRef.current = true;
       fetchItems();
-      // 只在初始加载时获取推荐等级（level为null时）
-      if (level === null) {
-        fetchRecommendedLevel();
-      }
     }
-  }, [authLoading, user?.id, fetchItems, fetchRecommendedLevel, level]);
+  }, [authLoading, user?.id, fetchItems]);
 
   // 加载题库（筛选条件变化时）
   useEffect(() => {
@@ -3730,33 +3702,6 @@ export default function ShadowingPage() {
                           </SelectContent>
                         </Select>
                       </div>
-
-                      {/* 推荐等级显示 - 紧凑版 */}
-                      {recommendedLevel && (
-                        <div className="relative p-3 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border border-amber-200 overflow-hidden">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
-                                <Star className="w-3 h-3 text-white fill-white" />
-                              </div>
-                              <div>
-                                <p className="text-xs font-bold text-amber-900">推荐 L{recommendedLevel}</p>
-                                <p className="text-[10px] text-amber-600">根据学习进度</p>
-                              </div>
-                            </div>
-                            {level !== recommendedLevel && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setLevel(recommendedLevel)}
-                                className="h-7 text-xs px-2 bg-amber-500 hover:bg-amber-600 text-white border-0"
-                              >
-                                使用
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      )}
 
                       {/* 练习状态 */}
                       <div className="space-y-2">

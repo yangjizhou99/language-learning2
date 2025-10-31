@@ -1,26 +1,9 @@
-export const dynamic = 'force-dynamic';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
-
-type Metrics = {
-  wer?: number;
-  cer?: number;
-  complete?: boolean;
-  accuracy?: number;
-};
-
-function calculateAccuracy(metrics: Metrics): number {
-  if (!metrics) return 0.0;
-  if (typeof metrics.wer === 'number') return Math.max(0, 1 - metrics.wer);
-  if (typeof metrics.cer === 'number') return Math.max(0, 1 - metrics.cer);
-  if (typeof metrics.accuracy === 'number') return Math.max(0, Math.min(1, metrics.accuracy));
-  return 0.0;
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -82,41 +65,12 @@ export async function GET(req: NextRequest) {
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-    // 计算推荐等级（与 /api/shadowing/recommended 一致逻辑）
+    // 拉取该语言的所有等级已审核题目（不再使用推荐等级）
     const supabaseAdmin = getServiceSupabase();
-    const { data: attempts } = await supabaseAdmin
-      .from('shadowing_attempts')
-      .select('level, metrics, created_at')
-      .eq('lang', lang)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(8);
-
-    let level = 2;
-    if (attempts && attempts.length > 0) {
-      const lastLevel = attempts[0].level as number;
-      const recentSame = attempts.filter((a: any) => a.level === lastLevel).slice(0, 3);
-      const lastAttempt = attempts[0];
-      const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-      if (recentSame.length === 3) {
-        const accuracies = recentSame.map((r: any) => calculateAccuracy(r.metrics as Metrics));
-        const avgAccuracy = avg(accuracies);
-        if (avgAccuracy >= 0.92) level = Math.min(5, lastLevel + 1);
-        else level = lastLevel;
-      } else {
-        const lastAccuracy = calculateAccuracy((lastAttempt?.metrics || {}) as Metrics);
-        const incomplete = (lastAttempt?.metrics as Metrics)?.complete === false;
-        if (incomplete || lastAccuracy < 0.75) level = Math.max(1, lastLevel - 1);
-        else level = lastLevel;
-      }
-    }
-
-    // 拉取该语言/等级的已审核题目
     const { data: items, error: itemsError } = await supabaseAdmin
       .from('shadowing_items')
       .select('*')
       .eq('lang', lang)
-      .eq('level', level)
       .order('created_at', { ascending: false })
       .limit(500);
     if (itemsError) {
@@ -125,7 +79,7 @@ export async function GET(req: NextRequest) {
 
     const allItems = items || [];
     if (allItems.length === 0) {
-      return NextResponse.json({ lang, level, phase: 'cleared' });
+      return NextResponse.json({ lang, level: null, phase: 'cleared' });
     }
 
     const itemIds = allItems.map((i) => i.id);
@@ -158,7 +112,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (phase === 'cleared') {
-      return NextResponse.json({ lang, level, phase: 'cleared', message: '恭喜清空题库', today_done: todayDone });
+      return NextResponse.json({ lang, level: null, phase: 'cleared', message: '恭喜清空题库', today_done: todayDone });
     }
 
     // 当日内固定题目：使用基于日期种子的 rawToday，避免完成后换题
@@ -210,7 +164,7 @@ export async function GET(req: NextRequest) {
       subtopic,
     };
 
-    return NextResponse.json({ lang, level, phase, item, today_done: todayDone });
+    return NextResponse.json({ lang, level: raw.level, phase, item, today_done: todayDone });
   } catch (e) {
     console.error('daily api failed', e);
     return NextResponse.json({ error: 'server_error' }, { status: 500 });
