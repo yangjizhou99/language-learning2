@@ -3641,7 +3641,7 @@ export default function ShadowingPage() {
                 </div>
 
                 {/* 侧边栏内容 - 优化版 */}
-                <div className="flex-1 overflow-y-auto bg-gray-50/50">
+                <div className="flex-1 overflow-y-auto bg-gray-50/50" ref={mobileListScrollRef}>
                   {/* 过滤器 - 使用折叠式布局 */}
                   <div className="p-4 space-y-4">
                     {/* 基础筛选 - 默认展开 */}
@@ -3865,7 +3865,7 @@ export default function ShadowingPage() {
                   />
 
                   {/* 题目列表 */}
-                  <div className="flex-1 overflow-y-auto" ref={mobileListScrollRef}>
+                  <div>
                     {loading ? (
                       <div className="space-y-3 p-4">
                         {Array.from({ length: 8 }).map((_, i) => (
