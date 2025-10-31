@@ -1593,30 +1593,50 @@ export default function ShadowingPage() {
       const params = new URLSearchParams();
       if (lang) params.set('lang', lang);
       if (level) params.set('level', level?.toString() || '');
-      const response = await fetch(`/api/admin/shadowing/themes?${params.toString()}`, { credentials: 'include' });
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/shadowing/themes?${params.toString()}`, { 
+        headers,
+        credentials: 'include' 
+      });
       if (response.ok) {
         const data = await response.json();
         setThemes((data.items || data.themes) ?? []);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to load themes:', response.status, errorText);
+        setThemes([]);
       }
     } catch (error) {
       console.error('Failed to load themes:', error);
+      setThemes([]);
     }
-  }, [lang, level]);
+  }, [lang, level, getAuthHeaders]);
 
   // 加载某主题下的小主题
   const loadSubtopics = useCallback(async (themeId: string) => {
     try {
       const params = new URLSearchParams();
       params.set('theme_id', themeId);
-      const response = await fetch(`/api/admin/shadowing/subtopics?${params.toString()}`, { credentials: 'include' });
+      if (lang) params.set('lang', lang);
+      if (level) params.set('level', level?.toString() || '');
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/shadowing/subtopics?${params.toString()}`, { 
+        headers,
+        credentials: 'include' 
+      });
       if (response.ok) {
         const data = await response.json();
         setSubtopics((data.items || data.subtopics) ?? []);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to load subtopics:', response.status, errorText);
+        setSubtopics([]);
       }
     } catch (error) {
       console.error('Failed to load subtopics:', error);
+      setSubtopics([]);
     }
-  }, []);
+  }, [lang, level, getAuthHeaders]);
 
   // 鉴权由 AuthContext 统一处理
 
@@ -1668,6 +1688,18 @@ export default function ShadowingPage() {
       loadThemes();
     }
   }, [lang, level, authLoading, user?.id, loadThemes]);
+
+  // 当大主题列表更新时，检查当前选择是否仍然有效
+  useEffect(() => {
+    if (selectedThemeId !== 'all' && themes.length > 0) {
+      const themeExists = themes.some((theme) => theme.id === selectedThemeId);
+      if (!themeExists) {
+        setSelectedThemeId('all');
+        setSelectedSubtopicId('all');
+        setSubtopics([]);
+      }
+    }
+  }, [themes, selectedThemeId]);
 
   // 当选择大主题时，加载对应的子主题
   useEffect(() => {
