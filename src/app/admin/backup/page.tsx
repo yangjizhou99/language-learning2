@@ -29,7 +29,7 @@ type DatabaseType = 'local' | 'prod' | 'supabase';
 export default function AdminBackupPage() {
   const [backupPath, setBackupPath] = useState('');
   const [backupType, setBackupType] = useState<BackupType>('all');
-  const [databaseType, setDatabaseType] = useState<DatabaseType>('supabase');
+  const [databaseType, setDatabaseType] = useState<DatabaseType>('local');
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [backupStatus, setBackupStatus] = useState<BackupStatus[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -202,17 +202,34 @@ export default function AdminBackupPage() {
     }
   }, [backupPath, backupType]);
 
-  const loadEnvConfig = async () => {
+  const loadEnvConfig = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/backup/env-config');
       if (response.ok) {
         const data = await response.json();
         setEnvConfig(data);
+        
+        // 如果当前选择的数据库类型不可用，自动切换到第一个可用的数据库
+        if (data.config) {
+          const availableTypes: DatabaseType[] = [];
+          if (data.config.local?.available) availableTypes.push('local');
+          if (data.config.prod?.available) availableTypes.push('prod');
+          if (data.config.supabase?.available) availableTypes.push('supabase');
+          
+          // 如果当前选择的数据库不可用，切换到第一个可用的
+          setDatabaseType(prevType => {
+            const currentAvailable = data.config[prevType]?.available;
+            if (!currentAvailable && availableTypes.length > 0) {
+              return availableTypes[0];
+            }
+            return prevType;
+          });
+        }
       }
     } catch (err) {
       console.error('加载环境配置失败:', err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // 设置默认备份路径
@@ -221,7 +238,7 @@ export default function AdminBackupPage() {
     
     // 加载环境配置
     loadEnvConfig();
-  }, []);
+  }, [loadEnvConfig]);
 
   // 当备份路径或类型变化时，获取对比选项
   useEffect(() => {
@@ -1431,13 +1448,15 @@ export default function AdminBackupPage() {
                         try {
                           const resp = await fetch(`/api/admin/backup/test?databaseType=${databaseType}`);
                           const data = await resp.json();
-                          if (resp.ok && data.tables) {
+                          if (resp.ok && data.success && data.tables) {
                             setTableList(data.tables);
                           } else {
-                            setError(data.error || '获取表列表失败');
+                            setError(data.error || data.message || '获取表列表失败');
+                            setTableList([]);
                           }
-                        } catch {
-                          setError('获取表列表失败');
+                        } catch (err) {
+                          setError(err instanceof Error ? err.message : '获取表列表失败');
+                          setTableList([]);
                         } finally {
                           setIsLoadingTables(false);
                         }
@@ -1503,33 +1522,30 @@ export default function AdminBackupPage() {
                     <SelectValue placeholder="选择数据库类型" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="supabase" disabled={!envConfig?.config?.supabase?.available}>
-                      <div className="flex items-center space-x-2">
-                        <Database className="h-4 w-4" />
-                        <span>Supabase 数据库</span>
-                        {!envConfig?.config?.supabase?.available && (
-                          <span className="text-red-500 text-xs">(不可用)</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="local" disabled={!envConfig?.config?.local?.available}>
-                      <div className="flex items-center space-x-2">
-                        <Database className="h-4 w-4" />
-                        <span>本地数据库</span>
-                        {!envConfig?.config?.local?.available && (
-                          <span className="text-red-500 text-xs">(不可用)</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="prod" disabled={!envConfig?.config?.prod?.available}>
-                      <div className="flex items-center space-x-2">
-                        <Database className="h-4 w-4" />
-                        <span>生产环境数据库</span>
-                        {!envConfig?.config?.prod?.available && (
-                          <span className="text-red-500 text-xs">(不可用)</span>
-                        )}
-                      </div>
-                    </SelectItem>
+                    {envConfig?.config?.local?.available && (
+                      <SelectItem value="local">
+                        <div className="flex items-center space-x-2">
+                          <Database className="h-4 w-4" />
+                          <span>本地数据库</span>
+                        </div>
+                      </SelectItem>
+                    )}
+                    {envConfig?.config?.prod?.available && (
+                      <SelectItem value="prod">
+                        <div className="flex items-center space-x-2">
+                          <Database className="h-4 w-4" />
+                          <span>生产环境数据库</span>
+                        </div>
+                      </SelectItem>
+                    )}
+                    {envConfig?.config?.supabase?.available && (
+                      <SelectItem value="supabase">
+                        <div className="flex items-center space-x-2">
+                          <Database className="h-4 w-4" />
+                          <span>Supabase 数据库</span>
+                        </div>
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-gray-500">
