@@ -107,10 +107,11 @@ export async function connectPostgresWithFallback(connectionString: string): Pro
       } else if (currentPort === '5432') {
         candidates = ['5432', '54340', '54322'];
       } else {
-        candidates = [currentPort, '54340', '54322', '5432'];
+        // 如果指定了其他端口（如 55432），仅使用该端口
+        candidates = [currentPort];
       }
 
-      let lastErr: unknown = null;
+      const errors: Array<{ port: string; error: string }> = [];
       for (const port of candidates) {
         try {
           const u = new URL(connectionString);
@@ -122,19 +123,32 @@ export async function connectPostgresWithFallback(connectionString: string): Pro
           console.log(`本地连接成功: ${u.hostname}:${port}`);
           return { client, effective: u.toString() };
         } catch (err) {
-          lastErr = err;
+          const errorMsg = err instanceof Error ? err.message : String(err);
+          errors.push({ port, error: errorMsg });
         }
       }
-      throw lastErr instanceof Error ? lastErr : new Error('本地连接失败');
+      
+      // 如果所有端口都失败，抛出包含详细信息的错误
+      const errorDetails = errors.map(e => `端口 ${e.port}: ${e.error}`).join('; ');
+      throw new Error(`本地数据库连接失败（尝试了端口: ${candidates.join(', ')}）。详情: ${errorDetails}`);
     }
-  } catch {
+  } catch (err) {
+    // 如果错误已经是我们抛出的，直接抛出
+    if (err instanceof Error && err.message.includes('本地数据库连接失败')) {
+      throw err;
+    }
     // 不是合法URL或非本地，走默认单次连接
   }
 
   // 非本地或解析失败，按原样连接一次
-  const client = new Client({ connectionString, ssl: undefined as any });
-  await client.connect();
-  return { client, effective: connectionString };
+  try {
+    const client = new Client({ connectionString, ssl: undefined as any });
+    await client.connect();
+    return { client, effective: connectionString };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    throw new Error(`数据库连接失败: ${errorMsg}`);
+  }
 }
 
 // 测试数据库连接
@@ -311,3 +325,4 @@ export async function getTableData(type: DatabaseType, tableName: string): Promi
     throw new Error(`获取表数据失败: ${error instanceof Error ? error.message : '未知错误'}`);
   }
 }
+

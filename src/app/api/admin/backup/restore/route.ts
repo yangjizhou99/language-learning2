@@ -1393,17 +1393,36 @@ async function insertNdjsonBatch(
           try { await client.query("SET LOCAL search_path = public"); } catch {}
           // 逐行插入（宽松模式）
           for (const row of rows) {
+            const singleValues = columns.map(col => {
+              const targetType = columnTypeMap[col];
+              return convertValueForInsertByType(row[col], targetType);
+            });
+            const singleSql = `INSERT INTO "${tableName}" (${quotedColumns}) VALUES (${singleValues.join(', ')});`;
+            
             try {
-              const singleValues = columns.map(col => {
-                const targetType = columnTypeMap[col];
-                return convertValueForInsertByType(row[col], targetType);
-              });
-              const singleSql = `INSERT INTO "${tableName}" (${quotedColumns}) VALUES (${singleValues.join(', ')});`;
               await client.query(singleSql);
               result.success++;
             } catch (rowErr) {
+              // 输出SQL语句以便调试
+              console.warn(`行插入失败 SQL:`, singleSql.substring(0, 500));
               console.warn(`行插入失败:`, row, rowErr);
               result.failed++;
+              // 如果事务处于 aborted 状态，回滚并开始新事务
+              try {
+                await client.query('ROLLBACK');
+                await client.query('BEGIN');
+                await client.query('SET LOCAL row_security = off');
+                await client.query('SET CONSTRAINTS ALL DEFERRED');
+                await client.query("SET LOCAL search_path = public");
+              } catch (rollbackErr) {
+                // 如果回滚也失败，尝试开始新事务
+                try {
+                  await client.query('BEGIN');
+                  await client.query('SET LOCAL row_security = off');
+                  await client.query('SET CONSTRAINTS ALL DEFERRED');
+                  await client.query("SET LOCAL search_path = public");
+                } catch {}
+              }
             }
           }
         }
@@ -1645,42 +1664,42 @@ function safelyParseJsonArray(s: string): unknown[] {
 }
 
 function toPostgresArrayLiteral(arr: unknown[], baseType: string): string {
-  // 空数组
-  if (!arr || arr.length === 0) return `'{}'::${baseType}[]`;
-  const elems = arr.map(v => formatArrayElement(v, baseType));
-  return `'{${elems.join(',')}}'::${baseType}[]`;
-}
-
-function formatArrayElement(v: unknown, baseType: string): string {
-  switch (baseType) {
-    case 'integer':
-    case 'bigint':
-    case 'smallint':
-    case 'numeric':
-    case 'real':
-    case 'double precision': {
-      const n = Number(v as unknown as number);
-      return isFinite(n) ? String(n) : 'NULL';
-    }
-    case 'boolean':
-      return (typeof v === 'boolean' ? v : String(v).toLowerCase() === 'true') ? 'true' : 'false';
-    case 'uuid':
-    case 'text':
-    default: {
-      // 作为字符串元素进行转义并包裹双引号（Postgres 数组字面量规则）
-      const s = String(v ?? '');
-      const escaped = s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-      return `"${escaped}"`;
-    }
-    case 'jsonb': {
-      try {
-        const s = JSON.stringify(v);
-        const escaped = s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        return `"${escaped}"`;
-      } catch {
-        return '"{}"';
+  // 使用 PostgreSQL 的 ARRAY 构造器，避免花括号与转义混乱
+  if (!arr || arr.length === 0) return `ARRAY[]::${baseType}[]`;
+  
+  const items = arr.map((it) => {
+    if (it === null || it === undefined) return 'NULL';
+    
+    switch (baseType) {
+      case 'integer':
+      case 'bigint':
+      case 'smallint':
+      case 'numeric':
+      case 'real':
+      case 'double precision': {
+        const num = Number(it);
+        return Number.isFinite(num) && typeof it !== 'string' ? String(num) : 'NULL';
+      }
+      case 'boolean':
+        return (typeof it === 'boolean' ? it : String(it).toLowerCase() === 'true') ? 'TRUE' : 'FALSE';
+      case 'uuid':
+      case 'text':
+      default: {
+        // 字符串类型：转义单引号
+        const s = String(it).replace(/'/g, "''");
+        return `'${s}'`;
+      }
+      case 'jsonb': {
+        try {
+          const s = JSON.stringify(it);
+          return `'${s.replace(/'/g, "''")}'::jsonb`;
+        } catch {
+          return "'{}'::jsonb";
+        }
       }
     }
-  }
+  });
+  
+  return `ARRAY[${items.join(', ')}]::${baseType}[]`;
 }
 
