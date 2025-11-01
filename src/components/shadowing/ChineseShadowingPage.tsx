@@ -5019,6 +5019,8 @@ export default function ShadowingPage() {
                       roleSegments={roleSegments}
                       onRoleRoundComplete={handleRoleRoundComplete}
                       acuUnits={currentItem?.notes?.acu_units}
+                      // 统一使用顶部主音频播放器进行分段播放
+                      onPlaySentence={(i) => playSentenceByIndex(i)}
                     />
                   )}
 
