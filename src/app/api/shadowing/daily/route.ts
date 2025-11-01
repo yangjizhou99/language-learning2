@@ -162,6 +162,7 @@ export async function GET(req: NextRequest) {
       subtopic_id: raw.subtopic_id,
       theme,
       subtopic,
+      notes: raw.notes, // 包含 acu_units 等ACU相关数据
     };
 
     return NextResponse.json({ lang, level: raw.level, phase, item, today_done: todayDone });
