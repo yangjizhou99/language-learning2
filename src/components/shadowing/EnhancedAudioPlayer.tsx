@@ -14,6 +14,7 @@ import {
 interface EnhancedAudioPlayerProps {
   audioUrl: string;
   onPlayStateChange?: (isPlaying: boolean) => void;
+  onSegmentComplete?: (start: number, end: number) => void; // 新增：分段播放完成回调
   duration_ms?: number;
   className?: string;
 }
@@ -31,6 +32,7 @@ export interface EnhancedAudioPlayerRef {
 const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlayerProps>(({
   audioUrl,
   onPlayStateChange,
+  onSegmentComplete,
   duration_ms,
   className = '',
 }, ref) => {
@@ -103,8 +105,12 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
     function watch() {
       const stopAt = stopAtRef.current;
       if (typeof stopAt === 'number' && audioEl.currentTime >= stopAt) {
-        try { audioEl.pause(); } catch {}
-        stopAtRef.current = null;
+        // 到达停止点，暂停音频（会触发 pause 事件，从而 resolve Promise）
+        try {
+          audioEl.pause();
+          // 确保在停止点处停住（由 finish 统一清空 stopAtRef）
+          audioEl.currentTime = Math.min(stopAt, audioEl.currentTime);
+        } catch {}
         if (rafRef.current) {
           cancelAnimationFrame(rafRef.current);
           rafRef.current = null;
@@ -238,12 +244,14 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
           finished = true;
           // 兜底：强制在段末停住，防止继续到下一句
           try {
-            if (audioEl && !audioEl.paused) {
-              const stopAt = stopAtRef.current;
-              if (typeof stopAt === 'number') {
-                try { audioEl.currentTime = Math.min(stopAt, audioEl.currentTime); } catch {}
-              }
-              try { audioEl.pause(); } catch {}
+            const stopAt = stopAtRef.current ?? targetStop;
+            try { audioEl.currentTime = Math.min(stopAt, audioEl.currentTime); } catch {}
+            try { if (!audioEl.paused) audioEl.pause(); } catch {}
+          } catch {}
+          // 触发分段播放完成回调（在清空 stopAtRef 前使用已知的边界）
+          try {
+            if (onSegmentComplete) {
+              onSegmentComplete(targetStart, targetStop);
             }
           } catch {}
           if (safetyId) { clearTimeout(safetyId); safetyId = null; }
@@ -369,4 +377,3 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
 EnhancedAudioPlayer.displayName = 'EnhancedAudioPlayer';
 
 export default EnhancedAudioPlayer;
-
