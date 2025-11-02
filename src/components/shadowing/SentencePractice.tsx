@@ -417,6 +417,21 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const roleCancelledRef = useRef(false);
   const roleProcessingRef = useRef(false); // 防止重复触发
 
+  // 使用 ref 持有最新的 completedSegmentIndex，避免在 setInterval 闭包中捕获旧值
+  const completedSegmentIndexRef = useRef<number | null>(null);
+  useEffect(() => {
+    completedSegmentIndexRef.current = completedSegmentIndex ?? null;
+  }, [completedSegmentIndex]);
+
+  // 使用 ref 缓存 onPlaySentence，避免因父组件重渲染导致 effect 反复重跑
+  const onPlaySentenceRef = useRef<typeof onPlaySentence>();
+  useEffect(() => {
+    onPlaySentenceRef.current = onPlaySentence;
+  }, [onPlaySentence]);
+
+  // 定时器句柄，确保在 effect 清理时可以取消旧的推进定时器
+  const roleTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!isRoleMode) {
       roleCancelledRef.current = true;
@@ -1437,86 +1452,57 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       let cancelled = false;
       const playAndAdvance = async () => {
         try {
-          // 确保麦克风已释放
-          await ensureMicReleased(300);
-          
-          // 再次检查是否已取消（可能在等待期间被取消）
+          // 确保麦克风已释放，避免与播放冲突
+          await ensureMicReleased(200);
+          // 再次检查是否已取消/索引变化
           if (cancelled || roleCancelledRef.current || roleIndexRef.current !== currentIndex) {
             roleProcessingRef.current = false;
             return;
           }
-          
-          // 如果使用 onPlaySentence 回调，通过 completedSegmentIndex 检测播放完成
-          if (typeof onPlaySentence === 'function' && sentenceTimeline && sentenceTimeline.length > 0) {
-            const segIndex = segment.index ?? currentIndex;
-            const seg = sentenceTimeline.find((s) => s.index === segIndex) || sentenceTimeline[segIndex];
-            if (seg && typeof seg.start === 'number' && typeof seg.end === 'number') {
-              try {
-                // 调用 onPlaySentence 开始播放
-                onPlaySentence(segIndex);
-                
-                // 等待 completedSegmentIndex 变为当前句子索引（表示播放完成）
-                await new Promise<void>((resolve) => {
-                  const checkInterval = 100; // 每100ms检查一次
-                  const maxWait = (seg.end - seg.start) * 1000 / playbackRate + 3000; // 最大等待时间（时长 + 3秒缓冲）
-                  let elapsed = 0;
-                  
-                  const checkTimer = setInterval(() => {
-                    // 检查播放完成标识
-                    if (completedSegmentIndex === segIndex) {
-                      clearInterval(checkTimer);
-                      resolve();
-                      return;
-                    }
-                    
-                    elapsed += checkInterval;
-                    // 超时保护
-                    if (elapsed >= maxWait) {
-                      clearInterval(checkTimer);
-                      resolve();
-                    }
-                  }, checkInterval);
-                });
-              } catch (err) {
-                console.error('播放音频失败:', err);
-                // 如果出错，根据时长等待作为兜底
-                const duration = (seg.end - seg.start) * 1000;
-                await new Promise<void>((resolve) => {
-                  setTimeout(resolve, Math.max(duration / playbackRate + 500, 1000));
-                });
-              }
-            } else {
-              await speak(segIndex);
+
+          const segIndex = segment.index ?? currentIndex;
+
+          // 触发播放（不等待事件/Promise，改用定时推进）
+          try {
+            const fn = onPlaySentenceRef.current;
+            if (typeof fn === 'function') {
+              fn(segIndex);
             }
-          } else {
-            // 调用 speak() 播放音频（会自动等待播放完成）
-            await speak(segment.index ?? currentIndex);
+          } catch {}
+
+          // 使用 derivedRoleSegments 的时长作为推进依据（避免依赖父层 timeline 和播放条）
+          const baseDurationMs = (typeof segment.start === 'number' && typeof segment.end === 'number')
+            ? Math.max((segment.end - segment.start) * 1000, 400)
+            : 1200;
+          const fudgeMs = 600;
+          const waitMs = baseDurationMs + fudgeMs;
+
+          // 清理旧定时器（如果有）
+          if (roleTimerRef.current) {
+            try { clearTimeout(roleTimerRef.current); } catch {}
+            roleTimerRef.current = null;
           }
+
+          roleTimerRef.current = window.setTimeout(() => {
+            // 超时后推进到下一句（仍做取消/索引检查）
+            if (cancelled || roleCancelledRef.current) {
+              roleProcessingRef.current = false;
+              return;
+            }
+            if (roleIndexRef.current !== currentIndex) {
+              roleProcessingRef.current = false;
+              return;
+            }
+            const savedIndex = currentIndex;
+            advanceToNextSegment();
+            if (roleIndexRef.current === savedIndex) {
+              // 推进失败，重置处理标记，避免卡死
+              roleProcessingRef.current = false;
+            }
+          }, waitMs);
         } catch (err) {
-          console.error('播放音频失败:', err);
-        }
-        
-        // 播放完成后的处理
-        // 检查是否已取消
-        if (cancelled || roleCancelledRef.current) {
-          roleProcessingRef.current = false;
-          return;
-        }
-        // 检查索引是否仍然匹配（播放完成后索引应该还没变）
-        if (roleIndexRef.current !== currentIndex) {
-          // 索引已经改变，说明已经推进过了，不需要再次推进
-          roleProcessingRef.current = false;
-          return;
-        }
-        // 音频播放完成后，直接调用推进函数
-        // advanceToNextSegment 会重置 roleProcessingRef.current = false 并推进索引
-        // 注意：必须在同一个同步执行中调用，避免中间状态导致重复触发
-        const savedIndex = currentIndex;
-        advanceToNextSegment();
-        // 确保推进成功：检查索引是否真的改变了
-        if (roleIndexRef.current === savedIndex) {
-          // 如果索引没有改变，说明推进失败，重置标记防止卡死
-          console.warn('推进失败，重置处理标记');
+          console.error('播放启动失败:', err);
+          // 出错也尝试推进，避免卡住
           roleProcessingRef.current = false;
         }
       };
@@ -1526,11 +1512,15 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       // 清理函数
       return () => {
         cancelled = true;
+        if (roleTimerRef.current) {
+          try { clearTimeout(roleTimerRef.current); } catch {}
+          roleTimerRef.current = null;
+        }
         // 注意：不在这里重置 roleProcessingRef，让播放完成后自己重置
         // 如果在这里重置，可能导致播放还没完成就重新触发
       };
     }
-  }, [derivedRoleSegments, isRoleMode, normalizedActiveRole, onRoleRoundComplete, roleAutoState, roleStepSignal, start, stopRoleAutomation, ensureMicReleased, cleanupAudio, speak, onPlaySentence, sentenceTimeline, playbackRate, advanceToNextSegment, completedSegmentIndex]);
+  }, [derivedRoleSegments, isRoleMode, normalizedActiveRole, onRoleRoundComplete, roleAutoState, roleStepSignal, start, stopRoleAutomation, ensureMicReleased, cleanupAudio, advanceToNextSegment]);
 
   const handleSentenceClick = async (index: number) => {
     // 如果点击的是当前展开的句子，则折叠

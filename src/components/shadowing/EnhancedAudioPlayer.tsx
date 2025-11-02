@@ -106,12 +106,11 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
       const stopAt = stopAtRef.current;
       if (typeof stopAt === 'number' && audioEl.currentTime >= stopAt) {
         // 到达停止点，暂停音频（会触发 pause 事件，从而 resolve Promise）
-        try { 
+        try {
           audioEl.pause();
-          // 确保在停止点处停住
+          // 确保在停止点处停住（由 finish 统一清空 stopAtRef）
           audioEl.currentTime = Math.min(stopAt, audioEl.currentTime);
         } catch {}
-        stopAtRef.current = null;
         if (rafRef.current) {
           cancelAnimationFrame(rafRef.current);
           rafRef.current = null;
@@ -245,18 +244,16 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
           finished = true;
           // 兜底：强制在段末停住，防止继续到下一句
           try {
-            if (audioEl && !audioEl.paused) {
-              const stopAt = stopAtRef.current;
-              if (typeof stopAt === 'number') {
-                try { audioEl.currentTime = Math.min(stopAt, audioEl.currentTime); } catch {}
-              }
-              try { audioEl.pause(); } catch {}
+            const stopAt = stopAtRef.current ?? targetStop;
+            try { audioEl.currentTime = Math.min(stopAt, audioEl.currentTime); } catch {}
+            try { if (!audioEl.paused) audioEl.pause(); } catch {}
+          } catch {}
+          // 触发分段播放完成回调（在清空 stopAtRef 前使用已知的边界）
+          try {
+            if (onSegmentComplete) {
+              onSegmentComplete(targetStart, targetStop);
             }
           } catch {}
-          // 触发分段播放完成回调
-          if (onSegmentComplete && stopAtRef.current !== null) {
-            onSegmentComplete(targetStart, stopAtRef.current);
-          }
           if (safetyId) { clearTimeout(safetyId); safetyId = null; }
           audioEl.removeEventListener('ended', onEnded);
           audioEl.removeEventListener('pause', onPause);
@@ -380,4 +377,3 @@ const EnhancedAudioPlayer = forwardRef<EnhancedAudioPlayerRef, EnhancedAudioPlay
 EnhancedAudioPlayer.displayName = 'EnhancedAudioPlayer';
 
 export default EnhancedAudioPlayer;
-
