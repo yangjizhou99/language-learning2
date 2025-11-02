@@ -424,7 +424,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   }, [completedSegmentIndex]);
 
   // 使用 ref 缓存 onPlaySentence，避免因父组件重渲染导致 effect 反复重跑
-  const onPlaySentenceRef = useRef<typeof onPlaySentence>();
+  const onPlaySentenceRef = useRef<typeof onPlaySentence>(undefined);
   useEffect(() => {
     onPlaySentenceRef.current = onPlaySentence;
   }, [onPlaySentence]);
