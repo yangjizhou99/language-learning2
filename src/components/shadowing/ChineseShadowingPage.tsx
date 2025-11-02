@@ -1670,14 +1670,23 @@ export default function ShadowingPage() {
   } | null>(null);
   const [isScoring, setIsScoring] = useState(false);
   const [currentTranscription, setCurrentTranscription] = useState<string>('');
+  // 播放完成的句子索引（用于分角色模式检测播放完成）
+  const [completedSegmentIndex, setCompletedSegmentIndex] = useState<number | null>(null);
 
   // 统一分段播放：由底部 EnhancedAudioPlayer 控制
-  const playSentenceByIndex = (index: number) => {
+  // playSegment 内部已经通过监听 currentTime >= stopAt 来判断播放完成
+  const playSentenceByIndex = (index: number): Promise<void> | void => {
     const timeline = (currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline;
     if (!timeline || !Array.isArray(timeline) || !timeline.length) return;
     const seg = timeline.find(s => s.index === index) || timeline[index];
-    if (!seg) return;
-    try { audioPlayerRef.current?.playSegment(seg.start, seg.end); } catch {}
+    if (!seg || typeof seg.start !== 'number' || typeof seg.end !== 'number') return;
+    
+    try {
+      // playSegment 已经返回 Promise，它会监听播放条时间点（currentTime >= stopAt）来判断完成
+      return audioPlayerRef.current?.playSegment(seg.start, seg.end);
+    } catch {
+      return;
+    }
   };
 
   // 桌面端显示播放器：已在渲染层保证展示，如需自动滚动可在后续交互中触发
@@ -4932,6 +4941,19 @@ export default function ShadowingPage() {
                               } catch {}
                             }
                           }}
+                          onSegmentComplete={(start, end) => {
+                            // 找到对应的句子索引
+                            const timeline = (currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline;
+                            if (timeline && Array.isArray(timeline)) {
+                              const seg = timeline.find(s => 
+                                typeof s.start === 'number' && typeof s.end === 'number' &&
+                                Math.abs(s.start - start) < 0.1 && Math.abs(s.end - end) < 0.1
+                              );
+                              if (seg && typeof seg.index === 'number') {
+                                setCompletedSegmentIndex(seg.index);
+                              }
+                            }
+                          }}
                           duration_ms={currentItem.duration_ms}
                         />
                       </div>
@@ -5245,6 +5267,7 @@ export default function ShadowingPage() {
                       acuUnits={currentItem?.notes?.acu_units}
                       // 统一使用顶部主音频播放器进行分段播放
                       onPlaySentence={(i) => playSentenceByIndex(i)}
+                      completedSegmentIndex={completedSegmentIndex}
                     />
                   )}
 
