@@ -1032,9 +1032,233 @@ export default function ShadowingPage() {
 
   // （移除重复母语加载副作用，统一由"步骤切换时的联动"处理翻译语言）
 
-  // 发音功能
+  // 增强的发音功能 (使用和黄字相同的语音选择逻辑)
   const speakWord = (word: string, lang: string) => {
-    speakTextUtil(word, lang);
+    // 调用浏览器发音 - 使用和黄字相同的逻辑
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        // 停止当前正在播放的语音
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(word);
+        
+        // 根据当前语言设置语音
+        const langMap: Record<string, string> = {
+          'ja': 'ja-JP',
+          'zh': 'zh-CN', 
+          'en': 'en-US',
+          'ko': 'ko-KR',
+        };
+        const langCode = langMap[lang] || 'ko-KR';
+        utterance.lang = langCode;
+        utterance.rate = 0.5; // 放慢语速，更清晰
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        // 选择最合适的语音引擎（iPad 上非常重要）
+        // 优先选择女性语音，避免奇怪的男性声音
+        const selectBestVoice = () => {
+          const voices = window.speechSynthesis.getVoices();
+          
+          // 对于日语，优先选择女性日语语音引擎
+          if (lang === 'ja') {
+            const japaneseVoices = voices.filter(
+              (voice) =>
+                voice.lang.startsWith('ja') ||
+                voice.name.toLowerCase().includes('japanese') ||
+                voice.name.toLowerCase().includes('japan'),
+            );
+            
+            if (japaneseVoices.length > 0) {
+              // 优先选择女性日语语音（常见名称：Kyoko, Siri Female等）
+              const nameLower = (name: string) => name.toLowerCase();
+              
+              // 首先尝试找到明确包含女性关键词的语音
+              const preferredFemaleVoices = japaneseVoices.filter(voice => {
+                const name = nameLower(voice.name);
+                return name.includes('kyoko') ||
+                       name.includes('female') ||
+                       name.includes('woman') ||
+                       (name.includes('siri') && !name.includes('male'));
+              });
+              
+              if (preferredFemaleVoices.length > 0) {
+                utterance.voice = preferredFemaleVoices[0];
+                return;
+              }
+              
+              // 如果没有明确的女性语音，选择不包含男性关键词的语音
+              const nonMaleVoices = japaneseVoices.filter(voice => {
+                const name = nameLower(voice.name);
+                return !name.includes('otoya') &&
+                       !name.includes('male') &&
+                       !name.includes('man');
+              });
+              
+              if (nonMaleVoices.length > 0) {
+                utterance.voice = nonMaleVoices[0];
+                return;
+              }
+              
+              // 最后，使用第一个可用的日语语音
+              utterance.voice = japaneseVoices[0];
+              return;
+            }
+          }
+          
+          // 对于中文，优先选择女性中文语音引擎
+          if (lang === 'zh') {
+            const chineseVoices = voices.filter(
+              (voice) =>
+                voice.lang.startsWith('zh') ||
+                voice.name.toLowerCase().includes('chinese') ||
+                voice.name.toLowerCase().includes('mandarin'),
+            );
+            
+            if (chineseVoices.length > 0) {
+              // 优先选择女性中文语音（常见名称：Ting-Ting等）
+              const nameLower = (name: string) => name.toLowerCase();
+              
+              // 首先尝试找到明确包含女性关键词的语音
+              const preferredFemaleVoices = chineseVoices.filter(voice => {
+                const name = nameLower(voice.name);
+                return name.includes('ting') ||
+                       name.includes('female') ||
+                       name.includes('woman');
+              });
+              
+              if (preferredFemaleVoices.length > 0) {
+                utterance.voice = preferredFemaleVoices[0];
+                return;
+              }
+              
+              // 如果没有明确的女性语音，选择不包含男性关键词的语音
+              const nonMaleVoices = chineseVoices.filter(voice => {
+                const name = nameLower(voice.name);
+                return !name.includes('yu-shu') &&
+                       !name.includes('male') &&
+                       !name.includes('man');
+              });
+              
+              if (nonMaleVoices.length > 0) {
+                utterance.voice = nonMaleVoices[0];
+                return;
+              }
+              
+              // 最后，使用第一个可用的中文语音
+              utterance.voice = chineseVoices[0];
+              return;
+            }
+          }
+          
+          // 对于韩语，优先选择女性韩语语音引擎
+          if (lang === 'ko') {
+            const koreanVoices = voices.filter(
+              (voice) =>
+                voice.lang.startsWith('ko') ||
+                voice.name.toLowerCase().includes('korean') ||
+                voice.name.toLowerCase().includes('korea') ||
+                voice.name.toLowerCase().includes('한국어'),
+            );
+            
+            if (koreanVoices.length > 0) {
+              // 优先选择女性韩语语音（常见名称：Yuna, Sora等）
+              const nameLower = (name: string) => name.toLowerCase();
+              
+              // 首先尝试找到明确包含女性关键词的语音
+              const preferredFemaleVoices = koreanVoices.filter(voice => {
+                const name = nameLower(voice.name);
+                return name.includes('yuna') ||
+                       name.includes('sora') ||
+                       name.includes('female') ||
+                       name.includes('woman') ||
+                       name.includes('여성');
+              });
+              
+              if (preferredFemaleVoices.length > 0) {
+                utterance.voice = preferredFemaleVoices[0];
+                return;
+              }
+              
+              // 如果没有明确的女性语音，选择不包含男性关键词的语音
+              const nonMaleVoices = koreanVoices.filter(voice => {
+                const name = nameLower(voice.name);
+                return !name.includes('male') &&
+                       !name.includes('man');
+              });
+              
+              if (nonMaleVoices.length > 0) {
+                utterance.voice = nonMaleVoices[0];
+                return;
+              }
+              
+              // 最后，使用第一个可用的韩语语音
+              utterance.voice = koreanVoices[0];
+              return;
+            }
+          }
+          
+          // 如果没有找到特定语言的语音，尝试匹配语言代码
+          const matchingVoices = voices.filter(
+            (voice) => voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0]),
+          );
+          
+          if (matchingVoices.length > 0) {
+            // 在匹配的语音中，也优先选择女性语音
+            const nameLower = (name: string) => name.toLowerCase();
+            
+            // 首先尝试找到明确包含女性关键词的语音
+            const preferredFemaleVoices = matchingVoices.filter(voice => {
+              const name = nameLower(voice.name);
+              return name.includes('female') ||
+                     name.includes('woman');
+            });
+            
+            if (preferredFemaleVoices.length > 0) {
+              utterance.voice = preferredFemaleVoices[0];
+              return;
+            }
+            
+            // 如果没有明确的女性语音，选择不包含男性关键词的语音
+            const nonMaleVoices = matchingVoices.filter(voice => {
+              const name = nameLower(voice.name);
+              return !name.includes('male') &&
+                     !name.includes('man');
+            });
+            
+            if (nonMaleVoices.length > 0) {
+              utterance.voice = nonMaleVoices[0];
+            } else {
+              utterance.voice = matchingVoices[0];
+            }
+          }
+        };
+        
+        // 尝试选择最佳语音引擎
+        selectBestVoice();
+        
+        // 如果语音列表还没有加载完成（iPad 上常见），等待加载
+        if (window.speechSynthesis.getVoices().length === 0) {
+          const handleVoicesChanged = () => {
+            selectBestVoice();
+            window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+          };
+          window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+          
+          // 如果一段时间后仍然没有加载，尝试直接播放（使用默认语音）
+          setTimeout(() => {
+            if (window.speechSynthesis.getVoices().length === 0) {
+              window.speechSynthesis.speak(utterance);
+            }
+          }, 1000);
+        } else {
+          // 语音列表已加载，直接播放
+          window.speechSynthesis.speak(utterance);
+        }
+      } catch (error) {
+        console.error('语音合成失败:', error);
+      }
+    }
   };
 
   // 悬停/点击解释组件
@@ -1144,7 +1368,7 @@ export default function ShadowingPage() {
           };
           const langCode = langMap[lang] || 'ko-KR';
           utterance.lang = langCode;
-          utterance.rate = 0.8; // 优化语速，更自然
+          utterance.rate = 0.5; // 放慢语速，更清晰
           utterance.pitch = 1.0;
           utterance.volume = 1.0;
           
