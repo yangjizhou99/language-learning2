@@ -86,9 +86,52 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         }
       }
       
-      // 对于其他语言，检查unit是否包含已选择词
-      if (span.includes(selectedWordText)) {
-        return true;
+      // 对于日语，检查词边界，确保完整词汇匹配而非子字符串匹配
+      if (lang === 'ja' && span.includes(selectedWordText)) {
+        const startIndex = span.indexOf(selectedWordText);
+        if (startIndex >= 0) {
+          const endIndex = startIndex + selectedWordText.length;
+          
+          // 检查词前边界（空格、标点符号或非日文字符）
+          const beforeChar = startIndex > 0 ? span[startIndex - 1] : '';
+          const isBeforeBoundary = startIndex === 0 || 
+            /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
+            !/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(beforeChar); // 非日文字符（平假名、片假名、汉字）
+          
+          // 检查词后边界（空格、标点符号或非日文字符）
+          const afterChar = endIndex < span.length ? span[endIndex] : '';
+          const isAfterBoundary = endIndex === span.length || 
+            /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
+            !/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(afterChar); // 非日文字符（平假名、片假名、汉字）
+          
+          if (isBeforeBoundary && isAfterBoundary) {
+            return true;
+          }
+        }
+      }
+      
+      // 对于中文，也应检查词边界
+      if (lang === 'zh' && span.includes(selectedWordText)) {
+        const startIndex = span.indexOf(selectedWordText);
+        if (startIndex >= 0) {
+          const endIndex = startIndex + selectedWordText.length;
+          
+          // 检查词前边界（空格、标点符号或非中文字符）
+          const beforeChar = startIndex > 0 ? span[startIndex - 1] : '';
+          const isBeforeBoundary = startIndex === 0 || 
+            /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
+            !/[\u4e00-\u9faf]/.test(beforeChar); // 非中文字符（汉字）
+          
+          // 检查词后边界（空格、标点符号或非中文字符）
+          const afterChar = endIndex < span.length ? span[endIndex] : '';
+          const isAfterBoundary = endIndex === span.length || 
+            /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
+            !/[\u4e00-\u9faf]/.test(afterChar); // 非中文字符（汉字）
+          
+          if (isBeforeBoundary && isAfterBoundary) {
+            return true;
+          }
+        }
       }
       
       // 关键修复：检查已选择生词是否包含unit的span（用于处理连续块合并的情况）
@@ -116,7 +159,52 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
             if (startIndex === 0 || endIndex === selectedWordText.length) {
               return true;
             }
-          } else {
+          }
+          // 对于日语，同样需要词边界检查
+          else if (lang === 'ja') {
+            const beforeChar = startIndex > 0 ? selectedWordText[startIndex - 1] : '';
+            const isBeforeBoundary = startIndex === 0 || 
+              /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
+              !/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(beforeChar); // 非日文字符
+            
+            const afterChar = endIndex < selectedWordText.length ? selectedWordText[endIndex] : '';
+            const isAfterBoundary = endIndex === selectedWordText.length || 
+              /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
+              !/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(afterChar); // 非日文字符
+            
+            // 如果unit的span在已选择生词中是一个完整的词，则匹配
+            if (isBeforeBoundary && isAfterBoundary) {
+              return true;
+            }
+            
+            // 对于连续块的情况，如果unit的span在已选择生词的开头或结尾，也应该匹配
+            if (startIndex === 0 || endIndex === selectedWordText.length) {
+              return true;
+            }
+          }
+          // 对于中文，同样需要词边界检查
+          else if (lang === 'zh') {
+            const beforeChar = startIndex > 0 ? selectedWordText[startIndex - 1] : '';
+            const isBeforeBoundary = startIndex === 0 || 
+              /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
+              !/[\u4e00-\u9faf]/.test(beforeChar); // 非中文字符
+            
+            const afterChar = endIndex < selectedWordText.length ? selectedWordText[endIndex] : '';
+            const isAfterBoundary = endIndex === selectedWordText.length || 
+              /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
+              !/[\u4e00-\u9faf]/.test(afterChar); // 非中文字符
+            
+            // 如果unit的span在已选择生词中是一个完整的词，则匹配
+            if (isBeforeBoundary && isAfterBoundary) {
+              return true;
+            }
+            
+            // 对于连续块的情况，如果unit的span在已选择生词的开头或结尾，也应该匹配
+            if (startIndex === 0 || endIndex === selectedWordText.length) {
+              return true;
+            }
+          }
+          else {
             // 对于非英文语言（中文、日文、韩文），更宽松的匹配策略
             // 检查unit的span是否在已选择生词的开头或结尾，直接匹配（这是连续块合并的情况）
             if (startIndex === 0 || endIndex === selectedWordText.length) {
