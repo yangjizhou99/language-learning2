@@ -42,10 +42,8 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         return true;
       }
       
-      // 检查unit的span是否包含已选择生词（unit包含已选择词）
-      // 对于韩语，需要检查词边界
+      // 检查unit的span是否包含已选择生词（unit包含已选择词）- 使用词边界检查
       if (lang === 'ko' && span.includes(selectedWordText)) {
-        // 检查是否在词边界
         const startIndex = span.indexOf(selectedWordText);
         if (startIndex >= 0) {
           const endIndex = startIndex + selectedWordText.length;
@@ -68,7 +66,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         }
       }
       
-      // 对于英文，加入大小写不敏感的词边界判断，避免 though 命中 thought
+      // 对于英文，检查词边界
       if (lang === 'en' && span.toLowerCase().includes(selectedWordText.toLowerCase())) {
         const lowerSpan = span.toLowerCase();
         const lowerWord = selectedWordText.toLowerCase();
@@ -86,7 +84,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         }
       }
       
-      // 对于日语，检查词边界，确保完整词汇匹配而非子字符串匹配
+      // 对于日语，检查词边界
       if (lang === 'ja' && span.includes(selectedWordText)) {
         const startIndex = span.indexOf(selectedWordText);
         if (startIndex >= 0) {
@@ -110,7 +108,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         }
       }
       
-      // 对于中文，也应检查词边界
+      // 对于中文，检查词边界
       if (lang === 'zh' && span.includes(selectedWordText)) {
         const startIndex = span.indexOf(selectedWordText);
         if (startIndex >= 0) {
@@ -134,14 +132,14 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         }
       }
       
-      // 关键修复：检查已选择生词是否包含unit的span（用于处理连续块合并的情况）
-      // 例如：已选择生词是"块1块2块3"，当前unit是"块1"、"块2"或"块3"时，应该匹配
+      // 检查已选择生词是否包含unit的span（用于处理连续块合并的情况）
+      // 例如：已选择生词是"今日も頑張ろう"，当前unit是"も"或"頑張"时，应该匹配
       if (selectedWordText.includes(span)) {
         const startIndex = selectedWordText.indexOf(span);
         if (startIndex >= 0) {
           const endIndex = startIndex + span.length;
           
-          // 对于英文，需要检查词边界，避免误匹配
+          // 对于英文，进行词边界检查
           if (lang === 'en') {
             const isLetter = (ch: string) => /[A-Za-z]/.test(ch);
             const beforeChar = startIndex > 0 ? selectedWordText[startIndex - 1] : '';
@@ -153,14 +151,8 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
             if (isBeforeBoundary && isAfterBoundary) {
               return true;
             }
-            
-            // 对于连续块的情况，即使不是完整词边界，如果unit的span在已选择生词的开头或结尾，也应该匹配
-            // 这是为了处理连续块合并的情况，比如"块1块2块3"应该匹配"块1"、"块2"、"块3"
-            if (startIndex === 0 || endIndex === selectedWordText.length) {
-              return true;
-            }
           }
-          // 对于日语，同样需要词边界检查
+          // 对于日语，进行词边界检查
           else if (lang === 'ja') {
             const beforeChar = startIndex > 0 ? selectedWordText[startIndex - 1] : '';
             const isBeforeBoundary = startIndex === 0 || 
@@ -176,13 +168,8 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
             if (isBeforeBoundary && isAfterBoundary) {
               return true;
             }
-            
-            // 对于连续块的情况，如果unit的span在已选择生词的开头或结尾，也应该匹配
-            if (startIndex === 0 || endIndex === selectedWordText.length) {
-              return true;
-            }
           }
-          // 对于中文，同样需要词边界检查
+          // 对于中文，进行词边界检查
           else if (lang === 'zh') {
             const beforeChar = startIndex > 0 ? selectedWordText[startIndex - 1] : '';
             const isBeforeBoundary = startIndex === 0 || 
@@ -198,40 +185,11 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
             if (isBeforeBoundary && isAfterBoundary) {
               return true;
             }
-            
-            // 对于连续块的情况，如果unit的span在已选择生词的开头或结尾，也应该匹配
-            if (startIndex === 0 || endIndex === selectedWordText.length) {
-              return true;
-            }
           }
           else {
-            // 对于非英文语言（中文、日文、韩文），更宽松的匹配策略
-            // 检查unit的span是否在已选择生词的开头或结尾，直接匹配（这是连续块合并的情况）
-            if (startIndex === 0 || endIndex === selectedWordText.length) {
-              return true;
-            }
-            
-            // 检查是否在词边界处（空格、标点符号或韩文词边界）
-            const beforeChar = startIndex > 0 ? selectedWordText[startIndex - 1] : '';
-            const afterChar = endIndex < selectedWordText.length ? selectedWordText[endIndex] : '';
-            const isBeforeBoundary = startIndex === 0 || 
-              /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
-              (lang === 'ko' && !/[\uac00-\ud7af]/.test(beforeChar)); // 韩文词边界
-            const isAfterBoundary = endIndex === selectedWordText.length || 
-              /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
-              (lang === 'ko' && !/[\uac00-\ud7af]/.test(afterChar)); // 韩文词边界
-            
-            if (isBeforeBoundary && isAfterBoundary) {
-              return true;
-            }
-            
-            // 对于连续块的情况，即使不在词边界处，如果unit的span在已选择生词中，也应该匹配
-            // 这是为了处理连续块合并的情况，比如"块1块2块3"应该匹配"块1"、"块2"、"块3"
-            // 注意：这里使用更宽松的匹配，因为连续块合并时可能没有空格分隔
-            // 但要避免误匹配，只在已选择生词明显比unit的span长时才匹配（说明是合并后的文本）
-            if (selectedWordText.length > span.length) {
-              return true;
-            }
+            // 对于其他语言，如果unit的span在已选择生词的内部，也应匹配（连续块的情况）
+            // 例如：已选择生词"今日も頑張ろう"，当前unit"も"或"頑張"
+            return true;
           }
         }
       }
