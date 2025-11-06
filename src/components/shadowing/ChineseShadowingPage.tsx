@@ -4551,12 +4551,7 @@ export default function ShadowingPage() {
                     {(!gatingActive || step >= 2) && (
                     <div id="shadowing-text" className="relative">
                       <div className="px-6 py-4 bg-amber-50/30 rounded-xl max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                      {step === 3 && currentItem.translations && currentItem.translations[translationLang] && (
-                        <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                          <div className="text-sm text-gray-600 mb-1">{t.shadowing.translation || '翻译'}</div>
-                          <div className="whitespace-pre-wrap text-base text-gray-800">{currentItem.translations[translationLang]}</div>
-                        </div>
-                      )}
+                      {/* 移除顶部翻译块，翻译在下方专用模块中展示 */}
                       {(isVocabMode || step >= 2) ? (
                         <>
                           {/* ACU 模式或自由框选模式（仅在步骤2时显示ACU模式） */}
@@ -4577,6 +4572,11 @@ export default function ShadowingPage() {
                                   language={currentItem.lang}
                                   sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
                                   onPlaySentence={(i) => playSentenceByIndex(i)}
+                                  enablePractice
+                                  showCompactProgress
+                                  acuUnits={currentItem?.notes?.acu_units}
+                                  translationText={currentItem.translations?.[translationLang]}
+                                  translationLanguage={translationLang as 'en'|'ja'|'zh'|'ko'}
                                   renderText={(line: string) => {
                                     // 基于当前已选与生词本构造 allSelectedWords
                                     const picked = [...previousWords, ...selectedWords];

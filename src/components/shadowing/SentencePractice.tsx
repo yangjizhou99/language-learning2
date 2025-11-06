@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { performAlignment, calculateSimilarityScore, AlignmentResult, AcuUnit } from '@/lib/alignment-utils';
 import { toast } from 'sonner';
+import { useSentencePracticeCore } from '@/hooks/useSentencePracticeCore';
 
 type Lang = 'ja' | 'en' | 'zh' | 'ko';
 
@@ -390,19 +391,68 @@ const computeRoleScore = (target: string, said: string, lang: Lang) => {
 
 function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits, onPlaySentence, completedSegmentIndex, renderText }: SentencePracticeProps) {
   const { t } = useLanguage();
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
-  const [isRecognizing, setIsRecognizing] = useState(false);
   const [displayText, setDisplayText] = useState('');
   const [finalText, setFinalText] = useState('');
   const [sentenceScores, setSentenceScores] = useState<Record<number, SentenceScore>>({});
   const [customToast, setCustomToast] = useState<{ message: string; type: 'success' | 'info' | 'celebration' } | null>(null);
   const [highlightUnperfect, setHighlightUnperfect] = useState(false);
-  
-  // 音频播放速度控制状态
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [isRecognizing, setIsRecognizing] = useState(false);
+  // 角色模式播放控制所需状态
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-
+  
+  // 音频播放速度控制状态
   const isRoleMode = practiceMode === 'role';
+
+  // 非分角色模式：抽取核心 Hook（始终调用，禁用开关确保不在角色模式初始化识别）
+  const practice = useSentencePracticeCore({
+    originalText: originalText || '',
+    language: language as any,
+    sentenceTimeline: sentenceTimeline as any,
+    onPlaySentence: onPlaySentence as any,
+    acuUnits,
+    enabled: !isRoleMode,
+  });
+
+  const nonRoleContent = (
+    <Card className={`p-4 ${className}`}>
+      <div className="mb-3">
+        <SentencePracticeProgress
+          total={practice.total}
+          scores={practice.sentenceScores}
+          onJumpToSentence={(index) => practice.setExpandedIndex(index)}
+        />
+      </div>
+      <div className="space-y-2">
+        {practice.sentences.map((s, index) => {
+          const score = practice.sentenceScores[index] || null;
+          const isExpanded = practice.expandedIndex === index;
+          return (
+            <SentenceCard
+              key={index}
+              index={index}
+              sentence={s.text}
+              score={score}
+              isExpanded={isExpanded}
+              isRecognizing={practice.isRecognizing && isExpanded}
+              displayText={isExpanded ? practice.displayText : ''}
+              finalText={isExpanded ? practice.finalText : ''}
+              currentMetrics={isExpanded && score ? { score: score.score, missing: score.missing, extra: score.extra, alignmentResult: score.alignmentResult } : null}
+              isMobile={false}
+              language={language}
+              onToggleExpand={() => practice.setExpandedIndex(isExpanded ? null : index)}
+              onSpeak={() => practice.speak(index)}
+              onStartPractice={() => practice.start(index)}
+              onStopPractice={() => practice.stop()}
+              onRetry={() => practice.retry(index)}
+              renderText={renderText}
+            />
+          );
+        })}
+      </div>
+    </Card>
+  );
   const normalizedActiveRole = useMemo(() => normalizeSpeakerSymbol(activeRole || 'A'), [activeRole]);
   const derivedRoleSegments = useMemo(() => {
     if (!isRoleMode) return [] as RolePracticeSegment[];
@@ -1550,6 +1600,10 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     }).length;
     return { practiced, total, goodCount };
   }, [sentenceScores, total]);
+
+  if (!isRoleMode) {
+    return nonRoleContent;
+  }
 
   return (
     <>
