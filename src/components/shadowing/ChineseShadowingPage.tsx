@@ -617,6 +617,17 @@ export default function ShadowingPage() {
   const [practiceStartTime, setPracticeStartTime] = useState<Date | null>(null);
   const [currentRecordings, setCurrentRecordings] = useState<AudioRecording[]>([]);
   const [isImporting, setIsImporting] = useState(false);
+  // 从首页每日一题等入口深链进入时，用于在题目自动加载期间展示整页加载动画
+  const [initialDeepLinkLoading, setInitialDeepLinkLoading] = useState(() => {
+    try {
+      const params = new URLSearchParams(navSearchParams?.toString() || '');
+      const itemId = params.get('item');
+      const auto = params.get('autostart') === '1';
+      return !!itemId && auto;
+    } catch {
+      return false;
+    }
+  });
 
   // 录音组件引用
   const audioRecorderRef = useRef<{
@@ -2480,6 +2491,10 @@ export default function ShadowingPage() {
         const itemId = searchParams?.get('item');
         explicitItemRef.current = !!itemId;
         const auto = searchParams?.get('autostart') === '1';
+        // 从每日一题等入口自动进入某道题时，显示整页加载动画，直至题目加载完成
+        if (itemId && auto) {
+          setInitialDeepLinkLoading(true);
+        }
         if (!itemId) return;
         // 记录待自动进入的题目，若立即加载失败，待题库就绪后再尝试
         pendingItemIdRef.current = itemId;
@@ -2555,7 +2570,12 @@ export default function ShadowingPage() {
           pendingItemIdRef.current = null;
           lastLoadedItemIdRef.current = itemId;
         }
-      } catch {}
+      } catch {
+        // 忽略错误，避免阻断后续兜底逻辑
+      } finally {
+        // 无论成功或失败，都结束初始深链加载动画；若后续成功进入题目，会通过 currentItem 渲染实际内容
+        setInitialDeepLinkLoading(false);
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -3905,6 +3925,17 @@ export default function ShadowingPage() {
   }
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      {/* 从首页“每日一题”等入口自动跳转到具体题目时的整页加载遮罩 */}
+      {initialDeepLinkLoading && !currentItem && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/75 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-gray-600">
+              {t.shadowing.daily_loading || '正在为你加载今日题目...'}
+            </p>
+          </div>
+        </div>
+      )}
       <Container>
         <Breadcrumbs items={[{ href: '/', label: t.nav.home }, { label: t.shadowing.title }]} />
 

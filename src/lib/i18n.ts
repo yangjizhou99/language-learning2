@@ -345,6 +345,8 @@ export interface Translations {
     shadowing_practice: string;
     shadowing_vocabulary: string;
     no_questions_found: string;
+    // 首页每日一题等入口：自动跳转到 Shadowing 题目时的加载提示
+    daily_loading: string;
     // 生词解释相关
     no_explanation: string;
     explanation: string;
@@ -994,6 +996,8 @@ const zh: Translations = {
     shadowing_practice: 'Shadowing 练习',
     shadowing_vocabulary: 'Shadowing 题库',
     no_questions_found: '没有找到题目',
+    // 首页每日一题等入口：自动跳转时的加载提示
+    daily_loading: '正在为你加载今日题目...',
     // 生词解释相关
     no_explanation: '暂无解释',
     explanation: '解释',
@@ -1648,6 +1652,8 @@ const en: Translations = {
     shadowing_practice: 'Shadowing Practice',
     shadowing_vocabulary: 'Shadowing Catalog',
     no_questions_found: 'No questions found',
+    // Home "Daily task" entry: loading hint when navigating into a shadowing question
+    daily_loading: 'Loading today\'s question for you...',
     // 生词解释相关
     no_explanation: 'No explanation available',
     explanation: 'Explanation',
@@ -2301,6 +2307,8 @@ const ja: Translations = {
     shadowing_practice: 'シャドーイング練習',
     shadowing_vocabulary: 'シャドーイング试题库',
     no_questions_found: '問題が見つかりません',
+    // ホーム「毎日のお題」などから自動で問題に遷移する際の読み込みメッセージ
+    daily_loading: '本日のお題を読み込み中...',
     // 生词解释相关
     no_explanation: '説明がありません',
     explanation: '説明',
