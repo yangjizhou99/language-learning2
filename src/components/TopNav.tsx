@@ -6,7 +6,6 @@ import { applyDefaultPermissionsToUser } from '@/lib/defaultPermissions';
 import useIsAdmin from '@/hooks/useIsAdmin';
 import useUserPermissions from '@/hooks/useUserPermissions';
 import { Button } from '@/components/ui/button';
-import ThemeToggle from '@/components/ThemeToggle';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { useMobile } from '@/contexts/MobileContext';
@@ -241,7 +240,7 @@ export default function TopNav() {
 
             {/* 主题切换 */}
             <div className="hidden sm:block">
-              <ThemeToggle />
+              {/* Theme toggle removed; always use light mode */}
             </div>
 
             {/* 移动端切换 */}
@@ -432,10 +431,6 @@ export default function TopNav() {
                               <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
                                 <span className="text-sm font-medium text-gray-700">语言</span>
                                 <LanguageToggle />
-                              </div>
-                              <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
-                                <span className="text-sm font-medium text-gray-700">主题</span>
-                                <ThemeToggle />
                               </div>
                               <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
                                 <span className="text-sm font-medium text-gray-700">设备模式</span>
