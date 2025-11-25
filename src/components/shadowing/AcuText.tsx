@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { type AcuUnit } from '@/lib/acu-utils';
@@ -31,172 +31,41 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
     return false;
   }, []);
 
+  // 预计算所有需要高亮的单元索引（基于精确的序列匹配）
+  const highlightedIndices = useMemo(() => {
+    const indices = new Set<number>();
+    if (!units.length || !selectedWords.length) return indices;
+
+    for (const { word } of selectedWords) {
+      if (!word) continue;
+      const target = word; // 精确匹配，因为 selectedWord 来自原文切片
+
+      for (let i = 0; i < units.length; i++) {
+        for (let j = i; j < units.length; j++) {
+          // 必须在同一句中
+          if (units[j].sid !== units[i].sid) break;
+
+          // 获取从 unit[i] 到 unit[j] 的原文片段（包含间隙）
+          const sequenceText = text.slice(units[i].start, units[j].end);
+
+          if (sequenceText === target) {
+            // 找到匹配，标记 i 到 j 的所有块
+            for (let k = i; k <= j; k++) indices.add(k);
+            break;
+          }
+
+          // 如果序列长度已经超过目标，停止延伸
+          if (sequenceText.length > target.length) break;
+        }
+      }
+    }
+    return indices;
+  }, [units, selectedWords, text]);
+
   // 检查ACU单元是否包含已选择的生词
-  const isAlreadySelected = useCallback((unit: AcuUnit) => {
-    const span = unit.span.trim();
-    return selectedWords.some(selectedWord => {
-      const selectedWordText = selectedWord.word.trim();
-      
-      // 完全匹配
-      if (span === selectedWordText) {
-        return true;
-      }
-      
-      // 检查unit的span是否包含已选择生词（unit包含已选择词）- 使用词边界检查
-      if (lang === 'ko' && span.includes(selectedWordText)) {
-        const startIndex = span.indexOf(selectedWordText);
-        if (startIndex >= 0) {
-          const endIndex = startIndex + selectedWordText.length;
-          
-          // 检查词前边界
-          const beforeChar = startIndex > 0 ? span[startIndex - 1] : '';
-          const isBeforeBoundary = startIndex === 0 || 
-            /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
-            !/[\uac00-\ud7af]/.test(beforeChar); // 非韩文字符
-          
-          // 检查词后边界
-          const afterChar = endIndex < span.length ? span[endIndex] : '';
-          const isAfterBoundary = endIndex === span.length || 
-            /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
-            !/[\uac00-\ud7af]/.test(afterChar); // 非韩文字符
-          
-          if (isBeforeBoundary && isAfterBoundary) {
-            return true;
-          }
-        }
-      }
-      
-      // 对于英文，检查词边界
-      if (lang === 'en' && span.toLowerCase().includes(selectedWordText.toLowerCase())) {
-        const lowerSpan = span.toLowerCase();
-        const lowerWord = selectedWordText.toLowerCase();
-        const startIndex = lowerSpan.indexOf(lowerWord);
-        if (startIndex >= 0) {
-          const endIndex = startIndex + selectedWordText.length;
-          const isLetter = (ch: string) => /[A-Za-z]/.test(ch);
-          const beforeChar = startIndex > 0 ? span[startIndex - 1] : '';
-          const isBeforeBoundary = startIndex === 0 || !isLetter(beforeChar);
-          const afterChar = endIndex < span.length ? span[endIndex] : '';
-          const isAfterBoundary = endIndex === span.length || !isLetter(afterChar);
-          if (isBeforeBoundary && isAfterBoundary) {
-            return true;
-          }
-        }
-      }
-      
-      // 对于日语，检查词边界
-      if (lang === 'ja' && span.includes(selectedWordText)) {
-        const startIndex = span.indexOf(selectedWordText);
-        if (startIndex >= 0) {
-          const endIndex = startIndex + selectedWordText.length;
-          
-          // 检查词前边界（空格、标点符号或非日文字符）
-          const beforeChar = startIndex > 0 ? span[startIndex - 1] : '';
-          const isBeforeBoundary = startIndex === 0 || 
-            /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
-            !/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(beforeChar); // 非日文字符（平假名、片假名、汉字）
-          
-          // 检查词后边界（空格、标点符号或非日文字符）
-          const afterChar = endIndex < span.length ? span[endIndex] : '';
-          const isAfterBoundary = endIndex === span.length || 
-            /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
-            !/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(afterChar); // 非日文字符（平假名、片假名、汉字）
-          
-          if (isBeforeBoundary && isAfterBoundary) {
-            return true;
-          }
-        }
-      }
-      
-      // 对于中文，检查词边界
-      if (lang === 'zh' && span.includes(selectedWordText)) {
-        const startIndex = span.indexOf(selectedWordText);
-        if (startIndex >= 0) {
-          const endIndex = startIndex + selectedWordText.length;
-          
-          // 检查词前边界（空格、标点符号或非中文字符）
-          const beforeChar = startIndex > 0 ? span[startIndex - 1] : '';
-          const isBeforeBoundary = startIndex === 0 || 
-            /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
-            !/[\u4e00-\u9faf]/.test(beforeChar); // 非中文字符（汉字）
-          
-          // 检查词后边界（空格、标点符号或非中文字符）
-          const afterChar = endIndex < span.length ? span[endIndex] : '';
-          const isAfterBoundary = endIndex === span.length || 
-            /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
-            !/[\u4e00-\u9faf]/.test(afterChar); // 非中文字符（汉字）
-          
-          if (isBeforeBoundary && isAfterBoundary) {
-            return true;
-          }
-        }
-      }
-      
-      // 检查已选择生词是否包含unit的span（用于处理连续块合并的情况）
-      // 例如：已选择生词是"今日も頑張ろう"，当前unit是"も"或"頑張"时，应该匹配
-      if (selectedWordText.includes(span)) {
-        const startIndex = selectedWordText.indexOf(span);
-        if (startIndex >= 0) {
-          const endIndex = startIndex + span.length;
-          
-          // 对于英文，进行词边界检查
-          if (lang === 'en') {
-            const isLetter = (ch: string) => /[A-Za-z]/.test(ch);
-            const beforeChar = startIndex > 0 ? selectedWordText[startIndex - 1] : '';
-            const isBeforeBoundary = startIndex === 0 || !isLetter(beforeChar);
-            const afterChar = endIndex < selectedWordText.length ? selectedWordText[endIndex] : '';
-            const isAfterBoundary = endIndex === selectedWordText.length || !isLetter(afterChar);
-            
-            // 如果unit的span在已选择生词中是一个完整的词，则匹配
-            if (isBeforeBoundary && isAfterBoundary) {
-              return true;
-            }
-          }
-          // 对于日语，进行词边界检查
-          else if (lang === 'ja') {
-            const beforeChar = startIndex > 0 ? selectedWordText[startIndex - 1] : '';
-            const isBeforeBoundary = startIndex === 0 || 
-              /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
-              !/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(beforeChar); // 非日文字符
-            
-            const afterChar = endIndex < selectedWordText.length ? selectedWordText[endIndex] : '';
-            const isAfterBoundary = endIndex === selectedWordText.length || 
-              /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
-              !/[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(afterChar); // 非日文字符
-            
-            // 如果unit的span在已选择生词中是一个完整的词，则匹配
-            if (isBeforeBoundary && isAfterBoundary) {
-              return true;
-            }
-          }
-          // 对于中文，进行词边界检查
-          else if (lang === 'zh') {
-            const beforeChar = startIndex > 0 ? selectedWordText[startIndex - 1] : '';
-            const isBeforeBoundary = startIndex === 0 || 
-              /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
-              !/[\u4e00-\u9faf]/.test(beforeChar); // 非中文字符
-            
-            const afterChar = endIndex < selectedWordText.length ? selectedWordText[endIndex] : '';
-            const isAfterBoundary = endIndex === selectedWordText.length || 
-              /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
-              !/[\u4e00-\u9faf]/.test(afterChar); // 非中文字符
-            
-            // 如果unit的span在已选择生词中是一个完整的词，则匹配
-            if (isBeforeBoundary && isAfterBoundary) {
-              return true;
-            }
-          }
-          else {
-            // 对于其他语言，如果unit的span在已选择生词的内部，也应匹配（连续块的情况）
-            // 例如：已选择生词"今日も頑張ろう"，当前unit"も"或"頑張"
-            return true;
-          }
-        }
-      }
-      
-      return false;
-    });
-  }, [selectedWords, lang]);
+  const isAlreadySelected = useCallback((index: number) => {
+    return highlightedIndices.has(index);
+  }, [highlightedIndices]);
 
   // 处理块点击
   const handleUnitClick = useCallback((unit: AcuUnit, index: number) => {
@@ -207,7 +76,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
 
     setSelectedUnits(prev => {
       const existingIndex = prev.findIndex(su => su.index === index);
-      
+
       if (existingIndex >= 0) {
         // 取消选中
         return prev.filter((_, i) => i !== existingIndex);
@@ -217,14 +86,14 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
           const lastSelected = prev[prev.length - 1];
           const isAdjacent = Math.abs(index - lastSelected.index) === 1;
           const isSameSentence = unit.sid === lastSelected.unit.sid;
-          
+
           if (!isAdjacent || !isSameSentence) {
             // 跨句或不相邻，提示用户
             toast.error(t.shadowing.acu_text.select_adjacent_units);
             return prev;
           }
         }
-        
+
         // 添加选中
         return [...prev, { unit, index }];
       }
@@ -234,18 +103,18 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
   // 获取合并后的文本
   const getMergedText = useCallback(() => {
     if (selectedUnits.length === 0) return '';
-    
+
     // 按索引排序
     const sortedUnits = [...selectedUnits].sort((a, b) => a.index - b.index);
-    
+
     // 获取选中单元的范围
     const minIndex = Math.min(...sortedUnits.map(su => su.index));
     const maxIndex = Math.max(...sortedUnits.map(su => su.index));
-    
+
     // 构建文本：包含选中单元和它们之间的所有单元
     let mergedText = '';
     let lastEnd = -1;
-    
+
     for (let i = minIndex; i <= maxIndex; i++) {
       const unit = units[i];
       if (unit) {
@@ -257,7 +126,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         lastEnd = unit.end;
       }
     }
-    
+
     return mergedText.trim();
   }, [selectedUnits, units, text]);
 
@@ -317,7 +186,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
   const handleConfirm = useCallback(() => {
     const mergedText = getMergedText();
     const context = getContext();
-    
+
     if (mergedText && context) {
       onConfirm(mergedText, context);
       setSelectedUnits([]);
@@ -332,16 +201,16 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
   // 渲染带格式的文本和ACU块 - 基于原文渲染
   const renderTextWithUnits = () => {
     // 检查是否为对话格式且所有unit都在同一个句子中（sid都是1）
-    const isDialogueInOneSentence = units.length > 0 && units.every(u => u.sid === 1) && 
-                                   text.includes('A:') && text.includes('B:');
-    
+    const isDialogueInOneSentence = units.length > 0 && units.every(u => u.sid === 1) &&
+      text.includes('A:') && text.includes('B:');
+
     if (isDialogueInOneSentence) {
       console.warn('ACU数据异常，回退到显示原文:', {
         dialogueInOneSentence: isDialogueInOneSentence,
         unitsCount: units.length,
         textLength: text.length
       });
-      
+
       // 处理对话格式换行
       let formattedText = text;
       if ((lang === 'ko' || lang === 'en') && formattedText.includes('A:') && formattedText.includes('B:') && !formattedText.includes('\n')) {
@@ -350,7 +219,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         // 在 A: 前添加换行符（除了第一个）
         formattedText = formattedText.replace(/([^A])\s+A:/g, '$1\nA:');
       }
-      
+
       return (
         <div className="text-gray-700 whitespace-pre-wrap">
           {formattedText.split('\n').map((line, i) => (
@@ -359,13 +228,13 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         </div>
       );
     }
-    
+
     // 如果ACU数据异常（只有对话标识符等），回退到显示原文
     const hasValidAcuData = units.length > 2 && units.some(u => u.span.length > 3);
-    
+
     if (!hasValidAcuData) {
       console.warn('ACU数据异常，回退到显示原文:', units);
-      
+
       // 处理对话格式换行
       let formattedText = text;
       if ((lang === 'ko' || lang === 'en') && formattedText.includes('A:') && formattedText.includes('B:') && !formattedText.includes('\n')) {
@@ -374,7 +243,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         // 在 A: 前添加换行符（除了第一个）
         formattedText = formattedText.replace(/([^A])\s+A:/g, '$1\nA:');
       }
-      
+
       return (
         <div className="text-gray-700 whitespace-pre-wrap">
           {formattedText.split('\n').map((line, i) => (
@@ -383,7 +252,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         </div>
       );
     }
-    
+
     // 处理对话格式换行 - 在ACU渲染之前
     let processedText = text;
     if ((lang === 'ko' || lang === 'en') && processedText.includes('A:') && processedText.includes('B:') && !processedText.includes('\n')) {
@@ -406,29 +275,29 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
     return Object.entries(sentences).map(([sid, sentenceUnits]) => {
       // 按start位置排序
       const sortedUnits = sentenceUnits.sort((a, b) => a.start - b.start);
-      
+
       // 找到该句在原文中的位置
       const sentenceStart = Math.min(...sortedUnits.map(u => u.start));
       let sentenceEnd = Math.max(...sortedUnits.map(u => u.end));
-      
+
       // 扩展句子结束位置以包含句尾标点符号（仅匹配当前位置之后的前缀）
       const remainingText = processedText.slice(sentenceEnd);
       const trailing = remainingText.match(/^[。！？；.!?…\s]+/);
       if (trailing) {
         sentenceEnd += trailing[0].length;
       }
-      
+
       // 获取该句的原文（用于调试，暂时注释）
       // const sentenceText = processedText.slice(sentenceStart, sentenceEnd);
-      
+
       // 基于原文逐字符渲染
       let currentPos = sentenceStart;
       const elements: React.ReactElement[] = [];
-      
+
       for (let i = 0; i < sortedUnits.length; i++) {
         const unit = sortedUnits[i];
         const unitIndex = unit.index;
-        
+
         // 添加unit之前的内容（如果有）
         if (unit.start > currentPos) {
           const beforeText = processedText.slice(currentPos, unit.start);
@@ -444,15 +313,15 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
             }
           }
         }
-        
+
         // 添加unit内容
         const isSelected = selectedUnits.some(su => su.index === unitIndex);
         const isNonSelectableUnit = isNonSelectable(unit);
-        const isAlreadySelectedWord = isAlreadySelected(unit);
-        
+        const isAlreadySelectedWord = isAlreadySelected(unitIndex);
+
         // 不再跳过单字母块，保证缩写如 I'm / it's 能完整显示
         const shouldSkipUnit = unit.span.length === 0;
-        
+
         if (!shouldSkipUnit) {
           elements.push(
             <span
@@ -471,20 +340,20 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
               className={`
                 inline-block px-1 py-0.5 mx-0.5 rounded transition-all
                 touch-manipulation select-none
-                ${isNonSelectableUnit 
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-60' 
-                  : isSelected 
-                    ? 'bg-blue-500 text-white border-blue-600 shadow-md cursor-pointer' 
+                ${isNonSelectableUnit
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-60'
+                  : isSelected
+                    ? 'bg-blue-500 text-white border-blue-600 shadow-md cursor-pointer'
                     : isAlreadySelectedWord
                       ? 'bg-yellow-200 text-yellow-800 border-yellow-400 hover:bg-yellow-300 cursor-pointer'
                       : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 cursor-pointer'
                 }
               `}
               title={
-                isNonSelectableUnit 
-                  ? '不可选中' 
-                  : isAlreadySelectedWord 
-                    ? `已选择的生词: ${unit.span}` 
+                isNonSelectableUnit
+                  ? '不可选中'
+                  : isAlreadySelectedWord
+                    ? `已选择的生词: ${unit.span}`
                     : `块 ${unitIndex + 1} (句子 ${unit.sid})`
               }
             >
@@ -492,10 +361,10 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
             </span>
           );
         }
-        
+
         currentPos = unit.end;
       }
-      
+
       // 添加最后一个unit之后的内容（如果有）
       if (currentPos < sentenceEnd) {
         const afterText = processedText.slice(currentPos, sentenceEnd);
@@ -511,7 +380,7 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
           }
         }
       }
-      
+
       return (
         <div key={sid} className="mb-2">
           {elements}
