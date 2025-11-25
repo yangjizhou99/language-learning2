@@ -49,7 +49,7 @@ function getScoreColor(score: SentenceScore | null): { bg: string; border: strin
       badge: 'bg-slate-100 text-slate-600'
     };
   }
-  
+
   if (score.score >= 0.8) {
     return {
       bg: 'bg-emerald-50/60',
@@ -100,10 +100,10 @@ export default function SentenceCard({
   const [animatedScore, setAnimatedScore] = React.useState(0);
   const animatedScoreRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
-  
+
   // DOM 引用，用于直接操作避免重渲染
   const progressBarRef = useRef<HTMLDivElement>(null);
-  
+
   // 保存最后一次的评分结果，即使重练也保留显示
   const [lastMetrics, setLastMetrics] = React.useState<{
     score: number;
@@ -207,38 +207,38 @@ export default function SentenceCard({
       // 保存这次的评分结果
       setLastMetrics(currentMetrics);
       setScoreAnimKey(prev => prev + 1);
-      
+
       const newScore = Math.round(currentMetrics.score * 100);
       const startScore = animatedScoreRef.current;
       setPrevScore(startScore);
-      
+
       // 取消之前的动画
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      
+
       // 动画更新分数 - 直接操作DOM，避免重渲染
       const duration = 1000;
       const startTime = performance.now();
-      
+
       const animate = (currentTime: number) => {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
+
         // 缓动函数
-        const easeProgress = progress < 0.5 
-          ? 2 * progress * progress 
+        const easeProgress = progress < 0.5
+          ? 2 * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-        
+
         const currentScore = startScore + (newScore - startScore) * easeProgress;
         const roundedScore = Math.round(currentScore);
         animatedScoreRef.current = roundedScore;
-        
+
         // 直接操作DOM，避免React重渲染
         if (progressBarRef.current) {
           progressBarRef.current.style.transform = `scaleX(${currentScore / 100})`;
         }
-        
+
         if (progress < 1) {
           animationFrameRef.current = requestAnimationFrame(animate);
         } else {
@@ -247,10 +247,10 @@ export default function SentenceCard({
           setAnimatedScore(roundedScore);
         }
       };
-      
+
       animationFrameRef.current = requestAnimationFrame(animate);
     }
-    
+
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -261,13 +261,13 @@ export default function SentenceCard({
   // 点击词汇标签进行发音
   const speakWord = (text: string) => {
     if (!text || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    
+
     try {
       // 停止当前正在播放的语音
       window.speechSynthesis.cancel();
-      
+
       const utterance = new SpeechSynthesisUtterance(text);
-      
+
       // 根据语言设置语音
       const langMap: Record<string, string> = {
         'ja': 'ja-JP',
@@ -280,12 +280,12 @@ export default function SentenceCard({
       utterance.rate = 0.5; // 很慢，便于仔细听清每个音
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
-      
+
       // 选择最合适的语音引擎（iPad 上非常重要）
       // 优先选择女性语音，避免奇怪的男性声音
       const selectBestVoice = () => {
         const voices = window.speechSynthesis.getVoices();
-        
+
         // 对于日语，优先选择女性日语语音引擎
         if (language === 'ja') {
           const japaneseVoices = voices.filter(
@@ -294,43 +294,43 @@ export default function SentenceCard({
               voice.name.toLowerCase().includes('japanese') ||
               voice.name.toLowerCase().includes('japan'),
           );
-          
+
           if (japaneseVoices.length > 0) {
             const nameLower = (name: string) => name.toLowerCase();
-            
+
             // 首先尝试找到明确包含女性关键词的语音
             const preferredFemaleVoices = japaneseVoices.filter(voice => {
               const name = nameLower(voice.name);
               return name.includes('kyoko') ||
-                     name.includes('female') ||
-                     name.includes('woman') ||
-                     (name.includes('siri') && !name.includes('male'));
+                name.includes('female') ||
+                name.includes('woman') ||
+                (name.includes('siri') && !name.includes('male'));
             });
-            
+
             if (preferredFemaleVoices.length > 0) {
               utterance.voice = preferredFemaleVoices[0];
               return;
             }
-            
+
             // 如果没有明确的女性语音，选择不包含男性关键词的语音
             const nonMaleVoices = japaneseVoices.filter(voice => {
               const name = nameLower(voice.name);
               return !name.includes('otoya') &&
-                     !name.includes('male') &&
-                     !name.includes('man');
+                !name.includes('male') &&
+                !name.includes('man');
             });
-            
+
             if (nonMaleVoices.length > 0) {
               utterance.voice = nonMaleVoices[0];
               return;
             }
-            
+
             // 最后，使用第一个可用的日语语音
             utterance.voice = japaneseVoices[0];
             return;
           }
         }
-        
+
         // 对于中文，优先选择女性中文语音引擎
         if (language === 'zh') {
           const chineseVoices = voices.filter(
@@ -339,42 +339,42 @@ export default function SentenceCard({
               voice.name.toLowerCase().includes('chinese') ||
               voice.name.toLowerCase().includes('mandarin'),
           );
-          
+
           if (chineseVoices.length > 0) {
             const nameLower = (name: string) => name.toLowerCase();
-            
+
             // 首先尝试找到明确包含女性关键词的语音
             const preferredFemaleVoices = chineseVoices.filter(voice => {
               const name = nameLower(voice.name);
               return name.includes('ting') ||
-                     name.includes('female') ||
-                     name.includes('woman');
+                name.includes('female') ||
+                name.includes('woman');
             });
-            
+
             if (preferredFemaleVoices.length > 0) {
               utterance.voice = preferredFemaleVoices[0];
               return;
             }
-            
+
             // 如果没有明确的女性语音，选择不包含男性关键词的语音
             const nonMaleVoices = chineseVoices.filter(voice => {
               const name = nameLower(voice.name);
               return !name.includes('yu-shu') &&
-                     !name.includes('male') &&
-                     !name.includes('man');
+                !name.includes('male') &&
+                !name.includes('man');
             });
-            
+
             if (nonMaleVoices.length > 0) {
               utterance.voice = nonMaleVoices[0];
               return;
             }
-            
+
             // 最后，使用第一个可用的中文语音
             utterance.voice = chineseVoices[0];
             return;
           }
         }
-        
+
         // 对于韩语，优先选择女性韩语语音引擎
         if (language === 'ko') {
           const koreanVoices = voices.filter(
@@ -384,70 +384,70 @@ export default function SentenceCard({
               voice.name.toLowerCase().includes('korea') ||
               voice.name.toLowerCase().includes('한국어'),
           );
-          
+
           if (koreanVoices.length > 0) {
             const nameLower = (name: string) => name.toLowerCase();
-            
+
             // 首先尝试找到明确包含女性关键词的语音
             const preferredFemaleVoices = koreanVoices.filter(voice => {
               const name = nameLower(voice.name);
               return name.includes('yuna') ||
-                     name.includes('sora') ||
-                     name.includes('female') ||
-                     name.includes('woman') ||
-                     name.includes('여성');
+                name.includes('sora') ||
+                name.includes('female') ||
+                name.includes('woman') ||
+                name.includes('여성');
             });
-            
+
             if (preferredFemaleVoices.length > 0) {
               utterance.voice = preferredFemaleVoices[0];
               return;
             }
-            
+
             // 如果没有明确的女性语音，选择不包含男性关键词的语音
             const nonMaleVoices = koreanVoices.filter(voice => {
               const name = nameLower(voice.name);
               return !name.includes('male') &&
-                     !name.includes('man');
+                !name.includes('man');
             });
-            
+
             if (nonMaleVoices.length > 0) {
               utterance.voice = nonMaleVoices[0];
               return;
             }
-            
+
             // 最后，使用第一个可用的韩语语音
             utterance.voice = koreanVoices[0];
             return;
           }
         }
-        
+
         // 如果没有找到特定语言的语音，尝试匹配语言代码
         const matchingVoices = voices.filter(
           (voice) => voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0]),
         );
-        
+
         if (matchingVoices.length > 0) {
           const nameLower = (name: string) => name.toLowerCase();
-          
+
           // 首先尝试找到明确包含女性关键词的语音
           const preferredFemaleVoices = matchingVoices.filter(voice => {
             const name = nameLower(voice.name);
             return name.includes('female') ||
-                   name.includes('woman');
+              name.includes('woman');
           });
-          
+
           if (preferredFemaleVoices.length > 0) {
             utterance.voice = preferredFemaleVoices[0];
             return;
           }
-          
+
           // 如果没有明确的女性语音，选择不包含男性关键词的语音
           const nonMaleVoices = matchingVoices.filter(voice => {
             const name = nameLower(voice.name);
             return !name.includes('male') &&
-                   !name.includes('man');
+              !name.includes('man');
           });
-          
+
           if (nonMaleVoices.length > 0) {
             utterance.voice = nonMaleVoices[0];
           } else {
@@ -455,10 +455,10 @@ export default function SentenceCard({
           }
         }
       };
-      
+
       // 尝试选择最佳语音引擎
       selectBestVoice();
-      
+
       // 如果语音列表还没有加载完成（iPad 上常见），等待加载
       if (window.speechSynthesis.getVoices().length === 0) {
         const handleVoicesChanged = () => {
@@ -467,7 +467,7 @@ export default function SentenceCard({
           window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
         };
         window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-        
+
         // 如果一段时间后仍然没有加载，尝试直接播放（使用默认语音）
         setTimeout(() => {
           if (window.speechSynthesis.getVoices().length === 0) {
@@ -487,18 +487,16 @@ export default function SentenceCard({
     <div
       id={`sentence-${index}`}
       ref={cardRef}
-      className={`rounded-2xl border-2 transition-all duration-300 ease-out ${
-        isExpanded ? 'shadow-lg scale-[1.01]' : 'hover:shadow-md'
-      } ${
-        highlightReview
+      className={`rounded-2xl border-2 transition-all duration-300 ease-out ${isExpanded ? 'shadow-lg scale-[1.01]' : 'hover:shadow-md'
+        } ${highlightReview
           ? 'border-amber-200 bg-amber-50/40 shadow-amber-100'
           : isExpanded
-          ? 'border-blue-200 bg-blue-50/30 shadow-blue-100'
-          : colors.border + ' ' + colors.bg
-      }`}
+            ? 'border-blue-200 bg-blue-50/30 shadow-blue-100'
+            : colors.border + ' ' + colors.bg
+        }`}
     >
       {/* 句子标题栏 */}
-      <div className={`w-full px-3 py-2 flex items-center gap-2 hover:bg-white/50 transition-colors ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
+      <div className={`w-full px-3 py-3 flex items-center gap-2 hover:bg-white/50 transition-colors ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
         {/* 左侧：序号 + 评分 + 文本 - 可点击展开 */}
         <button
           onClick={onToggleExpand}
@@ -508,7 +506,7 @@ export default function SentenceCard({
           <span className={`px-2 py-0.5 rounded text-xs font-bold flex-shrink-0 ${colors.badge}`}>
             {index + 1}
           </span>
-          
+
           {/* 评分圆点 */}
           {score && (
             <div className="flex items-center gap-0.5 flex-shrink-0" title={`综合相似度: ${Math.round(score.score * 100)}%`}>
@@ -516,24 +514,23 @@ export default function SentenceCard({
               {[...Array(5)].map((_, i) => (
                 <div
                   key={`score-${i}`}
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    i < Math.round(score.score * 5) 
-                      ? colors.badge.includes('emerald') ? 'bg-emerald-400' 
-                        : colors.badge.includes('amber') ? 'bg-amber-400'
+                  className={`w-1.5 h-1.5 rounded-full ${i < Math.round(score.score * 5)
+                    ? colors.badge.includes('emerald') ? 'bg-emerald-400'
+                      : colors.badge.includes('amber') ? 'bg-amber-400'
                         : 'bg-rose-400'
-                      : 'bg-slate-200'
-                  }`}
+                    : 'bg-slate-200'
+                    }`}
                 />
               ))}
             </div>
           )}
-          
+
           {/* 句子文本 */}
-          <span className={`${colors.text} text-sm flex-1 ${isExpanded ? '' : 'line-clamp-1'}`}>
+          <span className={`${colors.text} text-base leading-loose flex-1`}>
             {renderText ? renderText(sentence) : sentence}
           </span>
         </button>
-        
+
         {/* 右侧：操作按钮 */}
         <div className="flex items-center gap-1 flex-shrink-0">
           {/* 播放按钮 */}
@@ -547,7 +544,7 @@ export default function SentenceCard({
           >
             <Volume2 className="w-4 h-4 text-gray-600" />
           </button>
-          
+
           {/* 录音/停止按钮 */}
           {!isRecognizing ? (
             <button
@@ -577,7 +574,7 @@ export default function SentenceCard({
               <Square className="w-4 h-4 text-red-600" />
             </button>
           )}
-          
+
           {/* 重试按钮 - 仅在有评分时显示 */}
           {score && !isRecognizing && (
             <button
@@ -596,7 +593,7 @@ export default function SentenceCard({
               <RotateCcw className="w-4 h-4 text-purple-600" />
             </button>
           )}
-          
+
           {/* 展开/折叠图标 */}
           <button
             onClick={onToggleExpand}
@@ -619,13 +616,12 @@ export default function SentenceCard({
             <div className={`p-3 rounded-xl border-2 ${getTranscriptionColors().border} bg-gradient-to-br ${getTranscriptionColors().bg} shadow-sm ${getTranscriptionColors().shadow}`}>
               <div className="flex items-start gap-2">
                 <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
-                  <Mic className={`w-5 h-5 ${
-                    lastMetrics && finalText
-                      ? animatedScore >= 80 ? 'text-emerald-500'
-                        : animatedScore >= 60 ? 'text-amber-500'
+                  <Mic className={`w-5 h-5 ${lastMetrics && finalText
+                    ? animatedScore >= 80 ? 'text-emerald-500'
+                      : animatedScore >= 60 ? 'text-amber-500'
                         : 'text-rose-500'
-                      : 'text-sky-500'
-                  }`} />
+                    : 'text-sky-500'
+                    }`} />
                   <WaveformAnimation isActive={isRecognizing} color={getTranscriptionColors().waveColor} size="md" />
                 </div>
                 <div className={`text-sm ${getTranscriptionColors().text} whitespace-pre-wrap break-words leading-relaxed min-h-[1.5rem] flex-1`}>
@@ -638,7 +634,7 @@ export default function SentenceCard({
           {/* 评分结果 - 单行布局带完整信息 */}
           {lastMetrics && (
             <div className="space-y-2">
-              <div 
+              <div
                 key={scoreAnimKey}
                 className={`
                   p-3 rounded-xl border-2 transition-all duration-700 ease-in-out
@@ -667,13 +663,13 @@ export default function SentenceCard({
                       <Mic className="w-5 h-5 text-sky-500" />
                     ) : null}
                   </div>
-                  
+
                   {/* 进度条容器（带百分比和刻度） */}
                   <div className="flex-1 relative pt-5 pb-2">
                     {/* 百分比指示器 */}
-                    <div 
+                    <div
                       className="absolute top-0 left-0 right-0 flex justify-center pointer-events-none"
-                      style={{ 
+                      style={{
                         left: `calc(${animatedScore}% - 20px)`,
                         width: '40px'
                       }}
@@ -685,28 +681,28 @@ export default function SentenceCard({
                         {Math.round(lastMetrics.score * 100)}%
                       </div>
                     </div>
-                    
+
                     {/* 进度条背景 */}
                     <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                       {/* 进度条填充 */}
-                      <div 
+                      <div
                         ref={progressBarRef}
                         className={`
                           h-full rounded-full
                           ${getProgressColor(animatedScore)}
                         `}
-                        style={{ 
+                        style={{
                           width: '100%',
                           transform: `scaleX(${animatedScore / 100})`,
                           transformOrigin: 'left',
                           willChange: 'transform'
                         }}
                       />
-                      
+
                       {/* 刻度线 */}
                       <div className="absolute inset-0 flex items-center pointer-events-none">
                         {[25, 50, 75].map(mark => (
-                          <div 
+                          <div
                             key={mark}
                             className="absolute w-px h-full bg-gray-300 opacity-30"
                             style={{ left: `${mark}%` }}
@@ -714,7 +710,7 @@ export default function SentenceCard({
                         ))}
                       </div>
                     </div>
-                    
+
                     {/* 分数刻度 */}
                     <div className="flex justify-between text-[9px] text-gray-400 mt-0.5 px-0.5">
                       <span>0</span>
@@ -724,7 +720,7 @@ export default function SentenceCard({
                       <span>100</span>
                     </div>
                   </div>
-                  
+
                   {/* 提升指示 - Pastel柔和色 */}
                   {prevScore !== null && prevScore !== animatedScore && finalText && (
                     <div className={`flex items-center gap-1 text-sm font-bold flex-shrink-0 ${animatedScore > prevScore ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -733,8 +729,9 @@ export default function SentenceCard({
                   )}
                 </div>
               </div>
-              
-              <style dangerouslySetInnerHTML={{__html: `
+
+              <style dangerouslySetInnerHTML={{
+                __html: `
                 @keyframes scoreReveal {
                   0% {
                     opacity: 0;
@@ -772,238 +769,229 @@ export default function SentenceCard({
 
               {/* 对齐错误分析 - 新的对比展示 */}
               {lastMetrics.alignmentResult && (
-                lastMetrics.alignmentResult.extra.length > 0 || 
-                lastMetrics.alignmentResult.missing.length > 0 || 
+                lastMetrics.alignmentResult.extra.length > 0 ||
+                lastMetrics.alignmentResult.missing.length > 0 ||
                 lastMetrics.alignmentResult.substitution.length > 0
               ) && (
-                <div className="space-y-3">
-                  {/* 多读错误 - 仅显示多读的内容 */}
-                  {lastMetrics.alignmentResult.extra.length > 0 && (
-                    <div 
-                      key={`extra-${scoreAnimKey}`}
-                      className={`p-3 rounded-xl border animate-gentle-reminder ${
-                        animatedScore >= 80 
-                          ? 'bg-emerald-50/60 border-emerald-200' 
-                          : animatedScore >= 60 
-                          ? 'bg-amber-50/60 border-amber-200'
-                          : 'bg-rose-50/60 border-rose-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <Plus className={`w-5 h-5 flex-shrink-0 ${
-                          animatedScore >= 80 
-                            ? 'text-emerald-500' 
-                            : animatedScore >= 60 
-                            ? 'text-amber-500'
-                            : 'text-rose-500'
-                        }`} />
-                        <span className="text-sm font-medium text-gray-700">多读的内容</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {lastMetrics.alignmentResult.extra.map((error: AlignmentError, idx: number) => (
-                          <button
-                            key={`extra-${idx}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              speakWord(error.actual);
-                            }}
-                            onTouchEnd={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              speakWord(error.actual);
-                            }}
-                            className={`px-2 py-1 rounded-full flex-shrink-0 transition-all cursor-pointer inline-flex items-center gap-1 hover:scale-105 text-xs ${
-                              animatedScore >= 80
+                  <div className="space-y-3">
+                    {/* 多读错误 - 仅显示多读的内容 */}
+                    {lastMetrics.alignmentResult.extra.length > 0 && (
+                      <div
+                        key={`extra-${scoreAnimKey}`}
+                        className={`p-3 rounded-xl border animate-gentle-reminder ${animatedScore >= 80
+                          ? 'bg-emerald-50/60 border-emerald-200'
+                          : animatedScore >= 60
+                            ? 'bg-amber-50/60 border-amber-200'
+                            : 'bg-rose-50/60 border-rose-200'
+                          }`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <Plus className={`w-5 h-5 flex-shrink-0 ${animatedScore >= 80
+                            ? 'text-emerald-500'
+                            : animatedScore >= 60
+                              ? 'text-amber-500'
+                              : 'text-rose-500'
+                            }`} />
+                          <span className="text-sm font-medium text-gray-700">多读的内容</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {lastMetrics.alignmentResult.extra.map((error: AlignmentError, idx: number) => (
+                            <button
+                              key={`extra-${idx}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                speakWord(error.actual);
+                              }}
+                              onTouchEnd={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                speakWord(error.actual);
+                              }}
+                              className={`px-2 py-1 rounded-full flex-shrink-0 transition-all cursor-pointer inline-flex items-center gap-1 hover:scale-105 text-xs ${animatedScore >= 80
                                 ? 'bg-emerald-100/80 border border-emerald-200 text-emerald-700 hover:bg-emerald-200/90 hover:border-emerald-300 active:bg-emerald-200'
                                 : animatedScore >= 60
-                                ? 'bg-amber-100/80 border border-amber-200 text-amber-700 hover:bg-amber-200/90 hover:border-amber-300 active:bg-amber-200'
-                                : 'bg-rose-100/80 border border-rose-200 text-rose-700 hover:bg-rose-200/90 hover:border-rose-300 active:bg-rose-200'
-                            }`}
-                            title={`Play: ${error.actual}`}
-                          >
-                            <Volume2 className="w-3 h-3" />
-                            <span className="font-medium">{error.actual}</span>
-                          </button>
-                        ))}
+                                  ? 'bg-amber-100/80 border border-amber-200 text-amber-700 hover:bg-amber-200/90 hover:border-amber-300 active:bg-amber-200'
+                                  : 'bg-rose-100/80 border border-rose-200 text-rose-700 hover:bg-rose-200/90 hover:border-rose-300 active:bg-rose-200'
+                                }`}
+                              title={`Play: ${error.actual}`}
+                            >
+                              <Volume2 className="w-3 h-3" />
+                              <span className="font-medium">{error.actual}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* 少读错误 - 显示完整ACU块与用户少读形式的对比 */}
-                  {lastMetrics.alignmentResult.missing.length > 0 && (
-                    <div 
-                      key={`missing-${scoreAnimKey}`}
-                      className={`p-3 rounded-xl border animate-gentle-reminder ${
-                        animatedScore >= 80 
-                          ? 'bg-emerald-50/60 border-emerald-200' 
-                          : animatedScore >= 60 
-                          ? 'bg-amber-50/60 border-amber-200'
-                          : 'bg-rose-50/60 border-rose-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <Minus className={`w-5 h-5 flex-shrink-0 ${
-                          animatedScore >= 80 
-                            ? 'text-emerald-500' 
-                            : animatedScore >= 60 
-                            ? 'text-amber-500'
-                            : 'text-rose-500'
-                        }`} />
-                        <span className="text-sm font-medium text-gray-700">少读的内容</span>
-                      </div>
-                      <div className="space-y-2">
-                        {lastMetrics.alignmentResult.missing.map((error: AlignmentError, idx: number) => (
-                          <div key={`missing-${idx}`} className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-2'} p-2 bg-white/50 rounded-lg`}>
-                            {/* 左侧：完整的ACU块 */}
-                            <div className="flex-1">
-                              <div className="text-xs text-gray-500 mb-1">完整ACU块</div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  speakWord(error.acuContext || error.expected || '');
-                                }}
-                                onTouchEnd={(e) => {
-                                  // 在移动设备上，确保触摸结束后也能触发发音
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  speakWord(error.acuContext || error.expected || '');
-                                }}
-                                className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-200 transition-colors inline-flex items-center gap-1"
-                                title={`Play: ${error.acuContext || error.expected || ''}`}
-                              >
-                                <Volume2 className="w-3 h-3" />
-                                {error.acuContext || error.expected || ''}
-                              </button>
-                            </div>
-                            
-                            {/* 箭头分隔符 - 桌面端显示 */}
-                            {!isMobile && <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
-                            
-                            {/* 右侧：用户少读的形式 */}
-                            <div className="flex-1">
-                              <div className="text-xs text-gray-500 mb-1">你读的</div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  speakWord(error.actual || '');
-                                }}
-                                onTouchEnd={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  speakWord(error.actual || '');
-                                }}
-                                className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors inline-flex items-center gap-1"
-                                title={`Play: ${error.actual || ''}`}
-                              >
-                                <Volume2 className="w-3 h-3" />
-                                {error.actual}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    {/* 少读错误 - 显示完整ACU块与用户少读形式的对比 */}
+                    {lastMetrics.alignmentResult.missing.length > 0 && (
+                      <div
+                        key={`missing-${scoreAnimKey}`}
+                        className={`p-3 rounded-xl border animate-gentle-reminder ${animatedScore >= 80
+                          ? 'bg-emerald-50/60 border-emerald-200'
+                          : animatedScore >= 60
+                            ? 'bg-amber-50/60 border-amber-200'
+                            : 'bg-rose-50/60 border-rose-200'
+                          }`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <Minus className={`w-5 h-5 flex-shrink-0 ${animatedScore >= 80
+                            ? 'text-emerald-500'
+                            : animatedScore >= 60
+                              ? 'text-amber-500'
+                              : 'text-rose-500'
+                            }`} />
+                          <span className="text-sm font-medium text-gray-700">少读的内容</span>
+                        </div>
+                        <div className="space-y-2">
+                          {lastMetrics.alignmentResult.missing.map((error: AlignmentError, idx: number) => (
+                            <div key={`missing-${idx}`} className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-2'} p-2 bg-white/50 rounded-lg`}>
+                              {/* 左侧：完整的ACU块 */}
+                              <div className="flex-1">
+                                <div className="text-xs text-gray-500 mb-1">完整ACU块</div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    speakWord(error.acuContext || error.expected || '');
+                                  }}
+                                  onTouchEnd={(e) => {
+                                    // 在移动设备上，确保触摸结束后也能触发发音
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    speakWord(error.acuContext || error.expected || '');
+                                  }}
+                                  className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-200 transition-colors inline-flex items-center gap-1"
+                                  title={`Play: ${error.acuContext || error.expected || ''}`}
+                                >
+                                  <Volume2 className="w-3 h-3" />
+                                  {error.acuContext || error.expected || ''}
+                                </button>
+                              </div>
 
-                  {/* 读错错误 - 显示正确形式与用户读错形式的对比 */}
-                  {lastMetrics.alignmentResult.substitution.length > 0 && (
-                    <div 
-                      key={`substitution-${scoreAnimKey}`}
-                      className={`p-3 rounded-xl border animate-gentle-reminder ${
-                        animatedScore >= 80 
-                          ? 'bg-emerald-50/60 border-emerald-200' 
-                          : animatedScore >= 60 
-                          ? 'bg-amber-50/60 border-amber-200'
-                          : 'bg-rose-50/60 border-rose-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${
-                          animatedScore >= 80 
-                            ? 'text-emerald-500' 
-                            : animatedScore >= 60 
-                            ? 'text-amber-500'
-                            : 'text-rose-500'
-                        }`} />
-                        <span className="text-sm font-medium text-gray-700">读错的内容</span>
-                      </div>
-                      <div className="space-y-2">
-                        {lastMetrics.alignmentResult.substitution.map((error: AlignmentError, idx: number) => (
-                          <div key={`substitution-${idx}`} className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-2'} p-2 bg-white/50 rounded-lg`}>
-                            {/* 左侧：正确的形式 */}
-                            <div className="flex-1">
-                              <div className="text-xs text-gray-500 mb-1">正确</div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  speakWord(error.expected || '');
-                                }}
-                                onTouchEnd={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  speakWord(error.expected || '');
-                                }}
-                                className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition-colors inline-flex items-center gap-1"
-                                title={`Play: ${error.expected || ''}`}
-                              >
-                                <Volume2 className="w-3 h-3" />
-                                {error.expected || ''}
-                              </button>
+                              {/* 箭头分隔符 - 桌面端显示 */}
+                              {!isMobile && <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+
+                              {/* 右侧：用户少读的形式 */}
+                              <div className="flex-1">
+                                <div className="text-xs text-gray-500 mb-1">你读的</div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    speakWord(error.actual || '');
+                                  }}
+                                  onTouchEnd={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    speakWord(error.actual || '');
+                                  }}
+                                  className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors inline-flex items-center gap-1"
+                                  title={`Play: ${error.actual || ''}`}
+                                >
+                                  <Volume2 className="w-3 h-3" />
+                                  {error.actual}
+                                </button>
+                              </div>
                             </div>
-                            
-                            {/* 箭头分隔符 - 桌面端显示 */}
-                            {!isMobile && <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
-                            
-                            {/* 右侧：用户读错的形式 */}
-                            <div className="flex-1">
-                              <div className="text-xs text-gray-500 mb-1">你读的</div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  speakWord(error.actual);
-                                }}
-                                onTouchEnd={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  speakWord(error.actual);
-                                }}
-                                className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors inline-flex items-center gap-1"
-                                title={`Play: ${error.actual}`}
-                              >
-                                <Volume2 className="w-3 h-3" />
-                                {error.actual}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+
+                    {/* 读错错误 - 显示正确形式与用户读错形式的对比 */}
+                    {lastMetrics.alignmentResult.substitution.length > 0 && (
+                      <div
+                        key={`substitution-${scoreAnimKey}`}
+                        className={`p-3 rounded-xl border animate-gentle-reminder ${animatedScore >= 80
+                          ? 'bg-emerald-50/60 border-emerald-200'
+                          : animatedScore >= 60
+                            ? 'bg-amber-50/60 border-amber-200'
+                            : 'bg-rose-50/60 border-rose-200'
+                          }`}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${animatedScore >= 80
+                            ? 'text-emerald-500'
+                            : animatedScore >= 60
+                              ? 'text-amber-500'
+                              : 'text-rose-500'
+                            }`} />
+                          <span className="text-sm font-medium text-gray-700">读错的内容</span>
+                        </div>
+                        <div className="space-y-2">
+                          {lastMetrics.alignmentResult.substitution.map((error: AlignmentError, idx: number) => (
+                            <div key={`substitution-${idx}`} className={`${isMobile ? 'flex flex-col gap-2' : 'flex items-center gap-2'} p-2 bg-white/50 rounded-lg`}>
+                              {/* 左侧：正确的形式 */}
+                              <div className="flex-1">
+                                <div className="text-xs text-gray-500 mb-1">正确</div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    speakWord(error.expected || '');
+                                  }}
+                                  onTouchEnd={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    speakWord(error.expected || '');
+                                  }}
+                                  className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition-colors inline-flex items-center gap-1"
+                                  title={`Play: ${error.expected || ''}`}
+                                >
+                                  <Volume2 className="w-3 h-3" />
+                                  {error.expected || ''}
+                                </button>
+                              </div>
+
+                              {/* 箭头分隔符 - 桌面端显示 */}
+                              {!isMobile && <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+
+                              {/* 右侧：用户读错的形式 */}
+                              <div className="flex-1">
+                                <div className="text-xs text-gray-500 mb-1">你读的</div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    speakWord(error.actual);
+                                  }}
+                                  onTouchEnd={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    speakWord(error.actual);
+                                  }}
+                                  className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors inline-flex items-center gap-1"
+                                  title={`Play: ${error.actual}`}
+                                >
+                                  <Volume2 className="w-3 h-3" />
+                                  {error.actual}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
               {/* 回退到原有展示（当没有对齐数据时） */}
               {!lastMetrics.alignmentResult && (lastMetrics.missing.length > 0 || lastMetrics.extra.length > 0) && (
                 <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
                   {lastMetrics.missing.length > 0 && (
-                    <div 
+                    <div
                       key={`missing-fallback-${scoreAnimKey}`}
-                      className={`p-2 rounded-xl border animate-gentle-reminder ${
-                        animatedScore >= 80 
-                          ? 'bg-emerald-50/60 border-emerald-200' 
-                          : animatedScore >= 60 
+                      className={`p-2 rounded-xl border animate-gentle-reminder ${animatedScore >= 80
+                        ? 'bg-emerald-50/60 border-emerald-200'
+                        : animatedScore >= 60
                           ? 'bg-amber-50/60 border-amber-200'
                           : 'bg-rose-50/60 border-rose-200'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${
-                          animatedScore >= 80 
-                            ? 'text-emerald-500' 
-                            : animatedScore >= 60 
+                        <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${animatedScore >= 80
+                          ? 'text-emerald-500'
+                          : animatedScore >= 60
                             ? 'text-amber-500'
                             : 'text-rose-500'
-                        }`} />
+                          }`} />
                         {lastMetrics.missing.map((group, idx) => (
                           <button
                             key={`miss-fallback-${idx}`}
@@ -1016,13 +1004,12 @@ export default function SentenceCard({
                               e.stopPropagation();
                               speakWord(group);
                             }}
-                            className={`px-2 py-1 rounded-full flex-shrink-0 transition-all cursor-pointer inline-flex items-center gap-1 hover:scale-105 text-xs ${
-                              animatedScore >= 80
-                                ? 'bg-emerald-100/80 border border-emerald-200 text-emerald-700 hover:bg-emerald-200/90 hover:border-emerald-300 active:bg-emerald-200'
-                                : animatedScore >= 60
+                            className={`px-2 py-1 rounded-full flex-shrink-0 transition-all cursor-pointer inline-flex items-center gap-1 hover:scale-105 text-xs ${animatedScore >= 80
+                              ? 'bg-emerald-100/80 border border-emerald-200 text-emerald-700 hover:bg-emerald-200/90 hover:border-emerald-300 active:bg-emerald-200'
+                              : animatedScore >= 60
                                 ? 'bg-amber-100/80 border border-amber-200 text-amber-700 hover:bg-amber-200/90 hover:border-amber-300 active:bg-amber-200'
                                 : 'bg-rose-100/80 border border-rose-200 text-rose-700 hover:bg-rose-200/90 hover:border-rose-300 active:bg-rose-200'
-                            }`}
+                              }`}
                             title={`Play: ${group}`}
                           >
                             <Volume2 className="w-3 h-3" />
@@ -1033,24 +1020,22 @@ export default function SentenceCard({
                     </div>
                   )}
                   {lastMetrics.extra.length > 0 && (
-                    <div 
+                    <div
                       key={`extra-fallback-${scoreAnimKey}`}
-                      className={`p-2 rounded-xl border animate-gentle-reminder ${
-                        animatedScore >= 80 
-                          ? 'bg-emerald-50/60 border-emerald-200' 
-                          : animatedScore >= 60 
+                      className={`p-2 rounded-xl border animate-gentle-reminder ${animatedScore >= 80
+                        ? 'bg-emerald-50/60 border-emerald-200'
+                        : animatedScore >= 60
                           ? 'bg-amber-50/60 border-amber-200'
                           : 'bg-rose-50/60 border-rose-200'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <XCircle className={`w-5 h-5 flex-shrink-0 ${
-                          animatedScore >= 80 
-                            ? 'text-emerald-500' 
-                            : animatedScore >= 60 
+                        <XCircle className={`w-5 h-5 flex-shrink-0 ${animatedScore >= 80
+                          ? 'text-emerald-500'
+                          : animatedScore >= 60
                             ? 'text-amber-500'
                             : 'text-rose-500'
-                        }`} />
+                          }`} />
                         {lastMetrics.extra.map((group, idx) => (
                           <button
                             key={`extra-fallback-${idx}`}
@@ -1063,13 +1048,12 @@ export default function SentenceCard({
                               e.stopPropagation();
                               speakWord(group);
                             }}
-                            className={`px-2 py-1 rounded-full flex-shrink-0 transition-all cursor-pointer inline-flex items-center gap-1 hover:scale-105 text-xs ${
-                              animatedScore >= 80
-                                ? 'bg-emerald-100/80 border border-emerald-200 text-emerald-700 hover:bg-emerald-200/90 hover:border-emerald-300 active:bg-emerald-200'
-                                : animatedScore >= 60
+                            className={`px-2 py-1 rounded-full flex-shrink-0 transition-all cursor-pointer inline-flex items-center gap-1 hover:scale-105 text-xs ${animatedScore >= 80
+                              ? 'bg-emerald-100/80 border border-emerald-200 text-emerald-700 hover:bg-emerald-200/90 hover:border-emerald-300 active:bg-emerald-200'
+                              : animatedScore >= 60
                                 ? 'bg-amber-100/80 border border-amber-200 text-amber-700 hover:bg-amber-200/90 hover:border-amber-300 active:bg-amber-200'
                                 : 'bg-rose-100/80 border border-rose-200 text-rose-700 hover:bg-rose-200/90 hover:border-rose-300 active:bg-rose-200'
-                            }`}
+                              }`}
                             title={`Play: ${group}`}
                           >
                             <Volume2 className="w-3 h-3" />
@@ -1086,34 +1070,34 @@ export default function SentenceCard({
 
         </div>
       )}
-      
+
       {/* 移动端底部固定操作栏 - Pastel柔和风格 */}
       {isMobile && isExpanded && (
         <div className="border-t border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center gap-2 rounded-b-2xl -mx-[1px] -mb-[2px]">
-          <Button 
-            onClick={onSpeak} 
-            variant="outline" 
-            size="lg" 
+          <Button
+            onClick={onSpeak}
+            variant="outline"
+            size="lg"
             className="flex-1 rounded-full p-3"
             title="🔊"
           >
             <Volume2 className="w-5 h-5" />
           </Button>
           {!isRecognizing ? (
-            <Button 
-              onClick={onStartPractice} 
-              variant="outline" 
-              size="lg" 
+            <Button
+              onClick={onStartPractice}
+              variant="outline"
+              size="lg"
               className="flex-[2] rounded-full p-3 text-sky-500 border-sky-200 hover:bg-sky-50"
               title="🎤"
             >
               <Mic className="w-5 h-5" />
             </Button>
           ) : (
-            <Button 
-              onClick={onStopPractice} 
-              variant="outline" 
-              size="lg" 
+            <Button
+              onClick={onStopPractice}
+              variant="outline"
+              size="lg"
               className="flex-[2] rounded-full p-3 text-rose-500 border-rose-200 hover:bg-rose-50"
               title="🛑"
             >
