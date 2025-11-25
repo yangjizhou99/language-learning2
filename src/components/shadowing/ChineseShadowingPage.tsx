@@ -4,23 +4,23 @@ import pLimit from 'p-limit';
 
 // 韩语词边界检测函数
 const isKoreanWordBoundary = (
-  chars: string[], 
-  startIndex: number, 
-  wordLength: number, 
+  chars: string[],
+  startIndex: number,
+  wordLength: number,
   endIndex: number
 ): boolean => {
   // 检查词前边界
   const beforeChar = startIndex > 0 ? chars[startIndex - 1] : '';
-  const isBeforeBoundary = startIndex === 0 || 
+  const isBeforeBoundary = startIndex === 0 ||
     /[\s\p{P}\p{S}]/u.test(beforeChar) || // 空格、标点符号
     !/[\uac00-\ud7af]/.test(beforeChar); // 非韩文字符
-  
+
   // 检查词后边界
   const afterChar = endIndex < chars.length ? chars[endIndex] : '';
-  const isAfterBoundary = endIndex === chars.length || 
+  const isAfterBoundary = endIndex === chars.length ||
     /[\s\p{P}\p{S}]/u.test(afterChar) || // 空格、标点符号
     !/[\uac00-\ud7af]/.test(afterChar); // 非韩文字符
-  
+
   return isBeforeBoundary && isAfterBoundary;
 };
 
@@ -319,11 +319,11 @@ const pendingRequests = new Map<string, Promise<any>>(); // 请求去重
 // LRU 缓存清理：当缓存超过最大大小时，删除最旧的条目
 const cleanupLRUCache = () => {
   if (globalVocabCache.size <= MAX_CACHE_SIZE) return;
-  
+
   // 按时间戳排序，删除最旧的条目
   const entries = Array.from(globalVocabCache.entries())
     .sort((a, b) => a[1].timestamp - b[1].timestamp);
-  
+
   const toDelete = entries.slice(0, globalVocabCache.size - MAX_CACHE_SIZE);
   toDelete.forEach(([key]) => {
     globalVocabCache.delete(key);
@@ -333,20 +333,20 @@ const cleanupLRUCache = () => {
 // 增强的词汇搜索函数，包含请求去重和持久化缓存
 // lang 参数用于区分不同语言的缓存
 const searchVocabWithCache = async (
-  word: string, 
+  word: string,
   lang: 'ja' | 'en' | 'zh' | 'ko',
   getAuthHeaders: () => Promise<HeadersInit>
 ): Promise<any> => {
   // 缓存 key 包含语言代码，避免跨语言缓存冲突
   const cacheKey = `vocab:${lang}:${word.toLowerCase().trim()}`;
   const now = Date.now();
-  
+
   // 检查内存缓存
   const cached = globalVocabCache.get(cacheKey);
   if (cached && (now - cached.timestamp) < CACHE_DURATION) {
     return cached.data;
   }
-  
+
   // 检查sessionStorage缓存
   try {
     const sessionKey = `vocab_cache_${cacheKey}`;
@@ -363,12 +363,12 @@ const searchVocabWithCache = async (
   } catch (e) {
     // sessionStorage可能不可用，忽略错误
   }
-  
+
   // 检查是否有正在进行的相同请求
   if (pendingRequests.has(cacheKey)) {
     return pendingRequests.get(cacheKey);
   }
-  
+
   // 创建新的请求
   const requestPromise = (async () => {
     try {
@@ -378,11 +378,11 @@ const searchVocabWithCache = async (
         { headers }
       );
       const data = await response.json();
-      
+
       // 更新缓存
       globalVocabCache.set(cacheKey, { data, timestamp: now });
       cleanupLRUCache(); // 检查并清理缓存
-      
+
       // 更新sessionStorage缓存
       try {
         const sessionKey = `vocab_cache_${cacheKey}`;
@@ -390,17 +390,17 @@ const searchVocabWithCache = async (
       } catch (e) {
         // sessionStorage可能不可用，忽略错误
       }
-      
+
       return data;
     } finally {
       // 请求完成后移除pending状态
       pendingRequests.delete(cacheKey);
     }
   })();
-  
+
   // 记录pending请求
   pendingRequests.set(cacheKey, requestPromise);
-  
+
   return requestPromise;
 };
 
@@ -422,23 +422,23 @@ export default function ShadowingPage() {
   const { t, language, setLanguageFromUserProfile } = useLanguage();
   const { permissions } = useUserPermissions();
   const { user, authLoading, getAuthHeaders, profile } = useAuth();
-  
+
   // 页面加载状态，用于延迟词汇搜索
   const [pageLoaded, setPageLoaded] = useState(false);
 
   // 过滤和筛选状态
   const [lang, setLang] = useState<'ja' | 'en' | 'zh' | 'ko'>('zh');
-  
+
   // 页面加载完成后才允许词汇搜索
   useEffect(() => {
     const timer = setTimeout(() => {
       setPageLoaded(true);
     }, 2000); // 页面加载2秒后才允许词汇搜索
-    
+
     return () => clearTimeout(timer);
   }, []);
-  
-  
+
+
   // 注意：由于缓存 key 已包含 lang，语言切换时不再需要清空缓存
   // 这样可以避免跨语言切换时的"冷启动"问题
   const [level, setLevel] = useState<number | null>(() => {
@@ -455,7 +455,7 @@ export default function ShadowingPage() {
           return persisted.level ?? null;
         }
       }
-    } catch {}
+    } catch { }
     return 1;
   });
   const [practiced, setPracticed] = useState<'all' | 'practiced' | 'unpracticed'>('all');
@@ -636,10 +636,10 @@ export default function ShadowingPage() {
     stopPlayback: () => void;
     suspendMicForPlayback: () => void;
   } | null>(null);
-  
+
   // 请求中止控制器
   const abortRef = useRef<AbortController | null>(null);
-  
+
   // 首次数据加载标记，用于避免认证完成和筛选条件变化时的重复加载
   const initialLoadRef = useRef(false);
 
@@ -757,10 +757,10 @@ export default function ShadowingPage() {
       if (stored !== null) {
         setShowRubyPronunciation(stored === 'true');
       }
-    } catch {}
+    } catch { }
   }, [currentItem?.lang]);
   useEffect(() => {
-    try { if (typeof window !== 'undefined') window.localStorage.setItem('shadowing.showRubyPronunciation', String(showRubyPronunciation)); } catch {}
+    try { if (typeof window !== 'undefined') window.localStorage.setItem('shadowing.showRubyPronunciation', String(showRubyPronunciation)); } catch { }
   }, [showRubyPronunciation]);
 
   // 用户生词本状态
@@ -934,7 +934,7 @@ export default function ShadowingPage() {
   // 加载用户生词本 (当前语言)
   useEffect(() => {
     if (!currentItem?.lang || !user) return;
-    
+
     const loadUserVocab = async () => {
       try {
         const headers = await getAuthHeaders();
@@ -945,19 +945,19 @@ export default function ShadowingPage() {
         const data = await response.json();
         if (data.success) {
           setUserVocab(data.entries || []);
-          
+
           // 筛选出不是从当前文章来源的单词，并检查是否在当前文章文本中存在
-          const filteredVocab = (data.entries || []).filter((entry: { source_id: string }) => 
+          const filteredVocab = (data.entries || []).filter((entry: { source_id: string }) =>
             entry.source_id !== currentItem.id
           );
-          
+
           if (filteredVocab.length > 0 && currentItem.text) {
             // 检查哪些单词在当前文章文本中存在
             const articleText = currentItem.text.toLowerCase();
-            const wordsInArticle = filteredVocab.filter((entry: { term: string }) => 
+            const wordsInArticle = filteredVocab.filter((entry: { term: string }) =>
               articleText.includes(entry.term.toLowerCase())
             );
-            
+
             if (wordsInArticle.length > 0) {
               // 转换为 previousWords 格式
               const vocabWords = wordsInArticle.map((entry: { term: string; context?: string; explanation?: object; id: string }) => ({
@@ -967,12 +967,12 @@ export default function ShadowingPage() {
                 fromVocab: true,
                 vocabId: entry.id
               }));
-              
+
               // 获取当前已有的 previousWords，避免重复
               setPreviousWords(prevWords => {
                 const existingWords = new Set(prevWords.map(w => w.word));
                 const newWords = vocabWords.filter((v: { word: string }) => !existingWords.has(v.word));
-                
+
                 if (newWords.length > 0) {
                   return [...prevWords, ...newWords];
                 }
@@ -985,18 +985,18 @@ export default function ShadowingPage() {
         console.error('加载生词本失败:', error);
       }
     };
-    
+
     loadUserVocab();
   }, [currentItem?.lang, currentItem?.id, user]);
 
   // 刷新生词解释
   const handleRefreshExplanation = async (word: string, vocabId?: string) => {
     if (!vocabId) return;
-    
+
     try {
       setIsGeneratingExplanation(true);
       const headers = await getAuthHeaders();
-      
+
       // 重新生成解释
       const response = await fetch('/api/vocab/explain', {
         method: 'POST',
@@ -1008,7 +1008,7 @@ export default function ShadowingPage() {
           context: currentItem?.text || ''
         })
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.explanation) {
@@ -1021,11 +1021,11 @@ export default function ShadowingPage() {
               explanation: data.explanation
             })
           });
-          
+
           if (updateResponse.ok) {
             // 更新本地状态
-            setUserVocab(prev => prev.map(v => 
-              v.id === vocabId 
+            setUserVocab(prev => prev.map(v =>
+              v.id === vocabId
                 ? { ...v, explanation: data.explanation }
                 : v
             ));
@@ -1050,13 +1050,13 @@ export default function ShadowingPage() {
       try {
         // 停止当前正在播放的语音
         window.speechSynthesis.cancel();
-        
+
         const utterance = new SpeechSynthesisUtterance(word);
-        
+
         // 根据当前语言设置语音
         const langMap: Record<string, string> = {
           'ja': 'ja-JP',
-          'zh': 'zh-CN', 
+          'zh': 'zh-CN',
           'en': 'en-US',
           'ko': 'ko-KR',
         };
@@ -1065,12 +1065,12 @@ export default function ShadowingPage() {
         utterance.rate = 0.5; // 放慢语速，更清晰
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
-        
+
         // 选择最合适的语音引擎（iPad 上非常重要）
         // 优先选择女性语音，避免奇怪的男性声音
         const selectBestVoice = () => {
           const voices = window.speechSynthesis.getVoices();
-          
+
           // 对于日语，优先选择女性日语语音引擎
           if (lang === 'ja') {
             const japaneseVoices = voices.filter(
@@ -1079,44 +1079,44 @@ export default function ShadowingPage() {
                 voice.name.toLowerCase().includes('japanese') ||
                 voice.name.toLowerCase().includes('japan'),
             );
-            
+
             if (japaneseVoices.length > 0) {
               // 优先选择女性日语语音（常见名称：Kyoko, Siri Female等）
               const nameLower = (name: string) => name.toLowerCase();
-              
+
               // 首先尝试找到明确包含女性关键词的语音
               const preferredFemaleVoices = japaneseVoices.filter(voice => {
                 const name = nameLower(voice.name);
                 return name.includes('kyoko') ||
-                       name.includes('female') ||
-                       name.includes('woman') ||
-                       (name.includes('siri') && !name.includes('male'));
+                  name.includes('female') ||
+                  name.includes('woman') ||
+                  (name.includes('siri') && !name.includes('male'));
               });
-              
+
               if (preferredFemaleVoices.length > 0) {
                 utterance.voice = preferredFemaleVoices[0];
                 return;
               }
-              
+
               // 如果没有明确的女性语音，选择不包含男性关键词的语音
               const nonMaleVoices = japaneseVoices.filter(voice => {
                 const name = nameLower(voice.name);
                 return !name.includes('otoya') &&
-                       !name.includes('male') &&
-                       !name.includes('man');
+                  !name.includes('male') &&
+                  !name.includes('man');
               });
-              
+
               if (nonMaleVoices.length > 0) {
                 utterance.voice = nonMaleVoices[0];
                 return;
               }
-              
+
               // 最后，使用第一个可用的日语语音
               utterance.voice = japaneseVoices[0];
               return;
             }
           }
-          
+
           // 对于中文，优先选择女性中文语音引擎
           if (lang === 'zh') {
             const chineseVoices = voices.filter(
@@ -1125,43 +1125,43 @@ export default function ShadowingPage() {
                 voice.name.toLowerCase().includes('chinese') ||
                 voice.name.toLowerCase().includes('mandarin'),
             );
-            
+
             if (chineseVoices.length > 0) {
               // 优先选择女性中文语音（常见名称：Ting-Ting等）
               const nameLower = (name: string) => name.toLowerCase();
-              
+
               // 首先尝试找到明确包含女性关键词的语音
               const preferredFemaleVoices = chineseVoices.filter(voice => {
                 const name = nameLower(voice.name);
                 return name.includes('ting') ||
-                       name.includes('female') ||
-                       name.includes('woman');
+                  name.includes('female') ||
+                  name.includes('woman');
               });
-              
+
               if (preferredFemaleVoices.length > 0) {
                 utterance.voice = preferredFemaleVoices[0];
                 return;
               }
-              
+
               // 如果没有明确的女性语音，选择不包含男性关键词的语音
               const nonMaleVoices = chineseVoices.filter(voice => {
                 const name = nameLower(voice.name);
                 return !name.includes('yu-shu') &&
-                       !name.includes('male') &&
-                       !name.includes('man');
+                  !name.includes('male') &&
+                  !name.includes('man');
               });
-              
+
               if (nonMaleVoices.length > 0) {
                 utterance.voice = nonMaleVoices[0];
                 return;
               }
-              
+
               // 最后，使用第一个可用的中文语音
               utterance.voice = chineseVoices[0];
               return;
             }
           }
-          
+
           // 对于韩语，优先选择女性韩语语音引擎
           if (lang === 'ko') {
             const koreanVoices = voices.filter(
@@ -1171,72 +1171,72 @@ export default function ShadowingPage() {
                 voice.name.toLowerCase().includes('korea') ||
                 voice.name.toLowerCase().includes('한국어'),
             );
-            
+
             if (koreanVoices.length > 0) {
               // 优先选择女性韩语语音（常见名称：Yuna, Sora等）
               const nameLower = (name: string) => name.toLowerCase();
-              
+
               // 首先尝试找到明确包含女性关键词的语音
               const preferredFemaleVoices = koreanVoices.filter(voice => {
                 const name = nameLower(voice.name);
                 return name.includes('yuna') ||
-                       name.includes('sora') ||
-                       name.includes('female') ||
-                       name.includes('woman') ||
-                       name.includes('여성');
+                  name.includes('sora') ||
+                  name.includes('female') ||
+                  name.includes('woman') ||
+                  name.includes('여성');
               });
-              
+
               if (preferredFemaleVoices.length > 0) {
                 utterance.voice = preferredFemaleVoices[0];
                 return;
               }
-              
+
               // 如果没有明确的女性语音，选择不包含男性关键词的语音
               const nonMaleVoices = koreanVoices.filter(voice => {
                 const name = nameLower(voice.name);
                 return !name.includes('male') &&
-                       !name.includes('man');
+                  !name.includes('man');
               });
-              
+
               if (nonMaleVoices.length > 0) {
                 utterance.voice = nonMaleVoices[0];
                 return;
               }
-              
+
               // 最后，使用第一个可用的韩语语音
               utterance.voice = koreanVoices[0];
               return;
             }
           }
-          
+
           // 如果没有找到特定语言的语音，尝试匹配语言代码
           const matchingVoices = voices.filter(
             (voice) => voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0]),
           );
-          
+
           if (matchingVoices.length > 0) {
             // 在匹配的语音中，也优先选择女性语音
             const nameLower = (name: string) => name.toLowerCase();
-            
+
             // 首先尝试找到明确包含女性关键词的语音
             const preferredFemaleVoices = matchingVoices.filter(voice => {
               const name = nameLower(voice.name);
               return name.includes('female') ||
-                     name.includes('woman');
+                name.includes('woman');
             });
-            
+
             if (preferredFemaleVoices.length > 0) {
               utterance.voice = preferredFemaleVoices[0];
               return;
             }
-            
+
             // 如果没有明确的女性语音，选择不包含男性关键词的语音
             const nonMaleVoices = matchingVoices.filter(voice => {
               const name = nameLower(voice.name);
               return !name.includes('male') &&
-                     !name.includes('man');
+                !name.includes('man');
             });
-            
+
             if (nonMaleVoices.length > 0) {
               utterance.voice = nonMaleVoices[0];
             } else {
@@ -1244,10 +1244,10 @@ export default function ShadowingPage() {
             }
           }
         };
-        
+
         // 尝试选择最佳语音引擎
         selectBestVoice();
-        
+
         // 如果语音列表还没有加载完成（iPad 上常见），等待加载
         if (window.speechSynthesis.getVoices().length === 0) {
           const handleVoicesChanged = () => {
@@ -1255,7 +1255,7 @@ export default function ShadowingPage() {
             window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
           };
           window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-          
+
           // 如果一段时间后仍然没有加载，尝试直接播放（使用默认语音）
           setTimeout(() => {
             if (window.speechSynthesis.getVoices().length === 0) {
@@ -1316,18 +1316,18 @@ export default function ShadowingPage() {
     const handleMouseEnter = async () => {
       setShowTooltip(true);
       if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
-      if (abortRef.current) { try { abortRef.current.abort(); } catch {} abortRef.current = null; }
-      
+      if (abortRef.current) { try { abortRef.current.abort(); } catch { } abortRef.current = null; }
+
       // 优先使用本地缓存的解释
       if (latestExplanation) {
         return; // 如果已有解释，直接显示，不发起新请求
       }
-      
+
       // 只有在页面加载完成后才允许搜索
       if (!pageLoaded) {
         return;
       }
-      
+
       // 增加防抖延迟到1500ms，进一步减少频繁请求
       tooltipTimerRef.current = setTimeout(async () => {
         try {
@@ -1344,36 +1344,36 @@ export default function ShadowingPage() {
     const handleMouseLeave = () => {
       setShowTooltip(false);
       if (tooltipTimerRef.current) { clearTimeout(tooltipTimerRef.current); tooltipTimerRef.current = null; }
-      if (abortRef.current) { try { abortRef.current.abort(); } catch {} abortRef.current = null; }
+      if (abortRef.current) { try { abortRef.current.abort(); } catch { } abortRef.current = null; }
     };
 
     // 点击发音功能
     const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       // 防止重复触发（300ms 内的重复点击会被忽略）
       const now = Date.now();
       if (now - lastClickTimeRef.current < 300) {
         return;
       }
       lastClickTimeRef.current = now;
-      
+
       // 只专注发音，不切换tooltip
-      
+
       // 调用浏览器发音
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         try {
           setIsSpeaking(true);
           // 停止当前正在播放的语音
           window.speechSynthesis.cancel();
-          
+
           const utterance = new SpeechSynthesisUtterance(word);
-          
+
           // 根据当前语言设置语音
           const langMap: Record<string, string> = {
             'ja': 'ja-JP',
-            'zh': 'zh-CN', 
+            'zh': 'zh-CN',
             'en': 'en-US',
             'ko': 'ko-KR',
           };
@@ -1382,12 +1382,12 @@ export default function ShadowingPage() {
           utterance.rate = 0.5; // 放慢语速，更清晰
           utterance.pitch = 1.0;
           utterance.volume = 1.0;
-          
+
           // 选择最合适的语音引擎（iPad 上非常重要）
           // 优先选择女性语音，避免奇怪的男性声音
           const selectBestVoice = () => {
             const voices = window.speechSynthesis.getVoices();
-            
+
             // 对于日语，优先选择女性日语语音引擎
             if (lang === 'ja') {
               const japaneseVoices = voices.filter(
@@ -1396,44 +1396,44 @@ export default function ShadowingPage() {
                   voice.name.toLowerCase().includes('japanese') ||
                   voice.name.toLowerCase().includes('japan'),
               );
-              
+
               if (japaneseVoices.length > 0) {
                 // 优先选择女性日语语音（常见名称：Kyoko, Siri Female等）
                 const nameLower = (name: string) => name.toLowerCase();
-                
+
                 // 首先尝试找到明确包含女性关键词的语音
                 const preferredFemaleVoices = japaneseVoices.filter(voice => {
                   const name = nameLower(voice.name);
                   return name.includes('kyoko') ||
-                         name.includes('female') ||
-                         name.includes('woman') ||
-                         (name.includes('siri') && !name.includes('male'));
+                    name.includes('female') ||
+                    name.includes('woman') ||
+                    (name.includes('siri') && !name.includes('male'));
                 });
-                
+
                 if (preferredFemaleVoices.length > 0) {
                   utterance.voice = preferredFemaleVoices[0];
                   return;
                 }
-                
+
                 // 如果没有明确的女性语音，选择不包含男性关键词的语音
                 const nonMaleVoices = japaneseVoices.filter(voice => {
                   const name = nameLower(voice.name);
                   return !name.includes('otoya') &&
-                         !name.includes('male') &&
-                         !name.includes('man');
+                    !name.includes('male') &&
+                    !name.includes('man');
                 });
-                
+
                 if (nonMaleVoices.length > 0) {
                   utterance.voice = nonMaleVoices[0];
                   return;
                 }
-                
+
                 // 最后，使用第一个可用的日语语音
                 utterance.voice = japaneseVoices[0];
                 return;
               }
             }
-            
+
             // 对于中文，优先选择女性中文语音引擎
             if (lang === 'zh') {
               const chineseVoices = voices.filter(
@@ -1442,43 +1442,43 @@ export default function ShadowingPage() {
                   voice.name.toLowerCase().includes('chinese') ||
                   voice.name.toLowerCase().includes('mandarin'),
               );
-              
+
               if (chineseVoices.length > 0) {
                 // 优先选择女性中文语音（常见名称：Ting-Ting等）
                 const nameLower = (name: string) => name.toLowerCase();
-                
+
                 // 首先尝试找到明确包含女性关键词的语音
                 const preferredFemaleVoices = chineseVoices.filter(voice => {
                   const name = nameLower(voice.name);
                   return name.includes('ting') ||
-                         name.includes('female') ||
-                         name.includes('woman');
+                    name.includes('female') ||
+                    name.includes('woman');
                 });
-                
+
                 if (preferredFemaleVoices.length > 0) {
                   utterance.voice = preferredFemaleVoices[0];
                   return;
                 }
-                
+
                 // 如果没有明确的女性语音，选择不包含男性关键词的语音
                 const nonMaleVoices = chineseVoices.filter(voice => {
                   const name = nameLower(voice.name);
                   return !name.includes('yu-shu') &&
-                         !name.includes('male') &&
-                         !name.includes('man');
+                    !name.includes('male') &&
+                    !name.includes('man');
                 });
-                
+
                 if (nonMaleVoices.length > 0) {
                   utterance.voice = nonMaleVoices[0];
                   return;
                 }
-                
+
                 // 最后，使用第一个可用的中文语音
                 utterance.voice = chineseVoices[0];
                 return;
               }
             }
-            
+
             // 对于韩语，优先选择女性韩语语音引擎
             if (lang === 'ko') {
               const koreanVoices = voices.filter(
@@ -1488,72 +1488,72 @@ export default function ShadowingPage() {
                   voice.name.toLowerCase().includes('korea') ||
                   voice.name.toLowerCase().includes('한국어'),
               );
-              
+
               if (koreanVoices.length > 0) {
                 // 优先选择女性韩语语音（常见名称：Yuna, Sora等）
                 const nameLower = (name: string) => name.toLowerCase();
-                
+
                 // 首先尝试找到明确包含女性关键词的语音
                 const preferredFemaleVoices = koreanVoices.filter(voice => {
                   const name = nameLower(voice.name);
                   return name.includes('yuna') ||
-                         name.includes('sora') ||
-                         name.includes('female') ||
-                         name.includes('woman') ||
-                         name.includes('여성');
+                    name.includes('sora') ||
+                    name.includes('female') ||
+                    name.includes('woman') ||
+                    name.includes('여성');
                 });
-                
+
                 if (preferredFemaleVoices.length > 0) {
                   utterance.voice = preferredFemaleVoices[0];
                   return;
                 }
-                
+
                 // 如果没有明确的女性语音，选择不包含男性关键词的语音
                 const nonMaleVoices = koreanVoices.filter(voice => {
                   const name = nameLower(voice.name);
                   return !name.includes('male') &&
-                         !name.includes('man');
+                    !name.includes('man');
                 });
-                
+
                 if (nonMaleVoices.length > 0) {
                   utterance.voice = nonMaleVoices[0];
                   return;
                 }
-                
+
                 // 最后，使用第一个可用的韩语语音
                 utterance.voice = koreanVoices[0];
                 return;
               }
             }
-            
+
             // 如果没有找到特定语言的语音，尝试匹配语言代码
             const matchingVoices = voices.filter(
               (voice) => voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0]),
             );
-            
+
             if (matchingVoices.length > 0) {
               // 在匹配的语音中，也优先选择女性语音
               const nameLower = (name: string) => name.toLowerCase();
-              
+
               // 首先尝试找到明确包含女性关键词的语音
               const preferredFemaleVoices = matchingVoices.filter(voice => {
                 const name = nameLower(voice.name);
                 return name.includes('female') ||
-                       name.includes('woman');
+                  name.includes('woman');
               });
-              
+
               if (preferredFemaleVoices.length > 0) {
                 utterance.voice = preferredFemaleVoices[0];
                 return;
               }
-              
+
               // 如果没有明确的女性语音，选择不包含男性关键词的语音
               const nonMaleVoices = matchingVoices.filter(voice => {
                 const name = nameLower(voice.name);
                 return !name.includes('male') &&
-                       !name.includes('man');
+                  !name.includes('man');
               });
-              
+
               if (nonMaleVoices.length > 0) {
                 utterance.voice = nonMaleVoices[0];
               } else {
@@ -1561,10 +1561,10 @@ export default function ShadowingPage() {
               }
             }
           };
-          
+
           // 尝试选择最佳语音引擎
           selectBestVoice();
-          
+
           // 如果语音列表还没有加载完成（iPad 上常见），等待加载
           if (window.speechSynthesis.getVoices().length === 0) {
             const handleVoicesChanged = () => {
@@ -1579,7 +1579,7 @@ export default function ShadowingPage() {
               window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
             };
             window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-            
+
             // 如果一段时间后仍然没有加载，尝试直接播放（使用默认语音）
             setTimeout(() => {
               if (window.speechSynthesis.getVoices().length === 0) {
@@ -1599,7 +1599,7 @@ export default function ShadowingPage() {
               setIsSpeaking(false);
               console.error('TTS发音失败');
             };
-            
+
             window.speechSynthesis.speak(utterance);
           }
         } catch (error) {
@@ -1612,7 +1612,7 @@ export default function ShadowingPage() {
     useEffect(() => {
       return () => {
         if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current);
-        if (abortRef.current) { try { abortRef.current.abort(); } catch {} }
+        if (abortRef.current) { try { abortRef.current.abort(); } catch { } }
       };
     }, []);
 
@@ -1632,7 +1632,7 @@ export default function ShadowingPage() {
           // 处理点击事件（移动端和桌面端都使用）
           e.preventDefault();
           e.stopPropagation();
-          
+
           // 统一处理：只触发发音
           handleClick(e);
         }}
@@ -1683,7 +1683,7 @@ export default function ShadowingPage() {
             <div className="flex justify-between items-start mb-1">
               <span>{tooltipText}</span>
               {fromVocab && onRefresh && (
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onRefresh(word, vocabId);
@@ -1746,11 +1746,11 @@ export default function ShadowingPage() {
     // 优先使用缓存中的最新解释，其次使用fallback解释
     const [latestExplanation, setLatestExplanation] = useState<
       | {
-          gloss_native: string;
-          pronunciation?: string;
-          pos?: string;
-          senses?: Array<{ example_target: string; example_native: string }>;
-        }
+        gloss_native: string;
+        pronunciation?: string;
+        pos?: string;
+        senses?: Array<{ example_target: string; example_native: string }>;
+      }
       | undefined
     >(explanationCache[word] || fallbackExplanation);
     const [explanationLoading, setExplanationLoading] = useState(false);
@@ -1915,7 +1915,7 @@ export default function ShadowingPage() {
     if (!timeline || !Array.isArray(timeline) || !timeline.length) return;
     const seg = timeline.find(s => s.index === index) || timeline[index];
     if (!seg || typeof seg.start !== 'number' || typeof seg.end !== 'number') return;
-    
+
     try {
       // playSegment 已经返回 Promise，它会监听播放条时间点（currentTime >= stopAt）来判断完成
       return audioPlayerRef.current?.playSegment(seg.start, seg.end);
@@ -1933,7 +1933,7 @@ export default function ShadowingPage() {
     if (step === 4) {
       try {
         mainAudioContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } catch {}
+      } catch { }
     }
   }, [step]);
   const [highlightPlay, setHighlightPlay] = useState(false);
@@ -2006,12 +2006,12 @@ export default function ShadowingPage() {
     if (abortRef.current) {
       try {
         abortRef.current.abort();
-      } catch {}
+      } catch { }
     }
-    
+
     const controller = new AbortController();
     abortRef.current = controller;
-    
+
     // 设置请求超时（15秒）
     const timeoutId = setTimeout(() => {
       controller.abort();
@@ -2036,26 +2036,26 @@ export default function ShadowingPage() {
       }
 
       let headers = await getAuthHeaders();
-      let response = await fetch(`/api/shadowing/catalog?${params.toString()}`, { 
-        headers, 
+      let response = await fetch(`/api/shadowing/catalog?${params.toString()}`, {
+        headers,
         credentials: 'include',
-        signal: controller.signal 
+        signal: controller.signal
       });
-      
+
       if (response.status === 401) {
         try {
           await supabase.auth.refreshSession();
           headers = await getAuthHeaders();
-          response = await fetch(`/api/shadowing/catalog?${params.toString()}`, { 
-            headers, 
+          response = await fetch(`/api/shadowing/catalog?${params.toString()}`, {
+            headers,
             credentials: 'include',
-            signal: controller.signal 
+            signal: controller.signal
           });
         } catch (refreshError) {
           console.error('Session refresh failed:', refreshError);
         }
       }
-      
+
       if (response.ok) {
         const data = await response.json();
         setCached(key, data, 30_000);
@@ -2088,9 +2088,9 @@ export default function ShadowingPage() {
       if (lang) params.set('lang', lang);
       if (level) params.set('level', level?.toString() || '');
       const headers = await getAuthHeaders();
-      const response = await fetch(`/api/shadowing/themes?${params.toString()}`, { 
+      const response = await fetch(`/api/shadowing/themes?${params.toString()}`, {
         headers,
-        credentials: 'include' 
+        credentials: 'include'
       });
       if (response.ok) {
         const data = await response.json();
@@ -2114,9 +2114,9 @@ export default function ShadowingPage() {
       if (lang) params.set('lang', lang);
       if (level) params.set('level', level?.toString() || '');
       const headers = await getAuthHeaders();
-      const response = await fetch(`/api/shadowing/subtopics?${params.toString()}`, { 
+      const response = await fetch(`/api/shadowing/subtopics?${params.toString()}`, {
         headers,
-        credentials: 'include' 
+        credentials: 'include'
       });
       if (response.ok) {
         const data = await response.json();
@@ -2147,15 +2147,15 @@ export default function ShadowingPage() {
   useEffect(() => {
     // 等待认证完成且用户已登录
     if (authLoading || !user) return;
-    
+
     // 如果是首次加载，已经由上面的 effect 处理，避免重复
     if (!initialLoadRef.current) return;
-    
+
     // 防抖延迟，避免快速切换时多次请求
     const t = setTimeout(() => {
       fetchItems();
     }, 50);
-    
+
     return () => clearTimeout(t);
     // 依赖筛选条件和fetchItems函数，确保条件变化时重新加载
   }, [lang, level, practiced, authLoading, user?.id, fetchItems]);
@@ -2169,7 +2169,7 @@ export default function ShadowingPage() {
       if (abortRef.current) {
         try {
           abortRef.current.abort();
-        } catch {}
+        } catch { }
         abortRef.current = null;
       }
     };
@@ -2345,7 +2345,7 @@ export default function ShadowingPage() {
       return;
     }
     if (progressThrottleRef.current.raf != null) {
-      try { cancelAnimationFrame(progressThrottleRef.current.raf as number); } catch {}
+      try { cancelAnimationFrame(progressThrottleRef.current.raf as number); } catch { }
     }
     try {
       const id = requestAnimationFrame(commit);
@@ -2382,12 +2382,12 @@ export default function ShadowingPage() {
     try {
       // @ts-ignore
       audioRecorderRef.current?.stopPlayback?.();
-    } catch {}
+    } catch { }
     // 停止页面音频播放并复位
     try {
       audioPlayerRef.current?.pause();
       audioPlayerRef.current?.reset();
-    } catch {}
+    } catch { }
     setCurrentItem(item);
     setSelectedWords([]);
     setPreviousWords([]);
@@ -2411,7 +2411,7 @@ export default function ShadowingPage() {
       if (next !== current) {
         router.replace(next, { scroll: false });
       }
-    } catch {}
+    } catch { }
 
     // 将当前题目写入本地存储（按语言分桶），用于无 URL 参数时的兜底恢复
     try {
@@ -2419,7 +2419,7 @@ export default function ShadowingPage() {
       if (typeof window !== 'undefined' && keyLang) {
         localStorage.setItem(`shadowing:lastItem:${keyLang}`, item.id);
       }
-    } catch {}
+    } catch { }
 
     // 尝试加载之前的会话数据（不管是否标记为已练习）
     try {
@@ -2503,7 +2503,7 @@ export default function ShadowingPage() {
           let headers: HeadersInit | undefined = undefined;
           try {
             if (user) headers = await getAuthHeaders();
-          } catch {}
+          } catch { }
           const resp = await fetch(`/api/shadowing/item?id=${itemId}`, { headers, credentials: 'include' });
           if (resp.ok) {
             const data = await resp.json();
@@ -2562,7 +2562,7 @@ export default function ShadowingPage() {
                   }
                 }
               }
-            } catch {}
+            } catch { }
           }
         }
         if (target) {
@@ -2591,7 +2591,7 @@ export default function ShadowingPage() {
         loadItem(target);
         pendingItemIdRef.current = null;
       }
-    } catch {}
+    } catch { }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
 
@@ -2609,7 +2609,7 @@ export default function ShadowingPage() {
           let headers: HeadersInit | undefined = undefined;
           try {
             if (user) headers = await getAuthHeaders();
-          } catch {}
+          } catch { }
           const resp = await fetch(`/api/shadowing/item?id=${encodeURIComponent(itemId)}`, { headers, credentials: 'include' });
           if (resp.ok) {
             const data = await resp.json();
@@ -2633,7 +2633,7 @@ export default function ShadowingPage() {
         }
       };
       run();
-    } catch {}
+    } catch { }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navSearchParams]);
 
@@ -2648,7 +2648,7 @@ export default function ShadowingPage() {
         let headers: HeadersInit | undefined = undefined;
         try {
           headers = await getAuthHeaders();
-        } catch {}
+        } catch { }
         const resp = await fetch(`/api/shadowing/item?id=${encodeURIComponent(pendingId)}`, { headers, credentials: 'include' });
         if (resp.ok) {
           const data = await resp.json();
@@ -2667,7 +2667,7 @@ export default function ShadowingPage() {
             pendingItemIdRef.current = null;
           }
         }
-      } catch {}
+      } catch { }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, currentItem]);
@@ -2706,7 +2706,7 @@ export default function ShadowingPage() {
         if (target) {
           await loadItem(target);
         }
-      } catch {}
+      } catch { }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, lang]);
@@ -3198,7 +3198,7 @@ export default function ShadowingPage() {
         > = {};
 
         // 节流：在批量循环中避免频繁 setState，这里只汇总一次
-        for (const r of successfulResults as Array<{ word: string; explanation: any }> ) {
+        for (const r of successfulResults as Array<{ word: string; explanation: any }>) {
           if (r) {
             newExplanations[r.word] = r.explanation;
           }
@@ -3508,16 +3508,16 @@ export default function ShadowingPage() {
       prev.map((item) =>
         item.id === currentItem.id
           ? {
-              ...item,
-              isPracticed: true,
-              stats: {
-                ...item.stats,
-                recordingCount: currentRecordings.length,
-                vocabCount: selectedWords.length,
-                practiceTime,
-                lastPracticed: new Date().toISOString(),
-              },
-            }
+            ...item,
+            isPracticed: true,
+            stats: {
+              ...item.stats,
+              recordingCount: currentRecordings.length,
+              vocabCount: selectedWords.length,
+              practiceTime,
+              lastPracticed: new Date().toISOString(),
+            },
+          }
           : item,
       ),
     );
@@ -3627,7 +3627,7 @@ export default function ShadowingPage() {
       if (sessionResponse.ok) {
         const sessionData = await sessionResponse.json();
         setCurrentSession(sessionData.session);
-        
+
         // 如果服务端返回了更新后的item状态，直接合并到本地状态
         if (sessionData.item) {
           setItems((prev) =>
@@ -3718,11 +3718,11 @@ export default function ShadowingPage() {
   const batchFetchExplanations = async (words: string[]) => {
     const explanations: Record<string, any> = {};
     const itemLang = (currentItem?.lang || lang) as 'ja' | 'en' | 'zh' | 'ko';
-    
+
     try {
       // 使用 p-limit 限制并发数为 5，避免过多并发请求导致抖动和失败
       const limit = pLimit(5);
-      
+
       // 并行获取所有词汇的解释，但限制并发数
       const promises = words.map((word) =>
         limit(async () => {
@@ -3736,12 +3736,12 @@ export default function ShadowingPage() {
           }
         })
       );
-      
+
       await Promise.all(promises);
     } catch (error) {
       console.error('批量获取词汇解释失败:', error);
     }
-    
+
     return explanations;
   };
 
@@ -3757,7 +3757,7 @@ export default function ShadowingPage() {
       // 批量获取所有选中词汇的解释
       const wordList = selectedWords.map(item => item.word);
       const explanations = await batchFetchExplanations(wordList);
-      
+
       // 更新选中词汇的解释
       const updatedSelectedWords = selectedWords.map(item => ({
         ...item,
@@ -3842,16 +3842,16 @@ export default function ShadowingPage() {
   };
 
   // 统一侧边栏状态：移动端使用抽屉式，桌面端默认打开（通过CSS控制）
-  
+
   // 引导提示状态
   const [showGuide, setShowGuide] = useState(false);
-  
+
   // 步骤提示展开状态
   const [stepTipExpanded, setStepTipExpanded] = useState(false);
-  
+
   // 主内容区域引用
   const mainContentRef = useRef<HTMLDivElement>(null);
-  
+
   // 桌面端初始化时自动打开侧边栏（但如果从每日一题进入或已指定题目，则不自动打开）
   useEffect(() => {
     if (!actualIsMobile) {
@@ -3876,7 +3876,7 @@ export default function ShadowingPage() {
       return () => clearTimeout(timer);
     }
   }, [currentItem]);
-  
+
   // 隐藏引导提示
   const hideGuide = () => {
     setShowGuide(false);
@@ -3954,7 +3954,7 @@ export default function ShadowingPage() {
                   </h1>
                 </div>
               </div>
-              
+
               {/* 题库按钮 */}
               <div className="relative">
                 <Button
@@ -3964,17 +3964,16 @@ export default function ShadowingPage() {
                     setMobileSidebarOpen(true);
                     hideGuide();
                   }}
-                  className={`flex items-center gap-1.5 bg-white/50 hover:bg-white/80 border-white/30 h-9 px-3 transition-all ${
-                    showGuide 
-                      ? 'shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-2 ring-blue-400/30 ring-offset-2' 
-                      : 'shadow-md'
-                  }`}
+                  className={`flex items-center gap-1.5 bg-white/50 hover:bg-white/80 border-white/30 h-9 px-3 transition-all ${showGuide
+                    ? 'shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-2 ring-blue-400/30 ring-offset-2'
+                    : 'shadow-md'
+                    }`}
                   aria-label={t.shadowing.shadowing_vocabulary}
                 >
                   <Menu className="w-4 h-4" />
                   <span className="text-sm">题库</span>
                 </Button>
-                
+
                 {/* 呼吸光效 */}
                 {showGuide && (
                   <div className="absolute inset-0 rounded-lg animate-pulse pointer-events-none">
@@ -3992,20 +3991,20 @@ export default function ShadowingPage() {
                 <PracticeStepper
                   size="sm"
                   currentStep={step}
-                  onStepChange={(s)=> setStep(s)}
+                  onStepChange={(s) => setStep(s)}
                   maxStepAllowed={step}
-                  labels={[t.shadowing.step1_tip, t.shadowing.step2_tip, t.shadowing.step3_tip, t.shadowing.step5_tip].map(x=> String(x || 'Step'))}
+                  labels={[t.shadowing.step1_tip, t.shadowing.step2_tip, t.shadowing.step3_tip, t.shadowing.step5_tip].map(x => String(x || 'Step'))}
                 />
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4))} disabled={step===1}>Back</Button>
-                  <Button size="sm" onClick={() => setStep((s)=> (Math.min(4, (s as number)+1) as 1|2|3|4))} disabled={step===4}>Next</Button>
+                  <Button size="sm" variant="outline" onClick={() => setStep((s) => (Math.max(1, (s as number) - 1) as 1 | 2 | 3 | 4))} disabled={step === 1}>Back</Button>
+                  <Button size="sm" onClick={() => setStep((s) => (Math.min(4, (s as number) + 1) as 1 | 2 | 3 | 4))} disabled={step === 4}>Next</Button>
                 </div>
               </div>
               <div className="mt-3 text-xs text-gray-700">
-                {step===1 && t.shadowing.step1_tip}
-                {step===2 && t.shadowing.step2_tip}
-                {step===3 && t.shadowing.step3_tip}
-                {step===4 && t.shadowing.step5_tip}
+                {step === 1 && t.shadowing.step1_tip}
+                {step === 2 && t.shadowing.step2_tip}
+                {step === 3 && t.shadowing.step3_tip}
+                {step === 4 && t.shadowing.step5_tip}
               </div>
             </Card>
           )}
@@ -4020,664 +4019,897 @@ export default function ShadowingPage() {
 
           {/* 侧边栏 - 统一抽屉式 */}
           <div
-            className={`fixed top-0 left-0 h-full w-[90vw] max-w-[360px] bg-white/95 backdrop-blur-xl z-50 transform transition-all duration-300 shadow-2xl border-r border-white/20 ${
-              mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}
+            className={`fixed top-0 left-0 h-full w-[90vw] max-w-[360px] bg-white/95 backdrop-blur-xl z-50 transform transition-all duration-300 shadow-2xl border-r border-white/20 ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              }`}
           >
-              <div className="h-full flex flex-col">
-                {/* 侧边栏头部 - 美化 */}
-                <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                        <Filter className="w-4 h-4" />
-                      </div>
-                      <h3 className="font-bold text-lg">
-                        {t.shadowing.shadowing_vocabulary || 'Shadowing 题库'}
-                      </h3>
+            <div className="h-full flex flex-col">
+              {/* 侧边栏头部 - 美化 */}
+              <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                      <Filter className="w-4 h-4" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => fetchItems()}
-                        className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/20 transition-colors"
-                        title={t.shadowing.refresh_vocabulary || '刷新题库'}
-                        aria-label={t.shadowing.refresh_vocabulary || '刷新题库'}
-                        disabled={loading}
-                      >
-                        <div className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}>🔄</div>
-                      </button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setMobileSidebarOpen(false)}
-                        className="text-white hover:bg-white/20"
-                        aria-label="关闭侧边栏"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <h3 className="font-bold text-lg">
+                      {t.shadowing.shadowing_vocabulary || 'Shadowing 题库'}
+                    </h3>
                   </div>
-                </div>
-
-                {/* 侧边栏内容 - 优化版 */}
-                <div className="flex-1 overflow-y-auto bg-gray-50/50" ref={mobileListScrollRef}>
-                  {/* 过滤器 - 使用折叠式布局 */}
-                  <div className="p-4 space-y-4">
-                    {/* 基础筛选 - 默认展开 */}
-                    <CollapsibleFilterSection
-                      title={t.shadowing.filter || '筛选'}
-                      icon={<Filter className="w-3 h-3 text-blue-600" />}
-                      defaultOpen={true}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => fetchItems()}
+                      className="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/20 transition-colors"
+                      title={t.shadowing.refresh_vocabulary || '刷新题库'}
+                      aria-label={t.shadowing.refresh_vocabulary || '刷新题库'}
+                      disabled={loading}
                     >
-                      {/* 语言选择 */}
-                      <FilterLanguageSelector
-                        value={lang}
-                        onChange={setLang}
-                        allowedLanguages={permissions.allowed_languages}
-                        className="h-10"
-                      />
-
-                      {/* 等级选择 */}
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-gray-700">
-                          {t.shadowing.level}
-                        </Label>
-                        <Select
-                          value={level?.toString() || 'all'}
-                          onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
-                        >
-                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                            <SelectValue placeholder={t.shadowing.all_levels} />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                            <SelectItem value="all" className="rounded-lg">
-                              {t.shadowing.all_levels}
-                            </SelectItem>
-                            {permissions.allowed_levels.includes(1) && (
-                              <SelectItem value="1" className="rounded-lg">
-                                L1 - 初级
-                              </SelectItem>
-                            )}
-                            {permissions.allowed_levels.includes(2) && (
-                              <SelectItem value="2" className="rounded-lg">
-                                L2 - 初中级
-                              </SelectItem>
-                            )}
-                            {permissions.allowed_levels.includes(3) && (
-                              <SelectItem value="3" className="rounded-lg">
-                                L3 - 中级
-                              </SelectItem>
-                            )}
-                            {permissions.allowed_levels.includes(4) && (
-                              <SelectItem value="4" className="rounded-lg">
-                                L4 - 中高级
-                              </SelectItem>
-                            )}
-                            {permissions.allowed_levels.includes(5) && (
-                              <SelectItem value="5" className="rounded-lg">
-                                L5 - 高级
-                              </SelectItem>
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 练习状态 */}
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-gray-700">
-                          {t.shadowing.practice_status}
-                        </Label>
-                        <Select
-                          value={practiced}
-                          onValueChange={(v: 'all' | 'practiced' | 'unpracticed') => setPracticed(v)}
-                        >
-                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                            <SelectItem value="all" className="rounded-lg">
-                              {t.shadowing.all_status}
-                            </SelectItem>
-                            <SelectItem value="unpracticed" className="rounded-lg">
-                              {t.shadowing.unpracticed}
-                            </SelectItem>
-                            <SelectItem value="practiced" className="rounded-lg">
-                              {t.shadowing.practiced}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </CollapsibleFilterSection>
-
-                    {/* 高级筛选 - 可折叠 */}
-                    <CollapsibleFilterSection
-                      title="高级筛选"
-                      icon={<Target className="w-3 h-3 text-blue-600" />}
-                      defaultOpen={false}
+                      <div className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}>🔄</div>
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setMobileSidebarOpen(false)}
+                      className="text-white hover:bg-white/20"
+                      aria-label="关闭侧边栏"
                     >
-                      {/* 体裁筛选 */}
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-gray-700">
-                          {t.shadowing.genre}
-                        </Label>
-                        <Select value={theme} onValueChange={setTheme}>
-                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                            {GENRE_OPTIONS.map((option) => (
-                              <SelectItem
-                                key={option.value}
-                                value={option.value}
-                                className="rounded-lg"
-                              >
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 大主题筛选 */}
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-gray-700">
-                          {t.shadowing.major_theme}
-                        </Label>
-                        <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
-                          <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                            <SelectItem value="all" className="rounded-lg">
-                              {t.shadowing.all_major_themes}
-                            </SelectItem>
-                            {themes.map((theme) => (
-                              <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
-                                {theme.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 小主题筛选 */}
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-gray-700">
-                          {t.shadowing.minor_theme}
-                        </Label>
-                        <Select
-                          value={selectedSubtopicId}
-                          onValueChange={setSelectedSubtopicId}
-                          disabled={selectedThemeId === 'all'}
-                        >
-                          <SelectTrigger
-                            className={`h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}
-                          >
-                            <SelectValue
-                              placeholder={
-                                selectedThemeId === 'all'
-                                  ? t.shadowing.select_major_theme_first
-                                  : t.shadowing.all_minor_themes
-                              }
-                            />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-gray-200 shadow-lg">
-                            <SelectItem value="all" className="rounded-lg">
-                              {t.shadowing.all_minor_themes}
-                            </SelectItem>
-                            {subtopics.map((subtopic) => (
-                              <SelectItem
-                                key={subtopic.id}
-                                value={subtopic.id}
-                                className="rounded-lg"
-                              >
-                                {subtopic.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* 搜索 */}
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-gray-700">
-                          {t.shadowing.search}
-                        </Label>
-                        <Input
-                          placeholder={t.shadowing.search_placeholder}
-                          value={searchQuery}
-                          onChange={(e) => startTransition(() => setSearchQuery(e.target.value))}
-                          className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                    </CollapsibleFilterSection>
-
-                    {/* 快捷操作 */}
-                    <div className="flex gap-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={getRandomUnpracticed}
-                        className="flex-1 h-10 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100 hover:border-green-300 rounded-xl shadow-sm hover:shadow-md transition-all"
-                      >
-                        <Shuffle className="w-4 h-4 mr-2" />
-                        {t.shadowing.random}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={getNextUnpracticed}
-                        className="flex-1 h-10 bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-violet-100 hover:border-purple-300 rounded-xl shadow-sm hover:shadow-md transition-all"
-                      >
-                        <ArrowRight className="w-4 h-4 mr-2" />
-                        {t.shadowing.next_question}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* 统计信息 - 紧凑横向卡片 */}
-                  <CompactStatsCards
-                    totalCount={listStats.totalCount}
-                    completedCount={listStats.completedCount}
-                    draftCount={listStats.draftCount}
-                    unstartedCount={listStats.unstartedCount}
-                  />
-
-                  {/* 题目列表 */}
-                  <div>
-                    {loading ? (
-                      <div className="space-y-3 p-4">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                          <div key={i} className="p-4 rounded-2xl border border-gray-200 bg-white">
-                            <Skeleton className="h-6 w-48 mb-3" />
-                            <Skeleton className="h-4 w-full mb-2" />
-                            <Skeleton className="h-4 w-5/6 mb-2" />
-                            <div className="flex gap-2">
-                              <Skeleton className="h-6 w-16 rounded-full" />
-                              <Skeleton className="h-6 w-12 rounded-full" />
-                              <Skeleton className="h-6 w-20 rounded-full" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : filteredItems.length === 0 ? (
-                      <div className="p-6 text-center">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <BookOpen className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <p className="text-gray-500 font-medium">
-                          {t.shadowing.no_questions_found || '没有找到题目'}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="p-4">
-                        <Virtuoso
-                          customScrollParent={mobileListScrollRef.current ?? undefined}
-                          data={filteredItems}
-                          computeItemKey={(index, item) => (item as ShadowingItem).id}
-                          increaseViewportBy={{ top: 200, bottom: 400 }}
-                          overscan={5}
-                          itemContent={(index, item) => {
-                            const it = item as ShadowingItem;
-                            return (
-                              <div
-                                key={it.id}
-                                className={`p-4 mb-3 rounded-2xl cursor-pointer transition-all duration-200 ${
-                                  currentItem?.id === it.id
-                                    ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 shadow-lg transform scale-[1.02]'
-                                    : it.isPracticed
-                                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 hover:from-green-100 hover:to-emerald-100 hover:shadow-md'
-                                      : it.status === 'draft'
-                                        ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 hover:from-yellow-100 hover:to-amber-100 hover:shadow-md'
-                                        : 'bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-md hover:border-gray-300'
-                                }`}
-                                onClick={() => { loadItem(it); setMobileSidebarOpen(false); }}
-                              >
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-3 mb-2">
-                                      <div className="flex items-center gap-2">
-                                        {it.isPracticed ? (
-                                          <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                                            <CheckCircle className="w-4 h-4 text-green-600" />
-                                          </div>
-                                        ) : it.status === 'draft' ? (
-                                          <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center">
-                                            <FileText className="w-4 h-4 text-yellow-600" />
-                                          </div>
-                                        ) : (
-                                          <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                                            <Circle className="w-4 h-4 text-gray-400" />
-                                          </div>
-                                        )}
-                                        <span className="text-sm text-gray-500 font-bold min-w-[2rem]">{index + 1}.</span>
-                                      </div>
-                                      <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 flex-1">
-                                        {it.subtopic ? it.subtopic.title : it.title}
-                                      </h4>
-                                    </div>
-                                    <div className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">{it.text.substring(0, 60)}...</div>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${it.lang === 'en' ? 'bg-blue-100 text-blue-700' : it.lang === 'ja' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{(LANG_LABEL as any)[it.lang]}</span>
-                                      <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">L{it.level}</span>
-                                      {it.cefr && (<span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">{it.cefr}</span>)}
-                                      {it.tokens && (<span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">{it.tokens}词</span>)}
-                                    </div>
-                                    {it.isPracticed && (<div className="flex items-center gap-1 mt-2"><span className="text-xs text-green-600 font-medium">已完成练习</span></div>)}
-                                    {it.status === 'draft' && (<div className="flex items-center gap-1 mt-2"><span className="text-xs text-yellow-600 font-medium">草稿状态</span></div>)}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }}
-                        />
-                      </div>
-                    )}
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* 主内容区域 */}
-            <div className="space-y-4 md:space-y-6">
-              {!currentItem ? (
-                <Card className="p-8 bg-gradient-to-br from-white to-gray-50 border-0 shadow-xl rounded-3xl">
-                  <div className="text-center">
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <BookOpen className="w-10 h-10 text-blue-600" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">
-                      {t.shadowing.select_question_to_start || '选择题目开始练习'}
-                    </h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      {t.shadowing.click_vocabulary_button || '点击上方"题库"按钮选择题目'}
-                    </p>
-                  </div>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {/* 手机端步骤导航与提示（未完成时显示）- 紧凑折叠式 */}
-                  {gatingActive && (
-                    <Card className="bg-white border-0 shadow-sm overflow-hidden">
-                      <button
-                        onClick={() => setStepTipExpanded(!stepTipExpanded)}
-                        className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
-                        aria-expanded={stepTipExpanded}
+              {/* 侧边栏内容 - 优化版 */}
+              <div className="flex-1 overflow-y-auto bg-gray-50/50" ref={mobileListScrollRef}>
+                {/* 过滤器 - 使用折叠式布局 */}
+                <div className="p-4 space-y-4">
+                  {/* 基础筛选 - 默认展开 */}
+                  <CollapsibleFilterSection
+                    title={t.shadowing.filter || '筛选'}
+                    icon={<Filter className="w-3 h-3 text-blue-600" />}
+                    defaultOpen={true}
+                  >
+                    {/* 语言选择 */}
+                    <FilterLanguageSelector
+                      value={lang}
+                      onChange={setLang}
+                      allowedLanguages={permissions.allowed_languages}
+                      className="h-10"
+                    />
+
+                    {/* 等级选择 */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-gray-700">
+                        {t.shadowing.level}
+                      </Label>
+                      <Select
+                        value={level?.toString() || 'all'}
+                        onValueChange={(v) => setLevel(v === 'all' ? null : parseInt(v))}
                       >
-                        <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin">
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===1?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>1 盲听</span>
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===2?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>2 生词</span>
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===3?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>3 原文+翻译</span>
-                          <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step===4?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>4 录音</span>
-                        </div>
-                        <div className="flex items-center gap-2 ml-2">
-                          <span className="text-xs text-gray-500">{stepTipExpanded ? '收起' : '展开'}</span>
-                          <svg className={`w-4 h-4 text-gray-400 transition-transform ${stepTipExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </button>
-                      
-                      {/* 展开的详细内容 */}
-                      <div className={`transition-all duration-200 ${stepTipExpanded ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-                        <div className="px-4 pb-3 space-y-2">
-                          <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
-                            💡 {stepTips[step]}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => setStep((s)=> (Math.max(1, (s as number)-1) as 1|2|3|4))} 
-                              disabled={step===1}
-                              className="flex-1 h-8 text-xs"
-                            >
-                              ← 上一步
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              onClick={() => setStep((s)=> (Math.min(4, (s as number)+1) as 1|2|3|4))} 
-                              disabled={step===4}
-                              className="flex-1 h-8 text-xs"
-                            >
-                              下一步 →
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-                  {/* 题目信息 */}
-                  <Card className="p-4 md:p-8 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg rounded-2xl">
-                    <div className="mb-4">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h2 className="text-xl font-bold text-gray-900 mb-3 leading-tight">
-                            {currentItem.title}
-                          </h2>
-                          {/* 标签 - 横向滚动布局 */}
-                          <div className="flex items-center gap-2 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                            <span
-                              className={`snap-start flex-shrink-0 px-3 py-1 rounded-full text-sm font-medium ${
-                                currentItem.lang === 'en'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : currentItem.lang === 'ja'
-                                    ? 'bg-red-100 text-red-700'
-                                    : 'bg-green-100 text-green-700'
-                              }`}
-                            >
-                              {LANG_LABEL[currentItem.lang]}
-                            </span>
-                            <span className="snap-start flex-shrink-0 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-                              {t.shadowing.level} L{currentItem.level}
-                            </span>
-                            {currentItem.cefr && (
-                              <span className="snap-start flex-shrink-0 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                                {currentItem.cefr}
-                              </span>
-                            )}
-                            {currentItem.tokens && (
-                              <span className="snap-start flex-shrink-0 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
-                                {currentItem.tokens} {t.shadowing.words || '词'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 操作按钮 */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <Button
-                          onClick={playAudio}
-                          variant="outline"
-                          size="lg"
-                          className={`h-14 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all ${highlightPlay ? 'animate-pulse ring-2 ring-blue-400' : ''}`}
-                        >
-                          {isPlaying ? (
-                            <Pause className="w-5 h-5 mr-2" />
-                          ) : (
-                            <Play className="w-5 h-5 mr-2" />
+                        <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                          <SelectValue placeholder={t.shadowing.all_levels} />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                          <SelectItem value="all" className="rounded-lg">
+                            {t.shadowing.all_levels}
+                          </SelectItem>
+                          {permissions.allowed_levels.includes(1) && (
+                            <SelectItem value="1" className="rounded-lg">
+                              L1 - 初级
+                            </SelectItem>
                           )}
-                          {isPlaying ? '暂停' : t.shadowing.play_audio}
-                        </Button>
+                          {permissions.allowed_levels.includes(2) && (
+                            <SelectItem value="2" className="rounded-lg">
+                              L2 - 初中级
+                            </SelectItem>
+                          )}
+                          {permissions.allowed_levels.includes(3) && (
+                            <SelectItem value="3" className="rounded-lg">
+                              L3 - 中级
+                            </SelectItem>
+                          )}
+                          {permissions.allowed_levels.includes(4) && (
+                            <SelectItem value="4" className="rounded-lg">
+                              L4 - 中高级
+                            </SelectItem>
+                          )}
+                          {permissions.allowed_levels.includes(5) && (
+                            <SelectItem value="5" className="rounded-lg">
+                              L5 - 高级
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
+                    {/* 练习状态 */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-gray-700">
+                        {t.shadowing.practice_status}
+                      </Label>
+                      <Select
+                        value={practiced}
+                        onValueChange={(v: 'all' | 'practiced' | 'unpracticed') => setPracticed(v)}
+                      >
+                        <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                          <SelectItem value="all" className="rounded-lg">
+                            {t.shadowing.all_status}
+                          </SelectItem>
+                          <SelectItem value="unpracticed" className="rounded-lg">
+                            {t.shadowing.unpracticed}
+                          </SelectItem>
+                          <SelectItem value="practiced" className="rounded-lg">
+                            {t.shadowing.practiced}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CollapsibleFilterSection>
+
+                  {/* 高级筛选 - 可折叠 */}
+                  <CollapsibleFilterSection
+                    title="高级筛选"
+                    icon={<Target className="w-3 h-3 text-blue-600" />}
+                    defaultOpen={false}
+                  >
+                    {/* 体裁筛选 */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-gray-700">
+                        {t.shadowing.genre}
+                      </Label>
+                      <Select value={theme} onValueChange={setTheme}>
+                        <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                          {GENRE_OPTIONS.map((option) => (
+                            <SelectItem
+                              key={option.value}
+                              value={option.value}
+                              className="rounded-lg"
+                            >
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 大主题筛选 */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-gray-700">
+                        {t.shadowing.major_theme}
+                      </Label>
+                      <Select value={selectedThemeId} onValueChange={setSelectedThemeId}>
+                        <SelectTrigger className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                          <SelectItem value="all" className="rounded-lg">
+                            {t.shadowing.all_major_themes}
+                          </SelectItem>
+                          {themes.map((theme) => (
+                            <SelectItem key={theme.id} value={theme.id} className="rounded-lg">
+                              {theme.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 小主题筛选 */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-gray-700">
+                        {t.shadowing.minor_theme}
+                      </Label>
+                      <Select
+                        value={selectedSubtopicId}
+                        onValueChange={setSelectedSubtopicId}
+                        disabled={selectedThemeId === 'all'}
+                      >
+                        <SelectTrigger
+                          className={`h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${selectedThemeId === 'all' ? 'opacity-50' : ''}`}
+                        >
+                          <SelectValue
+                            placeholder={
+                              selectedThemeId === 'all'
+                                ? t.shadowing.select_major_theme_first
+                                : t.shadowing.all_minor_themes
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                          <SelectItem value="all" className="rounded-lg">
+                            {t.shadowing.all_minor_themes}
+                          </SelectItem>
+                          {subtopics.map((subtopic) => (
+                            <SelectItem
+                              key={subtopic.id}
+                              value={subtopic.id}
+                              className="rounded-lg"
+                            >
+                              {subtopic.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 搜索 */}
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium text-gray-700">
+                        {t.shadowing.search}
+                      </Label>
+                      <Input
+                        placeholder={t.shadowing.search_placeholder}
+                        value={searchQuery}
+                        onChange={(e) => startTransition(() => setSearchQuery(e.target.value))}
+                        className="h-10 bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </CollapsibleFilterSection>
+
+                  {/* 快捷操作 */}
+                  <div className="flex gap-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={getRandomUnpracticed}
+                      className="flex-1 h-10 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100 hover:border-green-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                    >
+                      <Shuffle className="w-4 h-4 mr-2" />
+                      {t.shadowing.random}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={getNextUnpracticed}
+                      className="flex-1 h-10 bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-violet-100 hover:border-purple-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                    >
+                      <ArrowRight className="w-4 h-4 mr-2" />
+                      {t.shadowing.next_question}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 统计信息 - 紧凑横向卡片 */}
+                <CompactStatsCards
+                  totalCount={listStats.totalCount}
+                  completedCount={listStats.completedCount}
+                  draftCount={listStats.draftCount}
+                  unstartedCount={listStats.unstartedCount}
+                />
+
+                {/* 题目列表 */}
+                <div>
+                  {loading ? (
+                    <div className="space-y-3 p-4">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="p-4 rounded-2xl border border-gray-200 bg-white">
+                          <Skeleton className="h-6 w-48 mb-3" />
+                          <Skeleton className="h-4 w-full mb-2" />
+                          <Skeleton className="h-4 w-5/6 mb-2" />
+                          <div className="flex gap-2">
+                            <Skeleton className="h-6 w-16 rounded-full" />
+                            <Skeleton className="h-6 w-12 rounded-full" />
+                            <Skeleton className="h-6 w-20 rounded-full" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : filteredItems.length === 0 ? (
+                    <div className="p-6 text-center">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <BookOpen className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-gray-500 font-medium">
+                        {t.shadowing.no_questions_found || '没有找到题目'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-4">
+                      <Virtuoso
+                        customScrollParent={mobileListScrollRef.current ?? undefined}
+                        data={filteredItems}
+                        computeItemKey={(index, item) => (item as ShadowingItem).id}
+                        increaseViewportBy={{ top: 200, bottom: 400 }}
+                        overscan={5}
+                        itemContent={(index, item) => {
+                          const it = item as ShadowingItem;
+                          return (
+                            <div
+                              key={it.id}
+                              className={`p-4 mb-3 rounded-2xl cursor-pointer transition-all duration-200 ${currentItem?.id === it.id
+                                ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 shadow-lg transform scale-[1.02]'
+                                : it.isPracticed
+                                  ? 'bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 hover:from-green-100 hover:to-emerald-100 hover:shadow-md'
+                                  : it.status === 'draft'
+                                    ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 hover:from-yellow-100 hover:to-amber-100 hover:shadow-md'
+                                    : 'bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-md hover:border-gray-300'
+                                }`}
+                              onClick={() => { loadItem(it); setMobileSidebarOpen(false); }}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="flex items-center gap-2">
+                                      {it.isPracticed ? (
+                                        <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                          <CheckCircle className="w-4 h-4 text-green-600" />
+                                        </div>
+                                      ) : it.status === 'draft' ? (
+                                        <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center">
+                                          <FileText className="w-4 h-4 text-yellow-600" />
+                                        </div>
+                                      ) : (
+                                        <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                          <Circle className="w-4 h-4 text-gray-400" />
+                                        </div>
+                                      )}
+                                      <span className="text-sm text-gray-500 font-bold min-w-[2rem]">{index + 1}.</span>
+                                    </div>
+                                    <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 flex-1">
+                                      {it.subtopic ? it.subtopic.title : it.title}
+                                    </h4>
+                                  </div>
+                                  <div className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">{it.text.substring(0, 60)}...</div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${it.lang === 'en' ? 'bg-blue-100 text-blue-700' : it.lang === 'ja' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{(LANG_LABEL as any)[it.lang]}</span>
+                                    <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">L{it.level}</span>
+                                    {it.cefr && (<span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">{it.cefr}</span>)}
+                                    {it.tokens && (<span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">{it.tokens}词</span>)}
+                                  </div>
+                                  {it.isPracticed && (<div className="flex items-center gap-1 mt-2"><span className="text-xs text-green-600 font-medium">已完成练习</span></div>)}
+                                  {it.status === 'draft' && (<div className="flex items-center gap-1 mt-2"><span className="text-xs text-yellow-600 font-medium">草稿状态</span></div>)}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 主内容区域 */}
+          <div className="space-y-4 md:space-y-6">
+            {!currentItem ? (
+              <Card className="p-8 bg-gradient-to-br from-white to-gray-50 border-0 shadow-xl rounded-3xl">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <BookOpen className="w-10 h-10 text-blue-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">
+                    {t.shadowing.select_question_to_start || '选择题目开始练习'}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {t.shadowing.click_vocabulary_button || '点击上方"题库"按钮选择题目'}
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {/* 手机端步骤导航与提示（未完成时显示）- 紧凑折叠式 */}
+                {gatingActive && (
+                  <Card className="bg-white border-0 shadow-sm overflow-hidden">
+                    <button
+                      onClick={() => setStepTipExpanded(!stepTipExpanded)}
+                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+                      aria-expanded={stepTipExpanded}
+                    >
+                      <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin">
+                        <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step === 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>1 盲听</span>
+                        <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step === 2 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>2 生词</span>
+                        <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step === 3 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>3 原文+翻译</span>
+                        <span className={`px-2 py-1 rounded text-[10px] whitespace-nowrap ${step === 4 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>4 录音</span>
+                      </div>
+                      <div className="flex items-center gap-2 ml-2">
+                        <span className="text-xs text-gray-500">{stepTipExpanded ? '收起' : '展开'}</span>
+                        <svg className={`w-4 h-4 text-gray-400 transition-transform ${stepTipExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </button>
+
+                    {/* 展开的详细内容 */}
+                    <div className={`transition-all duration-200 ${stepTipExpanded ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+                      <div className="px-4 pb-3 space-y-2">
+                        <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                          💡 {stepTips[step]}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setStep((s) => (Math.max(1, (s as number) - 1) as 1 | 2 | 3 | 4))}
+                            disabled={step === 1}
+                            className="flex-1 h-8 text-xs"
+                          >
+                            ← 上一步
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => setStep((s) => (Math.min(4, (s as number) + 1) as 1 | 2 | 3 | 4))}
+                            disabled={step === 4}
+                            className="flex-1 h-8 text-xs"
+                          >
+                            下一步 →
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+                {/* 题目信息 */}
+                <Card className="p-4 md:p-8 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg rounded-2xl">
+                  <div className="mb-4">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <h2 className="text-xl font-bold text-gray-900 mb-3 leading-tight">
+                          {currentItem.title}
+                        </h2>
+                        {/* 标签 - 横向滚动布局 */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                          <span
+                            className={`snap-start flex-shrink-0 px-3 py-1 rounded-full text-sm font-medium ${currentItem.lang === 'en'
+                              ? 'bg-blue-100 text-blue-700'
+                              : currentItem.lang === 'ja'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-green-100 text-green-700'
+                              }`}
+                          >
+                            {LANG_LABEL[currentItem.lang]}
+                          </span>
+                          <span className="snap-start flex-shrink-0 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
+                            {t.shadowing.level} L{currentItem.level}
+                          </span>
+                          {currentItem.cefr && (
+                            <span className="snap-start flex-shrink-0 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                              {currentItem.cefr}
+                            </span>
+                          )}
+                          {currentItem.tokens && (
+                            <span className="snap-start flex-shrink-0 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+                              {currentItem.tokens} {t.shadowing.words || '词'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 操作按钮 */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <Button
+                        onClick={playAudio}
+                        variant="outline"
+                        size="lg"
+                        className={`h-14 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all ${highlightPlay ? 'animate-pulse ring-2 ring-blue-400' : ''}`}
+                      >
+                        {isPlaying ? (
+                          <Pause className="w-5 h-5 mr-2" />
+                        ) : (
+                          <Play className="w-5 h-5 mr-2" />
+                        )}
+                        {isPlaying ? '暂停' : t.shadowing.play_audio}
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={saveDraft}
+                        disabled={saving}
+                        aria-busy={saving}
+                        aria-disabled={saving}
+                        aria-label={saving ? '保存草稿中' : '保存草稿'}
+                        className="h-14 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 hover:from-yellow-100 hover:to-amber-100 hover:border-yellow-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                      >
+                        <Save className="w-5 h-5 mr-2" />
+                        {saving ? t.common.loading : t.shadowing.save_draft}
+                      </Button>
+
+                      {(!gatingActive || step === 4) && (
                         <Button
-                          variant="outline"
                           size="lg"
-                          onClick={saveDraft}
+                          onClick={unifiedCompleteAndSave}
                           disabled={saving}
                           aria-busy={saving}
                           aria-disabled={saving}
-                          aria-label={saving ? '保存草稿中' : '保存草稿'}
-                          className="h-14 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 hover:from-yellow-100 hover:to-amber-100 hover:border-yellow-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                          aria-label={saving ? '完成并保存中' : '完成练习'}
+                          className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
                         >
-                          <Save className="w-5 h-5 mr-2" />
-                          {saving ? t.common.loading : t.shadowing.save_draft}
+                          <CheckCircle className="w-5 h-5 mr-2" />
+                          {saving ? (t.shadowing.saving_modal_title || '保存中...') : '完成'}
                         </Button>
-
-                        {(!gatingActive || step === 4) && (
-                          <Button
-                            size="lg"
-                            onClick={unifiedCompleteAndSave}
-                            disabled={saving}
-                            aria-busy={saving}
-                            aria-disabled={saving}
-                            aria-label={saving ? '完成并保存中' : '完成练习'}
-                            className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                          >
-                            <CheckCircle className="w-5 h-5 mr-2" />
-                            {saving ? (t.shadowing.saving_modal_title || '保存中...') : '完成'}
-                          </Button>
-                        )}
-                      </div>
+                      )}
+                    </div>
 
                     {/* 生词选择模式切换（仅步骤2显示） */}
                     {(!gatingActive || step === 2) && (
-                    <div className="mb-4 space-y-3">
-                      <Button
-                        variant={isVocabMode ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setIsVocabMode(!isVocabMode)}
-                        className={`w-full ${highlightVocab ? 'animate-pulse ring-2 ring-amber-400' : ''}`}
-                      >
-                        {isVocabMode ? t.shadowing.vocab_mode_on : t.shadowing.vocab_mode_off}
-                      </Button>
-                      
-                      {/* ACU 模式切换（仅在生词模式开启时显示） */}
-                      {isVocabMode && currentItem?.notes?.acu_units && (
-                        <div className="flex gap-2">
-                          <Button
-                            variant={isACUMode ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setIsACUMode(!isACUMode)}
-                            className="flex-1"
-                          >
-                            {isACUMode ? 'ACU 选词' : '自由框选'}
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {isVocabMode && (
-                        <div className="mt-2 space-y-2">
-                          {isACUMode && currentItem?.notes?.acu_units ? (
-                            <div className="p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
-                              💡 <strong>ACU 选词模式：</strong>
-                              点击预分割的语义块来选择生词，支持多选相邻块合并
-                            </div>
-                          ) : (
-                            <div className="p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
-                              💡 <strong>选词提示：</strong>
-                              拖拽选择单词或短语，松开鼠标后稍等（不超过50个字符），选择完成后会显示确认按钮
-                            </div>
-                          )}
-                          <p className="text-sm text-blue-600">
-                            {t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                      <div className="mb-4 space-y-3">
+                        <Button
+                          variant={isVocabMode ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setIsVocabMode(!isVocabMode)}
+                          className={`w-full ${highlightVocab ? 'animate-pulse ring-2 ring-amber-400' : ''}`}
+                        >
+                          {isVocabMode ? t.shadowing.vocab_mode_on : t.shadowing.vocab_mode_off}
+                        </Button>
+
+                        {/* ACU 模式切换（仅在生词模式开启时显示） */}
+                        {isVocabMode && currentItem?.notes?.acu_units && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant={isACUMode ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setIsACUMode(!isACUMode)}
+                              className="flex-1"
+                            >
+                              {isACUMode ? 'ACU 选词' : '自由框选'}
+                            </Button>
+                          </div>
+                        )}
+
+                        {isVocabMode && (
+                          <div className="mt-2 space-y-2">
+                            {isACUMode && currentItem?.notes?.acu_units ? (
+                              <div className="p-2 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+                                💡 <strong>ACU 选词模式：</strong>
+                                点击预分割的语义块来选择生词，支持多选相邻块合并
+                              </div>
+                            ) : (
+                              <div className="p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                                💡 <strong>选词提示：</strong>
+                                拖拽选择单词或短语，松开鼠标后稍等（不超过50个字符），选择完成后会显示确认按钮
+                              </div>
+                            )}
+                            <p className="text-sm text-blue-600">
+                              {t.shadowing.click_words_to_select || '点击文本中的单词来选择生词'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     {/* 文本内容（步骤>=2显示；步骤5也需显示原文） */}
                     {(!gatingActive || step >= 2) && (
-                    <div id="shadowing-text" className="relative">
-                      <div className="px-6 py-4 bg-amber-50/30 rounded-xl max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-                      {/* 移除顶部翻译块，翻译在下方专用模块中展示 */}
-                      {(isVocabMode || step >= 2) ? (
-                        <>
-                          {/* ACU 模式或自由框选模式（仅在步骤2时显示ACU模式） */}
-                          {isACUMode && currentItem?.notes?.acu_units && step === 2 ? (
-                            <AcuText
-                              text={currentItem.text}
-                              lang={currentItem.lang}
-                              units={currentItem.notes.acu_units}
-                              onConfirm={handleWordSelect}
-                              selectedWords={[...previousWords, ...selectedWords]}
-                            />
-                          ) : (
-                            <div className="text-lg leading-[2.05]">
-                              {/* 第3步：原文行内逐句播放 */}
-                              {step === 3 && currentItem?.audio_url ? (
-                                <SentenceInlinePlayer
+                      <div id="shadowing-text" className="relative">
+                        <div className="px-6 py-4 bg-amber-50/30 rounded-xl max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                          {/* 移除顶部翻译块，翻译在下方专用模块中展示 */}
+                          {(isVocabMode || step >= 2) ? (
+                            <>
+                              {/* ACU 模式或自由框选模式（仅在步骤2时显示ACU模式） */}
+                              {isACUMode && currentItem?.notes?.acu_units && step === 2 ? (
+                                <AcuText
                                   text={currentItem.text}
-                                  language={currentItem.lang}
-                                  sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
-                                  onPlaySentence={(i) => playSentenceByIndex(i)}
-                                  enablePractice
-                                  showCompactProgress
-                                  acuUnits={currentItem?.notes?.acu_units}
-                                  translationText={currentItem.translations?.[translationLang]}
-                                  translationLanguage={translationLang as 'en'|'ja'|'zh'|'ko'}
-                                  renderText={(line: string) => {
-                                    // 基于当前已选与生词本构造 allSelectedWords
-                                    const picked = [...previousWords, ...selectedWords];
-                                    const vocab = userVocab.map(v => ({
-                                      word: v.term,
-                                      explanation: v.explanation,
-                                      fromVocab: true,
-                                      vocabId: v.id,
-                                    }));
-                                    const wordMap = new Map<string, any>();
-                                    picked.forEach(w => wordMap.set(w.word, w));
-                                    vocab.forEach(v => { if (!wordMap.has(v.word)) wordMap.set(v.word, v); });
-                                    const allSelectedWords = Array.from(wordMap.values());
-
-                                    // 按中/日/韩处理：韩语也开启匹配
-                                    const isZh = currentItem?.lang === 'zh';
-                                    const isJa = currentItem?.lang === 'ja';
-                                    const isKo = currentItem?.lang === 'ko';
-                                    if (!isZh && !isJa && !isKo) return line;
-                                    const chars = line.split('');
-                                    const result: React.ReactNode[] = [];
-                                    for (let i = 0; i < chars.length; i++) {
-                                      let isHighlighted = false;
-                                      let highlightLength = 0;
-                                      for (const selectedWord of allSelectedWords) {
-                                        const w = selectedWord.word;
-                                        if (!w) continue;
-                                        if (i + w.length <= chars.length) {
-                                          const substring = chars.slice(i, i + w.length).join('');
-                                          if (substring === w) {
-                                            isHighlighted = true;
-                                            highlightLength = w.length;
-                                            break;
-                                          }
-                                        }
-                                      }
-                                      if (isHighlighted && highlightLength > 0) {
-                                        const word = chars.slice(i, i + highlightLength).join('');
-                                        const wordData = allSelectedWords.find((item) => item.word === word);
-                                        const explanation = wordData?.explanation;
-                                        result.push(
-                                          <HoverExplanation
-                                            key={`inline-${line}-${i}`}
-                                            word={word}
-                                            explanation={explanation}
-                                            fromVocab={wordData?.fromVocab}
-                                            vocabId={wordData?.vocabId}
-                                            onRefresh={handleRefreshExplanation}
-                                            lang={currentItem?.lang || 'ja'}
-                                          >
-                                            {word}
-                                          </HoverExplanation>
-                                        );
-                                        i += highlightLength - 1;
-                                      } else {
-                                        result.push(<span key={`c-${i}`}>{chars[i]}</span>);
-                                      }
-                                    }
-                                    return <span>{result}</span>;
-                                  }}
+                                  lang={currentItem.lang}
+                                  units={currentItem.notes.acu_units}
+                                  onConfirm={handleWordSelect}
+                                  selectedWords={[...previousWords, ...selectedWords]}
                                 />
                               ) : (
-                              (() => {
+                                <div className="text-lg leading-[2.05]">
+                                  {/* 第3步：原文行内逐句播放 */}
+                                  {step === 3 && currentItem?.audio_url ? (
+                                    <SentenceInlinePlayer
+                                      text={currentItem.text}
+                                      language={currentItem.lang}
+                                      sentenceTimeline={(currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline}
+                                      onPlaySentence={(i) => playSentenceByIndex(i)}
+                                      enablePractice
+                                      showCompactProgress
+                                      acuUnits={currentItem?.notes?.acu_units}
+                                      translationText={currentItem.translations?.[translationLang]}
+                                      translationLanguage={translationLang as 'en' | 'ja' | 'zh' | 'ko'}
+                                      renderText={(line: string) => {
+                                        // 基于当前已选与生词本构造 allSelectedWords
+                                        const picked = [...previousWords, ...selectedWords];
+                                        const vocab = userVocab.map(v => ({
+                                          word: v.term,
+                                          explanation: v.explanation,
+                                          fromVocab: true,
+                                          vocabId: v.id,
+                                        }));
+                                        const wordMap = new Map<string, any>();
+                                        picked.forEach(w => wordMap.set(w.word, w));
+                                        vocab.forEach(v => { if (!wordMap.has(v.word)) wordMap.set(v.word, v); });
+                                        const allSelectedWords = Array.from(wordMap.values());
+
+                                        // 按中/日/韩处理：韩语也开启匹配
+                                        const isZh = currentItem?.lang === 'zh';
+                                        const isJa = currentItem?.lang === 'ja';
+                                        const isKo = currentItem?.lang === 'ko';
+                                        if (!isZh && !isJa && !isKo) return line;
+                                        const chars = line.split('');
+                                        const result: React.ReactNode[] = [];
+                                        for (let i = 0; i < chars.length; i++) {
+                                          let isHighlighted = false;
+                                          let highlightLength = 0;
+                                          for (const selectedWord of allSelectedWords) {
+                                            const w = selectedWord.word;
+                                            if (!w) continue;
+                                            if (i + w.length <= chars.length) {
+                                              const substring = chars.slice(i, i + w.length).join('');
+                                              if (substring === w) {
+                                                isHighlighted = true;
+                                                highlightLength = w.length;
+                                                break;
+                                              }
+                                            }
+                                          }
+                                          if (isHighlighted && highlightLength > 0) {
+                                            const word = chars.slice(i, i + highlightLength).join('');
+                                            const wordData = allSelectedWords.find((item) => item.word === word);
+                                            const explanation = wordData?.explanation;
+                                            result.push(
+                                              <HoverExplanation
+                                                key={`inline-${line}-${i}`}
+                                                word={word}
+                                                explanation={explanation}
+                                                fromVocab={wordData?.fromVocab}
+                                                vocabId={wordData?.vocabId}
+                                                onRefresh={handleRefreshExplanation}
+                                                lang={currentItem?.lang || 'ja'}
+                                              >
+                                                {word}
+                                              </HoverExplanation>
+                                            );
+                                            i += highlightLength - 1;
+                                          } else {
+                                            result.push(<span key={`c-${i}`}>{chars[i]}</span>);
+                                          }
+                                        }
+                                        return <span>{result}</span>;
+                                      }}
+                                    />
+                                  ) : (
+                                    (() => {
+                                      // 格式化对话文本，按说话者分行
+                                      const formatDialogueText = (text: string): string => {
+                                        if (!text) return '';
+
+                                        // 处理AI返回的\n换行符
+                                        const formatted = text.replace(/\\n/g, '\n');
+
+                                        // 如果已经包含换行符，保持格式并清理
+                                        if (formatted.includes('\n')) {
+                                          return formatted
+                                            .split('\n')
+                                            .map((line) => line.trim())
+                                            .filter((line) => line.length > 0)
+                                            .join('\n');
+                                        }
+
+                                        // 尝试按说话者分割 - 匹配 A: 或 B: 等格式
+                                        const speakerPattern = /([A-Z]):\s*/g;
+                                        const parts = formatted.split(speakerPattern);
+
+                                        if (parts.length > 1) {
+                                          let result = '';
+                                          for (let i = 1; i < parts.length; i += 2) {
+                                            if (parts[i] && parts[i + 1]) {
+                                              const speaker = parts[i].trim();
+                                              const content = parts[i + 1].trim();
+                                              if (speaker && content) {
+                                                result += `${speaker}: ${content}\n`;
+                                              }
+                                            }
+                                          }
+                                          if (result.trim()) {
+                                            return result.trim();
+                                          }
+                                        }
+
+                                        // 默认返回原文本
+                                        return formatted;
+                                      };
+
+                                      const formattedText = formatDialogueText(currentItem.text);
+
+                                      // 获取所有已选择的生词（包括之前的、本次的和生词本中的）
+                                      // 合并当前题目的临时生词和生词本中的词汇
+                                      const picked = [...previousWords, ...selectedWords];
+                                      const vocab = userVocab.map(v => ({
+                                        word: v.term,
+                                        explanation: v.explanation,
+                                        fromVocab: true,
+                                        vocabId: v.id
+                                      }));
+
+                                      // 去重：picked优先（上下文更准确）
+                                      const wordMap = new Map();
+                                      picked.forEach(w => wordMap.set(w.word, w));
+                                      vocab.forEach(v => {
+                                        if (!wordMap.has(v.word)) {
+                                          wordMap.set(v.word, v);
+                                        }
+                                      });
+
+                                      const allSelectedWords = Array.from(wordMap.values());
+                                      const selectedWordSet = new Set(
+                                        allSelectedWords.map((item) => item.word),
+                                      );
+
+
+                                      // 检查是否为中文文本
+                                      const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
+
+                                      if (isChinese) {
+                                        // 中文处理：先按行分割，再按字符分割
+                                        const lines = formattedText.split('\n');
+
+                                        return lines.map((line, lineIndex) => {
+                                          const chars = line.split('');
+                                          const result = [];
+
+                                          for (let i = 0; i < chars.length; i++) {
+                                            let isHighlighted = false;
+                                            let highlightLength = 0;
+
+                                            // 检查从当前位置开始的多个字符是否组成已选择的生词
+                                            for (const selectedWord of allSelectedWords) {
+                                              if (i + selectedWord.word.length <= chars.length) {
+                                                const substring = chars
+                                                  .slice(i, i + selectedWord.word.length)
+                                                  .join('');
+                                                if (substring === selectedWord.word) {
+                                                  isHighlighted = true;
+                                                  highlightLength = selectedWord.word.length;
+                                                  break;
+                                                }
+                                              }
+                                            }
+
+                                            if (isHighlighted && highlightLength > 0) {
+                                              // 高亮显示整个生词
+                                              const word = chars.slice(i, i + highlightLength).join('');
+                                              const wordData = allSelectedWords.find(
+                                                (item) => item.word === word,
+                                              );
+                                              const explanation = wordData?.explanation;
+
+                                              result.push(
+                                                <HoverExplanation
+                                                  key={`${lineIndex}-${i}`}
+                                                  word={word}
+                                                  explanation={explanation}
+                                                  fromVocab={wordData?.fromVocab}
+                                                  vocabId={wordData?.vocabId}
+                                                  onRefresh={handleRefreshExplanation}
+                                                  lang={currentItem?.lang || 'ja'}
+                                                >
+                                                  {word}
+                                                </HoverExplanation>,
+                                              );
+                                              i += highlightLength - 1; // 跳过已处理的字符
+                                            } else {
+                                              // 普通字符
+                                              result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                            }
+                                          }
+
+                                          return (
+                                            <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
+                                              {result}
+                                            </div>
+                                          );
+                                        });
+                                      } else {
+                                        // 英文处理：先按行分割，再按单词分割
+                                        const lines = formattedText.split('\n');
+
+                                        return lines.map((line, lineIndex) => {
+                                          const chars = line.split('');
+                                          const result = [] as React.ReactNode[];
+
+                                          for (let i = 0; i < chars.length; i++) {
+                                            let isHighlighted = false;
+                                            let highlightLength = 0;
+
+                                            for (const selectedWord of allSelectedWords) {
+                                              const w = selectedWord.word;
+                                              if (!w) continue;
+                                              const wLower = w.toLowerCase();
+                                              if (i + w.length <= chars.length) {
+                                                const substring = chars.slice(i, i + w.length).join('');
+                                                if (substring.toLowerCase() === wLower) {
+                                                  const isAtWordBoundary = isEnglishWordBoundary(chars, i, w.length, i + w.length);
+                                                  if (isAtWordBoundary) {
+                                                    isHighlighted = true;
+                                                    highlightLength = w.length;
+                                                    break;
+                                                  }
+                                                }
+                                              }
+                                            }
+
+                                            if (isHighlighted && highlightLength > 0) {
+                                              const word = chars.slice(i, i + highlightLength).join('');
+                                              const wordData = allSelectedWords.find((item) => item.word === word);
+                                              const explanation = wordData?.explanation;
+
+                                              result.push(
+                                                <HoverExplanation
+                                                  key={`${lineIndex}-${i}`}
+                                                  word={word}
+                                                  explanation={explanation}
+                                                  fromVocab={wordData?.fromVocab}
+                                                  vocabId={wordData?.vocabId}
+                                                  onRefresh={handleRefreshExplanation}
+                                                  lang={currentItem?.lang || 'ja'}
+                                                >
+                                                  {word}
+                                                </HoverExplanation>,
+                                              );
+                                              i += highlightLength - 1;
+                                            } else {
+                                              result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
+                                            }
+                                          }
+
+                                          return (
+                                            <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
+                                              {result}
+                                            </div>
+                                          );
+                                        });
+                                      }
+                                    })()
+                                  )}
+                                </div>
+                              )}
+                              {selectedText && (
+                                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                  <div className="text-sm">
+                                    <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
+                                    <div className="text-blue-600 font-semibold mb-1">
+                                      {selectedText.word}
+                                    </div>
+                                    <div className="text-xs text-gray-600 mb-2">
+                                      {selectedText.context}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={confirmAddToVocab}
+                                        disabled={isAddingToVocab}
+                                        className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {isAddingToVocab ? (
+                                          <>
+                                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                                            {t.shadowing.adding_to_vocab || '添加中...'}
+                                          </>
+                                        ) : (
+                                          t.shadowing.acu_text?.confirm_add_to_vocab || '确认添加到生词本'
+                                        )}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={cancelSelection}
+                                        disabled={isAddingToVocab}
+                                        className="disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {t.shadowing.acu_text?.cancel || '取消'}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="text-lg leading-loose">
+                              {/* 文本渲染逻辑保持不变 */}
+                              {(() => {
                                 // 格式化对话文本，按说话者分行
                                 const formatDialogueText = (text: string): string => {
                                   if (!text) return '';
-
                                   // 处理AI返回的\n换行符
                                   const formatted = text.replace(/\\n/g, '\n');
-
                                   // 如果已经包含换行符，保持格式并清理
                                   if (formatted.includes('\n')) {
                                     return formatted
@@ -4686,11 +4918,9 @@ export default function ShadowingPage() {
                                       .filter((line) => line.length > 0)
                                       .join('\n');
                                   }
-
                                   // 尝试按说话者分割 - 匹配 A: 或 B: 等格式
                                   const speakerPattern = /([A-Z]):\s*/g;
                                   const parts = formatted.split(speakerPattern);
-
                                   if (parts.length > 1) {
                                     let result = '';
                                     for (let i = 1; i < parts.length; i += 2) {
@@ -4706,15 +4936,11 @@ export default function ShadowingPage() {
                                       return result.trim();
                                     }
                                   }
-
                                   // 默认返回原文本
                                   return formatted;
                                 };
 
-                                const formattedText = formatDialogueText(currentItem.text);
-
                                 // 获取所有已选择的生词（包括之前的、本次的和生词本中的）
-                                // 合并当前题目的临时生词和生词本中的词汇
                                 const picked = [...previousWords, ...selectedWords];
                                 const vocab = userVocab.map(v => ({
                                   word: v.term,
@@ -4722,7 +4948,7 @@ export default function ShadowingPage() {
                                   fromVocab: true,
                                   vocabId: v.id
                                 }));
-                                
+
                                 // 去重：picked优先（上下文更准确）
                                 const wordMap = new Map();
                                 picked.forEach(w => wordMap.set(w.word, w));
@@ -4731,821 +4957,494 @@ export default function ShadowingPage() {
                                     wordMap.set(v.word, v);
                                   }
                                 });
-                                
+
                                 const allSelectedWords = Array.from(wordMap.values());
-                                const selectedWordSet = new Set(
-                                  allSelectedWords.map((item) => item.word),
-                                );
 
+                                // 渲染高亮节点的通用函数
+                                const renderHighlightedNodes = (text: string, keyPrefix: string) => {
+                                  const chars = text.split('');
+                                  const result = [] as React.ReactNode[];
+                                  const isChinese = /[\u4e00-\u9fff]/.test(text);
+                                  const isKorean = /[\uac00-\ud7af]/.test(text);
 
-                                // 检查是否为中文文本
-                                const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
+                                  for (let i = 0; i < chars.length; i++) {
+                                    let isHighlighted = false;
+                                    let highlightLength = 0;
 
-                                if (isChinese) {
-                                  // 中文处理：先按行分割，再按字符分割
-                                  const lines = formattedText.split('\n');
+                                    for (const selectedWord of allSelectedWords) {
+                                      const w = selectedWord.word;
+                                      if (!w) continue;
 
-                                  return lines.map((line, lineIndex) => {
-                                    const chars = line.split('');
-                                    const result = [];
+                                      if (i + w.length <= chars.length) {
+                                        const substring = chars.slice(i, i + w.length).join('');
 
-                                    for (let i = 0; i < chars.length; i++) {
-                                      let isHighlighted = false;
-                                      let highlightLength = 0;
+                                        // 匹配检查
+                                        let isMatch = false;
+                                        if (isChinese || isKorean) {
+                                          isMatch = substring === w;
+                                        } else {
+                                          isMatch = substring.toLowerCase() === w.toLowerCase();
+                                        }
 
-                                      // 检查从当前位置开始的多个字符是否组成已选择的生词
-                                      for (const selectedWord of allSelectedWords) {
-                                        if (i + selectedWord.word.length <= chars.length) {
-                                          const substring = chars
-                                            .slice(i, i + selectedWord.word.length)
-                                            .join('');
-                                          if (substring === selectedWord.word) {
+                                        if (isMatch) {
+                                          // 边界检查
+                                          let isAtWordBoundary = true;
+                                          if (isKorean) {
+                                            isAtWordBoundary = isKoreanWordBoundary(chars, i, w.length, i + w.length);
+                                          } else if (!isChinese) {
+                                            // 英文/其他
+                                            isAtWordBoundary = isEnglishWordBoundary(chars, i, w.length, i + w.length);
+                                          }
+
+                                          if (isAtWordBoundary) {
                                             isHighlighted = true;
-                                            highlightLength = selectedWord.word.length;
+                                            highlightLength = w.length;
                                             break;
                                           }
                                         }
                                       }
-
-                                      if (isHighlighted && highlightLength > 0) {
-                                        // 高亮显示整个生词
-                                        const word = chars.slice(i, i + highlightLength).join('');
-                                        const wordData = allSelectedWords.find(
-                                          (item) => item.word === word,
-                                        );
-                                        const explanation = wordData?.explanation;
-
-                                        result.push(
-                                          <HoverExplanation
-                                            key={`${lineIndex}-${i}`}
-                                            word={word}
-                                            explanation={explanation}
-                                            fromVocab={wordData?.fromVocab}
-                                            vocabId={wordData?.vocabId}
-                                            onRefresh={handleRefreshExplanation}
-                                            lang={currentItem?.lang || 'ja'}
-                                          >
-                                            {word}
-                                          </HoverExplanation>,
-                                        );
-                                        i += highlightLength - 1; // 跳过已处理的字符
-                                      } else {
-                                        // 普通字符
-                                        result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
-                                      }
                                     }
 
-                                    return (
-                                      <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
-                                        {result}
-                                      </div>
-                                    );
-                                  });
-                                } else {
-                                  // 英文处理：先按行分割，再按单词分割
-                                  const lines = formattedText.split('\n');
+                                    if (isHighlighted && highlightLength > 0) {
+                                      const word = chars.slice(i, i + highlightLength).join('');
+                                      const wordData = allSelectedWords.find((item) => item.word === word || item.word.toLowerCase() === word.toLowerCase());
+                                      const explanation = wordData?.explanation;
 
-                                  return lines.map((line, lineIndex) => {
-                                    const chars = line.split('');
-                                    const result = [] as React.ReactNode[];
-
-                                    for (let i = 0; i < chars.length; i++) {
-                                      let isHighlighted = false;
-                                      let highlightLength = 0;
-
-                                      for (const selectedWord of allSelectedWords) {
-                                        const w = selectedWord.word;
-                                        if (!w) continue;
-                                        const wLower = w.toLowerCase();
-                                        if (i + w.length <= chars.length) {
-                                          const substring = chars.slice(i, i + w.length).join('');
-                                          if (substring.toLowerCase() === wLower) {
-                                            const isAtWordBoundary = isEnglishWordBoundary(chars, i, w.length, i + w.length);
-                                            if (isAtWordBoundary) {
-                                              isHighlighted = true;
-                                              highlightLength = w.length;
-                                              break;
-                                            }
-                                          }
-                                        }
-                                      }
-
-                                      if (isHighlighted && highlightLength > 0) {
-                                        const word = chars.slice(i, i + highlightLength).join('');
-                                        const wordData = allSelectedWords.find((item) => item.word === word);
-                                        const explanation = wordData?.explanation;
-
-                                        result.push(
-                                          <HoverExplanation
-                                            key={`${lineIndex}-${i}`} 
-                                            word={word} 
-                                            explanation={explanation}
-                                            fromVocab={wordData?.fromVocab}
-                                            vocabId={wordData?.vocabId}
-                                            onRefresh={handleRefreshExplanation}
-                                            lang={currentItem?.lang || 'ja'}
-                                          >
-                                            {word}
-                                          </HoverExplanation>,
-                                        );
-                                        i += highlightLength - 1;
-                                      } else {
-                                        result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
-                                      }
+                                      result.push(
+                                        <HoverExplanation
+                                          key={`${keyPrefix}-${i}`}
+                                          word={word}
+                                          explanation={explanation}
+                                          fromVocab={wordData?.fromVocab}
+                                          vocabId={wordData?.vocabId}
+                                          onRefresh={handleRefreshExplanation}
+                                          lang={currentItem?.lang || 'ja'}
+                                        >
+                                          {word}
+                                        </HoverExplanation>,
+                                      );
+                                      i += highlightLength - 1;
+                                    } else {
+                                      result.push(<span key={`${keyPrefix}-${i}`}>{chars[i]}</span>);
                                     }
+                                  }
+                                  return result;
+                                };
 
+                                // 优先使用 sentence_timeline 进行渲染
+                                const timeline = (currentItem as any)?.sentence_timeline;
+
+                                if (Array.isArray(timeline) && timeline.length > 0) {
+                                  return timeline.map((seg: any, idx: number) => {
+                                    const displayText = seg.speaker ? `${seg.speaker}: ${seg.text}` : seg.text;
+                                    const targetIndex = seg.index ?? idx;
                                     return (
-                                      <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
-                                        {result}
+                                      <div key={targetIndex} className="mb-3 cursor-pointer hover:bg-blue-50/50 rounded p-1 transition-colors" onClick={() => playSentenceByIndex(targetIndex)}>
+                                        {renderHighlightedNodes(displayText, `seg-${targetIndex}`)}
                                       </div>
                                     );
                                   });
                                 }
-                              })()
-                              )}
-                            </div>
-                          )}
-                          {selectedText && (
-                            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                              <div className="text-sm">
-                                <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
-                                <div className="text-blue-600 font-semibold mb-1">
-                                  {selectedText.word}
-                                </div>
-                                <div className="text-xs text-gray-600 mb-2">
-                                  {selectedText.context}
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={confirmAddToVocab}
-                                    disabled={isAddingToVocab}
-                                    className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {isAddingToVocab ? (
-                                      <>
-                                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                                        {t.shadowing.adding_to_vocab || '添加中...'}
-                                      </>
-                                    ) : (
-                                      t.shadowing.acu_text?.confirm_add_to_vocab || '确认添加到生词本'
-                                    )}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={cancelSelection}
-                                    disabled={isAddingToVocab}
-                                    className="disabled:opacity-50 disabled:cursor-not-allowed"
-                                  >
-                                    {t.shadowing.acu_text?.cancel || '取消'}
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="text-lg leading-loose">
-                          {/* 文本渲染逻辑保持不变 */}
-                          {(() => {
-                            // 格式化对话文本，按说话者分行
-                            const formatDialogueText = (text: string): string => {
-                              if (!text) return '';
 
-                              // 处理AI返回的\n换行符
-                              const formatted = text.replace(/\\n/g, '\n');
+                                // 回退到基于文本的渲染 - 增强版分句逻辑
+                                let formattedText = formatDialogueText(currentItem.text);
+                                let lines = formattedText.split('\n');
 
-                              // 如果已经包含换行符，保持格式并清理
-                              if (formatted.includes('\n')) {
-                                return formatted
-                                  .split('\n')
-                                  .map((line) => line.trim())
-                                  .filter((line) => line.length > 0)
-                                  .join('\n');
-                              }
-
-                              // 尝试按说话者分割 - 匹配 A: 或 B: 等格式
-                              const speakerPattern = /([A-Z]):\s*/g;
-                              const parts = formatted.split(speakerPattern);
-
-                              if (parts.length > 1) {
-                                let result = '';
-                                for (let i = 1; i < parts.length; i += 2) {
-                                  if (parts[i] && parts[i + 1]) {
-                                    const speaker = parts[i].trim();
-                                    const content = parts[i + 1].trim();
-                                    if (speaker && content) {
-                                      result += `${speaker}: ${content}\n`;
-                                    }
-                                  }
-                                }
-                                if (result.trim()) {
-                                  return result.trim();
-                                }
-                              }
-
-                              // 默认返回原文本
-                              return formatted;
-                            };
-
-                            const formattedText = formatDialogueText(currentItem.text);
-
-                            // 获取所有已选择的生词（包括之前的、本次的和生词本中的）
-                            // 合并当前题目的临时生词和生词本中的词汇
-                            const picked = [...previousWords, ...selectedWords];
-                            const vocab = userVocab.map(v => ({
-                              word: v.term,
-                              explanation: v.explanation,
-                              fromVocab: true,
-                              vocabId: v.id
-                            }));
-                            
-                            // 去重：picked优先（上下文更准确）
-                            const wordMap = new Map();
-                            picked.forEach(w => wordMap.set(w.word, w));
-                            vocab.forEach(v => {
-                              if (!wordMap.has(v.word)) {
-                                wordMap.set(v.word, v);
-                              }
-                            });
-                            
-                            const allSelectedWords = Array.from(wordMap.values());
-                            const selectedWordSet = new Set(
-                              allSelectedWords.map((item) => item.word),
-                            );
-
-
-                            // 检查是否为中文文本
-                            const isChinese = /[\u4e00-\u9fff]/.test(formattedText);
-
-                            if (isChinese) {
-                              // 中文处理：先按行分割，再按字符分割
-                              const lines = formattedText.split('\n');
-
-                              return lines.map((line, lineIndex) => {
-                                const chars = line.split('');
-                                const result = [];
-
-                                for (let i = 0; i < chars.length; i++) {
-                                  let isHighlighted = false;
-                                  let highlightLength = 0;
-
-                                  // 检查从当前位置开始的多个字符是否组成已选择的生词
-                                  for (const selectedWord of allSelectedWords) {
-                                    if (i + selectedWord.word.length <= chars.length) {
-                                      const substring = chars
-                                        .slice(i, i + selectedWord.word.length)
-                                        .join('');
-                                      if (substring === selectedWord.word) {
-                                        isHighlighted = true;
-                                        highlightLength = selectedWord.word.length;
-                                        break;
-                                      }
-                                    }
-                                  }
-
-                                  if (isHighlighted && highlightLength > 0) {
-                                    // 高亮显示整个生词
-                                    const word = chars.slice(i, i + highlightLength).join('');
-                                    const wordData = allSelectedWords.find(
-                                      (item) => item.word === word,
-                                    );
-                                    const explanation = wordData?.explanation;
-
-                                    result.push(
-                                      <HoverExplanation
-                                        key={`${lineIndex}-${i}`}
-                                        word={word}
-                                        explanation={explanation}
-                                        fromVocab={wordData?.fromVocab}
-                                        vocabId={wordData?.vocabId}
-                                        onRefresh={handleRefreshExplanation}
-                                        lang={currentItem?.lang || 'ja'}
-                                      >
-                                        {word}
-                                      </HoverExplanation>,
-                                    );
-                                    i += highlightLength - 1; // 跳过已处理的字符
-                                  } else {
-                                    // 普通字符
-                                    result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
-                                  }
+                                // 如果只有一行且包含标点符号，尝试按标点分句（模拟 timeline 效果）
+                                if (lines.length === 1 && /[。！？.!?]/.test(lines[0])) {
+                                  // 简单的分句逻辑，保留标点
+                                  const splitByPunctuation = (text: string) => {
+                                    return text.replace(/([。！？.!?]+)/g, '$1\n').split('\n').filter(l => l.trim());
+                                  };
+                                  lines = splitByPunctuation(lines[0]);
                                 }
 
-                                return (
-                                  <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
-                                    {result}
+                                return lines.map((line, lineIndex) => (
+                                  <div key={lineIndex} className="mb-3 cursor-pointer hover:bg-blue-50/50 rounded p-1 transition-colors" onClick={() => playSentenceByIndex(lineIndex)}>
+                                    {renderHighlightedNodes(line, `line-${lineIndex}`)}
                                   </div>
-                                );
-                              });
-                            } else {
-                              // 检查是否为韩语文本
-                              const isKorean = /[\uac00-\ud7af]/.test(formattedText);
-                              
-                              if (isKorean) {
-                                // 韩语文本处理：使用词边界检测
-                                const lines = formattedText.split('\n');
-
-                                return lines.map((line, lineIndex) => {
-                                  const chars = line.split('');
-                                  const result = [] as React.ReactNode[];
-
-                                  for (let i = 0; i < chars.length; i++) {
-                                    let isHighlighted = false;
-                                    let highlightLength = 0;
-
-                                    for (const selectedWord of allSelectedWords) {
-                                      const w = selectedWord.word;
-                                      if (!w) continue;
-                                      if (i + w.length <= chars.length) {
-                                        const substring = chars.slice(i, i + w.length).join('');
-                                        if (substring === w) {
-                                          // 韩语词边界检测：检查是否在词边界
-                                          const isAtWordBoundary = isKoreanWordBoundary(
-                                            chars, i, w.length, i + w.length
-                                          );
-                                          if (isAtWordBoundary) {
-                                            isHighlighted = true;
-                                            highlightLength = w.length;
-                                            break;
-                                          }
-                                        }
-                                      }
-                                    }
-
-                                    if (isHighlighted && highlightLength > 0) {
-                                      const word = chars.slice(i, i + highlightLength).join('');
-                                      const wordData = allSelectedWords.find((item) => item.word === word);
-                                      const explanation = wordData?.explanation;
-
-                                      result.push(
-                                        <HoverExplanation 
-                                          key={`${lineIndex}-${i}`} 
-                                          word={word} 
-                                          explanation={explanation}
-                                          fromVocab={wordData?.fromVocab}
-                                          vocabId={wordData?.vocabId}
-                                          onRefresh={handleRefreshExplanation}
-                                        lang={currentItem?.lang || 'ja'}
-                                        >
-                                          {word}
-                                        </HoverExplanation>,
-                                      );
-                                      i += highlightLength - 1;
-                                    } else {
-                                      result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
-                                    }
-                                  }
-
-                                  return (
-                                    <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
-                                      {result}
-                                    </div>
-                                  );
-                                });
-                              } else {
-                                // 英文文本也支持多词/整句短语高亮（按字符滑窗匹配）
-                                const lines = formattedText.split('\n');
-
-                                return lines.map((line, lineIndex) => {
-                                  const chars = line.split('');
-                                  const result = [] as React.ReactNode[];
-
-                                  for (let i = 0; i < chars.length; i++) {
-                                    let isHighlighted = false;
-                                    let highlightLength = 0;
-
-                                    for (const selectedWord of allSelectedWords) {
-                                      const w = selectedWord.word;
-                                      if (!w) continue;
-                                      const wLower = w.toLowerCase();
-                                      if (i + w.length <= chars.length) {
-                                        const substring = chars.slice(i, i + w.length).join('');
-                                        if (substring.toLowerCase() === wLower) {
-                                          const isAtWordBoundary = isEnglishWordBoundary(chars, i, w.length, i + w.length);
-                                          if (isAtWordBoundary) {
-                                            isHighlighted = true;
-                                            highlightLength = w.length;
-                                            break;
-                                          }
-                                        }
-                                      }
-                                    }
-
-                                    if (isHighlighted && highlightLength > 0) {
-                                      const word = chars.slice(i, i + highlightLength).join('');
-                                      const wordData = allSelectedWords.find((item) => item.word === word);
-                                      const explanation = wordData?.explanation;
-
-                                      result.push(
-                                        <HoverExplanation 
-                                          key={`${lineIndex}-${i}`} 
-                                          word={word} 
-                                          explanation={explanation}
-                                          fromVocab={wordData?.fromVocab}
-                                          vocabId={wordData?.vocabId}
-                                          onRefresh={handleRefreshExplanation}
-                                        lang={currentItem?.lang || 'ja'}
-                                        >
-                                          {word}
-                                        </HoverExplanation>,
-                                      );
-                                      i += highlightLength - 1;
-                                    } else {
-                                      result.push(<span key={`${lineIndex}-${i}`}>{chars[i]}</span>);
-                                    }
-                                  }
-
-                                  return (
-                                    <div key={lineIndex} className="mb-2 cursor-pointer hover:bg-blue-50/50 rounded" onClick={() => playSentenceByIndex(lineIndex)}>
-                                      {result}
-                                    </div>
-                                  );
-                                });
-                              }
-                            }
-                          })()}
+                                ));
+                              })()}
+                            </div>
+                          )}
+                          {/* 底部渐变遮罩提示有更多内容 */}
+                          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 to-transparent pointer-events-none rounded-b-xl"></div>
                         </div>
-                      )}
-                      {/* 底部渐变遮罩提示有更多内容 */}
-                      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 to-transparent pointer-events-none rounded-b-xl"></div>
-                    </div>
-                    </div>
-                    )}
-                    </div>
-
-                    {/* 音频播放器 - 优化版 */}
-                    {currentItem.audio_url && (
-                      <div className="mt-4" ref={mainAudioContainerRef}>
-                        <div className="mb-2 px-1">
-                          <span className="text-sm font-medium text-gray-700">
-                            {t.shadowing.original_audio_text || '原音频'}
-                          </span>
-                        </div>
-                        <EnhancedAudioPlayer
-                          ref={audioPlayerRef}
-                          audioUrl={currentItem.audio_url}
-                          onPlayStateChange={(playing) => {
-                            setIsPlaying(playing);
-                            if (playing) {
-                              try {
-                                if (audioRecorderRef.current && typeof audioRecorderRef.current.suspendMicForPlayback === 'function') {
-                                  audioRecorderRef.current.suspendMicForPlayback();
-                                }
-                              } catch {}
-                            }
-                          }}
-                          onSegmentComplete={(start, end) => {
-                            // 找到对应的句子索引
-                            const timeline = (currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline;
-                            if (timeline && Array.isArray(timeline)) {
-                              const seg = timeline.find(s => 
-                                typeof s.start === 'number' && typeof s.end === 'number' &&
-                                Math.abs(s.start - start) < 0.1 && Math.abs(s.end - end) < 0.1
-                              );
-                              if (seg && typeof seg.index === 'number') {
-                                setCompletedSegmentIndex(seg.index);
-                              }
-                            }
-                          }}
-                          duration_ms={currentItem.duration_ms}
-                        />
                       </div>
                     )}
-                  </Card>
+                  </div>
 
-                  {/* 生词区域 - 折叠式 */}
-                  {previousWords.length > 0 && (
-                    <CollapsibleCard
-                      title="之前的生词"
-                      icon={<BookOpen className="w-5 h-5 text-gray-600" />}
-                      badge={<span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{previousWords.length}</span>}
-                      summary={`${previousWords.length}个生词`}
-                      defaultOpen={step === 2}
-                      className="border-0 shadow-sm"
-                      contentClassName="pt-2"
-                    >
-                      <div className="space-y-2">
-                        {previousWords.map((item, index) => (
-                          <div
-                            key={`prev-${index}`}
-                            className="p-3 bg-gray-50 rounded border border-gray-200"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <WordWithPronunciation
-                                    word={item.word}
-                                    explanation={item.explanation || wordExplanations[item.word]}
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => speakWord(item.word, currentItem?.lang || 'en')}
-                                    className="text-blue-500 hover:text-blue-700 p-1"
-                                    title={t.shadowing.pronounce || '发音'}
-                                  >
-                                    🔊
-                                  </Button>
-                                </div>
-                                <div className="text-sm text-gray-600 mt-1">{item.context}</div>
-                              </div>
-                              <div className="flex gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      generateWordExplanation(
-                                        item.word,
-                                        item.context,
-                                        currentItem?.lang || 'en',
-                                      )
-                                    }
-                                    disabled={isGeneratingExplanation}
-                                    className="text-xs"
-                                  >
-                                  {generatingWord === item.word
-                                    ? (t.shadowing.generating || '生成中...')
-                                    : (t.shadowing.ai_explanation_button || 'AI解释')}
-                                  </Button>
+                  {/* 音频播放器 - 优化版 */}
+                  {currentItem.audio_url && (
+                    <div className="mt-4" ref={mainAudioContainerRef}>
+                      <div className="mb-2 px-1">
+                        <span className="text-sm font-medium text-gray-700">
+                          {t.shadowing.original_audio_text || '原音频'}
+                        </span>
+                      </div>
+                      <EnhancedAudioPlayer
+                        ref={audioPlayerRef}
+                        audioUrl={currentItem.audio_url}
+                        onPlayStateChange={(playing) => {
+                          setIsPlaying(playing);
+                          if (playing) {
+                            try {
+                              if (audioRecorderRef.current && typeof audioRecorderRef.current.suspendMicForPlayback === 'function') {
+                                audioRecorderRef.current.suspendMicForPlayback();
+                              }
+                            } catch { }
+                          }
+                        }}
+                        onSegmentComplete={(start, end) => {
+                          // 找到对应的句子索引
+                          const timeline = (currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline;
+                          if (timeline && Array.isArray(timeline)) {
+                            const seg = timeline.find(s =>
+                              typeof s.start === 'number' && typeof s.end === 'number' &&
+                              Math.abs(s.start - start) < 0.1 && Math.abs(s.end - end) < 0.1
+                            );
+                            if (seg && typeof seg.index === 'number') {
+                              setCompletedSegmentIndex(seg.index);
+                            }
+                          }
+                        }}
+                        duration_ms={currentItem.duration_ms}
+                      />
+                    </div>
+                  )}
+                </Card>
+
+                {/* 生词区域 - 折叠式 */}
+                {previousWords.length > 0 && (
+                  <CollapsibleCard
+                    title="之前的生词"
+                    icon={<BookOpen className="w-5 h-5 text-gray-600" />}
+                    badge={<span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">{previousWords.length}</span>}
+                    summary={`${previousWords.length}个生词`}
+                    defaultOpen={step === 2}
+                    className="border-0 shadow-sm"
+                    contentClassName="pt-2"
+                  >
+                    <div className="space-y-2">
+                      {previousWords.map((item, index) => (
+                        <div
+                          key={`prev-${index}`}
+                          className="p-3 bg-gray-50 rounded border border-gray-200"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <WordWithPronunciation
+                                  word={item.word}
+                                  explanation={item.explanation || wordExplanations[item.word]}
+                                />
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => removePreviousWord(index)}
-                                  className="text-red-500 hover:text-red-700"
+                                  onClick={() => speakWord(item.word, currentItem?.lang || 'en')}
+                                  className="text-blue-500 hover:text-blue-700 p-1"
+                                  title={t.shadowing.pronounce || '发音'}
                                 >
-                                  {t.shadowing.remove || '删除'}
+                                  🔊
                                 </Button>
                               </div>
+                              <div className="text-sm text-gray-600 mt-1">{item.context}</div>
                             </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  generateWordExplanation(
+                                    item.word,
+                                    item.context,
+                                    currentItem?.lang || 'en',
+                                  )
+                                }
+                                disabled={isGeneratingExplanation}
+                                className="text-xs"
+                              >
+                                {generatingWord === item.word
+                                  ? (t.shadowing.generating || '生成中...')
+                                  : (t.shadowing.ai_explanation_button || 'AI解释')}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removePreviousWord(index)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                {t.shadowing.remove || '删除'}
+                              </Button>
+                            </div>
+                          </div>
 
-                            {/* AI解释显示 */}
-                            <div className="mt-3 p-3 bg-white rounded border border-gray-100">
+                          {/* AI解释显示 */}
+                          <div className="mt-3 p-3 bg-white rounded border border-gray-100">
+                            <DynamicExplanation
+                              word={item.word}
+                              fallbackExplanation={item.explanation}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleCard>
+                )}
+                {/* 本次选中的生词 - 折叠式 */}
+                {selectedWords.length > 0 && (
+                  <CollapsibleCard
+                    title="本次选中的生词"
+                    icon={<Sparkles className="w-5 h-5 text-blue-600" />}
+                    badge={<span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-xs font-medium">{selectedWords.length}</span>}
+                    summary={`${selectedWords.length}个生词待处理`}
+                    defaultOpen={true}
+                    className="border-0 shadow-sm"
+                    contentClassName="pt-2"
+                  >
+                    <div className="flex gap-2 mb-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={generateBatchExplanations}
+                        disabled={isGeneratingBatchExplanation}
+                        className="text-green-600 hover:text-green-800 border-green-300"
+                      >
+                        {isGeneratingBatchExplanation
+                          ? (t.shadowing.generating || '生成中...')
+                          : (t.shadowing.ai_explanation_batch_button || '一键AI解释')}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setSelectedWords([])}>
+                        {t.shadowing.clear || '清空'}
+                      </Button>
+                      <Button size="sm" onClick={importToVocab} disabled={isImporting}>
+                        {isImporting ? (t.shadowing.adding_to_vocab || '添加中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
+                      </Button>
+                    </div>
+
+                    {/* 批量AI解释进度显示 */}
+                    {isGeneratingBatchExplanation && batchExplanationProgress.total > 0 && (
+                      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium text-green-700">{t.shadowing.ai_explanation_generation_progress || 'AI解释生成进度'}</span>
+                            <span className="text-green-600">
+                              {batchExplanationProgress.current} /{' '}
+                              {batchExplanationProgress.total}
+                            </span>
+                          </div>
+                          <div className="w-full bg-green-200 rounded-full h-2">
+                            <div
+                              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                              style={{
+                                width: `${(batchExplanationProgress.current / batchExplanationProgress.total) * 100}%`,
+                              }}
+                            ></div>
+                          </div>
+                          <div className="text-sm text-green-600">
+                            {batchExplanationProgress.status}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      {selectedWords.map((item, index) => (
+                        <div
+                          key={`selected-${item.word}-${index}`}
+                          className="p-3 bg-blue-50 rounded border border-blue-200"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <WordWithPronunciation
+                                  word={item.word}
+                                  explanation={item.explanation || wordExplanations[item.word]}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => speakWord(item.word, item.lang)}
+                                  className="text-blue-500 hover:text-blue-700 p-1"
+                                  title={t.shadowing.pronounce || '发音'}
+                                >
+                                  🔊
+                                </Button>
+                              </div>
+                              <div className="text-sm text-blue-600 mt-1">{item.context}</div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  generateWordExplanation(item.word, item.context, item.lang)
+                                }
+                                disabled={isGeneratingExplanation}
+                                className="text-xs"
+                              >
+                                {generatingWord === item.word
+                                  ? (t.shadowing.generating || '生成中...')
+                                  : (t.shadowing.ai_explanation_button || 'AI解释')}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeSelectedWord(index)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                移除
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* AI解释显示 */}
+                          {(item.explanation || wordExplanations[item.word]) && (
+                            <div className="mt-3 p-3 bg-white rounded border border-blue-100">
                               <DynamicExplanation
                                 word={item.word}
-                                fallbackExplanation={item.explanation}
+                                fallbackExplanation={
+                                  item.explanation || wordExplanations[item.word]
+                                }
                               />
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CollapsibleCard>
-                  )}
-                  {/* 本次选中的生词 - 折叠式 */}
-                  {selectedWords.length > 0 && (
-                    <CollapsibleCard
-                      title="本次选中的生词"
-                      icon={<Sparkles className="w-5 h-5 text-blue-600" />}
-                      badge={<span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full text-xs font-medium">{selectedWords.length}</span>}
-                      summary={`${selectedWords.length}个生词待处理`}
-                      defaultOpen={true}
-                      className="border-0 shadow-sm"
-                      contentClassName="pt-2"
-                    >
-                      <div className="flex gap-2 mb-3">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={generateBatchExplanations}
-                            disabled={isGeneratingBatchExplanation}
-                            className="text-green-600 hover:text-green-800 border-green-300"
-                          >
-                            {isGeneratingBatchExplanation
-                              ? (t.shadowing.generating || '生成中...')
-                              : (t.shadowing.ai_explanation_batch_button || '一键AI解释')}
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => setSelectedWords([])}>
-                            {t.shadowing.clear || '清空'}
-                          </Button>
-                          <Button size="sm" onClick={importToVocab} disabled={isImporting}>
-                            {isImporting ? (t.shadowing.adding_to_vocab || '添加中...') : (t.shadowing.import_to_vocab || '导入到生词本')}
-                          </Button>
-                        </div>
-
-                      {/* 批量AI解释进度显示 */}
-                      {isGeneratingBatchExplanation && batchExplanationProgress.total > 0 && (
-                        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded">
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="font-medium text-green-700">{t.shadowing.ai_explanation_generation_progress || 'AI解释生成进度'}</span>
-                              <span className="text-green-600">
-                                {batchExplanationProgress.current} /{' '}
-                                {batchExplanationProgress.total}
-                              </span>
-                            </div>
-                            <div className="w-full bg-green-200 rounded-full h-2">
-                              <div
-                                className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${(batchExplanationProgress.current / batchExplanationProgress.total) * 100}%`,
-                                }}
-                              ></div>
-                            </div>
-                            <div className="text-sm text-green-600">
-                              {batchExplanationProgress.status}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="space-y-3">
-                        {selectedWords.map((item, index) => (
-                          <div
-                            key={`selected-${item.word}-${index}`}
-                            className="p-3 bg-blue-50 rounded border border-blue-200"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <WordWithPronunciation
-                                    word={item.word}
-                                    explanation={item.explanation || wordExplanations[item.word]}
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => speakWord(item.word, item.lang)}
-                                    className="text-blue-500 hover:text-blue-700 p-1"
-                                    title={t.shadowing.pronounce || '发音'}
-                                  >
-                                    🔊
-                                  </Button>
-                                </div>
-                                <div className="text-sm text-blue-600 mt-1">{item.context}</div>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    generateWordExplanation(item.word, item.context, item.lang)
-                                  }
-                                  disabled={isGeneratingExplanation}
-                                  className="text-xs"
-                                >
-                                  {generatingWord === item.word
-                                    ? (t.shadowing.generating || '生成中...')
-                                    : (t.shadowing.ai_explanation_button || 'AI解释')}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeSelectedWord(index)}
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  移除
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* AI解释显示 */}
-                            {(item.explanation || wordExplanations[item.word]) && (
-                              <div className="mt-3 p-3 bg-white rounded border border-blue-100">
-                                <DynamicExplanation
-                                  word={item.word}
-                                  fallbackExplanation={
-                                    item.explanation || wordExplanations[item.word]
-                                  }
-                                />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </CollapsibleCard>
-                  )}
-
-                  {/* 翻译模块 */}
-                  {currentItem && (!gatingActive || step === 3) && (
-                    <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                          <span className="text-white text-lg">🌐</span>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900">
-                            {t.shadowing.translation || '翻译'}
-                          </h3>
-                          <p className="text-sm text-gray-600">{t.shadowing.translation_support_hint || '多语言翻译支持'}</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="space-y-3">
-                          <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg-white transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={showTranslation}
-                              onChange={(e) => setShowTranslation(e.target.checked)}
-                              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            <span className="font-medium">
-                              {t.shadowing.show_translation || '显示翻译'}
-                            </span>
-                          </label>
-                          <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg-white transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={showRubyPronunciation}
-                              onChange={(e) => setShowRubyPronunciation(e.target.checked)}
-                              className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            <span className="font-medium">
-                              {'显示读音注音（zh/ja/ko）'}
-                            </span>
-                          </label>
-                          {showTranslation && (
-                            <select
-                              className="h-11 px-4 py-2 bg-white border border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium w-full"
-                              value={translationLang}
-                              onChange={(e) =>
-                                setTranslationLang(e.target.value as 'en' | 'ja' | 'zh' | 'ko')
-                              }
-                            >
-                              {getTargetLanguages(currentItem.lang).map((lang) => (
-                                <option key={lang} value={lang}>
-                                  {getLangName(lang)}
-                                </option>
-                              ))}
-                            </select>
                           )}
                         </div>
+                      ))}
+                    </div>
+                  </CollapsibleCard>
+                )}
 
-                        {showTranslation &&
-                        currentItem.translations &&
-                        currentItem.translations[translationLang] ? (
-                          <div className="p-4 bg-white rounded-xl border border-indigo-200 shadow-sm">
-                            <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
-                              {formatSpeakerBreaks(currentItem.translations[translationLang])}
-                            </div>
-                          </div>
-                        ) : showTranslation ? (
-                          <div className="text-center py-8">
-                            <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <span className="text-2xl">📝</span>
-                            </div>
-                            <h3 className="text-lg font-semibold text-gray-700 mb-2">{t.shadowing.translation_none_title || '暂无翻译'}</h3>
-                            <p className="text-gray-500">{t.shadowing.translation_none_desc || '可能尚未生成翻译内容'}</p>
-                          </div>
-                        ) : (
-                          <div className="text-center py-8">
-                            <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <span className="text-2xl">🌐</span>
-                            </div>
-                            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                              {t.shadowing.translation_enable_action || '开启翻译功能'}
-                            </h3>
-                            <p className="text-gray-500">{t.shadowing.translation_enable_hint || '勾选上方选项以显示翻译内容'}</p>
-                          </div>
+                {/* 翻译模块 */}
+                {currentItem && (!gatingActive || step === 3) && (
+                  <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-0 shadow-xl rounded-2xl">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <span className="text-white text-lg">🌐</span>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {t.shadowing.translation || '翻译'}
+                        </h3>
+                        <p className="text-sm text-gray-600">{t.shadowing.translation_support_hint || '多语言翻译支持'}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg-white transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={showTranslation}
+                            onChange={(e) => setShowTranslation(e.target.checked)}
+                            className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                          />
+                          <span className="font-medium">
+                            {t.shadowing.show_translation || '显示翻译'}
+                          </span>
+                        </label>
+                        <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer p-3 bg-white/80 rounded-xl border border-indigo-200 hover:bg-white transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={showRubyPronunciation}
+                            onChange={(e) => setShowRubyPronunciation(e.target.checked)}
+                            className="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                          />
+                          <span className="font-medium">
+                            {'显示读音注音（zh/ja/ko）'}
+                          </span>
+                        </label>
+                        {showTranslation && (
+                          <select
+                            className="h-11 px-4 py-2 bg-white border border-indigo-200 rounded-xl shadow-sm hover:shadow-md transition-shadow focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-medium w-full"
+                            value={translationLang}
+                            onChange={(e) =>
+                              setTranslationLang(e.target.value as 'en' | 'ja' | 'zh' | 'ko')
+                            }
+                          >
+                            {getTargetLanguages(currentItem.lang).map((lang) => (
+                              <option key={lang} value={lang}>
+                                {getLangName(lang)}
+                              </option>
+                            ))}
+                          </select>
                         )}
                       </div>
-                    </Card>
-                  )}
 
-                  {/* 练习模式切换 */}
-                  {(!gatingActive || step >= 4) && renderPracticeModeSwitcher()}
+                      {showTranslation &&
+                        currentItem.translations &&
+                        currentItem.translations[translationLang] ? (
+                        <div className="p-4 bg-white rounded-xl border border-indigo-200 shadow-sm">
+                          <div className="text-base leading-relaxed text-gray-800 whitespace-pre-wrap break-words">
+                            {formatSpeakerBreaks(currentItem.translations[translationLang])}
+                          </div>
+                        </div>
+                      ) : showTranslation ? (
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-2xl">📝</span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-700 mb-2">{t.shadowing.translation_none_title || '暂无翻译'}</h3>
+                          <p className="text-gray-500">{t.shadowing.translation_none_desc || '可能尚未生成翻译内容'}</p>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-2xl">🌐</span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                            {t.shadowing.translation_enable_action || '开启翻译功能'}
+                          </h3>
+                          <p className="text-gray-500">{t.shadowing.translation_enable_hint || '勾选上方选项以显示翻译内容'}</p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                )}
 
-                  {/* 逐句/分角色练习 */}
-                  {(!gatingActive || step >= 4) && (
-                    <SentencePractice
-                      originalText={currentItem?.text}
-                      language={currentItem?.lang || 'ja'}
-                      audioUrl={currentItem?.audio_url || null}
-                      sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
-                        ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
-                        : undefined}
-                      practiceMode={practiceMode}
-                      activeRole={selectedRole}
-                      roleSegments={roleSegments}
-                      onRoleRoundComplete={handleRoleRoundComplete}
-                      acuUnits={currentItem?.notes?.acu_units}
-                      // 统一使用顶部主音频播放器进行分段播放
-                      onPlaySentence={(i) => playSentenceByIndex(i)}
-                      completedSegmentIndex={completedSegmentIndex}
-                    />
-                  )}
+                {/* 练习模式切换 */}
+                {(!gatingActive || step >= 4) && renderPracticeModeSwitcher()}
 
-                  {practiceMode === 'role' && nextRoleSuggestion && (
-                    <Card className="p-4 border border-emerald-200 bg-emerald-50 text-emerald-700 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div>
-                        {t.shadowing?.role_suggestion_text || '切换到其他角色继续练习：'}
-                        <span className="font-semibold ml-1">{nextRoleSuggestion}</span>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRole(nextRoleSuggestion);
-                          setNextRoleSuggestion(null);
-                        }}
-                      >
-                        {t.shadowing?.role_switch_now || '立即切换'}
-                      </Button>
-                    </Card>
-                  )}
+                {/* 逐句/分角色练习 */}
+                {(!gatingActive || step >= 4) && (
+                  <SentencePractice
+                    originalText={currentItem?.text}
+                    language={currentItem?.lang || 'ja'}
+                    audioUrl={currentItem?.audio_url || null}
+                    sentenceTimeline={Array.isArray((currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline)
+                      ? (currentItem as unknown as { sentence_timeline: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> }).sentence_timeline
+                      : undefined}
+                    practiceMode={practiceMode}
+                    activeRole={selectedRole}
+                    roleSegments={roleSegments}
+                    onRoleRoundComplete={handleRoleRoundComplete}
+                    acuUnits={currentItem?.notes?.acu_units}
+                    // 统一使用顶部主音频播放器进行分段播放
+                    onPlaySentence={(i) => playSentenceByIndex(i)}
+                    completedSegmentIndex={completedSegmentIndex}
+                  />
+                )}
 
-                  {/* 录音练习区域 */}
-                  {practiceMode !== 'role' && (!gatingActive || step >= 4) && (
+                {practiceMode === 'role' && nextRoleSuggestion && (
+                  <Card className="p-4 border border-emerald-200 bg-emerald-50 text-emerald-700 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div>
+                      {t.shadowing?.role_suggestion_text || '切换到其他角色继续练习：'}
+                      <span className="font-semibold ml-1">{nextRoleSuggestion}</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setSelectedRole(nextRoleSuggestion);
+                        setNextRoleSuggestion(null);
+                      }}
+                    >
+                      {t.shadowing?.role_switch_now || '立即切换'}
+                    </Button>
+                  </Card>
+                )}
+
+                {/* 录音练习区域 */}
+                {practiceMode !== 'role' && (!gatingActive || step >= 4) && (
                   <Card className="p-4">
                     <AudioRecorder
                       ref={audioRecorderRef}
@@ -5560,398 +5459,366 @@ export default function ShadowingPage() {
                       scrollTargetId="shadowing-text"
                     />
                   </Card>
-                  )}
+                )}
 
-                  {/* 评分区域（仅步骤5显示或完成后） */}
-                  {!scoringResult && practiceMode !== 'role' && (!gatingActive || step >= 4) && (
-                    <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
-                          <span className="text-white text-lg">📊</span>
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900">
-                            {t.shadowing.practice_scoring || '练习评分'}
-                          </h3>
-                          <p className="text-sm text-gray-600">{t.shadowing.ai_scoring_subtitle || 'AI智能评分，精准分析发音'}</p>
-                        </div>
+                {/* 评分区域（仅步骤5显示或完成后） */}
+                {!scoringResult && practiceMode !== 'role' && (!gatingActive || step >= 4) && (
+                  <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                        <span className="text-white text-lg">📊</span>
                       </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {t.shadowing.practice_scoring || '练习评分'}
+                        </h3>
+                        <p className="text-sm text-gray-600">{t.shadowing.ai_scoring_subtitle || 'AI智能评分，精准分析发音'}</p>
+                      </div>
+                    </div>
 
-                      {currentRecordings.length > 0 ? (
-                        <div className="text-center space-y-4">
-                          <div className="p-4 bg-white/80 rounded-xl border border-purple-200">
-                            <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                              <CheckCircle className="w-8 h-8 text-green-600" />
-                            </div>
-                            <p className="text-gray-700 font-medium mb-2">
-                              {t.shadowing.recording_completed || '录音完成！'}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {t.shadowing.recording_completed_message}
-                            </p>
+                    {currentRecordings.length > 0 ? (
+                      <div className="text-center space-y-4">
+                        <div className="p-4 bg-white/80 rounded-xl border border-purple-200">
+                          <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <CheckCircle className="w-8 h-8 text-green-600" />
                           </div>
-                          <Button
-                            onClick={() => performScoring()}
-                            disabled={isScoring}
-                            aria-busy={isScoring}
-                            aria-disabled={isScoring}
-                            aria-label={isScoring ? '评分进行中' : '开始评分'}
-                            className={`h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all w-full ${highlightScore ? 'animate-pulse ring-2 ring-purple-400' : ''}`}
-                          >
-                            {isScoring ? (
-                              <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                {t.shadowing.scoring_in_progress || '评分中...'}
-                              </>
-                            ) : (
-                              <>
-                                <span className="mr-2">🚀</span>
-                                {t.shadowing.start_scoring || '开始评分'}
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Mic className="w-10 h-10 text-gray-400" />
-                          </div>
-                          <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                            {t.shadowing.no_recording_yet || '还没有录音'}
-                          </h3>
-                          <p className="text-gray-500 leading-relaxed">
-                            {t.shadowing.complete_recording_first}
+                          <p className="text-gray-700 font-medium mb-2">
+                            {t.shadowing.recording_completed || '录音完成！'}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {t.shadowing.recording_completed_message}
                           </p>
                         </div>
-                      )}
-                    </Card>
-                  )}
-
-                  {/* 评分结果区域 */}
-                  {practiceMode !== 'role' && scoringResult && (
-                    <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                            <span className="text-white text-lg">🎯</span>
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900">
-                              {t.shadowing.scoring_result || '评分结果'}
-                            </h3>
-                            <p className="text-sm text-gray-600">{t.shadowing.ai_analysis_done || 'AI智能分析完成'}</p>
-                          </div>
-                        </div>
                         <Button
-                          onClick={() => performScoring(currentTranscription)}
+                          onClick={() => performScoring()}
                           disabled={isScoring}
                           aria-busy={isScoring}
                           aria-disabled={isScoring}
-                          aria-label={isScoring ? '重新评分进行中' : '重新评分'}
-                          variant="outline"
-                          size="sm"
-                          className="h-8 bg-white hover:bg-gray-50 border-gray-200 text-gray-700 rounded-lg"
+                          aria-label={isScoring ? '评分进行中' : '开始评分'}
+                          className={`h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all w-full ${highlightScore ? 'animate-pulse ring-2 ring-purple-400' : ''}`}
                         >
-                          {isScoring
-                            ? t.shadowing.re_scoring_in_progress || '重新评分中...'
-                            : t.shadowing.re_score || '重新评分'}
+                          {isScoring ? (
+                            <>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                              {t.shadowing.scoring_in_progress || '评分中...'}
+                            </>
+                          ) : (
+                            <>
+                              <span className="mr-2">🚀</span>
+                              {t.shadowing.start_scoring || '开始评分'}
+                            </>
+                          )}
                         </Button>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-4 mb-6" aria-live="polite" aria-atomic="true">
-                        <div className="p-4 bg-white rounded-xl border border-green-200 shadow-sm">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
-                              <span className="text-green-600 text-sm">🏆</span>
-                            </div>
-                            <div className="text-sm font-medium text-green-700">
-                              {t.shadowing.overall_score}
-                            </div>
-                          </div>
-                          <div className="text-2xl font-bold text-green-600">
-                            {(scoringResult.score || 0).toFixed(1)}%
-                          </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Mic className="w-10 h-10 text-gray-400" />
                         </div>
-                        <div className="p-4 bg-white rounded-xl border border-blue-200 shadow-sm">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-                              <span className="text-blue-600 text-sm">🎯</span>
-                            </div>
-                            <div className="text-sm font-medium text-blue-700">
-                              {t.shadowing.pronunciation_accuracy}
-                            </div>
-                          </div>
-                          <div className="text-2xl font-bold text-blue-600">
-                            {(scoringResult.score || 0).toFixed(1)}%
-                          </div>
-                        </div>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                          {t.shadowing.no_recording_yet || '还没有录音'}
+                        </h3>
+                        <p className="text-gray-500 leading-relaxed">
+                          {t.shadowing.complete_recording_first}
+                        </p>
                       </div>
+                    )}
+                  </Card>
+                )}
 
-                      {scoringResult.feedback && (
-                        <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200 shadow-sm mb-6">
-                          <div className="flex items-center gap-2 mb-3">
-                            <div className="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center">
-                              <span className="text-yellow-600 text-sm">💡</span>
-                            </div>
-                            <div className="text-sm font-medium text-yellow-700">
-                              {t.shadowing.improvement_suggestions}
-                            </div>
-                          </div>
-                          <p className="text-yellow-800 text-sm leading-relaxed">
-                            {scoringResult.feedback}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* 转录文字和原文对比 - 手机端优化 */}
-                      {scoringResult.transcription && scoringResult.originalText && (
-                        <div className="mt-4">
-                          <h4 className="text-lg font-semibold mb-3">
-                            {t.shadowing.practice_comparison}
-                          </h4>
-                          <div className="space-y-3">
-                            <div className="border rounded-lg p-3">
-                              <div className="space-y-3">
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-2">
-                                    {t.shadowing.original_text}
-                                  </div>
-                                  <div className="p-3 bg-gray-50 rounded border text-sm">
-                                    {scoringResult.originalText}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-2">
-                                    {t.shadowing.your_pronunciation}
-                                  </div>
-                                  <div
-                                    className={`p-3 rounded border text-sm ${
-                                      (scoringResult.score || 0) >= 80
-                                        ? 'bg-green-50 border-green-200'
-                                        : (scoringResult.score || 0) >= 60
-                                          ? 'bg-yellow-50 border-yellow-200'
-                                          : 'bg-red-50 border-red-200'
-                                    }`}
-                                  >
-                                    {scoringResult.transcription}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* 详细分析 - 手机端 */}
-                            <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
-                              <div className="text-sm text-blue-600 mb-2">
-                                {t.shadowing.detailed_analysis || '详细分析'}
-                              </div>
-                              <div className="text-sm text-gray-700">
-                                {(() => {
-                                  // 处理中文文本，按字符分割而不是按单词分割
-
-                                  // 使用简单句子分析（支持中文和英文）
-                                  const simpleAnalysis = performSimpleAnalysis(
-                                    scoringResult.originalText,
-                                    scoringResult.transcription,
-                                    t,
-                                  );
-                                  const { sentenceAnalysis, overallScore } = simpleAnalysis;
-
-                                  return (
-                                    <div>
-                                      {/* 整体评分 */}
-                                      <div className="mb-4 p-3 bg-white rounded border">
-                                        <div className="text-sm font-medium mb-2">
-                                          {t.shadowing.overall_score}:
-                                        </div>
-                                        <div className="text-2xl font-bold text-blue-600">
-                                          {overallScore}%
-                                        </div>
-                                      </div>
-
-                                      {/* 句子分析 */}
-                                      <div className="space-y-3">
-                                        {sentenceAnalysis.map((sentence, idx) => (
-                                          <div
-                                            key={`sentence-${idx}-${sentence.sentence.substring(0, 20)}`}
-                                            className={`p-3 rounded border ${
-                                              sentence.status === 'correct'
-                                                ? 'bg-green-50 border-green-200'
-                                                : sentence.status === 'partial'
-                                                  ? 'bg-yellow-50 border-yellow-200'
-                                                  : 'bg-red-50 border-red-200'
-                                            }`}
-                                          >
-                                            <div className="flex items-center justify-between mb-2">
-                                              <div className="text-sm font-medium">
-                                                {sentence.status === 'correct' && '✓ '}
-                                                {sentence.status === 'partial' && '⚠ '}
-                                                {sentence.status === 'missing' && '❌ '}
-                                                {t.shadowing.sentence || '句子'} {idx + 1}
-                                              </div>
-                                              <div className="text-sm font-bold">
-                                                {sentence.score}%
-                                              </div>
-                                            </div>
-
-                                            <div className="text-sm mb-2">
-                                              <span className="font-medium">
-                                                {t.shadowing.original_text}:
-                                              </span>
-                                              <span className="text-gray-700">
-                                                &ldquo;{sentence.sentence}&rdquo;
-                                              </span>
-                                            </div>
-
-                                            {sentence.issues.length > 0 && (
-                                              <div className="text-sm text-red-600">
-                                                <div className="font-medium">
-                                                  {t.shadowing.issues || '问题'}:
-                                                </div>
-                                                <ul className="list-disc list-inside space-y-1">
-                                                  {sentence.issues.map((issue, issueIdx) => (
-                                                    <li
-                                                      key={`issue-${issueIdx}-${issue.substring(0, 20)}`}
-                                                    >
-                                                      {issue}
-                                                    </li>
-                                                  ))}
-                                                </ul>
-                                              </div>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-
-                                      <div className="mt-4 text-xs text-gray-500">
-                                        💡{' '}
-                                        {t.shadowing.analysis_based_on_sentence_level ||
-                                          '分析基于句子级别，更直观地显示发音问题'}
-                                      </div>
-                                    </div>
-                                  );
-
-                                  return (
-                                    <div>
-                                      {/* 整体评分 */}
-                                      <div className="mb-4 p-3 bg-white rounded border">
-                                        <div className="text-sm font-medium mb-2">
-                                          {t.shadowing.overall_score}:
-                                        </div>
-                                        <div className="text-2xl font-bold text-blue-600">
-                                          {overallScore}%
-                                        </div>
-                                      </div>
-
-                                      {/* 句子分析 */}
-                                      <div className="space-y-3">
-                                        {sentenceAnalysis.map((sentence, idx) => (
-                                          <div
-                                            key={idx}
-                                            className={`p-3 rounded border ${
-                                              sentence.status === 'correct'
-                                                ? 'bg-green-50 border-green-200'
-                                                : sentence.status === 'partial'
-                                                  ? 'bg-yellow-50 border-yellow-200'
-                                                  : 'bg-red-50 border-red-200'
-                                            }`}
-                                          >
-                                            <div className="flex items-center justify-between mb-2">
-                                              <div className="text-sm font-medium">
-                                                {sentence.status === 'correct' && '✓ '}
-                                                {sentence.status === 'partial' && '⚠ '}
-                                                {sentence.status === 'missing' && '❌ '}
-                                                {t.shadowing.sentence || '句子'} {idx + 1}
-                                              </div>
-                                              <div className="text-sm font-bold">
-                                                {sentence.score}%
-                                              </div>
-                                            </div>
-
-                                            <div className="text-sm mb-2">
-                                              <span className="font-medium">
-                                                {t.shadowing.original_text}:
-                                              </span>
-                                              <span className="text-gray-700">
-                                                &ldquo;{sentence.sentence}&rdquo;
-                                              </span>
-                                            </div>
-
-                                            {sentence.issues.length > 0 && (
-                                              <div className="text-xs">
-                                                <span className="font-medium text-red-600">
-                                                  {t.shadowing.issues || '问题'}:
-                                                </span>
-                                                <ul className="mt-1 space-y-1">
-                                                  {sentence.issues.map((issue, issueIdx) => (
-                                                    <li
-                                                      key={`issue-${issueIdx}-${issue.substring(0, 20)}`}
-                                                      className="text-red-600"
-                                                    >
-                                                      • {issue}
-                                                    </li>
-                                                  ))}
-                                                </ul>
-                                              </div>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-
-                                      <div className="mt-3 text-xs text-gray-600">
-                                        💡{' '}
-                                        {t.shadowing.analysis_based_on_sentence_level ||
-                                          '分析基于句子级别，更直观地显示发音问题'}
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {!practiceComplete && (!gatingActive || step === 4) && (
-                        <div className="flex items-center gap-2 w-full mt-2">
-                          <Button
-                            onClick={unifiedCompleteAndSave}
-                            className="flex-1 h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            {t.shadowing.complete_and_save}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="flex-1 h-11"
-                            onClick={() => {
-                              setPracticeComplete(false);
-                              setStep(1);
-                              setScoringResult(null);
-                              setIsVocabMode(false);
-                              setShowTranslation(false);
-                            }}
-                          >
-                            {t.shadowing.practice_again}
-                          </Button>
-                        </div>
-                      )}
-                    </Card>
-                  )}
-
-                  {/* 完成后成功状态卡片 */}
-                  {practiceComplete && (
-                    <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
-                      <div className="flex items-center gap-3 mb-4">
+                {/* 评分结果区域 */}
+                {practiceMode !== 'role' && scoringResult && (
+                  <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                          <span className="text-white text-lg">✅</span>
+                          <span className="text-white text-lg">🎯</span>
                         </div>
                         <div>
-                          <h3 className="text-xl font-bold text-gray-900">{t.shadowing.practice_done_title || '练习已完成'}</h3>
-                          <p className="text-sm text-gray-600">{t.shadowing.practice_done_desc || '成绩与生词已保存，你可以选择继续提升'}</p>
+                          <h3 className="text-xl font-bold text-gray-900">
+                            {t.shadowing.scoring_result || '评分结果'}
+                          </h3>
+                          <p className="text-sm text-gray-600">{t.shadowing.ai_analysis_done || 'AI智能分析完成'}</p>
                         </div>
                       </div>
-                      <div className="flex gap-3 flex-wrap">
+                      <Button
+                        onClick={() => performScoring(currentTranscription)}
+                        disabled={isScoring}
+                        aria-busy={isScoring}
+                        aria-disabled={isScoring}
+                        aria-label={isScoring ? '重新评分进行中' : '重新评分'}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 bg-white hover:bg-gray-50 border-gray-200 text-gray-700 rounded-lg"
+                      >
+                        {isScoring
+                          ? t.shadowing.re_scoring_in_progress || '重新评分中...'
+                          : t.shadowing.re_score || '重新评分'}
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-6" aria-live="polite" aria-atomic="true">
+                      <div className="p-4 bg-white rounded-xl border border-green-200 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-6 h-6 bg-green-100 rounded-lg flex items-center justify-center">
+                            <span className="text-green-600 text-sm">🏆</span>
+                          </div>
+                          <div className="text-sm font-medium text-green-700">
+                            {t.shadowing.overall_score}
+                          </div>
+                        </div>
+                        <div className="text-2xl font-bold text-green-600">
+                          {(scoringResult.score || 0).toFixed(1)}%
+                        </div>
+                      </div>
+                      <div className="p-4 bg-white rounded-xl border border-blue-200 shadow-sm">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span className="text-blue-600 text-sm">🎯</span>
+                          </div>
+                          <div className="text-sm font-medium text-blue-700">
+                            {t.shadowing.pronunciation_accuracy}
+                          </div>
+                        </div>
+                        <div className="text-2xl font-bold text-blue-600">
+                          {(scoringResult.score || 0).toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+
+                    {scoringResult.feedback && (
+                      <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200 shadow-sm mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <span className="text-yellow-600 text-sm">💡</span>
+                          </div>
+                          <div className="text-sm font-medium text-yellow-700">
+                            {t.shadowing.improvement_suggestions}
+                          </div>
+                        </div>
+                        <p className="text-yellow-800 text-sm leading-relaxed">
+                          {scoringResult.feedback}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 转录文字和原文对比 - 手机端优化 */}
+                    {scoringResult.transcription && scoringResult.originalText && (
+                      <div className="mt-4">
+                        <h4 className="text-lg font-semibold mb-3">
+                          {t.shadowing.practice_comparison}
+                        </h4>
+                        <div className="space-y-3">
+                          <div className="border rounded-lg p-3">
+                            <div className="space-y-3">
+                              <div>
+                                <div className="text-sm text-gray-500 mb-2">
+                                  {t.shadowing.original_text}
+                                </div>
+                                <div className="p-3 bg-gray-50 rounded border text-sm">
+                                  {scoringResult.originalText}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-500 mb-2">
+                                  {t.shadowing.your_pronunciation}
+                                </div>
+                                <div
+                                  className={`p-3 rounded border text-sm ${(scoringResult.score || 0) >= 80
+                                    ? 'bg-green-50 border-green-200'
+                                    : (scoringResult.score || 0) >= 60
+                                      ? 'bg-yellow-50 border-yellow-200'
+                                      : 'bg-red-50 border-red-200'
+                                    }`}
+                                >
+                                  {scoringResult.transcription}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 详细分析 - 手机端 */}
+                          <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                            <div className="text-sm text-blue-600 mb-2">
+                              {t.shadowing.detailed_analysis || '详细分析'}
+                            </div>
+                            <div className="text-sm text-gray-700">
+                              {(() => {
+                                // 处理中文文本，按字符分割而不是按单词分割
+
+                                // 使用简单句子分析（支持中文和英文）
+                                const simpleAnalysis = performSimpleAnalysis(
+                                  scoringResult.originalText,
+                                  scoringResult.transcription,
+                                  t,
+                                );
+                                const { sentenceAnalysis, overallScore } = simpleAnalysis;
+
+                                return (
+                                  <div>
+                                    {/* 整体评分 */}
+                                    <div className="mb-4 p-3 bg-white rounded border">
+                                      <div className="text-sm font-medium mb-2">
+                                        {t.shadowing.overall_score}:
+                                      </div>
+                                      <div className="text-2xl font-bold text-blue-600">
+                                        {overallScore}%
+                                      </div>
+                                    </div>
+
+                                    {/* 句子分析 */}
+                                    <div className="space-y-3">
+                                      {sentenceAnalysis.map((sentence, idx) => (
+                                        <div
+                                          key={`sentence-${idx}-${sentence.sentence.substring(0, 20)}`}
+                                          className={`p-3 rounded border ${sentence.status === 'correct'
+                                            ? 'bg-green-50 border-green-200'
+                                            : sentence.status === 'partial'
+                                              ? 'bg-yellow-50 border-yellow-200'
+                                              : 'bg-red-50 border-red-200'
+                                            }`}
+                                        >
+                                          <div className="flex items-center justify-between mb-2">
+                                            <div className="text-sm font-medium">
+                                              {sentence.status === 'correct' && '✓ '}
+                                              {sentence.status === 'partial' && '⚠ '}
+                                              {sentence.status === 'missing' && '❌ '}
+                                              {t.shadowing.sentence || '句子'} {idx + 1}
+                                            </div>
+                                            <div className="text-sm font-bold">
+                                              {sentence.score}%
+                                            </div>
+                                          </div>
+
+                                          <div className="text-sm mb-2">
+                                            <span className="font-medium">
+                                              {t.shadowing.original_text}:
+                                            </span>
+                                            <span className="text-gray-700">
+                                              &ldquo;{sentence.sentence}&rdquo;
+                                            </span>
+                                          </div>
+
+                                          {sentence.issues.length > 0 && (
+                                            <div className="text-sm text-red-600">
+                                              <div className="font-medium">
+                                                {t.shadowing.issues || '问题'}:
+                                              </div>
+                                              <ul className="list-disc list-inside space-y-1">
+                                                {sentence.issues.map((issue, issueIdx) => (
+                                                  <li
+                                                    key={`issue-${issueIdx}-${issue.substring(0, 20)}`}
+                                                  >
+                                                    {issue}
+                                                  </li>
+                                                ))}
+                                              </ul>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    <div className="mt-4 text-xs text-gray-500">
+                                      💡{' '}
+                                      {t.shadowing.analysis_based_on_sentence_level ||
+                                        '分析基于句子级别，更直观地显示发音问题'}
+                                    </div>
+                                  </div>
+                                );
+
+                                return (
+                                  <div>
+                                    {/* 整体评分 */}
+                                    <div className="mb-4 p-3 bg-white rounded border">
+                                      <div className="text-sm font-medium mb-2">
+                                        {t.shadowing.overall_score}:
+                                      </div>
+                                      <div className="text-2xl font-bold text-blue-600">
+                                        {overallScore}%
+                                      </div>
+                                    </div>
+
+                                    {/* 句子分析 */}
+                                    <div className="space-y-3">
+                                      {sentenceAnalysis.map((sentence, idx) => (
+                                        <div
+                                          key={idx}
+                                          className={`p-3 rounded border ${sentence.status === 'correct'
+                                            ? 'bg-green-50 border-green-200'
+                                            : sentence.status === 'partial'
+                                              ? 'bg-yellow-50 border-yellow-200'
+                                              : 'bg-red-50 border-red-200'
+                                            }`}
+                                        >
+                                          <div className="flex items-center justify-between mb-2">
+                                            <div className="text-sm font-medium">
+                                              {sentence.status === 'correct' && '✓ '}
+                                              {sentence.status === 'partial' && '⚠ '}
+                                              {sentence.status === 'missing' && '❌ '}
+                                              {t.shadowing.sentence || '句子'} {idx + 1}
+                                            </div>
+                                            <div className="text-sm font-bold">
+                                              {sentence.score}%
+                                            </div>
+                                          </div>
+
+                                          <div className="text-sm mb-2">
+                                            <span className="font-medium">
+                                              {t.shadowing.original_text}:
+                                            </span>
+                                            <span className="text-gray-700">
+                                              &ldquo;{sentence.sentence}&rdquo;
+                                            </span>
+                                          </div>
+
+                                          {sentence.issues.length > 0 && (
+                                            <div className="text-xs">
+                                              <span className="font-medium text-red-600">
+                                                {t.shadowing.issues || '问题'}:
+                                              </span>
+                                              <ul className="mt-1 space-y-1">
+                                                {sentence.issues.map((issue, issueIdx) => (
+                                                  <li
+                                                    key={`issue-${issueIdx}-${issue.substring(0, 20)}`}
+                                                    className="text-red-600"
+                                                  >
+                                                    • {issue}
+                                                  </li>
+                                                ))}
+                                              </ul>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    <div className="mt-3 text-xs text-gray-600">
+                                      💡{' '}
+                                      {t.shadowing.analysis_based_on_sentence_level ||
+                                        '分析基于句子级别，更直观地显示发音问题'}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!practiceComplete && (!gatingActive || step === 4) && (
+                      <div className="flex items-center gap-2 w-full mt-2">
                         <Button
+                          onClick={unifiedCompleteAndSave}
+                          className="flex-1 h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          {t.shadowing.complete_and_save}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="flex-1 h-11"
                           onClick={() => {
                             setPracticeComplete(false);
                             setStep(1);
@@ -5959,26 +5826,55 @@ export default function ShadowingPage() {
                             setIsVocabMode(false);
                             setShowTranslation(false);
                           }}
-                          className="bg-blue-600 hover:bg-blue-700"
                         >
-                          {t.shadowing.practice_again || '再练一次'}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setCurrentItem(null);
-                          }}
-                        >
-                          {t.shadowing.back_to_catalog || '返回题库'}
+                          {t.shadowing.practice_again}
                         </Button>
                       </div>
-                    </Card>
-                  )}
-                </div>
-              )}
-            </div>
+                    )}
+                  </Card>
+                )}
 
+                {/* 完成后成功状态卡片 */}
+                {practiceComplete && (
+                  <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                        <span className="text-white text-lg">✅</span>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900">{t.shadowing.practice_done_title || '练习已完成'}</h3>
+                        <p className="text-sm text-gray-600">{t.shadowing.practice_done_desc || '成绩与生词已保存，你可以选择继续提升'}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 flex-wrap">
+                      <Button
+                        onClick={() => {
+                          setPracticeComplete(false);
+                          setStep(1);
+                          setScoringResult(null);
+                          setIsVocabMode(false);
+                          setShowTranslation(false);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        {t.shadowing.practice_again || '再练一次'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setCurrentItem(null);
+                        }}
+                      >
+                        {t.shadowing.back_to_catalog || '返回题库'}
+                      </Button>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
           </div>
+
+        </div>
       </Container>
 
       {/* 成功提示Toast */}
@@ -5994,7 +5890,7 @@ export default function ShadowingPage() {
           </button>
         </div>
       )}
-      
+
     </main>
   );
 }
