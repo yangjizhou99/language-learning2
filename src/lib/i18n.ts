@@ -126,6 +126,9 @@ export interface Translations {
     load_failed: string;
     loading: string;
     registered_at: string; // e.g. 注册时间 / Registered at / 登録日時
+    recommend_refreshing: string;
+    recommend_refreshed: string;
+    recommend_refresh_failed: string;
     tones: {
       formal: string;
       casual: string;
@@ -940,6 +943,9 @@ const zh: Translations = {
     load_failed: '加载个人资料失败',
     loading: '加载中...',
     registered_at: '注册时间',
+    recommend_refreshing: '正在为你生成个性化推荐...',
+    recommend_refreshed: '已更新个性化推荐偏好，下次练习将自动生效。',
+    recommend_refresh_failed: '推荐偏好刷新失败，将暂时使用旧的推荐结果。',
     tones: {
       formal: '正式',
       casual: '随意',
@@ -1752,6 +1758,9 @@ const en: Translations = {
     load_failed: 'Failed to load profile',
     loading: 'Loading...',
     registered_at: 'Registered at',
+    recommend_refreshing: 'Generating personalized recommendations for you...',
+    recommend_refreshed: 'Personalized recommendation preferences updated, will take effect in next practice.',
+    recommend_refresh_failed: 'Recommendation preference refresh failed, will temporarily use old results.',
     tones: {
       formal: 'Formal',
       casual: 'Casual',
@@ -2568,6 +2577,9 @@ const ja: Translations = {
     load_failed: 'プロフィールの読み込みに失敗しました',
     loading: '読み込み中...',
     registered_at: '登録日時',
+    recommend_refreshing: 'パーソナライズされたおすすめを生成中...',
+    recommend_refreshed: 'パーソナライズされたおすすめ設定を更新しました。次回の練習から有効になります。',
+    recommend_refresh_failed: 'おすすめ設定の更新に失敗しました。暫定的に古い結果を使用します。',
     tones: {
       formal: 'フォーマル',
       casual: 'カジュアル',

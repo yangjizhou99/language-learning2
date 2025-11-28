@@ -177,23 +177,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 先删除原有向量，再插入新向量
-    await supabase.from('theme_scene_vectors').delete().eq('theme_id', theme.id);
+    const newSceneIds = filteredRows.map((r) => r.scene_id);
 
+    // 先插入/更新新的向量，再清理多余的旧向量，避免在插入失败时丢失原始数据
     let insertedCount = 0;
-    if (filteredRows.length > 0) {
-      const { error: insertError } = await supabase
-        .from('theme_scene_vectors')
-        .upsert(filteredRows, { onConflict: 'theme_id,scene_id' });
+    const { error: insertError } = await supabase
+      .from('theme_scene_vectors')
+      .upsert(filteredRows, { onConflict: 'theme_id,scene_id' });
 
-      if (insertError) {
-        console.error('Upsert theme_scene_vectors error:', insertError);
-        return NextResponse.json(
-          { error: 'db_error', detail: insertError.message },
-          { status: 500 },
-        );
-      }
-      insertedCount = filteredRows.length;
+    if (insertError) {
+      console.error('Upsert theme_scene_vectors error:', insertError);
+      return NextResponse.json(
+        { error: 'db_error', detail: insertError.message },
+        { status: 500 },
+      );
+    }
+    insertedCount = filteredRows.length;
+
+    // 清理不再需要的旧场景向量（theme_id 相同但 scene_id 不在本次结果里的行）
+    const { error: deleteError } = await supabase
+      .from('theme_scene_vectors')
+      .delete()
+      .eq('theme_id', theme.id)
+      .not('scene_id', 'in', newSceneIds);
+
+    if (deleteError) {
+      // 记录错误但不影响主流程，最多只会残留一些冗余向量，不会导致数据丢失
+      console.error('Cleanup extra theme_scene_vectors error:', deleteError);
     }
 
     return NextResponse.json({
