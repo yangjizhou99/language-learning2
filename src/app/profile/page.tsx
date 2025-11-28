@@ -54,17 +54,18 @@ const TONE_OPTIONS = [
   { value: 'academic', label: '学术' },
 ];
 
+// 学习场景 / 话题领域选项（与 shadowing_themes 更贴近）
 const DOMAIN_OPTIONS = [
-  { value: 'business', label: '商务' },
-  { value: 'technology', label: '科技' },
-  { value: 'education', label: '教育' },
-  { value: 'healthcare', label: '医疗' },
-  { value: 'finance', label: '金融' },
-  { value: 'travel', label: '旅游' },
-  { value: 'entertainment', label: '娱乐' },
-  { value: 'sports', label: '体育' },
-  { value: 'news', label: '新闻' },
-  { value: 'lifestyle', label: '生活' },
+  { value: 'daily_life', label: '日常生活（作息、周末计划）' },
+  { value: 'family_relationships', label: '家庭与人际（家人、朋友、社交）' },
+  { value: 'food_and_restaurant', label: '饮食与餐厅（点餐、美食）' },
+  { value: 'shopping', label: '购物与消费（买东西、比价）' },
+  { value: 'travel_and_directions', label: '出行与问路（交通、旅游）' },
+  { value: 'school_campus', label: '学校与校园生活' },
+  { value: 'hobbies', label: '兴趣爱好（运动、娱乐、兴趣）' },
+  { value: 'work_parttime', label: '工作与打工（兼职、职场）' },
+  { value: 'romance', label: '恋爱与感情交流' },
+  { value: 'exam_study', label: '考试与学习 / 学术' },
 ];
 
 export default function ProfilePage() {
@@ -120,6 +121,17 @@ export default function ProfilePage() {
   const completion = calcCompletion(formData);
   const missingFields = getMissingFields(formData);
   const isFieldMissing = (key: string) => !isFilled(key, formData);
+
+  // 当资料保存/推荐刷新进行中时，提示用户不要关闭/刷新页面
+  useEffect(() => {
+    if (!saving) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [saving]);
 
   useEffect(() => {
     loadProfile();
@@ -286,8 +298,48 @@ export default function ProfilePage() {
 
       if (error) throw error;
 
+      // 先提示资料保存成功
       toast.success(t.profile.save_success || t.common.success);
       await loadProfile(); // 重新加载数据
+
+      // 然后同步刷新用户在“场景空间”的推荐偏好（调用会比较慢）
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers.Authorization = `Bearer ${session.access_token}`;
+        }
+        // 提示用户正在生成推荐
+        toast.loading(t.profile.recommend_refreshing || '正在为你生成个性化推荐...', {
+          id: 'profile-reco-refresh',
+        });
+        const resp = await fetch('/api/recommend/preferences?refresh=1', {
+          method: 'GET',
+          headers,
+          credentials: 'include',
+        });
+        if (resp.ok) {
+          toast.success(
+            t.profile.recommend_refreshed || '已更新个性化推荐偏好，下次练习将自动生效。',
+            { id: 'profile-reco-refresh' },
+          );
+        } else {
+          toast.error(
+            t.profile.recommend_refresh_failed ||
+              '推荐偏好刷新失败，将暂时使用旧的推荐结果。',
+            { id: 'profile-reco-refresh' },
+          );
+        }
+      } catch (e) {
+        console.error('刷新推荐偏好失败:', e);
+        toast.error(
+          t.profile.recommend_refresh_failed ||
+            '推荐偏好刷新失败，将暂时使用旧的推荐结果。',
+          { id: 'profile-reco-refresh' },
+        );
+      }
     } catch (error) {
       console.error('保存失败:', error);
       toast.error(t.profile.save_failed || t.common.error);
