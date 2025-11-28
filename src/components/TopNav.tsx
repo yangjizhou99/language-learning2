@@ -42,6 +42,7 @@ import {
   Settings,
   LogOut,
   Home,
+  TrendingUp,
 } from 'lucide-react';
 
 export default function TopNav() {
@@ -51,7 +52,7 @@ export default function TopNav() {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const isAdmin = useIsAdmin();
   const { permissions } = useUserPermissions();
-  const {} = useMobile();
+  const { } = useMobile();
   const t = useTranslation();
 
   useEffect(() => {
@@ -190,11 +191,13 @@ export default function TopNav() {
       show: permissions.can_access_alignment,
     },
     { href: '/vocab', label: t.nav.vocabulary, icon: BookOpen, show: true },
+    { href: '/profile/stats', label: '学习统计', icon: TrendingUp, show: !!email },
   ];
 
   // 用户菜单项
   const userMenuItems = [
     { href: '/profile', label: '个人资料', icon: User, show: !!email },
+    { href: '/profile/stats', label: '学习统计', icon: TrendingUp, show: !!email },
     { href: '/admin', label: t.nav.admin, icon: Settings, show: isAdmin },
   ];
 

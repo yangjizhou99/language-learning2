@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useLanguage, useTranslation } from '@/contexts/LanguageContext';
-import { User, Save, Loader2 } from 'lucide-react';
+import { User, Save, Loader2, TrendingUp, ChevronRight } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -328,7 +328,7 @@ export default function ProfilePage() {
         } else {
           toast.error(
             t.profile.recommend_refresh_failed ||
-              '推荐偏好刷新失败，将暂时使用旧的推荐结果。',
+            '推荐偏好刷新失败，将暂时使用旧的推荐结果。',
             { id: 'profile-reco-refresh' },
           );
         }
@@ -336,7 +336,7 @@ export default function ProfilePage() {
         console.error('刷新推荐偏好失败:', e);
         toast.error(
           t.profile.recommend_refresh_failed ||
-            '推荐偏好刷新失败，将暂时使用旧的推荐结果。',
+          '推荐偏好刷新失败，将暂时使用旧的推荐结果。',
           { id: 'profile-reco-refresh' },
         );
       }
@@ -402,6 +402,23 @@ export default function ProfilePage() {
                   {t.profile.progress_tip_prefix}{missingFields.join('、')}
                 </p>
               )}
+            </CardContent>
+          </Card>
+
+
+          {/* 学习统计入口 */}
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100 cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/profile/stats'}>
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white rounded-xl shadow-sm text-blue-600">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg text-gray-900">学习进度统计</h3>
+                  <p className="text-sm text-gray-600">查看你的能力雷达、练习活跃度和准确率趋势</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-400" />
             </CardContent>
           </Card>
 
