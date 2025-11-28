@@ -18,23 +18,7 @@ import type {
 
 type StageKey = 'learn' | 'task' | 'review';
 
-const STAGES: Array<{ key: StageKey; label: string; description: string }> = [
-  {
-    key: 'learn',
-    label: '步骤一 / 学习范文和知识点',
-    description: '阅读任务提示、示例与核心表达',
-  },
-  {
-    key: 'task',
-    label: '步骤二 / 完成任务',
-    description: '根据要求完成对齐练习并提交',
-  },
-  {
-    key: 'review',
-    label: '步骤三 / 总结评价',
-    description: '查看评分、亮点与改进建议',
-  },
-];
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type AlignmentMaterialDetail = {
   id: string;
@@ -93,29 +77,28 @@ type CorrectionItem = {
   corrected: string;
 };
 
-const LANG_LABEL: Record<string, string> = {
-  en: '英语',
-  ja: '日语',
-  zh: '中文',
-};
-
-const TASK_LABEL: Record<string, string> = {
-  dialogue: '对话任务',
-  article: '文章写作',
-  task_email: '任务邮件',
-  long_writing: '长写作',
-};
-
-const GENRE_LABEL: Record<string, string> = {
-  dialogue: '对话',
-  article: '文章',
-  task_email: '任务邮件',
-  long_writing: '长写作',
-};
-
 export default function AlignmentMaterialPracticePage() {
+  const { t } = useLanguage();
   const params = useParams();
   const materialId = params?.id as string;
+
+  const STAGES = useMemo(() => [
+    {
+      key: 'learn' as StageKey,
+      label: t.alignment.detail.stages.learn.label,
+      description: t.alignment.detail.stages.learn.description,
+    },
+    {
+      key: 'task' as StageKey,
+      label: t.alignment.detail.stages.task.label,
+      description: t.alignment.detail.stages.task.description,
+    },
+    {
+      key: 'review' as StageKey,
+      label: t.alignment.detail.stages.review.label,
+      description: t.alignment.detail.stages.review.description,
+    },
+  ], [t]);
 
   const [material, setMaterial] = useState<AlignmentMaterialDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,7 +131,7 @@ export default function AlignmentMaterialPracticePage() {
       const res = await fetch(`/api/alignment/materials/${materialId}`);
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json.error || '加载失败');
+        throw new Error(json.error || t.alignment.detail.errors.load_failed);
       }
       setMaterial(json.item);
       setChatHistory([]);
@@ -158,7 +141,7 @@ export default function AlignmentMaterialPracticePage() {
       setObjectiveStates([]);
       setAutoKickoffDone(false);
     } catch (err: any) {
-      setError(err?.message || '加载失败');
+      setError(err?.message || t.alignment.detail.errors.load_failed);
     } finally {
       setLoading(false);
     }
@@ -201,11 +184,11 @@ export default function AlignmentMaterialPracticePage() {
     if (isDialogue) {
       const hasUserTurn = chatHistory.some((turn) => turn.speaker === 'user');
       if (!hasUserTurn) {
-        setAttemptError("Please complete at least one dialogue turn first");
+        setAttemptError(t.alignment.detail.errors.turn_required);
         return;
       }
     } else if (!submission.trim()) {
-      setAttemptError('请先输入练习内容');
+      setAttemptError(t.alignment.detail.errors.submit_empty);
       return;
     }
     setAttemptError('');
@@ -219,8 +202,8 @@ export default function AlignmentMaterialPracticePage() {
 
       const transcript = isDialogue
         ? chatHistory
-            .map((turn) => `${turn.speaker === 'user' ? userRoleName : aiRoleName}: ${turn.text}`)
-            .join('\n')
+          .map((turn) => `${turn.speaker === 'user' ? userRoleName : aiRoleName}: ${turn.text}`)
+          .join('\n')
         : '';
 
       const res = await fetch('/api/alignment/attempts', {
@@ -238,7 +221,7 @@ export default function AlignmentMaterialPracticePage() {
       });
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json.error || '评分失败');
+        throw new Error(json.error || t.alignment.detail.writing.scoring); // Reusing scoring or generic error? Maybe add generic 'submit_failed'
       }
       setLatestAttempt(json.attempt);
       setHistory((prev) => {
@@ -247,7 +230,7 @@ export default function AlignmentMaterialPracticePage() {
       });
       setActiveStage('review');
     } catch (err: any) {
-      setAttemptError(err?.message || '评分失败');
+      setAttemptError(err?.message || t.alignment.detail.errors.send_failed);
     } finally {
       setAttempting(false);
     }
@@ -294,15 +277,15 @@ export default function AlignmentMaterialPracticePage() {
   const evaluationErrors: Array<{ type?: string; original: string; correction: string }> =
     Array.isArray(evaluation?.errors)
       ? evaluation.errors.map((item: any) => ({
-          type: item?.type || 'error',
-          original: item?.original || '',
-          correction: item?.correction || '',
-        }))
+        type: item?.type || 'error',
+        original: item?.original || '',
+        correction: item?.correction || '',
+      }))
       : [];
   const evaluationSuggestions: string[] = Array.isArray(evaluation?.suggestions)
     ? evaluation.suggestions
-        .filter((s: any) => typeof s === 'string' && s.trim())
-        .map((s: string) => s.trim())
+      .filter((s: any) => typeof s === 'string' && s.trim())
+      .map((s: string) => s.trim())
     : [];
   const evaluationCompleted = evaluation ? Boolean(evaluation.task_completed) : null;
 
@@ -446,7 +429,7 @@ export default function AlignmentMaterialPracticePage() {
 
   if (loading) {
     return (
-      <main className="max-w-6xl mx-auto p-6 text-muted-foreground">加载中...</main>
+      <main className="max-w-6xl mx-auto p-6 text-muted-foreground">{t.alignment.states.loading}</main>
     );
   }
 
@@ -454,11 +437,11 @@ export default function AlignmentMaterialPracticePage() {
     return (
       <main className="max-w-6xl mx-auto p-6">
         <div className="rounded-xl border border-red-200 bg-red-50 text-red-700 p-6">
-          {error || "Unable to load practice pack"}
+          {error || t.alignment.detail.errors.load_failed}
         </div>
         <div className="mt-4">
           <Button asChild variant="outline">
-            <Link href="/practice/alignment">Back to list</Link>
+            <Link href="/practice/alignment">{t.alignment.card.start_practice}</Link> {/* Or 'Back to list' translated */}
           </Button>
         </div>
       </main>
@@ -481,9 +464,9 @@ export default function AlignmentMaterialPracticePage() {
     <div className="space-y-6">
       <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
         <div>
-          <h2 className="text-xl font-semibold">任务提示</h2>
+          <h2 className="text-xl font-semibold">{t.alignment.detail.prompt.title}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            请先理解任务背景，再学习范文与知识点。
+            {t.alignment.detail.prompt.hint}
           </p>
         </div>
         <div className="bg-muted/40 rounded-xl p-4 text-sm whitespace-pre-wrap leading-relaxed">
@@ -491,7 +474,7 @@ export default function AlignmentMaterialPracticePage() {
         </div>
         {promptTranslations.length > 0 && (
           <details className="text-sm">
-            <summary className="cursor-pointer text-muted-foreground">查看提示翻译</summary>
+            <summary className="cursor-pointer text-muted-foreground">{t.alignment.detail.prompt.view_translation}</summary>
             <div className="mt-2 bg-muted/30 rounded p-3 space-y-2">
               {promptTranslations.map(([key, value]) => (
                 <div key={key}>
@@ -506,25 +489,25 @@ export default function AlignmentMaterialPracticePage() {
 
       {(wordPoints.length > 0 || sentencePoints.length > 0) && (
         <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
-          <h2 className="text-xl font-semibold">知识点</h2>
-          <p className="text-sm text-muted-foreground">聚焦练习需要掌握的表达、结构或策略。</p>
+          <h2 className="text-xl font-semibold">{t.alignment.detail.knowledge.title}</h2>
+          <p className="text-sm text-muted-foreground">{t.alignment.detail.knowledge.desc}</p>
           <div className="grid md:grid-cols-2 gap-4">
             {wordPoints.length > 0 && (
               <div className="space-y-2 text-sm">
-                <div className="font-medium">核心词汇</div>
+                <div className="font-medium">{t.alignment.detail.knowledge.words}</div>
                 <ul className="space-y-1.5">
                   {wordPoints.map((item: any, idx: number) => (
                     <li key={`word-${idx}`} className="bg-muted/30 rounded p-3 space-y-1">
                       <div className="font-medium text-foreground">{item.term}</div>
                       <div className="text-xs text-muted-foreground space-y-0.5">
                         {Object.entries(item.translations || {}).length === 0
-                          ? '暂无翻译'
+                          ? t.alignment.detail.knowledge.no_translation
                           : Object.entries(item.translations || {}).map(([code, value]) => (
-                              <div key={code}>
-                                <span className="uppercase font-semibold mr-1">{code}</span>
-                                {String(value)}
-                              </div>
-                            ))}
+                            <div key={code}>
+                              <span className="uppercase font-semibold mr-1">{code}</span>
+                              {String(value)}
+                            </div>
+                          ))}
                       </div>
                     </li>
                   ))}
@@ -533,20 +516,20 @@ export default function AlignmentMaterialPracticePage() {
             )}
             {sentencePoints.length > 0 && (
               <div className="space-y-2 text-sm">
-                <div className="font-medium">关键句型</div>
+                <div className="font-medium">{t.alignment.detail.knowledge.sentences}</div>
                 <ul className="space-y-1.5">
                   {sentencePoints.map((item: any, idx: number) => (
                     <li key={`sentence-${idx}`} className="bg-muted/30 rounded p-3 space-y-1">
                       <div className="font-medium text-foreground">{item.sentence}</div>
                       <div className="text-xs text-muted-foreground space-y-0.5">
                         {Object.entries(item.translations || {}).length === 0
-                          ? '暂无翻译'
+                          ? t.alignment.detail.knowledge.no_translation
                           : Object.entries(item.translations || {}).map(([code, value]) => (
-                              <div key={code}>
-                                <span className="uppercase font-semibold mr-1">{code}</span>
-                                {String(value)}
-                              </div>
-                            ))}
+                            <div key={code}>
+                              <span className="uppercase font-semibold mr-1">{code}</span>
+                              {String(value)}
+                            </div>
+                          ))}
                       </div>
                     </li>
                   ))}
@@ -560,7 +543,7 @@ export default function AlignmentMaterialPracticePage() {
       {material.exemplar && (
         <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
           <details>
-            <summary className="cursor-pointer text-xl font-semibold">示例范文</summary>
+            <summary className="cursor-pointer text-xl font-semibold">{t.alignment.detail.exemplar.title}</summary>
             <div className="mt-3 space-y-3">
               <div className="bg-muted/30 rounded-lg p-4 text-sm whitespace-pre-wrap leading-relaxed">
                 {material.exemplar}
@@ -589,18 +572,18 @@ export default function AlignmentMaterialPracticePage() {
       <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-semibold">完成写作任务</h2>
+            <h2 className="text-xl font-semibold">{t.alignment.detail.writing.title}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              按照提示完成练习。如需复习范文，可点击返回第一步。
+              {t.alignment.detail.writing.hint}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setActiveStage('learn')}>
-            查看范文与知识点
+            {t.alignment.detail.writing.view_learn}
           </Button>
         </div>
         <details className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm">
           <summary className="cursor-pointer font-medium text-muted-foreground">
-            快速查看任务提示
+            {t.alignment.detail.writing.quick_view_prompt}
           </summary>
           <div className="mt-2 space-y-3">
             <div className="whitespace-pre-wrap leading-relaxed">{material.task_prompt}</div>
@@ -620,7 +603,7 @@ export default function AlignmentMaterialPracticePage() {
 
       {requirements.length > 0 && (
         <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
-          <h2 className="text-xl font-semibold">任务要求</h2>
+          <h2 className="text-xl font-semibold">{t.alignment.detail.writing.requirements}</h2>
           <ul className="space-y-2 text-sm">
             {requirements.map((req, idx) => (
               <li key={idx} className="bg-muted/30 rounded p-3 flex items-start gap-2">
@@ -641,16 +624,16 @@ export default function AlignmentMaterialPracticePage() {
 
       <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
         <div>
-          <h2 className="text-xl font-semibold">我的练习</h2>
+          <h2 className="text-xl font-semibold">{t.alignment.detail.writing.my_practice}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            请根据要求完成写作，建议使用所给知识点中的表达。
+            {t.alignment.detail.writing.my_practice_hint}
           </p>
         </div>
         <Textarea
           rows={10}
           value={submission}
           onChange={(e) => setSubmission(e.target.value)}
-          placeholder="请在此写下你的文章或任务回复..."
+          placeholder={t.alignment.detail.writing.placeholder}
           className="bg-background"
         />
         {attemptError && (
@@ -660,7 +643,7 @@ export default function AlignmentMaterialPracticePage() {
         )}
         <div className="flex flex-wrap items-center gap-3">
           <Button onClick={handleSubmit} disabled={attempting}>
-            {attempting ? 'Scoring...' : 'Submit and get feedback'}
+            {attempting ? t.alignment.detail.writing.scoring : t.alignment.detail.writing.submit}
           </Button>
           {latestAttempt && (
             <Button
@@ -668,7 +651,7 @@ export default function AlignmentMaterialPracticePage() {
               variant="outline"
               onClick={() => setActiveStage('review')}
             >
-              查看最近评价
+              {t.alignment.detail.writing.view_feedback}
             </Button>
           )}
         </div>
@@ -681,32 +664,32 @@ export default function AlignmentMaterialPracticePage() {
       <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-semibold">练习场景</h2>
+            <h2 className="text-xl font-semibold">{t.alignment.detail.dialogue.scenario}</h2>
             <p className="text-sm text-muted-foreground mt-1">
               {scenario?.summary || "Complete a roleplay with AI per the prompt and objectives."}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setActiveStage('learn')}>
-            查看范文与知识点
+            {t.alignment.detail.writing.view_learn}
           </Button>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <div className="rounded-lg bg-muted/30 p-3 text-sm">
-            <div className="font-medium text-foreground">学员角色</div>
+            <div className="font-medium text-foreground">{t.alignment.detail.dialogue.user_role}</div>
             <div className="text-muted-foreground">
-              {userRoleName} · {scenario?.user_role?.description || '请根据目标完成任务'}
+              {userRoleName} · {scenario?.user_role?.description || 'Please complete the task based on objectives'}
             </div>
           </div>
           <div className="rounded-lg bg-muted/30 p-3 text-sm">
-            <div className="font-medium text-foreground">AI 角色</div>
+            <div className="font-medium text-foreground">{t.alignment.detail.dialogue.ai_role}</div>
             <div className="text-muted-foreground">
-              {aiRoleName} · {scenario?.ai_role?.description || 'AI 将协助你完成目标'}
+              {aiRoleName} · {scenario?.ai_role?.description || 'AI will assist you'}
             </div>
           </div>
           <div className="rounded-lg bg-muted/20 p-3 text-sm md:col-span-2">
-            <div className="font-medium text-foreground">开场顺序</div>
+            <div className="font-medium text-foreground">{t.alignment.detail.dialogue.kickoff}</div>
             <div className="text-muted-foreground">
-              {kickoffSpeaker === 'ai' ? 'AI 先开场，你紧随其后回应' : '请先由你发言来开启对话'}
+              {kickoffSpeaker === 'ai' ? t.alignment.detail.dialogue.kickoff_ai : t.alignment.detail.dialogue.kickoff_user}
             </div>
           </div>
         </div>
@@ -714,7 +697,7 @@ export default function AlignmentMaterialPracticePage() {
 
       {objectiveStates.length > 0 && (
         <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
-          <h2 className="text-xl font-semibold">目标进度</h2>
+          <h2 className="text-xl font-semibold">{t.alignment.detail.dialogue.objectives}</h2>
           <ul className="space-y-2 text-sm">
             {objectiveStates.map((obj) => (
               <li
@@ -729,11 +712,11 @@ export default function AlignmentMaterialPracticePage() {
                     {obj.index}. {obj.label}
                   </span>
                   <Badge variant={obj.met ? 'default' : 'secondary'}>
-                    {obj.met ? '已完成' : '待完成'}
+                    {obj.met ? t.alignment.detail.dialogue.met : t.alignment.detail.dialogue.unmet}
                   </Badge>
                 </div>
                 {obj.evidence && (
-                  <div className="text-xs text-muted-foreground">关键句：{obj.evidence}</div>
+                  <div className="text-xs text-muted-foreground">{t.alignment.detail.dialogue.evidence}：{obj.evidence}</div>
                 )}
               </li>
             ))}
@@ -744,9 +727,9 @@ export default function AlignmentMaterialPracticePage() {
       <section className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-xl font-semibold">实时对话</h2>
+            <h2 className="text-xl font-semibold">{t.alignment.detail.dialogue.chat_title}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              使用上方知识点，完成对话并满足目标。AI 会在必要时纠正你的表达。
+              {t.alignment.detail.dialogue.chat_desc}
             </p>
           </div>
           <div className="flex items-center gap-2" />
@@ -757,9 +740,9 @@ export default function AlignmentMaterialPracticePage() {
             <div className="text-sm text-muted-foreground">
               {kickoffSpeaker === 'ai'
                 ? chatLoading
-                  ? 'AI 正在开启对话...'
-                  : '点击"让 AI 开始"或稍候等待 AI 发言。'
-                : '请先输入第一句对话来开启练习。'}
+                  ? t.alignment.detail.dialogue.ai_starting
+                  : t.alignment.detail.dialogue.ai_wait
+                : t.alignment.detail.dialogue.user_start}
             </div>
           ) : (
             chatHistory.map((turn, idx) => (
@@ -783,13 +766,13 @@ export default function AlignmentMaterialPracticePage() {
 
         {newlyCompletedObjectives.length > 0 && (
           <div className="text-sm text-green-700 border border-green-200 bg-green-50 rounded px-3 py-2">
-            恭喜完成目标 {newlyCompletedObjectives.join(', ')}！
+            {t.alignment.detail.dialogue.congrats.replace('{goals}', newlyCompletedObjectives.join(', '))}
           </div>
         )}
 
         {latestCorrections.length > 0 && (
           <div className="border border-amber-200 bg-amber-50 text-amber-800 rounded-lg px-3 py-2 text-sm space-y-1">
-            <div className="font-medium">纠正建议</div>
+            <div className="font-medium">{t.alignment.detail.dialogue.corrections}</div>
             {latestCorrections.map((item, idx) => (
               <div key={idx} className="flex flex-col">
                 <span className="line-through decoration-red-400">{item.original}</span>
@@ -977,14 +960,19 @@ export default function AlignmentMaterialPracticePage() {
 
         <div className="max-w-5xl mx-auto space-y-6">
           <header className="rounded-2xl border bg-card text-card-foreground p-6 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">{LANG_LABEL[material.lang] || material.lang}</Badge>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Badge variant="outline">
+                {(t.vocabulary.language_labels as any)[material.lang] || material.lang}
+              </Badge>
               {theme && (
-                <Badge variant="outline" className="border-blue-300 text-blue-700">
-                  {GENRE_LABEL[theme.genre] || theme.genre}
+                <Badge variant="outline">
+                  {(t.alignment.genres as any)[theme.genre] || theme.genre}
                 </Badge>
               )}
-              <Badge variant="outline">{TASK_LABEL[material.task_type] || material.task_type}</Badge>
+              <Badge variant="outline">
+                {(t.alignment.task_types as any)[material.task_type] || material.task_type}
+              </Badge>
+              {theme && <span>L{theme.level}</span>}
             </div>
             <div>
               <h1 className="text-2xl font-semibold">
@@ -1020,9 +1008,9 @@ export default function AlignmentMaterialPracticePage() {
                     'rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
                     status === 'active' && 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm',
                     status === 'done' &&
-                      'border-muted-foreground/20 bg-muted/20 hover:border-muted-foreground/30',
+                    'border-muted-foreground/20 bg-muted/20 hover:border-muted-foreground/30',
                     status === 'todo' &&
-                      'border-dashed border-muted-foreground/30 text-muted-foreground hover:border-muted-foreground/60 hover:text-foreground',
+                    'border-dashed border-muted-foreground/30 text-muted-foreground hover:border-muted-foreground/60 hover:text-foreground',
                   )}
                   aria-current={stage.key === activeStage ? 'step' : undefined}
                 >

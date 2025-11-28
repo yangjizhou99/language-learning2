@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { LANG_LABEL } from '@/types/lang';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface FilterLanguageSelectorProps {
   value: 'ja' | 'en' | 'zh' | 'ko';
@@ -22,9 +22,12 @@ export default function FilterLanguageSelector({
   allowedLanguages,
   className = 'h-11',
 }: FilterLanguageSelectorProps) {
+  const { t } = useLanguage();
+  const labels = t.vocabulary.language_labels;
+
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium text-gray-700">语言</Label>
+      <Label className="text-sm font-medium text-gray-700">{t.vocabulary.filters.language}</Label>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger
           className={`${className} bg-white border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow`}
@@ -34,22 +37,22 @@ export default function FilterLanguageSelector({
         <SelectContent className="rounded-xl border-gray-200 shadow-lg">
           {allowedLanguages.includes('ja') && (
             <SelectItem value="ja" className="rounded-lg">
-              {LANG_LABEL.ja}
+              {labels.ja}
             </SelectItem>
           )}
           {allowedLanguages.includes('en') && (
             <SelectItem value="en" className="rounded-lg">
-              {LANG_LABEL.en}
+              {labels.en}
             </SelectItem>
           )}
           {allowedLanguages.includes('zh') && (
             <SelectItem value="zh" className="rounded-lg">
-              {LANG_LABEL.zh}
+              {labels.zh}
             </SelectItem>
           )}
           {allowedLanguages.includes('ko') && (
             <SelectItem value="ko" className="rounded-lg">
-              {LANG_LABEL.ko}
+              {labels.ko}
             </SelectItem>
           )}
         </SelectContent>

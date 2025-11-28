@@ -74,7 +74,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const t = useTranslation();
   const { language } = useLanguage();
-  
+
   // 请求中止控制器
   const abortRef = useRef<AbortController | null>(null);
 
@@ -90,13 +90,13 @@ export default function ProfilePage() {
   });
 
   const fieldLabels: Record<string, string> = {
-    username: '用户名',
-    bio: '个人简介',
-    goals: '学习目标',
-    preferred_tone: '偏好语气',
-    domains: '兴趣领域',
-    native_lang: '母语',
-    target_langs: '目标语言',
+    username: t.profile.field_labels.username,
+    bio: t.profile.field_labels.bio,
+    goals: t.profile.field_labels.goals,
+    preferred_tone: t.profile.field_labels.preferred_tone,
+    domains: t.profile.field_labels.domains,
+    native_lang: t.profile.field_labels.native_lang,
+    target_langs: t.profile.field_labels.target_langs,
   };
 
   function isFilled(key: string, data: any) {
@@ -140,12 +140,12 @@ export default function ProfilePage() {
     if (abortRef.current) {
       try {
         abortRef.current.abort();
-      } catch {}
+      } catch { }
     }
-    
+
     const controller = new AbortController();
     abortRef.current = controller;
-    
+
     // 设置请求超时（10秒）
     const timeoutId = setTimeout(() => {
       controller.abort();
@@ -159,12 +159,12 @@ export default function ProfilePage() {
         data: { user },
         error: userError,
       } = await supabase.auth.getUser();
-      
+
       // 检查是否被取消
       if (controller.signal.aborted) {
         return;
       }
-      
+
       if (userError) throw userError;
       if (!user) {
         // 未登录：无需抛错，显示登录提示或静默等待上面的 onAuthStateChange 触发
@@ -204,12 +204,12 @@ export default function ProfilePage() {
             .insert({ id: user.id })
             .abortSignal(controller.signal);
           if (insertErr) throw insertErr;
-          
+
           // 检查是否被取消
           if (controller.signal.aborted) {
             return;
           }
-          
+
           // 再次获取
           const { data: created } = await supabase
             .from('profiles')

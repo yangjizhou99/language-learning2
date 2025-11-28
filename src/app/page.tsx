@@ -141,7 +141,7 @@ export default function Home() {
       const second = (profile?.target_langs?.[1] as 'zh' | 'ja' | 'en' | 'ko') || null;
       const hasKorean = profile?.target_langs?.includes('ko') || false;
       const koreanIsThird = hasKorean && preferred !== 'ko' && second !== 'ko';
-      
+
       if (!preferred) { setDaily(null); setDailySecond(null); setDailyKorean(null); return; }
       try {
         const headers = await getAuthHeaders();
@@ -156,7 +156,7 @@ export default function Home() {
           koreanIsThird ? fetchDaily('ko') : Promise.resolve(null),
         ];
         const [pRes, sRes, kRes] = await Promise.all(promises);
-        
+
         if (pRes?.ok) setDaily(pRes.data);
         else setDaily({ lang: preferred, level: 2, error: pRes?.data?.error || 'failed' });
 
@@ -210,7 +210,7 @@ export default function Home() {
           const second = (profile?.target_langs?.[1] as 'zh' | 'ja' | 'en' | 'ko') || null;
           const hasKorean = profile?.target_langs?.includes('ko') || false;
           const koreanIsThird = hasKorean && preferred !== 'ko' && second !== 'ko';
-          
+
           if (preferred) {
             const r = await fetch(`/api/shadowing/daily?lang=${preferred}`, { cache: 'no-store', credentials: 'include', headers });
             const d = await r.json();
@@ -232,7 +232,7 @@ export default function Home() {
             const total = vd?.pagination?.total ?? 0;
             setDueCount(typeof total === 'number' ? total : 0);
           }
-        } catch {}
+        } catch { }
       })();
     };
     window.addEventListener('focus', onFocus);
@@ -272,8 +272,8 @@ export default function Home() {
       show: permissions.can_access_shadowing,
     },
     {
-      title: 'AI发音纠正',
-      description: '精准评测发音，快速定位问题',
+      title: t.home.quick_access_pronunciation,
+      description: t.home.quick_access_pronunciation_desc,
       icon: Mic,
       href: '/practice/pronunciation',
       color: 'bg-red-500',
@@ -281,7 +281,7 @@ export default function Home() {
     },
     {
       title: t.nav.alignment_practice,
-      description: '对齐练习，理解语言结构',
+      description: t.home.quick_access_alignment_desc,
       icon: AlignCenter,
       href: '/practice/alignment',
       color: 'bg-purple-500',
@@ -289,15 +289,15 @@ export default function Home() {
     },
     {
       title: t.nav.vocabulary,
-      description: '生词管理，积累词汇量',
+      description: t.home.quick_access_vocab_desc,
       icon: BookOpen,
       href: '/vocab',
       color: 'bg-indigo-500',
       show: true,
     },
     {
-      title: '个人资料',
-      description: '管理个人信息和学习目标',
+      title: t.home.quick_access_profile,
+      description: t.home.quick_access_profile_desc,
       icon: User,
       href: '/profile',
       color: 'bg-pink-500',
@@ -307,9 +307,9 @@ export default function Home() {
 
   // 学习进度数据
   const progressData = [
-    { label: '今日学习', value: 45, total: 60, unit: '分钟' },
-    { label: '本周目标', value: 4, total: 7, unit: '天' },
-    { label: '词汇掌握', value: stats.totalVocab, total: 100, unit: '个' },
+    { label: t.home.progress_today, value: 45, total: 60, unit: t.home.unit_minutes },
+    { label: t.home.progress_week, value: 4, total: 7, unit: t.home.unit_days },
+    { label: t.home.progress_vocab, value: stats.totalVocab, total: 100, unit: t.home.unit_words },
   ];
 
   // 为数字添加计数动画

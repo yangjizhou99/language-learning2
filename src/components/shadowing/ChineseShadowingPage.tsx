@@ -4355,7 +4355,7 @@ export default function ShadowingPage() {
                                   </div>
                                   <div className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">{it.text.substring(0, 60)}...</div>
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${it.lang === 'en' ? 'bg-blue-100 text-blue-700' : it.lang === 'ja' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{(LANG_LABEL as any)[it.lang]}</span>
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${it.lang === 'en' ? 'bg-blue-100 text-blue-700' : it.lang === 'ja' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{(t.vocabulary.language_labels as any)[it.lang]}</span>
                                     <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">L{it.level}</span>
                                     {it.cefr && (<span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">{it.cefr}</span>)}
                                     {it.tokens && (<span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">{it.tokens}词</span>)}
@@ -4462,7 +4462,7 @@ export default function ShadowingPage() {
                                 : 'bg-green-100 text-green-700'
                               }`}
                           >
-                            {LANG_LABEL[currentItem.lang]}
+                            {(t.vocabulary.language_labels as any)[currentItem.lang]}
                           </span>
                           <span className="snap-start flex-shrink-0 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
                             {t.shadowing.level} L{currentItem.level}
