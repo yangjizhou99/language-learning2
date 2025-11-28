@@ -11,6 +11,7 @@ import {
   ALIGNMENT_LEVELS,
   ALIGNMENT_TASK_TYPES,
 } from '@/lib/alignment/constants';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type CatalogTheme = {
   id: string;
@@ -38,27 +39,8 @@ type CatalogItem = {
   subtopic: CatalogSubtopic;
 };
 
-const LANG_LABEL: Record<string, string> = {
-  en: '英语',
-  ja: '日语',
-  zh: '中文',
-};
-
-const GENRE_LABEL: Record<string, string> = {
-  dialogue: '对话',
-  article: '文章',
-  task_email: '任务邮件',
-  long_writing: '长写作',
-};
-
-const TASK_LABEL: Record<string, string> = {
-  dialogue: '对话任务',
-  article: '文章写作',
-  task_email: '任务邮件',
-  long_writing: '长写作',
-};
-
 export default function AlignmentCatalogPage() {
+  const { t } = useLanguage();
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -81,15 +63,15 @@ export default function AlignmentCatalogPage() {
       const res = await fetch(`/api/alignment/materials?${params.toString()}`);
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json.error || '加载失败');
+        throw new Error(json.error || t.alignment.states.error.replace('{error}', 'Failed to load'));
       }
       setItems(json.items || []);
     } catch (err: any) {
-      setError(err?.message || '加载失败');
+      setError(err?.message || t.alignment.states.error.replace('{error}', 'Failed to load'));
     } finally {
       setLoading(false);
     }
-  }, [lang, level, genre, taskType]);
+  }, [lang, level, genre, taskType, t]);
 
   useEffect(() => {
     load();
@@ -117,36 +99,36 @@ export default function AlignmentCatalogPage() {
   return (
     <main className="p-6">
       <Container>
-        <Breadcrumbs items={[{ href: '/', label: '首页' }, { label: '对齐练习' }]} />
+        <Breadcrumbs items={[{ href: '/', label: t.nav.home }, { label: t.nav.alignment_practice }]} />
 
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="rounded-2xl border bg-card text-card-foreground p-6 space-y-4">
             <div>
-              <h1 className="text-2xl font-semibold">对齐练习 · 训练包列表</h1>
+              <h1 className="text-2xl font-semibold">{t.alignment.title}</h1>
               <p className="text-muted-foreground mt-2">
-                根据语言和等级选择训练包，阅读范文与知识点后完成任务，获取实时 AI 反馈。
+                {t.alignment.description}
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">语言</label>
+                <label className="text-sm font-medium">{t.alignment.labels.language}</label>
                 <select
                   className="w-full border rounded px-3 py-2 text-sm"
                   value={lang}
                   onChange={(e) => setLang(e.target.value as typeof lang)}
                 >
-                  <option value="all">全部</option>
+                  <option value="all">{t.alignment.labels.all}</option>
                   {ALIGNMENT_LANGS.map((code) => (
                     <option key={code} value={code}>
-                      {LANG_LABEL[code]}
+                      {(t.vocabulary.language_labels as any)[code] || code}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">等级</label>
+                <label className="text-sm font-medium">{t.alignment.labels.level}</label>
                 <select
                   className="w-full border rounded px-3 py-2 text-sm"
                   value={level}
@@ -154,7 +136,7 @@ export default function AlignmentCatalogPage() {
                     setLevel(e.target.value === 'all' ? 'all' : Number(e.target.value))
                   }
                 >
-                  <option value="all">全部</option>
+                  <option value="all">{t.alignment.labels.all}</option>
                   {ALIGNMENT_LEVELS.map((lvl) => (
                     <option key={lvl} value={lvl}>
                       L{lvl}
@@ -164,32 +146,32 @@ export default function AlignmentCatalogPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">主题体裁</label>
+                <label className="text-sm font-medium">{t.alignment.labels.genre}</label>
                 <select
                   className="w-full border rounded px-3 py-2 text-sm"
                   value={genre}
                   onChange={(e) => setGenre(e.target.value as typeof genre)}
                 >
-                  <option value="all">全部</option>
+                  <option value="all">{t.alignment.labels.all}</option>
                   {ALIGNMENT_GENRES.map((g) => (
                     <option key={g} value={g}>
-                      {GENRE_LABEL[g]}
+                      {(t.alignment.genres as any)[g] || g}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">任务类型</label>
+                <label className="text-sm font-medium">{t.alignment.labels.task_type}</label>
                 <select
                   className="w-full border rounded px-3 py-2 text-sm"
                   value={taskType}
                   onChange={(e) => setTaskType(e.target.value as typeof taskType)}
                 >
-                  <option value="all">全部</option>
+                  <option value="all">{t.alignment.labels.all}</option>
                   {ALIGNMENT_TASK_TYPES.map((type) => (
                     <option key={type} value={type}>
-                      {TASK_LABEL[type]}
+                      {(t.alignment.task_types as any)[type] || type}
                     </option>
                   ))}
                 </select>
@@ -199,28 +181,27 @@ export default function AlignmentCatalogPage() {
 
           {loading ? (
             <div className="rounded-2xl border bg-card text-card-foreground p-6 text-muted-foreground">
-              加载中…
+              {t.alignment.states.loading}
             </div>
           ) : error ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 text-red-700 p-6">
-              错误：{error}
+              {t.alignment.states.error.replace('{error}', error)}
             </div>
           ) : items.length === 0 ? (
             <div className="rounded-2xl border bg-card text-card-foreground p-10 text-center text-muted-foreground">
-              暂无符合条件的训练包
+              {t.alignment.states.empty}
             </div>
           ) : (
             <div className="space-y-6">
               {themeGroups.map(({ theme, materials }) => (
                 <section key={theme?.id || materials[0].id} className="space-y-3">
                   <header>
-                    <h2 className="text-xl font-semibold">{theme?.title || '未分类主题'}</h2>
+                    <h2 className="text-xl font-semibold">{theme?.title || t.alignment.card.unnamed_subtopic}</h2>
                     <p className="text-sm text-muted-foreground">
                       {theme
-                        ? `语言：${LANG_LABEL[theme.lang] || theme.lang} · 等级：L${
-                            theme.level
-                          } · 体裁：${GENRE_LABEL[theme.genre] || theme.genre}`
-                        : '该主题缺少元信息'}
+                        ? `${t.alignment.card.language}：${(t.vocabulary.language_labels as any)[theme.lang] || theme.lang} · ${t.alignment.card.level}：L${theme.level
+                        } · ${t.alignment.card.genre}：${(t.alignment.genres as any)[theme.genre] || theme.genre}`
+                        : t.alignment.card.missing_meta}
                     </p>
                   </header>
 
@@ -235,15 +216,15 @@ export default function AlignmentCatalogPage() {
                         >
                           <div className="flex items-center justify-between mb-3">
                             <span className="px-2 py-1 rounded text-xs bg-blue-50 text-blue-700">
-                              {LANG_LABEL[material.lang] || material.lang}
+                              {(t.vocabulary.language_labels as any)[material.lang] || material.lang}
                             </span>
                             <span className="px-2 py-1 rounded text-xs bg-slate-100 text-slate-700">
-                              {TASK_LABEL[material.task_type] || material.task_type}
+                              {(t.alignment.task_types as any)[material.task_type] || material.task_type}
                             </span>
                           </div>
 
                           <h3 className="font-medium text-lg">
-                            {subtopic?.title || '未命名小主题'}
+                            {subtopic?.title || t.alignment.card.unnamed_subtopic}
                           </h3>
                           {subtopic?.one_line && (
                             <p className="text-sm text-muted-foreground mt-1">
@@ -252,11 +233,11 @@ export default function AlignmentCatalogPage() {
                           )}
 
                           <ul className="text-xs text-muted-foreground mt-2 space-y-1">
-                            <li>等级：L{subtopic?.level ?? '?'}</li>
-                            <li>更新时间：{new Date(material.updated_at).toLocaleString()}</li>
+                            <li>{t.alignment.card.level}：L{subtopic?.level ?? '?'}</li>
+                            <li>{t.alignment.card.updated_at}：{new Date(material.updated_at).toLocaleString()}</li>
                             {objectives.length > 0 && (
                               <li>
-                                训练目标：
+                                {t.alignment.card.objectives}：
                                 {objectives
                                   .map((obj) => obj?.label || obj?.title || '')
                                   .filter(Boolean)
@@ -266,7 +247,7 @@ export default function AlignmentCatalogPage() {
                           </ul>
 
                           <Button asChild className="w-full mt-4">
-                            <Link href={`/practice/alignment/${material.id}`}>开始练习</Link>
+                            <Link href={`/practice/alignment/${material.id}`}>{t.alignment.card.start_practice}</Link>
                           </Button>
                         </article>
                       );
@@ -278,9 +259,9 @@ export default function AlignmentCatalogPage() {
           )}
 
           <div className="rounded-2xl p-6 bg-blue-50">
-            <h3 className="font-medium text-blue-900 mb-2">练习提示</h3>
+            <h3 className="font-medium text-blue-900 mb-2">{t.alignment.tips.title}</h3>
             <p className="text-blue-800 text-sm leading-relaxed">
-              每个训练包包含任务提示、范文、知识点与评分标准。请先阅读范文并标记核心表达，再按照要求逐条完成任务，提交后可以获得 AI 总分与改进建议。
+              {t.alignment.tips.content}
             </p>
           </div>
         </div>

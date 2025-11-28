@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation, useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -35,25 +36,32 @@ type GeneratedTheme = {
   summary_translations: Record<string, string>;
 };
 
-const LEVEL_OPTIONS = [{ label: '全部', value: 'all' }, ...ALIGNMENT_LEVELS.map((level) => ({
-  label: `L${level}`,
-  value: String(level),
-}))];
-
-const GENRE_LABEL: Record<AlignmentGenre, string> = {
-  dialogue: '对话',
-  article: '文章',
-  task_email: '任务邮件',
-  long_writing: '长写作',
-};
-
-const LANG_LABEL: Record<AlignmentLang, string> = {
-  en: '英语',
-  ja: '日语',
-  zh: '中文',
-};
+// Constants moved inside component for localization
 
 export default function AlignmentThemesPage() {
+  const t = useTranslation();
+  const { language } = useLanguage();
+
+  const LEVEL_OPTIONS = useMemo(() => [
+    { label: t.alignment.labels.all, value: 'all' },
+    ...ALIGNMENT_LEVELS.map((level) => ({
+      label: `L${level}`,
+      value: String(level),
+    }))
+  ], [t]);
+
+  const GENRE_LABEL = useMemo(() => ({
+    dialogue: t.alignment.genres.dialogue,
+    article: t.alignment.genres.article,
+    task_email: t.alignment.genres.task_email,
+    long_writing: t.alignment.genres.long_writing,
+  } as Record<AlignmentGenre, string>), [t]);
+
+  const LANG_LABEL = useMemo(() => ({
+    en: t.profile.language_labels.en,
+    ja: t.profile.language_labels.ja,
+    zh: t.profile.language_labels.zh,
+  } as Record<AlignmentLang, string>), [t]);
   const [items, setItems] = useState<AlignmentTheme[]>([]);
   const [lang, setLang] = useState<string>('all');
   const [level, setLevel] = useState<string>('all');
@@ -103,11 +111,11 @@ export default function AlignmentThemesPage() {
         headers: await getAuthHeaders(),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || '加载失败');
+      if (!res.ok) throw new Error(json.error || t.common.error);
       setItems(json.items || []);
     } catch (error) {
       console.error(error);
-      alert((error as Error).message || '加载失败');
+      alert((error as Error).message || t.common.error);
     } finally {
       setLoading(false);
     }
@@ -149,7 +157,7 @@ export default function AlignmentThemesPage() {
   const saveTheme = useCallback(async () => {
     if (!editingItem) return;
     if (!editingItem.title?.trim()) {
-      alert('标题不能为空');
+      alert(t.admin.alignment_themes.alert_title_empty);
       return;
     }
 
@@ -171,13 +179,13 @@ export default function AlignmentThemesPage() {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || '保存失败');
+      if (!res.ok) throw new Error(json.error || t.profile.save_failed);
       setEditorOpen(false);
       setEditingItem(null);
       await loadThemes();
     } catch (error) {
       console.error(error);
-      alert((error as Error).message || '保存失败');
+      alert((error as Error).message || t.profile.save_failed);
     } finally {
       setSaving(false);
     }
@@ -186,32 +194,32 @@ export default function AlignmentThemesPage() {
   const updateStatus = useCallback(
     async (next: 'draft' | 'active' | 'archived') => {
       if (selectedIds.length === 0) {
-        alert('请先选择主题');
+        alert(t.vocabulary.messages.no_vocab); // Use existing "No vocab" or similar "Please select"
         return;
       }
 
-      if (!window.confirm(`确认将 ${selectedIds.length} 个主题更新为 ${next} 状态吗？`)) return;
+      if (!window.confirm(t.admin.alignment_themes.confirm_status_update.replace('{count}', selectedIds.length.toString()).replace('{status}', next))) return;
 
-    try {
-      const res = await fetch('/api/admin/alignment/themes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(await getAuthHeaders()),
-        },
-        body: JSON.stringify({
-          action: 'bulk-status',
-          ids: selectedIds,
-          status: next,
-        }),
+      try {
+        const res = await fetch('/api/admin/alignment/themes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(await getAuthHeaders()),
+          },
+          body: JSON.stringify({
+            action: 'bulk-status',
+            ids: selectedIds,
+            status: next,
+          }),
         });
         const json = await res.json();
-        if (!res.ok) throw new Error(json.error || '更新失败');
+        if (!res.ok) throw new Error(json.error || t.vocabulary.messages.update_failed);
         setSelected({});
         await loadThemes();
       } catch (error) {
         console.error(error);
-        alert((error as Error).message || '更新失败');
+        alert((error as Error).message || t.vocabulary.messages.update_failed);
       }
     },
     [selectedIds, loadThemes, getAuthHeaders],
@@ -236,11 +244,11 @@ export default function AlignmentThemesPage() {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || '生成失败');
+      if (!res.ok) throw new Error(json.error || t.vocabulary.messages.generation_failed.replace('{error}', ''));
       setGeneratePreview(json.items || []);
     } catch (error) {
       console.error(error);
-      alert((error as Error).message || '生成失败');
+      alert((error as Error).message || t.vocabulary.messages.generation_failed.replace('{error}', ''));
     } finally {
       setGenerating(false);
     }
@@ -248,7 +256,7 @@ export default function AlignmentThemesPage() {
 
   const applyGenerated = useCallback(async () => {
     if (generatePreview.length === 0) return;
-    const confirmed = window.confirm(`确认保存 ${generatePreview.length} 个生成主题吗？`);
+    const confirmed = window.confirm(t.admin.alignment_themes.confirm_save_generated.replace('{count}', generatePreview.length.toString()));
     if (!confirmed) return;
 
     try {
@@ -288,31 +296,31 @@ export default function AlignmentThemesPage() {
     <main className="max-w-6xl mx-auto p-6 space-y-6">
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">对齐练习 · 大主题管理</h1>
+          <h1 className="text-2xl font-semibold">{t.admin.alignment_themes.title}</h1>
           <p className="text-sm text-muted-foreground">
-            生成并维护大主题，后续可为每个主题创建小主题与训练包。
+            {t.admin.alignment_themes.subtitle}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={loadThemes} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-            刷新
+            {t.common.loading}
           </Button>
           <Dialog open={generateOpen} onOpenChange={setGenerateOpen}>
             <DialogTrigger asChild>
-              <Button variant="secondary">AI 生成主题</Button>
+              <Button variant="secondary">{t.admin.alignment_themes.ai_generate}</Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl">
               <DialogHeader>
-                <DialogTitle>批量生成大主题</DialogTitle>
+                <DialogTitle>{t.admin.alignment_themes.batch_generate_title}</DialogTitle>
                 <DialogDescription>
-                  将根据当前筛选条件（语言/等级/体裁）生成不重复的新主题。仅使用 DeepSeek 模型。
+                  {t.admin.alignment_themes.batch_generate_desc}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label>生成数量</Label>
+                    <Label>{t.admin.alignment_themes.generate_count}</Label>
                     <Input
                       type="number"
                       min={1}
@@ -335,7 +343,7 @@ export default function AlignmentThemesPage() {
                 </div>
                 <Button onClick={runGenerate} disabled={generating}>
                   {generating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  生成
+                  {t.admin.alignment_themes.generate}
                 </Button>
                 {generatePreview.length > 0 && (
                   <div className="space-y-3 max-h-80 overflow-y-auto border rounded-md p-3 bg-muted/40">
@@ -360,31 +368,31 @@ export default function AlignmentThemesPage() {
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setGeneratePreview([])}>
-                  清空
+                  {t.admin.alignment_themes.clear}
                 </Button>
                 <Button onClick={applyGenerated} disabled={generatePreview.length === 0}>
-                  保存
+                  {t.common.save}
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
-          <Button onClick={openCreateModal}>新建</Button>
+          <Button onClick={openCreateModal}>{t.admin.alignment_themes.create}</Button>
         </div>
       </header>
 
       <section className="space-y-4">
         <div className="flex flex-wrap gap-3 items-center">
           <Input
-            placeholder="搜索主题标题"
+            placeholder={t.admin.alignment_themes.search_placeholder}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="w-60"
           />
           <div className="flex items-center gap-2">
-            <Label>语言</Label>
+            <Label>{t.alignment.labels.language}</Label>
             <Select value={lang} onValueChange={setLang}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="全部语言" />
+                <SelectValue placeholder={t.vocabulary.filters.all_languages} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">全部</SelectItem>
@@ -397,10 +405,10 @@ export default function AlignmentThemesPage() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <Label>等级</Label>
+            <Label>{t.alignment.labels.level}</Label>
             <Select value={level} onValueChange={setLevel}>
               <SelectTrigger className="w-28">
-                <SelectValue placeholder="全部等级" />
+                <SelectValue placeholder={t.vocabulary.filters.all_levels} />
               </SelectTrigger>
               <SelectContent>
                 {LEVEL_OPTIONS.map((opt) => (
@@ -412,13 +420,13 @@ export default function AlignmentThemesPage() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <Label>体裁</Label>
+            <Label>{t.alignment.labels.genre}</Label>
             <Select value={genre} onValueChange={setGenre}>
               <SelectTrigger className="w-36">
-                <SelectValue placeholder="全部体裁" />
+                <SelectValue placeholder={t.vocabulary.filters.all_genres} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部</SelectItem>
+                <SelectItem value="all">{t.vocabulary.filters.all_genres}</SelectItem>
                 {ALIGNMENT_GENRES.map((g) => (
                   <SelectItem key={g} value={g}>
                     {GENRE_LABEL[g]}
@@ -428,16 +436,16 @@ export default function AlignmentThemesPage() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <Label>状态</Label>
+            <Label>{t.vocabulary.filters.status}</Label>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="w-32">
-                <SelectValue placeholder="全部状态" />
+                <SelectValue placeholder={t.vocabulary.filters.all_status} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">全部</SelectItem>
-                <SelectItem value="draft">草稿</SelectItem>
-                <SelectItem value="active">已发布</SelectItem>
-                <SelectItem value="archived">已归档</SelectItem>
+                <SelectItem value="all">{t.alignment.labels.all}</SelectItem>
+                <SelectItem value="draft">{t.admin.alignment_themes.status_draft}</SelectItem>
+                <SelectItem value="active">{t.admin.alignment_themes.status_active}</SelectItem>
+                <SelectItem value="archived">{t.admin.alignment_themes.status_archived}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -446,16 +454,16 @@ export default function AlignmentThemesPage() {
         {selectedIds.length > 0 && (
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" onClick={() => updateStatus('draft')}>
-              转为草稿
+              {t.admin.alignment_themes.action_draft}
             </Button>
             <Button size="sm" variant="outline" onClick={() => updateStatus('active')}>
-              发布
+              {t.admin.alignment_themes.action_publish}
             </Button>
             <Button size="sm" variant="destructive" onClick={() => updateStatus('archived')}>
-              归档
+              {t.admin.alignment_themes.action_archive}
             </Button>
             <div className="text-sm text-muted-foreground self-center">
-              已选 {selectedIds.length} 项
+              {t.admin.alignment_themes.selected_count.replace('{count}', selectedIds.length.toString())}
             </div>
           </div>
         )}
@@ -467,7 +475,7 @@ export default function AlignmentThemesPage() {
             <Loader2 className="w-6 h-6 animate-spin" />
           </div>
         ) : items.length === 0 ? (
-          <div className="p-10 text-center text-muted-foreground">暂无数据</div>
+          <div className="p-10 text-center text-muted-foreground">{t.admin.alignment_themes.no_data}</div>
         ) : (
           items.map((item) => (
             <div key={item.id} className="p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -486,17 +494,17 @@ export default function AlignmentThemesPage() {
                     <Badge variant="outline">L{item.level}</Badge>
                     <Badge variant="outline">{GENRE_LABEL[item.genre]}</Badge>
                     <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
-                      {item.status === 'active' ? '已发布' : item.status === 'draft' ? '草稿' : '已归档'}
+                      {item.status === 'active' ? t.admin.alignment_themes.status_active : item.status === 'draft' ? t.admin.alignment_themes.status_draft : t.admin.alignment_themes.status_archived}
                     </Badge>
                     <Badge variant="outline">
-                      小主题 {item.subtopic_count ?? 0}
+                      {t.admin.alignment_themes.subtopic_count.replace('{count}', (item.subtopic_count ?? 0).toString())}
                     </Badge>
                   </div>
                 </div>
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => openEditModal(item)}>
-                  编辑
+                  {t.common.edit}
                 </Button>
               </div>
             </div>
@@ -507,14 +515,14 @@ export default function AlignmentThemesPage() {
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingItem?.id ? '编辑主题' : '新建主题'}</DialogTitle>
-            <DialogDescription>维护标题、翻译与概述信息。</DialogDescription>
+            <DialogTitle>{editingItem?.id ? t.admin.alignment_themes.edit_title : t.admin.alignment_themes.create_title}</DialogTitle>
+            <DialogDescription>{t.admin.alignment_themes.modal_desc}</DialogDescription>
           </DialogHeader>
           {editingItem && (
             <div className="space-y-4">
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <Label>语言</Label>
+                  <Label>{t.alignment.labels.language}</Label>
                   <Select
                     value={editingItem.lang || 'en'}
                     onValueChange={(val) =>
@@ -522,7 +530,7 @@ export default function AlignmentThemesPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="选择语言" />
+                      <SelectValue placeholder={t.alignment.labels.language} />
                     </SelectTrigger>
                     <SelectContent>
                       {ALIGNMENT_LANGS.map((code) => (
@@ -534,7 +542,7 @@ export default function AlignmentThemesPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label>等级</Label>
+                  <Label>{t.alignment.labels.level}</Label>
                   <Select
                     value={String(editingItem.level || 1)}
                     onValueChange={(val) =>
@@ -544,7 +552,7 @@ export default function AlignmentThemesPage() {
                     }
                   >
                     <SelectTrigger className="w-32">
-                      <SelectValue placeholder="选择等级" />
+                      <SelectValue placeholder={t.alignment.labels.level} />
                     </SelectTrigger>
                     <SelectContent>
                       {ALIGNMENT_LEVELS.map((lvl) => (
@@ -556,7 +564,7 @@ export default function AlignmentThemesPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label>体裁</Label>
+                  <Label>{t.alignment.labels.genre}</Label>
                   <Select
                     value={editingItem.genre || 'dialogue'}
                     onValueChange={(val) =>
@@ -566,7 +574,7 @@ export default function AlignmentThemesPage() {
                     }
                   >
                     <SelectTrigger className="w-36">
-                      <SelectValue placeholder="选择体裁" />
+                      <SelectValue placeholder={t.alignment.labels.genre} />
                     </SelectTrigger>
                     <SelectContent>
                       {ALIGNMENT_GENRES.map((g) => (
@@ -580,7 +588,7 @@ export default function AlignmentThemesPage() {
               </div>
 
               <div>
-                <Label>标题（主语言）</Label>
+                <Label>{t.admin.alignment_themes.label_title_main}</Label>
                 <Input
                   value={editingItem.title || ''}
                   onChange={(e) =>
@@ -592,19 +600,19 @@ export default function AlignmentThemesPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {ALIGNMENT_LANGS.map((code) => (
                   <div key={code}>
-                    <Label>{`标题翻译 (${LANG_LABEL[code]})`}</Label>
+                    <Label>{t.admin.alignment_themes.label_title_trans.replace('{lang}', LANG_LABEL[code])}</Label>
                     <Input
                       value={editingItem.title_translations?.[code] || ''}
                       onChange={(e) =>
                         setEditingItem((prev) =>
                           prev
                             ? {
-                                ...prev,
-                                title_translations: {
-                                  ...prev.title_translations,
-                                  [code]: e.target.value,
-                                },
-                              }
+                              ...prev,
+                              title_translations: {
+                                ...prev.title_translations,
+                                [code]: e.target.value,
+                              },
+                            }
                             : prev,
                         )
                       }
@@ -614,7 +622,7 @@ export default function AlignmentThemesPage() {
               </div>
 
               <div>
-                <Label>主题概述（主语言）</Label>
+                <Label>{t.admin.alignment_themes.label_summary_main}</Label>
                 <Textarea
                   rows={3}
                   value={editingItem.summary || ''}
@@ -627,7 +635,7 @@ export default function AlignmentThemesPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {ALIGNMENT_LANGS.map((code) => (
                   <div key={code}>
-                    <Label>{`概述翻译 (${LANG_LABEL[code]})`}</Label>
+                    <Label>{t.admin.alignment_themes.label_summary_trans.replace('{lang}', LANG_LABEL[code])}</Label>
                     <Textarea
                       rows={2}
                       value={editingItem.summary_translations?.[code] || ''}
@@ -635,12 +643,12 @@ export default function AlignmentThemesPage() {
                         setEditingItem((prev) =>
                           prev
                             ? {
-                                ...prev,
-                                summary_translations: {
-                                  ...prev.summary_translations,
-                                  [code]: e.target.value,
-                                },
-                              }
+                              ...prev,
+                              summary_translations: {
+                                ...prev.summary_translations,
+                                [code]: e.target.value,
+                              },
+                            }
                             : prev,
                         )
                       }
@@ -652,11 +660,11 @@ export default function AlignmentThemesPage() {
           )}
           <div className="flex justify-end gap-2 mt-6">
             <Button variant="outline" onClick={() => setEditorOpen(false)}>
-              取消
+              {t.common.cancel}
             </Button>
             <Button onClick={saveTheme} disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              保存
+              {t.common.save}
             </Button>
           </div>
         </DialogContent>

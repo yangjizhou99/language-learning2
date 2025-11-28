@@ -85,6 +85,20 @@ export interface Translations {
     tasks_vocab_done: string;
     tasks_go_review: string;
     tasks_completed_badge: string;
+    // Quick Access
+    quick_access_pronunciation: string;
+    quick_access_pronunciation_desc: string;
+    quick_access_profile: string;
+    quick_access_profile_desc: string;
+    quick_access_alignment_desc: string;
+    quick_access_vocab_desc: string;
+    // Progress
+    progress_today: string;
+    progress_week: string;
+    progress_vocab: string;
+    unit_minutes: string;
+    unit_days: string;
+    unit_words: string;
   };
 
   // 个人资料页面
@@ -156,6 +170,15 @@ export interface Translations {
       example_label: string;
       example_text: string;
     };
+    field_labels: {
+      username: string;
+      bio: string;
+      goals: string;
+      preferred_tone: string;
+      domains: string;
+      native_lang: string;
+      target_langs: string;
+    };
   };
 
   // 导航
@@ -192,6 +215,37 @@ export interface Translations {
     ai_generation: string;
     batch_generation: string;
     settings: string;
+    alignment_themes: {
+      title: string;
+      subtitle: string;
+      ai_generate: string;
+      batch_generate_title: string;
+      batch_generate_desc: string;
+      generate_count: string;
+      generate: string;
+      clear: string;
+      create: string;
+      search_placeholder: string;
+      status_draft: string;
+      status_active: string;
+      status_archived: string;
+      action_draft: string;
+      action_publish: string;
+      action_archive: string;
+      selected_count: string;
+      no_data: string;
+      subtopic_count: string;
+      edit_title: string;
+      create_title: string;
+      modal_desc: string;
+      label_title_main: string;
+      label_summary_main: string;
+      label_title_trans: string;
+      label_summary_trans: string;
+      alert_title_empty: string;
+      confirm_status_update: string;
+      confirm_save_generated: string;
+    };
   };
 
   // 表单标签
@@ -512,6 +566,111 @@ export interface Translations {
     };
   };
 
+  // 对齐练习
+  alignment: {
+    title: string;
+    description: string;
+    labels: {
+      language: string;
+      level: string;
+      genre: string;
+      task_type: string;
+      all: string;
+    };
+    genres: {
+      dialogue: string;
+      article: string;
+      task_email: string;
+      long_writing: string;
+    };
+    task_types: {
+      dialogue: string;
+      article: string;
+      task_email: string;
+      long_writing: string;
+    };
+    card: {
+      language: string;
+      level: string;
+      genre: string;
+      updated_at: string;
+      objectives: string;
+      start_practice: string;
+      unnamed_subtopic: string;
+      missing_meta: string;
+    };
+    tips: {
+      title: string;
+      content: string;
+    };
+    states: {
+      loading: string;
+      error: string;
+      empty: string;
+    };
+    detail: {
+      stages: {
+        learn: { label: string; description: string };
+        task: { label: string; description: string };
+        review: { label: string; description: string };
+      };
+      prompt: {
+        title: string;
+        hint: string;
+        view_translation: string;
+      };
+      knowledge: {
+        title: string;
+        desc: string;
+        words: string;
+        sentences: string;
+        no_translation: string;
+      };
+      exemplar: {
+        title: string;
+      };
+      writing: {
+        title: string;
+        hint: string;
+        view_learn: string;
+        quick_view_prompt: string;
+        requirements: string;
+        my_practice: string;
+        my_practice_hint: string;
+        placeholder: string;
+        submit: string;
+        scoring: string;
+        view_feedback: string;
+      };
+      dialogue: {
+        scenario: string;
+        user_role: string;
+        ai_role: string;
+        kickoff: string;
+        kickoff_ai: string;
+        kickoff_user: string;
+        objectives: string;
+        met: string;
+        unmet: string;
+        evidence: string;
+        chat_title: string;
+        chat_desc: string;
+        ai_starting: string;
+        ai_wait: string;
+        user_start: string;
+        congrats: string;
+        corrections: string;
+      };
+      errors: {
+        load_failed: string;
+        submit_empty: string;
+        turn_required: string;
+        login_required: string;
+        send_failed: string;
+      };
+    };
+  };
+
   // 词汇页面
   vocabulary: {
     title: string;
@@ -525,6 +684,8 @@ export interface Translations {
       korean: string;
       status: string;
       all_status: string;
+      all_levels: string;
+      all_genres: string;
       new_word: string;
       starred: string;
       archived: string;
@@ -549,6 +710,9 @@ export interface Translations {
       elapsed_time: string;
       auto_selected: string;
       refresh_models: string;
+      model_auto: string;
+      model_auto_desc: string;
+      model_openrouter_count: string;
     };
     batch_operations: {
       select_all: string;
@@ -714,9 +878,21 @@ const zh: Translations = {
     // 每日任务-生词复习
     tasks_vocab_title: '复习单词',
     tasks_vocab_due: '今日需复习 {count} 个单词',
-    tasks_vocab_done: '今日复习已完成',
+    tasks_vocab_done: '今日生词已复习完成',
     tasks_go_review: '去复习',
     tasks_completed_badge: '已完成',
+    quick_access_pronunciation: 'AI发音纠正',
+    quick_access_pronunciation_desc: '精准评测发音，快速定位问题',
+    quick_access_profile: '个人资料',
+    quick_access_profile_desc: '管理个人信息和学习目标',
+    quick_access_alignment_desc: '对齐练习，理解语言结构',
+    quick_access_vocab_desc: '生词管理，积累词汇量',
+    progress_today: '今日学习',
+    progress_week: '本周目标',
+    progress_vocab: '词汇掌握',
+    unit_minutes: '分钟',
+    unit_days: '天',
+    unit_words: '个',
     learn_overview: '学习概览',
     learn_overview_desc: '您的学习进度和成就',
     quick_start: '快速开始',
@@ -816,7 +992,16 @@ const zh: Translations = {
       r: 'R（相关 Relevant）：与你的长期方向一致',
       t: 'T（时限 Time-bound）：设定完成的时间范围',
       example_label: '示例',
-      example_text: '例如：在2个月内完成40次跟读练习，并通过L2难度评分≥80分。',
+      example_text: '我想提高商务英语口语，以便在下个月的国际会议上自信地做演讲。',
+    },
+    field_labels: {
+      username: '用户名',
+      bio: '个人简介',
+      goals: '学习目标',
+      preferred_tone: '偏好语气',
+      domains: '兴趣领域',
+      native_lang: '母语',
+      target_langs: '目标语言',
     },
   },
   nav: {
@@ -848,6 +1033,37 @@ const zh: Translations = {
     ai_generation: 'AI 生成',
     batch_generation: '批量生成',
     settings: '设置',
+    alignment_themes: {
+      title: '对齐练习 · 大主题管理',
+      subtitle: '生成并维护大主题，后续可为每个主题创建小主题与训练包。',
+      ai_generate: 'AI 生成主题',
+      batch_generate_title: '批量生成大主题',
+      batch_generate_desc: '将根据当前筛选条件（语言/等级/体裁）生成不重复的新主题。仅使用 DeepSeek 模型。',
+      generate_count: '生成数量',
+      generate: '生成',
+      clear: '清空',
+      create: '新建',
+      search_placeholder: '搜索主题标题',
+      status_draft: '草稿',
+      status_active: '已发布',
+      status_archived: '已归档',
+      action_draft: '转为草稿',
+      action_publish: '发布',
+      action_archive: '归档',
+      selected_count: '已选 {count} 项',
+      no_data: '暂无数据',
+      subtopic_count: '小主题 {count}',
+      edit_title: '编辑主题',
+      create_title: '新建主题',
+      modal_desc: '维护标题、翻译与概述信息。',
+      label_title_main: '标题（主语言）',
+      label_summary_main: '主题概述（主语言）',
+      label_title_trans: '标题翻译 ({lang})',
+      label_summary_trans: '概述翻译 ({lang})',
+      alert_title_empty: '标题不能为空',
+      confirm_status_update: '确认将 {count} 个主题更新为 {status} 状态吗？',
+      confirm_save_generated: '确认保存 {count} 个生成主题吗？',
+    },
   },
   form: {
     title: '标题',
@@ -1161,6 +1377,109 @@ const zh: Translations = {
       cancel: '取消',
     },
   },
+  alignment: {
+    title: '对齐练习 · 训练包列表',
+    description: '根据语言和等级选择训练包，阅读范文与知识点后完成任务，获取实时 AI 反馈。',
+    labels: {
+      language: '语言',
+      level: '等级',
+      genre: '主题体裁',
+      task_type: '任务类型',
+      all: '全部',
+    },
+    genres: {
+      dialogue: '对话',
+      article: '文章',
+      task_email: '任务邮件',
+      long_writing: '长写作',
+    },
+    task_types: {
+      dialogue: '对话任务',
+      article: '文章写作',
+      task_email: '任务邮件',
+      long_writing: '长写作',
+    },
+    card: {
+      language: '语言',
+      level: '等级',
+      genre: '体裁',
+      updated_at: '更新时间',
+      objectives: '训练目标',
+      start_practice: '开始练习',
+      unnamed_subtopic: '未命名小主题',
+      missing_meta: '该主题缺少元信息',
+    },
+    tips: {
+      title: '练习提示',
+      content: '每个训练包包含任务提示、范文、知识点与评分标准。请先阅读范文并标记核心表达，再按照要求逐条完成任务，提交后可以获得 AI 总分与改进建议。',
+    },
+    states: {
+      loading: '加载中…',
+      error: '错误：{error}',
+      empty: '暂无符合条件的训练包',
+    },
+    detail: {
+      stages: {
+        learn: { label: '步骤一 / 学习范文和知识点', description: '阅读任务提示、示例与核心表达' },
+        task: { label: '步骤二 / 完成任务', description: '根据要求完成对齐练习并提交' },
+        review: { label: '步骤三 / 总结评价', description: '查看评分、亮点与改进建议' },
+      },
+      prompt: {
+        title: '任务提示',
+        hint: '请先理解任务背景，再学习范文与知识点。',
+        view_translation: '查看提示翻译',
+      },
+      knowledge: {
+        title: '知识点',
+        desc: '聚焦练习需要掌握的表达、结构或策略。',
+        words: '核心词汇',
+        sentences: '关键句型',
+        no_translation: '暂无翻译',
+      },
+      exemplar: {
+        title: '示例范文',
+      },
+      writing: {
+        title: '完成写作任务',
+        hint: '按照提示完成练习。如需复习范文，可点击返回第一步。',
+        view_learn: '查看范文与知识点',
+        quick_view_prompt: '快速查看任务提示',
+        requirements: '任务要求',
+        my_practice: '我的练习',
+        my_practice_hint: '请根据要求完成写作，建议使用所给知识点中的表达。',
+        placeholder: '请在此写下你的文章或任务回复...',
+        submit: '提交并获取反馈',
+        scoring: '评分中...',
+        view_feedback: '查看最近评价',
+      },
+      dialogue: {
+        scenario: '练习场景',
+        user_role: '学员角色',
+        ai_role: 'AI 角色',
+        kickoff: '开场顺序',
+        kickoff_ai: 'AI 先开场，你紧随其后回应',
+        kickoff_user: '请先由你发言来开启对话',
+        objectives: '目标进度',
+        met: '已完成',
+        unmet: '待完成',
+        evidence: '关键句',
+        chat_title: '实时对话',
+        chat_desc: '使用上方知识点，完成对话并满足目标。AI 会在必要时纠正你的表达。',
+        ai_starting: 'AI 正在开启对话...',
+        ai_wait: '点击"让 AI 开始"或稍候等待 AI 发言。',
+        user_start: '请先输入第一句对话来开启练习。',
+        congrats: '恭喜完成目标 {goals}！',
+        corrections: '纠正建议',
+      },
+      errors: {
+        load_failed: '加载失败',
+        submit_empty: '请先输入练习内容',
+        turn_required: '请先完成至少一轮对话',
+        login_required: '请先登录后再继续',
+        send_failed: '发送失败，请稍后重试',
+      },
+    },
+  },
   vocabulary: {
     title: '生词本',
     total_vocab: '共 {count} 个生词',
@@ -1173,6 +1492,8 @@ const zh: Translations = {
       korean: '韩语',
       status: '状态',
       all_status: '全部状态',
+      all_levels: '全部等级',
+      all_genres: '全部体裁',
       new_word: '新词',
       starred: '已标星',
       archived: '已归档',
@@ -1197,6 +1518,9 @@ const zh: Translations = {
       elapsed_time: '已用时间',
       auto_selected: '💡 已根据您的个人资料自动选择',
       refresh_models: '🔄',
+      model_auto: 'Auto (智能选择)',
+      model_auto_desc: '根据任务自动选择最佳模型',
+      model_openrouter_count: 'OpenRouter ({count} 个模型)',
     },
     batch_operations: {
       select_all: '全选',
@@ -1363,9 +1687,21 @@ const en: Translations = {
     // Daily tasks - vocabulary review
     tasks_vocab_title: 'Review Vocabulary',
     tasks_vocab_due: '{count} words due today',
-    tasks_vocab_done: 'Today\'s review completed',
-    tasks_go_review: 'Go Review',
+    tasks_vocab_done: 'All vocab reviews completed',
+    tasks_go_review: 'Review Now',
     tasks_completed_badge: 'Completed',
+    quick_access_pronunciation: 'AI Pronunciation',
+    quick_access_pronunciation_desc: 'Precise assessment to fix issues fast',
+    quick_access_profile: 'Profile',
+    quick_access_profile_desc: 'Manage info and learning goals',
+    quick_access_alignment_desc: 'Alignment practice, understand structure',
+    quick_access_vocab_desc: 'Vocabulary management, build lexicon',
+    progress_today: 'Today',
+    progress_week: 'Weekly Goal',
+    progress_vocab: 'Vocabulary',
+    unit_minutes: 'min',
+    unit_days: 'days',
+    unit_words: 'words',
     learn_overview: 'Learning Overview',
     learn_overview_desc: 'Your learning progress and achievements',
     quick_start: 'Quick Start',
@@ -1468,7 +1804,16 @@ const en: Translations = {
       r: 'R (Relevant): Align with your long-term direction',
       t: 'T (Time-bound): Set a time frame',
       example_label: 'Example',
-      example_text: 'E.g., finish 40 shadowing sessions in 2 months and score ≥80 at L2.',
+      example_text: 'I want to improve my Business English speaking to present confidently at the international conference next month.',
+    },
+    field_labels: {
+      username: 'Username',
+      bio: 'Bio',
+      goals: 'Goals',
+      preferred_tone: 'Preferred Tone',
+      domains: 'Interests',
+      native_lang: 'Native Language',
+      target_langs: 'Target Languages',
     },
   },
   nav: {
@@ -1500,6 +1845,37 @@ const en: Translations = {
     ai_generation: 'AI Generation',
     batch_generation: 'Batch Generation',
     settings: 'Settings',
+    alignment_themes: {
+      title: 'Alignment Practice · Theme Management',
+      subtitle: 'Generate and maintain themes, then create subtopics and packs.',
+      ai_generate: 'AI Generate Themes',
+      batch_generate_title: 'Batch Generate Themes',
+      batch_generate_desc: 'Generate unique themes based on filters (Language/Level/Genre). Uses DeepSeek model.',
+      generate_count: 'Count',
+      generate: 'Generate',
+      clear: 'Clear',
+      create: 'Create New',
+      search_placeholder: 'Search theme title',
+      status_draft: 'Draft',
+      status_active: 'Published',
+      status_archived: 'Archived',
+      action_draft: 'Set to Draft',
+      action_publish: 'Publish',
+      action_archive: 'Archive',
+      selected_count: 'Selected {count} items',
+      no_data: 'No data',
+      subtopic_count: 'Subtopics {count}',
+      edit_title: 'Edit Theme',
+      create_title: 'Create Theme',
+      modal_desc: 'Maintain title, translations, and summary.',
+      label_title_main: 'Title (Main Language)',
+      label_summary_main: 'Summary (Main Language)',
+      label_title_trans: 'Title Translation ({lang})',
+      label_summary_trans: 'Summary Translation ({lang})',
+      alert_title_empty: 'Title cannot be empty',
+      confirm_status_update: 'Confirm update {count} themes to {status}?',
+      confirm_save_generated: 'Confirm save {count} generated themes?',
+    },
   },
   form: {
     title: 'Title',
@@ -1771,7 +2147,7 @@ const en: Translations = {
       add_vocab_failed: 'Failed to add vocabulary, please try again',
       batch_ai_explanation_none_success: 'No AI explanations were generated, please retry',
       batch_ai_explanation_failed: 'Batch AI explanation failed: {error}',
-      generate_explanation_failed: 'Failed to generate explanation, please retry',
+      generate_explanation_failed: 'Failed to generate explanation, please try again',
       practice_completed_delayed_sync: 'Practice completed. Some data may sync with delay',
       confirm_delete_vocab: 'Delete "{word}" from vocabulary? This action cannot be undone.',
     },
@@ -1819,6 +2195,109 @@ const en: Translations = {
       cancel: 'Cancel',
     },
   },
+  alignment: {
+    title: 'Alignment Practice · Training Packs',
+    description: 'Select training packs by language and level, read samples and key points, complete tasks, and get real-time AI feedback.',
+    labels: {
+      language: 'Language',
+      level: 'Level',
+      genre: 'Genre',
+      task_type: 'Task Type',
+      all: 'All',
+    },
+    genres: {
+      dialogue: 'Dialogue',
+      article: 'Article',
+      task_email: 'Task Email',
+      long_writing: 'Long Writing',
+    },
+    task_types: {
+      dialogue: 'Dialogue Task',
+      article: 'Article Writing',
+      task_email: 'Task Email',
+      long_writing: 'Long Writing',
+    },
+    card: {
+      language: 'Language',
+      level: 'Level',
+      genre: 'Genre',
+      updated_at: 'Updated',
+      objectives: 'Objectives',
+      start_practice: 'Start Practice',
+      unnamed_subtopic: 'Unnamed Subtopic',
+      missing_meta: 'Missing metadata',
+    },
+    tips: {
+      title: 'Practice Tips',
+      content: 'Each pack contains task prompts, samples, key points, and scoring criteria. Read the sample and mark core expressions first, then complete tasks one by one. Submit to get AI score and suggestions.',
+    },
+    states: {
+      loading: 'Loading...',
+      error: 'Error: {error}',
+      empty: 'No training packs found',
+    },
+    detail: {
+      stages: {
+        learn: { label: 'Step 1 / Learn Sample & Points', description: 'Read prompt, sample, and key expressions' },
+        task: { label: 'Step 2 / Complete Task', description: 'Complete alignment practice as required' },
+        review: { label: 'Step 3 / Review & Feedback', description: 'Check scores, highlights, and suggestions' },
+      },
+      prompt: {
+        title: 'Task Prompt',
+        hint: 'Understand the context first, then study the sample and key points.',
+        view_translation: 'View Prompt Translation',
+      },
+      knowledge: {
+        title: 'Key Points',
+        desc: 'Focus on expressions, structures, or strategies to master.',
+        words: 'Core Vocabulary',
+        sentences: 'Key Sentences',
+        no_translation: 'No translation',
+      },
+      exemplar: {
+        title: 'Sample Answer',
+      },
+      writing: {
+        title: 'Complete Writing Task',
+        hint: 'Follow the prompt. Click back to Step 1 to review the sample.',
+        view_learn: 'View Sample & Points',
+        quick_view_prompt: 'Quick View Prompt',
+        requirements: 'Requirements',
+        my_practice: 'My Practice',
+        my_practice_hint: 'Write your response, trying to use the key points provided.',
+        placeholder: 'Write your article or response here...',
+        submit: 'Submit and get feedback',
+        scoring: 'Scoring...',
+        view_feedback: 'View Latest Feedback',
+      },
+      dialogue: {
+        scenario: 'Practice Scenario',
+        user_role: 'User Role',
+        ai_role: 'AI Role',
+        kickoff: 'Kickoff',
+        kickoff_ai: 'AI starts first, please respond.',
+        kickoff_user: 'Please start the conversation.',
+        objectives: 'Objectives Progress',
+        met: 'Completed',
+        unmet: 'Pending',
+        evidence: 'Key sentence',
+        chat_title: 'Live Dialogue',
+        chat_desc: 'Complete the dialogue and meet objectives. AI will correct you if needed.',
+        ai_starting: 'AI is starting...',
+        ai_wait: 'Click "Let AI Start" or wait for AI.',
+        user_start: 'Please enter the first sentence to start.',
+        congrats: 'Congrats on completing goals {goals}!',
+        corrections: 'Corrections',
+      },
+      errors: {
+        load_failed: 'Failed to load',
+        submit_empty: 'Please enter content first',
+        turn_required: 'Please complete at least one dialogue turn first',
+        login_required: 'Please login first',
+        send_failed: 'Failed to send, please retry',
+      },
+    },
+  },
   vocabulary: {
     title: 'Vocabulary',
     total_vocab: '{count} vocabulary words total',
@@ -1831,6 +2310,8 @@ const en: Translations = {
       korean: 'Korean',
       status: 'Status',
       all_status: 'All Status',
+      all_levels: 'All Levels',
+      all_genres: 'All Genres',
       new_word: 'New',
       starred: 'Starred',
       archived: 'Archived',
@@ -1855,6 +2336,9 @@ const en: Translations = {
       elapsed_time: 'Elapsed Time',
       auto_selected: '💡 Auto-selected based on your profile',
       refresh_models: '🔄',
+      model_auto: 'Auto (Smart Selection)',
+      model_auto_desc: 'Automatically select the best model based on the task',
+      model_openrouter_count: 'OpenRouter ({count} models)',
     },
     batch_operations: {
       select_all: 'Select All',
@@ -1924,14 +2408,14 @@ const en: Translations = {
       generation_preparing: 'Preparing to start generation...',
       generation_sending_request: 'Sending request to AI service...',
       generation_processing: 'AI is analyzing and processing {count} words...',
-      generation_generating: '正在生成解释... {progress}%',
-      generation_finalizing: '即将完成，正在整理结果...',
+      generation_generating: 'Generating explanations... {progress}%',
+      generation_finalizing: 'Almost done, finalizing results...',
       generation_completed: 'Successfully generated explanations for {count} words!',
-      generation_failed_status: '生成失败：{error}',
+      generation_failed_status: 'Generation failed: {error}',
       // 页面描述
       page_description: 'Manage your vocabulary collection and improve language learning efficiency',
       review_count_placeholder: 'Review count',
-      review_count_all: '全部',
+      review_count_all: 'All',
       review_count_10: '10 items',
       review_count_20: '20 items',
       review_count_30: '30 items',
@@ -1947,7 +2431,7 @@ const en: Translations = {
       update_status_failed: 'Failed to update word status',
       delete_failed_unknown: 'Unknown error',
       batch_delete_partial_failed: ', but {count} words failed to delete, please retry',
-      batch_delete_retry: '，失败 {count} 个',
+      batch_delete_retry: ', failed {count}',
       generation_details: 'Details: ',
     },
     status_labels: {
@@ -2023,8 +2507,20 @@ const ja: Translations = {
     tasks_vocab_title: '単語復習',
     tasks_vocab_due: '今日復習すべき単語 {count} 個',
     tasks_vocab_done: '今日の復習は完了しました',
-    tasks_go_review: '復習へ',
+    tasks_go_review: '復習する',
     tasks_completed_badge: '完了',
+    quick_access_pronunciation: 'AI発音矯正',
+    quick_access_pronunciation_desc: '発音を正確に評価し、問題を特定',
+    quick_access_profile: 'プロフィール',
+    quick_access_profile_desc: '個人情報と学習目標の管理',
+    quick_access_alignment_desc: 'アライメント練習、構造を理解する',
+    quick_access_vocab_desc: '単語管理、語彙を増やす',
+    progress_today: '今日の学習',
+    progress_week: '今週の目標',
+    progress_vocab: '語彙力',
+    unit_minutes: '分',
+    unit_days: '日',
+    unit_words: '語',
     learn_overview: '学習概要',
     learn_overview_desc: 'あなたの学習進捗と実績',
     quick_start: 'クイックスタート',
@@ -2124,7 +2620,16 @@ const ja: Translations = {
       r: 'R（関連性 Relevant）：長期目標と一致させる',
       t: 'T（期限 Time-bound）：期限を設定する',
       example_label: '例',
-      example_text: '例：2ヶ月で40回のシャドーイングを完了し、L2で80点以上を達成。',
+      example_text: '来月の国際会議で自信を持ってプレゼンテーションできるように、ビジネス英語のスピーキングを向上させたいです。',
+    },
+    field_labels: {
+      username: 'ユーザー名',
+      bio: '自己紹介',
+      goals: '学習目標',
+      preferred_tone: '好みの口調',
+      domains: '興味のある分野',
+      native_lang: '母国語',
+      target_langs: '学習言語',
     },
   },
   nav: {
@@ -2156,6 +2661,37 @@ const ja: Translations = {
     ai_generation: 'AI生成',
     batch_generation: '一括生成',
     settings: '設定',
+    alignment_themes: {
+      title: 'アライメント練習 · テーマ管理',
+      subtitle: 'テーマを生成・管理し、サブトピックやトレーニングパックを作成します。',
+      ai_generate: 'AIテーマ生成',
+      batch_generate_title: 'テーマ一括生成',
+      batch_generate_desc: 'フィルター（言語/レベル/ジャンル）に基づいて独自のテーマを生成します。DeepSeekモデルを使用。',
+      generate_count: '生成数',
+      generate: '生成',
+      clear: 'クリア',
+      create: '新規作成',
+      search_placeholder: 'テーマタイトルを検索',
+      status_draft: '下書き',
+      status_active: '公開中',
+      status_archived: 'アーカイブ',
+      action_draft: '下書きにする',
+      action_publish: '公開する',
+      action_archive: 'アーカイブする',
+      selected_count: '{count} 項目選択中',
+      no_data: 'データなし',
+      subtopic_count: 'サブトピック {count}',
+      edit_title: 'テーマ編集',
+      create_title: 'テーマ作成',
+      modal_desc: 'タイトル、翻訳、概要を管理します。',
+      label_title_main: 'タイトル（主言語）',
+      label_summary_main: '概要（主言語）',
+      label_title_trans: 'タイトル翻訳 ({lang})',
+      label_summary_trans: '概要翻訳 ({lang})',
+      alert_title_empty: 'タイトルは必須です',
+      confirm_status_update: '{count} 個のテーマを {status} に更新しますか？',
+      confirm_save_generated: '{count} 個の生成されたテーマを保存しますか？',
+    },
   },
   form: {
     title: 'タイトル',
@@ -2473,6 +3009,109 @@ const ja: Translations = {
       cancel: 'キャンセル',
     },
   },
+  alignment: {
+    title: 'アライメント練習 · トレーニングパック',
+    description: '言語とレベルでパックを選択し、例文とポイントを読んだ後、タスクを完了してリアルタイムAIフィードバックを取得します。',
+    labels: {
+      language: '言語',
+      level: 'レベル',
+      genre: 'ジャンル',
+      task_type: 'タスクタイプ',
+      all: 'すべて',
+    },
+    genres: {
+      dialogue: '対話',
+      article: '記事',
+      task_email: 'タスクメール',
+      long_writing: '長文ライティング',
+    },
+    task_types: {
+      dialogue: '対話タスク',
+      article: '記事ライティング',
+      task_email: 'タスクメール',
+      long_writing: '長文ライティング',
+    },
+    card: {
+      language: '言語',
+      level: 'レベル',
+      genre: 'ジャンル',
+      updated_at: '更新日時',
+      objectives: '目標',
+      start_practice: '練習開始',
+      unnamed_subtopic: '無題のサブトピック',
+      missing_meta: 'メタデータ不足',
+    },
+    tips: {
+      title: '練習のヒント',
+      content: '各パックにはタスクプロンプト、例文、重要ポイント、採点基準が含まれています。まず例文を読んで核となる表現をマークし、その後タスクを一つずつ完了させてください。提出するとAIスコアと提案が得られます。',
+    },
+    states: {
+      loading: '読み込み中...',
+      error: 'エラー：{error}',
+      empty: '条件に合うトレーニングパックがありません',
+    },
+    detail: {
+      stages: {
+        learn: { label: 'ステップ1 / 例文とポイント学習', description: 'タスク、例文、重要表現を読む' },
+        task: { label: 'ステップ2 / タスク完了', description: '要件に従って練習を完了し提出' },
+        review: { label: 'ステップ3 / レビュー', description: 'スコア、ハイライト、提案を確認' },
+      },
+      prompt: {
+        title: 'タスクプロンプト',
+        hint: 'まず文脈を理解し、次に例文とポイントを学習してください。',
+        view_translation: '翻訳を表示',
+      },
+      knowledge: {
+        title: '重要ポイント',
+        desc: '習得すべき表現、構造、戦略に焦点を当てます。',
+        words: '核心語彙',
+        sentences: '重要文型',
+        no_translation: '翻訳なし',
+      },
+      exemplar: {
+        title: '模範解答',
+      },
+      writing: {
+        title: 'ライティングタスク完了',
+        hint: 'プロンプトに従ってください。ステップ1に戻って例文を確認できます。',
+        view_learn: '例文とポイントを表示',
+        quick_view_prompt: 'プロンプトをクイック表示',
+        requirements: '要件',
+        my_practice: '私の練習',
+        my_practice_hint: '提供されたポイントを使用するようにして回答を書いてください。',
+        placeholder: 'ここに記事や回答を書いてください...',
+        submit: '提出してフィードバックを取得',
+        scoring: '採点中...',
+        view_feedback: '最新のフィードバックを表示',
+      },
+      dialogue: {
+        scenario: '練習シナリオ',
+        user_role: 'ユーザー役割',
+        ai_role: 'AI役割',
+        kickoff: '開始順序',
+        kickoff_ai: 'AIが先に開始します。応答してください。',
+        kickoff_user: '会話を開始してください。',
+        objectives: '目標進捗',
+        met: '完了',
+        unmet: '未完了',
+        evidence: 'キーセンテンス',
+        chat_title: 'リアルタイム対話',
+        chat_desc: '対話を完了し目標を達成してください。必要に応じてAIが修正します。',
+        ai_starting: 'AIが開始中...',
+        ai_wait: '「AIに開始させる」をクリックするか、AIを待ってください。',
+        user_start: '最初の文を入力して開始してください。',
+        congrats: '目標 {goals} を達成しました！',
+        corrections: '修正提案',
+      },
+      errors: {
+        load_failed: '読み込みに失敗しました',
+        submit_empty: '内容を入力してください',
+        turn_required: '少なくとも1回の対話を完了してください',
+        login_required: '先にログインしてください',
+        send_failed: '送信に失敗しました、再試行してください',
+      },
+    },
+  },
   vocabulary: {
     title: '単語帳',
     total_vocab: '合計 {count} 語',
@@ -2485,6 +3124,8 @@ const ja: Translations = {
       korean: '韓国語',
       status: 'ステータス',
       all_status: 'すべてのステータス',
+      all_levels: 'すべてのレベル',
+      all_genres: 'すべてのジャンル',
       new_word: '新規',
       starred: 'スター付き',
       archived: 'アーカイブ',
@@ -2509,6 +3150,9 @@ const ja: Translations = {
       elapsed_time: '経過時間',
       auto_selected: '💡 プロフィールに基づいて自動選択',
       refresh_models: '🔄',
+      model_auto: 'Auto (自動選択)',
+      model_auto_desc: 'タスクに基づいて最適なモデルを自動選択',
+      model_openrouter_count: 'OpenRouter ({count} モデル)',
     },
     batch_operations: {
       select_all: 'すべて選択',
