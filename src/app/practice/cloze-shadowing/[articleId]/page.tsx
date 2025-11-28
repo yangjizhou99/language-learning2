@@ -10,6 +10,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { HeaderProgress } from '@/components/cloze-shadowing/HeaderProgress';
 import { SentenceCard } from '@/components/cloze-shadowing/SentenceCard';
 import { FooterBar } from '@/components/cloze-shadowing/FooterBar';
+import { getNextRecommendedItem, RecommendationResult } from '@/lib/recommendation/nextItem';
+import { ThemePreference } from '@/lib/recommendation/preferences';
+import { NextPracticeCard } from '@/components/recommendation/NextPracticeCard';
+import { useRouter } from 'next/navigation';
 
 type SentencePayload = {
   index: number;
@@ -21,9 +25,10 @@ type SentencePayload = {
 };
 
 export default function ClozeShadowingPracticePage() {
+  const router = useRouter();
   const params = useParams();
   const articleId = String(params?.articleId || '');
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [article, setArticle] = useState<{ id: string; lang: string; level: number; title: string } | null>(null);
@@ -37,6 +42,7 @@ export default function ClozeShadowingPracticePage() {
   const [shaking, setShaking] = useState<Record<number, boolean>>({});
   const [feedbackByIndex, setFeedbackByIndex] = useState<Record<number, 'correct' | 'wrong' | null>>({});
   const [focusedSentenceIndex, setFocusedSentenceIndex] = useState<number | null>(null);
+  const [nextRecommendation, setNextRecommendation] = useState<RecommendationResult | null>(null);
 
   const totalSentences = useMemo(() => sentences.length, [sentences]);
   const needCountForSentence = (s: SentencePayload) => (s.is_placeholder ? 0 : Math.max(1, s.num_correct || 1));
@@ -129,6 +135,65 @@ export default function ClozeShadowingPracticePage() {
     if (articleId) loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [articleId]);
+
+  // 加载推荐
+  useEffect(() => {
+    if (showSolution && article) {
+      const fetchRec = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        // 1. Load Items
+        const { data: items } = await supabase
+          .from('shadowing_items')
+          .select('*, shadowing_user_progress(*)')
+          .eq('is_deleted', false);
+
+        if (!items) return;
+
+        // 2. Load Prefs from API
+        let themePrefs: Record<string, ThemePreference> = {};
+        try {
+          const res = await fetch('/api/shadowing/preferences');
+          const data = await res.json();
+          if (data.success && data.prefs?.themes) {
+            data.prefs.themes.forEach((t: ThemePreference) => {
+              themePrefs[t.theme_id] = t;
+            });
+          }
+        } catch (e) {
+          console.error('Failed to load prefs', e);
+        }
+
+        // 3. Map to Candidates
+        const candidates = items.map((it: any) => {
+          const progress = it.shadowing_user_progress?.[0];
+          return {
+            id: it.id,
+            lang: it.lang,
+            level: it.level,
+            theme_id: it.theme_id,
+            isPracticed: !!progress?.completed_at,
+            status: progress?.status,
+            title: it.title,
+            genre: it.genre,
+            lastPracticed: progress?.last_practiced_at
+          };
+        });
+
+        // 4. Calculate
+        const next = getNextRecommendedItem(
+          article.id,
+          candidates,
+          themePrefs,
+          article.level, // Use current article level as recommended level baseline
+          article.lang
+        );
+        setNextRecommendation(next);
+      };
+      fetchRec();
+    }
+  }, [showSolution, article]);
 
   const checkImmediateFeedback = useCallback(async (sIndex: number, picked: string[]) => {
     try {
@@ -341,137 +406,142 @@ export default function ClozeShadowingPracticePage() {
 
   return (
     <>
-    <main className="p-6">
-      <Container>
-        <Breadcrumbs items={[{ href: '/', label: '首页' }, { label: 'Shadowing Cloze 挖空' }]} />
-        <div className="max-w-4xl mx-auto space-y-4">
-          <HeaderProgress
-            article={article}
-            totalSentences={totalSentences}
-            completedCount={completedCount}
-            showOnlyIncomplete={showOnlyIncomplete}
-            sentences={sentences}
-            answersByIndex={answersByIndex}
-            needCountForSentence={needCountForSentence}
-            onToggleFilter={setShowOnlyIncomplete}
-            onDotClick={handleDotClick}
-          />
+      <main className="p-6">
+        <Container>
+          <Breadcrumbs items={[{ href: '/', label: '首页' }, { label: 'Shadowing Cloze 挖空' }]} />
+          <div className="max-w-4xl mx-auto space-y-4">
+            <HeaderProgress
+              article={article}
+              totalSentences={totalSentences}
+              completedCount={completedCount}
+              showOnlyIncomplete={showOnlyIncomplete}
+              sentences={sentences}
+              answersByIndex={answersByIndex}
+              needCountForSentence={needCountForSentence}
+              onToggleFilter={setShowOnlyIncomplete}
+              onDotClick={handleDotClick}
+            />
 
-          {error && (
-            <div className="px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-700 mb-4 shadow-sm flex items-center justify-between gap-3">
-              <span className="text-sm">{error}</span>
-              <Button size="sm" variant="outline" onClick={() => loadAll()}>重试</Button>
-            </div>
-          )}
+            {error && (
+              <div className="px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-700 mb-4 shadow-sm flex items-center justify-between gap-3">
+                <span className="text-sm">{error}</span>
+                <Button size="sm" variant="outline" onClick={() => loadAll()}>重试</Button>
+              </div>
+            )}
 
-          {loading && !showSolution && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="rounded-lg border bg-card p-4 space-y-3">
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {Array.from({ length: 6 }).map((_, j) => (
-                      <Skeleton key={j} className="h-10 w-full" />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!showSolution && !loading && (
-            <>
+            {loading && !showSolution && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {displayedSentences.map((s) => (
-                  <SentenceCard
-                    key={s.index}
-                    ref={(el) => { sentenceRefs.current[s.index] = el; }}
-                    sentence={s}
-                    selected={answersByIndex[s.index] || []}
-                    feedback={feedbackByIndex[s.index] || null}
-                    animating={animating}
-                    shaking={shaking[s.index] || false}
-                    needCount={needCountForSentence(s)}
-                    onSelect={(opt) => handleSelect(s.index, opt)}
-                    onUndo={() => handleUndo(s.index)}
-                    onFocus={() => setFocusedSentenceIndex(s.index)}
-                    onBlur={(e) => {
-                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                        setFocusedSentenceIndex(null);
-                      }
-                    }}
-                  />
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="rounded-lg border bg-card p-4 space-y-3">
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      {Array.from({ length: 6 }).map((_, j) => (
+                        <Skeleton key={j} className="h-10 w-full" />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-              <FooterBar
-                completedCount={completedCount}
-                totalSentences={totalSentences}
-                firstIncompleteIndex={firstIncompleteIndex}
-                loading={loading}
-                onJumpToNext={() => scrollToIndex(firstIncompleteIndex)}
-                onSubmit={submitAll}
-              />
-            </>
-          )}
+            )}
 
-          {showSolution && solution && (
-            <div className="rounded-lg border bg-card text-card-foreground p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">参考答案与原文</h2>
-                {solution.audio_url ? (
-                  <audio controls src={solution.audio_url} />
-                ) : null}
-              </div>
-              {summary && (
-                <div className="text-sm">正确率：{Math.round((summary.accuracy || 0) * 100)}%（{summary.correct}/{summary.total}）</div>
-              )}
-              <div className="prose whitespace-pre-wrap p-4 bg-muted rounded">{solution.text}</div>
-              {solution.translations && (
-                <div className="space-y-2">
-                  <div className="font-medium">翻译</div>
-                  <div className="text-sm text-muted-foreground">
-                    {Object.entries(solution.translations).map(([k, v]) => (
-                      <div key={k}><span className="font-semibold mr-2">[{k}]</span>{String(v)}</div>
-                    ))}
+            {!showSolution && !loading && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {displayedSentences.map((s) => (
+                    <SentenceCard
+                      key={s.index}
+                      ref={(el) => { sentenceRefs.current[s.index] = el; }}
+                      sentence={s}
+                      selected={answersByIndex[s.index] || []}
+                      feedback={feedbackByIndex[s.index] || null}
+                      animating={animating}
+                      shaking={shaking[s.index] || false}
+                      needCount={needCountForSentence(s)}
+                      onSelect={(opt) => handleSelect(s.index, opt)}
+                      onUndo={() => handleUndo(s.index)}
+                      onFocus={() => setFocusedSentenceIndex(s.index)}
+                      onBlur={(e) => {
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                          setFocusedSentenceIndex(null);
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
+                <FooterBar
+                  completedCount={completedCount}
+                  totalSentences={totalSentences}
+                  firstIncompleteIndex={firstIncompleteIndex}
+                  loading={loading}
+                  onJumpToNext={() => scrollToIndex(firstIncompleteIndex)}
+                  onSubmit={submitAll}
+                />
+              </>
+            )}
+
+            {showSolution && solution && (
+              <div className="rounded-lg border bg-card text-card-foreground p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold">参考答案与原文</h2>
+                  {solution.audio_url ? (
+                    <audio controls src={solution.audio_url} />
+                  ) : null}
+                </div>
+                {summary && (
+                  <div className="text-sm">正确率：{Math.round((summary.accuracy || 0) * 100)}%（{summary.correct}/{summary.total}）</div>
+                )}
+                <div className="prose whitespace-pre-wrap p-4 bg-muted rounded">{solution.text}</div>
+                {solution.translations && (
+                  <div className="space-y-2">
+                    <div className="font-medium">翻译</div>
+                    <div className="text-sm text-muted-foreground">
+                      {Object.entries(solution.translations).map(([k, v]) => (
+                        <div key={k}><span className="font-semibold mr-2">[{k}]</span>{String(v)}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <div className="font-medium mb-2">逐句答案对照</div>
+                  <div className="space-y-2">
+                    {solution.sentences.map((s) => {
+                      const userAns = (answersByIndex[s.index] || []).map((x) => x.trim().toLowerCase());
+                      const correct = (s.correct_options || []).map((x) => x.trim().toLowerCase());
+                      const isCorrect = userAns.length === correct.length && userAns.every((x) => correct.includes(x));
+                      return (
+                        <div key={s.index} className={`p-3 rounded ${isCorrect ? 'bg-emerald-50 animate-answer-correct' : 'bg-rose-50 animate-answer-wrong'}`}>
+                          <div className="mb-1 text-sm text-muted-foreground">{isCorrect ? '✅' : '❌'}</div>
+                          <div className="mb-2 whitespace-pre-wrap">{s.text}</div>
+                          <div className="text-sm mb-1">
+                            你的答案：
+                            {(answersByIndex[s.index] || []).length > 0 ? (
+                              <span className={`ml-1 px-1.5 py-0.5 rounded ${isCorrect ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}`}>
+                                {(answersByIndex[s.index] || []).join(' / ')}
+                              </span>
+                            ) : '—'}
+                          </div>
+                          <div className="text-sm">
+                            正确答案：<span className="ml-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900">{s.correct_options.join(' / ')}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
-              <div>
-                <div className="font-medium mb-2">逐句答案对照</div>
-                <div className="space-y-2">
-                  {solution.sentences.map((s) => {
-                    const userAns = (answersByIndex[s.index] || []).map((x) => x.trim().toLowerCase());
-                    const correct = (s.correct_options || []).map((x) => x.trim().toLowerCase());
-                    const isCorrect = userAns.length === correct.length && userAns.every((x) => correct.includes(x));
-                    return (
-                      <div key={s.index} className={`p-3 rounded ${isCorrect ? 'bg-emerald-50 animate-answer-correct' : 'bg-rose-50 animate-answer-wrong'}`}>
-                        <div className="mb-1 text-sm text-muted-foreground">{isCorrect ? '✅' : '❌'}</div>
-                        <div className="mb-2 whitespace-pre-wrap">{s.text}</div>
-                        <div className="text-sm mb-1">
-                          你的答案：
-                          {(answersByIndex[s.index] || []).length > 0 ? (
-                            <span className={`ml-1 px-1.5 py-0.5 rounded ${isCorrect ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}`}>
-                              {(answersByIndex[s.index] || []).join(' / ')}
-                            </span>
-                          ) : '—'}
-                        </div>
-                        <div className="text-sm">
-                          正确答案：<span className="ml-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900">{s.correct_options.join(' / ')}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </Container>
-    </main>
+            )}
+            {nextRecommendation && (
+              <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <NextPracticeCard
+                  recommendation={nextRecommendation}
+                  onStart={(item) => router.push(`/practice/cloze-shadowing/${item.id}`)}
+                />
+              </div>
+            )}
+          </div>
+        </Container>
+      </main>
     </>
   );
 }
-
-
-

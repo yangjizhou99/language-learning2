@@ -38,7 +38,9 @@ import {
   Play,
   X,
   Target,
+  BarChart2,
 } from 'lucide-react';
+import { SceneVectorModal } from '@/components/admin/shadowing/SceneVectorModal';
 
 type Lang = 'all' | 'en' | 'ja' | 'zh' | 'ko';
 type Genre = 'all' | 'dialogue' | 'monologue' | 'news' | 'lecture';
@@ -195,6 +197,10 @@ export default function ThemesPage() {
   const [aiModel, setAiModel] = useState('');
   const [aiTemperature, setAiTemperature] = useState(0.7);
   const [selectedThemeForSubtopic, setSelectedThemeForSubtopic] = useState<any>(null);
+
+  // 场景向量查看
+  const [vectorModalOpen, setVectorModalOpen] = useState(false);
+  const [vectorTheme, setVectorTheme] = useState<{ id: string; title: string } | null>(null);
 
   // 任务队列相关状态
   const [taskQueue, setTaskQueue] = useState<
@@ -553,12 +559,12 @@ export default function ThemesPage() {
       prev.map((t) =>
         t.id === taskId
           ? {
-              ...t,
-              status: 'running',
-              startedAt: new Date(),
-              progress: 10,
-              abortController,
-            }
+            ...t,
+            status: 'running',
+            startedAt: new Date(),
+            progress: 10,
+            abortController,
+          }
           : t,
       ),
     );
@@ -651,13 +657,13 @@ export default function ThemesPage() {
           prev.map((t) =>
             t.id === taskId
               ? {
-                  ...t,
-                  status: 'completed',
-                  progress: 100,
-                  result,
-                  completedAt: new Date(),
-                  abortController: undefined,
-                }
+                ...t,
+                status: 'completed',
+                progress: 100,
+                result,
+                completedAt: new Date(),
+                abortController: undefined,
+              }
               : t,
           ),
         );
@@ -680,13 +686,13 @@ export default function ThemesPage() {
           prev.map((t) =>
             t.id === taskId
               ? {
-                  ...t,
-                  status: 'completed',
-                  progress: 100,
-                  result,
-                  completedAt: new Date(),
-                  abortController: undefined,
-                }
+                ...t,
+                status: 'completed',
+                progress: 100,
+                result,
+                completedAt: new Date(),
+                abortController: undefined,
+              }
               : t,
           ),
         );
@@ -701,11 +707,11 @@ export default function ThemesPage() {
           prev.map((t) =>
             t.id === taskId
               ? {
-                  ...t,
-                  status: 'cancelled',
-                  completedAt: new Date(),
-                  abortController: undefined,
-                }
+                ...t,
+                status: 'cancelled',
+                completedAt: new Date(),
+                abortController: undefined,
+              }
               : t,
           ),
         );
@@ -715,12 +721,12 @@ export default function ThemesPage() {
           prev.map((t) =>
             t.id === taskId
               ? {
-                  ...t,
-                  status: 'failed',
-                  error: error instanceof Error ? error.message : String(error),
-                  completedAt: new Date(),
-                  abortController: undefined,
-                }
+                ...t,
+                status: 'failed',
+                error: error instanceof Error ? error.message : String(error),
+                completedAt: new Date(),
+                abortController: undefined,
+              }
               : t,
           ),
         );
@@ -818,11 +824,11 @@ export default function ThemesPage() {
       prev.map((t) =>
         t.id === taskId
           ? {
-              ...t,
-              status: 'cancelled',
-              completedAt: new Date(),
-              abortController: undefined,
-            }
+            ...t,
+            status: 'cancelled',
+            completedAt: new Date(),
+            abortController: undefined,
+          }
           : t,
       ),
     );
@@ -1256,37 +1262,35 @@ export default function ThemesPage() {
               {taskQueue.map((task) => (
                 <div
                   key={task.id}
-                  className={`p-3 rounded-lg border ${
-                    task.status === 'completed'
-                      ? 'bg-green-50 border-green-200'
-                      : task.status === 'failed'
-                        ? 'bg-red-50 border-red-200'
-                        : task.status === 'cancelled'
-                          ? 'bg-gray-50 border-gray-200'
-                          : task.status === 'running'
-                            ? 'bg-blue-50 border-blue-200'
-                            : task.status === 'paused'
-                              ? 'bg-yellow-50 border-yellow-200'
-                              : 'bg-gray-50 border-gray-200'
-                  }`}
+                  className={`p-3 rounded-lg border ${task.status === 'completed'
+                    ? 'bg-green-50 border-green-200'
+                    : task.status === 'failed'
+                      ? 'bg-red-50 border-red-200'
+                      : task.status === 'cancelled'
+                        ? 'bg-gray-50 border-gray-200'
+                        : task.status === 'running'
+                          ? 'bg-blue-50 border-blue-200'
+                          : task.status === 'paused'
+                            ? 'bg-yellow-50 border-yellow-200'
+                            : 'bg-gray-50 border-gray-200'
+                    }`}
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`w-2 h-2 rounded-full ${
-                            task.status === 'completed'
-                              ? 'bg-green-500'
-                              : task.status === 'failed'
-                                ? 'bg-red-500'
-                                : task.status === 'cancelled'
-                                  ? 'bg-gray-500'
-                                  : task.status === 'running'
-                                    ? 'bg-blue-500'
-                                    : task.status === 'paused'
-                                      ? 'bg-yellow-500'
-                                      : 'bg-gray-400'
-                          }`}
+                          className={`w-2 h-2 rounded-full ${task.status === 'completed'
+                            ? 'bg-green-500'
+                            : task.status === 'failed'
+                              ? 'bg-red-500'
+                              : task.status === 'cancelled'
+                                ? 'bg-gray-500'
+                                : task.status === 'running'
+                                  ? 'bg-blue-500'
+                                  : task.status === 'paused'
+                                    ? 'bg-yellow-500'
+                                    : 'bg-gray-400'
+                            }`}
                         />
                         <span className="font-medium">{task.title}</span>
                         <Badge
@@ -1513,6 +1517,18 @@ export default function ThemesPage() {
                             title="为该主题生成场景标签向量（用于个性化推荐）"
                           >
                             <Target className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setVectorTheme(item);
+                              setVectorModalOpen(true);
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-700"
+                            title="查看场景向量"
+                          >
+                            <BarChart2 className="w-4 h-4" />
                           </Button>
                           <Button
                             onClick={() => {
@@ -1767,6 +1783,13 @@ export default function ThemesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <SceneVectorModal
+        isOpen={vectorModalOpen}
+        onClose={() => setVectorModalOpen(false)}
+        themeId={vectorTheme?.id || null}
+        themeTitle={vectorTheme?.title || ''}
+      />
     </div>
   );
 }

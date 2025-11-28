@@ -8,6 +8,7 @@ type Provider = 'openrouter' | 'deepseek' | 'openai';
 export type ThemePreference = {
   theme_id: string;
   weight: number; // 实际含义：用户场景向量 U 与该主题场景向量 M 的相似度得分
+  topScenes?: { scene_id: string; name_cn: string; weight: number }[]; // 贡献度最高的场景
 };
 
 export type SubtopicPreference = {
@@ -144,16 +145,39 @@ async function loadPreferenceVectors(
     return null;
   }
 
+  // 额外读取 scene_tags 以获取中文名
+  const { data: sceneTags, error: tagErr } = await supabase
+    .from('scene_tags')
+    .select('scene_id, name_cn');
+
+  const sceneNameMap = new Map<string, string>();
+  if (sceneTags) {
+    sceneTags.forEach((t: any) => {
+      sceneNameMap.set(t.scene_id, t.name_cn || t.scene_id);
+    });
+  }
+
   const vectorRows = (vectors || []) as ThemeSceneVectorRow[];
 
   // 3. 对每个 theme 计算 U·M（用户场景偏好 × 主题场景向量）
+  // 同时记录每个主题下贡献度最高的场景
   const themeScoreMap = new Map<string, number>();
+  const themeSceneContribs = new Map<string, Array<{ scene_id: string; contrib: number }>>();
+
   for (const row of vectorRows) {
     const u = sceneMap.get(row.scene_id) ?? 0;
     const w = clamp01(row.weight);
     if (u <= 0 || w <= 0) continue;
+
+    const contrib = u * w;
     const prev = themeScoreMap.get(row.theme_id) ?? 0;
-    themeScoreMap.set(row.theme_id, prev + u * w);
+    themeScoreMap.set(row.theme_id, prev + contrib);
+
+    // 记录贡献
+    if (!themeSceneContribs.has(row.theme_id)) {
+      themeSceneContribs.set(row.theme_id, []);
+    }
+    themeSceneContribs.get(row.theme_id)?.push({ scene_id: row.scene_id, contrib });
   }
 
   // 对没有任何场景向量的主题，得分默认为 0
@@ -165,7 +189,17 @@ async function loadPreferenceVectors(
   const themeMap = new Map<string, number>();
   for (const [themeId, score] of themeScoreMap.entries()) {
     const val = clamp01(score); // 简单裁剪到 [0,1]，后续可按需要做归一化
-    themesOut.push({ theme_id: themeId, weight: val });
+
+    // 获取 Top 2 场景
+    const contribs = themeSceneContribs.get(themeId) || [];
+    contribs.sort((a, b) => b.contrib - a.contrib);
+    const topScenes = contribs.slice(0, 2).map(c => ({
+      scene_id: c.scene_id,
+      name_cn: sceneNameMap.get(c.scene_id) || c.scene_id,
+      weight: c.contrib // 这里存的是贡献值 (u*w)
+    }));
+
+    themesOut.push({ theme_id: themeId, weight: val, topScenes });
     themeMap.set(themeId, val);
   }
 
@@ -226,8 +260,7 @@ async function generateAndStoreScenePreferences(
   const sceneListText = sceneRows
     .map(
       (s) =>
-        `- ${s.scene_id}: ${s.name_cn || s.name_en || ''} ${
-          s.description ? `（${s.description}）` : ''
+        `- ${s.scene_id}: ${s.name_cn || s.name_en || ''} ${s.description ? `（${s.description}）` : ''
         }`,
     )
     .join('\n');
@@ -331,3 +364,4 @@ function clamp01(x: number): number {
   if (x > 1) return 1;
   return x;
 }
+

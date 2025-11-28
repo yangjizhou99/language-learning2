@@ -39,8 +39,8 @@ export async function GET(req: NextRequest) {
             get(name: string) {
               return cookieMap.get(name);
             },
-            set() {},
-            remove() {},
+            set() { },
+            remove() { },
           },
         },
       ) as unknown) as SupabaseClient;
@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
             get(name: string) {
               return cookieStore.get(name)?.value;
             },
-            set() {},
-            remove() {},
+            set() { },
+            remove() { },
           },
         },
       ) as unknown) as SupabaseClient;
@@ -99,7 +99,10 @@ export async function GET(req: NextRequest) {
       .eq('id', id)
       .single();
 
-    if (error || !data) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    if (error || !data) {
+      console.error('[Item API] Item not found or error:', { id, error, data });
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
 
     const row = data as ItemRow;
     const audioUrl =

@@ -101,6 +101,9 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { loadFilters as loadShadowingFilters, saveFilters as saveShadowingFilters } from '@/lib/shadowingFilterStorage';
 import { deriveKanjiFuriganaSegments, sanitizeJapaneseReadingToHiragana } from '@/lib/japanese/furigana';
 import { performSimpleAnalysis } from '@/lib/shadowing/simpleAnalysis';
+import { getNextRecommendedItem, getRecommendationReason, RecommendationResult } from '@/lib/recommendation/nextItem';
+import { NextPracticeCard } from '@/components/recommendation/NextPracticeCard';
+import { ThemePreference } from '@/lib/recommendation/preferences';
 
 // 题目数据类型
 interface ShadowingItem {
@@ -469,8 +472,7 @@ export default function ShadowingPage() {
   const [nextRoleSuggestion, setNextRoleSuggestion] = useState<string | null>(null);
   // 依据用户历史表现的推荐等级（按语言）
   const [recommendedLevel, setRecommendedLevel] = useState<number | null>(null);
-  // 用户对各大主题的偏好（0~1 权重），由 /api/recommend/preferences 提供
-  const [themePrefs, setThemePrefs] = useState<Record<string, number>>({});
+
   // 列表排序模式
   const [sortMode, setSortMode] = useState<'recommended' | 'recent' | 'completion'>('recommended');
 
@@ -672,6 +674,78 @@ export default function ShadowingPage() {
     status: '',
   });
   const [isRefreshingAllPrev, setIsRefreshingAllPrev] = useState(false);
+
+  // 主题偏好
+  const [themePrefs, setThemePrefs] = useState<Record<string, ThemePreference>>({});
+
+  // 加载主题偏好
+  useEffect(() => {
+    const loadPrefs = async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/shadowing/preferences', { headers });
+        const data = await res.json();
+        if (data.success && data.prefs?.themeMap) {
+          // Convert array/map to record if needed, or just use the raw prefs object
+          // getNextRecommendedItem expects Record<string, ThemePreference>
+          // UserPreferenceVectors.themes is ThemePreference[]
+          const map: Record<string, ThemePreference> = {};
+          data.prefs.themes.forEach((t: ThemePreference) => {
+            map[t.theme_id] = t;
+          });
+          setThemePrefs(map);
+        }
+      } catch (e) {
+        console.error('Failed to load preferences', e);
+      }
+    };
+    if (user) loadPrefs();
+  }, [user]);
+
+  // 下一条推荐
+  const [nextRecommendation, setNextRecommendation] = useState<RecommendationResult | null>(null);
+
+  // 计算下一条推荐
+  useEffect(() => {
+    if (!currentItem || !items.length) return;
+
+    // 仅在有评分结果（即完成练习）时，或者刚加载完 currentItem 时预计算
+    // 这里选择预计算，但只在 UI 上按需显示
+    const candidateItems = items.map(it => ({
+      id: it.id,
+      lang: it.lang,
+      level: it.level,
+      theme_id: it.theme_id,
+      isPracticed: it.isPracticed,
+      status: it.status,
+      title: it.title,
+      genre: it.genre,
+      lastPracticed: it.stats.lastPracticed,
+      themeTitle: it.theme?.title
+    }));
+
+    const next = getNextRecommendedItem(
+      currentItem.id,
+      candidateItems,
+      themePrefs, // 需要确保 themePrefs 已加载
+      recommendedLevel,
+      currentItem.lang
+    );
+    setNextRecommendation(next);
+  }, [currentItem, items, themePrefs, recommendedLevel]);
+
+  const handleStartNext = (nextItemCandidate: any) => {
+    const nextItem = items.find(i => i.id === nextItemCandidate.id);
+    if (nextItem) {
+      setCurrentItem(nextItem);
+      // 重置状态
+      setStep(1);
+      setScoringResult(null);
+      setCurrentRecordings([]);
+      setPracticeStartTime(new Date());
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   // 解释缓存
   const [explanationCache, setExplanationCache] = useState<
@@ -2216,39 +2290,7 @@ export default function ShadowingPage() {
   }, [lang, user]);
 
   // 加载用户对各大主题的偏好（场景向量）
-  useEffect(() => {
-    const loadPrefs = async () => {
-      try {
-        if (!user) return;
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) return;
-        const resp = await fetch('/api/recommend/preferences', {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          credentials: 'include',
-        });
-        if (!resp.ok) return;
-        const data = await resp.json();
-        const map: Record<string, number> = {};
-        if (Array.isArray(data?.themes)) {
-          for (const t of data.themes) {
-            if (t?.theme_id) {
-              const raw = typeof t.weight === 'number' ? t.weight : 0;
-              const w = Math.max(0, Math.min(1, raw));
-              map[t.theme_id] = w;
-            }
-          }
-        }
-        setThemePrefs(map);
-      } catch {
-        // 静默失败，保持默认排序
-      }
-    };
-    loadPrefs();
-  }, [user]);
 
-  // 当大主题列表更新时，检查当前选择是否仍然有效
   useEffect(() => {
     if (selectedThemeId !== 'all' && themes.length > 0) {
       const themeExists = themes.some((theme) => theme.id === selectedThemeId);
@@ -2396,7 +2438,7 @@ export default function ShadowingPage() {
           }
 
           // 场景 / 主题偏好权重
-          const basePref = item.theme_id ? themePrefs[item.theme_id] ?? 0.3 : 0.3;
+          const basePref = item.theme_id ? themePrefs[item.theme_id]?.weight ?? 0.3 : 0.3;
           const themeWeight = Math.max(0, Math.min(1, basePref));
 
           // 综合得分：场景 > 难度 > 状态
@@ -4113,11 +4155,10 @@ export default function ShadowingPage() {
                       setMobileSidebarOpen(true);
                       hideGuide();
                     }}
-                    className={`flex items-center gap-1.5 bg-white/50 hover:bg-white/80 border-white/30 h-9 px-3 transition-all ${
-                      showGuide
-                        ? 'shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-2 ring-blue-400/30 ring-offset-2'
-                        : 'shadow-md'
-                    }`}
+                    className={`flex items-center gap-1.5 bg-white/50 hover:bg-white/80 border-white/30 h-9 px-3 transition-all ${showGuide
+                      ? 'shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-2 ring-blue-400/30 ring-offset-2'
+                      : 'shadow-md'
+                      }`}
                     aria-label={t.shadowing.shadowing_vocabulary}
                   >
                     <Menu className="w-4 h-4" />
@@ -4504,6 +4545,25 @@ export default function ShadowingPage() {
                                       {it.subtopic ? it.subtopic.title : it.title}
                                     </h4>
                                   </div>
+                                  {(() => {
+                                    const pref = it.theme_id ? themePrefs[it.theme_id] : undefined;
+                                    const reason = getRecommendationReason(it, pref, recommendedLevel);
+
+                                    // Debug log for specific item if needed, or just rely on general observation
+                                    // if (it.level === 1) console.log('Item:', it.title, 'ThemeID:', it.theme_id, 'Pref:', pref, 'Reason:', reason);
+
+                                    if (reason) {
+                                      return (
+                                        <div className="mb-2">
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                            <Sparkles className="w-3 h-3 mr-1" />
+                                            {reason}
+                                          </span>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                   <div className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">{it.text.substring(0, 60)}...</div>
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${it.lang === 'en' ? 'bg-blue-100 text-blue-700' : it.lang === 'ja' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{(t.vocabulary.language_labels as any)[it.lang]}</span>
@@ -5796,159 +5856,22 @@ export default function ShadowingPage() {
                             <div className="text-sm text-gray-700">
                               {(() => {
                                 // 处理中文文本，按字符分割而不是按单词分割
-
-                                // 使用简单句子分析（支持中文和英文）
-                                const simpleAnalysis = performSimpleAnalysis(
-                                  scoringResult.originalText,
-                                  scoringResult.transcription,
-                                  t,
-                                );
-                                const { sentenceAnalysis, overallScore } = simpleAnalysis;
+                                const details = (scoringResult as any).details;
+                                if (!details) return null;
 
                                 return (
-                                  <div>
-                                    {/* 整体评分 */}
-                                    <div className="mb-4 p-3 bg-white rounded border">
-                                      <div className="text-sm font-medium mb-2">
-                                        {t.shadowing.overall_score}:
+                                  <div className="space-y-2">
+                                    {details.map((detail: any, idx: number) => (
+                                      <div key={idx} className="flex items-start gap-2">
+                                        <span className={`px-1.5 py-0.5 rounded text-xs font-mono ${detail.score >= 80 ? 'bg-green-100 text-green-700' :
+                                          detail.score >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                                            'bg-red-100 text-red-700'
+                                          }`}>
+                                          {detail.score}
+                                        </span>
+                                        <span className="text-gray-700">{detail.char || detail.word}</span>
                                       </div>
-                                      <div className="text-2xl font-bold text-blue-600">
-                                        {overallScore}%
-                                      </div>
-                                    </div>
-
-                                    {/* 句子分析 */}
-                                    <div className="space-y-3">
-                                      {sentenceAnalysis.map((sentence, idx) => (
-                                        <div
-                                          key={`sentence-${idx}-${sentence.sentence.substring(0, 20)}`}
-                                          className={`p-3 rounded border ${sentence.status === 'correct'
-                                            ? 'bg-green-50 border-green-200'
-                                            : sentence.status === 'partial'
-                                              ? 'bg-yellow-50 border-yellow-200'
-                                              : 'bg-red-50 border-red-200'
-                                            }`}
-                                        >
-                                          <div className="flex items-center justify-between mb-2">
-                                            <div className="text-sm font-medium">
-                                              {sentence.status === 'correct' && '✓ '}
-                                              {sentence.status === 'partial' && '⚠ '}
-                                              {sentence.status === 'missing' && '❌ '}
-                                              {t.shadowing.sentence || '句子'} {idx + 1}
-                                            </div>
-                                            <div className="text-sm font-bold">
-                                              {sentence.score}%
-                                            </div>
-                                          </div>
-
-                                          <div className="text-sm mb-2">
-                                            <span className="font-medium">
-                                              {t.shadowing.original_text}:
-                                            </span>
-                                            <span className="text-gray-700">
-                                              &ldquo;{sentence.sentence}&rdquo;
-                                            </span>
-                                          </div>
-
-                                          {sentence.issues.length > 0 && (
-                                            <div className="text-sm text-red-600">
-                                              <div className="font-medium">
-                                                {t.shadowing.issues || '问题'}:
-                                              </div>
-                                              <ul className="list-disc list-inside space-y-1">
-                                                {sentence.issues.map((issue, issueIdx) => (
-                                                  <li
-                                                    key={`issue-${issueIdx}-${issue.substring(0, 20)}`}
-                                                  >
-                                                    {issue}
-                                                  </li>
-                                                ))}
-                                              </ul>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-
-                                    <div className="mt-4 text-xs text-gray-500">
-                                      💡{' '}
-                                      {t.shadowing.analysis_based_on_sentence_level ||
-                                        '分析基于句子级别，更直观地显示发音问题'}
-                                    </div>
-                                  </div>
-                                );
-
-                                return (
-                                  <div>
-                                    {/* 整体评分 */}
-                                    <div className="mb-4 p-3 bg-white rounded border">
-                                      <div className="text-sm font-medium mb-2">
-                                        {t.shadowing.overall_score}:
-                                      </div>
-                                      <div className="text-2xl font-bold text-blue-600">
-                                        {overallScore}%
-                                      </div>
-                                    </div>
-
-                                    {/* 句子分析 */}
-                                    <div className="space-y-3">
-                                      {sentenceAnalysis.map((sentence, idx) => (
-                                        <div
-                                          key={idx}
-                                          className={`p-3 rounded border ${sentence.status === 'correct'
-                                            ? 'bg-green-50 border-green-200'
-                                            : sentence.status === 'partial'
-                                              ? 'bg-yellow-50 border-yellow-200'
-                                              : 'bg-red-50 border-red-200'
-                                            }`}
-                                        >
-                                          <div className="flex items-center justify-between mb-2">
-                                            <div className="text-sm font-medium">
-                                              {sentence.status === 'correct' && '✓ '}
-                                              {sentence.status === 'partial' && '⚠ '}
-                                              {sentence.status === 'missing' && '❌ '}
-                                              {t.shadowing.sentence || '句子'} {idx + 1}
-                                            </div>
-                                            <div className="text-sm font-bold">
-                                              {sentence.score}%
-                                            </div>
-                                          </div>
-
-                                          <div className="text-sm mb-2">
-                                            <span className="font-medium">
-                                              {t.shadowing.original_text}:
-                                            </span>
-                                            <span className="text-gray-700">
-                                              &ldquo;{sentence.sentence}&rdquo;
-                                            </span>
-                                          </div>
-
-                                          {sentence.issues.length > 0 && (
-                                            <div className="text-xs">
-                                              <span className="font-medium text-red-600">
-                                                {t.shadowing.issues || '问题'}:
-                                              </span>
-                                              <ul className="mt-1 space-y-1">
-                                                {sentence.issues.map((issue, issueIdx) => (
-                                                  <li
-                                                    key={`issue-${issueIdx}-${issue.substring(0, 20)}`}
-                                                    className="text-red-600"
-                                                  >
-                                                    • {issue}
-                                                  </li>
-                                                ))}
-                                              </ul>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-
-                                    <div className="mt-3 text-xs text-gray-600">
-                                      💡{' '}
-                                      {t.shadowing.analysis_based_on_sentence_level ||
-                                        '分析基于句子级别，更直观地显示发音问题'}
-                                    </div>
+                                    ))}
                                   </div>
                                 );
                               })()}
@@ -5957,19 +5880,174 @@ export default function ShadowingPage() {
                         </div>
                       </div>
                     )}
+                  </Card>
+                )}
 
-                    {!practiceComplete && (!gatingActive || step === 4) && (
-                      <div className="flex items-center gap-2 w-full mt-2">
+                {/* 评分结果区域 - 恢复的逻辑 */}
+                {practiceMode !== 'role' && scoringResult && scoringResult.originalText && scoringResult.transcription && (
+                  <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
+                    {(() => {
+                      const simpleAnalysis = performSimpleAnalysis(
+                        scoringResult.originalText!,
+                        scoringResult.transcription!,
+                        t
+                      );
+                      const { sentenceAnalysis, overallScore } = simpleAnalysis;
+
+                      return (
+                        <div>
+                          {/* 整体评分 */}
+                          <div className="mb-4 p-3 bg-white rounded border">
+                            <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
+                            <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
+                          </div>
+
+                          {/* 句子分析 */}
+                          <div className="space-y-3">
+                            {sentenceAnalysis.map((sentence, idx) => (
+                              <div key={idx} className={`p-3 rounded border ${sentence.status === 'correct' ? 'bg-green-50 border-green-200' :
+                                sentence.status === 'partial' ? 'bg-yellow-50 border-yellow-200' :
+                                  'bg-red-50 border-red-200'
+                                }`}>
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="text-sm font-medium">
+                                    {sentence.status === 'correct' && '✓ '}
+                                    {sentence.status === 'partial' && '⚠ '}
+                                    {sentence.status === 'missing' && '❌ '}
+                                    {t.shadowing.sentence || '句子'} {idx + 1}
+                                  </div>
+                                  <div className="text-sm font-bold">{sentence.score}%</div>
+                                </div>
+                                <div className="text-sm mb-2">
+                                  <span className="font-medium">{t.shadowing.original_text}:</span>
+                                  <span className="text-gray-700 ml-1">&ldquo;{sentence.sentence}&rdquo;</span>
+                                </div>
+                                {sentence.issues.length > 0 && (
+                                  <div className="text-xs text-red-600">
+                                    <div className="font-medium">{t.shadowing.issues || '问题'}:</div>
+                                    <ul className="list-disc list-inside">
+                                      {sentence.issues.map((issue, i) => <li key={i}>{issue}</li>)}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </Card>
+                )}
+
+                {/* 评分结果区域 - 恢复的逻辑 */}
+                {practiceMode !== 'role' && scoringResult && (
+                  <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
+                    {(() => {
+                      const simpleAnalysis = performSimpleAnalysis(
+                        scoringResult.originalText || '',
+                        scoringResult.transcription || '',
+                        t
+                      );
+                      const { sentenceAnalysis, overallScore } = simpleAnalysis;
+
+                      return (
+                        <div>
+                          {/* 整体评分 */}
+                          <div className="mb-4 p-3 bg-white rounded border">
+                            <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
+                            <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
+                          </div>
+
+                          {/* 句子分析 */}
+                          <div className="space-y-3">
+                            {sentenceAnalysis.map((sentence, idx) => (
+                              <div key={idx} className={`p-3 rounded border ${sentence.status === 'correct' ? 'bg-green-50 border-green-200' :
+                                sentence.status === 'partial' ? 'bg-yellow-50 border-yellow-200' :
+                                  'bg-red-50 border-red-200'
+                                }`}>
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="text-sm font-medium">
+                                    {sentence.status === 'correct' && '✓ '}
+                                    {sentence.status === 'partial' && '⚠ '}
+                                    {sentence.status === 'missing' && '❌ '}
+                                    {t.shadowing.sentence || '句子'} {idx + 1}
+                                  </div>
+                                  <div className="text-sm font-bold">{sentence.score}%</div>
+                                </div>
+                                <div className="text-sm mb-2">
+                                  <span className="font-medium">{t.shadowing.original_text}:</span>
+                                  <span className="text-gray-700 ml-1">&ldquo;{sentence.sentence}&rdquo;</span>
+                                </div>
+                                {sentence.issues.length > 0 && (
+                                  <div className="text-xs text-red-600">
+                                    <div className="font-medium">{t.shadowing.issues || '问题'}:</div>
+                                    <ul className="list-disc list-inside">
+                                      {sentence.issues.map((issue, i) => <li key={i}>{issue}</li>)}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </Card>
+                )}
+
+                {/* 下一条推荐卡片 */}
+                {scoringResult && nextRecommendation && (
+                  <div className="mt-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <NextPracticeCard
+                      recommendation={nextRecommendation}
+                      onStart={handleStartNext}
+                    />
+                  </div>
+                )}
+
+
+
+                {!practiceComplete && (!gatingActive || step === 4) && (
+                  <div className="flex items-center gap-2 w-full mt-2">
+                    <Button
+                      onClick={unifiedCompleteAndSave}
+                      className="flex-1 h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      {t.shadowing.complete_and_save}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-11"
+                      onClick={() => {
+                        setPracticeComplete(false);
+                        setStep(1);
+                        setScoringResult(null);
+                        setIsVocabMode(false);
+                        setShowTranslation(false);
+                      }}
+                    >
+                      {t.shadowing.practice_again}
+                    </Button>
+                  </div>
+                )}
+
+
+                {/* 完成后成功状态卡片 */}
+                {
+                  practiceComplete && (
+                    <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                          <span className="text-white text-lg">✅</span>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">{t.shadowing.practice_done_title || '练习已完成'}</h3>
+                          <p className="text-sm text-gray-600">{t.shadowing.practice_done_desc || '成绩与生词已保存，你可以选择继续提升'}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 flex-wrap">
                         <Button
-                          onClick={unifiedCompleteAndSave}
-                          className="flex-1 h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          {t.shadowing.complete_and_save}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="flex-1 h-11"
                           onClick={() => {
                             setPracticeComplete(false);
                             setStep(1);
@@ -5977,71 +6055,45 @@ export default function ShadowingPage() {
                             setIsVocabMode(false);
                             setShowTranslation(false);
                           }}
+                          className="bg-blue-600 hover:bg-blue-700"
                         >
-                          {t.shadowing.practice_again}
+                          {t.shadowing.practice_again || '再练一次'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setCurrentItem(null);
+                          }}
+                        >
+                          {t.shadowing.back_to_catalog || '返回题库'}
                         </Button>
                       </div>
-                    )}
-                  </Card>
-                )}
-
-                {/* 完成后成功状态卡片 */}
-                {practiceComplete && (
-                  <Card className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
-                        <span className="text-white text-lg">✅</span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900">{t.shadowing.practice_done_title || '练习已完成'}</h3>
-                        <p className="text-sm text-gray-600">{t.shadowing.practice_done_desc || '成绩与生词已保存，你可以选择继续提升'}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-3 flex-wrap">
-                      <Button
-                        onClick={() => {
-                          setPracticeComplete(false);
-                          setStep(1);
-                          setScoringResult(null);
-                          setIsVocabMode(false);
-                          setShowTranslation(false);
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        {t.shadowing.practice_again || '再练一次'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setCurrentItem(null);
-                        }}
-                      >
-                        {t.shadowing.back_to_catalog || '返回题库'}
-                      </Button>
-                    </div>
-                  </Card>
-                )}
-              </div>
+                    </Card>
+                  )
+                }
+              </div >
             )}
-          </div>
+          </div >
 
-        </div>
-      </Container>
+        </div >
+      </Container >
 
       {/* 成功提示Toast */}
-      {showSuccessToast && (
-        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-right duration-300">
-          <CheckCircle className="h-5 w-5" />
-          <span className="font-medium">{successMessage}</span>
-          <button
-            onClick={() => setShowSuccessToast(false)}
-            className="ml-2 text-white hover:text-gray-200"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      {
+        showSuccessToast && (
+          <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-in slide-in-from-right duration-300">
+            <CheckCircle className="h-5 w-5" />
+            <span className="font-medium">{successMessage}</span>
+            <button
+              onClick={() => setShowSuccessToast(false)}
+              className="ml-2 text-white hover:text-gray-200"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )
+      }
 
-    </main>
+    </main >
   );
 }
