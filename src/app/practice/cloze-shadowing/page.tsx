@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Lang = 'en' | 'ja' | 'zh';
 type SortKey = 'recommended' | 'recent' | 'levelAsc' | 'levelDesc' | 'completion';
@@ -62,6 +63,7 @@ export default function ClozeShadowingEntryPage() {
   const [pageSize, setPageSize] = useState<number>(20);
   const [page, setPage] = useState<number>(1);
   const [total, setTotal] = useState<number>(0);
+  const { user } = useAuth();
   // 用户对各大主题的偏好权重（由 /api/recommend/preferences 提供）
   const [themePrefs, setThemePrefs] = useState<Record<string, number>>({});
 
@@ -319,6 +321,11 @@ export default function ClozeShadowingEntryPage() {
   useEffect(() => {
     const loadPrefs = async () => {
       try {
+        if (!user) {
+          // 未登录时清空偏好，避免使用上一次用户的缓存
+          setThemePrefs({});
+          return;
+        }
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -346,7 +353,7 @@ export default function ClozeShadowingEntryPage() {
       }
     };
     loadPrefs();
-  }, []);
+  }, [user?.id]);
 
   // 筛选胶囊
   const themeTitle = useMemo(() => themes.find((t) => t.id === theme)?.title || '', [themes, theme]);

@@ -166,6 +166,17 @@ export async function POST(req: NextRequest) {
     const validSceneIds = new Set((scenes || []).map((s: any) => s.scene_id));
     const filteredRows = rows.filter((r) => validSceneIds.has(r.scene_id));
 
+    // 若无任何有效 scene_id，则保留原有映射并返回错误，避免误删
+    if (filteredRows.length === 0) {
+      return NextResponse.json(
+        {
+          error: 'no_valid_scene_weights',
+          detail: 'LLM returned no valid scene_ids; existing mapping is kept.',
+        },
+        { status: 400 },
+      );
+    }
+
     // 先删除原有向量，再插入新向量
     await supabase.from('theme_scene_vectors').delete().eq('theme_id', theme.id);
 
