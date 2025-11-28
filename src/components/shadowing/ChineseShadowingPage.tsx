@@ -3818,13 +3818,14 @@ export default function ShadowingPage() {
         });
       }
 
-      // 5. 如果有评分结果，记录练习结果
-      if (scoringResult && practiceStartTime) {
+      // 5. 记录练习结果 (无论是否有评分)
+      if (practiceStartTime) {
         const metrics = {
-          accuracy: scoringResult.score || 0,
+          accuracy: scoringResult?.score || 0,
+          score: scoringResult?.score || 0,
           complete: true,
           time_sec: practiceTime,
-          scoring_result: scoringResult,
+          scoring_result: scoringResult || null,
         };
 
         const attemptResponse = await fetch('/api/shadowing/attempts', {
@@ -3839,7 +3840,9 @@ export default function ShadowingPage() {
         });
 
         if (!attemptResponse.ok) {
-          console.warn('记录练习结果失败，但本地状态已更新');
+          const errText = await attemptResponse.text();
+          console.warn('记录练习结果失败:', errText);
+          toast.error(`保存练习结果失败: ${errText}`);
         }
       }
 

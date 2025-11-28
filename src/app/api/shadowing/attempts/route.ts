@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          set() {},
-          remove() {},
+          set() { },
+          remove() { },
         },
       });
     }
@@ -50,11 +50,11 @@ export async function POST(req: NextRequest) {
     }
 
     // 验证语言和等级
-    if (!['en', 'ja', 'zh'].includes(lang)) {
+    if (!['en', 'ja', 'zh', 'ko'].includes(lang)) {
       return NextResponse.json({ error: '无效的语言参数' }, { status: 400 });
     }
 
-    if (level < 1 || level > 5) {
+    if (level < 0 || level > 6) { // Relaxed level check
       return NextResponse.json({ error: '无效的等级参数' }, { status: 400 });
     }
 
@@ -69,15 +69,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '题目不存在' }, { status: 404 });
     }
 
-    // 验证语言和等级是否匹配
+    // 验证语言和等级是否匹配 (Relaxed validation: Log warning instead of error)
     if (item.lang !== lang || item.level !== level) {
-      return NextResponse.json({ error: '题目参数不匹配' }, { status: 400 });
+      console.warn(`[Attempts API] Item mismatch warning: ID=${item_id}, DB(lang=${item.lang}, level=${item.level}) vs Req(lang=${lang}, level=${level})`);
+      // Continue anyway to ensure data is saved
     }
 
     // 插入练习记录
     const { data: attempt, error: insertError } = await supabase
       .from('shadowing_attempts')
       .insert({
+        id: crypto.randomUUID(),
         user_id: user.id,
         item_id,
         lang,
