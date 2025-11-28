@@ -37,6 +37,7 @@ import {
   Pause,
   Play,
   X,
+  Target,
 } from 'lucide-react';
 
 type Lang = 'all' | 'en' | 'ja' | 'zh' | 'ko';
@@ -199,7 +200,7 @@ export default function ThemesPage() {
   const [taskQueue, setTaskQueue] = useState<
     Array<{
       id: string;
-      type: 'themes' | 'subtopics';
+      type: 'themes' | 'subtopics' | 'scene_map';
       status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
       progress: number;
       title: string;
@@ -518,7 +519,7 @@ export default function ThemesPage() {
   }
 
   // 添加任务到队列
-  function addTaskToQueue(type: 'themes' | 'subtopics', params: any) {
+  function addTaskToQueue(type: 'themes' | 'subtopics' | 'scene_map', params: any) {
     const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const task = {
       id: taskId,
@@ -528,7 +529,9 @@ export default function ThemesPage() {
       title:
         type === 'themes'
           ? `生成 ${params.count} 个大主题 (${LANG_OPTIONS.find((l) => l.value === params.lang)?.label} L${params.level} ${GENRE_OPTIONS.find((g) => g.value === params.genre)?.label})`
-          : `为主题"${params.theme_title_cn}"生成 ${params.count} 个小主题`,
+          : type === 'subtopics'
+            ? `为主题"${params.theme_title_cn}"生成 ${params.count} 个小主题`
+            : `为主题"${params.theme_title_cn}"生成场景向量`,
       params,
       createdAt: new Date(),
     };
@@ -562,11 +565,13 @@ export default function ThemesPage() {
     setRunningTasks((prev) => prev + 1);
 
     try {
-      // 对于小主题生成，使用流式API
+      // 任务类型对应的后端端点
       const endpoint =
         task.type === 'themes'
           ? '/api/admin/shadowing/themes/generate'
-          : '/api/admin/shadowing/subtopics/generate';
+          : task.type === 'subtopics'
+            ? '/api/admin/shadowing/subtopics/generate'
+            : '/api/admin/shadowing/themes/map-scenes';
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -921,6 +926,36 @@ export default function ThemesPage() {
     }
   }
 
+  // 批量为选中主题添加“场景映射”任务到队列
+  function batchAddSceneMapTasks() {
+    if (!aiModel) {
+      alert('请选择 AI 模型');
+      return;
+    }
+
+    const selectedThemes = items.filter((theme) => selected[theme.id]);
+    if (selectedThemes.length === 0) {
+      alert('请先选择要生成场景向量的大主题');
+      return;
+    }
+
+    let added = 0;
+    selectedThemes.forEach((theme) => {
+      addTaskToQueue('scene_map', {
+        theme_id: theme.id,
+        theme_title_cn: theme.title,
+        provider: aiProvider,
+        model: aiModel,
+        temperature: aiTemperature,
+      });
+      added += 1;
+    });
+
+    if (added > 0) {
+      alert(`已为 ${added} 个主题添加场景映射任务到队列`);
+    }
+  }
+
   // AI 生成大主题（添加到队列）
   function generateThemes() {
     if (!aiModel) {
@@ -978,6 +1013,34 @@ export default function ThemesPage() {
   }
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
+
+  // 为单个主题生成“场景映射向量”
+  async function mapScenesForTheme(theme: any) {
+    try {
+      const headers = await getAuthHeaders();
+      const r = await fetch('/api/admin/shadowing/themes/map-scenes', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          theme_id: theme.id,
+          provider: aiProvider,
+          model: aiModel || undefined,
+          temperature: aiTemperature,
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        alert(`场景映射失败：${j.error || r.statusText || '未知错误'}`);
+        return;
+      }
+      alert(
+        `已为主题「${theme.title}」生成场景向量（${j.inserted_count ?? 0} 个场景标签有非零权重）。`,
+      );
+    } catch (error) {
+      console.error('mapScenesForTheme failed:', error);
+      alert('场景映射失败，请查看控制台日志。');
+    }
+  }
 
   return (
     <div className="container mx-auto p-6">
@@ -1360,6 +1423,10 @@ export default function ThemesPage() {
                 <Brain className="w-4 h-4 mr-2" />
                 批量生成小主题
               </Button>
+              <Button onClick={batchAddSceneMapTasks} variant="outline" size="sm">
+                <Target className="w-4 h-4 mr-2" />
+                批量生成场景向量
+              </Button>
               <Button onClick={archiveSelected} variant="outline" size="sm">
                 <Archive className="w-4 h-4 mr-2" />
                 归档
@@ -1437,6 +1504,15 @@ export default function ThemesPage() {
                         <div className="flex gap-2">
                           <Button onClick={() => openEdit(item)} variant="ghost" size="sm">
                             <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => mapScenesForTheme(item)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-amber-600 hover:text-amber-700"
+                            title="为该主题生成场景标签向量（用于个性化推荐）"
+                          >
+                            <Target className="w-4 h-4" />
                           </Button>
                           <Button
                             onClick={() => {

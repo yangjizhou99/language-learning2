@@ -467,6 +467,12 @@ export default function ShadowingPage() {
   const [selectedRole, setSelectedRole] = useState<string>('A');
   const [completedRoleList, setCompletedRoleList] = useState<string[]>([]);
   const [nextRoleSuggestion, setNextRoleSuggestion] = useState<string | null>(null);
+  // 依据用户历史表现的推荐等级（按语言）
+  const [recommendedLevel, setRecommendedLevel] = useState<number | null>(null);
+  // 用户对各大主题的偏好（0~1 权重），由 /api/recommend/preferences 提供
+  const [themePrefs, setThemePrefs] = useState<Record<string, number>>({});
+  // 列表排序模式
+  const [sortMode, setSortMode] = useState<'recommended' | 'recent' | 'completion'>('recommended');
 
   // 本地持久化 + URL 同步（仅语言、等级、练习情况）
   const navSearchParams = useSearchParams();
@@ -2183,6 +2189,65 @@ export default function ShadowingPage() {
     }
   }, [lang, level, authLoading, user?.id, loadThemes]);
 
+  // 根据用户历史表现获取推荐等级（按当前筛选语言）
+  useEffect(() => {
+    const fetchRecommendedLevel = async () => {
+      try {
+        if (!user) return;
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) return;
+        const effectiveLang = lang || 'zh';
+        const resp = await fetch(`/api/shadowing/recommended?lang=${effectiveLang}`, {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          credentials: 'include',
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (typeof data?.recommended === 'number') {
+          setRecommendedLevel(data.recommended);
+        }
+      } catch {
+        // ignore, fallback to仅基于完成状态的排序
+      }
+    };
+    fetchRecommendedLevel();
+  }, [lang, user]);
+
+  // 加载用户对各大主题的偏好（场景向量）
+  useEffect(() => {
+    const loadPrefs = async () => {
+      try {
+        if (!user) return;
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) return;
+        const resp = await fetch('/api/recommend/preferences', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          credentials: 'include',
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const map: Record<string, number> = {};
+        if (Array.isArray(data?.themes)) {
+          for (const t of data.themes) {
+            if (t?.theme_id) {
+              const raw = typeof t.weight === 'number' ? t.weight : 0;
+              const w = Math.max(0, Math.min(1, raw));
+              map[t.theme_id] = w;
+            }
+          }
+        }
+        setThemePrefs(map);
+      } catch {
+        // 静默失败，保持默认排序
+      }
+    };
+    loadPrefs();
+  }, [user]);
+
   // 当大主题列表更新时，检查当前选择是否仍然有效
   useEffect(() => {
     if (selectedThemeId !== 'all' && themes.length > 0) {
@@ -2283,41 +2348,108 @@ export default function ShadowingPage() {
         }
 
         return true;
-      })
-      .sort((a, b) => {
-        // 排序规则：已完成 > 草稿中 > 未开始
-        const getStatusOrder = (item: ShadowingItem) => {
-          if (item.isPracticed) return 0; // 已完成
-          if (item.status === 'draft') return 1; // 草稿中
-          return 2; // 未开始
-        };
-
-        const orderA = getStatusOrder(a);
-        const orderB = getStatusOrder(b);
-
-        if (orderA !== orderB) {
-          return orderA - orderB;
-        }
-
-        // 相同状态按数字顺序排序
-        const getNumberFromTitle = (title: string) => {
-          const match = title.match(/^(\d+)\./);
-          return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
-        };
-
-        const numA = getNumberFromTitle(a.title);
-        const numB = getNumberFromTitle(b.title);
-
-        if (numA !== numB) {
-          return numA - numB;
-        }
-
-        // 如果数字相同，按标题排序
-        return a.title.localeCompare(b.title);
       });
 
-    return list;
-  }, [items, deferredSearchQuery, theme, selectedThemeId, selectedSubtopicId, searchIndex]);
+    const getLastTs = (item: ShadowingItem) => {
+      if (item.stats?.lastPracticed) {
+        const ts = new Date(item.stats.lastPracticed).getTime();
+        if (!Number.isNaN(ts)) return ts;
+      }
+      const created = new Date(item.created_at).getTime();
+      return Number.isNaN(created) ? 0 : created;
+    };
+
+    // 最近练习排序：按最近练习时间降序
+    if (sortMode === 'recent') {
+      return list.sort((a, b) => getLastTs(b) - getLastTs(a));
+    }
+
+    // 完成度优先：已完成 > 其它，内部按最近练习时间降序
+    if (sortMode === 'completion') {
+      return list.sort((a, b) => {
+        const pa = a.isPracticed ? 1 : 0;
+        const pb = b.isPracticed ? 1 : 0;
+        if (pb !== pa) return pb - pa; // 已完成优先
+        return getLastTs(b) - getLastTs(a);
+      });
+    }
+
+    // 默认：“推荐”排序（使用个性化分数）
+    return list.sort((a, b) => {
+      // 如果有推荐等级或场景偏好，则优先按“个性化推荐得分”排序
+      const hasPersonalizedSignal =
+        recommendedLevel != null || (themePrefs && Object.keys(themePrefs).length > 0);
+
+      if (hasPersonalizedSignal) {
+        const scoreFor = (item: ShadowingItem) => {
+          // 练习状态：未开始 > 草稿中 > 已完成
+          const practiceWeight = item.isPracticed ? 0.1 : item.status === 'draft' ? 0.7 : 1.0;
+
+          // 难度与推荐等级的匹配度
+          let difficultyWeight = 0.5;
+          if (recommendedLevel != null) {
+            const diff = Math.abs(item.level - recommendedLevel);
+            if (diff === 0) difficultyWeight = 1.0;
+            else if (diff === 1) difficultyWeight = 0.6;
+            else if (diff === 2) difficultyWeight = 0.3;
+            else difficultyWeight = 0.0;
+          }
+
+          // 场景 / 主题偏好权重
+          const basePref = item.theme_id ? themePrefs[item.theme_id] ?? 0.3 : 0.3;
+          const themeWeight = Math.max(0, Math.min(1, basePref));
+
+          // 综合得分：场景 > 难度 > 状态
+          return 0.5 * themeWeight + 0.3 * difficultyWeight + 0.2 * practiceWeight;
+        };
+
+        const sa = scoreFor(a);
+        const sb = scoreFor(b);
+        if (sb !== sa) return sb - sa;
+      }
+
+      // 回退规则：按状态 + 序号排序（原有逻辑）
+      // 排序规则：已完成 > 草稿中 > 未开始
+      const getStatusOrder = (item: ShadowingItem) => {
+        if (item.isPracticed) return 0; // 已完成
+        if (item.status === 'draft') return 1; // 草稿中
+        return 2; // 未开始
+      };
+
+      const orderA = getStatusOrder(a);
+      const orderB = getStatusOrder(b);
+
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+
+      // 相同状态按数字顺序排序
+      const getNumberFromTitle = (title: string) => {
+        const match = title.match(/^(\d+)\./);
+        return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
+      };
+
+      const numA = getNumberFromTitle(a.title);
+      const numB = getNumberFromTitle(b.title);
+
+      if (numA !== numB) {
+        return numA - numB;
+      }
+
+      // 如果数字相同，按标题排序
+      return a.title.localeCompare(b.title);
+    });
+  }, [
+    items,
+    deferredSearchQuery,
+    theme,
+    selectedThemeId,
+    selectedSubtopicId,
+    searchIndex,
+    recommendedLevel,
+    themePrefs,
+    sortMode,
+  ]);
 
   // 列表统计一次性计算，避免多处重复 filter
   const listStats = useMemo(() => {
@@ -3955,31 +4087,50 @@ export default function ShadowingPage() {
                 </div>
               </div>
 
-              {/* 题库按钮 */}
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setMobileSidebarOpen(true);
-                    hideGuide();
-                  }}
-                  className={`flex items-center gap-1.5 bg-white/50 hover:bg-white/80 border-white/30 h-9 px-3 transition-all ${showGuide
-                    ? 'shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-2 ring-blue-400/30 ring-offset-2'
-                    : 'shadow-md'
-                    }`}
-                  aria-label={t.shadowing.shadowing_vocabulary}
-                >
-                  <Menu className="w-4 h-4" />
-                  <span className="text-sm">题库</span>
-                </Button>
+              {/* 排序 + 题库按钮 */}
+              <div className="flex items-center gap-3">
+                {/* 排序选择器 */}
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border bg-white/70">
+                  <span className="text-xs text-gray-500">排序</span>
+                  <Select value={sortMode} onValueChange={(v) => setSortMode(v as any)}>
+                    <SelectTrigger className="h-8 w-[7rem] border-0 shadow-none text-xs">
+                      <SelectValue placeholder="推荐" />
+                    </SelectTrigger>
+                    <SelectContent align="end">
+                      <SelectItem value="recommended">推荐</SelectItem>
+                      <SelectItem value="recent">最近练习</SelectItem>
+                      <SelectItem value="completion">完成度优先</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                {/* 呼吸光效 */}
-                {showGuide && (
-                  <div className="absolute inset-0 rounded-lg animate-pulse pointer-events-none">
-                    <div className="absolute inset-0 rounded-lg bg-blue-400/20 blur-md"></div>
-                  </div>
-                )}
+                {/* 题库按钮 */}
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setMobileSidebarOpen(true);
+                      hideGuide();
+                    }}
+                    className={`flex items-center gap-1.5 bg-white/50 hover:bg-white/80 border-white/30 h-9 px-3 transition-all ${
+                      showGuide
+                        ? 'shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-2 ring-blue-400/30 ring-offset-2'
+                        : 'shadow-md'
+                    }`}
+                    aria-label={t.shadowing.shadowing_vocabulary}
+                  >
+                    <Menu className="w-4 h-4" />
+                    <span className="text-sm">题库</span>
+                  </Button>
+
+                  {/* 呼吸光效 */}
+                  {showGuide && (
+                    <div className="absolute inset-0 rounded-lg animate-pulse pointer-events-none">
+                      <div className="absolute inset-0 rounded-lg bg-blue-400/20 blur-md"></div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
