@@ -262,10 +262,55 @@ export async function GET(req: NextRequest) {
         // If attempts are 0 but sessions > 0, show sessions count.
         const totalAttempts = Math.max(shadowingAttempts.length, shadowingSessions?.length || 0);
 
+        // --- Score Distribution ---
+        // Buckets: 0-59 (Needs Practice), 60-79 (Fair), 80-89 (Good), 90-100 (Excellent)
+        const scoreDistribution = [
+            { name: '需练习 (0-59)', range: '0-59', count: 0, fill: '#ef4444' }, // Red-500
+            { name: '一般 (60-79)', range: '60-79', count: 0, fill: '#f59e0b' }, // Amber-500
+            { name: '良好 (80-89)', range: '80-89', count: 0, fill: '#3b82f6' }, // Blue-500
+            { name: '优秀 (90-100)', range: '90-100', count: 0, fill: '#22c55e' }, // Green-500
+        ];
+
+        shadowingAttempts.forEach(attempt => {
+            if (attempt.metrics && typeof attempt.metrics === 'object') {
+                // Check for sentence-level scores first
+                if ('sentenceScores' in attempt.metrics && typeof attempt.metrics.sentenceScores === 'object') {
+                    const scores = Object.values(attempt.metrics.sentenceScores as Record<string, any>);
+                    scores.forEach(s => {
+                        const score = Number(s.score);
+                        if (!isNaN(score)) {
+                            if (score >= 90) scoreDistribution[3].count++;
+                            else if (score >= 80) scoreDistribution[2].count++;
+                            else if (score >= 60) scoreDistribution[1].count++;
+                            else scoreDistribution[0].count++;
+                        }
+                    });
+                } else {
+                    // Fallback to overall score if no sentence details
+                    let score = 0;
+                    if ('score' in attempt.metrics) {
+                        score = Number(attempt.metrics.score);
+                    } else if ('accuracy' in attempt.metrics) {
+                        const acc = Number(attempt.metrics.accuracy);
+                        score = acc > 1 ? acc : acc * 100;
+                    }
+
+                    // Ensure score is valid
+                    if (!isNaN(score)) {
+                        if (score >= 90) scoreDistribution[3].count++;
+                        else if (score >= 80) scoreDistribution[2].count++;
+                        else if (score >= 60) scoreDistribution[1].count++;
+                        else scoreDistribution[0].count++;
+                    }
+                }
+            }
+        });
+
         return NextResponse.json({
             abilityRadar,
             recentAccuracy,
             activityChart,
+            scoreDistribution,
             stats: {
                 totalAttempts,
                 totalDays: activityMap.size,

@@ -2,15 +2,7 @@
 'use client';
 
 import React from 'react';
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-} from 'recharts';
+import { ResponsiveBar } from '@nivo/bar';
 
 interface ActivityChartProps {
     data: {
@@ -22,46 +14,80 @@ interface ActivityChartProps {
 export function ActivityChart({ data }: ActivityChartProps) {
     if (!data || data.length === 0) {
         return (
-            <div className="flex items-center justify-center h-64 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            <div className="flex items-center justify-center h-64 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
                 <p className="text-gray-400 text-sm">暂无活动数据</p>
             </div>
         );
     }
 
+    // Transform data for Nivo if needed, but the current structure works fine
+    // We just need to ensure date is formatted nicely for the axis
+    const chartData = data.map(item => ({
+        ...item,
+        dateDisplay: new Date(item.date).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })
+    }));
+
     return (
         <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                    <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 10, fill: '#9ca3af' }}
-                        tickFormatter={(value) => {
-                            const date = new Date(value);
-                            return `${date.getMonth() + 1}/${date.getDate()}`;
-                        }}
-                        interval={Math.floor(data.length / 7)} // Show ~7 ticks
-                    />
-                    <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                        cursor={{ fill: '#f3f4f6' }}
-                        contentStyle={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            borderRadius: '8px',
-                            border: 'none',
+            <ResponsiveBar
+                data={chartData}
+                keys={['count']}
+                indexBy="dateDisplay"
+                margin={{ top: 10, right: 10, bottom: 50, left: 30 }}
+                padding={0.3}
+                valueScale={{ type: 'linear' }}
+                indexScale={{ type: 'band', round: true }}
+                colors={['#10b981']}
+                borderRadius={4}
+                axisTop={null}
+                axisRight={null}
+                axisBottom={{
+                    tickSize: 0,
+                    tickPadding: 12,
+                    tickRotation: -45,
+                    legend: '',
+                    legendPosition: 'middle',
+                    legendOffset: 32
+                }}
+                axisLeft={{
+                    tickSize: 0,
+                    tickPadding: 12,
+                    tickRotation: 0,
+                    legend: '',
+                    legendPosition: 'middle',
+                    legendOffset: -40
+                }}
+                enableLabel={false}
+                role="application"
+                ariaLabel="Activity chart"
+                theme={{
+                    axis: {
+                        ticks: {
+                            text: {
+                                fontSize: 10,
+                                fill: '#9ca3af',
+                            },
+                        },
+                    },
+                    grid: {
+                        line: {
+                            stroke: '#f3f4f6',
+                            strokeDasharray: '4 4',
+                        },
+                    },
+                    tooltip: {
+                        container: {
+                            background: '#ffffff',
+                            color: '#333333',
+                            fontSize: 12,
+                            borderRadius: '12px',
                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        }}
-                        labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                    />
-                    <Bar
-                        dataKey="count"
-                        name="练习次数"
-                        fill="#10b981"
-                        radius={[4, 4, 0, 0]}
-                        maxBarSize={40}
-                    />
-                </BarChart>
-            </ResponsiveContainer>
+                            padding: '8px 12px',
+                            border: 'none',
+                        },
+                    },
+                }}
+            />
         </div>
     );
 }

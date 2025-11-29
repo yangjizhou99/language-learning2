@@ -7,7 +7,8 @@ import { supabase } from '@/lib/supabase';
 import { AbilityRadar } from '@/components/stats/AbilityRadar';
 import { ActivityChart } from '@/components/stats/ActivityChart';
 import { RecentAccuracyChart } from '@/components/stats/RecentAccuracyChart';
-import { ArrowLeft, Loader2, TrendingUp, Calendar, Target } from 'lucide-react';
+import { ScoreDistributionChart } from '@/components/stats/ScoreDistributionChart';
+import { ArrowLeft, Loader2, TrendingUp, Calendar, Target, PieChart as PieChartIcon } from 'lucide-react';
 
 interface StatsData {
     stats: {
@@ -28,6 +29,12 @@ interface StatsData {
     activityChart: Array<{
         date: string;
         count: number;
+    }>;
+    scoreDistribution: Array<{
+        name: string;
+        range: string;
+        count: number;
+        fill: string;
     }>;
 }
 
@@ -93,51 +100,51 @@ export default function LearningStatsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-12">
+        <div className="min-h-screen bg-[#f8fafc] pb-12">
             {/* Header */}
-            <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
+            <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-20">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
                     <button
                         onClick={() => router.back()}
-                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 hover:text-gray-900"
                     >
-                        <ArrowLeft className="w-5 h-5 text-gray-600" />
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
                     <h1 className="text-xl font-bold text-gray-900">学习进度统计</h1>
                 </div>
             </div>
 
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
                 {/* Overview Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-blue-50 rounded-lg">
-                                <Target className="w-5 h-5 text-blue-600" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: '0ms' }}>
+                        <div className="flex items-center gap-4 mb-3">
+                            <div className="p-3 bg-blue-50 rounded-xl">
+                                <Target className="w-6 h-6 text-blue-600" />
                             </div>
                             <h3 className="text-sm font-medium text-gray-500">总练习次数</h3>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900">{data?.stats?.totalAttempts || 0}</p>
+                        <p className="text-4xl font-bold text-gray-900 tracking-tight">{data?.stats?.totalAttempts || 0}</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-green-50 rounded-lg">
-                                <Calendar className="w-5 h-5 text-green-600" />
+                    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: '100ms' }}>
+                        <div className="flex items-center gap-4 mb-3">
+                            <div className="p-3 bg-green-50 rounded-xl">
+                                <Calendar className="w-6 h-6 text-green-600" />
                             </div>
                             <h3 className="text-sm font-medium text-gray-500">活跃天数 (近30天)</h3>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900">{data?.stats?.totalDays || 0}</p>
+                        <p className="text-4xl font-bold text-gray-900 tracking-tight">{data?.stats?.totalDays || 0}</p>
                     </div>
 
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-purple-50 rounded-lg">
-                                <TrendingUp className="w-5 h-5 text-purple-600" />
+                    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: '200ms' }}>
+                        <div className="flex items-center gap-4 mb-3">
+                            <div className="p-3 bg-purple-50 rounded-xl">
+                                <TrendingUp className="w-6 h-6 text-purple-600" />
                             </div>
                             <h3 className="text-sm font-medium text-gray-500">最近准确率</h3>
                         </div>
-                        <p className="text-3xl font-bold text-gray-900">
+                        <p className="text-4xl font-bold text-gray-900 tracking-tight">
                             {data?.recentAccuracy && data.recentAccuracy.length > 0
                                 ? `${data.recentAccuracy[data.recentAccuracy.length - 1].score}%`
                                 : '-'}
@@ -145,28 +152,48 @@ export default function LearningStatsPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Ability Radar */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <h2 className="text-lg font-bold text-gray-900 mb-6">能力雷达</h2>
+                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '300ms' }}>
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-xl font-bold text-gray-900">能力雷达</h2>
+                            <span className="text-sm text-gray-400">综合能力评估</span>
+                        </div>
                         <AbilityRadar data={data?.abilityRadar || []} />
                     </div>
 
                     {/* Recent Accuracy */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <h2 className="text-lg font-bold text-gray-900 mb-6">近期准确率趋势</h2>
+                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '400ms' }}>
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-xl font-bold text-gray-900">近期准确率趋势</h2>
+                            <span className="text-sm text-gray-400">最近练习表现</span>
+                        </div>
                         <RecentAccuracyChart data={data?.recentAccuracy || []} />
                     </div>
                 </div>
 
-                {/* Activity Chart */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-900 mb-6">学习活跃度 (近30天)</h2>
-                    <ActivityChart data={data?.activityChart || []} />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Score Distribution */}
+                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '500ms' }}>
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="p-2 bg-orange-50 rounded-lg">
+                                <PieChartIcon className="w-5 h-5 text-orange-600" />
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-900">练习得分分布</h2>
+                        </div>
+                        <ScoreDistributionChart data={data?.scoreDistribution || []} />
+                    </div>
+
+                    {/* Activity Chart */}
+                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '600ms' }}>
+                        <div className="flex items-center justify-between mb-8">
+                            <h2 className="text-xl font-bold text-gray-900">学习活跃度</h2>
+                            <span className="text-sm text-gray-400">近30天</span>
+                        </div>
+                        <ActivityChart data={data?.activityChart || []} />
+                    </div>
                 </div>
             </div>
-
-
         </div>
     );
 }

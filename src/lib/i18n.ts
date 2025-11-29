@@ -323,6 +323,8 @@ export interface Translations {
     remove: string;
     import_success: string;
     import_failed: string;
+    practice_saved: string;
+    save_failed: string;
     // 新增的翻译内容
     filter: string;
     language: string;
@@ -1139,6 +1141,8 @@ const zh: Translations = {
     remove: '移除',
     import_success: '成功导入 {count} 个生词到生词本！',
     import_failed: '导入失败：{error}',
+    practice_saved: '练习已保存',
+    save_failed: '保存失败',
     // 新增的翻译内容
     filter: '筛选',
     language: '语言',
@@ -1954,6 +1958,8 @@ const en: Translations = {
     remove: 'Remove',
     import_success: 'Successfully imported {count} words to vocabulary!',
     import_failed: 'Import failed: {error}',
+    practice_saved: 'Practice saved',
+    save_failed: 'Save failed',
     // 新增的翻译内容
     filter: 'Filter',
     language: 'Language',
@@ -2773,6 +2779,8 @@ const ja: Translations = {
     remove: '削除',
     import_success: '{count}個の単語を単語帳にインポートしました！',
     import_failed: 'インポート失敗：{error}',
+    practice_saved: '練習が保存されました',
+    save_failed: '保存に失敗しました',
     // 新增的翻译内容
     filter: 'フィルター',
     language: '言語',
