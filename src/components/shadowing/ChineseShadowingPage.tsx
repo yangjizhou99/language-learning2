@@ -41,6 +41,7 @@ const isEnglishWordBoundary = (
 import { Virtuoso } from 'react-virtuoso';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -624,6 +625,7 @@ export default function ShadowingPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [practiceStartTime, setPracticeStartTime] = useState<Date | null>(null);
   const [currentRecordings, setCurrentRecordings] = useState<AudioRecording[]>([]);
+  const [sentenceScores, setSentenceScores] = useState<Record<number, any>>({});
   const [isImporting, setIsImporting] = useState(false);
   // 从首页每日一题等入口深链进入时，用于在题目自动加载期间展示整页加载动画
   const [initialDeepLinkLoading, setInitialDeepLinkLoading] = useState(() => {
@@ -3668,7 +3670,7 @@ export default function ShadowingPage() {
 
   // 统一的完成并保存函数 - 整合session保存和练习结果记录
   const unifiedCompleteAndSave = async () => {
-    if (!currentItem) return;
+    if (!currentItem || !user) return;
 
     setSaving(true);
 
@@ -3696,20 +3698,44 @@ export default function ShadowingPage() {
       ),
     );
 
-    // 2. 立即设置练习完成状态
+    // Calculate overall score from sentenceScores
+    const scores = Object.values(sentenceScores);
+    let overallScore = 0;
+    let validCount = 0;
+
+    scores.forEach((s: any) => {
+      if (typeof s.score === 'number') {
+        overallScore += s.score;
+        validCount++;
+      }
+    });
+
+    const finalScore = validCount > 0 ? (overallScore / validCount) * 100 : 0;
+
+    // Construct scoring result for display
+    const newScoringResult = {
+      score: finalScore,
+      details: scores, // Store sentence details
+      originalText: currentItem.text,
+      transcription: '',
+      accuracy: finalScore / 100,
+      feedback: '',
+    };
+
+    setScoringResult(newScoringResult);
     setPracticeComplete(true);
 
     try {
       const headers = await getAuthHeaders();
 
-      // 3. 自动检查和保存生词
+      // Auto-save vocab
       let savedVocabCount = 0;
       if (selectedWords.length > 0) {
         try {
           const entries = selectedWords.map((item) => ({
             term: item.word,
             lang: item.lang,
-            native_lang: userProfile?.native_lang || language, // 优先使用用户母语，否则使用界面语言
+            native_lang: language, // Fallback to interface language if profile not available
             source: 'shadowing',
             source_id: currentItem.id,
             context: item.context,
@@ -3725,167 +3751,74 @@ export default function ShadowingPage() {
 
           if (vocabResponse.ok) {
             savedVocabCount = entries.length;
-            // 将本次选中的生词移动到之前的生词中
             setPreviousWords((prev) => [...prev, ...selectedWords]);
             setSelectedWords([]);
-            // 自动保存了生词
-          } else {
-            console.warn('自动保存生词失败');
           }
-        } catch (vocabError) {
-          console.warn('自动保存生词时出错:', vocabError);
+        } catch (e) {
+          console.warn('Vocab auto-save failed', e);
         }
       }
 
-      // 4. 异步保存练习session（包含所有数据）
+      // 2. Save attempt
+      const metrics = {
+        overallScore: finalScore,
+        sentenceScores: sentenceScores,
+        completedAt: new Date().toISOString(),
+        accuracy: finalScore,
+        score: finalScore,
+        complete: true,
+        time_sec: practiceTime,
+      };
+
+      const attemptResponse = await fetch('/api/shadowing/attempts', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          item_id: currentItem.id,
+          lang: currentItem.lang,
+          level: currentItem.level,
+          metrics,
+        }),
+      });
+
+      if (!attemptResponse.ok) {
+        throw new Error('Failed to save attempt');
+      }
+
+      // 3. Save session (optional, but good for keeping track of vocab/recordings if any)
       const allWords = [...previousWords, ...selectedWords];
-
-      // 检查并处理录音保存
-      let finalRecordings = [...currentRecordings];
-
-      if (
-        audioRecorderRef.current &&
-        typeof audioRecorderRef.current.uploadCurrentRecording === 'function'
-      ) {
-        // 检查是否有未保存的录音
-        const hasUnsavedRecording = audioRecorderRef.current.hasUnsavedRecording?.() || false;
-
-        if (hasUnsavedRecording) {
-          try {
-            // 自动上传未保存的录音
-            await audioRecorderRef.current.uploadCurrentRecording();
-
-            // 等待录音状态更新
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            // 重新获取最新的录音数据
-            if (currentItem) {
-              try {
-                const headers = await getAuthHeaders();
-                const sessionResponse = await fetch(
-                  `/api/shadowing/session?item_id=${currentItem.id}`,
-                  {
-                    headers,
-                  },
-                );
-                if (sessionResponse.ok) {
-                  const sessionData = await sessionResponse.json();
-                  if (sessionData.session?.recordings) {
-                    // 更新本地状态和使用最新的录音数据
-                    setCurrentRecordings(sessionData.session.recordings);
-                    finalRecordings = sessionData.session.recordings;
-                  }
-                }
-              } catch (error) {
-                console.warn('刷新录音状态失败:', error);
-              }
-            }
-          } catch (error) {
-            console.warn('录音保存失败:', error);
-          }
-        }
-      }
-
-      const sessionResponse = await fetch('/api/shadowing/session', {
+      await fetch('/api/shadowing/session', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           item_id: currentItem.id,
           status: 'completed',
-          recordings: finalRecordings,
+          recordings: [],
           picked_preview: allWords,
-          notes: {},
+          notes: {
+            sentence_scores: sentenceScores
+          },
         }),
       });
 
-      if (sessionResponse.ok) {
-        const sessionData = await sessionResponse.json();
-        setCurrentSession(sessionData.session);
+      setSuccessMessage(t.shadowing.practice_saved || '练习已保存');
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
 
-        // 如果服务端返回了更新后的item状态，直接合并到本地状态
-        if (sessionData.item) {
-          setItems((prev) =>
-            prev.map((item) =>
-              item.id === currentItem.id ? { ...item, ...sessionData.item } : item,
-            ),
-          );
-        }
-      } else {
-        const errorText = await sessionResponse.text();
-        console.error('保存练习session失败:', {
-          status: sessionResponse.status,
-          error: errorText,
-        });
-      }
-
-      // 5. 记录练习结果 (无论是否有评分)
-      if (practiceStartTime) {
-        const metrics = {
-          accuracy: scoringResult?.score || 0,
-          score: scoringResult?.score || 0,
-          complete: true,
-          time_sec: practiceTime,
-          scoring_result: scoringResult || null,
-        };
-
-        const attemptResponse = await fetch('/api/shadowing/attempts', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            item_id: currentItem.id,
-            lang: currentItem.lang,
-            level: currentItem.level,
-            metrics,
-          }),
-        });
-
-        if (!attemptResponse.ok) {
-          const errText = await attemptResponse.text();
-          console.warn('记录练习结果失败:', errText);
-          toast.error(`保存练习结果失败: ${errText}`);
-        }
-      }
-
-      // 6. 显示完成消息（包含保存的详细信息）
-      let message = t.shadowing.practice_done_title || '练习已完成';
-      const details = [];
-
-      if (currentRecordings.length > 0) {
-        details.push(`${currentRecordings.length} 个录音`);
-      }
-      if (savedVocabCount > 0) {
-        details.push(`${savedVocabCount} 个生词`);
-      }
-      if (scoringResult) {
-        details.push(`准确率: ${(scoringResult.score || 0).toFixed(1)}%`);
-      }
-
-      if (details.length > 0) {
-        message += ` (已保存: ${details.join(', ')})`;
-      }
-
-      toast.success(message);
-
-      // 7. 清除相关缓存并刷新题库列表以确保数据同步
-      // 直接清除缓存并刷新，不依赖 setTimeout 延迟
+      // Invalidate cache
       try {
-        // 清除shadowing:catalog相关的缓存
         await fetch('/api/cache/invalidate', {
           method: 'POST',
           headers,
-          body: JSON.stringify({
-            pattern: 'shadowing:catalog*',
-          }),
+          body: JSON.stringify({ pattern: 'shadowing:catalog*' }),
         });
-      } catch (cacheError) {
-        console.warn('Failed to clear cache:', cacheError);
-      }
-      // 刷新题库列表
+      } catch (e) { console.warn(e); }
+
       fetchItems();
+
     } catch (error) {
-      console.error('Failed to save practice data:', error);
-      // 即使保存失败，本地状态已经更新，用户体验不受影响
-      toast.warning(t.shadowing.messages?.practice_completed_delayed_sync || '练习已完成，但部分数据同步可能延迟');
+      console.error('Save failed:', error);
+      toast.error(t.shadowing.save_failed || '保存失败');
     } finally {
       setSaving(false);
     }
@@ -5636,6 +5569,12 @@ export default function ShadowingPage() {
                     // 统一使用顶部主音频播放器进行分段播放
                     onPlaySentence={(i) => playSentenceByIndex(i)}
                     completedSegmentIndex={completedSegmentIndex}
+                    onSentenceScoreUpdate={(index, score) => {
+                      setSentenceScores(prev => ({
+                        ...prev,
+                        [index]: score
+                      }));
+                    }}
                   />
                 )}
 
@@ -5657,88 +5596,8 @@ export default function ShadowingPage() {
                   </Card>
                 )}
 
-                {/* 录音练习区域 */}
-                {practiceMode !== 'role' && (!gatingActive || step >= 4) && (
-                  <Card className="p-4">
-                    <AudioRecorder
-                      ref={audioRecorderRef}
-                      sessionId={currentSession?.id}
-                      existingRecordings={currentRecordings}
-                      onRecordingAdded={handleRecordingAdded}
-                      onRecordingDeleted={handleRecordingDeleted}
-                      onTranscriptionReady={handleTranscriptionReady}
-                      onRecordingSelected={handleRecordingSelected}
-                      originalText={currentItem?.text}
-                      language={currentItem?.lang || 'ja'}
-                      scrollTargetId="shadowing-text"
-                    />
-                  </Card>
-                )}
-
-                {/* 评分区域（仅步骤5显示或完成后） */}
-                {!scoringResult && practiceMode !== 'role' && (!gatingActive || step >= 4) && (
-                  <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 border-0 shadow-xl rounded-2xl">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
-                        <span className="text-white text-lg">📊</span>
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900">
-                          {t.shadowing.practice_scoring || '练习评分'}
-                        </h3>
-                        <p className="text-sm text-gray-600">{t.shadowing.ai_scoring_subtitle || 'AI智能评分，精准分析发音'}</p>
-                      </div>
-                    </div>
-
-                    {currentRecordings.length > 0 ? (
-                      <div className="text-center space-y-4">
-                        <div className="p-4 bg-white/80 rounded-xl border border-purple-200">
-                          <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <CheckCircle className="w-8 h-8 text-green-600" />
-                          </div>
-                          <p className="text-gray-700 font-medium mb-2">
-                            {t.shadowing.recording_completed || '录音完成！'}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {t.shadowing.recording_completed_message}
-                          </p>
-                        </div>
-                        <Button
-                          onClick={() => performScoring()}
-                          disabled={isScoring}
-                          aria-busy={isScoring}
-                          aria-disabled={isScoring}
-                          aria-label={isScoring ? '评分进行中' : '开始评分'}
-                          className={`h-12 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all w-full ${highlightScore ? 'animate-pulse ring-2 ring-purple-400' : ''}`}
-                        >
-                          {isScoring ? (
-                            <>
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                              {t.shadowing.scoring_in_progress || '评分中...'}
-                            </>
-                          ) : (
-                            <>
-                              <span className="mr-2">🚀</span>
-                              {t.shadowing.start_scoring || '开始评分'}
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <Mic className="w-10 h-10 text-gray-400" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                          {t.shadowing.no_recording_yet || '还没有录音'}
-                        </h3>
-                        <p className="text-gray-500 leading-relaxed">
-                          {t.shadowing.complete_recording_first}
-                        </p>
-                      </div>
-                    )}
-                  </Card>
-                )}
+                {/* 录音练习区域 - 已移除 */}
+                {/* 评分区域 - 已移除 */}
 
                 {/* 评分结果区域 */}
                 {practiceMode !== 'role' && scoringResult && (
@@ -6049,14 +5908,39 @@ export default function ShadowingPage() {
                           <p className="text-sm text-gray-600">{t.shadowing.practice_done_desc || '成绩与生词已保存，你可以选择继续提升'}</p>
                         </div>
                       </div>
+
+                      {/* Summary Section */}
+                      {scoringResult && (
+                        <div className="mb-6 bg-white/60 rounded-xl p-4 border border-green-100">
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-gray-700 font-medium">整体准确率</span>
+                            <span className="text-2xl font-bold text-green-600">{(scoringResult.score || 0).toFixed(1)}%</span>
+                          </div>
+                          <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                            {Object.entries(sentenceScores).map(([idx, score]: [string, any]) => (
+                              <div key={idx} className="flex items-center justify-between text-sm p-2 bg-white rounded border border-gray-100">
+                                <span className="text-gray-600 truncate max-w-[70%]">
+                                  {score.finalText || `句子 ${Number(idx) + 1}`}
+                                </span>
+                                <Badge variant={score.score >= 0.8 ? 'default' : score.score >= 0.6 ? 'secondary' : 'destructive'}>
+                                  {(score.score * 100).toFixed(0)}%
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex gap-3 flex-wrap">
                         <Button
                           onClick={() => {
                             setPracticeComplete(false);
                             setStep(1);
                             setScoringResult(null);
+                            setSentenceScores({}); // Clear scores
                             setIsVocabMode(false);
                             setShowTranslation(false);
+                            setSentenceScores({});
                           }}
                           className="bg-blue-600 hover:bg-blue-700"
                         >

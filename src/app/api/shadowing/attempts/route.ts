@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
         lang,
         level,
         metrics,
+        created_at: new Date().toISOString(),
       })
       .select()
       .single();

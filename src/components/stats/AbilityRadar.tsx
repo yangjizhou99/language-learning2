@@ -2,20 +2,14 @@
 'use client';
 
 import React from 'react';
-import {
-    Radar,
-    RadarChart,
-    PolarGrid,
-    PolarAngleAxis,
-    PolarRadiusAxis,
-    ResponsiveContainer,
-    Tooltip,
-} from 'recharts';
+import { ResponsiveRadar } from '@nivo/radar';
 
 interface AbilityRadarProps {
     data: {
         scene_name: string;
         score: number;
+        accuracy: number;
+        count: number;
         fullMark: number;
     }[];
 }
@@ -23,7 +17,7 @@ interface AbilityRadarProps {
 export function AbilityRadar({ data }: AbilityRadarProps) {
     if (!data || data.length === 0) {
         return (
-            <div className="flex items-center justify-center h-64 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            <div className="flex items-center justify-center h-80 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
                 <p className="text-gray-400 text-sm">暂无能力数据，快去练习吧！</p>
             </div>
         );
@@ -31,33 +25,57 @@ export function AbilityRadar({ data }: AbilityRadarProps) {
 
     return (
         <div className="w-full h-80">
-            <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-                    <PolarGrid stroke="#e5e7eb" />
-                    <PolarAngleAxis
-                        dataKey="scene_name"
-                        tick={{ fill: '#4b5563', fontSize: 12 }}
-                    />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar
-                        name="能力值"
-                        dataKey="score"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        fill="#3b82f6"
-                        fillOpacity={0.3}
-                    />
-                    <Tooltip
-                        contentStyle={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            borderRadius: '8px',
-                            border: 'none',
+            <ResponsiveRadar
+                data={data}
+                keys={['score']}
+                indexBy="scene_name"
+                valueFormat=">-.2f"
+                maxValue={100}
+                margin={{ top: 40, right: 80, bottom: 40, left: 80 }}
+                borderColor={{ from: 'color' }}
+                gridLabelOffset={36}
+                dotSize={10}
+                dotColor={{ theme: 'background' }}
+                dotBorderWidth={2}
+                colors={['#3b82f6']}
+                blendMode="multiply"
+                motionConfig="wobbly"
+                fillOpacity={0.25}
+                theme={{
+                    axis: {
+                        ticks: {
+                            text: {
+                                fontSize: 12,
+                                fill: '#6b7280',
+                                fontWeight: 500,
+                            },
+                        },
+                    },
+                    grid: {
+                        line: {
+                            stroke: '#e5e7eb',
+                            strokeDasharray: '4 4',
+                        },
+                    },
+                    dots: {
+                        text: {
+                            fontSize: 12,
+                            fill: '#374151',
+                        },
+                    },
+                    tooltip: {
+                        container: {
+                            background: '#ffffff',
+                            color: '#333333',
+                            fontSize: 12,
+                            borderRadius: '12px',
                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        }}
-                        itemStyle={{ color: '#1f2937', fontWeight: 600 }}
-                    />
-                </RadarChart>
-            </ResponsiveContainer>
+                            padding: '12px',
+                            border: '1px solid #f3f4f6',
+                        },
+                    },
+                }}
+            />
         </div>
     );
 }

@@ -120,7 +120,9 @@ export async function GET(req: NextRequest) {
         // --- Ability Radar ---
         // Scene Score = Sum(Attempt Score * Theme-Scene Weight) / Sum(Theme-Scene Weight)
         // We need to track total weighted score and total weight for each scene.
-        const sceneStats = new Map<string, { totalWeightedScore: number; totalWeight: number }>();
+        // NEW: We also track "Practice Volume" to calculate Mastery.
+        // Mastery = Accuracy * (Count / (Count + K))
+        const sceneStats = new Map<string, { totalWeightedScore: number; totalWeight: number; rawCount: number }>();
 
         shadowingAttempts.forEach(attempt => {
             const item = itemsMap.get(attempt.item_id);
@@ -140,24 +142,43 @@ export async function GET(req: NextRequest) {
                     score = acc > 1 ? acc : acc * 100;
                 }
             }
-            if (!score) return; // Skip if no score
+            // Note: We count even 0 score attempts as practice, but they contribute 0 to score.
 
             vectors.forEach((v: { scene_id: string; weight: number }) => {
                 if (!sceneStats.has(v.scene_id)) {
-                    sceneStats.set(v.scene_id, { totalWeightedScore: 0, totalWeight: 0 });
+                    sceneStats.set(v.scene_id, { totalWeightedScore: 0, totalWeight: 0, rawCount: 0 });
                 }
                 const stats = sceneStats.get(v.scene_id)!;
                 stats.totalWeightedScore += score * v.weight;
                 stats.totalWeight += v.weight;
+                // We increment rawCount by weight to reflect that "Partial Relevance" counts less?
+                // Or just count +1? 
+                // Let's use accumulated weight as "Effective Practice Count" for this scene.
+                // If a scene has weight 0.5 in a theme, doing it twice = 1 full practice.
+                stats.rawCount += v.weight;
             });
         });
 
-        const abilityRadar = Array.from(sceneStats.entries()).map(([sceneId, stats]) => ({
-            scene_id: sceneId,
-            scene_name: sceneNameMap.get(sceneId) || sceneId,
-            score: stats.totalWeight > 0 ? Math.round(stats.totalWeightedScore / stats.totalWeight) : 0,
-            fullMark: 100
-        })).sort((a, b) => b.score - a.score).slice(0, 6); // Top 6 scenes
+        const K = 5; // Mastery Constant: Need ~5 full practices to reach 50% of true accuracy potential.
+
+        const abilityRadar = Array.from(sceneStats.entries()).map(([sceneId, stats]) => {
+            const accuracy = stats.totalWeight > 0 ? stats.totalWeightedScore / stats.totalWeight : 0;
+            const count = Math.round(stats.rawCount * 10) / 10; // Round to 1 decimal
+
+            // Bayesian-like Mastery Score
+            // If count is low, score is suppressed.
+            // If count is high, score approaches accuracy.
+            const masteryScore = accuracy * (count / (count + K));
+
+            return {
+                scene_id: sceneId,
+                scene_name: sceneNameMap.get(sceneId) || sceneId,
+                score: Math.round(masteryScore), // Display Score (Mastery)
+                accuracy: Math.round(accuracy),  // True Accuracy
+                count: count,                    // Effective Practice Count
+                fullMark: 100
+            };
+        }).sort((a, b) => b.score - a.score).slice(0, 12); // Top 12 scenes (User has ~10)
 
 
         // --- Recent Accuracy ---
@@ -171,8 +192,16 @@ export async function GET(req: NextRequest) {
                     if ('score' in attempt.metrics) score = Number(attempt.metrics.score);
                     else if ('accuracy' in attempt.metrics) score = Number(attempt.metrics.accuracy) * 100;
                 }
+                // Fallback to metrics.completedAt if created_at is missing or invalid
+                let dateStr = attempt.created_at;
+                if (attempt.metrics && typeof attempt.metrics === 'object' && 'completedAt' in attempt.metrics) {
+                    if (!dateStr || new Date(dateStr).toString() === 'Invalid Date') {
+                        dateStr = attempt.metrics.completedAt;
+                    }
+                }
+
                 return {
-                    date: new Date(attempt.created_at).toLocaleDateString(),
+                    date: dateStr,
                     score: Math.round(score)
                 };
             });
@@ -233,10 +262,55 @@ export async function GET(req: NextRequest) {
         // If attempts are 0 but sessions > 0, show sessions count.
         const totalAttempts = Math.max(shadowingAttempts.length, shadowingSessions?.length || 0);
 
+        // --- Score Distribution ---
+        // Buckets: 0-59 (Needs Practice), 60-79 (Fair), 80-89 (Good), 90-100 (Excellent)
+        const scoreDistribution = [
+            { name: '需练习 (0-59)', range: '0-59', count: 0, fill: '#ef4444' }, // Red-500
+            { name: '一般 (60-79)', range: '60-79', count: 0, fill: '#f59e0b' }, // Amber-500
+            { name: '良好 (80-89)', range: '80-89', count: 0, fill: '#3b82f6' }, // Blue-500
+            { name: '优秀 (90-100)', range: '90-100', count: 0, fill: '#22c55e' }, // Green-500
+        ];
+
+        shadowingAttempts.forEach(attempt => {
+            if (attempt.metrics && typeof attempt.metrics === 'object') {
+                // Check for sentence-level scores first
+                if ('sentenceScores' in attempt.metrics && typeof attempt.metrics.sentenceScores === 'object') {
+                    const scores = Object.values(attempt.metrics.sentenceScores as Record<string, any>);
+                    scores.forEach(s => {
+                        const score = Number(s.score);
+                        if (!isNaN(score)) {
+                            if (score >= 90) scoreDistribution[3].count++;
+                            else if (score >= 80) scoreDistribution[2].count++;
+                            else if (score >= 60) scoreDistribution[1].count++;
+                            else scoreDistribution[0].count++;
+                        }
+                    });
+                } else {
+                    // Fallback to overall score if no sentence details
+                    let score = 0;
+                    if ('score' in attempt.metrics) {
+                        score = Number(attempt.metrics.score);
+                    } else if ('accuracy' in attempt.metrics) {
+                        const acc = Number(attempt.metrics.accuracy);
+                        score = acc > 1 ? acc : acc * 100;
+                    }
+
+                    // Ensure score is valid
+                    if (!isNaN(score)) {
+                        if (score >= 90) scoreDistribution[3].count++;
+                        else if (score >= 80) scoreDistribution[2].count++;
+                        else if (score >= 60) scoreDistribution[1].count++;
+                        else scoreDistribution[0].count++;
+                    }
+                }
+            }
+        });
+
         return NextResponse.json({
             abilityRadar,
             recentAccuracy,
             activityChart,
+            scoreDistribution,
             stats: {
                 totalAttempts,
                 totalDays: activityMap.size,

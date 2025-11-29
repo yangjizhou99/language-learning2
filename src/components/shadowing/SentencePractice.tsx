@@ -80,6 +80,7 @@ interface SentencePracticeProps {
   onPlaySentence?: (index: number) => Promise<void> | void; // 新增：统一用主播放器播放分段，可返回 Promise 等待完成
   completedSegmentIndex?: number | null; // 新增：播放完成的句子索引（用于检测播放完成）
   renderText?: (text: string) => React.ReactNode; // 可选：自定义句子渲染（用于注音）
+  onSentenceScoreUpdate?: (index: number, score: SentenceScore) => void;
 }
 
 const mapLangToLocale = (lang: Lang): string => {
@@ -223,7 +224,7 @@ export function deriveRoleSegments(
 
 const splitSentences = (text: string, language: Lang): string[] => {
   if (!text || !text.trim()) return [];
-  
+
   // 处理对话格式（A: / B: 开头的内容）
   const hasDialogue = /(?:^|\n)\s*[ABＡＢ]\s*[：:]/.test(text);
   if (hasDialogue) {
@@ -245,14 +246,14 @@ const splitSentences = (text: string, language: Lang): string[] => {
       const segmenter = new Intl.Segmenter(locale, { granularity: 'sentence' });
       const segments = Array.from(segmenter.segment(text));
       const parts: string[] = [];
-      
+
       for (const segment of segments) {
         const s = segment.segment.trim();
         if (s) {
           parts.push(s);
         }
       }
-      
+
       if (parts.length > 0) {
         return parts;
       }
@@ -272,7 +273,7 @@ const splitSentences = (text: string, language: Lang): string[] => {
       .filter(Boolean);
     return result;
   }
-  
+
   // 中文和日文使用对应的标点符号
   const result = text
     .split(/[。！？!?…]+/)
@@ -358,7 +359,7 @@ const groupConsecutiveTokens = (tokens: string[], sourceTokens: string[], separa
 };
 
 const EN_STOPWORDS = new Set([
-  'the','a','an','and','or','but','if','then','else','when','at','by','for','in','of','on','to','with','as','is','are','was','were','be','been','being','do','does','did','have','has','had','i','you','he','she','it','we','they','them','me','my','your','his','her','its','our','their','this','that','these','those','from'
+  'the', 'a', 'an', 'and', 'or', 'but', 'if', 'then', 'else', 'when', 'at', 'by', 'for', 'in', 'of', 'on', 'to', 'with', 'as', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'do', 'does', 'did', 'have', 'has', 'had', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'them', 'me', 'my', 'your', 'his', 'her', 'its', 'our', 'their', 'this', 'that', 'these', 'those', 'from'
 ]);
 
 const computeRoleScore = (target: string, said: string, lang: Lang) => {
@@ -389,7 +390,7 @@ const computeRoleScore = (target: string, said: string, lang: Lang) => {
   };
 };
 
-function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits, onPlaySentence, completedSegmentIndex, renderText }: SentencePracticeProps) {
+function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits, onPlaySentence, completedSegmentIndex, renderText, onSentenceScoreUpdate }: SentencePracticeProps) {
   const { t } = useLanguage();
   const [displayText, setDisplayText] = useState('');
   const [finalText, setFinalText] = useState('');
@@ -401,7 +402,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   // 角色模式播放控制所需状态
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  
+
   // 音频播放速度控制状态
   const isRoleMode = practiceMode === 'role';
 
@@ -413,6 +414,11 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     onPlaySentence: onPlaySentence as any,
     acuUnits,
     enabled: !isRoleMode,
+    onScoreUpdate: (index, score) => {
+      if (onSentenceScoreUpdate) {
+        onSentenceScoreUpdate(index, score);
+      }
+    }
   });
 
   const nonRoleContent = (
@@ -507,7 +513,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     if (rec) {
       try {
         rec.stop();
-      } catch {}
+      } catch { }
     }
   }, []);
 
@@ -519,7 +525,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     if (audioRef.current) {
       try {
         audioRef.current.pause();
-      } catch {}
+      } catch { }
     }
   }, []);
 
@@ -531,7 +537,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const rafRef = useRef<number | null>(null);
   const iosUnlockedRef = useRef(false);
   const isStartingRef = useRef(false);
-  
+
   // 临时存储识别结果，只在录音真正停止时才提交
   const tempFinalTextRef = useRef<string>('');
   // 保存上一次的最终文本，用于检测是否有新内容
@@ -552,7 +558,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const total = sentences.length;
   const currentSentence = expandedIndex !== null ? sentences[expandedIndex] || '' : '';
   const { actualIsMobile } = useMobile();
-  
+
   // 使用 ref 保存当前句子，供定时器闭包使用
   const currentSentenceRef = useRef('');
   useEffect(() => {
@@ -569,16 +575,16 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!audioUrl || !sentenceTimeline || sentenceTimeline.length === 0) return;
-    
+
     // 清理旧的音频实例
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
     }
-    
+
     const audio = new Audio(audioUrl);
     audio.preload = 'auto';
-    
+
     const handleTimeUpdate = () => {
       const stopAt = stopAtRef.current;
       if (typeof stopAt === 'number' && audio.currentTime >= stopAt) {
@@ -586,7 +592,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         stopAtRef.current = null;
       }
     };
-    
+
     const handlePause = () => {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
@@ -594,18 +600,18 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       }
       setIsAudioPlaying(false);
     };
-    
+
     const handlePlay = () => setIsAudioPlaying(true);
     const handleEnded = () => setIsAudioPlaying(false);
-    
+
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('pause', handlePause);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('ended', handleEnded);
-    
-    try { audio.load(); } catch {}
+
+    try { audio.load(); } catch { }
     audioRef.current = audio;
-    
+
     // 清理函数
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
@@ -627,7 +633,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   // 计算当前句子的评分
   const currentMetrics = useMemo(() => {
     if (expandedIndex === null) return null;
-    
+
     const targetRaw = tokenize(currentSentence, language);
     const saidRaw = tokenize(finalText, language);
 
@@ -636,15 +642,15 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
 
     const targetTokens = filterSpeaker(targetRaw);
     const saidTokens = filterSpeaker(saidRaw);
-    
+
     // 使用传入的 ACU 数据
-    
+
     // 使用新的对齐算法（如果有 ACU 数据）
     let alignmentResult;
     let comprehensiveScore;
     let missingGroups;
     let extraGroups;
-    
+
     if (acuUnits && acuUnits.length > 0) {
       alignmentResult = performAlignment(
         targetTokens,
@@ -652,10 +658,10 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         acuUnits,
         currentSentence
       );
-      
+
       // 计算综合评分
       comprehensiveScore = calculateSimilarityScore(targetTokens, saidTokens, alignmentResult);
-      
+
       // 为了向后兼容，保留原有的 missing 和 extra 格式
       missingGroups = alignmentResult.missing.map(err => err.expected || '');
       extraGroups = alignmentResult.extra.map(err => err.actual);
@@ -665,26 +671,26 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       const dist = levenshtein(targetTokens, saidTokens);
       const maxLen = Math.max(targetTokens.length, saidTokens.length, 1);
       const sim = 1 - dist / maxLen;
-      
+
       // 找出缺失和多余的token
       const missingTokensRaw = unique(targetTokens.filter((t) => !saidTokens.includes(t)));
       const extraTokensRaw = unique(saidTokens.filter((t) => !targetTokens.includes(t)));
-      
+
       // 将连续的token分组（中文/日文直接连接，英文用空格连接）
       const separator = language === 'en' ? ' ' : '';
       missingGroups = groupConsecutiveTokens(missingTokensRaw, targetTokens, separator);
       extraGroups = groupConsecutiveTokens(extraTokensRaw, saidTokens, separator);
-      
+
       // 合并覆盖度和相似度为综合得分
       comprehensiveScore = (cov + sim) / 2;
       alignmentResult = undefined;
     }
-    
-    return { 
-      score: comprehensiveScore, 
-      missing: missingGroups, 
+
+    return {
+      score: comprehensiveScore,
+      missing: missingGroups,
       extra: extraGroups,
-      alignmentResult 
+      alignmentResult
     };
   }, [currentSentence, finalText, language, expandedIndex, isConversation, originalText]);
 
@@ -736,7 +742,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         const segIndex = typeof seg.index === 'number' ? seg.index : idx;
         return segIndex === expandedIndex;
       });
-      
+
       // 只有当是用户回合时才推进
       if (activeSegment && normalizeSpeakerSymbol(activeSegment.speaker) === normalizedActiveRole) {
         // 调用回调，回调中会延迟1秒显示评分后推进
@@ -777,59 +783,59 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       tempCombinedTextRef.current = '';
       lastResultAtRef.current = Date.now();
       clearSilenceTimer();
-      
+
       // 智能静默检测：根据完成度动态调整静默时间
       silenceTimerRef.current = window.setInterval(() => {
         const diff = Date.now() - lastResultAtRef.current;
-        
+
         // 从 ref 获取当前句子，避免闭包问题
         const targetSentence = currentSentenceRef.current;
         if (!targetSentence || targetSentence.trim() === '') {
           // 没有目标句子时，使用简单的静默检测（2秒）
           if (diff >= 2000) {
-            try { rec.stop(); } catch {}
+            try { rec.stop(); } catch { }
             clearSilenceTimer();
           }
           return;
         }
-        
+
         // 计算当前录入文本的token数量（使用完整文本：final + interim）
         const currentText = tempCombinedTextRef.current;
         const currentTokensRaw = tokenize(currentText, language);
         const targetTokensRaw = tokenize(targetSentence, language);
-        
+
         // 检测是否为对话类型（从当前句子判断）
         const isDialogueType = /^[ABＡＢ]\s*[：:]/.test(targetSentence.trim());
-        
+
         // 对话类型需要过滤A/B标记（与评分计算保持一致）
         const filterSpeaker = (arr: string[]) =>
           isDialogueType ? arr.filter((w) => w.toLowerCase() !== 'a' && w.toLowerCase() !== 'b') : arr;
-        
+
         const currentTokens = filterSpeaker(currentTokensRaw);
         const targetTokens = filterSpeaker(targetTokensRaw);
-        
-        const completionRate = targetTokens.length > 0 
-          ? currentTokens.length / targetTokens.length 
+
+        const completionRate = targetTokens.length > 0
+          ? currentTokens.length / targetTokens.length
           : 0;
-        
+
         // 根据完成度动态调整静默时间
         let requiredSilence = 10000; // 默认10秒（<80%时）
-        
+
         if (completionRate >= 1.0) {
           requiredSilence = 1000; // 完成度 >= 100%：1秒
         } else if (completionRate >= 0.8) {
           requiredSilence = 1500; // 完成度在80%-99%：1.5秒
         }
         // else: 完成度 < 80%：保持默认10秒
-        
+
         // 达到静默时间要求，自动停止
         if (diff >= requiredSilence) {
-          try { rec.stop(); } catch {}
+          try { rec.stop(); } catch { }
           clearSilenceTimer();
         }
         // 超过12秒强制兜底（防止卡住）
         else if (diff >= 12000) {
-          try { rec.stop(); } catch {}
+          try { rec.stop(); } catch { }
           clearSilenceTimer();
         }
       }, 50);
@@ -837,7 +843,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     rec.onresult = (event: WebSpeechRecognitionEvent) => {
       let fullFinal = '';
       let interim = '';
-      
+
       // 正确处理所有结果：累积所有final结果，只取最后一个interim结果
       for (let i = 0; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
@@ -848,27 +854,27 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           interim += transcript;
         }
       }
-      
+
       const finalTrimmed = fullFinal.trim();
       const interimTrimmed = interim.trim();
-      const combined = finalTrimmed 
+      const combined = finalTrimmed
         ? (interimTrimmed ? `${finalTrimmed} ${interimTrimmed}` : finalTrimmed)
         : interimTrimmed;
-      
+
       // 只要完整文本有变化就重置静默时间（包括interim变化）
       if (combined && combined !== tempCombinedTextRef.current) {
         lastResultAtRef.current = Date.now();
       }
-      
+
       // 保存final文本用于最终评分
       if (finalTrimmed && finalTrimmed !== lastFinalTextRef.current) {
         lastFinalTextRef.current = finalTrimmed;
       }
-      
+
       // 暂存到 ref
       tempFinalTextRef.current = finalTrimmed;
       tempCombinedTextRef.current = combined; // 保存完整文本供完成度计算
-      
+
       // 使用requestAnimationFrame优化UI更新，避免阻塞
       requestAnimationFrame(() => {
         setDisplayText(combined);
@@ -877,13 +883,13 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     rec.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
       const errorType = event.error || 'unknown';
-      
+
       // 只在严重错误时弹出提示
       if (errorType === 'not-allowed' || errorType === 'permission-denied') {
-        const isNonSecure = typeof window !== 'undefined' && 
-                           window.location.protocol !== 'https:' && 
-                           window.location.hostname !== 'localhost' &&
-                           !window.location.hostname.startsWith('127.');
+        const isNonSecure = typeof window !== 'undefined' &&
+          window.location.protocol !== 'https:' &&
+          window.location.hostname !== 'localhost' &&
+          !window.location.hostname.startsWith('127.');
         if (isNonSecure) {
           toast?.error(t.shadowing?.alert_messages?.microphone_permission_denied_mobile || '麦克风权限被拒绝。\n\n移动端需要使用HTTPS安全连接。\n\n请使用 https:// 开头的地址访问，或部署到Vercel等平台测试。');
         } else {
@@ -895,10 +901,10 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         toast?.error(t.shadowing?.alert_messages?.microphone_service_not_allowed || '语音识别服务不可用。\n\n请确保使用支持Web Speech API的浏览器（如Chrome）。');
       }
       // no-speech等其他错误不提示，静默处理
-      
+
       setIsRecognizing(false);
       clearSilenceTimer();
-      
+
       // 设置 finalText 以触发评分计算（评分保存后会自动推进）
       const textToSave = tempFinalTextRef.current || tempCombinedTextRef.current || '';
       if (textToSave) {
@@ -911,7 +917,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       isStartingRef.current = false;
       setIsRecognizing(false);
       clearSilenceTimer();
-      
+
       // 设置 finalText 以触发评分计算（评分保存后会自动推进）
       const textToSave = tempFinalTextRef.current || tempCombinedTextRef.current || '';
       if (textToSave) {
@@ -922,7 +928,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     };
     recognitionRef.current = rec;
     return () => {
-      try { rec.stop(); } catch {}
+      try { rec.stop(); } catch { }
       recognitionRef.current = null;
       clearSilenceTimer();
     };
@@ -933,7 +939,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       toast.error(t.shadowing?.alert_messages?.speech_recognition_not_supported || '当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
       return;
     }
-    
+
     try {
       if (isStartingRef.current || isRecognizing) {
         // 已在启动中或正在识别，避免重复调用
@@ -951,13 +957,13 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         const msg = err instanceof Error ? err.message : String(err);
         // 避免在“已启动”情况下弹框，进行一次无提示的安全重试
         if (msg && msg.toLowerCase().includes('already started')) {
-          try { recognitionRef.current.stop(); } catch {}
+          try { recognitionRef.current.stop(); } catch { }
           setTimeout(() => {
             try {
               if (!isRecognizing) {
                 recognitionRef.current?.start?.();
               }
-            } catch {}
+            } catch { }
           }, 350);
           return;
         }
@@ -1004,8 +1010,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
 
   // 确保麦克风资源已释放的安全栅栏（默认500ms）
   const ensureMicReleased = useCallback(async (ms: number = 500) => {
-    try { stop(); } catch {}
-    try { cleanupRecognition(); } catch {}
+    try { stop(); } catch { }
+    try { cleanupRecognition(); } catch { }
     if (ms > 0) {
       await new Promise<void>((resolve) => setTimeout(resolve, ms));
     }
@@ -1035,7 +1041,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const speak = useCallback(async (index: number) => {
     // 优先使用父层主播放器播放
     if (typeof onPlaySentence === 'function') {
-      try { onPlaySentence(index); } catch {}
+      try { onPlaySentence(index); } catch { }
       return;
     }
     if (!(audioUrl && sentenceTimeline && sentenceTimeline.length > 0)) {
@@ -1059,7 +1065,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         audioRef.current.preload = 'auto';
         // 设置初始播放速度
         audioRef.current.playbackRate = playbackRate;
-      } catch {}
+      } catch { }
     } else if (audioRef.current.src !== audioUrl) {
       audioRef.current.src = audioUrl;
       // 重新设置播放速度
@@ -1085,9 +1091,9 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         // 不等待，以保留用户手势调用栈
         const p = a.play();
         if (p && typeof p.then === 'function') {
-          p.then(() => { try { a.pause(); } catch {}; a.muted = false; }).catch(() => { a.muted = false; });
+          p.then(() => { try { a.pause(); } catch { }; a.muted = false; }).catch(() => { a.muted = false; });
         } else {
-          try { a.pause(); } catch {}
+          try { a.pause(); } catch { }
           a.muted = false;
         }
       } catch { a.muted = false; }
@@ -1147,9 +1153,9 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       if (!isIOS) {
         try {
           if ('speechSynthesis' in window) {
-            setTimeout(() => { try { window.speechSynthesis.cancel(); } catch {} }, 0);
+            setTimeout(() => { try { window.speechSynthesis.cancel(); } catch { } }, 0);
           }
-        } catch {}
+        } catch { }
       }
 
       await new Promise<void>((resolve, reject) => {
@@ -1186,11 +1192,11 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
             if (a && !a.paused) {
               const stopAt = stopAtRef.current;
               if (typeof stopAt === 'number') {
-                try { a.currentTime = Math.min(stopAt, a.currentTime); } catch {}
+                try { a.currentTime = Math.min(stopAt, a.currentTime); } catch { }
               }
-              try { a.pause(); } catch {}
+              try { a.pause(); } catch { }
             }
-          } catch {}
+          } catch { }
           cleanup();
           resolve();
         }
@@ -1244,7 +1250,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         })();
       });
       return;
-    } catch {}
+    } catch { }
 
     toast.error(t.shadowing?.alert_messages?.no_audio_or_timeline || '未找到可用的生成音频或时间轴，无法播放该句。');
   }, [audioUrl, sentenceTimeline, isIOS, playbackRate, t.shadowing?.alert_messages?.no_audio_or_timeline, onPlaySentence]);
@@ -1266,7 +1272,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       utterance.onerror = () => resolve();
       try {
         window.speechSynthesis.cancel();
-      } catch {}
+      } catch { }
       window.speechSynthesis.speak(utterance);
     });
   }, [language]);
@@ -1286,7 +1292,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   // 统一的推进到下一句的函数
   const advanceToNextSegment = useCallback(() => {
     if (roleCancelledRef.current) return;
-    
+
     const segments = derivedRoleSegments;
     if (roleIndexRef.current >= segments.length) {
       // 已完成所有片段
@@ -1315,14 +1321,14 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       setTimeout(() => setHighlightUnperfect(false), 6000);
       return;
     }
-    
+
     // 推进到下一句
     const oldIndex = roleIndexRef.current;
     roleIndexRef.current += 1;
-    
+
     // 先重置处理标记，确保 useEffect 能检测到新的索引
     roleProcessingRef.current = false;
-    
+
     // 触发信号更新，让 useEffect 重新执行处理下一句
     setRoleStepSignal((x) => x + 1);
   }, [derivedRoleSegments, normalizedActiveRole, onRoleRoundComplete, sentenceScores, stopRoleAutomation]);
@@ -1383,13 +1389,13 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       // 如果正在处理，不重复触发
       return;
     }
-    
+
     const segments = derivedRoleSegments;
     if (!segments.length) {
       stopRoleAutomation();
       return;
     }
-    
+
     // 检查是否已完成所有片段
     if (roleIndexRef.current >= segments.length) {
       roleProcessingRef.current = false;
@@ -1425,13 +1431,13 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       stopRoleAutomation();
       return;
     }
-    
+
     // 保存当前处理的索引，防止依赖项变化时重新执行
     const currentIndex = roleIndexRef.current;
-    
+
     // 立即标记正在处理，防止重复触发
     roleProcessingRef.current = true;
-    
+
     const isUserTurn = normalizeSpeakerSymbol(segment.speaker) === normalizedActiveRole;
 
     if (isUserTurn) {
@@ -1440,21 +1446,21 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch {}
+        } catch { }
       }
       setIsRecognizing(false);
       isStartingRef.current = false;
       cleanupAudio();
-      
+
       // 2. 清理状态
       setDisplayText('');
       setFinalText('');
       tempFinalTextRef.current = '';
       tempCombinedTextRef.current = '';
       lastFinalTextRef.current = '';
-      
+
       // roleProcessingRef 已经在上面设置了，这里不需要重复设置
-      
+
       // 3. 设置评分完成后的回调（会在评分保存 useEffect 中触发）
       rolePendingResolveRef.current = () => {
         rolePendingResolveRef.current = null;
@@ -1463,7 +1469,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           advanceToNextSegment();
         }, 1000);
       };
-      
+
       // 4. 展开句子并触发录音（模拟点击麦克风按钮）
       const targetIndex = segment.index ?? roleIndexRef.current;
       setExpandedIndex(targetIndex);
@@ -1476,20 +1482,20 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         // 调用 start() 开始录音，就像点击了麦克风按钮一样
         start();
       }, 100);
-      
+
     } else {
       // 电脑回合：复用逐句练习的播放功能
       // roleProcessingRef 已经在上面设置了，这里不需要重复设置
-      
+
       // 1. 停止录音（如果有）
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch {}
+        } catch { }
       }
       setIsRecognizing(false);
       cleanupAudio();
-      
+
       // 2. 不展开句子
       setExpandedIndex(null);
       setDisplayText('');
@@ -1497,7 +1503,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       tempFinalTextRef.current = '';
       tempCombinedTextRef.current = '';
       lastFinalTextRef.current = '';
-      
+
       // 3. 调用逐句练习的 speak() 函数播放音频并等待完成
       let cancelled = false;
       const playAndAdvance = async () => {
@@ -1518,7 +1524,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
             if (typeof fn === 'function') {
               fn(segIndex);
             }
-          } catch {}
+          } catch { }
 
           // 使用 derivedRoleSegments 的时长作为推进依据（避免依赖父层 timeline 和播放条）
           const baseDurationMs = (typeof segment.start === 'number' && typeof segment.end === 'number')
@@ -1529,7 +1535,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
 
           // 清理旧定时器（如果有）
           if (roleTimerRef.current) {
-            try { clearTimeout(roleTimerRef.current); } catch {}
+            try { clearTimeout(roleTimerRef.current); } catch { }
             roleTimerRef.current = null;
           }
 
@@ -1556,14 +1562,14 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           roleProcessingRef.current = false;
         }
       };
-      
+
       playAndAdvance();
-      
+
       // 清理函数
       return () => {
         cancelled = true;
         if (roleTimerRef.current) {
-          try { clearTimeout(roleTimerRef.current); } catch {}
+          try { clearTimeout(roleTimerRef.current); } catch { }
           roleTimerRef.current = null;
         }
         // 注意：不在这里重置 roleProcessingRef，让播放完成后自己重置
@@ -1656,9 +1662,30 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       )}
 
       <Card className={`p-4 md:p-6 border border-slate-200 shadow-sm bg-slate-50/30 ${className || ''}`}>
-      {/* 顶部：进度显示 */}
-      <div className="mb-4">
-        <SentencePracticeProgress
+        {/* 顶部：进度显示 */}
+        <div className="mb-4">
+          <SentencePracticeProgress
+            total={total}
+            scores={sentenceScores}
+            onJumpToSentence={(index) => {
+              handleSentenceClick(index);
+              setTimeout(() => {
+                const element = document.getElementById(`sentence-${index}`);
+                element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
+            }}
+          />
+        </div>
+
+        {/* 音频播放速度控制 */}
+        {audioUrl && sentenceTimeline && sentenceTimeline.length > 0 && (
+          <div className="mb-4">
+            {/* 倍速与播放控制已由底部主播放器统一管理，此处仅保留占位/提示或可移除 */}
+          </div>
+        )}
+
+        {/* 智能建议 */}
+        <SmartSuggestion
           total={total}
           scores={sentenceScores}
           onJumpToSentence={(index) => {
@@ -1668,81 +1695,60 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
               element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 100);
           }}
+          className="mb-4"
         />
-      </div>
 
-      {/* 音频播放速度控制 */}
-      {audioUrl && sentenceTimeline && sentenceTimeline.length > 0 && (
-        <div className="mb-4">
-          {/* 倍速与播放控制已由底部主播放器统一管理，此处仅保留占位/提示或可移除 */}
-        </div>
-      )}
+        {total > 0 ? (
+          <div className="space-y-2">
+            {sentences.map((sentence, index) => {
+              const score = sentenceScores[index];
+              const isExpanded = expandedIndex === index;
 
-      {/* 智能建议 */}
-      <SmartSuggestion
-        total={total}
-        scores={sentenceScores}
-        onJumpToSentence={(index) => {
-          handleSentenceClick(index);
-          setTimeout(() => {
-            const element = document.getElementById(`sentence-${index}`);
-            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 100);
-        }}
-        className="mb-4"
-      />
-
-      {total > 0 ? (
-        <div className="space-y-2">
-          {sentences.map((sentence, index) => {
-            const score = sentenceScores[index];
-            const isExpanded = expandedIndex === index;
-            
-            return (
-              <SentenceCard
-                key={index}
-                index={index}
-                sentence={sentence}
-                score={score || null}
-                isExpanded={isExpanded}
-                isRecognizing={isRecognizing && isExpanded}
-                displayText={isExpanded ? displayText : ''}
-                finalText={isExpanded ? finalText : ''}
-                currentMetrics={isExpanded ? currentMetrics : null}
-                isMobile={actualIsMobile}
-                language={language}
-                onToggleExpand={() => handleSentenceClick(index)}
-                onSpeak={() => speak(index)}
-                onStartPractice={isRoleMode ? startManualPractice : start}
-                onStopPractice={stop}
-                onRetry={isRoleMode
-                  ? retryManualPractice
-                  : () => {
+              return (
+                <SentenceCard
+                  key={index}
+                  index={index}
+                  sentence={sentence}
+                  score={score || null}
+                  isExpanded={isExpanded}
+                  isRecognizing={isRecognizing && isExpanded}
+                  displayText={isExpanded ? displayText : ''}
+                  finalText={isExpanded ? finalText : ''}
+                  currentMetrics={isExpanded ? currentMetrics : null}
+                  isMobile={actualIsMobile}
+                  language={language}
+                  onToggleExpand={() => handleSentenceClick(index)}
+                  onSpeak={() => speak(index)}
+                  onStartPractice={isRoleMode ? startManualPractice : start}
+                  onStopPractice={stop}
+                  onRetry={isRoleMode
+                    ? retryManualPractice
+                    : () => {
                       setDisplayText('');
                       setFinalText('');
                       setTimeout(() => start(), 100);
                     }}
-                highlightReview={highlightUnperfect && !!score && Math.round((score.score || 0) * 100) < 100}
-                renderText={renderText}
-              />
-            );
-          })}
-        </div>
-      ) : (
-        <div className="text-gray-500 text-center py-8">
-          {t.shadowing?.alert_messages?.no_content_message || '暂无内容'}
-        </div>
-      )}
+                  highlightReview={highlightUnperfect && !!score && Math.round((score.score || 0) * 100) < 100}
+                  renderText={renderText}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-gray-500 text-center py-8">
+            {t.shadowing?.alert_messages?.no_content_message || '暂无内容'}
+          </div>
+        )}
 
-      {/* Toast 通知 */}
-      {customToast && (
-        <Toast
-          message={customToast.message}
-          type={customToast.type}
-          onClose={() => setCustomToast(null)}
-        />
-      )}
-    </Card>
+        {/* Toast 通知 */}
+        {customToast && (
+          <Toast
+            message={customToast.message}
+            type={customToast.type}
+            onClose={() => setCustomToast(null)}
+          />
+        )}
+      </Card>
     </>
   );
 }
