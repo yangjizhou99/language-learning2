@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { ResponsiveRadar } from '@nivo/radar';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface AbilityRadarProps {
     data: {
@@ -15,10 +16,12 @@ interface AbilityRadarProps {
 }
 
 export function AbilityRadar({ data }: AbilityRadarProps) {
+    const t = useTranslation();
+
     if (!data || data.length === 0) {
         return (
             <div className="flex items-center justify-center h-80 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
-                <p className="text-gray-400 text-sm">暂无能力数据，快去练习吧！</p>
+                <p className="text-gray-400 text-sm">{t.stats.no_ability_data}</p>
             </div>
         );
     }

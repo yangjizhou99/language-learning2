@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { ResponsivePie } from '@nivo/pie';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface ScoreDistributionChartProps {
     data: Array<{
@@ -14,12 +15,13 @@ interface ScoreDistributionChartProps {
 }
 
 export function ScoreDistributionChart({ data }: ScoreDistributionChartProps) {
+    const t = useTranslation();
     const totalCount = data.reduce((sum, item) => sum + item.count, 0);
 
     if (totalCount === 0) {
         return (
             <div className="h-[300px] flex items-center justify-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
-                <p className="text-gray-400 text-sm">暂无练习数据</p>
+                <p className="text-gray-400 text-sm">{t.stats.no_practice_data}</p>
             </div>
         );
     }
@@ -52,7 +54,7 @@ export function ScoreDistributionChart({ data }: ScoreDistributionChartProps) {
                             <span className="font-medium text-gray-900">{datum.label}</span>
                         </div>
                         <div className="mt-1 text-gray-500">
-                            练习次数: <span className="font-bold text-gray-900">{datum.value}</span>
+                            {t.stats.practice_count}: <span className="font-bold text-gray-900">{datum.value}</span>
                         </div>
                     </div>
                 )}
