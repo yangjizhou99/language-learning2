@@ -171,8 +171,16 @@ export async function GET(req: NextRequest) {
                     if ('score' in attempt.metrics) score = Number(attempt.metrics.score);
                     else if ('accuracy' in attempt.metrics) score = Number(attempt.metrics.accuracy) * 100;
                 }
+                // Fallback to metrics.completedAt if created_at is missing or invalid
+                let dateStr = attempt.created_at;
+                if (attempt.metrics && typeof attempt.metrics === 'object' && 'completedAt' in attempt.metrics) {
+                    if (!dateStr || new Date(dateStr).toString() === 'Invalid Date') {
+                        dateStr = attempt.metrics.completedAt;
+                    }
+                }
+
                 return {
-                    date: new Date(attempt.created_at).toLocaleDateString(),
+                    date: dateStr,
                     score: Math.round(score)
                 };
             });

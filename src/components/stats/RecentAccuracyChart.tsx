@@ -52,6 +52,11 @@ export function RecentAccuracyChart({ data }: RecentAccuracyChartProps) {
                             border: 'none',
                             boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                         }}
+                        labelFormatter={(value) => {
+                            if (!value) return '';
+                            const date = new Date(value);
+                            return date.toLocaleDateString();
+                        }}
                     />
                     <Line
                         type="monotone"

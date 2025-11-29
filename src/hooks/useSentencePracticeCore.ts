@@ -45,6 +45,7 @@ export interface UseSentencePracticeCoreOptions {
   onPlaySentence?: (index: number) => Promise<void> | void;
   acuUnits?: AcuUnit[];
   enabled?: boolean;
+  onScoreUpdate?: (index: number, score: SentenceScore) => void;
 }
 
 function mapLangToLocale(lang: LangCode): string {
@@ -83,7 +84,7 @@ function splitTextToSentences(text: string, language: LangCode): string[] {
         if (s) parts.push(s);
       }
       if (parts.length) return parts;
-    } catch {}
+    } catch { }
   }
   if (language === 'en' || language === 'ko') {
     return src.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
@@ -107,7 +108,7 @@ function tokenize(text: string, lang: LangCode): string[] {
   return removedPunct.split('').filter((c) => c.trim().length > 0);
 }
 
-export function useSentencePracticeCore({ originalText, language, sentenceTimeline, onPlaySentence, acuUnits, enabled = true }: UseSentencePracticeCoreOptions) {
+export function useSentencePracticeCore({ originalText, language, sentenceTimeline, onPlaySentence, acuUnits, enabled = true, onScoreUpdate }: UseSentencePracticeCoreOptions) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [displayText, setDisplayText] = useState('');
@@ -161,12 +162,12 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
       // 重置静音计时器（与第四步一致：连续静音阈值触发结束）
       lastResultAtRef.current = Date.now();
       if (silenceTimerRef.current) {
-        try { clearTimeout(silenceTimerRef.current); } catch {}
+        try { clearTimeout(silenceTimerRef.current); } catch { }
         silenceTimerRef.current = null;
       }
       const SILENCE_MS = 1200;
       silenceTimerRef.current = window.setTimeout(() => {
-        try { recognitionRef.current?.stop?.(); } catch {}
+        try { recognitionRef.current?.stop?.(); } catch { }
       }, SILENCE_MS) as any;
     };
 
@@ -179,36 +180,36 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
         scoreCurrent(textToSave, expandedIndex);
       }
       // 清理计时器
-      if (silenceTimerRef.current) { try { clearTimeout(silenceTimerRef.current); } catch {} silenceTimerRef.current = null; }
-      if (maxDurationTimerRef.current) { try { clearTimeout(maxDurationTimerRef.current); } catch {} maxDurationTimerRef.current = null; }
+      if (silenceTimerRef.current) { try { clearTimeout(silenceTimerRef.current); } catch { } silenceTimerRef.current = null; }
+      if (maxDurationTimerRef.current) { try { clearTimeout(maxDurationTimerRef.current); } catch { } maxDurationTimerRef.current = null; }
     };
 
     rec.onerror = (event: { error?: string }) => {
       const err = (event?.error || '').toLowerCase();
       // 无语音时直接结束，避免长等待
       if (err === 'no-speech' || err === 'audio-capture') {
-        try { recognitionRef.current?.stop?.(); } catch {}
+        try { recognitionRef.current?.stop?.(); } catch { }
         return;
       }
       // already started：做一次安全重试
       if (err.includes('already')) {
-        try { recognitionRef.current?.stop?.(); } catch {}
-        setTimeout(() => { try { recognitionRef.current?.start?.(); } catch {} }, 120);
+        try { recognitionRef.current?.stop?.(); } catch { }
+        setTimeout(() => { try { recognitionRef.current?.start?.(); } catch { } }, 120);
       }
     };
 
     recognitionRef.current = rec;
     return () => {
-      try { rec.stop(); } catch {}
+      try { rec.stop(); } catch { }
       recognitionRef.current = null;
-      if (silenceTimerRef.current) { try { clearTimeout(silenceTimerRef.current); } catch {} silenceTimerRef.current = null; }
+      if (silenceTimerRef.current) { try { clearTimeout(silenceTimerRef.current); } catch { } silenceTimerRef.current = null; }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, expandedIndex, enabled]);
 
   const clearSilenceTimer = useCallback(() => {
     if (silenceTimerRef.current) {
-      try { clearTimeout(silenceTimerRef.current); } catch {}
+      try { clearTimeout(silenceTimerRef.current); } catch { }
       silenceTimerRef.current = null;
     }
   }, []);
@@ -230,12 +231,23 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
         alignmentResult: alignment,
       },
     }));
-  }, [language, sentences, acuUnits]);
+
+    // Notify parent about the update
+    if (onScoreUpdate) {
+      onScoreUpdate(index, {
+        score,
+        finalText: spoken,
+        missing: alignment.missing.map((m) => m.expected || ''),
+        extra: alignment.extra.map((e) => e.actual),
+        alignmentResult: alignment,
+      });
+    }
+  }, [language, sentences, acuUnits, onScoreUpdate]);
 
   const ensureMicReleased = useCallback(async (delayMs = 150) => {
     try {
       if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
+        try { recognitionRef.current.stop(); } catch { }
       }
     } finally {
       await new Promise((r) => setTimeout(r, delayMs));
@@ -244,7 +256,7 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
 
   const speak = useCallback(async (index: number) => {
     await ensureMicReleased(120);
-    try { await onPlaySentence?.(index); } catch {}
+    try { await onPlaySentence?.(index); } catch { }
   }, [ensureMicReleased, onPlaySentence]);
 
   const start = useCallback((index?: number) => {
@@ -267,23 +279,23 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
 
     // 清理旧计时器
     clearSilenceTimer();
-    if (maxDurationTimerRef.current) { try { clearTimeout(maxDurationTimerRef.current); } catch {} maxDurationTimerRef.current = null; }
+    if (maxDurationTimerRef.current) { try { clearTimeout(maxDurationTimerRef.current); } catch { } maxDurationTimerRef.current = null; }
 
-    try { recognitionRef.current.start(); } catch {}
+    try { recognitionRef.current.start(); } catch { }
 
     // 最大录音时长兜底（防止无限识别）
     const MAX_DURATION_MS = 15000;
     maxDurationTimerRef.current = window.setTimeout(() => {
-      try { recognitionRef.current?.stop?.(); } catch {}
+      try { recognitionRef.current?.stop?.(); } catch { }
     }, MAX_DURATION_MS) as any;
   }, [expandedIndex, clearSilenceTimer, enabled]);
 
   const stop = useCallback(() => {
-    try { recognitionRef.current?.stop?.(); } catch {}
+    try { recognitionRef.current?.stop?.(); } catch { }
     setIsRecognizing(false);
     // 清理计时器
-    if (silenceTimerRef.current) { try { clearTimeout(silenceTimerRef.current); } catch {} silenceTimerRef.current = null; }
-    if (maxDurationTimerRef.current) { try { clearTimeout(maxDurationTimerRef.current); } catch {} maxDurationTimerRef.current = null; }
+    if (silenceTimerRef.current) { try { clearTimeout(silenceTimerRef.current); } catch { } silenceTimerRef.current = null; }
+    if (maxDurationTimerRef.current) { try { clearTimeout(maxDurationTimerRef.current); } catch { } maxDurationTimerRef.current = null; }
   }, []);
 
   const retry = useCallback((index?: number) => {
