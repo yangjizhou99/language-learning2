@@ -9,6 +9,7 @@ import { ActivityChart } from '@/components/stats/ActivityChart';
 import { RecentAccuracyChart } from '@/components/stats/RecentAccuracyChart';
 import { ScoreDistributionChart } from '@/components/stats/ScoreDistributionChart';
 import { ArrowLeft, Loader2, TrendingUp, Calendar, Target, PieChart as PieChartIcon } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface StatsData {
     stats: {
@@ -43,10 +44,12 @@ export default function LearningStatsPage() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<StatsData | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [selectedLanguage, setSelectedLanguage] = useState('all');
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                setLoading(true);
                 const { data: { session } } = await supabase.auth.getSession();
 
                 if (!session) {
@@ -54,7 +57,7 @@ export default function LearningStatsPage() {
                     return;
                 }
 
-                const res = await fetch('/api/user/stats', {
+                const res = await fetch(`/api/user/stats?lang=${selectedLanguage}`, {
                     headers: {
                         Authorization: `Bearer ${session.access_token}`,
                     },
@@ -75,9 +78,9 @@ export default function LearningStatsPage() {
         };
 
         fetchData();
-    }, [router]);
+    }, [router, selectedLanguage]);
 
-    if (loading) {
+    if (loading && !data) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -103,14 +106,24 @@ export default function LearningStatsPage() {
         <div className="min-h-screen bg-[#f8fafc] pb-12">
             {/* Header */}
             <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-20">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
-                    <button
-                        onClick={() => router.back()}
-                        className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 hover:text-gray-900"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                    </button>
-                    <h1 className="text-xl font-bold text-gray-900">学习进度统计</h1>
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => router.back()}
+                            className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 hover:text-gray-900"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                        <h1 className="text-xl font-bold text-gray-900">学习进度统计</h1>
+                    </div>
+                    <Tabs value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                        <TabsList>
+                            <TabsTrigger value="all">全部</TabsTrigger>
+                            <TabsTrigger value="zh">中文</TabsTrigger>
+                            <TabsTrigger value="en">English</TabsTrigger>
+                            <TabsTrigger value="ja">日本語</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
             </div>
 
