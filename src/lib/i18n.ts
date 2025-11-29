@@ -184,6 +184,27 @@ export interface Translations {
     };
   };
 
+  // 统计页面
+  stats: {
+    title: string;
+    all_languages: string;
+    total_attempts: string;
+    active_days: string;
+    recent_accuracy: string;
+    ability_radar: string;
+    ability_radar_desc: string;
+    accuracy_trend: string;
+    accuracy_trend_desc: string;
+    score_distribution: string;
+    activity_chart: string;
+    last_30_days: string;
+    load_error: string;
+    no_ability_data: string;
+    no_activity_data: string;
+    no_practice_data: string;
+    practice_count: string;
+  };
+
   // 导航
   nav: {
     home: string;
@@ -1012,6 +1033,26 @@ const zh: Translations = {
       target_langs: '目标语言',
     },
   },
+
+  stats: {
+    title: '学习进度统计',
+    all_languages: '全部',
+    total_attempts: '总练习次数',
+    active_days: '活跃天数 (近30天)',
+    recent_accuracy: '最近准确率',
+    ability_radar: '能力雷达',
+    ability_radar_desc: '综合能力评估',
+    accuracy_trend: '近期准确率趋势',
+    accuracy_trend_desc: '最近练习表现',
+    score_distribution: '练习得分分布',
+    activity_chart: '学习活跃度',
+    last_30_days: '近30天',
+    load_error: '无法加载统计数据，请稍后再试',
+    no_ability_data: '暂无能力数据，快去练习吧！',
+    no_activity_data: '暂无活动数据',
+    no_practice_data: '暂无练习数据',
+    practice_count: '练习次数',
+  },
   nav: {
     home: '首页',
     alignment_practice: '对齐练习',
@@ -1828,6 +1869,26 @@ const en: Translations = {
       native_lang: 'Native Language',
       target_langs: 'Target Languages',
     },
+  },
+
+  stats: {
+    title: 'Learning Statistics',
+    all_languages: 'All',
+    total_attempts: 'Total Attempts',
+    active_days: 'Active Days (Last 30 Days)',
+    recent_accuracy: 'Recent Accuracy',
+    ability_radar: 'Ability Radar',
+    ability_radar_desc: 'Comprehensive Ability Assessment',
+    accuracy_trend: 'Recent Accuracy Trend',
+    accuracy_trend_desc: 'Recent Practice Performance',
+    score_distribution: 'Score Distribution',
+    activity_chart: 'Learning Activity',
+    last_30_days: 'Last 30 Days',
+    load_error: 'Failed to load statistics, please try again later',
+    no_ability_data: 'No ability data yet, go practice!',
+    no_activity_data: 'No activity data',
+    no_practice_data: 'No practice data',
+    practice_count: 'Practice Count',
   },
   nav: {
     home: 'Home',
@@ -2650,11 +2711,31 @@ const ja: Translations = {
       target_langs: '学習言語',
     },
   },
+
+  stats: {
+    title: '学習進捗統計',
+    all_languages: 'すべて',
+    total_attempts: '総練習回数',
+    active_days: '活動日数 (過去30日)',
+    recent_accuracy: '最近の正解率',
+    ability_radar: '能力レーダー',
+    ability_radar_desc: '総合能力評価',
+    accuracy_trend: '最近の正解率推移',
+    accuracy_trend_desc: '最近の練習パフォーマンス',
+    score_distribution: 'スコア分布',
+    activity_chart: '学習活動',
+    last_30_days: '過去30日',
+    load_error: '統計データを読み込めませんでした。後でもう一度お試しください',
+    no_ability_data: '能力データがまだありません。練習に行きましょう！',
+    no_activity_data: '活動データがありません',
+    no_practice_data: '練習データがありません',
+    practice_count: '練習回数',
+  },
   nav: {
     home: 'ホーム',
     alignment_practice: 'アライメント練習',
     shadowing: 'シャドーイング',
-    vocabulary: '題庫',
+    vocabulary: '単語帳',
     admin: '管理者',
   },
   practice: {

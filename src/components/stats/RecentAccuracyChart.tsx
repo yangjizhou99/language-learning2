@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ResponsiveLine } from '@nivo/line';
+import { useTranslation } from '@/contexts/LanguageContext';
 
 interface RecentAccuracyChartProps {
     data: {
@@ -11,10 +12,12 @@ interface RecentAccuracyChartProps {
 }
 
 export function RecentAccuracyChart({ data }: RecentAccuracyChartProps) {
+    const t = useTranslation();
+
     if (!data || data.length === 0) {
         return (
             <div className="flex items-center justify-center h-64 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
-                <p className="text-gray-400 text-sm">暂无练习数据</p>
+                <p className="text-gray-400 text-sm">{t.stats.no_practice_data}</p>
             </div>
         );
     }
