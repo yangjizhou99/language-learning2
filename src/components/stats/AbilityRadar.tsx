@@ -16,6 +16,8 @@ interface AbilityRadarProps {
     data: {
         scene_name: string;
         score: number;
+        accuracy: number;
+        count: number;
         fullMark: number;
     }[];
 }
@@ -28,6 +30,32 @@ export function AbilityRadar({ data }: AbilityRadarProps) {
             </div>
         );
     }
+
+    const CustomTooltip = ({ active, payload }: any) => {
+        if (active && payload && payload.length) {
+            const data = payload[0].payload;
+            return (
+                <div className="bg-white/95 p-3 rounded-lg shadow-lg border border-gray-100 text-sm">
+                    <p className="font-bold text-gray-900 mb-2">{data.scene_name}</p>
+                    <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-4">
+                            <span className="text-blue-600 font-medium">综合能力:</span>
+                            <span className="font-bold">{data.score}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 text-gray-600">
+                            <span>练习准确率:</span>
+                            <span>{data.accuracy}%</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 text-gray-600">
+                            <span>练习量:</span>
+                            <span>{data.count}</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
         <div className="w-full h-80">
@@ -47,15 +75,7 @@ export function AbilityRadar({ data }: AbilityRadarProps) {
                         fill="#3b82f6"
                         fillOpacity={0.3}
                     />
-                    <Tooltip
-                        contentStyle={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            borderRadius: '8px',
-                            border: 'none',
-                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        }}
-                        itemStyle={{ color: '#1f2937', fontWeight: 600 }}
-                    />
+                    <Tooltip content={<CustomTooltip />} />
                 </RadarChart>
             </ResponsiveContainer>
         </div>

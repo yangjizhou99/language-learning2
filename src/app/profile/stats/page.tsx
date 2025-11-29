@@ -21,6 +21,8 @@ interface StatsData {
     abilityRadar: Array<{
         scene_name: string;
         score: number;
+        accuracy: number;
+        count: number;
         fullMark: number;
     }>;
     activityChart: Array<{
