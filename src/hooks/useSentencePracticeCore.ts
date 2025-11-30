@@ -46,6 +46,7 @@ export interface UseSentencePracticeCoreOptions {
   acuUnits?: AcuUnit[];
   enabled?: boolean;
   onScoreUpdate?: (index: number, score: SentenceScore) => void;
+  externalScores?: Record<number, SentenceScore>;
 }
 
 function mapLangToLocale(lang: LangCode): string {
@@ -108,12 +109,29 @@ function tokenize(text: string, lang: LangCode): string[] {
   return removedPunct.split('').filter((c) => c.trim().length > 0);
 }
 
-export function useSentencePracticeCore({ originalText, language, sentenceTimeline, onPlaySentence, acuUnits, enabled = true, onScoreUpdate }: UseSentencePracticeCoreOptions) {
+export function useSentencePracticeCore({ originalText, language, sentenceTimeline, onPlaySentence, acuUnits, enabled = true, onScoreUpdate, externalScores }: UseSentencePracticeCoreOptions) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [displayText, setDisplayText] = useState('');
   const [finalText, setFinalText] = useState('');
   const [sentenceScores, setSentenceScores] = useState<Record<number, SentenceScore>>({});
+
+  // Sync with external scores
+  useEffect(() => {
+    if (externalScores) {
+      setSentenceScores(prev => {
+        // Only update if there are changes to avoid infinite loops
+        const hasChanges = Object.keys(externalScores).some(key => {
+          const k = Number(key);
+          return JSON.stringify(prev[k]) !== JSON.stringify(externalScores[k]);
+        });
+        if (hasChanges || Object.keys(externalScores).length !== Object.keys(prev).length) {
+          return { ...prev, ...externalScores };
+        }
+        return prev;
+      });
+    }
+  }, [externalScores]);
 
   const recognitionRef = useRef<WebSpeechRecognition | null>(null);
   const silenceTimerRef = useRef<number | null>(null);

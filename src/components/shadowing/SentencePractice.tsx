@@ -81,6 +81,7 @@ interface SentencePracticeProps {
   completedSegmentIndex?: number | null; // 新增：播放完成的句子索引（用于检测播放完成）
   renderText?: (text: string) => React.ReactNode; // 可选：自定义句子渲染（用于注音）
   onSentenceScoreUpdate?: (index: number, score: SentenceScore) => void;
+  sentenceScores?: Record<number, SentenceScore>; // New prop
 }
 
 const mapLangToLocale = (lang: Lang): string => {
@@ -390,11 +391,27 @@ const computeRoleScore = (target: string, said: string, lang: Lang) => {
   };
 };
 
-function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits, onPlaySentence, completedSegmentIndex, renderText, onSentenceScoreUpdate }: SentencePracticeProps) {
+function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits, onPlaySentence, completedSegmentIndex, renderText, onSentenceScoreUpdate, sentenceScores: externalScores }: SentencePracticeProps) {
   const { t } = useLanguage();
   const [displayText, setDisplayText] = useState('');
   const [finalText, setFinalText] = useState('');
   const [sentenceScores, setSentenceScores] = useState<Record<number, SentenceScore>>({});
+
+  // Sync with external scores
+  useEffect(() => {
+    if (externalScores) {
+      setSentenceScores(prev => {
+        const hasChanges = Object.keys(externalScores).some(key => {
+          const k = Number(key);
+          return JSON.stringify(prev[k]) !== JSON.stringify(externalScores[k]);
+        });
+        if (hasChanges || Object.keys(externalScores).length !== Object.keys(prev).length) {
+          return { ...prev, ...externalScores };
+        }
+        return prev;
+      });
+    }
+  }, [externalScores]);
   const [customToast, setCustomToast] = useState<{ message: string; type: 'success' | 'info' | 'celebration' } | null>(null);
   const [highlightUnperfect, setHighlightUnperfect] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -418,7 +435,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       if (onSentenceScoreUpdate) {
         onSentenceScoreUpdate(index, score);
       }
-    }
+    },
+    externalScores // Pass external scores to hook
   });
 
   const nonRoleContent = (

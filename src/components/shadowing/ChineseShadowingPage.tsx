@@ -884,7 +884,24 @@ export default function ShadowingPage() {
   };
 
   const handleRoleRoundComplete = useCallback(
-    (_result: unknown) => {
+    (results: any[]) => {
+      // Merge role practice scores into main sentenceScores
+      setSentenceScores(prev => {
+        const next = { ...prev };
+        results.forEach(res => {
+          if (res.index !== undefined && res.scorePercent !== undefined) {
+            next[res.index] = {
+              score: res.scoreRatio || (res.scorePercent / 100),
+              finalText: res.transcript || res.text,
+              missing: res.missing || [],
+              extra: res.extra || [],
+              // alignmentResult might be missing in role results, but that's acceptable
+            };
+          }
+        });
+        return next;
+      });
+
       setCompletedRoleList((prev) => {
         if (prev.includes(selectedRole)) return prev;
         const updated = [...prev, selectedRole];
@@ -5575,6 +5592,7 @@ export default function ShadowingPage() {
                         [index]: score
                       }));
                     }}
+                    sentenceScores={sentenceScores} // Pass shared scores
                   />
                 )}
 

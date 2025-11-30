@@ -382,8 +382,13 @@ export async function GET(req: NextRequest) {
                 if ('sentenceScores' in attempt.metrics && typeof attempt.metrics.sentenceScores === 'object') {
                     const scores = Object.values(attempt.metrics.sentenceScores as Record<string, any>);
                     scores.forEach(s => {
-                        const score = Number(s.score);
+                        let score = Number(s.score);
                         if (!isNaN(score)) {
+                            // Normalize 0-1 scores to 0-100
+                            if (score <= 1 && score > 0) {
+                                score *= 100;
+                            }
+
                             if (score >= 90) scoreDistribution[3].count++;
                             else if (score >= 80) scoreDistribution[2].count++;
                             else if (score >= 60) scoreDistribution[1].count++;
