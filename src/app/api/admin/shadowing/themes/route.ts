@@ -39,7 +39,7 @@ async function handleRequest(supabase: any, req: NextRequest) {
   // 统一计算每个主题的小主题数量与练习题数量，避免关系推断计数
   if (data && data.length) {
     await Promise.all(
-      data.map(async (theme) => {
+      data.map(async (theme: Record<string, any>) => {
         const subtopicQuery = supabase
           .from('shadowing_subtopics')
           .select('*', { count: 'exact', head: true })
@@ -86,10 +86,10 @@ async function handleRequest(supabase: any, req: NextRequest) {
     })) || [];
 
   if (onlyNoSubtopics) {
-    items = items.filter((item) => (item.subtopic_count || 0) === 0);
+    items = items.filter((item: { subtopic_count?: number }) => (item.subtopic_count || 0) === 0);
   }
   if (onlyNoPractice) {
-    items = items.filter((item) => (item.practice_count || 0) === 0);
+    items = items.filter((item: { practice_count?: number }) => (item.practice_count || 0) === 0);
   }
 
   return NextResponse.json({ items });
