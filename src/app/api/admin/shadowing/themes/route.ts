@@ -19,32 +19,56 @@ async function handleRequest(supabase: any, req: NextRequest) {
   const lang = searchParams.get('lang');
   const level = searchParams.get('level');
   const genre = searchParams.get('genre');
+  const onlyNoSubtopics = searchParams.get('no_subtopics') === '1';
+  const onlyNoPractice = searchParams.get('no_practice') === '1';
 
-  // 不依赖 PostgREST 的关系推断，避免因为缺少/未识别 FK 导致整查询失败
+  const langFilter = lang && lang !== 'all' ? lang : null;
+  const genreFilter = genre && genre !== 'all' ? genre : null;
+  const levelNumber =
+    level && !Number.isNaN(Number.parseInt(level, 10)) ? Number.parseInt(level, 10) : null;
+
+  // 不依赖 PostgREST 的关系推断，避免因为缺少/未知的 FK 导致统计查询失败
   let query = supabase.from('shadowing_themes').select('*').eq('status', 'active');
 
-  if (lang) query = query.eq('lang', lang);
-  if (level) query = query.eq('level', parseInt(level));
-  if (genre) query = query.eq('genre', genre);
+  if (langFilter) query = query.eq('lang', langFilter);
+  if (typeof levelNumber === 'number') query = query.eq('level', levelNumber);
+  if (genreFilter) query = query.eq('genre', genreFilter);
 
   const { data, error } = await query.order('created_at', { ascending: false });
 
-  // 统一计算每个主题的小主题数量（避免依赖关系嵌套计数）
+  // 统一计算每个主题的小主题数量与练习题数量，避免关系推断计数
   if (data && data.length) {
-    for (const theme of data) {
-      const subtopicQuery = supabase
-        .from('shadowing_subtopics')
-        .select('*', { count: 'exact', head: true })
-        .eq('theme_id', theme.id)
-        .eq('status', 'active');
+    await Promise.all(
+      data.map(async (theme: Record<string, any>) => {
+        const subtopicQuery = supabase
+          .from('shadowing_subtopics')
+          .select('*', { count: 'exact', head: true })
+          .eq('theme_id', theme.id)
+          .eq('status', 'active');
 
-      if (lang) subtopicQuery.eq('lang', lang);
-      if (genre) subtopicQuery.eq('genre', genre);
-      if (level) subtopicQuery.eq('level', parseInt(level));
+        if (langFilter) subtopicQuery.eq('lang', langFilter);
+        if (genreFilter) subtopicQuery.eq('genre', genreFilter);
+        if (typeof levelNumber === 'number') subtopicQuery.eq('level', levelNumber);
 
-      const { count } = await subtopicQuery;
-      (theme as any).subtopic_count = count || 0;
-    }
+        const practiceQuery = supabase
+          .from('shadowing_items')
+          .select('*', { count: 'exact', head: true })
+          .eq('theme_id', theme.id)
+          .eq('status', 'approved');
+
+        if (langFilter) practiceQuery.eq('lang', langFilter);
+        if (genreFilter) practiceQuery.eq('genre', genreFilter);
+        if (typeof levelNumber === 'number') practiceQuery.eq('level', levelNumber);
+
+        const [{ count: subtopicCount }, { count: practiceCount }] = await Promise.all([
+          subtopicQuery,
+          practiceQuery,
+        ]);
+
+        (theme as any).subtopic_count = subtopicCount || 0;
+        (theme as any).practice_count = practiceCount || 0;
+      }),
+    );
   }
 
   if (error) {
@@ -54,13 +78,21 @@ async function handleRequest(supabase: any, req: NextRequest) {
     );
   }
 
-  return NextResponse.json({
-    items:
-      data?.map((item: any) => ({
-        ...item,
-        subtopic_count: typeof item.subtopic_count === 'number' ? item.subtopic_count : 0,
-      })) || [],
-  });
+  let items =
+    data?.map((item: any) => ({
+      ...item,
+      subtopic_count: typeof item.subtopic_count === 'number' ? item.subtopic_count : 0,
+      practice_count: typeof item.practice_count === 'number' ? item.practice_count : 0,
+    })) || [];
+
+  if (onlyNoSubtopics) {
+    items = items.filter((item: { subtopic_count?: number }) => (item.subtopic_count || 0) === 0);
+  }
+  if (onlyNoPractice) {
+    items = items.filter((item: { practice_count?: number }) => (item.practice_count || 0) === 0);
+  }
+
+  return NextResponse.json({ items });
 }
 
 export async function POST(req: NextRequest) {
