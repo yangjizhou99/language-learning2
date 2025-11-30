@@ -179,6 +179,8 @@ export default function ThemesPage() {
   const [level, setLevel] = useState<'all' | 1 | 2 | 3 | 4 | 5 | 6>('all');
   const [genre, setGenre] = useState<Genre>('all');
   const [q, setQ] = useState('');
+  const [onlyNoSubtopics, setOnlyNoSubtopics] = useState(false);
+  const [onlyNoPractice, setOnlyNoPractice] = useState(false);
 
   const [items, setItems] = useState<any[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -242,6 +244,8 @@ export default function ThemesPage() {
       if (lang !== 'all') qs.set('lang', lang);
       if (level !== 'all') qs.set('level', String(level));
       if (genre !== 'all') qs.set('genre', genre);
+      if (onlyNoSubtopics) qs.set('no_subtopics', '1');
+      if (onlyNoPractice) qs.set('no_practice', '1');
       const r = await fetch(`/api/admin/shadowing/themes?${qs.toString()}`, {
         headers: await getAuthHeaders(),
       });
@@ -260,7 +264,7 @@ export default function ThemesPage() {
 
   useEffect(() => {
     load();
-  }, [lang, level, genre, q]);
+  }, [lang, level, genre, q, onlyNoSubtopics, onlyNoPractice]);
 
   // 加载 AI 模型列表
   useEffect(() => {
@@ -1215,6 +1219,31 @@ export default function ThemesPage() {
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
+            <div>
+              <Label>问题排查</Label>
+              <div className="flex flex-wrap gap-6 mt-2 text-sm text-muted-foreground">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="filter-no-subtopics"
+                    checked={onlyNoSubtopics}
+                    onCheckedChange={(checked) => setOnlyNoSubtopics(checked === true)}
+                  />
+                  <Label htmlFor="filter-no-subtopics" className="text-sm font-normal">
+                    只看小主题数量为 0
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="filter-no-practice"
+                    checked={onlyNoPractice}
+                    onCheckedChange={(checked) => setOnlyNoPractice(checked === true)}
+                  />
+                  <Label htmlFor="filter-no-practice" className="text-sm font-normal">
+                    只看没有练习题的主题
+                  </Label>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -1460,6 +1489,7 @@ export default function ThemesPage() {
                   <th className="p-4 text-left">主题标题</th>
                   <th className="p-4 text-left">描述</th>
                   <th className="p-4 text-left">小主题数</th>
+                  <th className="p-4 text-left">练习题数</th>
                   <th className="p-4 text-left">创建时间</th>
                   <th className="p-4 text-left">操作</th>
                 </tr>
@@ -1467,13 +1497,13 @@ export default function ThemesPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       加载中...
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       暂无数据
                     </td>
                   </tr>
@@ -1500,6 +1530,11 @@ export default function ThemesPage() {
                       </td>
                       <td className="p-4">
                         <Badge variant="secondary">{item.subtopic_count || 0}</Badge>
+                      </td>
+                      <td className="p-4">
+                        <Badge variant={item.practice_count ? 'secondary' : 'destructive'}>
+                          {item.practice_count || 0}
+                        </Badge>
                       </td>
                       <td className="p-4 text-sm text-muted-foreground">
                         {new Date(item.created_at).toLocaleDateString()}
