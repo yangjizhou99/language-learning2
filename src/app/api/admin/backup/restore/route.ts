@@ -237,6 +237,12 @@ function ensureArrayColumnDDLFixes(sql: string): string {
   return out;
 }
 
+function ensureUserDefinedTypeFixes(sql: string): string {
+  // 修复 data_type 为 USER-DEFINED 导致的语法错误，统一回退为 text
+  // 匹配模式： "column_name" USER-DEFINED
+  return sql.replace(/(\n\s*"[^"]+"\s+)USER-DEFINED(\b)/g, (_m, pre: string, suf: string) => `${pre}text${suf}`);
+}
+
 function robustReplaceArrayLiterals(sql: string): string {
   // 在不进入引号/注释/美元引用的情况下，查找关键字 ARRAY 后的 [] 内容并替换为 '{..}'::text[]
   let out = '';
@@ -295,7 +301,8 @@ function robustReplaceArrayLiterals(sql: string): string {
       // 现在 buf 是 ARRAY[...] 内部内容
       // 进行 token 化，复用 repair/route 的思路
       const tokens: string[] = (function tokenize(inner: string): string[] {
-        const toks: string[] = []; let b = ''; let q = false; for (let k = 0; k < inner.length; k++) { const ch2 = inner[k]; if (ch2 === "'") { if (q && inner[k + 1] === "'") { b += "''"; k++; continue; } q = !q; b += ch2; continue; } if (ch2 === ',' && !q) { const t = b.trim(); if (t) toks.push(t); b = ''; continue; } b += ch2; } const last = b.trim(); if (last) toks.push(last); return toks; })(buf);
+        const toks: string[] = []; let b = ''; let q = false; for (let k = 0; k < inner.length; k++) { const ch2 = inner[k]; if (ch2 === "'") { if (q && inner[k + 1] === "'") { b += "''"; k++; continue; } q = !q; b += ch2; continue; } if (ch2 === ',' && !q) { const t = b.trim(); if (t) toks.push(t); b = ''; continue; } b += ch2; } const last = b.trim(); if (last) toks.push(last); return toks;
+      })(buf);
       const converted = tokens.map((t) => {
         if (t.startsWith("'") && t.endsWith("'")) { const unq = t.slice(1, -1).replace(/''/g, "'"); const esc = unq.replace(/\\/g, "\\\\").replace(/"/g, '\\"'); return `"${esc}"`; }
         const esc = t.replace(/\\/g, "\\\\").replace(/"/g, '\\"'); return `"${esc}"`;
@@ -328,7 +335,7 @@ export async function POST(req: NextRequest) {
       file = formData.get('file') as File;
       restoreType = (formData.get('restoreType') as string) || 'upload';
       const dt = formData.get('databaseType') as string | null;
-      if (dt && (['local','prod','supabase'] as const).includes(dt as DatabaseType)) {
+      if (dt && (['local', 'prod', 'supabase'] as const).includes(dt as DatabaseType)) {
         databaseType = dt as DatabaseType;
       }
       const rm = (formData.get('restoreMode') as string | null)?.toLowerCase();
@@ -338,7 +345,7 @@ export async function POST(req: NextRequest) {
       const body = await req.json();
       restoreType = body.restoreType || 'history';
       backupPath = body.backupPath;
-      if (body.databaseType && (['local','prod','supabase'] as const).includes(body.databaseType)) {
+      if (body.databaseType && (['local', 'prod', 'supabase'] as const).includes(body.databaseType)) {
         databaseType = body.databaseType as DatabaseType;
       }
       if (typeof body.restoreMode === 'string') {
@@ -347,7 +354,7 @@ export async function POST(req: NextRequest) {
       }
     }
     // 校验数据库类型
-    if (!(['local','prod','supabase'] as const).includes(databaseType)) {
+    if (!(['local', 'prod', 'supabase'] as const).includes(databaseType)) {
       return NextResponse.json({ error: '无效的数据库类型' }, { status: 400 });
     }
 
@@ -388,7 +395,7 @@ export async function POST(req: NextRequest) {
       const manifestPath = path.join(tempDir, 'manifest.json');
       let isNdjsonBackup = false;
       let manifest = null;
-      
+
       try {
         const manifestContent = await fs.readFile(manifestPath, 'utf8');
         manifest = JSON.parse(manifestContent);
@@ -401,7 +408,7 @@ export async function POST(req: NextRequest) {
       }
 
       let dbRestoreSummary: { total: number; success: number; skipped: number; failed: number; firstErrors?: Array<{ index: number; message: string }> } | null = null;
-      
+
       if (isNdjsonBackup && manifest) {
         console.log('开始NDJSON格式数据库恢复...');
         dbRestoreSummary = await restoreNdjsonDatabase(tempDir, manifest, databaseType, restoreMode);
@@ -410,7 +417,7 @@ export async function POST(req: NextRequest) {
         // 传统SQL恢复
         const sqlFiles = await findSqlFiles(tempDir);
         console.log('找到SQL文件:', sqlFiles);
-        
+
         if (sqlFiles.length > 0) {
           console.log('开始恢复数据库...');
           dbRestoreSummary = await restoreDatabase(sqlFiles[0], databaseType, restoreMode);
@@ -458,7 +465,7 @@ export async function POST(req: NextRequest) {
     console.error('恢复备份失败:', error);
     const errorMessage = error instanceof Error ? error.message : '未知错误';
     return NextResponse.json(
-      { 
+      {
         error: '恢复备份失败',
         details: errorMessage,
         stack: error instanceof Error ? error.stack : undefined
@@ -471,7 +478,7 @@ export async function POST(req: NextRequest) {
 async function extractZip(zipPath: string, extractDir: string): Promise<void> {
   console.log('开始解压ZIP文件:', zipPath);
   console.log('解压到目录:', extractDir);
-  
+
   return new Promise((resolve, reject) => {
     yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
       if (err) {
@@ -488,12 +495,12 @@ async function extractZip(zipPath: string, extractDir: string): Promise<void> {
 
       console.log('ZIP文件打开成功，开始读取条目...');
       let entryCount = 0;
-      
+
       zipfile.readEntry();
       zipfile.on('entry', (entry) => {
         entryCount++;
         console.log(`处理条目 ${entryCount}: ${entry.fileName}`);
-        
+
         if (/\/$/.test(entry.fileName)) {
           // 目录
           const dirPath = path.join(extractDir, entry.fileName);
@@ -517,12 +524,12 @@ async function extractZip(zipPath: string, extractDir: string): Promise<void> {
 
             const filePath = path.join(extractDir, entry.fileName);
             const dirPath = path.dirname(filePath);
-            
+
             // 确保目录存在
             fs.mkdir(dirPath, { recursive: true })
               .then(() => {
                 const writeStream = createWriteStream(filePath);
-                
+
                 pipeline(readStream, writeStream)
                   .then(() => {
                     console.log(`解压文件完成: ${entry.fileName}`);
@@ -543,7 +550,7 @@ async function extractZip(zipPath: string, extractDir: string): Promise<void> {
 
       zipfile.on('end', () => {
         console.log(`ZIP解压完成，共处理 ${entryCount} 个条目`);
-        try { zipfile.close(); } catch {}
+        try { zipfile.close(); } catch { }
         resolve();
       });
 
@@ -570,14 +577,14 @@ async function safeRemoveDirWithRetry(dirPath: string, retries: number = 5, base
 
 async function findSqlFiles(dir: string): Promise<string[]> {
   const files: string[] = [];
-  
+
   try {
     const items = await fs.readdir(dir);
-    
+
     for (const item of items) {
       const itemPath = path.join(dir, item);
       const stats = await fs.stat(itemPath);
-      
+
       if (stats.isDirectory()) {
         const subFiles = await findSqlFiles(itemPath);
         files.push(...subFiles);
@@ -588,13 +595,13 @@ async function findSqlFiles(dir: string): Promise<string[]> {
   } catch (err) {
     console.error('查找SQL文件失败:', err);
   }
-  
+
   return files;
 }
 
 async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType, restoreMode: 'append' | 'overwrite' = 'append'): Promise<{ total: number; success: number; skipped: number; failed: number; firstErrors?: Array<{ index: number; message: string }> }> {
   const supabase = databaseType === 'supabase' ? getServiceSupabase() : null;
-  
+
   try {
     console.log('开始恢复数据库，SQL文件:', sqlFilePath);
     const sqlContent = await fs.readFile(sqlFilePath, 'utf8');
@@ -620,26 +627,26 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType, 
             }
             await client.query('COMMIT');
           } catch (e) {
-            try { await client.query('ROLLBACK'); } catch {}
+            try { await client.query('ROLLBACK'); } catch { }
             throw e;
           } finally {
-            try { await (client as import('pg').Client).end(); } catch {}
+            try { await (client as import('pg').Client).end(); } catch { }
           }
         } catch (e) {
           console.warn('覆盖模式 TRUNCATE public 表失败，将继续执行恢复:', e);
         }
       }
-      const repairedWhole = ensureArrayColumnDDLFixes(sanitizeLeakedConversation(wrapBareJsonObjectsGeneric(ensureJsonCastsInline(robustReplaceArrayLiterals(sqlContent)))));
+      const repairedWhole = ensureArrayColumnDDLFixes(ensureUserDefinedTypeFixes(sanitizeLeakedConversation(wrapBareJsonObjectsGeneric(ensureJsonCastsInline(robustReplaceArrayLiterals(sqlContent))))));
       const stmts = splitSqlStatements(repairedWhole);
       const conn = createDatabaseConnection(databaseType);
       const { client } = await connectPostgresWithFallback(conn.connectionString!);
       let ok = 0, skip = 0;
       try {
         // 会话级强化设置（尽量不失败；失败忽略继续）
-        try { await client.query('BEGIN'); } catch {}
-        try { await client.query('SET LOCAL row_security = off'); } catch {}
-        try { await client.query('SET CONSTRAINTS ALL DEFERRED'); } catch {}
-        try { await client.query('SET LOCAL search_path = public'); } catch {}
+        try { await client.query('BEGIN'); } catch { }
+        try { await client.query('SET LOCAL row_security = off'); } catch { }
+        try { await client.query('SET CONSTRAINTS ALL DEFERRED'); } catch { }
+        try { await client.query('SET LOCAL search_path = public'); } catch { }
 
         for (const statement of stmts) {
           if (!statement.trim()) { skip++; continue; }
@@ -657,7 +664,7 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType, 
                 await client.query(jsonStringified);
                 ok++;
                 continue;
-              } catch {/* 继续后续回退 */}
+              } catch {/* 继续后续回退 */ }
             }
             // 针对 ARRAY/JSON 语法再做一次单语句级修复并重试
             if (/syntax error/i.test(msg)) {
@@ -687,8 +694,8 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType, 
           }
         }
       } finally {
-        try { await client.query('COMMIT'); } catch { try { await client.query('ROLLBACK'); } catch {} }
-        try { await (client as import('pg').Client).end(); } catch {}
+        try { await client.query('COMMIT'); } catch { try { await client.query('ROLLBACK'); } catch { } }
+        try { await (client as import('pg').Client).end(); } catch { }
       }
       console.log(`数据库分句恢复完成: 成功 ${ok} 跳过 ${skip}`);
       return { total: stmts.length, success: ok, skipped: skip, failed: stmts.length - ok - skip };
@@ -776,16 +783,16 @@ async function restoreDatabase(sqlFilePath: string, databaseType: DatabaseType, 
 async function restoreStorage(storageDir: string, incrementalMode: boolean = false, databaseType: DatabaseType = 'supabase', overwriteFiles: boolean = false): Promise<void> {
   const { getSupabaseFor } = await import('@/lib/supabaseEnv');
   const supabase = getSupabaseFor(databaseType);
-  
+
   try {
     const items = await fs.readdir(storageDir);
     const bucketDirs = [];
-    
+
     // 收集所有存储桶目录
     for (const item of items) {
       const itemPath = path.join(storageDir, item);
       const stats = await fs.stat(itemPath);
-      
+
       if (stats.isDirectory()) {
         bucketDirs.push({
           name: item,
@@ -793,55 +800,55 @@ async function restoreStorage(storageDir: string, incrementalMode: boolean = fal
         });
       }
     }
-    
+
     console.log(`找到 ${bucketDirs.length} 个存储桶目录，开始并行处理...`);
-    
+
     // 并行处理所有存储桶
     const bucketPromises = bucketDirs.map(async (bucketDir) => {
       const bucketName = bucketDir.name;
-      
+
       try {
         // 检查存储桶是否存在
         const { data: buckets } = await supabase.storage.listBuckets();
         const bucketExists = buckets?.some(b => b.name === bucketName);
-        
+
         if (!bucketExists) {
           // 创建存储桶
           const { error: createError } = await supabase.storage.createBucket(bucketName, {
             public: false,
           });
-          
+
           if (createError) {
             console.error(`创建存储桶 ${bucketName} 失败:`, createError);
             return { bucketName, success: false, error: createError.message };
           }
           console.log(`创建存储桶 ${bucketName} 成功`);
         }
-        
+
         // 上传文件
         await uploadDirectoryToBucket(supabase, bucketDir.path, bucketName, '', incrementalMode, overwriteFiles);
-        
+
         return { bucketName, success: true };
       } catch (err) {
         console.error(`处理存储桶 ${bucketName} 失败:`, err);
         return { bucketName, success: false, error: err instanceof Error ? err.message : '未知错误' };
       }
     });
-    
+
     // 等待所有存储桶处理完成
     const results = await Promise.all(bucketPromises);
-    
+
     // 统计结果
     const successCount = results.filter(r => r.success).length;
     const failureCount = results.filter(r => !r.success).length;
-    
+
     console.log(`存储桶恢复完成: 成功 ${successCount} 个，失败 ${failureCount} 个`);
-    
+
     if (failureCount > 0) {
       const failedBuckets = results.filter(r => !r.success).map(r => `${r.bucketName}(${r.error})`);
       console.warn(`失败的存储桶: ${failedBuckets.join(', ')}`);
     }
-    
+
   } catch (err) {
     console.error('恢复存储桶失败:', err);
     throw err;
@@ -852,11 +859,11 @@ async function copyBackupFromHistory(backupPath: string, tempDir: string): Promi
   try {
     console.log('开始从历史备份复制:', backupPath);
     console.log('复制到临时目录:', tempDir);
-    
+
     // 检查备份路径是否存在
     await fs.access(backupPath);
     console.log('备份路径存在，获取文件信息...');
-    
+
     const stats = await fs.stat(backupPath);
     console.log('文件信息:', {
       isFile: stats.isFile(),
@@ -864,16 +871,16 @@ async function copyBackupFromHistory(backupPath: string, tempDir: string): Promi
       size: stats.size,
       mtime: stats.mtime
     });
-    
+
     if (stats.isFile()) {
       // 如果是文件，直接复制
       const fileName = path.basename(backupPath);
       const destPath = path.join(tempDir, fileName);
       console.log(`复制文件: ${backupPath} -> ${destPath}`);
-      
+
       await fs.copyFile(backupPath, destPath);
       console.log('文件复制完成');
-      
+
       // 如果是ZIP文件，解压
       if (fileName.endsWith('.zip')) {
         console.log('检测到ZIP文件，开始解压...');
@@ -895,7 +902,7 @@ async function copyBackupFromHistory(backupPath: string, tempDir: string): Promi
     } else {
       throw new Error('不支持的备份文件类型');
     }
-    
+
     console.log('从历史备份复制完成');
   } catch (err) {
     console.error('从历史备份复制失败:', err);
@@ -917,14 +924,14 @@ async function copyDirectory(
 ): Promise<void> {
   try {
     await fs.mkdir(dest, { recursive: true });
-    
+
     const items = await fs.readdir(src);
-    
+
     for (const item of items) {
       const srcPath = path.join(src, item);
       const destPath = path.join(dest, item);
       const stats = await fs.stat(srcPath);
-      
+
       if (filter && filter(item, srcPath, stats.isDirectory())) {
         continue;
       }
@@ -1004,48 +1011,48 @@ async function uploadDirectoryToBucket(
 ): Promise<void> {
   try {
     console.log(`开始批量检查存储桶 ${bucketName} 中的现有文件...`);
-    
+
     // 先获取存储桶中所有现有文件的列表
     const existingFiles = await getAllFilesFromBucket(supabase, bucketName, prefix);
     const existingFileSet = new Set(existingFiles);
-    
+
     console.log(`存储桶 ${bucketName} 中现有文件数量: ${existingFiles.length}`);
-    
+
     // 收集所有需要上传的文件
     const filesToUpload = await collectFilesToUpload(dirPath, prefix, existingFileSet, incrementalMode, overwriteFiles);
-    
+
     console.log(`存储桶 ${bucketName} 需要上传 ${filesToUpload.length} 个文件`);
-    
+
     if (filesToUpload.length === 0) {
       console.log(`存储桶 ${bucketName} 没有需要上传的文件`);
       return;
     }
-    
+
     // 高性能并行上传文件 - 优化
     const CONCURRENT_UPLOADS = 30; // 提高并发上传数量
     let uploadedCount = 0;
     let skippedCount = 0;
     let errorCount = 0;
-    
+
     console.log(`开始批量上传 ${filesToUpload.length} 个文件，并发数: ${CONCURRENT_UPLOADS}`);
-    
+
     for (let i = 0; i < filesToUpload.length; i += CONCURRENT_UPLOADS) {
       const batch = filesToUpload.slice(i, i + CONCURRENT_UPLOADS);
-      
+
       const uploadPromises = batch.map(async (fileInfo) => {
         const maxRetries = 3;
         let retries = 0;
-        
+
         while (retries < maxRetries) {
           try {
             const fileBuffer = await fs.readFile(fileInfo.filePath);
-            
+
             const { error } = await supabase.storage
               .from(bucketName)
               .upload(fileInfo.relativePath, fileBuffer, {
                 upsert: overwriteFiles || !incrementalMode
               });
-            
+
             if (error) {
               if (retries < maxRetries - 1) {
                 retries++;
@@ -1071,12 +1078,12 @@ async function uploadDirectoryToBucket(
             }
           }
         }
-        
+
         return { success: false, file: fileInfo.relativePath, error: '达到最大重试次数' };
       });
-      
+
       const results = await Promise.all(uploadPromises);
-      
+
       // 统计结果
       results.forEach(result => {
         if (result.success) {
@@ -1085,13 +1092,13 @@ async function uploadDirectoryToBucket(
           errorCount++;
         }
       });
-      
+
       const batchSuccess = results.filter(r => r.success).length;
       const batchFailure = results.filter(r => !r.success).length;
       const progress = Math.round(((i + CONCURRENT_UPLOADS) / filesToUpload.length) * 100);
       console.log(`批次 ${Math.floor(i / CONCURRENT_UPLOADS) + 1} 完成: 成功 ${batchSuccess} 个，失败 ${batchFailure} 个，进度 ${Math.min(progress, 100)}%`);
     }
-    
+
     skippedCount = filesToUpload.length - uploadedCount - errorCount;
     console.log(`存储桶 ${bucketName} 上传完成: 成功 ${uploadedCount} 个，跳过 ${skippedCount} 个，失败 ${errorCount} 个`);
   } catch (err) {
@@ -1109,13 +1116,13 @@ async function collectFilesToUpload(
   overwriteFiles: boolean
 ): Promise<Array<{ filePath: string; relativePath: string }>> {
   const filesToUpload: Array<{ filePath: string; relativePath: string }> = [];
-  
+
   const items = await fs.readdir(dirPath);
-  
+
   for (const item of items) {
     const itemPath = path.join(dirPath, item);
     const stats = await fs.stat(itemPath);
-    
+
     if (stats.isDirectory()) {
       // 递归处理子目录
       const subFiles = await collectFilesToUpload(itemPath, `${prefix}${item}/`, existingFileSet, incrementalMode, overwriteFiles);
@@ -1123,7 +1130,7 @@ async function collectFilesToUpload(
     } else {
       // 检查文件是否已存在
       const filePath = `${prefix}${item}`;
-      
+
       if (incrementalMode && !overwriteFiles) {
         // 增量模式：只上传数据库中不存在的文件
         if (existingFileSet.has(filePath)) {
@@ -1133,7 +1140,7 @@ async function collectFilesToUpload(
         // 完整追加模式：仍跳过已存在的文件
         if (existingFileSet.has(filePath)) continue;
       }
-      
+
       // 添加到上传列表
       filesToUpload.push({
         filePath: itemPath,
@@ -1141,7 +1148,7 @@ async function collectFilesToUpload(
       });
     }
   }
-  
+
   return filesToUpload;
 }
 
@@ -1152,12 +1159,12 @@ async function getAllFilesFromBucket(
   prefix: string = ''
 ): Promise<string[]> {
   const allFiles: string[] = [];
-  
+
   try {
     const { data: files } = await supabase.storage
       .from(bucketName)
-      .list(prefix, { 
-        limit: 1000, 
+      .list(prefix, {
+        limit: 1000,
         sortBy: { column: 'name', order: 'asc' },
         offset: 0
       });
@@ -1165,7 +1172,7 @@ async function getAllFilesFromBucket(
     if (files) {
       for (const file of files as Array<{ name: string; metadata?: { size?: number } }>) {
         const fullPath = prefix ? `${prefix}/${file.name}` : file.name;
-        
+
         if (file.metadata && file.metadata.size !== undefined) {
           // 这是一个文件
           allFiles.push(fullPath);
@@ -1179,31 +1186,31 @@ async function getAllFilesFromBucket(
   } catch (err) {
     console.error(`获取存储桶 ${bucketName} 文件列表失败:`, err);
   }
-  
+
   return allFiles;
 }
 
 // NDJSON格式数据库恢复函数
 async function restoreNdjsonDatabase(
-  backupDir: string, 
-  manifest: { version: string; tables: Array<{ name: string; data_file: string; rows: number; columns: number }> }, 
+  backupDir: string,
+  manifest: { version: string; tables: Array<{ name: string; data_file: string; rows: number; columns: number }> },
   databaseType: DatabaseType,
   restoreMode: 'append' | 'overwrite' = 'append'
 ): Promise<{ total: number; success: number; skipped: number; failed: number; firstErrors?: Array<{ index: number; message: string }> }> {
   const summary = { total: 0, success: 0, skipped: 0, failed: 0, firstErrors: [] as Array<{ index: number; message: string }> };
-  
+
   try {
     console.log('开始NDJSON数据库恢复，格式版本:', manifest.version);
-    
+
     // 1. 首先执行schema.clean.sql创建表结构
     const schemaPath = path.join(backupDir, 'schema.clean.sql');
     try {
       await fs.readFile(schemaPath, 'utf8');
       console.log('开始执行schema.clean.sql创建表结构...');
-      
+
       const schemaResult = await restoreDatabase(schemaPath, databaseType);
       console.log('Schema创建完成:', schemaResult);
-      
+
       if (schemaResult.failed > 0) {
         console.warn('Schema创建有部分失败，但继续数据恢复');
       }
@@ -1212,27 +1219,27 @@ async function restoreNdjsonDatabase(
       summary.failed++;
       return summary;
     }
-    
+
     // 覆盖模式：先按 manifest 顺序 TRUNCATE 这些表
     if (restoreMode === 'overwrite') {
       try {
         if (databaseType === 'local' || databaseType === 'prod') {
-          const connectionString = databaseType === 'local' 
+          const connectionString = databaseType === 'local'
             ? (process.env.LOCAL_DB_URL_FORCE || process.env.LOCAL_DB_URL)
             : (process.env.PROD_DB_URL || process.env.DATABASE_URL);
           const { client } = await connectPostgresWithFallback(connectionString!);
           try {
-            try { await client.query('BEGIN'); } catch {}
-            try { await client.query('SET LOCAL row_security = off'); } catch {}
-            try { await client.query("SET LOCAL search_path = public"); } catch {}
+            try { await client.query('BEGIN'); } catch { }
+            try { await client.query('SET LOCAL row_security = off'); } catch { }
+            try { await client.query("SET LOCAL search_path = public"); } catch { }
             const tableNames = manifest.tables.map(t => `"${t.name}"`).join(', ');
             if (tableNames.length > 0) {
               await client.query(`TRUNCATE ${tableNames} RESTART IDENTITY CASCADE;`);
               console.log('NDJSON 覆盖模式：已 TRUNCATE 表：', tableNames);
             }
-            try { await client.query('COMMIT'); } catch { try { await client.query('ROLLBACK'); } catch {} }
+            try { await client.query('COMMIT'); } catch { try { await client.query('ROLLBACK'); } catch { } }
           } finally {
-            try { await (client as import('pg').Client).end(); } catch {}
+            try { await (client as import('pg').Client).end(); } catch { }
           }
         } else {
           const supabase = getServiceSupabase();
@@ -1248,27 +1255,27 @@ async function restoreNdjsonDatabase(
     }
 
     // 2. 遍历每个表的NDJSON文件并插入数据
-    
+
     for (const tableInfo of manifest.tables) {
       const tableName = tableInfo.name;
       const ndjsonPath = path.join(backupDir, tableInfo.data_file);
-      
+
       console.log(`开始恢复表 ${tableName}...`);
       summary.total++;
-      
+
       try {
         // 检查NDJSON文件是否存在
         const ndjsonContent = await fs.readFile(ndjsonPath, 'utf8');
         const lines = ndjsonContent.trim().split('\n');
-        
+
         if (lines.length === 0 || (lines.length === 1 && lines[0] === '')) {
           console.log(`表 ${tableName} 无数据，跳过`);
           summary.skipped++;
           continue;
         }
-        
+
         console.log(`表 ${tableName} 有 ${lines.length} 行数据`);
-        
+
         // 解析每行JSON并构建INSERT语句
         const rows = [];
         for (const line of lines) {
@@ -1280,24 +1287,24 @@ async function restoreNdjsonDatabase(
             }
           }
         }
-        
+
         if (rows.length === 0) {
           console.log(`表 ${tableName} 解析后无有效数据，跳过`);
           summary.skipped++;
           continue;
         }
-        
+
         // 获取列名
         const firstRow = rows[0];
         const columns = Object.keys(firstRow);
-        
+
         // 分批插入数据（宽松模式）
         const BATCH_SIZE = 500;
         let insertedRows = 0;
-        
+
         for (let i = 0; i < rows.length; i += BATCH_SIZE) {
           const batch = rows.slice(i, i + BATCH_SIZE);
-          
+
           try {
             const result = await insertNdjsonBatch(tableName, columns, batch, databaseType);
             insertedRows += result.success;
@@ -1308,10 +1315,10 @@ async function restoreNdjsonDatabase(
             console.error(`表 ${tableName} 批次 ${Math.floor(i / BATCH_SIZE) + 1} 插入失败:`, batchErr);
           }
         }
-        
+
         console.log(`表 ${tableName} 恢复完成: ${insertedRows}/${rows.length} 行`);
         summary.success++;
-        
+
       } catch (err) {
         console.error(`恢复表 ${tableName} 失败:`, err);
         summary.failed++;
@@ -1321,10 +1328,10 @@ async function restoreNdjsonDatabase(
         });
       }
     }
-    
+
     console.log('NDJSON数据库恢复完成:', summary);
     return summary;
-    
+
   } catch (error) {
     console.error('NDJSON数据库恢复失败:', error);
     summary.failed++;
@@ -1338,20 +1345,20 @@ async function restoreNdjsonDatabase(
 
 // 宽松模式批量插入NDJSON数据
 async function insertNdjsonBatch(
-  tableName: string, 
-  columns: string[], 
-  rows: Record<string, unknown>[], 
+  tableName: string,
+  columns: string[],
+  rows: Record<string, unknown>[],
   databaseType: DatabaseType
 ): Promise<{ success: number; failed: number }> {
   const result = { success: 0, failed: 0 };
-  
+
   try {
     // 执行插入
     if (databaseType === 'local' || databaseType === 'prod') {
-      const connectionString = databaseType === 'local' 
+      const connectionString = databaseType === 'local'
         ? (process.env.LOCAL_DB_URL_FORCE || process.env.LOCAL_DB_URL)
         : (process.env.PROD_DB_URL || process.env.DATABASE_URL);
-      
+
       if (!connectionString) {
         throw new Error(`缺少${databaseType === 'local' ? 'LOCAL_DB_URL' : 'PROD_DB_URL / DATABASE_URL'}环境变量`);
       }
@@ -1360,10 +1367,10 @@ async function insertNdjsonBatch(
       const { client } = await connectPostgresWithFallback(connectionString);
       try {
         // 会话级强化设置（尽量不失败；失败则忽略）
-        try { await client.query('BEGIN'); } catch {}
-        try { await client.query('SET LOCAL row_security = off'); } catch {}
-        try { await client.query('SET CONSTRAINTS ALL DEFERRED'); } catch {}
-        try { await client.query("SET LOCAL search_path = public"); } catch {}
+        try { await client.query('BEGIN'); } catch { }
+        try { await client.query('SET LOCAL row_security = off'); } catch { }
+        try { await client.query('SET CONSTRAINTS ALL DEFERRED'); } catch { }
+        try { await client.query("SET LOCAL search_path = public"); } catch { }
 
         // 读取列类型映射，便于为数组/JSON列做正确转换
         const columnTypeMap = await getColumnTypeMap(client as import('pg').Client, tableName);
@@ -1386,11 +1393,11 @@ async function insertNdjsonBatch(
         } catch (err) {
           console.error(`PostgreSQL插入失败，尝试逐行插入:`, err);
           // 回滚并开启新事务，避免处于 aborted 状态
-          try { await client.query('ROLLBACK'); } catch {}
-          try { await client.query('BEGIN'); } catch {}
-          try { await client.query('SET LOCAL row_security = off'); } catch {}
-          try { await client.query('SET CONSTRAINTS ALL DEFERRED'); } catch {}
-          try { await client.query("SET LOCAL search_path = public"); } catch {}
+          try { await client.query('ROLLBACK'); } catch { }
+          try { await client.query('BEGIN'); } catch { }
+          try { await client.query('SET LOCAL row_security = off'); } catch { }
+          try { await client.query('SET CONSTRAINTS ALL DEFERRED'); } catch { }
+          try { await client.query("SET LOCAL search_path = public"); } catch { }
           // 逐行插入（宽松模式）
           for (const row of rows) {
             const singleValues = columns.map(col => {
@@ -1398,7 +1405,7 @@ async function insertNdjsonBatch(
               return convertValueForInsertByType(row[col], targetType);
             });
             const singleSql = `INSERT INTO "${tableName}" (${quotedColumns}) VALUES (${singleValues.join(', ')});`;
-            
+
             try {
               await client.query(singleSql);
               result.success++;
@@ -1421,15 +1428,15 @@ async function insertNdjsonBatch(
                   await client.query('SET LOCAL row_security = off');
                   await client.query('SET CONSTRAINTS ALL DEFERRED');
                   await client.query("SET LOCAL search_path = public");
-                } catch {}
+                } catch { }
               }
             }
           }
         }
 
-        try { await client.query('COMMIT'); } catch { try { await client.query('ROLLBACK'); } catch {} }
+        try { await client.query('COMMIT'); } catch { try { await client.query('ROLLBACK'); } catch { } }
       } finally {
-        try { await client.end(); } catch {}
+        try { await client.end(); } catch { }
       }
     } else {
       // Supabase
@@ -1465,12 +1472,12 @@ async function insertNdjsonBatch(
         }
       }
     }
-    
+
   } catch (error) {
     console.error('批量插入失败:', error);
     result.failed = rows.length;
   }
-  
+
   return result;
 }
 
@@ -1479,15 +1486,15 @@ function convertValueForInsert(value: unknown): string {
   if (value === null || value === undefined) {
     return 'NULL';
   }
-  
+
   if (typeof value === 'boolean') {
     return value ? 'TRUE' : 'FALSE';
   }
-  
+
   if (typeof value === 'number') {
     return isFinite(value) ? String(value) : 'NULL';
   }
-  
+
   if (Array.isArray(value)) {
     // 优先使用 JSONB 表达数组，避免与 jsonb 列发生 text[] 类型不匹配
     try {
@@ -1497,7 +1504,7 @@ function convertValueForInsert(value: unknown): string {
       return "'[]'::jsonb";
     }
   }
-  
+
   if (typeof value === 'object') {
     try {
       // JSON对象
@@ -1507,7 +1514,7 @@ function convertValueForInsert(value: unknown): string {
       return "'{}'::jsonb";
     }
   }
-  
+
   // 字符串和其他类型
   return `'${String(value).replace(/'/g, "''")}'`;
 }
@@ -1666,10 +1673,10 @@ function safelyParseJsonArray(s: string): unknown[] {
 function toPostgresArrayLiteral(arr: unknown[], baseType: string): string {
   // 使用 PostgreSQL 的 ARRAY 构造器，避免花括号与转义混乱
   if (!arr || arr.length === 0) return `ARRAY[]::${baseType}[]`;
-  
+
   const items = arr.map((it) => {
     if (it === null || it === undefined) return 'NULL';
-    
+
     switch (baseType) {
       case 'integer':
       case 'bigint':
@@ -1699,7 +1706,7 @@ function toPostgresArrayLiteral(arr: unknown[], baseType: string): string {
       }
     }
   });
-  
+
   return `ARRAY[${items.join(', ')}]::${baseType}[]`;
 }
 

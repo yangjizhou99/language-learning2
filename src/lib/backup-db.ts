@@ -41,11 +41,11 @@ export function createPostgresClient(connectionString: string): Client {
 export function createSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  
+
   if (!url || !serviceKey) {
     throw new Error('Supabase配置不完整: 缺少 NEXT_PUBLIC_SUPABASE_URL 或 SUPABASE_SERVICE_ROLE_KEY');
   }
-  
+
   return createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -65,7 +65,7 @@ export function createDatabaseConnection(type: DatabaseType): DatabaseConnection
         client: createPostgresClient(localUrl),
         connectionString: localUrl
       };
-      
+
     case 'prod':
       const prodUrl = process.env.PROD_DB_URL;
       if (!prodUrl) {
@@ -77,22 +77,21 @@ export function createDatabaseConnection(type: DatabaseType): DatabaseConnection
         client: createPostgresClient(prodUrl),
         connectionString: prodUrl
       };
-      
+
     case 'supabase':
       return {
         type: 'supabase',
         name: 'Supabase 数据库',
         client: createSupabaseClient()
       };
-      
+
     default:
       throw new Error(`不支持的数据库类型: ${type}`);
   }
 }
 
 // 尝试以多端口回退方式建立本地连接（优先用于开发场景）
-export async function connectPostgresWithFallback(connectionString: string): Promise<{ client: Client; effective: string }>
-{
+export async function connectPostgresWithFallback(connectionString: string): Promise<{ client: Client; effective: string }> {
   // 优先使用传入端口；若为本地且端口为 5432/未写，则尝试 54340、54322
   let candidates: string[] = [];
   try {
@@ -127,7 +126,7 @@ export async function connectPostgresWithFallback(connectionString: string): Pro
           errors.push({ port, error: errorMsg });
         }
       }
-      
+
       // 如果所有端口都失败，抛出包含详细信息的错误
       const errorDetails = errors.map(e => `端口 ${e.port}: ${e.error}`).join('; ');
       throw new Error(`本地数据库连接失败（尝试了端口: ${candidates.join(', ')}）。详情: ${errorDetails}`);
@@ -159,20 +158,20 @@ export async function testDatabaseConnection(type: DatabaseType): Promise<{
   tables?: string[];
 }> {
   const connection = createDatabaseConnection(type);
-  
+
   try {
     if (type === 'supabase') {
       // 测试Supabase连接
       const supabase = connection.client;
       const { data: tables, error } = await supabase.rpc('get_table_list');
-      
+
       if (error) {
         return {
           success: false,
           error: `Supabase连接失败: ${error.message}`
         };
       }
-      
+
       return {
         success: true,
         tableCount: tables?.length || 0,
@@ -181,7 +180,7 @@ export async function testDatabaseConnection(type: DatabaseType): Promise<{
     } else {
       // 测试PostgreSQL连接（带端口回退）
       const { client } = await connectPostgresWithFallback(connection.connectionString!);
-      
+
       // 获取表列表
       const result = await client.query(`
         SELECT table_name 
@@ -190,11 +189,11 @@ export async function testDatabaseConnection(type: DatabaseType): Promise<{
         AND table_type = 'BASE TABLE'
         ORDER BY table_name
       `);
-      
+
       const tables = result.rows.map(row => row.table_name);
-      
+
       await client.end();
-      
+
       return {
         success: true,
         tableCount: tables.length,
@@ -212,24 +211,24 @@ export async function testDatabaseConnection(type: DatabaseType): Promise<{
 // 获取表列表
 export async function getTableList(type: DatabaseType): Promise<string[]> {
   const connection = createDatabaseConnection(type);
-  
+
   try {
     if (type === 'supabase') {
       const supabase = connection.client;
       const { data: tables, error } = await supabase.rpc('get_table_list');
-      
+
       if (error) {
         throw new Error(`获取表列表失败: ${error.message}`);
       }
-      
+
       return tables?.map((t: any) => t.table_name) || [];
     } else {
       const { client, effective } = await connectPostgresWithFallback(connection.connectionString!);
       try {
         const u = new URL(effective);
         console.log(`正在连接 Postgres: ${u.hostname}:${u.port || '5432'} (${type})`);
-      } catch {}
-      
+      } catch { }
+
       const result = await client.query(`
         SELECT table_name 
         FROM information_schema.tables 
@@ -237,9 +236,9 @@ export async function getTableList(type: DatabaseType): Promise<string[]> {
         AND table_type = 'BASE TABLE'
         ORDER BY table_name
       `);
-      
+
       await client.end();
-      
+
       return result.rows.map(row => row.table_name);
     }
   } catch (error) {
@@ -250,42 +249,53 @@ export async function getTableList(type: DatabaseType): Promise<string[]> {
 // 获取表列信息
 export async function getTableColumns(type: DatabaseType, tableName: string): Promise<any[]> {
   const connection = createDatabaseConnection(type);
-  
+
   try {
     if (type === 'supabase') {
       const supabase = connection.client;
       const { data: columns, error } = await supabase.rpc('get_table_columns', {
         table_name_param: tableName
       });
-      
+
       if (error) {
         throw new Error(`获取表列信息失败: ${error.message}`);
       }
-      
+
       return columns || [];
     } else {
       const { client, effective } = await connectPostgresWithFallback(connection.connectionString!);
       try {
         const u = new URL(effective);
         console.log(`正在连接 Postgres: ${u.hostname}:${u.port || '5432'} (${type})`);
-      } catch {}
-      
+      } catch { }
+
       const result = await client.query(`
-        SELECT column_name, data_type, is_nullable, column_default
+        SELECT column_name, data_type, udt_name, is_nullable, column_default
         FROM information_schema.columns 
         WHERE table_schema = 'public' 
         AND table_name = $1
         ORDER BY ordinal_position
       `, [tableName]);
-      
+
       await client.end();
-      
-      return result.rows.map(row => ({
-        column_name: row.column_name,
-        data_type: row.data_type,
-        is_nullable: row.is_nullable === 'YES',
-        column_default: row.column_default
-      }));
+
+      return result.rows.map(row => {
+        let finalType = row.data_type;
+        if (row.data_type === 'USER-DEFINED') {
+          finalType = row.udt_name;
+        } else if (row.data_type === 'ARRAY') {
+          // udt_name for int4[] is _int4, for text[] is _text
+          // We strip the leading underscore and append []
+          finalType = row.udt_name.startsWith('_') ? row.udt_name.slice(1) + '[]' : row.udt_name + '[]';
+        }
+
+        return {
+          column_name: row.column_name,
+          data_type: finalType,
+          is_nullable: row.is_nullable === 'YES',
+          column_default: row.column_default
+        };
+      });
     }
   } catch (error) {
     throw new Error(`获取表列信息失败: ${error instanceof Error ? error.message : '未知错误'}`);
@@ -295,30 +305,30 @@ export async function getTableColumns(type: DatabaseType, tableName: string): Pr
 // 获取表数据
 export async function getTableData(type: DatabaseType, tableName: string): Promise<any[]> {
   const connection = createDatabaseConnection(type);
-  
+
   try {
     if (type === 'supabase') {
       const supabase = connection.client;
       const { data: rows, error } = await supabase
         .from(tableName)
         .select('*');
-      
+
       if (error) {
         throw new Error(`获取表数据失败: ${error.message}`);
       }
-      
+
       return rows || [];
     } else {
       const { client, effective } = await connectPostgresWithFallback(connection.connectionString!);
       try {
         const u = new URL(effective);
         console.log(`正在连接 Postgres: ${u.hostname}:${u.port || '5432'} (${type})`);
-      } catch {}
-      
+      } catch { }
+
       const result = await client.query(`SELECT * FROM "${tableName}"`);
-      
+
       await client.end();
-      
+
       return result.rows;
     }
   } catch (error) {
