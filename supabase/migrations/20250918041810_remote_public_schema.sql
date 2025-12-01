@@ -1757,8 +1757,14 @@ ALTER TABLE ONLY "public"."unit_alias"
 
 
 
-ALTER TABLE ONLY "public"."unit_catalog"
-    ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'unit_catalog_lang_symbol_key'
+    ) THEN
+        ALTER TABLE "public"."unit_catalog" ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
+    END IF;
+END $$;
 
 
 
