@@ -54,6 +54,156 @@ CREATE OR REPLACE FUNCTION "public"."generate_invitation_code"() RETURNS "text"
 ALTER FUNCTION "public"."generate_invitation_code"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."get_shadowing_catalog"("p_user_id" "uuid", "p_lang" "text" DEFAULT NULL::"text", "p_level" integer DEFAULT NULL::integer, "p_practiced" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 100, "p_offset" integer DEFAULT 0, "p_since" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_allowed_languages" "text"[] DEFAULT NULL::"text"[], "p_allowed_levels" integer[] DEFAULT NULL::integer[]) RETURNS TABLE("id" "uuid", "lang" "text", "level" integer, "title" "text", "text" "text", "audio_url" "text", "audio_bucket" "text", "audio_path" "text", "sentence_timeline" "jsonb", "topic" "text", "genre" "text", "register" "text", "notes" "jsonb", "translations" "jsonb", "trans_updated_at" timestamp with time zone, "ai_provider" "text", "ai_model" "text", "ai_usage" "jsonb", "status" "text", "theme_id" "uuid", "subtopic_id" "uuid", "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "theme_title" "text", "theme_desc" "text", "subtopic_title" "text", "subtopic_one_line" "text", "session_status" "text", "last_practiced" timestamp with time zone, "recording_count" integer, "vocab_count" integer, "practice_time_seconds" integer, "is_practiced" boolean, "total_count" bigint)
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    AS $$
+BEGIN
+  RETURN QUERY
+  WITH filtered_items AS (
+    SELECT 
+      i.id,
+      i.lang,
+      i.level,
+      i.title,
+      i.text,
+      i.audio_url,
+      i.audio_bucket,
+      i.audio_path,
+      i.sentence_timeline,
+      i.topic,
+      i.genre,
+      i.register,
+      i.notes,
+      i.translations,
+      i.trans_updated_at,
+      i.ai_provider,
+      i.ai_model,
+      i.ai_usage,
+      i.status,
+      i.theme_id,
+      i.subtopic_id,
+      i.created_at,
+      i.updated_at,
+      t.title as theme_title,
+      t.desc as theme_desc,
+      st.title as subtopic_title,
+      st.one_line as subtopic_one_line,
+      s.status as session_status,
+      s.created_at as last_practiced,
+      s.recordings,
+      s.picked_preview,
+      -- 使用窗口函数计算总数（所有符合条件的记录，不受LIMIT/OFFSET影响）
+      COUNT(*) OVER() as total_count
+    FROM shadowing_items i
+  
+  -- 左连接 themes（可能为空）
+  LEFT JOIN shadowing_themes t ON i.theme_id = t.id
+  
+  -- 左连接 subtopics（可能为空）
+  LEFT JOIN shadowing_subtopics st ON i.subtopic_id = st.id
+  
+  -- 左连接 sessions（只获取当前用户的）
+  LEFT JOIN shadowing_sessions s ON s.item_id = i.id AND s.user_id = p_user_id
+  
+  WHERE 
+    -- 只显示已审核的内容
+    i.status = 'approved'
+    
+    -- 语言过滤（包含权限检查）
+    AND (
+      p_lang IS NOT NULL AND i.lang = p_lang
+      OR p_lang IS NULL AND (p_allowed_languages IS NULL OR i.lang = ANY(p_allowed_languages))
+    )
+    
+    -- 等级过滤（包含权限检查）
+    AND (
+      p_level IS NOT NULL AND i.level = p_level
+      OR p_level IS NULL AND (p_allowed_levels IS NULL OR i.level = ANY(p_allowed_levels))
+    )
+    
+    -- 练习状态过滤
+    AND (
+      p_practiced IS NULL OR 
+      (p_practiced = 'true' AND s.status = 'completed') OR
+      (p_practiced = 'false' AND (s.status IS NULL OR s.status != 'completed'))
+    )
+    
+    -- 增量同步：只返回指定时间之后更新的记录
+    AND (p_since IS NULL OR i.updated_at > p_since)
+    
+    -- 按更新时间或创建时间排序（增量同步时按更新时间升序）
+    ORDER BY 
+      CASE WHEN p_since IS NOT NULL THEN i.updated_at ELSE i.created_at END DESC
+    
+    -- 分页（在所有过滤之后应用）
+    LIMIT p_limit
+    OFFSET p_offset
+  )
+  SELECT 
+    f.id,
+    f.lang,
+    f.level,
+    f.title,
+    f.text,
+    f.audio_url,
+    f.audio_bucket,
+    f.audio_path,
+    f.sentence_timeline,
+    f.topic,
+    f.genre,
+    f.register,
+    f.notes,
+    f.translations,
+    f.trans_updated_at,
+    f.ai_provider,
+    f.ai_model,
+    f.ai_usage,
+    f.status,
+    f.theme_id,
+    f.subtopic_id,
+    f.created_at,
+    f.updated_at,
+    f.theme_title,
+    f.theme_desc,
+    f.subtopic_title,
+    f.subtopic_one_line,
+    f.session_status,
+    f.last_practiced,
+    COALESCE(jsonb_array_length(f.recordings), 0)::int as recording_count,
+    COALESCE(jsonb_array_length(f.picked_preview), 0)::int as vocab_count,
+    -- 计算总练习时长
+    (
+      COALESCE(
+        (
+          SELECT SUM((rec->>'duration')::int)
+          FROM jsonb_array_elements(COALESCE(f.recordings, '[]'::jsonb)) as rec
+          WHERE (rec->>'duration') IS NOT NULL
+        ), 
+        0
+      ) / 1000
+    )::int as practice_time_seconds,
+    (f.session_status = 'completed')::boolean as is_practiced,
+    f.total_count
+  FROM filtered_items f;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_shadowing_catalog"("p_user_id" "uuid", "p_lang" "text", "p_level" integer, "p_practiced" "text", "p_limit" integer, "p_offset" integer, "p_since" timestamp with time zone, "p_allowed_languages" "text"[], "p_allowed_levels" integer[]) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_shadowing_catalog"("p_user_id" "uuid", "p_lang" "text", "p_level" integer, "p_practiced" "text", "p_limit" integer, "p_offset" integer, "p_since" timestamp with time zone, "p_allowed_languages" "text"[], "p_allowed_levels" integer[]) IS '
+优化的 shadowing catalog 查询函数（修复版）
+修复内容：
+1. 在数据库层面应用权限过滤，确保分页正确
+2. 支持增量同步（since 参数），用于获取更新的内容
+3. LIMIT/OFFSET 在所有过滤后应用，保证返回数量正确
+
+性能：从 2-5秒 降至 250-650ms（8-20倍）
+';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."get_table_columns"("table_name_param" "text") RETURNS TABLE("column_name" "text", "data_type" "text", "is_nullable" "text", "column_default" "text", "ordinal_position" integer)
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -92,6 +242,45 @@ $$;
 
 
 ALTER FUNCTION "public"."get_table_list"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_vocab_stats"("p_user_id" "uuid") RETURNS json
+    LANGUAGE "sql" STABLE
+    AS $$
+  SELECT json_build_object(
+    'byLanguage', (
+      SELECT COALESCE(json_object_agg(lang, count), '{}'::json)
+      FROM (
+        SELECT lang, COUNT(*) as count 
+        FROM vocab_entries 
+        WHERE user_id = p_user_id 
+        GROUP BY lang
+      ) t
+    ),
+    'byStatus', (
+      SELECT COALESCE(json_object_agg(status, count), '{}'::json)
+      FROM (
+        SELECT status, COUNT(*) as count 
+        FROM vocab_entries 
+        WHERE user_id = p_user_id 
+        GROUP BY status
+      ) t
+    ),
+    'withExplanation', (
+      SELECT COUNT(*) 
+      FROM vocab_entries 
+      WHERE user_id = p_user_id AND explanation IS NOT NULL
+    ),
+    'withoutExplanation', (
+      SELECT COUNT(*) 
+      FROM vocab_entries 
+      WHERE user_id = p_user_id AND explanation IS NULL
+    )
+  );
+$$;
+
+
+ALTER FUNCTION "public"."get_vocab_stats"("p_user_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."insert_shadowing_item"("p_lang" "text", "p_level" integer, "p_title" "text", "p_text" "text", "p_audio_url" "text", "p_duration_ms" integer DEFAULT NULL::integer, "p_tokens" integer DEFAULT NULL::integer) RETURNS "uuid"
@@ -205,6 +394,19 @@ $$;
 
 
 ALTER FUNCTION "public"."update_default_user_permissions_updated_at"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_scene_tags_updated_at"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_scene_tags_updated_at"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_shadowing_sessions_updated_at"() RETURNS "trigger"
@@ -812,6 +1014,27 @@ CREATE TABLE IF NOT EXISTS "public"."pronunciation_test_runs" (
 ALTER TABLE "public"."pronunciation_test_runs" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."scene_tags" (
+    "scene_id" "text" NOT NULL,
+    "name_cn" "text" NOT NULL,
+    "name_en" "text",
+    "description" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."scene_tags" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."scene_tags" IS 'Stable scene/ability tags used as a shared semantic space for users and materials.';
+
+
+
+COMMENT ON COLUMN "public"."scene_tags"."scene_id" IS 'Stable identifier (e.g. daily_life, travel_and_directions).';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."sentence_units" (
     "sentence_id" bigint NOT NULL,
     "unit_id" bigint NOT NULL,
@@ -903,7 +1126,7 @@ ALTER TABLE "public"."shadowing_items" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."shadowing_sessions" (
-    "id" "uuid" NOT NULL,
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
     "item_id" "uuid" NOT NULL,
     "status" "text" NOT NULL,
@@ -911,11 +1134,20 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_sessions" (
     "vocab_entry_ids" "text"[],
     "picked_preview" "jsonb",
     "notes" "jsonb",
-    "created_at" timestamp with time zone
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 
 ALTER TABLE "public"."shadowing_sessions" OWNER TO "postgres";
+
+
+COMMENT ON COLUMN "public"."shadowing_sessions"."created_at" IS 'Timestamp when the session was created';
+
+
+
+COMMENT ON COLUMN "public"."shadowing_sessions"."updated_at" IS 'Timestamp when the session was last updated';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."shadowing_subtopics" (
@@ -961,6 +1193,22 @@ CREATE TABLE IF NOT EXISTS "public"."shadowing_themes" (
 
 
 ALTER TABLE "public"."shadowing_themes" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."theme_scene_vectors" (
+    "theme_id" "uuid" NOT NULL,
+    "scene_id" "text" NOT NULL,
+    "weight" numeric NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "theme_scene_vectors_weight_check" CHECK ((("weight" >= (0)::numeric) AND ("weight" <= (1)::numeric)))
+);
+
+
+ALTER TABLE "public"."theme_scene_vectors" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."theme_scene_vectors" IS 'Mapping from shadowing themes to scene tags with weights in [0,1].';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."training_content" (
@@ -1165,6 +1413,22 @@ ALTER SEQUENCE "public"."user_pron_verifications_verification_id_seq" OWNED BY "
 
 
 
+CREATE TABLE IF NOT EXISTS "public"."user_scene_preferences" (
+    "user_id" "uuid" NOT NULL,
+    "scene_id" "text" NOT NULL,
+    "weight" numeric NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "user_scene_preferences_weight_check" CHECK ((("weight" >= (0)::numeric) AND ("weight" <= (1)::numeric)))
+);
+
+
+ALTER TABLE "public"."user_scene_preferences" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_scene_preferences" IS 'Per-user preference weights in unified scene space (scene_tags).';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."user_sentence_progress" (
     "user_id" "uuid" NOT NULL,
     "sentence_id" bigint NOT NULL,
@@ -1182,6 +1446,46 @@ ALTER TABLE "public"."user_sentence_progress" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."user_sentence_progress" IS '用户句子练习进度';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_subtopic_preferences" (
+    "user_id" "uuid" NOT NULL,
+    "subtopic_id" "uuid" NOT NULL,
+    "weight" numeric NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "user_subtopic_preferences_weight_check" CHECK ((("weight" >= (0)::numeric) AND ("weight" <= (1)::numeric)))
+);
+
+
+ALTER TABLE "public"."user_subtopic_preferences" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_subtopic_preferences" IS 'Per-user preference weights for shadowing subtopics (0~1, higher means more relevant).';
+
+
+
+COMMENT ON COLUMN "public"."user_subtopic_preferences"."weight" IS 'Preference strength in [0,1]. 0 means almost irrelevant, 1 means highly relevant.';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."user_theme_preferences" (
+    "user_id" "uuid" NOT NULL,
+    "theme_id" "uuid" NOT NULL,
+    "weight" numeric NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "user_theme_preferences_weight_check" CHECK ((("weight" >= (0)::numeric) AND ("weight" <= (1)::numeric)))
+);
+
+
+ALTER TABLE "public"."user_theme_preferences" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."user_theme_preferences" IS 'Per-user preference weights for shadowing themes (0~1, higher means more relevant to the user''s goals).';
+
+
+
+COMMENT ON COLUMN "public"."user_theme_preferences"."weight" IS 'Preference strength in [0,1]. 0 means almost irrelevant, 1 means highly relevant.';
 
 
 
@@ -1413,8 +1717,28 @@ ALTER TABLE ONLY "public"."pronunciation_test_runs"
 
 
 
+ALTER TABLE ONLY "public"."scene_tags"
+    ADD CONSTRAINT "scene_tags_pkey" PRIMARY KEY ("scene_id");
+
+
+
 ALTER TABLE ONLY "public"."sentence_units"
     ADD CONSTRAINT "sentence_units_pkey" PRIMARY KEY ("sentence_id", "unit_id");
+
+
+
+ALTER TABLE ONLY "public"."shadowing_subtopics"
+    ADD CONSTRAINT "shadowing_subtopics_id_unique" UNIQUE ("id");
+
+
+
+ALTER TABLE ONLY "public"."shadowing_themes"
+    ADD CONSTRAINT "shadowing_themes_id_unique" UNIQUE ("id");
+
+
+
+ALTER TABLE ONLY "public"."theme_scene_vectors"
+    ADD CONSTRAINT "theme_scene_vectors_pkey" PRIMARY KEY ("theme_id", "scene_id");
 
 
 
@@ -1433,17 +1757,25 @@ ALTER TABLE ONLY "public"."unit_alias"
 
 
 
--- Ensure idempotency: drop the unique constraint if it exists before re-adding
-ALTER TABLE IF EXISTS "public"."unit_catalog" DROP CONSTRAINT IF EXISTS "unit_catalog_lang_symbol_key";
-ALTER TABLE ONLY "public"."unit_catalog"
-    ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'unit_catalog_lang_symbol_key'
+    ) THEN
+        ALTER TABLE "public"."unit_catalog" ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
+    END IF;
+END $$;
 
 
 
--- Ensure idempotency: drop the primary key if it exists before re-adding
-ALTER TABLE IF EXISTS "public"."unit_catalog" DROP CONSTRAINT IF EXISTS "unit_catalog_pkey";
-ALTER TABLE ONLY "public"."unit_catalog"
-    ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conrelid = 'public.unit_catalog'::regclass AND contype = 'p'
+    ) THEN
+        ALTER TABLE "public"."unit_catalog" ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
+    END IF;
+END $$;
 
 
 
@@ -1477,8 +1809,23 @@ ALTER TABLE ONLY "public"."user_pron_verifications"
 
 
 
+ALTER TABLE ONLY "public"."user_scene_preferences"
+    ADD CONSTRAINT "user_scene_preferences_pkey" PRIMARY KEY ("user_id", "scene_id");
+
+
+
 ALTER TABLE ONLY "public"."user_sentence_progress"
     ADD CONSTRAINT "user_sentence_progress_pkey" PRIMARY KEY ("user_id", "sentence_id");
+
+
+
+ALTER TABLE ONLY "public"."user_subtopic_preferences"
+    ADD CONSTRAINT "user_subtopic_preferences_pkey" PRIMARY KEY ("user_id", "subtopic_id");
+
+
+
+ALTER TABLE ONLY "public"."user_theme_preferences"
+    ADD CONSTRAINT "user_theme_preferences_pkey" PRIMARY KEY ("user_id", "theme_id");
 
 
 
@@ -1492,8 +1839,14 @@ ALTER TABLE ONLY "public"."vocab_entries"
 
 
 
-ALTER TABLE ONLY "public"."zh_pinyin_units"
-    ADD CONSTRAINT "zh_pinyin_units_pkey" PRIMARY KEY ("symbol");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conrelid = 'public.zh_pinyin_units'::regclass AND contype = 'p'
+    ) THEN
+        ALTER TABLE "public"."zh_pinyin_units" ADD CONSTRAINT "zh_pinyin_units_pkey" PRIMARY KEY ("symbol");
+    END IF;
+END $$;
 
 
 
@@ -1585,15 +1938,11 @@ CREATE INDEX "idx_cloze_shadowing_items_published" ON "public"."cloze_shadowing_
 
 
 
--- Ensure idempotency for local resets: drop index if it exists before re-creating
-DROP INDEX IF EXISTS "public"."idx_en_phoneme_units_category";
-CREATE INDEX "idx_en_phoneme_units_category" ON "public"."en_phoneme_units" USING "btree" ("category");
+CREATE INDEX IF NOT EXISTS "idx_en_phoneme_units_category" ON "public"."en_phoneme_units" USING "btree" ("category");
 
 
 
--- Ensure idempotency for local resets: drop index if it exists before re-creating
-DROP INDEX IF EXISTS "public"."idx_en_phoneme_units_subcategory";
-CREATE INDEX "idx_en_phoneme_units_subcategory" ON "public"."en_phoneme_units" USING "btree" ("subcategory");
+CREATE INDEX IF NOT EXISTS "idx_en_phoneme_units_subcategory" ON "public"."en_phoneme_units" USING "btree" ("subcategory");
 
 
 
@@ -1649,23 +1998,47 @@ CREATE INDEX "idx_sentence_units_unit" ON "public"."sentence_units" USING "btree
 
 
 
-CREATE INDEX "idx_training_content_lang" ON "public"."training_content" USING "btree" ("lang");
+CREATE INDEX "idx_shadowing_items_status_lang_level_created" ON "public"."shadowing_items" USING "btree" ("status", "lang", "level", "created_at" DESC) WHERE ("status" = 'approved'::"text");
 
 
 
-CREATE INDEX "idx_training_content_unit" ON "public"."training_content" USING "btree" ("unit_id");
+COMMENT ON INDEX "public"."idx_shadowing_items_status_lang_level_created" IS '
+优化 shadowing catalog 查询的复合索引
+覆盖最常用的过滤条件：status + lang + level + created_at
+使用 WHERE 条件索引只包含 approved 的记录
+';
 
 
 
-CREATE INDEX "idx_unit_alias_unit_id" ON "public"."unit_alias" USING "btree" ("unit_id");
+CREATE INDEX "idx_shadowing_sessions_item_user_status" ON "public"."shadowing_sessions" USING "btree" ("item_id", "user_id", "status");
 
 
 
-CREATE INDEX "idx_unit_catalog_lang" ON "public"."unit_catalog" USING "btree" ("lang");
+CREATE INDEX "idx_theme_scene_vectors_scene" ON "public"."theme_scene_vectors" USING "btree" ("scene_id");
 
 
 
-CREATE INDEX "idx_unit_catalog_symbol" ON "public"."unit_catalog" USING "btree" ("symbol");
+CREATE INDEX "idx_theme_scene_vectors_theme" ON "public"."theme_scene_vectors" USING "btree" ("theme_id");
+
+
+
+CREATE INDEX IF NOT EXISTS "idx_training_content_lang" ON "public"."training_content" USING "btree" ("lang");
+
+
+
+CREATE INDEX IF NOT EXISTS "idx_training_content_unit" ON "public"."training_content" USING "btree" ("unit_id");
+
+
+
+CREATE INDEX IF NOT EXISTS "idx_unit_alias_unit_id" ON "public"."unit_alias" USING "btree" ("unit_id");
+
+
+
+CREATE INDEX IF NOT EXISTS "idx_unit_catalog_lang" ON "public"."unit_catalog" USING "btree" ("lang");
+
+
+
+CREATE INDEX IF NOT EXISTS "idx_unit_catalog_symbol" ON "public"."unit_catalog" USING "btree" ("symbol");
 
 
 
@@ -1697,6 +2070,14 @@ CREATE INDEX "idx_user_pron_verifications_user" ON "public"."user_pron_verificat
 
 
 
+CREATE INDEX "idx_user_scene_preferences_scene" ON "public"."user_scene_preferences" USING "btree" ("scene_id");
+
+
+
+CREATE INDEX "idx_user_scene_preferences_user" ON "public"."user_scene_preferences" USING "btree" ("user_id");
+
+
+
 CREATE INDEX "idx_user_sentence_progress_status" ON "public"."user_sentence_progress" USING "btree" ("status");
 
 
@@ -1706,6 +2087,22 @@ CREATE INDEX "idx_user_sentence_progress_user" ON "public"."user_sentence_progre
 
 
 CREATE INDEX "idx_user_sentence_progress_user_status" ON "public"."user_sentence_progress" USING "btree" ("user_id", "status");
+
+
+
+CREATE INDEX "idx_user_subtopic_preferences_subtopic" ON "public"."user_subtopic_preferences" USING "btree" ("subtopic_id");
+
+
+
+CREATE INDEX "idx_user_subtopic_preferences_user" ON "public"."user_subtopic_preferences" USING "btree" ("user_id");
+
+
+
+CREATE INDEX "idx_user_theme_preferences_theme" ON "public"."user_theme_preferences" USING "btree" ("theme_id");
+
+
+
+CREATE INDEX "idx_user_theme_preferences_user" ON "public"."user_theme_preferences" USING "btree" ("user_id");
 
 
 
@@ -1741,11 +2138,27 @@ CREATE INDEX "idx_vocab_entries_user_due" ON "public"."vocab_entries" USING "btr
 
 
 
+CREATE INDEX "idx_vocab_entries_user_has_explanation" ON "public"."vocab_entries" USING "btree" ("user_id", "created_at" DESC) WHERE ("explanation" IS NOT NULL);
+
+
+
 CREATE INDEX "idx_vocab_entries_user_id" ON "public"."vocab_entries" USING "btree" ("user_id");
 
 
 
 CREATE INDEX "idx_vocab_entries_user_lang" ON "public"."vocab_entries" USING "btree" ("user_id", "lang");
+
+
+
+CREATE INDEX "idx_vocab_entries_user_lang_status" ON "public"."vocab_entries" USING "btree" ("user_id", "lang", "status", "created_at" DESC) WHERE (("lang" IS NOT NULL) AND ("status" IS NOT NULL));
+
+
+
+CREATE INDEX "idx_vocab_entries_user_no_explanation" ON "public"."vocab_entries" USING "btree" ("user_id", "created_at" DESC) WHERE ("explanation" IS NULL);
+
+
+
+CREATE INDEX "idx_vocab_entries_user_status_created" ON "public"."vocab_entries" USING "btree" ("user_id", "status", "created_at" DESC) WHERE ("status" IS NOT NULL);
 
 
 
@@ -1757,7 +2170,15 @@ CREATE INDEX "pronunciation_test_runs_created_at_idx" ON "public"."pronunciation
 
 
 
+CREATE OR REPLACE TRIGGER "set_scene_tags_updated_at" BEFORE UPDATE ON "public"."scene_tags" FOR EACH ROW EXECUTE FUNCTION "public"."update_scene_tags_updated_at"();
+
+
+
 CREATE OR REPLACE TRIGGER "set_timestamp_pron_sentences" BEFORE UPDATE ON "public"."pron_sentences" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_set_timestamp"();
+
+
+
+CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."shadowing_sessions" FOR EACH ROW EXECUTE FUNCTION "public"."update_shadowing_sessions_updated_at"();
 
 
 
@@ -1915,6 +2336,16 @@ ALTER TABLE ONLY "public"."sentence_units"
 
 
 
+ALTER TABLE ONLY "public"."theme_scene_vectors"
+    ADD CONSTRAINT "theme_scene_vectors_scene_id_fkey" FOREIGN KEY ("scene_id") REFERENCES "public"."scene_tags"("scene_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."theme_scene_vectors"
+    ADD CONSTRAINT "theme_scene_vectors_theme_id_fkey" FOREIGN KEY ("theme_id") REFERENCES "public"."shadowing_themes"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."training_content"
     ADD CONSTRAINT "training_content_unit_id_fkey" FOREIGN KEY ("unit_id") REFERENCES "public"."unit_catalog"("unit_id") ON DELETE CASCADE;
 
@@ -1950,6 +2381,16 @@ ALTER TABLE ONLY "public"."user_pron_verifications"
 
 
 
+ALTER TABLE ONLY "public"."user_scene_preferences"
+    ADD CONSTRAINT "user_scene_preferences_scene_id_fkey" FOREIGN KEY ("scene_id") REFERENCES "public"."scene_tags"("scene_id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_scene_preferences"
+    ADD CONSTRAINT "user_scene_preferences_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."user_sentence_progress"
     ADD CONSTRAINT "user_sentence_progress_sentence_id_fkey" FOREIGN KEY ("sentence_id") REFERENCES "public"."pron_sentences"("sentence_id") ON DELETE CASCADE;
 
@@ -1957,6 +2398,26 @@ ALTER TABLE ONLY "public"."user_sentence_progress"
 
 ALTER TABLE ONLY "public"."user_sentence_progress"
     ADD CONSTRAINT "user_sentence_progress_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_subtopic_preferences"
+    ADD CONSTRAINT "user_subtopic_preferences_subtopic_id_fkey" FOREIGN KEY ("subtopic_id") REFERENCES "public"."shadowing_subtopics"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_subtopic_preferences"
+    ADD CONSTRAINT "user_subtopic_preferences_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_theme_preferences"
+    ADD CONSTRAINT "user_theme_preferences_theme_id_fkey" FOREIGN KEY ("theme_id") REFERENCES "public"."shadowing_themes"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."user_theme_preferences"
+    ADD CONSTRAINT "user_theme_preferences_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
 
 
@@ -2190,11 +2651,11 @@ CREATE POLICY "profiles_insert_own" ON "public"."profiles" FOR INSERT TO "authen
 
 
 
-CREATE POLICY "profiles_select_own" ON "public"."profiles" FOR SELECT USING (("id" = "auth"."uid"()));
+CREATE POLICY "profiles_select_own" ON "public"."profiles" FOR SELECT TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "id"));
 
 
 
-CREATE POLICY "profiles_update_own" ON "public"."profiles" FOR UPDATE USING (("id" = "auth"."uid"())) WITH CHECK (("id" = "auth"."uid"()));
+CREATE POLICY "profiles_update_own" ON "public"."profiles" FOR UPDATE TO "authenticated" USING ((( SELECT "auth"."uid"() AS "uid") = "id")) WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "id"));
 
 
 
@@ -2208,10 +2669,24 @@ CREATE POLICY "pron_sentences_read" ON "public"."pron_sentences" FOR SELECT USIN
 ALTER TABLE "public"."pronunciation_test_runs" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."scene_tags" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "scene_tags_select_all_authenticated" ON "public"."scene_tags" FOR SELECT TO "authenticated" USING (true);
+
+
+
 ALTER TABLE "public"."sentence_units" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "sentence_units_read" ON "public"."sentence_units" FOR SELECT USING (true);
+
+
+
+ALTER TABLE "public"."theme_scene_vectors" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "theme_scene_vectors_select_all_authenticated" ON "public"."theme_scene_vectors" FOR SELECT TO "authenticated" USING (true);
 
 
 
@@ -2268,10 +2743,43 @@ CREATE POLICY "user_pron_verifications_select_own" ON "public"."user_pron_verifi
 
 
 
+ALTER TABLE "public"."user_scene_preferences" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_scene_preferences_select_own" ON "public"."user_scene_preferences" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "user_scene_preferences_write_own" ON "public"."user_scene_preferences" USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
 ALTER TABLE "public"."user_sentence_progress" ENABLE ROW LEVEL SECURITY;
 
 
 CREATE POLICY "user_sentence_progress_own" ON "public"."user_sentence_progress" USING (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."user_subtopic_preferences" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_subtopic_preferences_select_own" ON "public"."user_subtopic_preferences" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "user_subtopic_preferences_write_own" ON "public"."user_subtopic_preferences" USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+ALTER TABLE "public"."user_theme_preferences" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "user_theme_preferences_select_own" ON "public"."user_theme_preferences" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "user_theme_preferences_write_own" ON "public"."user_theme_preferences" USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
@@ -2311,6 +2819,12 @@ GRANT ALL ON FUNCTION "public"."generate_invitation_code"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."get_shadowing_catalog"("p_user_id" "uuid", "p_lang" "text", "p_level" integer, "p_practiced" "text", "p_limit" integer, "p_offset" integer, "p_since" timestamp with time zone, "p_allowed_languages" "text"[], "p_allowed_levels" integer[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."get_shadowing_catalog"("p_user_id" "uuid", "p_lang" "text", "p_level" integer, "p_practiced" "text", "p_limit" integer, "p_offset" integer, "p_since" timestamp with time zone, "p_allowed_languages" "text"[], "p_allowed_levels" integer[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_shadowing_catalog"("p_user_id" "uuid", "p_lang" "text", "p_level" integer, "p_practiced" "text", "p_limit" integer, "p_offset" integer, "p_since" timestamp with time zone, "p_allowed_languages" "text"[], "p_allowed_levels" integer[]) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."get_table_columns"("table_name_param" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_table_columns"("table_name_param" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_table_columns"("table_name_param" "text") TO "service_role";
@@ -2320,6 +2834,12 @@ GRANT ALL ON FUNCTION "public"."get_table_columns"("table_name_param" "text") TO
 GRANT ALL ON FUNCTION "public"."get_table_list"() TO "anon";
 GRANT ALL ON FUNCTION "public"."get_table_list"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_table_list"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_vocab_stats"("p_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_vocab_stats"("p_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_vocab_stats"("p_user_id" "uuid") TO "service_role";
 
 
 
@@ -2362,6 +2882,12 @@ GRANT ALL ON FUNCTION "public"."update_api_usage_logs_updated_at"() TO "service_
 GRANT ALL ON FUNCTION "public"."update_default_user_permissions_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_default_user_permissions_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_default_user_permissions_updated_at"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_scene_tags_updated_at"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_scene_tags_updated_at"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_scene_tags_updated_at"() TO "service_role";
 
 
 
@@ -2479,9 +3005,9 @@ GRANT ALL ON TABLE "public"."default_user_permissions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."en_phoneme_units" TO "anon";
-GRANT ALL ON TABLE "public"."en_phoneme_units" TO "authenticated";
-GRANT ALL ON TABLE "public"."en_phoneme_units" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."en_phoneme_units" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."en_phoneme_units" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."en_phoneme_units" TO "service_role";
 
 
 
@@ -2497,9 +3023,9 @@ GRANT ALL ON TABLE "public"."invitation_uses" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "anon";
-GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "authenticated";
-GRANT ALL ON TABLE "public"."ja_phoneme_units" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."ja_phoneme_units" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."ja_phoneme_units" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."ja_phoneme_units" TO "service_role";
 
 
 
@@ -2521,9 +3047,9 @@ GRANT ALL ON TABLE "public"."profiles" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."pron_sentences" TO "anon";
-GRANT ALL ON TABLE "public"."pron_sentences" TO "authenticated";
-GRANT ALL ON TABLE "public"."pron_sentences" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."pron_sentences" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."pron_sentences" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."pron_sentences" TO "service_role";
 
 
 
@@ -2539,9 +3065,15 @@ GRANT ALL ON TABLE "public"."pronunciation_test_runs" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."sentence_units" TO "anon";
-GRANT ALL ON TABLE "public"."sentence_units" TO "authenticated";
-GRANT ALL ON TABLE "public"."sentence_units" TO "service_role";
+GRANT ALL ON TABLE "public"."scene_tags" TO "anon";
+GRANT ALL ON TABLE "public"."scene_tags" TO "authenticated";
+GRANT ALL ON TABLE "public"."scene_tags" TO "service_role";
+
+
+
+GRANT MAINTAIN ON TABLE "public"."sentence_units" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."sentence_units" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."sentence_units" TO "service_role";
 
 
 
@@ -2581,6 +3113,12 @@ GRANT ALL ON TABLE "public"."shadowing_themes" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."theme_scene_vectors" TO "anon";
+GRANT ALL ON TABLE "public"."theme_scene_vectors" TO "authenticated";
+GRANT ALL ON TABLE "public"."theme_scene_vectors" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."training_content" TO "anon";
 GRANT ALL ON TABLE "public"."training_content" TO "authenticated";
 GRANT ALL ON TABLE "public"."training_content" TO "service_role";
@@ -2593,15 +3131,15 @@ GRANT ALL ON SEQUENCE "public"."training_content_content_id_seq" TO "service_rol
 
 
 
-GRANT ALL ON TABLE "public"."unit_alias" TO "anon";
-GRANT ALL ON TABLE "public"."unit_alias" TO "authenticated";
-GRANT ALL ON TABLE "public"."unit_alias" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."unit_alias" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."unit_alias" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."unit_alias" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."unit_catalog" TO "anon";
-GRANT ALL ON TABLE "public"."unit_catalog" TO "authenticated";
-GRANT ALL ON TABLE "public"."unit_catalog" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."unit_catalog" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."unit_catalog" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."unit_catalog" TO "service_role";
 
 
 
@@ -2623,9 +3161,9 @@ GRANT ALL ON TABLE "public"."user_permissions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."user_pron_attempts" TO "anon";
-GRANT ALL ON TABLE "public"."user_pron_attempts" TO "authenticated";
-GRANT ALL ON TABLE "public"."user_pron_attempts" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."user_pron_attempts" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."user_pron_attempts" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."user_pron_attempts" TO "service_role";
 
 
 
@@ -2647,15 +3185,33 @@ GRANT ALL ON SEQUENCE "public"."user_pron_verifications_verification_id_seq" TO 
 
 
 
-GRANT ALL ON TABLE "public"."user_sentence_progress" TO "anon";
-GRANT ALL ON TABLE "public"."user_sentence_progress" TO "authenticated";
-GRANT ALL ON TABLE "public"."user_sentence_progress" TO "service_role";
+GRANT ALL ON TABLE "public"."user_scene_preferences" TO "anon";
+GRANT ALL ON TABLE "public"."user_scene_preferences" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_scene_preferences" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."user_unit_stats" TO "anon";
-GRANT ALL ON TABLE "public"."user_unit_stats" TO "authenticated";
-GRANT ALL ON TABLE "public"."user_unit_stats" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."user_sentence_progress" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."user_sentence_progress" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."user_sentence_progress" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_subtopic_preferences" TO "anon";
+GRANT ALL ON TABLE "public"."user_subtopic_preferences" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_subtopic_preferences" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."user_theme_preferences" TO "anon";
+GRANT ALL ON TABLE "public"."user_theme_preferences" TO "authenticated";
+GRANT ALL ON TABLE "public"."user_theme_preferences" TO "service_role";
+
+
+
+GRANT MAINTAIN ON TABLE "public"."user_unit_stats" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."user_unit_stats" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."user_unit_stats" TO "service_role";
 
 
 
@@ -2671,9 +3227,9 @@ GRANT ALL ON TABLE "public"."voices" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."zh_pinyin_units" TO "anon";
-GRANT ALL ON TABLE "public"."zh_pinyin_units" TO "authenticated";
-GRANT ALL ON TABLE "public"."zh_pinyin_units" TO "service_role";
+GRANT MAINTAIN ON TABLE "public"."zh_pinyin_units" TO "anon";
+GRANT MAINTAIN ON TABLE "public"."zh_pinyin_units" TO "authenticated";
+GRANT MAINTAIN ON TABLE "public"."zh_pinyin_units" TO "service_role";
 
 
 

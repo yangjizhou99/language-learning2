@@ -23,6 +23,17 @@ import {
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
+const DIALOGUE_TYPE_OPTIONS = [
+  { value: 'all', label: '全部类型' },
+  { value: 'casual', label: '日常闲聊' },
+  { value: 'task', label: '任务导向' },
+  { value: 'emotion', label: '情感表达' },
+  { value: 'opinion', label: '观点讨论' },
+  { value: 'request', label: '请求建议' },
+  { value: 'roleplay', label: '角色扮演' },
+  { value: 'pattern', label: '句型操练' },
+];
+
 export default function ShadowingItemsAdmin() {
   const router = useRouter();
 
@@ -37,6 +48,8 @@ export default function ShadowingItemsAdmin() {
   const [q, setQ] = useState(''); // 搜索关键词
   const [lang, setLang] = useState<string>('all'); // 语言筛选
   const [level, setLevel] = useState<string>('all'); // 等级筛选
+  const [genre, setGenre] = useState<string>('all'); // 体裁筛选
+  const [dialogueType, setDialogueType] = useState<string>('all'); // 对话类型筛选
   const [selectAll, setSelectAll] = useState(false); // 全选状态
 
   // 获取认证头信息
@@ -54,12 +67,14 @@ export default function ShadowingItemsAdmin() {
       .filter((it) =>
         q
           ? String(it.title || '')
-              .toLowerCase()
-              .includes(q.toLowerCase())
+            .toLowerCase()
+            .includes(q.toLowerCase())
           : true,
       )
       .filter((it) => (lang === 'all' ? true : it.lang === lang))
-      .filter((it) => (level === 'all' ? true : it.level === parseInt(level)));
+      .filter((it) => (level === 'all' ? true : it.level === parseInt(level)))
+      .filter((it) => (genre === 'all' ? true : it.genre === genre))
+      .filter((it) => (dialogueType === 'all' ? true : it.dialogue_type === dialogueType));
   };
 
   // 加载素材列表
@@ -107,7 +122,7 @@ export default function ShadowingItemsAdmin() {
     } else {
       setSelectAll(selectedCount === totalCount);
     }
-  }, [selected, items, q, lang, level]);
+  }, [selected, items, q, lang, level, genre, dialogueType]);
 
   // 保存编辑的素材
   const save = async () => {
@@ -285,6 +300,38 @@ export default function ShadowingItemsAdmin() {
             </SelectContent>
           </Select>
         </div>
+        <div className="flex items-center gap-2">
+          <Label>体裁</Label>
+          <Select value={genre} onValueChange={setGenre}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="所有体裁" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有体裁</SelectItem>
+              <SelectItem value="dialogue">对话</SelectItem>
+              <SelectItem value="monologue">独白</SelectItem>
+              <SelectItem value="news">新闻</SelectItem>
+              <SelectItem value="lecture">讲座</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {genre === 'dialogue' && (
+          <div className="flex items-center gap-2">
+            <Label>对话类型</Label>
+            <Select value={dialogueType} onValueChange={setDialogueType}>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="所有类型" />
+              </SelectTrigger>
+              <SelectContent>
+                {DIALOGUE_TYPE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -654,7 +701,8 @@ export default function ShadowingItemsAdmin() {
                 </div>
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                {it.lang} • 等级 {it.level}
+                {it.lang} • 等级 {it.level} • {it.genre}
+                {it.genre === 'dialogue' && it.dialogue_type && DIALOGUE_TYPE_OPTIONS.find(d => d.value === it.dialogue_type)?.label && ` (${DIALOGUE_TYPE_OPTIONS.find(d => d.value === it.dialogue_type)?.label})`}
               </div>
             </div>
           ))}
@@ -696,6 +744,37 @@ export default function ShadowingItemsAdmin() {
                   <SelectItem value="5">等级 5</SelectItem>
                 </SelectContent>
               </Select>
+              <Select
+                value={editing.genre || 'monologue'}
+                onValueChange={(v) => setEditing({ ...editing, genre: v })}
+              >
+                <SelectTrigger className="w-24">
+                  <SelectValue placeholder="体裁" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dialogue">对话</SelectItem>
+                  <SelectItem value="monologue">独白</SelectItem>
+                  <SelectItem value="news">新闻</SelectItem>
+                  <SelectItem value="lecture">讲座</SelectItem>
+                </SelectContent>
+              </Select>
+              {editing.genre === 'dialogue' && (
+                <Select
+                  value={editing.dialogue_type || 'casual'}
+                  onValueChange={(v) => setEditing({ ...editing, dialogue_type: v })}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="对话类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DIALOGUE_TYPE_OPTIONS.filter(o => o.value !== 'all').map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Input
                 className="flex-1"
                 value={editing.title || ''}

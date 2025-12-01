@@ -19,12 +19,14 @@ function buildSubtopicPrompt({
   genre,
   themeTitle,
   count,
+  dialogueType,
 }: {
   lang: string;
   level: number;
   genre: string;
   themeTitle: string;
   count: number;
+  dialogueType?: string;
 }) {
   const langMap = { en: 'English', ja: '日本語', zh: '简体中文', ko: '한국어' } as const;
   const L = langMap[lang as keyof typeof langMap] || 'English';
@@ -49,6 +51,7 @@ function buildSubtopicPrompt({
   return `LANG=${L}
 LEVEL=L${level}
 GENRE=${genre}
+${dialogueType ? `DIALOGUE_TYPE=${dialogueType}` : ''}
 THEME_TITLE=${themeTitle}
 COUNT=${count}
 
@@ -89,6 +92,7 @@ export async function POST(req: NextRequest) {
       lang,
       level,
       genre,
+      dialogue_type,
       count = 5,
       provider = 'deepseek',
       model = 'deepseek-chat',
@@ -123,13 +127,14 @@ export async function POST(req: NextRequest) {
 
     // 构建包含现有小主题信息的提示词（一次性生成所有小主题）
     const enhancedPrompt =
-            buildSubtopicPrompt({
-              lang,
-              level,
-              genre,
-              themeTitle,
-              count,
-            }) +
+      buildSubtopicPrompt({
+        lang,
+        level,
+        genre,
+        themeTitle,
+        count,
+        dialogueType: dialogue_type,
+      }) +
       `\n\n现有小主题列表（请避免重复）：\n${existingSubtopicTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n\n请生成与上述小主题不同的新小主题。`;
 
     // 只调用一次 AI 生成，设置90秒超时
@@ -170,6 +175,7 @@ export async function POST(req: NextRequest) {
       lang: string;
       level: number;
       genre: string;
+      dialogue_type?: string;
       title: string;
       seed: string;
       one_line: string;
@@ -195,6 +201,7 @@ export async function POST(req: NextRequest) {
         lang,
         level,
         genre,
+        dialogue_type,
         title: subtopic.title,
         seed: subtopic.seed || '',
         one_line: subtopic.one_line || '',
@@ -225,6 +232,7 @@ export async function POST(req: NextRequest) {
             lang: t.lang,
             level: t.level,
             genre: t.genre,
+            dialogue_type: t.dialogue_type,
             title: t.title,
             one_line: t.one_line,
             status: t.status,

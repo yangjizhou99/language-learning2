@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
     lang,
     level,
     genre,
+    dialogue_type,
     concurrency = 4,
     provider = 'deepseek',
     model = 'deepseek-chat',
@@ -35,12 +36,26 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // 获取小主题数据
-  const { data: subtopics, error: fetchError } = await supabase
-    .from('shadowing_subtopics')
-    .select('*')
-    .in('id', subtopic_ids)
-    .eq('status', 'active');
+  // 获取小主题数据 (分批获取以避免 URI too long)
+  const CHUNK_SIZE = 50;
+  let subtopics: any[] = [];
+  let fetchError: any = null;
+
+  for (let i = 0; i < subtopic_ids.length; i += CHUNK_SIZE) {
+    const chunk = subtopic_ids.slice(i, i + CHUNK_SIZE);
+    const { data, error } = await supabase
+      .from('shadowing_subtopics')
+      .select('*')
+      .in('id', chunk);
+
+    if (error) {
+      fetchError = error;
+      break;
+    }
+    if (data) {
+      subtopics = [...subtopics, ...data];
+    }
+  }
 
   if (fetchError || !subtopics?.length) {
     return new Response(JSON.stringify({ error: 'subtopics not found' }), {
@@ -91,10 +106,16 @@ export async function POST(req: NextRequest) {
                 }
 
                 // 构建提示词（使用统一字段）
+                // 优先使用请求参数中的 dialogue_type，如果没有则尝试使用 subtopic 中的（如果有），最后默认为 casual
+                const effectiveDialogueType = dialogue_type && dialogue_type !== 'all'
+                  ? dialogue_type
+                  : (subtopic.dialogue_type || 'casual');
+
                 const prompt = buildShadowPrompt({
                   lang: subtopic.lang,
                   level: subtopic.level,
                   genre: subtopic.genre,
+                  dialogueType: effectiveDialogueType,
                   title: subtopic.title,
                   seed: subtopic.seed,
                   one_line: subtopic.one_line,
@@ -142,6 +163,7 @@ export async function POST(req: NextRequest) {
                   level: subtopic.level,
                   topic: subtopic.title,
                   genre: subtopic.genre,
+                  dialogue_type: effectiveDialogueType,
                   title: parsed.title || subtopic.title,
                   text: parsed.passage || content,
                   theme_id: themeData?.theme_id || null,

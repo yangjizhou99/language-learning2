@@ -19,11 +19,13 @@ async function handleRequest(supabase: any, req: NextRequest) {
   const lang = searchParams.get('lang');
   const level = searchParams.get('level');
   const genre = searchParams.get('genre');
+  const dialogueType = searchParams.get('dialogue_type');
   const onlyNoSubtopics = searchParams.get('no_subtopics') === '1';
   const onlyNoPractice = searchParams.get('no_practice') === '1';
 
   const langFilter = lang && lang !== 'all' ? lang : null;
   const genreFilter = genre && genre !== 'all' ? genre : null;
+  const dialogueTypeFilter = dialogueType && dialogueType !== 'all' ? dialogueType : null;
   const levelNumber =
     level && !Number.isNaN(Number.parseInt(level, 10)) ? Number.parseInt(level, 10) : null;
 
@@ -33,6 +35,7 @@ async function handleRequest(supabase: any, req: NextRequest) {
   if (langFilter) query = query.eq('lang', langFilter);
   if (typeof levelNumber === 'number') query = query.eq('level', levelNumber);
   if (genreFilter) query = query.eq('genre', genreFilter);
+  if (dialogueTypeFilter) query = query.eq('dialogue_type', dialogueTypeFilter);
 
   const { data, error } = await query.order('created_at', { ascending: false });
 
@@ -48,6 +51,7 @@ async function handleRequest(supabase: any, req: NextRequest) {
 
         if (langFilter) subtopicQuery.eq('lang', langFilter);
         if (genreFilter) subtopicQuery.eq('genre', genreFilter);
+        if (dialogueTypeFilter) subtopicQuery.eq('dialogue_type', dialogueTypeFilter);
         if (typeof levelNumber === 'number') subtopicQuery.eq('level', levelNumber);
 
         const practiceQuery = supabase
@@ -58,6 +62,7 @@ async function handleRequest(supabase: any, req: NextRequest) {
 
         if (langFilter) practiceQuery.eq('lang', langFilter);
         if (genreFilter) practiceQuery.eq('genre', genreFilter);
+        if (dialogueTypeFilter) practiceQuery.eq('dialogue_type', dialogueTypeFilter);
         if (typeof levelNumber === 'number') practiceQuery.eq('level', levelNumber);
 
         const [{ count: subtopicCount }, { count: practiceCount }] = await Promise.all([
@@ -115,6 +120,7 @@ export async function POST(req: NextRequest) {
 
     const data = {
       ...item,
+      dialogue_type: item.dialogue_type || null,
       updated_at: now,
       created_by: item.created_by || user?.id,
     };

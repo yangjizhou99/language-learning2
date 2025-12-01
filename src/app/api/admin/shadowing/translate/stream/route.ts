@@ -469,9 +469,34 @@ export async function POST(req: NextRequest) {
       .select('id, lang, text, translations, trans_updated_at, title, genre, level')
       .order('created_at', { ascending: false });
 
+    let items: any[] = [];
+
     // 如果有选中的ID，只查询这些ID
     if (selectedIds && selectedIds.length > 0) {
-      query = query.in('id', selectedIds);
+      // 分批获取数据以避免 URI too long
+      const CHUNK_SIZE = 50;
+      let fetchError: any = null;
+
+      for (let i = 0; i < selectedIds.length; i += CHUNK_SIZE) {
+        const chunk = selectedIds.slice(i, i + CHUNK_SIZE);
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('id, lang, text, translations, trans_updated_at, title, genre, level')
+          .in('id', chunk)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          fetchError = error;
+          break;
+        }
+        if (data) {
+          items.push(...data);
+        }
+      }
+
+      if (fetchError) {
+        throw new Error(`查询失败: ${fetchError.message}`);
+      }
     } else {
       // 否则应用筛选条件
       if (filters.status && filters.status !== 'all') {
@@ -489,12 +514,14 @@ export async function POST(req: NextRequest) {
       if (filters.q && filters.q.trim()) {
         query = query.ilike('title', `%${filters.q.trim()}%`);
       }
-    }
 
-    const { data: items, error: fetchError } = await query;
-
-    if (fetchError) {
-      throw new Error(`查询失败: ${fetchError.message}`);
+      const { data, error } = await query;
+      if (error) {
+        throw new Error(`查询失败: ${error.message}`);
+      }
+      if (data) {
+        items = data;
+      }
     }
 
     if (!items || items.length === 0) {

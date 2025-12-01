@@ -43,8 +43,8 @@ export async function GET(req: NextRequest) {
             get(name: string) {
               return cookieMap.get(name);
             },
-            set() {},
-            remove() {},
+            set() { },
+            remove() { },
           },
         }) as unknown as SupabaseClient;
       } else {
@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
             get(name: string) {
               return cookieStore.get(name)?.value;
             },
-            set() {},
-            remove() {},
+            set() { },
+            remove() { },
           },
         }) as unknown as SupabaseClient;
       }
@@ -94,6 +94,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const lang = url.searchParams.get('lang');
     const level = url.searchParams.get('level');
+    const dialogue_type = url.searchParams.get('dialogue_type');
     const practiced = url.searchParams.get('practiced'); // 'true', 'false', or null (all)
     const since = url.searchParams.get('since'); // for incremental syncing
     const limitParam = url.searchParams.get('limit');
@@ -153,6 +154,7 @@ export async function GET(req: NextRequest) {
         p_since: since || null,
         p_allowed_languages: lang ? null : permissions.allowed_languages,
         p_allowed_levels: level ? null : permissions.allowed_levels,
+        p_dialogue_type: dialogue_type || null,
       });
 
       if (process.env.NODE_ENV !== 'production') {
@@ -249,7 +251,7 @@ export async function GET(req: NextRequest) {
           subtopic_id: item.subtopic_id,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          
+
           // 构建 audio_url（优先级：url > notes > storage）
           audio_url:
             item.audio_url ||
@@ -257,14 +259,14 @@ export async function GET(req: NextRequest) {
             (item.audio_bucket && item.audio_path
               ? `/api/storage-proxy?path=${item.audio_path}&bucket=${item.audio_bucket}`
               : null),
-          
+
           // 嵌套对象
           theme,
           subtopic,
-          
+
           // 练习状态
           isPracticed: item.is_practiced || false,
-          
+
           // 统计信息（已由数据库计算好）
           stats: {
             recordingCount: item.recording_count || 0,
@@ -277,12 +279,12 @@ export async function GET(req: NextRequest) {
 
       // 权限过滤已在数据库层面完成，无需应用层过滤
       // 这确保了分页的正确性：LIMIT/OFFSET 在过滤后的数据集上应用
-      
+
       // 获取总记录数（从任意一条记录中获取，所有记录的 total_count 都相同）
-      const totalCount = rawItems && rawItems.length > 0 
+      const totalCount = rawItems && rawItems.length > 0
         ? parseInt(String(rawItems[0].total_count))
         : 0;
-      
+
       const result = {
         success: true,
         items: processedItems,
