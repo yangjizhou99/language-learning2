@@ -95,7 +95,18 @@ export async function GET(req: NextRequest) {
     const lang = url.searchParams.get('lang');
     const level = url.searchParams.get('level');
     const dialogue_type = url.searchParams.get('dialogue_type');
-    const practiced = url.searchParams.get('practiced'); // 'true', 'false', or null (all)
+    let practiced = url.searchParams.get('practiced'); // 'true', 'false', or null (all)
+
+    // Normalize practiced parameter: convert frontend values ('practiced', 'unpracticed', 'all')
+    // to database values ('true', 'false', null)
+    if (practiced === 'practiced') {
+      practiced = 'true';
+    } else if (practiced === 'unpracticed') {
+      practiced = 'false';
+    } else if (practiced === 'all') {
+      practiced = null;
+    }
+
     const since = url.searchParams.get('since'); // for incremental syncing
     const limitParam = url.searchParams.get('limit');
     const offsetParam = url.searchParams.get('offset');
@@ -144,11 +155,12 @@ export async function GET(req: NextRequest) {
 
       // 调用优化的数据库函数（使用 JOIN 和聚合，单次查询）
       // 传递权限参数以在数据库层面完成过滤，确保分页正确
+      // practiced 参数已规范化为 'true', 'false', 或 null
       const { data: rawItems, error } = await supabase.rpc('get_shadowing_catalog', {
         p_user_id: user.id,
         p_lang: lang || null,
         p_level: level ? parseInt(level) : null,
-        p_practiced: practiced || null,
+        p_practiced: practiced, // already normalized to 'true', 'false', or null
         p_limit: limit || 100,
         p_offset: offset || 0,
         p_since: since || null,
@@ -168,7 +180,7 @@ export async function GET(req: NextRequest) {
       if (error) {
         console.error('Database query error:', error);
         throw new Error(
-          `Error fetching shadowing catalog: ${error instanceof Error ? error.message : String(error)}`,
+          `Error fetching shadowing catalog: ${JSON.stringify(error)}`,
         );
       }
 
@@ -316,3 +328,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
