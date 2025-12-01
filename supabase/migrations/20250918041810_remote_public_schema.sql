@@ -1839,8 +1839,14 @@ ALTER TABLE ONLY "public"."vocab_entries"
 
 
 
-ALTER TABLE ONLY "public"."zh_pinyin_units"
-    ADD CONSTRAINT "zh_pinyin_units_pkey" PRIMARY KEY ("symbol");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conrelid = 'public.zh_pinyin_units'::regclass AND contype = 'p'
+    ) THEN
+        ALTER TABLE "public"."zh_pinyin_units" ADD CONSTRAINT "zh_pinyin_units_pkey" PRIMARY KEY ("symbol");
+    END IF;
+END $$;
 
 
 
@@ -1932,11 +1938,11 @@ CREATE INDEX "idx_cloze_shadowing_items_published" ON "public"."cloze_shadowing_
 
 
 
-CREATE INDEX "idx_en_phoneme_units_category" ON "public"."en_phoneme_units" USING "btree" ("category");
+CREATE INDEX IF NOT EXISTS "idx_en_phoneme_units_category" ON "public"."en_phoneme_units" USING "btree" ("category");
 
 
 
-CREATE INDEX "idx_en_phoneme_units_subcategory" ON "public"."en_phoneme_units" USING "btree" ("subcategory");
+CREATE INDEX IF NOT EXISTS "idx_en_phoneme_units_subcategory" ON "public"."en_phoneme_units" USING "btree" ("subcategory");
 
 
 
@@ -2016,23 +2022,23 @@ CREATE INDEX "idx_theme_scene_vectors_theme" ON "public"."theme_scene_vectors" U
 
 
 
-CREATE INDEX "idx_training_content_lang" ON "public"."training_content" USING "btree" ("lang");
+CREATE INDEX IF NOT EXISTS "idx_training_content_lang" ON "public"."training_content" USING "btree" ("lang");
 
 
 
-CREATE INDEX "idx_training_content_unit" ON "public"."training_content" USING "btree" ("unit_id");
+CREATE INDEX IF NOT EXISTS "idx_training_content_unit" ON "public"."training_content" USING "btree" ("unit_id");
 
 
 
-CREATE INDEX "idx_unit_alias_unit_id" ON "public"."unit_alias" USING "btree" ("unit_id");
+CREATE INDEX IF NOT EXISTS "idx_unit_alias_unit_id" ON "public"."unit_alias" USING "btree" ("unit_id");
 
 
 
-CREATE INDEX "idx_unit_catalog_lang" ON "public"."unit_catalog" USING "btree" ("lang");
+CREATE INDEX IF NOT EXISTS "idx_unit_catalog_lang" ON "public"."unit_catalog" USING "btree" ("lang");
 
 
 
-CREATE INDEX "idx_unit_catalog_symbol" ON "public"."unit_catalog" USING "btree" ("symbol");
+CREATE INDEX IF NOT EXISTS "idx_unit_catalog_symbol" ON "public"."unit_catalog" USING "btree" ("symbol");
 
 
 
