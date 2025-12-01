@@ -6,6 +6,7 @@ export type ClozeShadowingFilterPersist = {
   subtopic?: string | null;
   q?: string | null;
   genre?: string | null;
+  dialogue_type?: string | null;
   sort?: 'recommended' | 'recent' | 'levelAsc' | 'levelDesc' | 'completion';
 };
 

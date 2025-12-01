@@ -1,11 +1,47 @@
 export type Lang = 'en' | 'ja' | 'zh' | 'ko';
 export type Genre = 'dialogue' | 'monologue' | 'news' | 'lecture';
+export type DialogueType =
+  | 'casual'
+  | 'task'
+  | 'emotion'
+  | 'opinion'
+  | 'request'
+  | 'roleplay'
+  | 'pattern';
 
-export function shadowingLevelPresets(lang: Lang, level: 1 | 2 | 3 | 4 | 5 | 6, genre: Genre) {
+export const DIALOGUE_TYPE_LABELS: Record<DialogueType, string> = {
+  casual: '日常闲聊 (Casual Chat)',
+  task: '任务场景 (Task-based)',
+  emotion: '情绪互动 (Emotional Interaction)',
+  opinion: '意见交流 (Opinion Exchange)',
+  request: '请求/拒绝/协商 (Request/Negotiation)',
+  roleplay: '角色扮演 (Roleplay)',
+  pattern: '句型模式 (Pattern Practice)',
+};
+
+export function shadowingLevelPresets(
+  lang: Lang,
+  level: 1 | 2 | 3 | 4 | 5 | 6,
+  genre: Genre,
+  dialogueType?: DialogueType,
+) {
   const sentMin = Math.max(6, Math.min(13, 5 + level));
   const sentMax = sentMin + 2;
-  const register =
-    genre === 'dialogue' ? (level <= 2 ? 'casual' : 'neutral') : level >= 5 ? 'formal' : 'neutral';
+
+  let register = 'neutral';
+  if (genre === 'dialogue') {
+    if (dialogueType === 'casual' || dialogueType === 'emotion') {
+      register = 'casual';
+    } else if (dialogueType === 'task' || dialogueType === 'request') {
+      register = 'polite/neutral';
+    } else if (level <= 2) {
+      register = 'casual';
+    } else {
+      register = 'neutral';
+    }
+  } else {
+    register = level >= 5 ? 'formal' : 'neutral';
+  }
 
   const maxSentenceLenEn = [0, 12, 16, 20, 24, 28, 32][level];
   const maxSentenceLenCJK = [0, 35, 45, 55, 65, 75, 90][level];
@@ -32,6 +68,7 @@ export function buildShadowPrompt({
   lang,
   level,
   genre,
+  dialogueType,
   title,
   seed,
   one_line,
@@ -39,12 +76,13 @@ export function buildShadowPrompt({
   lang: Lang;
   level: 1 | 2 | 3 | 4 | 5 | 6;
   genre: Genre;
+  dialogueType?: DialogueType;
   title: string;
   seed?: string;
   one_line?: string;
 }) {
   const L = lang === 'en' ? 'English' : lang === 'ja' ? '日本語' : lang === 'ko' ? '한국어' : '简体中文';
-  const p = shadowingLevelPresets(lang, level, genre);
+  const p = shadowingLevelPresets(lang, level, genre, dialogueType);
 
   const lenLine =
     lang === 'en'
@@ -53,14 +91,42 @@ export function buildShadowPrompt({
 
   const maxSent = lang === 'en' ? `${p.maxSentenceLenEn} words` : `${p.maxSentenceLenCJK} chars`;
 
-  const genreRules =
-    genre === 'dialogue'
-      ? `TURNS=${p.sentRange[0]}–${p.sentRange[1]}, alternate speakers "A:"/"B:", avoid long monologues.`
-      : genre === 'news'
-        ? `Headline-style title; explanatory flow; minimal quotations.`
-        : genre === 'lecture'
-          ? `Academic tone; clear structure; examples and explanations.`
-          : `Narrative flow; engaging content; varied sentence structures.`;
+  let genreRules = '';
+  if (genre === 'dialogue') {
+    let typeDesc = 'General conversation';
+    if (dialogueType) {
+      switch (dialogueType) {
+        case 'casual':
+          typeDesc = 'Casual chat between friends/family. Natural, informal tone.';
+          break;
+        case 'task':
+          typeDesc = 'Task-oriented (ordering food, asking directions, shopping). Clear, polite but functional.';
+          break;
+        case 'emotion':
+          typeDesc = 'Emotional interaction (comforting, apologizing, complaining). Expressive tone.';
+          break;
+        case 'opinion':
+          typeDesc = 'Exchanging opinions/small discussion. Stating preferences, agreeing/disagreeing.';
+          break;
+        case 'request':
+          typeDesc = 'Making requests, refusing, negotiating. Polite strategies.';
+          break;
+        case 'roleplay':
+          typeDesc = 'Roleplay scenario (Teacher-Student, Clerk-Customer). Appropriate role-based register.';
+          break;
+        case 'pattern':
+          typeDesc = 'Pattern practice. Focus on specific sentence structures in a dialogue context.';
+          break;
+      }
+    }
+    genreRules = `TYPE=${typeDesc}\nTURNS=${p.sentRange[0]}–${p.sentRange[1]}, alternate speakers "A:"/"B:", avoid long monologues.`;
+  } else if (genre === 'news') {
+    genreRules = `Headline-style title; explanatory flow; minimal quotations.`;
+  } else if (genre === 'lecture') {
+    genreRules = `Academic tone; clear structure; examples and explanations.`;
+  } else {
+    genreRules = `Narrative flow; engaging content; varied sentence structures.`;
+  }
 
   const seedHint = seed ? `\nSEED_KEYWORDS=${seed}` : '';
   const summaryHint = one_line ? `\nINTENT_HINT=${one_line}` : '';
@@ -68,6 +134,7 @@ export function buildShadowPrompt({
   return `LANG=${L}
 LEVEL=L${level}
 GENRE=${genre}
+${dialogueType ? `DIALOGUE_TYPE=${dialogueType}` : ''}
 TOPIC=${title}${seedHint}${summaryHint}
 
 SENTENCES=${p.sentRange[0]}–${p.sentRange[1]}
@@ -78,7 +145,7 @@ MAX_SENTENCE_LEN=${maxSent}
 ${genreRules}
 
 OUTPUT JSON:
-{ "title":"...", "passage":"...", "notes":{ "key_phrases":[...], "pacing":"...", "tips":"..." }, "meta":{"lang":"${lang}","level":"L${level}","genre":"${genre}"}, "violations":[] }
+{ "title":"...", "passage":"...", "notes":{ "key_phrases":[...], "pacing":"...", "tips":"..." }, "meta":{"lang":"${lang}","level":"L${level}","genre":"${genre}","dialogue_type":"${dialogueType || ''}"}, "violations":[] }
 
 If length is outside ±10% or sentences out of range, self-repair before returning.`;
 }

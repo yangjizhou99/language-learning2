@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { chatJSON } from '@/lib/ai/client';
 import { requireAdmin } from '@/lib/admin';
+import { DIALOGUE_TYPE_LABELS, DialogueType } from '@/lib/shadowing/prompt';
 
 export const maxDuration = 300; // 5分钟超时，符合Vercel Hobby计划限制
 
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
       lang,
       level,
       genre,
+      dialogue_type,
       provider,
       model,
       temperature,
@@ -100,11 +102,18 @@ export async function POST(request: NextRequest) {
 
         const actualLevel = level === 'all' ? String(subtopic.level) : level;
         const actualGenre = genre === 'all' ? subtopic.genre : genre;
+        const actualDialogueType = (dialogue_type === 'all' ? subtopic.dialogue_type : dialogue_type) as DialogueType | undefined;
         const actualLang = lang === 'all' ? subtopic.lang : lang;
         const wordCountRange = getWordCountRange(String(actualLevel), String(actualLang));
         const formatInstruction = actualGenre === 'dialogue' ? '必须使用A: B: 对话格式，每行以A: 或B: 开头' : '使用完整句子，不要使用A/B对话格式';
 
+        let typeDesc = '';
+        if (actualGenre === 'dialogue' && actualDialogueType && DIALOGUE_TYPE_LABELS[actualDialogueType]) {
+          typeDesc = `\n对话类型：${DIALOGUE_TYPE_LABELS[actualDialogueType]}`;
+        }
+
         const prompt = `请为以下小主题生成一篇${actualLang}语言、${actualLevel}级、${actualGenre}类型的影子跟读文章：
+${typeDesc}
 
 小主题：${subtopic.title}
 关键词：${subtopic.seed}
@@ -158,6 +167,7 @@ export async function POST(request: NextRequest) {
             lang: actualLang,
             level: parseInt(String(actualLevel)),
             genre: actualGenre,
+            dialogue_type: actualDialogueType,
             status: 'draft',
             created_by: auth.user.id,
             created_at: new Date().toISOString(),

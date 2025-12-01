@@ -2,6 +2,7 @@ export type ShadowingFilterPersist = {
   lang?: 'zh' | 'ja' | 'en' | 'ko';
   level?: number | null;
   practiced?: 'all' | 'practiced' | 'unpracticed';
+  dialogue_type?: string | null;
 };
 
 const STORAGE_KEY = 'shadowing:filters';

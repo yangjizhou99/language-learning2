@@ -20,11 +20,13 @@ function buildThemePrompt({
   level,
   genre,
   count,
+  dialogueType,
 }: {
   lang: string;
   level: number;
   genre: string;
   count: number;
+  dialogueType?: string;
 }) {
   const langNameMap = { en: 'English', ja: '日本語', zh: '简体中文', ko: '한국어' } as const;
   const L = langNameMap[lang as keyof typeof langNameMap] || 'English';
@@ -53,6 +55,7 @@ function buildThemePrompt({
   return `LANG=${L}
 LEVEL=L${level}
 GENRE=${genre}
+${dialogueType ? `DIALOGUE_TYPE=${dialogueType}` : ''}
 COUNT=${count}
 
 Constraints:
@@ -90,6 +93,7 @@ export async function POST(req: NextRequest) {
       lang,
       level,
       genre,
+      dialogue_type,
       count = 5,
       provider = 'deepseek',
       model = 'deepseek-chat',
@@ -112,7 +116,7 @@ export async function POST(req: NextRequest) {
 
     // 构建包含现有主题信息的提示词（一次性生成所有主题）
     const enhancedPrompt =
-      buildThemePrompt({ lang, level, genre, count }) +
+      buildThemePrompt({ lang, level, genre, count, dialogueType: dialogue_type }) +
       `\n\n现有主题列表（请避免重复）：\n${existingTitles.map((title, index) => `${index + 1}. ${title}`).join('\n')}\n\n请生成与上述主题不同的新主题。`;
 
     // 只调用一次 AI 生成，设置90秒超时
@@ -153,6 +157,7 @@ export async function POST(req: NextRequest) {
       lang: string;
       level: number;
       genre: string;
+      dialogue_type?: string;
       title: string;
       title_en: string;
       desc: string;
@@ -170,6 +175,7 @@ export async function POST(req: NextRequest) {
       lang,
       level,
       genre,
+      dialogue_type,
       title: theme.title_cn,
       title_en: theme.title_en || '',
       desc: theme.rationale || '',
@@ -205,6 +211,7 @@ export async function POST(req: NextRequest) {
             lang: t.lang,
             level: t.level,
             genre: t.genre,
+            dialogue_type: t.dialogue_type,
             title: t.title,
             desc: t.desc,
             status: t.status,

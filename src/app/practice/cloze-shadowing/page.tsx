@@ -51,6 +51,7 @@ export default function ClozeShadowingEntryPage() {
   const [q, setQ] = useState<string>('');
   const [recommendedLevel, setRecommendedLevel] = useState<number | null>(null);
   const [genre, setGenre] = useState<string>('all');
+  const [dialogueType, setDialogueType] = useState<string>('all');
 
   const [themes, setThemes] = useState<Array<{ id: string; title: string }>>([]);
   const [subtopics, setSubtopics] = useState<Array<{ id: string; title: string }>>([]);
@@ -67,6 +68,17 @@ export default function ClozeShadowingEntryPage() {
   // 用户对各大主题的偏好权重（由 /api/recommend/preferences 提供）
   const [themePrefs, setThemePrefs] = useState<Record<string, number>>({});
 
+  const DIALOGUE_TYPE_OPTIONS = [
+    { value: 'all', label: '全部类型' },
+    { value: 'casual', label: '日常闲聊' },
+    { value: 'task', label: '任务导向' },
+    { value: 'emotion', label: '情感表达' },
+    { value: 'opinion', label: '观点讨论' },
+    { value: 'request', label: '请求建议' },
+    { value: 'roleplay', label: '角色扮演' },
+    { value: 'pattern', label: '句型操练' },
+  ];
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -81,6 +93,7 @@ export default function ClozeShadowingEntryPage() {
     const urlSubtopic = params?.get('subtopic') || '';
     const urlQ = params?.get('q') || '';
     const urlGenre = params?.get('genre') || 'all';
+    const urlDialogueType = params?.get('dialogue_type') || 'all';
     const urlSort = params?.get('sort');
     const urlLimit = params?.get('limit');
     const urlOffset = params?.get('offset');
@@ -92,6 +105,7 @@ export default function ClozeShadowingEntryPage() {
     if (urlSubtopic) setSubtopic(urlSubtopic);
     if (urlQ) setQ(urlQ);
     if (urlGenre) setGenre(urlGenre);
+    if (urlDialogueType) setDialogueType(urlDialogueType);
     if (urlSort && ['recommended', 'recent', 'levelAsc', 'levelDesc', 'completion'].includes(urlSort)) setSortBy(urlSort as SortKey);
     if (urlLimit && !Number.isNaN(parseInt(urlLimit))) setPageSize(Math.max(1, Math.min(200, parseInt(urlLimit))));
     if (urlOffset && !Number.isNaN(parseInt(urlOffset))) {
@@ -110,6 +124,7 @@ export default function ClozeShadowingEntryPage() {
         if (persisted.subtopic) setSubtopic(persisted.subtopic || '');
         if (persisted.q) setQ(persisted.q || '');
         if (typeof persisted.genre === 'string') setGenre(persisted.genre || 'all');
+        if (typeof persisted.dialogue_type === 'string') setDialogueType(persisted.dialogue_type || 'all');
         if (persisted.sort) setSortBy(persisted.sort);
       }
     }
@@ -126,6 +141,7 @@ export default function ClozeShadowingEntryPage() {
     if (subtopic) params.set('subtopic', subtopic); else params.delete('subtopic');
     if (q) params.set('q', q); else params.delete('q');
     if (genre && genre !== 'all') params.set('genre', genre); else params.delete('genre');
+    if (dialogueType && dialogueType !== 'all') params.set('dialogue_type', dialogueType); else params.delete('dialogue_type');
     if (sortBy && sortBy !== 'recommended') params.set('sort', sortBy); else params.delete('sort');
     params.set('limit', String(pageSize));
     params.set('offset', String(Math.max(0, (page - 1) * pageSize)));
@@ -138,75 +154,77 @@ export default function ClozeShadowingEntryPage() {
       subtopic: subtopic || null,
       q: q || null,
       genre: genre && genre !== 'all' ? genre : null,
+      dialogue_type: dialogueType && dialogueType !== 'all' ? dialogueType : null,
       sort: sortBy !== 'recommended' ? sortBy : undefined,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang, level, practiced, theme, subtopic, q, genre, sortBy, page, pageSize]);
+  }, [lang, level, practiced, theme, subtopic, q, genre, dialogueType, sortBy, page, pageSize]);
 
   // 条件变化时回到第 1 页
   useEffect(() => {
     setPage(1);
-  }, [lang, level, practiced, theme, subtopic, q, genre, sortBy]);
+  }, [lang, level, practiced, theme, subtopic, q, genre, dialogueType, sortBy]);
 
   const fetchItems = async () => {
-      // 取消上一次请求
-      if (abortRef.current) {
-        try { abortRef.current.abort(); } catch {}
-      }
-      const controller = new AbortController();
-      abortRef.current = controller;
+    // 取消上一次请求
+    if (abortRef.current) {
+      try { abortRef.current.abort(); } catch { }
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-      setLoading(true);
-      setError('');
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session) {
-          setError('请先登录');
-          setItems([]);
-          setLoading(false);
-          return;
-        }
-
-        const params = new URLSearchParams();
-        if (lang) params.set('lang', String(lang));
-        if (level) params.set('level', String(level));
-        if (practiced !== 'all') params.set('practiced', practiced === 'practiced' ? 'true' : 'false');
-        if (theme) params.set('theme', theme);
-        if (subtopic) params.set('subtopic', subtopic);
-        if (q) params.set('q', q);
-        if (genre && genre !== 'all') params.set('genre', genre);
-        params.set('limit', String(pageSize));
-        params.set('offset', String(Math.max(0, (page - 1) * pageSize)));
-
-        const resp = await fetch(`/api/cloze-shadowing/catalog?${params.toString()}`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          cache: 'no-store',
-          signal: controller.signal,
-        });
-        const data = await resp.json();
-        if (!resp.ok || !data?.success) throw new Error(data?.error || '加载失败');
-        setItems(data.items || []);
-        setThemes(data.themes || []);
-        setSubtopics(data.subtopics || []);
-        setTotal(typeof data.total === 'number' ? data.total : 0);
-        if (!selectedId && (data.items || []).length > 0) setSelectedId(data.items[0].id);
-      } catch (e) {
-        // 忽略中止错误
-        if (e && typeof e === 'object' && 'name' in e && e.name === 'AbortError') return;
-        let msg = '加载失败';
-        try {
-          if (e && typeof e === 'object' && 'message' in e && e.message) {
-            msg = String(e.message);
-          }
-        } catch {}
-        setError(msg);
+    setLoading(true);
+    setError('');
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setError('请先登录');
         setItems([]);
-      } finally {
         setLoading(false);
+        return;
       }
-    };
+
+      const params = new URLSearchParams();
+      if (lang) params.set('lang', String(lang));
+      if (level) params.set('level', String(level));
+      if (practiced !== 'all') params.set('practiced', practiced === 'practiced' ? 'true' : 'false');
+      if (theme) params.set('theme', theme);
+      if (subtopic) params.set('subtopic', subtopic);
+      if (q) params.set('q', q);
+      if (genre && genre !== 'all') params.set('genre', genre);
+      if (dialogueType && dialogueType !== 'all') params.set('dialogue_type', dialogueType);
+      params.set('limit', String(pageSize));
+      params.set('offset', String(Math.max(0, (page - 1) * pageSize)));
+
+      const resp = await fetch(`/api/cloze-shadowing/catalog?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data?.success) throw new Error(data?.error || '加载失败');
+      setItems(data.items || []);
+      setThemes(data.themes || []);
+      setSubtopics(data.subtopics || []);
+      setTotal(typeof data.total === 'number' ? data.total : 0);
+      if (!selectedId && (data.items || []).length > 0) setSelectedId(data.items[0].id);
+    } catch (e) {
+      // 忽略中止错误
+      if (e && typeof e === 'object' && 'name' in e && e.name === 'AbortError') return;
+      let msg = '加载失败';
+      try {
+        if (e && typeof e === 'object' && 'message' in e && e.message) {
+          msg = String(e.message);
+        }
+      } catch { }
+      setError(msg);
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -215,11 +233,11 @@ export default function ClozeShadowingEntryPage() {
     return () => {
       clearTimeout(t);
       if (abortRef.current) {
-        try { abortRef.current.abort(); } catch {}
+        try { abortRef.current.abort(); } catch { }
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang, level, practiced, theme, subtopic, q, genre, page, pageSize]);
+  }, [lang, level, practiced, theme, subtopic, q, genre, dialogueType, page, pageSize]);
 
   const filtered = useMemo(() => {
     const arr = [...items];
@@ -372,11 +390,15 @@ export default function ClozeShadowingEntryPage() {
         const genreMap: Record<string, string> = { dialogue: '对话', monologue: '独白', news: '新闻', lecture: '讲座' };
         chips.push({ key: 'genre', label: `体裁: ${genreMap[genre] || genre}`, onRemove: () => setGenre('all') });
       }
+      if (dialogueType && dialogueType !== 'all') {
+        const dtLabel = DIALOGUE_TYPE_OPTIONS.find(o => o.value === dialogueType)?.label || dialogueType;
+        chips.push({ key: 'dialogue_type', label: `类型: ${dtLabel}`, onRemove: () => setDialogueType('all') });
+      }
       if (theme) chips.push({ key: 'theme', label: `主题: ${themeTitle || theme}`, onRemove: () => { setTheme(''); setSubtopic(''); } });
       if (subtopic) chips.push({ key: 'subtopic', label: `小主题: ${subtopicTitle || subtopic}`, onRemove: () => setSubtopic('') });
       if (q) chips.push({ key: 'q', label: `搜索: ${q}`, onRemove: () => setQ('') });
       return chips;
-    }, [lang, level, practiced, theme, subtopic, q, genre, themeTitle, subtopicTitle]
+    }, [lang, level, practiced, theme, subtopic, q, genre, dialogueType, themeTitle, subtopicTitle]
   );
 
   const resetAllFilters = () => {
@@ -387,6 +409,7 @@ export default function ClozeShadowingEntryPage() {
     setSubtopic('');
     setQ('');
     setGenre('all');
+    setDialogueType('all');
   };
 
   return (
@@ -416,24 +439,24 @@ export default function ClozeShadowingEntryPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {/* 筛选按钮（移动端） */}
               <Button variant="outline" size="sm" className="md:hidden" onClick={() => setMobileSidebarOpen(true)}>
                 <Filter className="w-4 h-4 mr-2" /> 筛选
               </Button>
-              
+
               {/* 侧栏控制（桌面端） */}
               <Button variant="outline" size="sm" className="hidden md:flex" onClick={() => setSidebarCollapsed((v) => !v)}>
                 <Menu className="w-4 h-4 mr-2" />
                 {sidebarCollapsed ? '展开' : '收起'}
               </Button>
-              
+
               {/* 快捷操作按钮组 */}
               <div className="flex items-center gap-2 p-1 rounded-lg border bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => lastPracticedItem && gotoItem(lastPracticedItem.id)} 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => lastPracticedItem && gotoItem(lastPracticedItem.id)}
                   disabled={!lastPracticedItem}
                   className="hover:bg-white/80 transition-all hover:shadow-sm"
                   title="继续上次练习"
@@ -441,10 +464,10 @@ export default function ClozeShadowingEntryPage() {
                   <Clock className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:inline">继续</span>
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={getRandomUnpracticed} 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={getRandomUnpracticed}
                   disabled={unpracticedPool.length === 0}
                   className="hover:bg-white/80 transition-all hover:shadow-sm"
                   title="随机选择未完成题目"
@@ -452,10 +475,10 @@ export default function ClozeShadowingEntryPage() {
                   <Shuffle className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:inline">随机</span>
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={getNextUnpracticed} 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={getNextUnpracticed}
                   disabled={unpracticedPool.length === 0}
                   className="hover:bg-white/80 transition-all hover:shadow-sm"
                   title="下一个未完成题目"
@@ -483,7 +506,7 @@ export default function ClozeShadowingEntryPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* 已完成 */}
             <div className="group relative overflow-hidden rounded-2xl border border-green-200/60 bg-white/80 backdrop-blur-sm p-5 transition-all duration-300 hover:shadow-xl hover:shadow-green-200/50 hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.98]">
               {/* 装饰性背景图案 */}
@@ -500,7 +523,7 @@ export default function ClozeShadowingEntryPage() {
                 </div>
                 {/* 进度条 */}
                 <div className="w-full bg-green-200/40 rounded-full h-2 overflow-hidden shadow-inner">
-                  <div 
+                  <div
                     className="bg-gradient-to-r from-green-500 via-green-500 to-emerald-500 h-full rounded-full transition-all duration-700 ease-out shadow-sm"
                     style={{ width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%` }}
                   />
@@ -510,7 +533,7 @@ export default function ClozeShadowingEntryPage() {
                 </p>
               </div>
             </div>
-            
+
             {/* 草稿中 */}
             <div className="group relative overflow-hidden rounded-2xl border border-amber-200/60 bg-white/80 backdrop-blur-sm p-5 transition-all duration-300 hover:shadow-xl hover:shadow-amber-200/50 hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.98]">
               {/* 装饰性背景图案 */}
@@ -525,7 +548,7 @@ export default function ClozeShadowingEntryPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* 未开始 */}
             <div className="group relative overflow-hidden rounded-2xl border border-gray-200/60 bg-white/80 backdrop-blur-sm p-5 transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/50 hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.98]">
               {/* 装饰性背景图案 */}
@@ -554,7 +577,7 @@ export default function ClozeShadowingEntryPage() {
                   hoverBorder: 'hover:border-gray-400',
                   shadow: 'shadow-sm hover:shadow-md',
                 };
-                
+
                 if (c.key === 'lang') {
                   chipStyles = {
                     bg: 'bg-blue-50',
@@ -618,8 +641,17 @@ export default function ClozeShadowingEntryPage() {
                     hoverBorder: 'hover:border-pink-400',
                     shadow: 'shadow-sm hover:shadow-md shadow-pink-200/50',
                   };
+                } else if (c.key === 'dialogue_type') {
+                  chipStyles = {
+                    bg: 'bg-cyan-50',
+                    text: 'text-cyan-700',
+                    border: 'border-cyan-300',
+                    hoverBg: 'hover:bg-cyan-100',
+                    hoverBorder: 'hover:border-cyan-400',
+                    shadow: 'shadow-sm hover:shadow-md shadow-cyan-200/50',
+                  };
                 }
-                
+
                 return (
                   <button
                     key={c.key}
@@ -631,8 +663,8 @@ export default function ClozeShadowingEntryPage() {
                   </button>
                 );
               })}
-              <button 
-                onClick={resetAllFilters} 
+              <button
+                onClick={resetAllFilters}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-red-300 bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 hover:border-red-400 hover:shadow-md hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm"
               >
                 <X className="w-3.5 h-3.5" />
@@ -651,309 +683,324 @@ export default function ClozeShadowingEntryPage() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
             {/* 侧栏（桌面） */}
             {!sidebarCollapsed && (
-            <aside className="hidden md:block md:col-span-3">
-              <div className="rounded-2xl border border-gray-200/60 bg-white/80 backdrop-blur-sm shadow-lg">
-                <div className="p-4 border-b border-gray-200/60 bg-gradient-to-r from-gray-50/50 to-white flex items-center justify-between">
-                  <div className="font-semibold flex items-center gap-2 text-gray-700">
-                    <Filter className="w-4 h-4 text-violet-600" /> 筛选
-                  </div>
-                </div>
-                <div className="p-4 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-blue-600" />
-                  语言
-                </label>
-                    <Select value={lang || 'all'} onValueChange={(v) => setLang(v === 'all' ? '' : (v as Lang))}>
-                      <SelectTrigger className="w-full h-10 border-gray-300 hover:border-blue-400 transition-colors">
-                        <SelectValue placeholder="全部" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">全部</SelectItem>
-                        <SelectItem value="ja">日本語</SelectItem>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="zh">中文（普通话）</SelectItem>
-                      </SelectContent>
-                    </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-purple-600" />
-                  难度
-                </label>
-                    <Select value={(level === '' ? 'all' : String(level))} onValueChange={(v) => setLevel(v === 'all' ? '' : parseInt(v))}>
-                      <SelectTrigger className="w-full h-10 border-gray-300 hover:border-purple-400 transition-colors">
-                        <SelectValue placeholder="全部" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">全部</SelectItem>
-                        <SelectItem value="1">L1 - 初学</SelectItem>
-                        <SelectItem value="2">L2 - 初中级</SelectItem>
-                        <SelectItem value="3">L3 - 中级</SelectItem>
-                        <SelectItem value="4">L4 - 中高级</SelectItem>
-                        <SelectItem value="5">L5 - 高级</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {recommendedLevel != null && (
-                    <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-300 shadow-lg overflow-hidden">
-                      {/* 装饰性闪光效果 */}
-                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/40 to-amber-200/40 rounded-full blur-2xl" />
-                      
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                            <Star className="w-4 h-4 text-white fill-white" />
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Sparkles className="w-4 h-4 text-amber-600" />
-                            <span className="text-sm font-bold text-amber-900">为你推荐</span>
-                          </div>
-                        </div>
-                        <div className="text-lg font-bold text-amber-900 flex items-baseline gap-2">
-                          <span>等级</span>
-                          <span className="text-2xl text-orange-600">L{recommendedLevel}</span>
-                        </div>
-                        <p className="text-xs text-amber-700 mt-1">根据你的学习进度推荐</p>
-                      </div>
+              <aside className="hidden md:block md:col-span-3">
+                <div className="rounded-2xl border border-gray-200/60 bg-white/80 backdrop-blur-sm shadow-lg">
+                  <div className="p-4 border-b border-gray-200/60 bg-gradient-to-r from-gray-50/50 to-white flex items-center justify-between">
+                    <div className="font-semibold flex items-center gap-2 text-gray-700">
+                      <Filter className="w-4 h-4 text-violet-600" /> 筛选
                     </div>
-                  )}
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-indigo-600" />
-                      体裁
-                    </label>
-                    <Select value={genre} onValueChange={(v) => setGenre(v)}>
-                      <SelectTrigger className="w-full h-10 border-gray-300 hover:border-indigo-400 transition-colors">
-                        <SelectValue placeholder="全部体裁" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">全部体裁</SelectItem>
-                        <SelectItem value="dialogue">对话</SelectItem>
-                        <SelectItem value="monologue">独白</SelectItem>
-                        <SelectItem value="news">新闻</SelectItem>
-                        <SelectItem value="lecture">讲座</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4 text-green-600" />
-                      练习状态
-                    </label>
-                    <Select value={practiced} onValueChange={(v) => setPracticed(v as 'all' | 'practiced' | 'unpracticed')}>
-                      <SelectTrigger className="w-full h-10 border-gray-300 hover:border-green-400 transition-colors">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">全部</SelectItem>
-                        <SelectItem value="unpracticed">未开始</SelectItem>
-                        <SelectItem value="practiced">已完成</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-amber-600" />
-                      大主题
-                    </label>
-                    <Select value={theme || 'all'} onValueChange={(v) => { setTheme(v === 'all' ? '' : v); setSubtopic(''); }}>
-                      <SelectTrigger className="w-full h-10 border-gray-300 hover:border-amber-400 transition-colors">
-                        <SelectValue placeholder="（全部）" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">（全部）</SelectItem>
-                        {themes.map((t) => (
-                          <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-orange-600" />
-                      小主题
-                    </label>
-                    <Select value={subtopic || 'all'} onValueChange={(v) => setSubtopic(v === 'all' ? '' : v)} disabled={!theme}>
-                      <SelectTrigger className="w-full h-10 border-gray-300 hover:border-orange-400 transition-colors disabled:opacity-50">
-                        <SelectValue placeholder="（全部）" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">（全部）</SelectItem>
-                        {subtopics.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
-                      <Search className="w-4 h-4 text-pink-600" />
-                      搜索
-                    </label>
-                    <Input 
-                      value={q} 
-                      onChange={(e) => setQ(e.target.value)} 
-                      placeholder="搜索标题、主题..." 
-                      className="h-10 border-gray-300 focus:border-pink-400 focus:ring-pink-400/20 transition-colors"
-                    />
-                  </div>
-                  <div className="pt-2">
-                    <Button 
-                      variant="secondary" 
-                      className="w-full h-10 font-semibold bg-gradient-to-r from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 border border-gray-300 hover:border-gray-400 transition-all shadow-sm hover:shadow-md" 
-                      onClick={() => { setLang(''); setLevel(''); setPracticed('all'); setTheme(''); setSubtopic(''); setQ(''); setGenre('all'); }}
-                    >
-                      <RotateCcw className="w-4 h-4 mr-2" />
-                      重置筛选
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 rounded-2xl border border-gray-200/60 bg-white/80 backdrop-blur-sm max-h-[60vh] overflow-y-auto shadow-lg">
-                {loading ? (
-                  <div className="p-3 space-y-2">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="p-3 animate-pulse">
-                        <Skeleton className="h-4 w-3/4 mb-2" />
-                        <Skeleton className="h-3 w-1/3" />
-                      </div>
-                    ))}
-                  </div>
-                ) : filtered.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                      <BookOpen className="w-8 h-8 text-gray-400" />
+                  <div className="p-4 space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-blue-600" />
+                        语言
+                      </label>
+                      <Select value={lang || 'all'} onValueChange={(v) => setLang(v === 'all' ? '' : (v as Lang))}>
+                        <SelectTrigger className="w-full h-10 border-gray-300 hover:border-blue-400 transition-colors">
+                          <SelectValue placeholder="全部" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部</SelectItem>
+                          <SelectItem value="ja">日本語</SelectItem>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="zh">中文（普通话）</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-3">暂无可练习的文章</p>
-                    <Button variant="outline" size="sm" onClick={resetAllFilters}>重置筛选条件</Button>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-100">
-                    {filtered.map((it) => {
-                      // 根据难度级别设置徽章颜色
-                      const getLevelBadgeColor = (level: number) => {
-                        if (level === 1) return 'bg-green-100 text-green-700 border-green-200 shadow-sm';
-                        if (level === 2) return 'bg-blue-100 text-blue-700 border-blue-200 shadow-sm';
-                        if (level === 3) return 'bg-indigo-100 text-indigo-700 border-indigo-200 shadow-sm';
-                        if (level === 4) return 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm';
-                        if (level === 5) return 'bg-red-100 text-red-700 border-red-200 shadow-sm';
-                        return 'bg-gray-100 text-gray-700 border-gray-200 shadow-sm';
-                      };
-                      
-                      // 语言标识色
-                      const getLangColor = (lang: string) => {
-                        if (lang === 'en') return 'text-blue-600 bg-blue-50';
-                        if (lang === 'ja') return 'text-pink-600 bg-pink-50';
-                        if (lang === 'zh') return 'text-red-600 bg-red-50';
-                        return 'text-gray-600 bg-gray-50';
-                      };
-                      
-                      return (
-                        <button 
-                          key={it.id} 
-                          onClick={() => setSelectedId(it.id)} 
-                          className={`w-full text-left p-4 transition-all duration-200 relative group ${
-                            selectedId === it.id 
-                              ? 'bg-gradient-to-r from-violet-50 via-indigo-50 to-violet-50 border-l-4 border-l-violet-500 shadow-md shadow-violet-100/50' 
-                              : 'hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-50/50 border-l-4 border-l-transparent hover:border-l-gray-300 hover:shadow-sm'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="font-semibold text-gray-900 line-clamp-2 flex-1 group-hover:text-violet-700 transition-colors">
-                              {it.title}
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-purple-600" />
+                        难度
+                      </label>
+                      <Select value={(level === '' ? 'all' : String(level))} onValueChange={(v) => setLevel(v === 'all' ? '' : parseInt(v))}>
+                        <SelectTrigger className="w-full h-10 border-gray-300 hover:border-purple-400 transition-colors">
+                          <SelectValue placeholder="全部" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部</SelectItem>
+                          <SelectItem value="1">L1 - 初学</SelectItem>
+                          <SelectItem value="2">L2 - 初中级</SelectItem>
+                          <SelectItem value="3">L3 - 中级</SelectItem>
+                          <SelectItem value="4">L4 - 中高级</SelectItem>
+                          <SelectItem value="5">L5 - 高级</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {recommendedLevel != null && (
+                      <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-300 shadow-lg overflow-hidden">
+                        {/* 装饰性闪光效果 */}
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/40 to-amber-200/40 rounded-full blur-2xl" />
+
+                        <div className="relative z-10">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                              <Star className="w-4 h-4 text-white fill-white" />
                             </div>
-                            {it.isPracticed ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-green-100 via-emerald-100 to-green-100 text-green-700 text-xs font-semibold shrink-0 shadow-sm border border-green-200/50">
-                                <CheckCircle className="w-3.5 h-3.5" /> 已完成
-                              </span>
-                            ) : null}
+                            <div className="flex items-center gap-1">
+                              <Sparkles className="w-4 h-4 text-amber-600" />
+                              <span className="text-sm font-bold text-amber-900">为你推荐</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold ${getLangColor(it.lang)} border border-current/20 shadow-sm`}>
-                              {it.lang.toUpperCase()}
-                            </span>
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-md border text-xs font-semibold ${getLevelBadgeColor(it.level)}`}>
-                              L{it.level}
-                            </span>
-                            <span className="text-xs text-gray-500 font-medium">
-                              {it.stats?.sentenceCount ?? 0} 句
-                            </span>
-                            {it.stats?.lastPracticed ? (
-                              <span className="inline-flex items-center gap-1 text-xs text-gray-500 font-medium">
-                                <Clock className="w-3 h-3" /> 
-                                {new Date(it.stats.lastPracticed).toLocaleDateString()}
-                              </span>
-                            ) : null}
+                          <div className="text-lg font-bold text-amber-900 flex items-baseline gap-2">
+                            <span>等级</span>
+                            <span className="text-2xl text-orange-600">L{recommendedLevel}</span>
                           </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-              {/* 分页控件 */}
-              <div className="mt-4 p-4 bg-gradient-to-br from-gray-50/80 to-white/80 backdrop-blur-sm rounded-xl border border-gray-200/60 shadow-md">
-                <div className="flex flex-col gap-3">
-                  {/* 显示信息和页码 */}
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="font-semibold text-gray-700">
-                      {total > 0 ? (
-                        <span>
-                          显示 <span className="text-violet-600 font-bold">{pageStart}-{Math.min(total, pageEnd)}</span> / 共 <span className="text-violet-600 font-bold">{total}</span> 题
-                        </span>
-                      ) : (
-                        <span className="text-gray-500">无结果</span>
-                      )}
+                          <p className="text-xs text-amber-700 mt-1">根据你的学习进度推荐</p>
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-indigo-600" />
+                        体裁
+                      </label>
+                      <Select value={genre} onValueChange={(v) => setGenre(v)}>
+                        <SelectTrigger className="w-full h-10 border-gray-300 hover:border-indigo-400 transition-colors">
+                          <SelectValue placeholder="全部体裁" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部体裁</SelectItem>
+                          <SelectItem value="dialogue">对话</SelectItem>
+                          <SelectItem value="monologue">独白</SelectItem>
+                          <SelectItem value="news">新闻</SelectItem>
+                          <SelectItem value="lecture">讲座</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="font-semibold text-gray-700">
-                      第 <span className="text-violet-600 font-bold">{page}</span> / {Math.max(1, Math.ceil(total / pageSize))} 页
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-cyan-600" />
+                        对话类型
+                      </label>
+                      <Select value={dialogueType} onValueChange={(v) => setDialogueType(v)}>
+                        <SelectTrigger className="w-full h-10 border-gray-300 hover:border-cyan-400 transition-colors">
+                          <SelectValue placeholder="全部类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DIALOGUE_TYPE_OPTIONS.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </div>
-                  
-                  {/* 分页按钮和每页数量 */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        disabled={!hasPrev} 
-                        onClick={() => hasPrev && setPage((p) => Math.max(1, p - 1))}
-                        className="h-8 px-3 hover:bg-violet-50 hover:text-violet-700 hover:border-violet-300 transition-all duration-200 disabled:opacity-50 shadow-sm hover:shadow-md"
-                      >
-                        上一页
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        disabled={!hasNext} 
-                        onClick={() => hasNext && setPage((p) => p + 1)}
-                        className="h-8 px-3 hover:bg-violet-50 hover:text-violet-700 hover:border-violet-300 transition-all duration-200 disabled:opacity-50 shadow-sm hover:shadow-md"
-                      >
-                        下一页
-                      </Button>
-                    </div>
-                    
-                    {/* 每页数量选择 */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-600 font-medium">每页</span>
-                      <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(parseInt(v)); setPage(1); }}>
-                        <SelectTrigger className="h-8 w-16 text-xs border-gray-300 hover:border-violet-400 transition-colors">
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-green-600" />
+                        练习状态
+                      </label>
+                      <Select value={practiced} onValueChange={(v) => setPracticed(v as 'all' | 'practiced' | 'unpracticed')}>
+                        <SelectTrigger className="w-full h-10 border-gray-300 hover:border-green-400 transition-colors">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="20">20</SelectItem>
-                          <SelectItem value="50">50</SelectItem>
-                          <SelectItem value="100">100</SelectItem>
+                          <SelectItem value="all">全部</SelectItem>
+                          <SelectItem value="unpracticed">未开始</SelectItem>
+                          <SelectItem value="practiced">已完成</SelectItem>
                         </SelectContent>
                       </Select>
-                      <span className="text-xs text-gray-600 font-medium">条</span>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-amber-600" />
+                        大主题
+                      </label>
+                      <Select value={theme || 'all'} onValueChange={(v) => { setTheme(v === 'all' ? '' : v); setSubtopic(''); }}>
+                        <SelectTrigger className="w-full h-10 border-gray-300 hover:border-amber-400 transition-colors">
+                          <SelectValue placeholder="（全部）" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">（全部）</SelectItem>
+                          {themes.map((t) => (
+                            <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-orange-600" />
+                        小主题
+                      </label>
+                      <Select value={subtopic || 'all'} onValueChange={(v) => setSubtopic(v === 'all' ? '' : v)} disabled={!theme}>
+                        <SelectTrigger className="w-full h-10 border-gray-300 hover:border-orange-400 transition-colors disabled:opacity-50">
+                          <SelectValue placeholder="（全部）" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">（全部）</SelectItem>
+                          {subtopics.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700 flex items-center gap-2">
+                        <Search className="w-4 h-4 text-pink-600" />
+                        搜索
+                      </label>
+                      <Input
+                        value={q}
+                        onChange={(e) => setQ(e.target.value)}
+                        placeholder="搜索标题、主题..."
+                        className="h-10 border-gray-300 focus:border-pink-400 focus:ring-pink-400/20 transition-colors"
+                      />
+                    </div>
+                    <div className="pt-2">
+                      <Button
+                        variant="secondary"
+                        className="w-full h-10 font-semibold bg-gradient-to-r from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 border border-gray-300 hover:border-gray-400 transition-all shadow-sm hover:shadow-md"
+                        onClick={() => { setLang(''); setLevel(''); setPracticed('all'); setTheme(''); setSubtopic(''); setQ(''); setGenre('all'); }}
+                      >
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        重置筛选
+                      </Button>
                     </div>
                   </div>
                 </div>
-              </div>
-            </aside>
+                <div className="mt-4 rounded-2xl border border-gray-200/60 bg-white/80 backdrop-blur-sm max-h-[60vh] overflow-y-auto shadow-lg">
+                  {loading ? (
+                    <div className="p-3 space-y-2">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="p-3 animate-pulse">
+                          <Skeleton className="h-4 w-3/4 mb-2" />
+                          <Skeleton className="h-3 w-1/3" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : filtered.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                        <BookOpen className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">暂无可练习的文章</p>
+                      <Button variant="outline" size="sm" onClick={resetAllFilters}>重置筛选条件</Button>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-100">
+                      {filtered.map((it) => {
+                        // 根据难度级别设置徽章颜色
+                        const getLevelBadgeColor = (level: number) => {
+                          if (level === 1) return 'bg-green-100 text-green-700 border-green-200 shadow-sm';
+                          if (level === 2) return 'bg-blue-100 text-blue-700 border-blue-200 shadow-sm';
+                          if (level === 3) return 'bg-indigo-100 text-indigo-700 border-indigo-200 shadow-sm';
+                          if (level === 4) return 'bg-purple-100 text-purple-700 border-purple-200 shadow-sm';
+                          if (level === 5) return 'bg-red-100 text-red-700 border-red-200 shadow-sm';
+                          return 'bg-gray-100 text-gray-700 border-gray-200 shadow-sm';
+                        };
+
+                        // 语言标识色
+                        const getLangColor = (lang: string) => {
+                          if (lang === 'en') return 'text-blue-600 bg-blue-50';
+                          if (lang === 'ja') return 'text-pink-600 bg-pink-50';
+                          if (lang === 'zh') return 'text-red-600 bg-red-50';
+                          return 'text-gray-600 bg-gray-50';
+                        };
+
+                        return (
+                          <button
+                            key={it.id}
+                            onClick={() => setSelectedId(it.id)}
+                            className={`w-full text-left p-4 transition-all duration-200 relative group ${selectedId === it.id
+                                ? 'bg-gradient-to-r from-violet-50 via-indigo-50 to-violet-50 border-l-4 border-l-violet-500 shadow-md shadow-violet-100/50'
+                                : 'hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-50/50 border-l-4 border-l-transparent hover:border-l-gray-300 hover:shadow-sm'
+                              }`}
+                          >
+                            <div className="flex items-start justify-between gap-3 mb-3">
+                              <div className="font-semibold text-gray-900 line-clamp-2 flex-1 group-hover:text-violet-700 transition-colors">
+                                {it.title}
+                              </div>
+                              {it.isPracticed ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-green-100 via-emerald-100 to-green-100 text-green-700 text-xs font-semibold shrink-0 shadow-sm border border-green-200/50">
+                                  <CheckCircle className="w-3.5 h-3.5" /> 已完成
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold ${getLangColor(it.lang)} border border-current/20 shadow-sm`}>
+                                {it.lang.toUpperCase()}
+                              </span>
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-md border text-xs font-semibold ${getLevelBadgeColor(it.level)}`}>
+                                L{it.level}
+                              </span>
+                              <span className="text-xs text-gray-500 font-medium">
+                                {it.stats?.sentenceCount ?? 0} 句
+                              </span>
+                              {it.stats?.lastPracticed ? (
+                                <span className="inline-flex items-center gap-1 text-xs text-gray-500 font-medium">
+                                  <Clock className="w-3 h-3" />
+                                  {new Date(it.stats.lastPracticed).toLocaleDateString()}
+                                </span>
+                              ) : null}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                {/* 分页控件 */}
+                <div className="mt-4 p-4 bg-gradient-to-br from-gray-50/80 to-white/80 backdrop-blur-sm rounded-xl border border-gray-200/60 shadow-md">
+                  <div className="flex flex-col gap-3">
+                    {/* 显示信息和页码 */}
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="font-semibold text-gray-700">
+                        {total > 0 ? (
+                          <span>
+                            显示 <span className="text-violet-600 font-bold">{pageStart}-{Math.min(total, pageEnd)}</span> / 共 <span className="text-violet-600 font-bold">{total}</span> 题
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">无结果</span>
+                        )}
+                      </div>
+                      <div className="font-semibold text-gray-700">
+                        第 <span className="text-violet-600 font-bold">{page}</span> / {Math.max(1, Math.ceil(total / pageSize))} 页
+                      </div>
+                    </div>
+
+                    {/* 分页按钮和每页数量 */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!hasPrev}
+                          onClick={() => hasPrev && setPage((p) => Math.max(1, p - 1))}
+                          className="h-8 px-3 hover:bg-violet-50 hover:text-violet-700 hover:border-violet-300 transition-all duration-200 disabled:opacity-50 shadow-sm hover:shadow-md"
+                        >
+                          上一页
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!hasNext}
+                          onClick={() => hasNext && setPage((p) => p + 1)}
+                          className="h-8 px-3 hover:bg-violet-50 hover:text-violet-700 hover:border-violet-300 transition-all duration-200 disabled:opacity-50 shadow-sm hover:shadow-md"
+                        >
+                          下一页
+                        </Button>
+                      </div>
+
+                      {/* 每页数量选择 */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-600 font-medium">每页</span>
+                        <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(parseInt(v)); setPage(1); }}>
+                          <SelectTrigger className="h-8 w-16 text-xs border-gray-300 hover:border-violet-400 transition-colors">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <span className="text-xs text-gray-600 font-medium">条</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </aside>
             )}
 
             {/* 主区域 */}
@@ -979,7 +1026,7 @@ export default function ClozeShadowingEntryPage() {
                       if (level === 5) return 'from-red-500/10 via-rose-500/5 to-transparent';
                       return 'from-gray-500/10 via-gray-500/5 to-transparent';
                     };
-                    
+
                     const getLevelBadgeColor = (level: number) => {
                       if (level === 1) return 'bg-green-100 text-green-700 border-green-300 shadow-sm';
                       if (level === 2) return 'bg-blue-100 text-blue-700 border-blue-300 shadow-sm';
@@ -988,24 +1035,24 @@ export default function ClozeShadowingEntryPage() {
                       if (level === 5) return 'bg-red-100 text-red-700 border-red-300 shadow-sm';
                       return 'bg-gray-100 text-gray-700 border-gray-300 shadow-sm';
                     };
-                    
+
                     const getLangColor = (lang: string) => {
                       if (lang === 'en') return 'text-blue-600 bg-blue-50 border-blue-300';
                       if (lang === 'ja') return 'text-pink-600 bg-pink-50 border-pink-300';
                       if (lang === 'zh') return 'text-red-600 bg-red-50 border-red-300';
                       return 'text-gray-600 bg-gray-50 border-gray-300';
                     };
-                    
+
                     const accuracy = selectedItem.stats?.accuracy ?? 0;
                     const accuracyPercent = Math.round(accuracy * 100);
-                    
+
                     return (
                       <div className={`rounded-2xl border-2 border-gray-200/60 bg-white/90 backdrop-blur-sm bg-gradient-to-br ${getGradientByLevel(selectedItem.level)} p-6 shadow-xl relative overflow-hidden transition-all duration-300 hover:shadow-2xl`}>
                         {/* 装饰性背景图案 */}
                         <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
                           <div className="w-full h-full bg-gradient-to-br from-violet-500 to-indigo-500 rounded-full blur-3xl" />
                         </div>
-                        
+
                         <div className="relative z-10">
                           {/* 头部信息 */}
                           <div className="flex items-start justify-between gap-4 mb-6">
@@ -1030,7 +1077,7 @@ export default function ClozeShadowingEntryPage() {
                               </div>
                             )}
                           </div>
-                          
+
                           {/* 统计信息网格 */}
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             {/* 已发布句数 */}
@@ -1045,7 +1092,7 @@ export default function ClozeShadowingEntryPage() {
                                 </div>
                               </div>
                             </div>
-                            
+
                             {/* 正确率 */}
                             <div className="bg-white/90 backdrop-blur-sm rounded-xl p-5 border-2 border-green-200/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group">
                               <div className="flex items-center gap-3 mb-3">
@@ -1061,14 +1108,14 @@ export default function ClozeShadowingEntryPage() {
                               </div>
                               {selectedItem.stats?.accuracy != null && (
                                 <div className="w-full bg-gray-200/60 rounded-full h-2.5 overflow-hidden shadow-inner">
-                                  <div 
+                                  <div
                                     className="bg-gradient-to-r from-green-500 via-green-500 to-emerald-500 h-full rounded-full transition-all duration-700 ease-out shadow-sm"
                                     style={{ width: `${accuracyPercent}%` }}
                                   />
                                 </div>
                               )}
                             </div>
-                            
+
                             {/* 练习历史 */}
                             <div className="bg-white/90 backdrop-blur-sm rounded-xl p-5 border-2 border-purple-200/50 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group">
                               <div className="flex items-center gap-3">
@@ -1078,18 +1125,18 @@ export default function ClozeShadowingEntryPage() {
                                 <div>
                                   <p className="text-xs text-gray-600 mb-1 font-semibold uppercase tracking-wide">最近练习</p>
                                   <p className="text-sm font-bold text-gray-900">
-                                    {selectedItem.stats?.lastPracticed 
-                                      ? new Date(selectedItem.stats.lastPracticed).toLocaleDateString() 
+                                    {selectedItem.stats?.lastPracticed
+                                      ? new Date(selectedItem.stats.lastPracticed).toLocaleDateString()
                                       : '从未练习'}
                                   </p>
                                 </div>
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* 操作按钮 */}
                           <div className="flex flex-wrap gap-3">
-                            <Button 
+                            <Button
                               onClick={() => gotoItem(selectedItem.id)}
                               size="lg"
                               className="bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 hover:from-violet-700 hover:via-indigo-700 hover:to-violet-700 text-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 font-semibold px-8"
@@ -1113,19 +1160,19 @@ export default function ClozeShadowingEntryPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">选择题目开始练习</h3>
                   <p className="text-sm text-muted-foreground mb-4">从左侧列表中选择一个题目，或使用上方的快捷按钮</p>
                   <div className="flex gap-2 justify-center flex-wrap">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
-                      onClick={getRandomUnpracticed} 
+                      onClick={getRandomUnpracticed}
                       disabled={unpracticedPool.length === 0}
                     >
                       <Shuffle className="w-4 h-4 mr-2" />
                       随机选题
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
-                      onClick={() => lastPracticedItem && gotoItem(lastPracticedItem.id)} 
+                      onClick={() => lastPracticedItem && gotoItem(lastPracticedItem.id)}
                       disabled={!lastPracticedItem}
                     >
                       <Clock className="w-4 h-4 mr-2" />
@@ -1191,7 +1238,7 @@ export default function ClozeShadowingEntryPage() {
                     <div className="relative p-4 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-xl border-2 border-amber-300 shadow-lg overflow-hidden">
                       {/* 装饰性闪光效果 */}
                       <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-200/40 to-amber-200/40 rounded-full blur-2xl" />
-                      
+
                       <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
@@ -1283,17 +1330,17 @@ export default function ClozeShadowingEntryPage() {
                       <Search className="w-4 h-4 text-pink-600" />
                       搜索
                     </label>
-                    <Input 
-                      value={q} 
-                      onChange={(e) => setQ(e.target.value)} 
-                      placeholder="搜索标题、主题..." 
+                    <Input
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder="搜索标题、主题..."
                       className="h-10 border-gray-300 focus:border-pink-400 focus:ring-pink-400/20 transition-colors"
                     />
                   </div>
                   <div className="pt-2">
-                    <Button 
-                      variant="secondary" 
-                      className="w-full h-10 font-semibold bg-gradient-to-r from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 border border-gray-300 hover:border-gray-400 transition-all shadow-sm hover:shadow-md" 
+                    <Button
+                      variant="secondary"
+                      className="w-full h-10 font-semibold bg-gradient-to-r from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 border border-gray-300 hover:border-gray-400 transition-all shadow-sm hover:shadow-md"
                       onClick={() => { setLang(''); setLevel(''); setPracticed('all'); setTheme(''); setSubtopic(''); setQ(''); setGenre('all'); }}
                     >
                       <RotateCcw className="w-4 h-4 mr-2" />
@@ -1322,7 +1369,7 @@ export default function ClozeShadowingEntryPage() {
                             if (level === 5) return 'bg-red-100 text-red-700 border-red-200 shadow-sm';
                             return 'bg-gray-100 text-gray-700 border-gray-200 shadow-sm';
                           };
-                          
+
                           // 语言标识色
                           const getLangColor = (lang: string) => {
                             if (lang === 'en') return 'text-blue-600 bg-blue-50';
@@ -1330,16 +1377,15 @@ export default function ClozeShadowingEntryPage() {
                             if (lang === 'zh') return 'text-red-600 bg-red-50';
                             return 'text-gray-600 bg-gray-50';
                           };
-                          
+
                           return (
-                            <button 
-                              key={it.id} 
-                              onClick={() => { setSelectedId(it.id); setMobileSidebarOpen(false); }} 
-                              className={`w-full text-left p-4 transition-all duration-200 relative group ${
-                                selectedId === it.id 
-                                  ? 'bg-gradient-to-r from-violet-50 via-indigo-50 to-violet-50 border-l-4 border-l-violet-500 shadow-md shadow-violet-100/50' 
+                            <button
+                              key={it.id}
+                              onClick={() => { setSelectedId(it.id); setMobileSidebarOpen(false); }}
+                              className={`w-full text-left p-4 transition-all duration-200 relative group ${selectedId === it.id
+                                  ? 'bg-gradient-to-r from-violet-50 via-indigo-50 to-violet-50 border-l-4 border-l-violet-500 shadow-md shadow-violet-100/50'
                                   : 'hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-50/50 border-l-4 border-l-transparent hover:border-l-gray-300 hover:shadow-sm'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-start justify-between gap-3 mb-3">
                                 <div className="font-semibold text-gray-900 line-clamp-2 flex-1 group-hover:text-violet-700 transition-colors">

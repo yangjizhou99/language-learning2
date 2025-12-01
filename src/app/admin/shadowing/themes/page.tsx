@@ -44,6 +44,7 @@ import { SceneVectorModal } from '@/components/admin/shadowing/SceneVectorModal'
 
 type Lang = 'all' | 'en' | 'ja' | 'zh' | 'ko';
 type Genre = 'all' | 'dialogue' | 'monologue' | 'news' | 'lecture';
+type DialogueType = 'all' | 'casual' | 'task' | 'emotion' | 'opinion' | 'request' | 'roleplay' | 'pattern';
 
 const LANG_OPTIONS = [
   { value: 'all', label: '全部' },
@@ -63,6 +64,17 @@ const GENRE_OPTIONS = [
   { value: 'lecture', label: '讲座' },
 ];
 
+const DIALOGUE_TYPE_OPTIONS = [
+  { value: 'all', label: '全部类型' },
+  { value: 'casual', label: '日常闲聊' },
+  { value: 'task', label: '任务导向' },
+  { value: 'emotion', label: '情感表达' },
+  { value: 'opinion', label: '观点讨论' },
+  { value: 'request', label: '请求建议' },
+  { value: 'roleplay', label: '角色扮演' },
+  { value: 'pattern', label: '句型操练' },
+];
+
 // 等级与体裁的对应关系（基于6级难度设计）
 const LEVEL_GENRE_RESTRICTIONS: Record<number, Genre[]> = {
   1: ['dialogue'], // L1: 对话优先
@@ -77,6 +89,22 @@ const LEVEL_GENRE_RESTRICTIONS: Record<number, Genre[]> = {
 const getAvailableGenres = (level: number | 'all'): Genre[] => {
   if (level === 'all') return ['all', 'dialogue', 'monologue', 'news', 'lecture'];
   return (LEVEL_GENRE_RESTRICTIONS[level] || []) as Genre[];
+};
+
+// 等级与对话类型的对应关系
+const LEVEL_DIALOGUE_TYPE_RESTRICTIONS: Record<number, DialogueType[]> = {
+  1: ['pattern', 'casual'], // L1: 句型操练、日常闲聊
+  2: ['casual', 'task', 'roleplay'], // L2: 日常闲聊、任务导向、角色扮演
+  3: ['task', 'request', 'roleplay'], // L3: 任务导向、请求建议、角色扮演
+  4: ['request', 'emotion', 'opinion'], // L4: 请求建议、情感表达、观点讨论
+  5: ['emotion', 'opinion', 'task'], // L5: 情感表达、观点讨论、复杂任务
+  6: ['opinion', 'roleplay'], // L6: 深度观点、复杂角色扮演
+};
+
+// 根据等级获取可用的对话类型选项
+const getAvailableDialogueTypes = (level: number | 'all'): DialogueType[] => {
+  if (level === 'all') return DIALOGUE_TYPE_OPTIONS.map((o) => o.value as DialogueType);
+  return (LEVEL_DIALOGUE_TYPE_RESTRICTIONS[level] || []) as DialogueType[];
 };
 
 // 等级详细配置（基于6级难度设计）
@@ -177,7 +205,8 @@ const LEVEL_CONFIG: Record<
 export default function ThemesPage() {
   const [lang, setLang] = useState<Lang>('all');
   const [level, setLevel] = useState<'all' | 1 | 2 | 3 | 4 | 5 | 6>('all');
-  const [genre, setGenre] = useState<Genre>('all');
+  const [genre, setGenre] = useState<Genre>('dialogue'); // Default to dialogue
+  const [dialogueType, setDialogueType] = useState<DialogueType>('all');
   const [q, setQ] = useState('');
   const [onlyNoSubtopics, setOnlyNoSubtopics] = useState(false);
   const [onlyNoPractice, setOnlyNoPractice] = useState(false);
@@ -243,7 +272,9 @@ export default function ThemesPage() {
       const qs = new URLSearchParams();
       if (lang !== 'all') qs.set('lang', lang);
       if (level !== 'all') qs.set('level', String(level));
+      if (level !== 'all') qs.set('level', String(level));
       if (genre !== 'all') qs.set('genre', genre);
+      if (dialogueType !== 'all') qs.set('dialogue_type', dialogueType);
       if (onlyNoSubtopics) qs.set('no_subtopics', '1');
       if (onlyNoPractice) qs.set('no_practice', '1');
       const r = await fetch(`/api/admin/shadowing/themes?${qs.toString()}`, {
@@ -264,7 +295,7 @@ export default function ThemesPage() {
 
   useEffect(() => {
     load();
-  }, [lang, level, genre, q, onlyNoSubtopics, onlyNoPractice]);
+  }, [lang, level, genre, dialogueType, q, onlyNoSubtopics, onlyNoPractice]);
 
   // 加载 AI 模型列表
   useEffect(() => {
@@ -315,12 +346,11 @@ export default function ThemesPage() {
     loadModels();
   }, [aiProvider]);
 
-  // 检查体裁与等级的匹配
+  // 检查对话类型与等级的匹配
   useEffect(() => {
-    const availableGenres = getAvailableGenres(level);
-    if (!availableGenres.includes(genre)) {
-      // 当等级为全部时，允许体裁选择全部
-      setGenre(availableGenres[0]);
+    const availableTypes = getAvailableDialogueTypes(level);
+    if (dialogueType !== 'all' && !availableTypes.includes(dialogueType)) {
+      setDialogueType('all');
     }
   }, [level]);
 
@@ -340,12 +370,14 @@ export default function ThemesPage() {
     const defaultGenre: Exclude<Genre, 'all'> = (genre === 'all'
       ? (getAvailableGenres(defaultLevel).find((g) => g !== 'all') as Exclude<Genre, 'all'>)
       : genre);
+    const defaultDialogueType: Exclude<DialogueType, 'all'> = (dialogueType === 'all' ? 'casual' : dialogueType);
 
     setEditing({
       id: undefined,
       lang: defaultLang,
       level: defaultLevel,
       genre: defaultGenre,
+      dialogue_type: defaultDialogueType,
       title: '',
       desc: '',
       status: 'active',
@@ -538,7 +570,7 @@ export default function ThemesPage() {
       progress: 0,
       title:
         type === 'themes'
-          ? `生成 ${params.count} 个大主题 (${LANG_OPTIONS.find((l) => l.value === params.lang)?.label} L${params.level} ${GENRE_OPTIONS.find((g) => g.value === params.genre)?.label})`
+          ? `生成 ${params.count} 个大主题 (${LANG_OPTIONS.find((l) => l.value === params.lang)?.label} L${params.level} ${GENRE_OPTIONS.find((g) => g.value === params.genre)?.label}${params.dialogue_type ? ` ${DIALOGUE_TYPE_OPTIONS.find(d => d.value === params.dialogue_type)?.label}` : ''})`
           : type === 'subtopics'
             ? `为主题"${params.theme_title_cn}"生成 ${params.count} 个小主题`
             : `为主题"${params.theme_title_cn}"生成场景向量`,
@@ -909,6 +941,7 @@ export default function ThemesPage() {
       const effectiveLang = (lang !== 'all' ? lang : (theme.lang as Exclude<Lang, 'all'>));
       const effectiveLevel = (level !== 'all' ? level : (theme.level as 1 | 2 | 3 | 4 | 5 | 6));
       const effectiveGenre = (genre !== 'all' ? genre : (theme.genre as Exclude<Genre, 'all'>));
+      const effectiveDialogueType = (dialogueType !== 'all' ? dialogueType : (theme.dialogue_type as Exclude<DialogueType, 'all'>));
 
       if (!effectiveLang || !effectiveLevel || !effectiveGenre) {
         skipped += 1;
@@ -921,6 +954,7 @@ export default function ThemesPage() {
         lang: effectiveLang,
         level: effectiveLevel,
         genre: effectiveGenre,
+        dialogue_type: effectiveGenre === 'dialogue' ? effectiveDialogueType : undefined,
         count: aiGenerationCount,
         provider: aiProvider,
         model: aiModel,
@@ -982,6 +1016,7 @@ export default function ThemesPage() {
       lang,
       level,
       genre,
+      dialogue_type: genre === 'dialogue' ? dialogueType : undefined,
       count: aiGenerationCount,
       provider: aiProvider,
       model: aiModel,
@@ -1001,6 +1036,7 @@ export default function ThemesPage() {
     const effectiveLang = (lang !== 'all' ? lang : (theme.lang as Exclude<Lang, 'all'>));
     const effectiveLevel = (level !== 'all' ? level : (theme.level as 1 | 2 | 3 | 4 | 5 | 6));
     const effectiveGenre = (genre !== 'all' ? genre : (theme.genre as Exclude<Genre, 'all'>));
+    const effectiveDialogueType = (dialogueType !== 'all' ? dialogueType : (theme.dialogue_type as Exclude<DialogueType, 'all'>));
 
     if (!effectiveLang || !effectiveLevel || !effectiveGenre) {
       alert('该主题缺少语言/等级/体裁信息，无法添加到队列');
@@ -1013,6 +1049,7 @@ export default function ThemesPage() {
       lang: effectiveLang,
       level: effectiveLevel,
       genre: effectiveGenre,
+      dialogue_type: effectiveGenre === 'dialogue' ? effectiveDialogueType : undefined,
       count: aiGenerationCount,
       provider: aiProvider,
       model: aiModel,
@@ -1152,56 +1189,21 @@ export default function ThemesPage() {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label>等级</Label>
-              <Select
-                value={String(level)}
-                onValueChange={(v) => {
-                  const newLevel = (v === 'all' ? 'all' : (parseInt(v) as 1 | 2 | 3 | 4 | 5 | 6));
-                  setLevel(newLevel);
-                  const availableGenres = getAvailableGenres(newLevel);
-                  if (!availableGenres.includes(genre)) {
-                    setGenre(availableGenres[0]);
-                  }
-                }}
-              >
+              <Select value={String(level)} onValueChange={(v) => setLevel(v === 'all' ? 'all' : Number(v) as any)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {LEVEL_OPTIONS.map((opt) => (
-                    <SelectItem key={String(opt)} value={String(opt)}>
+                    <SelectItem key={opt} value={String(opt)}>
                       {opt === 'all' ? '全部' : `L${opt}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div>
-              <Label>体裁</Label>
-              <Select value={genre} onValueChange={(v: Genre) => setGenre(v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {GENRE_OPTIONS.filter((opt) =>
-                    getAvailableGenres(level).includes(opt.value as Genre),
-                  ).map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <div className="text-xs text-muted-foreground mt-1 space-y-1">
-                <p>
-                  <strong>{level === 'all' ? '全部等级' : `等级 L${level}`}</strong> 可用体裁:{' '}
-                  {getAvailableGenres(level)
-                    .map((g) => GENRE_OPTIONS.find((opt) => opt.value === g)?.label)
-                    .join('、')}
-                </p>
                 {level !== 'all' && (
                   <>
                     <p>体裁优先: {LEVEL_CONFIG[level]?.genrePriority}</p>
@@ -1209,6 +1211,29 @@ export default function ThemesPage() {
                   </>
                 )}
               </div>
+            </div>
+
+            {/* 体裁固定为对话，不显示选择器，直接显示对话类型 */}
+            <div>
+              <Label>对话类型</Label>
+              <Select
+                value={dialogueType}
+                onValueChange={(v: DialogueType) => setDialogueType(v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="全部类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部类型</SelectItem>
+                  {DIALOGUE_TYPE_OPTIONS.filter((opt) =>
+                    opt.value !== 'all' && getAvailableDialogueTypes(level).includes(opt.value as DialogueType)
+                  ).map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -1219,29 +1244,30 @@ export default function ThemesPage() {
                 onChange={(e) => setQ(e.target.value)}
               />
             </div>
-            <div>
-              <Label>问题排查</Label>
-              <div className="flex flex-wrap gap-6 mt-2 text-sm text-muted-foreground">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="filter-no-subtopics"
-                    checked={onlyNoSubtopics}
-                    onCheckedChange={(checked) => setOnlyNoSubtopics(checked === true)}
-                  />
-                  <Label htmlFor="filter-no-subtopics" className="text-sm font-normal">
-                    只看小主题数量为 0
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="filter-no-practice"
-                    checked={onlyNoPractice}
-                    onCheckedChange={(checked) => setOnlyNoPractice(checked === true)}
-                  />
-                  <Label htmlFor="filter-no-practice" className="text-sm font-normal">
-                    只看没有练习题的主题
-                  </Label>
-                </div>
+          </div>
+
+          <div className="mt-4">
+            <Label>问题排查</Label>
+            <div className="flex flex-wrap gap-6 mt-2 text-sm text-muted-foreground">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="filter-no-subtopics"
+                  checked={onlyNoSubtopics}
+                  onCheckedChange={(checked) => setOnlyNoSubtopics(checked === true)}
+                />
+                <Label htmlFor="filter-no-subtopics" className="text-sm font-normal">
+                  只看小主题数量为 0
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="filter-no-practice"
+                  checked={onlyNoPractice}
+                  onCheckedChange={(checked) => setOnlyNoPractice(checked === true)}
+                />
+                <Label htmlFor="filter-no-practice" className="text-sm font-normal">
+                  只看没有练习题的主题
+                </Label>
               </div>
             </div>
           </div>
@@ -1521,6 +1547,7 @@ export default function ThemesPage() {
                         <div className="text-sm text-muted-foreground">
                           {LANG_OPTIONS.find((l) => l.value === item.lang)?.label} L{item.level}{' '}
                           {GENRE_OPTIONS.find((g) => g.value === item.genre)?.label}
+                          {item.genre === 'dialogue' && item.dialogue_type && DIALOGUE_TYPE_OPTIONS.find(d => d.value === item.dialogue_type)?.label && ` (${DIALOGUE_TYPE_OPTIONS.find(d => d.value === item.dialogue_type)?.label})`}
                         </div>
                       </td>
                       <td className="p-4">

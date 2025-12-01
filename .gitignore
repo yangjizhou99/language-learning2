@@ -52,6 +52,7 @@ backups/
 temp/
 *.dump
 *.sql
+!supabase/migrations/*.sql
 
 # API keys and secrets
 *api*key*

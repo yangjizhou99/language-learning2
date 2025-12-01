@@ -118,6 +118,7 @@ interface ShadowingItem {
   tokens?: number;
   cefr?: string;
   genre?: string;
+  dialogue_type?: string;
   meta?: Record<string, unknown>;
   translations?: Record<string, string>;
   trans_updated_at?: string;
@@ -463,6 +464,7 @@ export default function ShadowingPage() {
     return 1;
   });
   const [practiced, setPracticed] = useState<'all' | 'practiced' | 'unpracticed'>('all');
+  const [dialogueType, setDialogueType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [theme, setTheme] = useState<string>('all');
   const [selectedThemeId, setSelectedThemeId] = useState<string>('all');
@@ -522,6 +524,7 @@ export default function ShadowingPage() {
       if (!urlLang && persisted.lang && persisted.lang !== lang) setLang(persisted.lang);
       if (!urlLevel && typeof persisted.level !== 'undefined') setLevel(persisted.level ?? null);
       if (!urlPracticed && persisted.practiced) setPracticed(persisted.practiced);
+      if (persisted.dialogue_type) setDialogueType(persisted.dialogue_type);
     }
     // 标记初始化完成，后续变更才能写回本地/URL，避免用默认值覆盖持久化
     filtersReadyRef.current = true;
@@ -533,7 +536,7 @@ export default function ShadowingPage() {
   useEffect(() => {
     if (!filtersReadyRef.current) return;
     // 本地保存（3天 TTL 在工具内默认）
-    saveShadowingFilters({ lang, level, practiced });
+    saveShadowingFilters({ lang, level, practiced, dialogue_type: dialogueType });
 
     if (replaceTimerRef.current) clearTimeout(replaceTimerRef.current);
     replaceTimerRef.current = setTimeout(() => {
@@ -559,7 +562,7 @@ export default function ShadowingPage() {
     }, 200);
     // 不依赖 searchParams，避免自身 replace 触发循环
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang, level, practiced, practiceMode, selectedRole, pathname, router]);
+  }, [lang, level, practiced, dialogueType, practiceMode, selectedRole, pathname, router]);
 
   useEffect(() => {
     return () => {
@@ -574,6 +577,17 @@ export default function ShadowingPage() {
     { value: 'monologue', label: t.shadowing.monologue },
     { value: 'news', label: t.shadowing.news },
     { value: 'lecture', label: t.shadowing.lecture },
+  ];
+
+  const DIALOGUE_TYPE_OPTIONS = [
+    { value: 'all', label: '全部类型' },
+    { value: 'casual', label: '日常闲聊' },
+    { value: 'task', label: '任务导向' },
+    { value: 'emotion', label: '情感表达' },
+    { value: 'opinion', label: '观点讨论' },
+    { value: 'request', label: '请求建议' },
+    { value: 'roleplay', label: '角色扮演' },
+    { value: 'pattern', label: '句型操练' },
   ];
 
   // 题库相关状态
@@ -625,6 +639,125 @@ export default function ShadowingPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [practiceStartTime, setPracticeStartTime] = useState<Date | null>(null);
   const [currentRecordings, setCurrentRecordings] = useState<AudioRecording[]>([]);
+  const [generatingWord, setGeneratingWord] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // UI 状态
+  // 统一侧边栏状态：所有设备都使用抽屉式
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { actualIsMobile } = useMobile();
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioPlayerRef = useRef<EnhancedAudioPlayerRef | null>(null);
+  const mainAudioContainerRef = useRef<HTMLDivElement | null>(null);
+  const [practiceComplete, setPracticeComplete] = useState(false);
+  // 移动端也启用步骤门控：仅在未完成时生效
+  const gatingActive = !practiceComplete;
+  const [showSentenceComparison, setShowSentenceComparison] = useState(false);
+  const [scoringResult, setScoringResult] = useState<{
+    score?: number;
+    accuracy?: number;
+    feedback?: string;
+    transcription?: string;
+    originalText?: string;
+    sentenceComparison?: Array<{
+      original: string;
+      transcribed: string;
+      accuracy: number;
+    }>;
+  } | null>(null);
+  const [isScoring, setIsScoring] = useState(false);
+  const [currentTranscription, setCurrentTranscription] = useState<string>('');
+  // 播放完成的句子索引（用于分角色模式检测播放完成）
+  const [completedSegmentIndex, setCompletedSegmentIndex] = useState<number | null>(null);
+
+  // 统一分段播放：由底部 EnhancedAudioPlayer 控制
+  // playSegment 内部已经通过监听 currentTime >= stopAt 来判断播放完成
+  const playSentenceByIndex = (index: number): Promise<void> | void => {
+    const timeline = (currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline;
+    if (!timeline || !Array.isArray(timeline) || !timeline.length) return;
+    const seg = timeline.find(s => s.index === index) || timeline[index];
+    if (!seg || typeof seg.start !== 'number' || typeof seg.end !== 'number') return;
+
+    try {
+      // playSegment 已经返回 Promise，它会监听播放条时间点（currentTime >= stopAt）来判断完成
+      return audioPlayerRef.current?.playSegment(seg.start, seg.end);
+    } catch {
+      return;
+    }
+  };
+
+  // 桌面端显示播放器：已在渲染层保证展示，如需自动滚动可在后续交互中触发
+
+  // 桌面端分步骤练习（仅在未完成状态下启用）
+  // 桌面端分步骤练习（仅在未完成状态下启用）
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  useEffect(() => {
+    if (step === 4) {
+      try {
+        mainAudioContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch { }
+    }
+  }, [step]);
+  const [highlightPlay, setHighlightPlay] = useState(false);
+  const [highlightVocab, setHighlightVocab] = useState(false);
+  const [highlightScore, setHighlightScore] = useState(false);
+
+  // ACU 模式状态
+  const [isACUMode, setIsACUMode] = useState(true); // 默认使用 ACU 模式
+
+
+  const stepTips: Record<number, string> = {
+    1: t.shadowing.step1_tip,
+    2: t.shadowing.step2_tip,
+    3: t.shadowing.step3_tip,
+    4: t.shadowing.step5_tip,
+  };
+
+  // 步骤切换时的联动：自动开/关生词模式与翻译偏好
+  useEffect(() => {
+    if (!currentItem) return;
+    // 只在第2步开启生词模式，其余步骤关闭
+    setIsVocabMode(step === 2);
+
+    if (step === 3) {
+      setShowTranslation(true);
+      const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
+      const uiLang = (language as 'en' | 'ja' | 'zh' | 'ko');
+      const pref = (profile?.native_lang as 'en' | 'ja' | 'zh' | 'ko' | undefined) || undefined;
+      if (available.includes(uiLang)) {
+        setTranslationLang(uiLang);
+      } else if (pref && available.includes(pref)) {
+        setTranslationLang(pref);
+      } else {
+        const targets = getTargetLanguages(currentItem.lang);
+        if (targets.length > 0) {
+          setTranslationLang(targets[0] as 'en' | 'ja' | 'zh' | 'ko');
+        }
+      }
+    } else {
+      // 非第4步隐藏翻译
+      setShowTranslation(false);
+    }
+  }, [step, currentItem, profile, language]);
+
+  // 关键按钮短暂高亮引导
+  useEffect(() => {
+    if (practiceComplete) return;
+    let timeoutId: number | undefined;
+    if (step === 1) {
+      setHighlightPlay(true);
+      timeoutId = window.setTimeout(() => setHighlightPlay(false), 2000);
+    } else if (step === 2) {
+      setHighlightVocab(true);
+      timeoutId = window.setTimeout(() => setHighlightVocab(false), 2000);
+    } else if (step === 4) {
+      setHighlightScore(true);
+      timeoutId = window.setTimeout(() => setHighlightScore(false), 2000);
+    }
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [step, practiceComplete]);
   const [sentenceScores, setSentenceScores] = useState<Record<number, any>>({});
   const [isImporting, setIsImporting] = useState(false);
   // 从首页每日一题等入口深链进入时，用于在题目自动加载期间展示整页加载动画
@@ -1976,125 +2109,7 @@ export default function ShadowingPage() {
       </div>
     );
   };
-  const [generatingWord, setGeneratingWord] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
-  // UI 状态
-  // 统一侧边栏状态：所有设备都使用抽屉式
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const { actualIsMobile } = useMobile();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioPlayerRef = useRef<EnhancedAudioPlayerRef | null>(null);
-  const mainAudioContainerRef = useRef<HTMLDivElement | null>(null);
-  const [practiceComplete, setPracticeComplete] = useState(false);
-  // 移动端也启用步骤门控：仅在未完成时生效
-  const gatingActive = !practiceComplete;
-  const [showSentenceComparison, setShowSentenceComparison] = useState(false);
-  const [scoringResult, setScoringResult] = useState<{
-    score?: number;
-    accuracy?: number;
-    feedback?: string;
-    transcription?: string;
-    originalText?: string;
-    sentenceComparison?: Array<{
-      original: string;
-      transcribed: string;
-      accuracy: number;
-    }>;
-  } | null>(null);
-  const [isScoring, setIsScoring] = useState(false);
-  const [currentTranscription, setCurrentTranscription] = useState<string>('');
-  // 播放完成的句子索引（用于分角色模式检测播放完成）
-  const [completedSegmentIndex, setCompletedSegmentIndex] = useState<number | null>(null);
-
-  // 统一分段播放：由底部 EnhancedAudioPlayer 控制
-  // playSegment 内部已经通过监听 currentTime >= stopAt 来判断播放完成
-  const playSentenceByIndex = (index: number): Promise<void> | void => {
-    const timeline = (currentItem as unknown as { sentence_timeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }> })?.sentence_timeline;
-    if (!timeline || !Array.isArray(timeline) || !timeline.length) return;
-    const seg = timeline.find(s => s.index === index) || timeline[index];
-    if (!seg || typeof seg.start !== 'number' || typeof seg.end !== 'number') return;
-
-    try {
-      // playSegment 已经返回 Promise，它会监听播放条时间点（currentTime >= stopAt）来判断完成
-      return audioPlayerRef.current?.playSegment(seg.start, seg.end);
-    } catch {
-      return;
-    }
-  };
-
-  // 桌面端显示播放器：已在渲染层保证展示，如需自动滚动可在后续交互中触发
-
-  // 桌面端分步骤练习（仅在未完成状态下启用）
-  // 桌面端分步骤练习（仅在未完成状态下启用）
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  useEffect(() => {
-    if (step === 4) {
-      try {
-        mainAudioContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } catch { }
-    }
-  }, [step]);
-  const [highlightPlay, setHighlightPlay] = useState(false);
-  const [highlightVocab, setHighlightVocab] = useState(false);
-  const [highlightScore, setHighlightScore] = useState(false);
-
-  // ACU 模式状态
-  const [isACUMode, setIsACUMode] = useState(true); // 默认使用 ACU 模式
-
-
-  const stepTips: Record<number, string> = {
-    1: t.shadowing.step1_tip,
-    2: t.shadowing.step2_tip,
-    3: t.shadowing.step3_tip,
-    4: t.shadowing.step5_tip,
-  };
-
-  // 步骤切换时的联动：自动开/关生词模式与翻译偏好
-  useEffect(() => {
-    if (!currentItem) return;
-    // 只在第2步开启生词模式，其余步骤关闭
-    setIsVocabMode(step === 2);
-
-    if (step === 3) {
-      setShowTranslation(true);
-      const available = currentItem.translations ? Object.keys(currentItem.translations) : [];
-      const uiLang = (language as 'en' | 'ja' | 'zh' | 'ko');
-      const pref = (userProfile?.native_lang as 'en' | 'ja' | 'zh' | 'ko' | undefined) || undefined;
-      if (available.includes(uiLang)) {
-        setTranslationLang(uiLang);
-      } else if (pref && available.includes(pref)) {
-        setTranslationLang(pref);
-      } else {
-        const targets = getTargetLanguages(currentItem.lang);
-        if (targets.length > 0) {
-          setTranslationLang(targets[0] as 'en' | 'ja' | 'zh' | 'ko');
-        }
-      }
-    } else {
-      // 非第4步隐藏翻译
-      setShowTranslation(false);
-    }
-  }, [step, currentItem, userProfile, language]);
-
-  // 关键按钮短暂高亮引导
-  useEffect(() => {
-    if (practiceComplete) return;
-    let timeoutId: number | undefined;
-    if (step === 1) {
-      setHighlightPlay(true);
-      timeoutId = window.setTimeout(() => setHighlightPlay(false), 2000);
-    } else if (step === 2) {
-      setHighlightVocab(true);
-      timeoutId = window.setTimeout(() => setHighlightVocab(false), 2000);
-    } else if (step === 4) {
-      setHighlightScore(true);
-      timeoutId = window.setTimeout(() => setHighlightScore(false), 2000);
-    }
-    return () => {
-      if (timeoutId) window.clearTimeout(timeoutId);
-    };
-  }, [step, practiceComplete]);
 
   // 认证头由 useAuth 提供的 getAuthHeaders 统一处理
 
@@ -2120,9 +2135,9 @@ export default function ShadowingPage() {
     try {
       const params = new URLSearchParams();
       if (lang) params.set('lang', lang);
-      if (level) params.set('level', level.toString());
+      if (level !== null) params.set('level', String(level));
       if (practiced !== 'all') params.set('practiced', practiced === 'practiced' ? 'true' : 'false');
-      params.set('limit', '100');
+      if (dialogueType !== 'all') params.set('dialogue_type', dialogueType);
 
       const key = `shadowing_catalog:${params.toString()}`;
       const cached = getCached<any>(key);
@@ -2178,7 +2193,7 @@ export default function ShadowingPage() {
       setLoading(false);
       abortRef.current = null;
     }
-  }, [lang, level, practiced, getAuthHeaders]);
+  }, [lang, level, practiced, dialogueType, getAuthHeaders]);
 
   // 加载主题列表
   const loadThemes = useCallback(async () => {
@@ -2257,7 +2272,7 @@ export default function ShadowingPage() {
 
     return () => clearTimeout(t);
     // 依赖筛选条件和fetchItems函数，确保条件变化时重新加载
-  }, [lang, level, practiced, authLoading, user?.id, fetchItems]);
+  }, [lang, level, practiced, dialogueType, authLoading, user?.id, fetchItems]);
 
   // 组件卸载时清理资源
   useEffect(() => {
@@ -2350,6 +2365,7 @@ export default function ShadowingPage() {
   const filteredItems = useMemo(() => {
     const list = items
       .filter((item) => {
+        if (dialogueType !== 'all' && item.dialogue_type !== dialogueType) return false;
         // 搜索筛选
         if (deferredSearchQuery) {
           const query = deferredSearchQuery.toLowerCase();
@@ -2510,6 +2526,7 @@ export default function ShadowingPage() {
     recommendedLevel,
     themePrefs,
     sortMode,
+    dialogueType,
   ]);
 
   // 列表统计一次性计算，避免多处重复 filter

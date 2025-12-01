@@ -20,11 +20,23 @@ import { Separator } from '@/components/ui/separator';
 import VoiceManager from '@/components/VoiceManager';
 import CandidateVoiceSelector from '@/components/CandidateVoiceSelector';
 
+const DIALOGUE_TYPE_OPTIONS = [
+  { value: 'all', label: '全部类型' },
+  { value: 'casual', label: '日常闲聊' },
+  { value: 'task', label: '任务导向' },
+  { value: 'emotion', label: '情感表达' },
+  { value: 'opinion', label: '观点讨论' },
+  { value: 'request', label: '请求建议' },
+  { value: 'roleplay', label: '角色扮演' },
+  { value: 'pattern', label: '句型操练' },
+];
+
 type Item = {
   id: string;
   lang: 'en' | 'ja' | 'zh' | 'ko';
   level: number;
   genre: string;
+  dialogue_type?: string;
   title: string;
   status: string;
   created_at: string;
@@ -129,6 +141,7 @@ export default function ShadowingReviewList() {
   const [q, setQ] = useState('');
   const [lang, setLang] = useState<'all' | 'en' | 'ja' | 'zh' | 'ko'>('all');
   const [genre, setGenre] = useState('all');
+  const [dialogueType, setDialogueType] = useState('all');
   const [level, setLevel] = useState<'all' | '1' | '2' | '3' | '4' | '5'>('all');
   const [status, setStatus] = useState<'all' | 'draft' | 'approved'>('draft');
   const [audioStatus, setAudioStatus] = useState<'all' | 'no_audio' | 'has_audio'>('all');
@@ -301,6 +314,7 @@ export default function ShadowingReviewList() {
       });
       if (lang !== 'all') params.set('lang', lang);
       if (genre !== 'all') params.set('genre', genre);
+      if (dialogueType !== 'all') params.set('dialogue_type', dialogueType);
       if (level !== 'all') params.set('level', level);
       if (q.trim()) params.set('q', q.trim());
       const {
@@ -349,7 +363,7 @@ export default function ShadowingReviewList() {
 
       setItems(filteredItems);
     })();
-  }, [q, lang, genre, level, status, audioStatus, acuStatus, currentPage, pageSize]);
+  }, [q, lang, genre, dialogueType, level, status, audioStatus, acuStatus, currentPage, pageSize]);
 
   // 加载可用模型
   useEffect(() => {
@@ -359,7 +373,7 @@ export default function ShadowingReviewList() {
   // 当筛选条件改变时，重置到第一页
   useEffect(() => {
     setCurrentPage(1);
-  }, [q, lang, genre, level, status, audioStatus, acuStatus]);
+  }, [q, lang, genre, dialogueType, level, status, audioStatus, acuStatus]);
 
   // 分页控制函数
   const goToPage = (page: number) => {
@@ -480,22 +494,22 @@ export default function ShadowingReviewList() {
       // 分批处理
       const batchSize = Math.max(1, Math.min(concurrency, ids.length));
       console.log(`批量删除并发控制: 总任务${ids.length}个, 批次大小${batchSize}, 并发数${concurrency}`);
-      
+
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
         const batchNum = Math.floor(i / batchSize) + 1;
         const totalBatches = Math.ceil(ids.length / batchSize);
-        
+
         console.log(`删除批次 ${batchNum}/${totalBatches}: ${batch.length}个任务`);
         appendLog(`🔄 删除批次 ${batchNum}/${totalBatches} (${batch.length}个任务)`);
-        
+
         const startTime = Date.now();
         const batchFail = await processBatch(batch);
         const batchTime = Date.now() - startTime;
-        
+
         console.log(`删除批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
         appendLog(`✅ 删除批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
-        
+
         fail += batchFail;
 
         // 节流延迟
@@ -713,11 +727,11 @@ export default function ShadowingReviewList() {
             prev.map((item) =>
               item.id === id
                 ? {
-                    ...item,
-                    notes: {
-                      ...sanitizedNotes,
-                    },
-                  }
+                  ...item,
+                  notes: {
+                    ...sanitizedNotes,
+                  },
+                }
                 : item,
             ),
           );
@@ -844,22 +858,22 @@ export default function ShadowingReviewList() {
 
       const batchSize = Math.max(1, Math.min(concurrency, ids.length));
       console.log(`ACU生成并发控制: 总任务${ids.length}个, 批次大小${batchSize}, 并发数${concurrency}`);
-      
+
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
         const batchNum = Math.floor(i / batchSize) + 1;
         const totalBatches = Math.ceil(ids.length / batchSize);
-        
+
         console.log(`处理批次 ${batchNum}/${totalBatches}: ${batch.length}个任务`);
         appendLog(`🔄 处理批次 ${batchNum}/${totalBatches} (${batch.length}个任务)`);
-        
+
         const startTime = Date.now();
         const results = await Promise.all(batch.map((id) => generateOne(id)));
         const batchTime = Date.now() - startTime;
-        
+
         console.log(`批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
         appendLog(`✅ 批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
-        
+
         // 更新ACU性能统计
         setAcuPerformanceStats(prev => ({
           ...prev,
@@ -868,7 +882,7 @@ export default function ShadowingReviewList() {
           batchProcessingTime: batchTime,
           acuSuccessRate: results.filter(r => r).length / batch.length,
         }));
-        
+
         fail += results.filter((ok) => !ok).length;
 
         if (throttle > 0 && i + batchSize < ids.length) {
@@ -955,22 +969,22 @@ export default function ShadowingReviewList() {
       // 分批处理
       const batchSize = Math.max(1, Math.min(concurrency, ids.length));
       console.log(`批量发布并发控制: 总任务${ids.length}个, 批次大小${batchSize}, 并发数${concurrency}`);
-      
+
       for (let i = 0; i < ids.length; i += batchSize) {
         const batch = ids.slice(i, i + batchSize);
         const batchNum = Math.floor(i / batchSize) + 1;
         const totalBatches = Math.ceil(ids.length / batchSize);
-        
+
         console.log(`发布批次 ${batchNum}/${totalBatches}: ${batch.length}个任务`);
         appendLog(`🔄 发布批次 ${batchNum}/${totalBatches} (${batch.length}个任务)`);
-        
+
         const startTime = Date.now();
         const batchFail = await processBatch(batch);
         const batchTime = Date.now() - startTime;
-        
+
         console.log(`发布批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
         appendLog(`✅ 发布批次 ${batchNum} 完成，耗时: ${batchTime}ms`);
-        
+
         fail += batchFail;
 
         // 节流延迟
@@ -1044,14 +1058,14 @@ export default function ShadowingReviewList() {
     // 显示确认对话框
     const confirmed = window.confirm(
       `🎲 随机生成参数确认：\n\n` +
-        `• 选中草稿：${selectedDraftsArray.length} 个\n` +
-        `  - 对话：${dialogueCount} 个 (A=男声, B=女声)\n` +
-        `  - 独白：${monologueCount} 个 (随机音色)\n` +
-        `• 备选音色：${candidateVoices.length} 个\n` +
-        `• 总字符数：${totalCharacters.toLocaleString()} 字符\n` +
-        `• 预估花费：$${estimatedCost.toFixed(4)} (约¥${estimatedCostCNY.toFixed(2)})\n` +
-        `• 性能参数：并发${concurrency}，重试${MAX_TTS_RETRIES}次，延迟${throttle}ms\n\n` +
-        `是否开始随机生成？`,
+      `• 选中草稿：${selectedDraftsArray.length} 个\n` +
+      `  - 对话：${dialogueCount} 个 (A=男声, B=女声)\n` +
+      `  - 独白：${monologueCount} 个 (随机音色)\n` +
+      `• 备选音色：${candidateVoices.length} 个\n` +
+      `• 总字符数：${totalCharacters.toLocaleString()} 字符\n` +
+      `• 预估花费：$${estimatedCost.toFixed(4)} (约¥${estimatedCostCNY.toFixed(2)})\n` +
+      `• 性能参数：并发${concurrency}，重试${MAX_TTS_RETRIES}次，延迟${throttle}ms\n\n` +
+      `是否开始随机生成？`,
     );
 
     if (!confirmed) {
@@ -2044,6 +2058,23 @@ export default function ShadowingReviewList() {
                 </SelectContent>
               </Select>
             </div>
+            {genre === 'dialogue' && (
+              <div>
+                <label className="text-sm font-medium">对话类型</label>
+                <Select value={dialogueType} onValueChange={setDialogueType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DIALOGUE_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium">等级</label>
               <Select
@@ -2161,7 +2192,7 @@ export default function ShadowingReviewList() {
                 </div>
               </div>
             </div>
-            
+
             {/* ACU生成专用监控 */}
             {acuPerformanceStats.totalAcuRequests > 0 && (
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
@@ -2755,10 +2786,12 @@ export default function ShadowingReviewList() {
                         )}
                       </div>
                       <div className="font-medium text-lg mb-2">{it.title}</div>
-                      <div className="text-sm text-gray-500 mb-2">
-                        创建时间: {new Date(it.created_at).toLocaleString()}
+                      <div className="text-sm text-gray-500 mt-1">
+                        {it.lang} • 等级 {it.level} • {it.genre}
+                        {it.genre === 'dialogue' && it.dialogue_type && DIALOGUE_TYPE_OPTIONS.find(d => d.value === it.dialogue_type)?.label && ` (${DIALOGUE_TYPE_OPTIONS.find(d => d.value === it.dialogue_type)?.label})`}
+                        {it.notes?.audio_url && ' • 🎵'}
+                        {it.notes?.acu_units && ' • 📊'}
                       </div>
-                      {/* 显示对话文本，按说话者分行 */}
                       {it.text && (
                         <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border max-h-32 overflow-y-auto">
                           <div className="whitespace-pre-wrap font-mono text-xs leading-relaxed">

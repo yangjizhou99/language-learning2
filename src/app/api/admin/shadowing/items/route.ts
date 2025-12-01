@@ -21,6 +21,8 @@ export async function GET(req: NextRequest) {
     const offset = (page - 1) * limit;
     const lang = searchParams.get('lang');
     const level = searchParams.get('level');
+    const genre = searchParams.get('genre');
+    const dialogue_type = searchParams.get('dialogue_type');
 
     // 构建查询
     let query = supabaseAdmin
@@ -34,6 +36,12 @@ export async function GET(req: NextRequest) {
     }
     if (level && level !== 'all') {
       query = query.eq('level', parseInt(level));
+    }
+    if (genre && genre !== 'all') {
+      query = query.eq('genre', genre);
+    }
+    if (dialogue_type && dialogue_type !== 'all') {
+      query = query.eq('dialogue_type', dialogue_type);
     }
 
     const { data: items, error } = await query.range(offset, offset + limit - 1);
@@ -59,6 +67,12 @@ export async function GET(req: NextRequest) {
     }
     if (level && level !== 'all') {
       countQuery = countQuery.eq('level', parseInt(level));
+    }
+    if (genre && genre !== 'all') {
+      countQuery = countQuery.eq('genre', genre);
+    }
+    if (dialogue_type && dialogue_type !== 'all') {
+      countQuery = countQuery.eq('dialogue_type', dialogue_type);
     }
 
     const { count } = await countQuery;
@@ -118,7 +132,7 @@ export async function PATCH(req: NextRequest) {
 
     const supabaseAdmin = getServiceSupabase();
     const body = await req.json();
-    const updates: Array<{ id: string; [k: string]: any }> = Array.isArray(body?.updates)
+    const updates: Array<{ id: string;[k: string]: any }> = Array.isArray(body?.updates)
       ? body.updates
       : [];
     if (!updates.length) return NextResponse.json({ error: 'no updates' }, { status: 400 });

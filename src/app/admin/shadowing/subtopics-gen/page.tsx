@@ -64,6 +64,17 @@ const GENRE_OPTIONS = [
   { value: 'lecture', label: '讲座' },
 ];
 
+const DIALOGUE_TYPE_OPTIONS = [
+  { value: 'all', label: '全部类型' },
+  { value: 'casual', label: '日常闲聊' },
+  { value: 'task', label: '任务导向' },
+  { value: 'emotion', label: '情感表达' },
+  { value: 'opinion', label: '观点讨论' },
+  { value: 'request', label: '请求建议' },
+  { value: 'roleplay', label: '角色扮演' },
+  { value: 'pattern', label: '句型操练' },
+];
+
 const HAS_ARTICLE_OPTIONS = [
   { value: 'all', label: '全部' },
   { value: 'yes', label: '已有文章' },
@@ -81,6 +92,7 @@ const QUICK_CONFIGS = [
     lang: 'ja',
     level: 1,
     genre: 'dialogue',
+    dialogue_type: 'casual',
     provider: 'openrouter',
     model: 'gpt-4o-mini',
     temperature: 0.7,
@@ -150,6 +162,7 @@ export default function SubtopicsPage() {
   const [lang, setLang] = useState<Lang>('all');
   const [level, setLevel] = useState<string>('all');
   const [genre, setGenre] = useState<Genre>('all');
+  const [dialogueType, setDialogueType] = useState<string>('all');
   const [themeId, setThemeId] = useState<string>('all');
   const [hasArticle, setHasArticle] = useState<string>('all');
   const [q, setQ] = useState('');
@@ -234,6 +247,7 @@ export default function SubtopicsPage() {
       if (lang !== 'all') qs.set('lang', lang);
       if (level !== 'all') qs.set('level', level);
       if (genre !== 'all') qs.set('genre', genre);
+      if (dialogueType !== 'all') qs.set('dialogue_type', dialogueType);
       if (hasArticle !== 'all') qs.set('has_article', hasArticle);
 
       const r = await fetch(`/api/admin/shadowing/themes?${qs.toString()}`, {
@@ -274,6 +288,7 @@ export default function SubtopicsPage() {
       if (lang !== 'all') qs.set('lang', lang);
       if (level !== 'all') qs.set('level', String(level));
       if (genre !== 'all') qs.set('genre', genre);
+      if (dialogueType !== 'all') qs.set('dialogue_type', dialogueType);
       if (themeId && themeId !== 'all') qs.set('theme_id', themeId);
       if (hasArticle !== 'all') qs.set('has_article', hasArticle);
       if (q) qs.set('q', q);
@@ -311,16 +326,16 @@ export default function SubtopicsPage() {
 
   useEffect(() => {
     loadThemes();
-  }, [lang, level, genre, hasArticle]);
+  }, [lang, level, genre, dialogueType, hasArticle]);
 
   useEffect(() => {
     loadSubtopics();
-  }, [lang, level, genre, themeId, hasArticle, q, pagination.page, pagination.limit]);
+  }, [lang, level, genre, dialogueType, themeId, hasArticle, q, pagination.page, pagination.limit]);
 
   // 当筛选条件变化时，重置到第一页，避免高页码下看起来“无数据”
   useEffect(() => {
     setPagination((prev) => (prev.page === 1 ? prev : { ...prev, page: 1 }));
-  }, [lang, level, genre, themeId, hasArticle, q]);
+  }, [lang, level, genre, dialogueType, themeId, hasArticle, q]);
 
   // 加载模型列表
   useEffect(() => {
@@ -393,6 +408,7 @@ export default function SubtopicsPage() {
       lang: lang === 'all' ? 'ja' : lang,
       level: level === 'all' ? 3 : level,
       genre: genre === 'all' ? 'monologue' : genre,
+      dialogue_type: dialogueType === 'all' ? 'casual' : dialogueType,
       title: '',
       seed: '',
       one_line: '',
@@ -758,6 +774,7 @@ export default function SubtopicsPage() {
       lang: lang === 'all' ? 'all' : lang,
       level: level === 'all' ? 'all' : level,
       genre: genre === 'all' ? 'all' : genre,
+      dialogue_type: dialogueType === 'all' ? 'all' : dialogueType,
       provider,
       model,
       temperature,
@@ -781,6 +798,7 @@ export default function SubtopicsPage() {
     setLang(config.lang);
     setLevel(String(config.level));
     setGenre(config.genre);
+    if (config.dialogue_type) setDialogueType(config.dialogue_type);
     setProvider(config.provider);
     setModel(config.model);
     setTemperature(config.temperature);
@@ -846,9 +864,12 @@ export default function SubtopicsPage() {
             </div>
             <div>
               <Label>体裁</Label>
-              <Select value={genre} onValueChange={(v: Genre) => setGenre(v)}>
-                <SelectTrigger>
-                  <SelectValue />
+              <Select
+                value={genre}
+                onValueChange={(v: Genre) => setGenre(v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="体裁" />
                 </SelectTrigger>
                 <SelectContent>
                   {GENRE_OPTIONS.map((opt) => (
@@ -859,17 +880,37 @@ export default function SubtopicsPage() {
                 </SelectContent>
               </Select>
             </div>
+            {genre === 'dialogue' && (
+              <div>
+                <Label>对话类型</Label>
+                <Select
+                  value={dialogueType}
+                  onValueChange={setDialogueType}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="对话类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DIALOGUE_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label>大主题</Label>
               <Select value={themeId} onValueChange={setThemeId}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="选择大主题" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部大主题</SelectItem>
                   {themes.map((theme) => (
                     <SelectItem key={theme.id} value={theme.id}>
-                      {theme.title} ({theme.subtopic_count})
+                      {theme.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -890,10 +931,14 @@ export default function SubtopicsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>搜索</Label>
-              <Input placeholder="搜索小主题..." value={q} onChange={(e) => setQ(e.target.value)} />
-            </div>
+          </div>
+          <div className="mt-4">
+            <Label>搜索</Label>
+            <Input
+              placeholder="搜索标题、关键词..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -941,13 +986,12 @@ export default function SubtopicsPage() {
                   {logs.map((log, index) => (
                     <div
                       key={index}
-                      className={`text-sm ${
-                        log.type === 'error'
-                          ? 'text-red-600'
-                          : log.type === 'success'
-                            ? 'text-green-600'
-                            : 'text-gray-600'
-                      }`}
+                      className={`text-sm ${log.type === 'error'
+                        ? 'text-red-600'
+                        : log.type === 'success'
+                          ? 'text-green-600'
+                          : 'text-gray-600'
+                        }`}
                     >
                       {log.message}
                     </div>
@@ -965,6 +1009,39 @@ export default function SubtopicsPage() {
           <CardTitle>批量操作</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Label>体裁</Label>
+            <Select value={genre} onValueChange={(v: Genre) => setGenre(v)}>
+              <SelectTrigger className="w-24">
+                <SelectValue placeholder="全部体裁" />
+              </SelectTrigger>
+              <SelectContent>
+                {GENRE_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {genre === 'dialogue' && (
+              <div className="flex items-center gap-2">
+                <Label>对话类型</Label>
+                <Select value={dialogueType} onValueChange={setDialogueType}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="全部类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DIALOGUE_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Checkbox

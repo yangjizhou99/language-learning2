@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   const lang = sp.get('lang') as 'en' | 'ja' | 'zh' | null;
   const level = sp.get('level');
   const genre = sp.get('genre');
+  const dialogue_type = sp.get('dialogue_type');
   const q = sp.get('q')?.trim() || '';
 
   // 分页参数
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
     .from('shadowing_drafts')
     .select(
       `
-      id, lang, level, genre, title, text, status, created_at, notes, translations, trans_updated_at,
+      id, lang, level, genre, dialogue_type, title, text, status, created_at, notes, translations, trans_updated_at,
       theme_id, subtopic_id
     `,
       { count: 'exact' },
@@ -41,6 +42,7 @@ export async function GET(req: NextRequest) {
   if (lang) query = query.eq('lang', lang);
   if (level) query = query.eq('level', Number(level));
   if (genre) query = query.eq('genre', genre);
+  if (dialogue_type) query = query.eq('dialogue_type', dialogue_type);
   if (q) query = query.ilike('title', `%${q}%`);
 
   // 应用分页
