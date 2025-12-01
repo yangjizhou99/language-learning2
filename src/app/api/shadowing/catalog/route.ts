@@ -327,8 +327,9 @@ export async function GET(req: NextRequest) {
     console.error('Error in shadowing catalog API:', error);
     return NextResponse.json({
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : String(error),
+      details: error instanceof Error ? error.message : JSON.stringify(error, null, 2),
       stack: error instanceof Error ? error.stack : undefined
     }, { status: 500 });
   }
 }
+
