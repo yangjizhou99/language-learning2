@@ -325,6 +325,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error('Error in shadowing catalog API:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }, { status: 500 });
   }
 }
