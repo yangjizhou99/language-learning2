@@ -1768,8 +1768,14 @@ END $$;
 
 
 
-ALTER TABLE ONLY "public"."unit_catalog"
-    ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conrelid = 'public.unit_catalog'::regclass AND contype = 'p'
+    ) THEN
+        ALTER TABLE "public"."unit_catalog" ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
+    END IF;
+END $$;
 
 
 
