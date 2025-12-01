@@ -180,7 +180,7 @@ export async function GET(req: NextRequest) {
       if (error) {
         console.error('Database query error:', error);
         throw new Error(
-          `Error fetching shadowing catalog: ${error instanceof Error ? error.message : String(error)}`,
+          `Error fetching shadowing catalog: ${JSON.stringify(error)}`,
         );
       }
 
