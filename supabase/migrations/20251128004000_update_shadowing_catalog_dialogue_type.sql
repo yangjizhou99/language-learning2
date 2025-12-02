@@ -11,6 +11,19 @@ DROP FUNCTION IF EXISTS get_shadowing_catalog(
   int[]
 );
 
+DROP FUNCTION IF EXISTS get_shadowing_catalog(
+  uuid,
+  text,
+  integer,
+  text,
+  integer,
+  integer,
+  timestamptz,
+  text[],
+  int[],
+  text
+);
+
 CREATE OR REPLACE FUNCTION get_shadowing_catalog(
   p_user_id uuid,
   p_lang text DEFAULT NULL,

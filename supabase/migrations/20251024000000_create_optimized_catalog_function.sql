@@ -200,13 +200,13 @@ END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- 添加函数注释
-COMMENT ON FUNCTION get_shadowing_catalog IS '
-优化的 shadowing catalog 查询函数（修复版）
-修复内容：
-1. 在数据库层面应用权限过滤，确保分页正确
-2. 支持增量同步（since 参数），用于获取更新的内容
-3. LIMIT/OFFSET 在所有过滤后应用，保证返回数量正确
-
-性能：从 2-5秒 降至 250-650ms（8-20倍）
-';
+-- COMMENT ON FUNCTION get_shadowing_catalog(uuid, text, int, text, int, int, timestamptz, text[], int[]) IS '
+-- 优化的 shadowing catalog 查询函数（修复版）
+-- 修复内容：
+-- 1. 在数据库层面应用权限过滤，确保分页正确
+-- 2. 支持增量同步（since 参数），用于获取更新的内容
+-- 3. LIMIT/OFFSET 在所有过滤后应用，保证返回数量正确
+-- 
+-- 性能：从 2-5秒 降至 250-650ms（8-20倍）
+-- ';
 
