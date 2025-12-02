@@ -51,6 +51,7 @@ drop policy if exists "profiles_update_own" on "public"."profiles";
 -- revoke truncate on table "public"."ja_phoneme_units" from "service_role";
 -- revoke update on table "public"."ja_phoneme_units" from "service_role";
 
+/*
 revoke delete on table "public"."minimal_pairs" from "anon";
 
 revoke insert on table "public"."minimal_pairs" from "anon";
@@ -493,6 +494,7 @@ revoke update on table "public"."user_unit_stats" from "service_role";
 -- revoke trigger on table "public"."zh_pinyin_units" from "service_role";
 -- revoke truncate on table "public"."zh_pinyin_units" from "service_role";
 -- revoke update on table "public"."zh_pinyin_units" from "service_role";
+*/
 
 -- REVIEW: keep unique id constraints for shadowing_* unless confirmed to drop
 -- alter table "public"."shadowing_subtopics" drop constraint "shadowing_subtopics_id_unique";
