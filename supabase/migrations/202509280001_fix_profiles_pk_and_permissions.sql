@@ -1,3 +1,16 @@
+-- Ensure is_admin function exists
+create or replace function public.is_admin()
+returns boolean as $$
+begin
+  return exists (
+    select 1
+    from public.profiles
+    where id = auth.uid()
+    and role = 'admin'
+  );
+end;
+$$ language plpgsql security definer;
+
 -- Fix core constraints and policies to resolve profile save/load and permissions errors
 -- Date: 2025-09-28
 
