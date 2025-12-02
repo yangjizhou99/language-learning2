@@ -50,7 +50,7 @@ export default function AuthPage() {
 
   const signUp = async () => {
     if (!registrationConfig?.allow_direct_registration) {
-      setMsg('当前不允许直接注册，请使用邀请码注册');
+      setMsg(t.auth.invitation_required);
       return;
     }
 
@@ -67,7 +67,7 @@ export default function AuthPage() {
   const validateAndRegister = async () => {
     // 验证输入
     if (!invitationCode.trim()) {
-      setMsg('请输入邀请码');
+      setMsg(t.auth.invitation_required);
       return;
     }
     if (!email.trim()) {
@@ -79,12 +79,12 @@ export default function AuthPage() {
       return;
     }
     if (pw.length < 6) {
-      setMsg('密码长度至少6位');
+      setMsg(t.form.password_min);
       return;
     }
 
     setIsValidatingInvitation(true);
-    setMsg('正在验证邀请码并注册...');
+    setMsg(t.auth.invitation_validating);
 
     try {
       // 直接调用注册接口，后端会验证邀请码
@@ -150,10 +150,10 @@ export default function AuthPage() {
     return (
       <main className="max-w-xl mx-auto p-6 space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-4">系统维护中</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-4">{t.auth.maintenance_mode}</h1>
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-yellow-800">
-              {registrationConfig.maintenance_message || '系统正在维护中，请稍后再试'}
+              {registrationConfig.maintenance_message || t.auth.maintenance_desc}
             </p>
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function AuthPage() {
 
   return (
     <main className="max-w-xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">登录 / 注册</h1>
+      <h1 className="text-2xl font-semibold">{t.auth.login_register_title}</h1>
       {msg && (
         <div className={`text-sm ${msg.includes('成功') ? 'text-green-700' : 'text-red-700'}`}>
           {msg}
@@ -183,7 +183,7 @@ export default function AuthPage() {
 
       {/* 登录区域 */}
       <section className="p-4 bg-white rounded-2xl shadow space-y-3">
-        <h2 className="font-medium">用户登录</h2>
+        <h2 className="font-medium">{t.auth.user_login}</h2>
         <input
           className="border rounded px-2 py-1 w-full"
           placeholder="email@example.com"
@@ -212,17 +212,16 @@ export default function AuthPage() {
       {/* 邀请码注册 */}
       {registrationConfig?.allow_invitation_registration && (
         <section
-          className={`p-4 rounded-2xl shadow space-y-3 ${
-            !registrationConfig?.allow_direct_registration
+          className={`p-4 rounded-2xl shadow space-y-3 ${!registrationConfig?.allow_direct_registration
               ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200'
               : 'bg-white'
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between">
-            <h2 className="font-medium text-blue-800">🎫 邀请码注册</h2>
+            <h2 className="font-medium text-blue-800">🎫 {t.auth.invitation_register}</h2>
             {!registrationConfig?.allow_direct_registration && (
               <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                唯一注册方式
+                {t.auth.only_way}
               </span>
             )}
           </div>
@@ -232,20 +231,20 @@ export default function AuthPage() {
               <div className="space-y-2">
                 <input
                   className="border rounded px-2 py-1 w-full"
-                  placeholder="请输入邮箱"
+                  placeholder={t.form.email}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
                 <input
                   className="border rounded px-2 py-1 w-full"
                   type="password"
-                  placeholder="请输入密码（至少6位）"
+                  placeholder={t.auth.password_placeholder}
                   value={pw}
                   onChange={(e) => setPw(e.target.value)}
                 />
                 <input
                   className="border rounded px-2 py-1 w-full"
-                  placeholder="请输入8位邀请码"
+                  placeholder={t.auth.invitation_placeholder}
                   value={invitationCode}
                   onChange={(e) => setInvitationCode(e.target.value.toUpperCase())}
                   maxLength={8}
@@ -257,7 +256,7 @@ export default function AuthPage() {
                 disabled={isValidatingInvitation}
                 className="w-full px-3 py-2 rounded bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
-                {isValidatingInvitation ? '正在处理...' : '验证并注册'}
+                {isValidatingInvitation ? t.auth.processing : t.auth.verify_register}
               </button>
             </div>
           )}

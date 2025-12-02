@@ -1,0 +1,436 @@
+npm warn config cache-max This option has been deprecated in favor of `--prefer-online`
+
+> lang-trainer@0.1.0 db:reset
+> supabase db reset && npm run db:dump
+
+Resetting local database...
+Recreating database...
+Initialising schema...
+Seeding globals from roles.sql...
+Skipping migration _local_skip_20251019180142_remote_schema.sql.disabled... (file name must match pattern "<timestamp>_name.sql")
+Applying migration 20250117000001_add_english_support.sql...
+NOTICE (00000): 英语音素插入成功: 49 个音素
+NOTICE (00000): 英语音素辅助表数据插入成功: 50 条记录
+NOTICE (00000): =====================================================
+NOTICE (00000): 英语支持扩展迁移完成
+NOTICE (00000): =====================================================
+NOTICE (00000): 新增内容:
+NOTICE (00000): - 英语音素: 49个 (15元音 + 8双元音 + 2组合音素 + 24辅音)
+NOTICE (00000): - 辅助表: en_phoneme_units
+NOTICE (00000): - 视图: english_phonemes_view
+NOTICE (00000): =====================================================
+Applying migration 20250120000001_create_japanese_phonemes.sql...
+NOTICE (00000): 日语音素插入完成:
+NOTICE (00000):   元音: 5 个
+NOTICE (00000):   辅音: 20 个
+NOTICE (00000):   特殊音: 3 个
+NOTICE (00000):   总计: 28 个
+Applying migration 20250120000002_update_japanese_to_romaji.sql...
+NOTICE (00000): drop cascades to view japanese_phonemes_view
+NOTICE (00000): view "japanese_phonemes_view" does not exist, skipping
+NOTICE (00000): 日语罗马字迁移完成:
+NOTICE (00000):   基本音节: 46 个
+NOTICE (00000):   浊音: 20 个
+NOTICE (00000):   半浊音: 5 个
+NOTICE (00000):   拗音: 33 个
+NOTICE (00000):   总计: 104 个罗马字音节
+NOTICE (00000): ✅ 日语罗马音发音评测系统迁移成功！
+Applying migration 20250127000000_remove_unused_tables.sql...
+NOTICE (00000): index "idx_article_cloze_article_id" does not exist, skipping
+NOTICE (00000): index "idx_article_drafts_created_by" does not exist, skipping
+NOTICE (00000): index "idx_sessions_user_id" does not exist, skipping
+NOTICE (00000): index "idx_study_cards_user_id" does not exist, skipping
+NOTICE (00000): index "idx_tts_assets_user_id" does not exist, skipping
+NOTICE (00000): index "idx_cloze_drafts_created_by" does not exist, skipping
+NOTICE (00000): index "idx_cloze_drafts_lang_level" does not exist, skipping
+NOTICE (00000): index "idx_cloze_drafts_status_lang_level" does not exist, skipping
+NOTICE (00000): index "idx_cloze_items_lang_level" does not exist, skipping
+NOTICE (00000): index "idx_cloze_items_lang_level_created" does not exist, skipping
+NOTICE (00000): index "idx_cloze_items_lang_level_title" does not exist, skipping
+NOTICE (00000): table "article_cloze" does not exist, skipping
+NOTICE (00000): table "article_keys" does not exist, skipping
+NOTICE (00000): table "articles" does not exist, skipping
+NOTICE (00000): table "cloze_drafts" does not exist, skipping
+NOTICE (00000): table "cloze_items" does not exist, skipping
+NOTICE (00000): table "article_drafts" does not exist, skipping
+NOTICE (00000): table "glossary" does not exist, skipping
+NOTICE (00000): table "phrases" does not exist, skipping
+NOTICE (00000): table "registration_config" does not exist, skipping
+NOTICE (00000): table "sessions" does not exist, skipping
+NOTICE (00000): table "study_cards" does not exist, skipping
+NOTICE (00000): table "tts_assets" does not exist, skipping
+Applying migration 20250918041810_remote_public_schema.sql...
+Applying migration 20250918100000_add_vocab_srs.sql...
+NOTICE (42P07): relation "vocab_entries" already exists, skipping
+NOTICE (42701): column "srs_due" of relation "vocab_entries" already exists, skipping
+NOTICE (42701): column "srs_interval" of relation "vocab_entries" already exists, skipping
+NOTICE (42701): column "srs_ease" of relation "vocab_entries" already exists, skipping
+NOTICE (42701): column "srs_reps" of relation "vocab_entries" already exists, skipping
+NOTICE (42701): column "srs_lapses" of relation "vocab_entries" already exists, skipping
+NOTICE (42701): column "srs_last" of relation "vocab_entries" already exists, skipping
+NOTICE (42701): column "srs_state" of relation "vocab_entries" already exists, skipping
+NOTICE (42P07): relation "idx_vocab_entries_user_due" already exists, skipping
+Applying migration 20250922000000_rename_subtopic_fields.sql...
+NOTICE (42P07): relation "shadowing_themes" already exists, skipping
+NOTICE (42P07): relation "shadowing_subtopics" already exists, skipping
+Applying migration 20250922001000_audio_url_normalization.sql...
+NOTICE (42P07): relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "audio_bucket" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "audio_path" of relation "shadowing_items" already exists, skipping
+WARNING (25P01): there is no transaction in progress
+Applying migration 20250923000100_fix_shadowing_items_columns.sql...
+NOTICE (42701): column "ai_provider" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "ai_model" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "ai_usage" of relation "shadowing_items" already exists, skipping
+Applying migration 20250923000200_align_shadowing_items_schema.sql...
+NOTICE (42701): column "status" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "created_by" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "updated_at" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "topic" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "genre" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "register" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "duration_ms" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "notes" of relation "shadowing_items" already exists, skipping
+Applying migration 20250925093000_fix_vocab_entries_id_default.sql...
+NOTICE (42710): extension "pgcrypto" already exists, skipping
+NOTICE (42P07): relation "vocab_entries" already exists, skipping
+Applying migration 20250925103000_fix_shadowing_sessions_id_default.sql...
+NOTICE (42P07): relation "shadowing_sessions" already exists, skipping
+NOTICE (42710): extension "pgcrypto" already exists, skipping
+Applying migration 20250926100000_fix_invitation_codes_default_uuid.sql...
+NOTICE (42710): extension "pgcrypto" already exists, skipping
+Applying migration 20250926100510_fix_invitation_codes_used_count_not_null.sql...
+NOTICE (42710): extension "pgcrypto" already exists, skipping
+NOTICE (42P07): relation "invitation_codes" already exists, skipping
+Applying migration 202509280001_fix_profiles_pk_and_permissions.sql...
+NOTICE (42710): extension "pgcrypto" already exists, skipping
+NOTICE (42P07): relation "profiles" already exists, skipping
+NOTICE (42P07): relation "default_user_permissions" already exists, skipping
+NOTICE (42P07): relation "user_permissions" already exists, skipping
+NOTICE (00000): policy "default_user_permissions_select_all" for relation "public.default_user_permissions" does not exist, skipping
+Applying migration 202509290001_align_remote_schema_columns.sql...
+NOTICE (42P07): relation "voices" already exists, skipping
+NOTICE (42P07): relation "article_batch_items" already exists, skipping
+NOTICE (42701): column "topic" of relation "article_batch_items" already exists, skipping
+NOTICE (42701): column "difficulty" of relation "article_batch_items" already exists, skipping
+NOTICE (42701): column "status" of relation "article_batch_items" already exists, skipping
+NOTICE (42701): column "result_draft_id" of relation "article_batch_items" already exists, skipping
+NOTICE (42701): column "error" of relation "article_batch_items" already exists, skipping
+NOTICE (42701): column "usage" of relation "article_batch_items" already exists, skipping
+NOTICE (42701): column "created_at" of relation "article_batch_items" already exists, skipping
+NOTICE (42701): column "updated_at" of relation "article_batch_items" already exists, skipping
+NOTICE (42P07): relation "vocab_entries" already exists, skipping
+NOTICE (42P07): relation "user_permissions" already exists, skipping
+Applying migration 202509290101_restore_shadowing_audio_columns.sql...
+NOTICE (42701): column "audio_bucket" of relation "shadowing_items" already exists, skipping
+NOTICE (42701): column "audio_path" of relation "shadowing_items" already exists, skipping
+Applying migration 20250929120000_add_unique_index_user_api_limits.sql...
+NOTICE (42710): extension "pgcrypto" already exists, skipping
+NOTICE (42P07): relation "user_api_limits" already exists, skipping
+Applying migration 20250929120500_fix_user_api_limits_id_default.sql...
+NOTICE (42710): extension "pgcrypto" already exists, skipping
+Applying migration 20250929121500_fix_api_usage_logs_created_at.sql...
+NOTICE (42P07): relation "api_usage_logs" already exists, skipping
+NOTICE (42P07): relation "idx_api_usage_logs_created_at" already exists, skipping
+Applying migration 20251001_000001_add_vocab_srs_and_init.sql...
+Applying migration 20251002103000_create_cloze_shadowing.sql...
+NOTICE (42P07): relation "cloze_shadowing_items" already exists, skipping
+NOTICE (42P07): relation "cloze_shadowing_attempts_sentence" already exists, skipping
+NOTICE (42P07): relation "cloze_shadowing_attempts_article" already exists, skipping
+Applying migration 20251003121500_add_is_published_to_cloze_shadowing.sql...
+NOTICE (42701): column "is_published" of relation "cloze_shadowing_items" already exists, skipping
+NOTICE (42P07): relation "idx_cloze_shadowing_items_published" already exists, skipping
+Applying migration 20251006090000_add_sentence_timeline_to_shadowing_items.sql...
+NOTICE (42701): column "sentence_timeline" of relation "shadowing_items" already exists, skipping
+Applying migration 20251008120000_create_alignment_training.sql...
+NOTICE (42710): extension "pgcrypto" already exists, skipping
+NOTICE (42P07): relation "alignment_themes" already exists, skipping
+NOTICE (42P07): relation "alignment_themes_unique_lang_level_genre_title" already exists, skipping
+NOTICE (42P07): relation "alignment_themes_status_idx" already exists, skipping
+NOTICE (42P07): relation "alignment_subtopics" already exists, skipping
+NOTICE (42P07): relation "alignment_subtopics_unique_theme_title" already exists, skipping
+NOTICE (42P07): relation "alignment_subtopics_status_idx" already exists, skipping
+NOTICE (42P07): relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "subtopic_id" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "lang" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "task_type" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "status" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "version" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "is_current" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "task_prompt" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "task_prompt_translations" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "exemplar" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "exemplar_translations" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "knowledge_points" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "requirements" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "standard_answer" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "standard_answer_translations" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "core_sentences" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "rubric" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "dialogue_meta" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "writing_meta" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "ai_metadata" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "review_status" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "review_notes" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "reviewed_by" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "reviewed_at" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "created_by" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "created_at" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "updated_at" of relation "alignment_materials" already exists, skipping
+NOTICE (42P07): relation "alignment_materials_subtopic_idx" already exists, skipping
+NOTICE (42P07): relation "alignment_materials_status_idx" already exists, skipping
+NOTICE (42P07): relation "alignment_materials_current_idx" already exists, skipping
+NOTICE (42P07): relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "subtopic_id" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "material_id" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "task_type" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "attempt_number" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "submission" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "submission_text" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "word_count" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "turn_count" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "duration_seconds" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "score_total" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "scores" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "feedback" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "feedback_json" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "ai_model" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "ai_response" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "prev_attempt_id" of relation "alignment_attempts" already exists, skipping
+NOTICE (42701): column "status" of relation "alignment_attempts" already exists, skipping
+NOTICE (42P07): relation "alignment_attempts_user_subtopic_idx" already exists, skipping
+NOTICE (42P07): relation "alignment_attempts_subtopic_created_idx" already exists, skipping
+NOTICE (42P07): relation "alignment_attempts_prev_idx" already exists, skipping
+Applying migration 20251012000000_add_timestamps_to_shadowing_sessions.sql...
+NOTICE (42701): column "updated_at" of relation "shadowing_sessions" already exists, skipping
+Applying migration 20251015140000_create_pronunciation_test_runs.sql...
+NOTICE (42P07): relation "pronunciation_test_runs" already exists, skipping
+NOTICE (42P07): relation "pronunciation_test_runs_admin_idx" already exists, skipping
+NOTICE (42P07): relation "pronunciation_test_runs_created_at_idx" already exists, skipping
+Applying migration 20251019181149_remote_schema.sql...
+Applying migration 20251020120000_update_alignment_materials_schema.sql...
+NOTICE (42701): column "practice_scenario" of relation "alignment_materials" already exists, skipping
+NOTICE (42701): column "standard_dialogue" of relation "alignment_materials" already exists, skipping
+Applying migration 20251021000001_create_pronunciation_assessment_v2.sql...
+NOTICE (00000): drop cascades to 6 other objects
+NOTICE (00000): policy "pronunciation_audio_select_own" for relation "storage.objects" does not exist, skipping
+NOTICE (00000): policy "pronunciation_audio_insert_service" for relation "storage.objects" does not exist, skipping
+NOTICE (00000): ✅ 数据统计：
+NOTICE (00000):    - unit_catalog (zh-CN): 463 条
+NOTICE (00000):    - pron_sentences (zh-CN): 25 条
+NOTICE (00000):    - sentence_units: 56 条关联
+Applying migration 20251021050103_20251021140500_review_remote_public_diff.sql.sql...
+NOTICE (42P07): relation "idx_voices_category" already exists, skipping
+NOTICE (42P07): relation "idx_voices_language_code" already exists, skipping
+NOTICE (42P07): relation "idx_voices_name" already exists, skipping
+NOTICE (42P07): relation "idx_voices_provider" already exists, skipping
+Applying migration 20251022000002_create_minimal_pairs_safe.sql...
+NOTICE (00000): policy "user_pron_verifications_select_own" for relation "public.user_pron_verifications" does not exist, skipping
+NOTICE (00000): policy "user_pron_verifications_insert_service" for relation "public.user_pron_verifications" does not exist, skipping
+NOTICE (00000): 已插入 3 对最小对立词
+Applying migration 20251022000003_create_training_content_safe.sql...
+NOTICE (00000): policy "training_content_select_all" for relation "public.training_content" does not exist, skipping
+NOTICE (00000): 已插入 4 条中文训练内容
+Applying migration 20251022100000_fix_invitation_rls.sql...
+Applying migration 20251023000000_add_korean_support.sql...
+NOTICE (00000): 语言约束更新成功: 4 个约束已更新
+NOTICE (00000): 权限更新结果:
+NOTICE (00000): - 默认权限包含韩语: 1 条
+NOTICE (00000): - 用户权限包含韩语: 0 条
+NOTICE (00000): =====================================================
+NOTICE (00000): 韩语学习支持迁移完成
+NOTICE (00000): =====================================================
+NOTICE (00000): 更新内容:
+NOTICE (00000): - 扩展语言约束: 支持 ko 语言
+NOTICE (00000): - 更新用户权限: 默认和现有用户均可访问韩语
+NOTICE (00000): - 刷新缓存: PostgREST schema 已重新加载
+NOTICE (00000): =====================================================
+Applying migration 20251023120000_optimize_vocab_performance.sql...
+NOTICE (42P07): relation "idx_vocab_entries_user_status_created" already exists, skipping
+NOTICE (42P07): relation "idx_vocab_entries_user_lang_status" already exists, skipping
+NOTICE (00000): 索引 idx_vocab_entries_user_srs_due 创建成功
+NOTICE (42P07): relation "idx_vocab_entries_user_has_explanation" already exists, skipping
+NOTICE (42P07): relation "idx_vocab_entries_user_no_explanation" already exists, skipping
+NOTICE (00000): 函数 get_vocab_stats 已创建
+NOTICE (00000): 已创建 6 个优化索引
+Applying migration 20251024000000_create_optimized_catalog_function.sql...
+NOTICE (00000): function get_shadowing_catalog(uuid,text,pg_catalog.int4,text,pg_catalog.int4,pg_catalog.int4) does not exist, skipping
+Applying migration 20251128002000_create_scene_tags_and_theme_scene_vectors.sql...
+NOTICE (42P07): relation "scene_tags" already exists, skipping
+NOTICE (42P07): relation "theme_scene_vectors" already exists, skipping
+NOTICE (42P07): relation "idx_theme_scene_vectors_theme" already exists, skipping
+NOTICE (42P07): relation "idx_theme_scene_vectors_scene" already exists, skipping
+Applying migration 20251128003000_create_user_scene_preferences.sql...
+NOTICE (42P07): relation "user_scene_preferences" already exists, skipping
+NOTICE (42P07): relation "idx_user_scene_preferences_user" already exists, skipping
+NOTICE (42P07): relation "idx_user_scene_preferences_scene" already exists, skipping
+Applying migration 20251128004000_update_shadowing_catalog_dialogue_type.sql...
+ERROR: cannot change return type of existing function (SQLSTATE 42P13)                            
+Row type defined by OUT parameters is different.                                                  
+At statement: 1                                                                                   
+CREATE OR REPLACE FUNCTION get_shadowing_catalog(                                                 
+  p_user_id uuid,                                                                                 
+  p_lang text DEFAULT NULL,                                                                       
+  p_level int DEFAULT NULL,                                                                       
+  p_practiced text DEFAULT NULL,                                                                  
+  p_limit int DEFAULT 100,                                                                        
+  p_offset int DEFAULT 0,                                                                         
+  p_since timestamptz DEFAULT NULL,                                                               
+  p_allowed_languages text[] DEFAULT NULL,                                                        
+  p_allowed_levels int[] DEFAULT NULL,                                                            
+  p_dialogue_type text DEFAULT NULL                                                               
+)                                                                                                 
+RETURNS TABLE(                                                                                    
+  id uuid,                                                                                        
+  lang text,                                                                                      
+  level int,                                                                                      
+  title text,                                                                                     
+  text text,                                                                                      
+  audio_url text,                                                                                 
+  audio_bucket text,                                                                              
+  audio_path text,                                                                                
+  sentence_timeline jsonb,                                                                        
+  topic text,                                                                                     
+  genre text,                                                                                     
+  dialogue_type text,                                                                             
+  register text,                                                                                  
+  notes jsonb,                                                                                    
+  translations jsonb,                                                                             
+  trans_updated_at timestamptz,                                                                   
+  ai_provider text,                                                                               
+  ai_model text,                                                                                  
+  ai_usage jsonb,                                                                                 
+  status text,                                                                                    
+  theme_id uuid,                                                                                  
+  subtopic_id uuid,                                                                               
+  created_at timestamptz,                                                                         
+  updated_at timestamptz,                                                                         
+  theme_title text,                                                                               
+  theme_desc text,                                                                                
+  subtopic_title text,                                                                            
+  subtopic_one_line text,                                                                         
+  session_status text,                                                                            
+  last_practiced timestamptz,                                                                     
+  recording_count int,                                                                            
+  vocab_count int,                                                                                
+  practice_time_seconds int,                                                                      
+  is_practiced boolean,                                                                           
+  total_count bigint                                                                              
+) AS $$                                                                                           
+BEGIN                                                                                             
+  RETURN QUERY                                                                                    
+  WITH filtered_items AS (                                                                        
+    SELECT                                                                                        
+      i.id,                                                                                       
+      i.lang,                                                                                     
+      i.level,                                                                                    
+      i.title,                                                                                    
+      i.text,                                                                                     
+      i.audio_url,                                                                                
+      i.audio_bucket,                                                                             
+      i.audio_path,                                                                               
+      i.sentence_timeline,                                                                        
+      i.topic,                                                                                    
+      i.genre,                                                                                    
+      i.dialogue_type,                                                                            
+      i.register,                                                                                 
+      i.notes,                                                                                    
+      i.translations,                                                                             
+      i.trans_updated_at,                                                                         
+      i.ai_provider,                                                                              
+      i.ai_model,                                                                                 
+      i.ai_usage,                                                                                 
+      i.status,                                                                                   
+      i.theme_id,                                                                                 
+      i.subtopic_id,                                                                              
+      i.created_at,                                                                               
+      i.updated_at,                                                                               
+      t.title as theme_title,                                                                     
+      t.desc as theme_desc,                                                                       
+      st.title as subtopic_title,                                                                 
+      st.one_line as subtopic_one_line,                                                           
+      s.status as session_status,                                                                 
+      s.created_at as last_practiced,                                                             
+      s.recordings,                                                                               
+      s.picked_preview,                                                                           
+      COUNT(*) OVER() as total_count                                                              
+    FROM shadowing_items i                                                                        
+    LEFT JOIN shadowing_themes t ON i.theme_id = t.id                                             
+    LEFT JOIN shadowing_subtopics st ON i.subtopic_id = st.id                                     
+    LEFT JOIN shadowing_sessions s ON s.item_id = i.id AND s.user_id = p_user_id                  
+    WHERE                                                                                         
+      i.status = 'approved'                                                                       
+      AND i.genre = 'dialogue'                                                                    
+      AND (                                                                                       
+        p_dialogue_type IS NULL                                                                   
+        OR p_dialogue_type = 'all'                                                                
+        OR i.dialogue_type = p_dialogue_type                                                      
+      )                                                                                           
+      AND (                                                                                       
+        (p_lang IS NOT NULL AND i.lang = p_lang)                                                  
+        OR (p_lang IS NULL AND (p_allowed_languages IS NULL OR i.lang = ANY(p_allowed_languages)))
+      )                                                                                           
+      AND (                                                                                       
+        (p_level IS NOT NULL AND i.level = p_level)                                               
+        OR (p_level IS NULL AND (p_allowed_levels IS NULL OR i.level = ANY(p_allowed_levels)))    
+      )                                                                                           
+      AND (                                                                                       
+        p_practiced IS NULL OR                                                                    
+        (p_practiced = 'true' AND s.status = 'completed') OR                                      
+        (p_practiced = 'false' AND (s.status IS NULL OR s.status != 'completed'))                 
+      )                                                                                           
+      AND (p_since IS NULL OR i.updated_at > p_since)                                             
+    ORDER BY                                                                                      
+      CASE WHEN p_since IS NOT NULL THEN i.updated_at ELSE i.created_at END DESC                  
+    LIMIT p_limit                                                                                 
+    OFFSET p_offset                                                                               
+  )                                                                                               
+  SELECT                                                                                          
+    f.id,                                                                                         
+    f.lang,                                                                                       
+    f.level,                                                                                      
+    f.title,                                                                                      
+    f.text,                                                                                       
+    f.audio_url,                                                                                  
+    f.audio_bucket,                                                                               
+    f.audio_path,                                                                                 
+    f.sentence_timeline,                                                                          
+    f.topic,                                                                                      
+    f.genre,                                                                                      
+    f.dialogue_type,                                                                              
+    f.register,                                                                                   
+    f.notes,                                                                                      
+    f.translations,                                                                               
+    f.trans_updated_at,                                                                           
+    f.ai_provider,                                                                                
+    f.ai_model,                                                                                   
+    f.ai_usage,                                                                                   
+    f.status,                                                                                     
+    f.theme_id,                                                                                   
+    f.subtopic_id,                                                                                
+    f.created_at,                                                                                 
+    f.updated_at,                                                                                 
+    f.theme_title,                                                                                
+    f.theme_desc,                                                                                 
+    f.subtopic_title,                                                                             
+    f.subtopic_one_line,                                                                          
+    f.session_status,                                                                             
+    f.last_practiced,                                                                             
+    COALESCE(jsonb_array_length(f.recordings), 0)::int as recording_count,                        
+    COALESCE(jsonb_array_length(f.picked_preview), 0)::int as vocab_count,                        
+    (                                                                                             
+      COALESCE(                                                                                   
+        (                                                                                         
+          SELECT SUM((rec->>'duration')::int)                                                     
+          FROM jsonb_array_elements(COALESCE(f.recordings, '[]'::jsonb)) as rec                   
+          WHERE (rec->>'duration') IS NOT NULL                                                    
+        ),                                                                                        
+        0                                                                                         
+      ) / 1000                                                                                    
+    )::int as practice_time_seconds,                                                              
+    (f.session_status = 'completed')::boolean as is_practiced,                                    
+    f.total_count                                                                                 
+  FROM filtered_items f;                                                                          
+END;                                                                                              
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER                                                       
+Try rerunning the command with --debug to troubleshoot the error.

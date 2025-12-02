@@ -580,14 +580,14 @@ export default function ShadowingPage() {
   ];
 
   const DIALOGUE_TYPE_OPTIONS = [
-    { value: 'all', label: '全部类型' },
-    { value: 'casual', label: '日常闲聊' },
-    { value: 'task', label: '任务导向' },
-    { value: 'emotion', label: '情感表达' },
-    { value: 'opinion', label: '观点讨论' },
-    { value: 'request', label: '请求建议' },
-    { value: 'roleplay', label: '角色扮演' },
-    { value: 'pattern', label: '句型操练' },
+    { value: 'all', label: t.shadowing.dialogue_types.all },
+    { value: 'casual', label: t.shadowing.dialogue_types.casual },
+    { value: 'task', label: t.shadowing.dialogue_types.task },
+    { value: 'emotion', label: t.shadowing.dialogue_types.emotion },
+    { value: 'opinion', label: t.shadowing.dialogue_types.opinion },
+    { value: 'request', label: t.shadowing.dialogue_types.request },
+    { value: 'roleplay', label: t.shadowing.dialogue_types.roleplay },
+    { value: 'pattern', label: t.shadowing.dialogue_types.pattern },
   ];
 
   // 题库相关状态

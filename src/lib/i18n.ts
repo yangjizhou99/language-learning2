@@ -126,6 +126,8 @@ export interface Translations {
     load_failed: string;
     loading: string;
     registered_at: string; // e.g. 注册时间 / Registered at / 登録日時
+    stats_card_title: string;
+    stats_card_desc: string;
     recommend_refreshing: string;
     recommend_refreshed: string;
     recommend_refresh_failed: string;
@@ -137,16 +139,16 @@ export interface Translations {
       academic: string;
     };
     domains: {
-      business: string;
-      technology: string;
-      education: string;
-      healthcare: string;
-      finance: string;
-      travel: string;
-      entertainment: string;
-      sports: string;
-      news: string;
-      lifestyle: string;
+      daily_life: string;
+      family_relationships: string;
+      food_and_restaurant: string;
+      shopping: string;
+      travel_and_directions: string;
+      school_campus: string;
+      hobbies: string;
+      work_parttime: string;
+      romance: string;
+      exam_study: string;
     };
     language_labels: Record<string, string>; // 动态语言列表显示名
     date_locales: Record<'zh' | 'en' | 'ja' | 'ko', string>; // 用于 toLocaleDateString
@@ -299,6 +301,19 @@ export interface Translations {
     login_failed: string;
     signup_failed: string;
     google_login_failed: string;
+    invitation_required: string;
+    invitation_code: string;
+    invitation_validating: string;
+    maintenance_mode: string;
+    maintenance_desc: string;
+    login_register_title: string;
+    user_login: string;
+    invitation_register: string;
+    only_way: string;
+    password_placeholder: string;
+    invitation_placeholder: string;
+    processing: string;
+    verify_register: string;
   };
 
   // Shadowing 练习
@@ -313,6 +328,16 @@ export interface Translations {
     ai_generate_desc: string;
     get_next_question: string;
     loading: string;
+    dialogue_types: {
+      all: string;
+      casual: string;
+      task: string;
+      emotion: string;
+      opinion: string;
+      request: string;
+      roleplay: string;
+      pattern: string;
+    };
     change_question: string;
     vocab_mode_on: string;
     vocab_mode_off: string;
@@ -729,6 +754,8 @@ export interface Translations {
       search: string;
       search_placeholder: string;
       reset: string;
+      mobile_filter_hint: string;
+      mobile_filter_sheet_hint: string;
       speech_rate: string;
     };
     ai_generation: {
@@ -798,6 +825,8 @@ export interface Translations {
       speech_failed: string;
       // 复习相关
       review_completed: string;
+      review_completed_desc: string;
+      review_title: string;
       review_close: string;
       review_progress: string;
       review_show_explanation: string;
@@ -836,6 +865,12 @@ export interface Translations {
       fetch_due_failed: string;
       update_status_failed: string;
       delete_failed_unknown: string;
+      ai_limit_reached: string;
+      ai_no_permission: string;
+      ai_unavailable: string;
+      filtering: string;
+      delete_partial_failed: string;
+      batch_delete_failed: string;
       batch_delete_partial_failed: string;
       batch_delete_retry: string;
       generation_details: string;
@@ -973,6 +1008,8 @@ const zh: Translations = {
     load_failed: '加载个人资料失败',
     loading: '加载中...',
     registered_at: '注册时间',
+    stats_card_title: '学习进度统计',
+    stats_card_desc: '查看你的能力雷达、练习活跃度和准确率趋势',
     recommend_refreshing: '正在为你生成个性化推荐...',
     recommend_refreshed: '已更新个性化推荐偏好，下次练习将自动生效。',
     recommend_refresh_failed: '推荐偏好刷新失败，将暂时使用旧的推荐结果。',
@@ -984,16 +1021,16 @@ const zh: Translations = {
       academic: '学术',
     },
     domains: {
-      business: '商务',
-      technology: '科技',
-      education: '教育',
-      healthcare: '医疗',
-      finance: '金融',
-      travel: '旅游',
-      entertainment: '娱乐',
-      sports: '体育',
-      news: '新闻',
-      lifestyle: '生活',
+      daily_life: '日常生活（作息、周末计划）',
+      family_relationships: '家庭与人际（家人、朋友、社交）',
+      food_and_restaurant: '饮食与餐厅（点餐、美食）',
+      shopping: '购物与消费（买东西、比价）',
+      travel_and_directions: '出行与问路（交通、旅游）',
+      school_campus: '学校与校园生活',
+      hobbies: '兴趣爱好（运动、娱乐、兴趣）',
+      work_parttime: '工作与打工（兼职、职场）',
+      romance: '恋爱与感情交流',
+      exam_study: '考试与学习 / 学术',
     },
     language_labels: {
       zh: '中文',
@@ -1145,6 +1182,19 @@ const zh: Translations = {
     login_failed: '登录失败',
     signup_failed: '注册失败',
     google_login_failed: 'Google 登录启动失败',
+    invitation_required: '需要邀请码',
+    invitation_code: '邀请码',
+    invitation_validating: '验证邀请码...',
+    maintenance_mode: '系统维护中',
+    maintenance_desc: '暂时无法注册，请稍后再试',
+    login_register_title: '登录 / 注册',
+    user_login: '用户登录',
+    invitation_register: '邀请注册',
+    only_way: '当前仅支持邀请注册',
+    password_placeholder: '请输入密码（至少6位）',
+    invitation_placeholder: '请输入邀请码',
+    processing: '正在处理...',
+    verify_register: '验证并注册',
   },
   shadowing: {
     title: 'Shadowing 跟读练习',
@@ -1157,6 +1207,7 @@ const zh: Translations = {
     ai_generate_desc: '使用 AI 生成更多适合你当前等级的练习内容',
     get_next_question: '获取下一题',
     loading: '加载中...',
+
     change_question: '换一题',
     vocab_mode_on: '退出选词模式',
     vocab_mode_off: '开启选词模式',
@@ -1313,6 +1364,17 @@ const zh: Translations = {
       l4: 'L4 - 中高级',
       l5: 'L5 - 高级',
     },
+    dialogue_types: {
+      all: '全部类型',
+      casual: '日常闲聊',
+      task: '任务导向',
+      emotion: '情感表达',
+      opinion: '观点讨论',
+      request: '请求建议',
+      roleplay: '角色扮演',
+      pattern: '句型操练',
+    },
+
     // Navigation and controls
     prev_step: '上一步',
     next_step: '下一步',
@@ -1569,6 +1631,8 @@ const zh: Translations = {
       search: '搜索',
       search_placeholder: '搜索生词或上下文...',
       reset: '重置',
+      mobile_filter_hint: '手机端可横向滑动查看更多列',
+      mobile_filter_sheet_hint: '筛选器功能将在移动端展开时显示',
       speech_rate: '🔊 语音速度',
     },
     ai_generation: {
@@ -1638,6 +1702,8 @@ const zh: Translations = {
       speech_failed: '语音播放失败，请重试',
       // 复习相关
       review_completed: '今日复习完成！',
+      review_completed_desc: '恭喜完成本次复习！',
+      review_title: '词汇复习',
       review_close: '关闭',
       review_progress: '进度 {current} / {total}',
       review_show_explanation: '显示解释 / 例句',
@@ -1676,6 +1742,12 @@ const zh: Translations = {
       fetch_due_failed: '获取到期生词失败',
       update_status_failed: '更新生词状态失败',
       delete_failed_unknown: '未知错误',
+      ai_limit_reached: 'AI 生成次数已达上限',
+      ai_no_permission: '没有权限使用 AI 生成功能',
+      ai_unavailable: 'AI 服务暂时不可用',
+      filtering: '筛选中...',
+      delete_partial_failed: '部分删除失败',
+      batch_delete_failed: '批量删除失败',
       batch_delete_partial_failed: '，但有 {count} 个生词删除失败，请重试',
       batch_delete_retry: '，失败 {count} 个',
       generation_details: '详情：',
@@ -1817,6 +1889,8 @@ const en: Translations = {
     load_failed: 'Failed to load profile',
     loading: 'Loading...',
     registered_at: 'Registered at',
+    stats_card_title: 'Learning Statistics',
+    stats_card_desc: 'View your ability radar, practice activity, and accuracy trends',
     recommend_refreshing: 'Generating personalized recommendations for you...',
     recommend_refreshed: 'Personalized recommendation preferences updated, will take effect in next practice.',
     recommend_refresh_failed: 'Recommendation preference refresh failed, will temporarily use old results.',
@@ -1828,16 +1902,16 @@ const en: Translations = {
       academic: 'Academic',
     },
     domains: {
-      business: 'Business',
-      technology: 'Technology',
-      education: 'Education',
-      healthcare: 'Healthcare',
-      finance: 'Finance',
-      travel: 'Travel',
-      entertainment: 'Entertainment',
-      sports: 'Sports',
-      news: 'News',
-      lifestyle: 'Lifestyle',
+      daily_life: 'Daily Life (Routine, Weekend Plans)',
+      family_relationships: 'Family & Relationships (Family, Friends, Social)',
+      food_and_restaurant: 'Food & Dining (Ordering, Cuisine)',
+      shopping: 'Shopping & Consumption (Buying, Price Comparison)',
+      travel_and_directions: 'Travel & Directions (Transport, Tourism)',
+      school_campus: 'School & Campus Life',
+      hobbies: 'Hobbies (Sports, Entertainment, Interests)',
+      work_parttime: 'Work & Part-time (Jobs, Workplace)',
+      romance: 'Romance & Relationships',
+      exam_study: 'Exams & Study / Academic',
     },
     language_labels: {
       zh: 'Chinese',
@@ -1990,6 +2064,19 @@ const en: Translations = {
     login_failed: 'Login failed',
     signup_failed: 'Registration failed',
     google_login_failed: 'Google login initiation failed',
+    invitation_required: 'Invitation Required',
+    invitation_code: 'Invitation Code',
+    invitation_validating: 'Validating invitation code...',
+    maintenance_mode: 'Maintenance Mode',
+    maintenance_desc: 'Registration is temporarily unavailable, please try again later',
+    login_register_title: 'Login / Register',
+    user_login: 'User Login',
+    invitation_register: 'Invitation Register',
+    only_way: 'Only invitation registration is supported currently',
+    password_placeholder: 'Enter password (min 6 chars)',
+    invitation_placeholder: 'Enter invitation code',
+    processing: 'Processing...',
+    verify_register: 'Verify & Register',
   },
   shadowing: {
     title: 'Shadowing Practice',
@@ -2002,6 +2089,7 @@ const en: Translations = {
     ai_generate_desc: 'Use AI to generate more practice content suitable for your current level',
     get_next_question: 'Get Next Question',
     loading: 'Loading...',
+
     change_question: 'Change Question',
     vocab_mode_on: 'Exit Word Selection Mode',
     vocab_mode_off: 'Enable Word Selection Mode',
@@ -2162,6 +2250,17 @@ const en: Translations = {
       l4: 'L4 - Upper-Intermediate',
       l5: 'L5 - Advanced',
     },
+    dialogue_types: {
+      all: 'All Types',
+      casual: 'Casual Chat',
+      task: 'Task Oriented',
+      emotion: 'Emotion Expression',
+      opinion: 'Opinion Discussion',
+      request: 'Request & Advice',
+      roleplay: 'Role Play',
+      pattern: 'Pattern Drill',
+    },
+
     // Navigation and controls
     prev_step: 'Previous',
     next_step: 'Next',
@@ -2419,6 +2518,8 @@ const en: Translations = {
       search: 'Search',
       search_placeholder: 'Search words or context...',
       reset: 'Reset',
+      mobile_filter_hint: 'Swipe horizontally to see more columns on mobile',
+      mobile_filter_sheet_hint: 'Filter functions will be shown when expanded on mobile',
       speech_rate: '🔊 Speech Rate',
     },
     ai_generation: {
@@ -2489,6 +2590,8 @@ const en: Translations = {
       speech_failed: 'Speech playback failed, please try again',
       // 复习相关
       review_completed: 'Today\'s review completed!',
+      review_completed_desc: 'Congratulations on completing this review!',
+      review_title: 'Vocabulary Review',
       review_close: 'Close',
       review_progress: 'Progress {current} / {total}',
       review_show_explanation: 'Show explanation / examples',
@@ -2527,6 +2630,12 @@ const en: Translations = {
       fetch_due_failed: 'Failed to fetch due words',
       update_status_failed: 'Failed to update word status',
       delete_failed_unknown: 'Unknown error',
+      ai_limit_reached: 'AI generation limit reached',
+      ai_no_permission: 'No permission to use AI generation',
+      ai_unavailable: 'AI service temporarily unavailable',
+      filtering: 'Filtering...',
+      delete_partial_failed: 'Partial delete failed',
+      batch_delete_failed: 'Batch delete failed',
       batch_delete_partial_failed: ', but {count} words failed to delete, please retry',
       batch_delete_retry: ', failed {count}',
       generation_details: 'Details: ',
@@ -2665,6 +2774,8 @@ const ja: Translations = {
     load_failed: 'プロフィールの読み込みに失敗しました',
     loading: '読み込み中...',
     registered_at: '登録日時',
+    stats_card_title: '学習進捗統計',
+    stats_card_desc: '能力レーダー、練習活動、正解率の傾向を確認',
     recommend_refreshing: 'パーソナライズされたおすすめを生成中...',
     recommend_refreshed: 'パーソナライズされたおすすめ設定を更新しました。次回の練習から有効になります。',
     recommend_refresh_failed: 'おすすめ設定の更新に失敗しました。暫定的に古い結果を使用します。',
@@ -2676,16 +2787,16 @@ const ja: Translations = {
       academic: 'アカデミック',
     },
     domains: {
-      business: 'ビジネス',
-      technology: 'テクノロジー',
-      education: '教育',
-      healthcare: '医療',
-      finance: '金融',
-      travel: '旅行',
-      entertainment: 'エンタメ',
-      sports: 'スポーツ',
-      news: 'ニュース',
-      lifestyle: 'ライフスタイル',
+      daily_life: '日常生活（生活習慣、週末の予定）',
+      family_relationships: '家族と人間関係（家族、友人、社交）',
+      food_and_restaurant: '食事とレストラン（注文、グルメ）',
+      shopping: '買い物と消費（購入、価格比較）',
+      travel_and_directions: '旅行と道案内（交通、観光）',
+      school_campus: '学校とキャンパスライフ',
+      hobbies: '趣味（スポーツ、娯楽、興味）',
+      work_parttime: '仕事とアルバイト（パート、職場）',
+      romance: '恋愛と感情表現',
+      exam_study: '試験と学習 / 学術',
     },
     language_labels: {
       zh: '中国語',
@@ -2838,6 +2949,19 @@ const ja: Translations = {
     login_failed: 'ログイン失敗',
     signup_failed: '登録失敗',
     google_login_failed: 'Googleログインの開始に失敗しました',
+    invitation_required: '招待コードが必要です',
+    invitation_code: '招待コード',
+    invitation_validating: '招待コードを確認中...',
+    maintenance_mode: 'メンテナンス中',
+    maintenance_desc: '現在登録できません。後でもう一度お試しください',
+    login_register_title: 'ログイン / 登録',
+    user_login: 'ユーザーログイン',
+    invitation_register: '招待登録',
+    only_way: '現在、招待登録のみサポートされています',
+    password_placeholder: 'パスワードを入力（6文字以上）',
+    invitation_placeholder: '招待コードを入力',
+    processing: '処理中...',
+    verify_register: '確認して登録',
   },
   shadowing: {
     title: 'シャドーイング練習',
@@ -2850,6 +2974,7 @@ const ja: Translations = {
     ai_generate_desc: 'AIを使用して現在のレベルに適した練習コンテンツを生成',
     get_next_question: '次の問題を取得',
     loading: '読み込み中...',
+
     change_question: '問題を変更',
     vocab_mode_on: '単語選択モードを終了',
     vocab_mode_off: '単語選択モードを有効化',
@@ -3008,6 +3133,17 @@ const ja: Translations = {
       l4: 'L4 - 中上級',
       l5: 'L5 - 上級',
     },
+    dialogue_types: {
+      all: '全タイプ',
+      casual: '日常会話',
+      task: 'タスク指向',
+      emotion: '感情表現',
+      opinion: '意見交換',
+      request: '依頼・助言',
+      roleplay: 'ロールプレイ',
+      pattern: '文型練習',
+    },
+
     // Navigation and controls
     prev_step: '前へ',
     next_step: '次へ',
@@ -3265,6 +3401,8 @@ const ja: Translations = {
       search: '検索',
       search_placeholder: '単語や文脈を検索...',
       reset: 'リセット',
+      mobile_filter_hint: 'モバイルでは横にスワイプして詳細を表示',
+      mobile_filter_sheet_hint: 'フィルター機能はモバイルで展開時に表示されます',
       speech_rate: '🔊 音声速度',
     },
     ai_generation: {
@@ -3335,6 +3473,8 @@ const ja: Translations = {
       speech_failed: '音声再生に失敗しました、再試行してください',
       // 复习相关
       review_completed: '今日の復習完了！',
+      review_completed_desc: '今回の復習が完了しました！',
+      review_title: '単語復習',
       review_close: '閉じる',
       review_progress: '進捗 {current} / {total}',
       review_show_explanation: '説明 / 例文を表示',
@@ -3373,6 +3513,12 @@ const ja: Translations = {
       fetch_due_failed: '期限切れ単語の取得に失敗',
       update_status_failed: '単語ステータスの更新に失敗',
       delete_failed_unknown: '不明なエラー',
+      ai_limit_reached: 'AI生成制限に達しました',
+      ai_no_permission: 'AI生成機能を使用する権限がありません',
+      ai_unavailable: 'AIサービスは一時的に利用できません',
+      filtering: 'フィルタリング中...',
+      delete_partial_failed: '一部の削除に失敗しました',
+      batch_delete_failed: '一括削除に失敗しました',
       batch_delete_partial_failed: '、ただし{count}語の削除に失敗、再試行してください',
       batch_delete_retry: '、{count}語失敗',
       generation_details: '詳細：',
