@@ -156,18 +156,44 @@ export async function GET(req: NextRequest) {
       // 调用优化的数据库函数（使用 JOIN 和聚合，单次查询）
       // 传递权限参数以在数据库层面完成过滤，确保分页正确
       // practiced 参数已规范化为 'true', 'false', 或 null
-      const { data: rawItems, error } = await supabase.rpc('get_shadowing_catalog', {
-        p_user_id: user.id,
-        p_lang: lang || null,
-        p_level: level ? parseInt(level) : null,
-        p_practiced: practiced, // already normalized to 'true', 'false', or null
-        p_limit: limit || 100,
-        p_offset: offset || 0,
-        p_since: since || null,
-        p_allowed_languages: lang ? null : permissions.allowed_languages,
-        p_allowed_levels: level ? null : permissions.allowed_levels,
-        p_dialogue_type: dialogue_type || null,
-      });
+      const callCatalog = async (includeDialogueType: boolean) => {
+        const payload: Record<string, unknown> = {
+          p_user_id: user.id,
+          p_lang: lang || null,
+          p_level: level ? parseInt(level) : null,
+          p_practiced: practiced, // already normalized to 'true', 'false', or null
+          p_limit: limit || 100,
+          p_offset: offset || 0,
+          p_since: since || null,
+          p_allowed_languages: lang ? null : permissions.allowed_languages,
+          p_allowed_levels: level ? null : permissions.allowed_levels,
+        };
+
+        // 新版函数支持 dialogue_type；旧版（线上可能未更新）不接受该参数
+        if (includeDialogueType) {
+          payload.p_dialogue_type = dialogue_type || null;
+        }
+
+        return supabase.rpc('get_shadowing_catalog', payload);
+      };
+
+      const needsDialogueTypeFallback = (err: any) => {
+        if (!err) return false;
+        const msg = String(err.message || '').toLowerCase();
+        // 常见报错：Unexpected param: p_dialogue_type / function ... does not exist
+        return msg.includes('p_dialogue_type') || msg.includes('unexpected param') || msg.includes('does not exist');
+      };
+
+      // 优先尝试新版（含 dialogue_type），失败时降级调用旧版，避免线上旧函数签名导致 500
+      let { data: rawItems, error } = await callCatalog(true);
+      if (error && needsDialogueTypeFallback(error)) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('get_shadowing_catalog without dialogue_type fallback triggered:', error.message);
+        }
+        const retry = await callCatalog(false);
+        rawItems = retry.data;
+        error = retry.error;
+      }
 
       if (process.env.NODE_ENV !== 'production') {
         console.log('Optimized query result:', {
@@ -328,4 +354,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
