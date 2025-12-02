@@ -1,6 +1,18 @@
 -- Ensure extension for UUID if needed
 create extension if not exists pgcrypto;
 
+-- Ensure user_api_limits table exists
+create table if not exists public.user_api_limits (
+  id uuid default gen_random_uuid() not null primary key,
+  user_id uuid not null,
+  limit_type text not null,
+  count integer default 0,
+  max_limit integer default 50,
+  reset_at timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 -- 1) De-duplicate existing rows by user_id, keep the latest (highest updated_at, then created_at)
 with ranked as (
   select id, user_id, row_number() over (
