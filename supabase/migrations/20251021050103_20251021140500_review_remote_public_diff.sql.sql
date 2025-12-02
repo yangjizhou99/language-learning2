@@ -1,9 +1,9 @@
 -- REVIEW: Potentially breaks automatic updated_at for shadowing_items; keep disabled until confirmed
 -- drop trigger if exists "shadowing_items_set_updated_at" on "public"."shadowing_items";
 
-drop policy "profiles_select_own" on "public"."profiles";
+drop policy if exists "profiles_select_own" on "public"."profiles";
 
-drop policy "profiles_update_own" on "public"."profiles";
+drop policy if exists "profiles_update_own" on "public"."profiles";
 
 -- en_phoneme_units table may not exist in remote database, skipping permissions revoke
 -- revoke delete on table "public"."en_phoneme_units" from "anon";
