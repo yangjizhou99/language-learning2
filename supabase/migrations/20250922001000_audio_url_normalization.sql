@@ -1,4 +1,19 @@
-BEGIN;
+-- Ensure shadowing_items table exists before altering
+CREATE TABLE IF NOT EXISTS public.shadowing_items (
+    id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+    title text NOT NULL,
+    text text NOT NULL,
+    audio_url text,
+    lang text NOT NULL,
+    level integer NOT NULL,
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now(),
+    created_by uuid,
+    is_public boolean DEFAULT false,
+    notes jsonb DEFAULT '{}'::jsonb,
+    audio_bucket text,
+    audio_path text
+);
 
 -- 1) 规范化字段：为音频存储增加 bucket 与 path
 ALTER TABLE public.shadowing_items

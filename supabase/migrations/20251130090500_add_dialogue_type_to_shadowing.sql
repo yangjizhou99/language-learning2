@@ -42,10 +42,10 @@ SET dialogue_type = 'casual'
 WHERE dialogue_type IS NULL
   AND genre = 'dialogue';
 
-UPDATE public.shadowing_drafts
-SET dialogue_type = 'casual'
-WHERE dialogue_type IS NULL
-  AND genre = 'dialogue';
+-- UPDATE public.shadowing_drafts
+-- SET dialogue_type = 'casual'
+-- WHERE dialogue_type IS NULL
+--   AND genre = 'dialogue';
 
 UPDATE public.shadowing_items
 SET dialogue_type = 'casual'

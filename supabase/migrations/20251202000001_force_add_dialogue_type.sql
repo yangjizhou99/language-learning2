@@ -20,9 +20,9 @@ DO $$ BEGIN
         ALTER TABLE public.shadowing_subtopics ADD COLUMN dialogue_type public.dialogue_type_enum;
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'shadowing_drafts' AND column_name = 'dialogue_type') THEN
-        ALTER TABLE public.shadowing_drafts ADD COLUMN dialogue_type public.dialogue_type_enum;
-    END IF;
+    -- IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'shadowing_drafts' AND column_name = 'dialogue_type') THEN
+    --     ALTER TABLE public.shadowing_drafts ADD COLUMN dialogue_type public.dialogue_type_enum;
+    -- END IF;
 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'shadowing_items' AND column_name = 'dialogue_type') THEN
         ALTER TABLE public.shadowing_items ADD COLUMN dialogue_type public.dialogue_type_enum;

@@ -16,9 +16,9 @@ ALTER TABLE public.shadowing_subtopics
     USING dialogue_type::public.dialogue_type_enum;
 
 -- Alter drafts
-ALTER TABLE public.shadowing_drafts 
-    ALTER COLUMN dialogue_type TYPE public.dialogue_type_enum 
-    USING dialogue_type::public.dialogue_type_enum;
+-- ALTER TABLE public.shadowing_drafts 
+--     ALTER COLUMN dialogue_type TYPE public.dialogue_type_enum 
+--     USING dialogue_type::public.dialogue_type_enum;
 
 -- Alter items
 ALTER TABLE public.shadowing_items 

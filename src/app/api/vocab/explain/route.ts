@@ -142,6 +142,7 @@ export async function POST(request: NextRequest) {
 1. 解释部分用${nativeLangNames[native_lang]}（用户的母语）
 2. 例句部分用生词本身的语言（如日语词用日语例句，英语词用英语例句）
 3. 例句的翻译/说明用${nativeLangNames[native_lang]}
+4. 必须评估该词的 CEFR 难度等级（A1, A2, B1, B2, C1, C2）
 
 具体要求：
 - 词性: 用${nativeLangNames[native_lang]}表示
@@ -151,23 +152,27 @@ export async function POST(request: NextRequest) {
 - 搭配: 用生词的原语言
 - 发音: 韩语词必须使用罗马音（如 jeo-nyeok），不要使用韩文字母
 - 发音: 日语词的发音必须使用全平假名（ひらがな），不得包含罗马字、空格或连字符；若为片假名请转换为平假名。
+- CEFR: 评估该词在当前上下文中的难度等级
 
 示例说明：
 如果生词是日语"尽力"：
 ✅ gloss_native: "努力做到最好，竭尽全力"（中文解释）
 ✅ example_target: "私はこの問題を解決するために尽力します"（日语例句）
 ✅ example_native: "我会尽力解决这个问题"（中文翻译/说明）
+✅ cefr: "B2"
 
 如果生词是英语"effort"：
 ✅ gloss_native: "努力，尝试"（中文解释）
 ✅ example_target: "I will make every effort to solve this problem"（英语例句）
 ✅ example_native: "我会尽一切努力解决这个问题"（中文翻译/说明）
+✅ cefr: "B1"
 
 如果生词是韩语"저녁"：
 ✅ pronunciation: "jeo-nyeok"（罗马音，不是韩文字母）
 ✅ gloss_native: "傍晚；晚餐"（中文解释）
 ✅ example_target: "오늘 저녁 맛있네요"（韩语例句）
 ✅ example_native: "今天的晚餐真好吃"（中文翻译/说明）
+✅ cefr: "A1"
 
 JSON格式要求：
 
@@ -175,6 +180,7 @@ JSON格式要求：
   "pos": "词性（${nativeLangNames[native_lang]}）",
   "pronunciation": "发音（韩语用罗马音；日语用全平假名、不可含空格/连字符/罗马字；其他语言用合适的本地记音）", 
   "gloss_native": "${nativeLangNames[native_lang]}解释",
+  "cefr": "A1/A2/B1/B2/C1/C2",
   "senses": [
     {
       "example_target": "生词原语言的例句",
@@ -189,14 +195,14 @@ JSON格式要求：
 
 生词列表：
 ${entries
-  .map(
-    (entry: any) => `
+        .map(
+          (entry: any) => `
 词条: ${entry.term}
 语言: ${targetLangNames[entry.lang as keyof typeof targetLangNames]}
 上下文: ${entry.context || '无'}
 `,
-  )
-  .join('\n')}
+        )
+        .join('\n')}
 
 ⚠️ 最终提醒：
 - 确保所有 gloss_native 都是${nativeLangNames[native_lang]}（解释用母语）
@@ -205,6 +211,7 @@ ${entries
 - 确保 collocations 用生词的原语言
 - 确保韩语词的 pronunciation 使用罗马音（如 jeo-nyeok），不要使用韩文字母
  - 确保日语词的 pronunciation 仅使用平假名，不要使用片假名、空格、连字符或罗马字
+ - 确保 cefr 字段存在且为有效等级
 
 请返回JSON数组，每个元素对应一个词条的解释。`;
 
@@ -240,10 +247,16 @@ ${entries
     if (!word_info && !word_info_batch) {
       const updatePromises = entries.map((entry: any, index: number) => {
         const explanation = explanations[index] || null;
+        const cefr = explanation?.cefr || null; // Extract CEFR
+
+        // Remove CEFR from explanation object if you don't want to store it in the JSON blob too, 
+        // but keeping it there is fine and maybe useful for frontend display.
+
         return supabase
           .from('vocab_entries')
           .update({
             explanation,
+            cefr, // Save CEFR to the new column
             updated_at: new Date().toISOString(),
           })
           .eq('id', entry.id)

@@ -36,6 +36,9 @@ export interface SentenceScore {
   missing: string[];
   extra: string[];
   alignmentResult?: AlignmentResult;
+  attempts?: number;
+  firstScore?: number;
+  bestScore?: number;
 }
 
 export interface UseSentencePracticeCoreOptions {
@@ -66,7 +69,7 @@ function stripSpeakerLabel(line: string): string {
 }
 
 function splitTextToSentences(text: string, language: LangCode): string[] {
-  const src = String(text || '');
+  const src = String(text || '').trim();
   if (!src.trim()) return [];
   const hasDialogue = /(?:^|\n)\s*[ABＡＢ]\s*[：:]/.test(src);
   if (hasDialogue) {
@@ -108,6 +111,8 @@ function tokenize(text: string, lang: LangCode): string[] {
   const removedPunct = cleaned.replace(/[，。,．．。！？!？、；：:“”"'‘’（）()\[\]【】《》〈〉…—\-·\s]/g, '');
   return removedPunct.split('').filter((c) => c.trim().length > 0);
 }
+
+// ... (lines 41-234 unchanged)
 
 export function useSentencePracticeCore({ originalText, language, sentenceTimeline, onPlaySentence, acuUnits, enabled = true, onScoreUpdate, externalScores }: UseSentencePracticeCoreOptions) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -239,27 +244,34 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
     const saidTokens = tokenize(spoken, language);
     const alignment = performAlignment(targetTokens, saidTokens, acuUnits, target.text);
     const score = calculateSimilarityScore(targetTokens, saidTokens, alignment);
-    setSentenceScores((prev) => ({
-      ...prev,
-      [index]: {
-        score,
-        finalText: spoken,
-        missing: alignment.missing.map((m) => m.expected || ''),
-        extra: alignment.extra.map((e) => e.actual),
-        alignmentResult: alignment,
-      },
-    }));
 
-    // Notify parent about the update
-    if (onScoreUpdate) {
-      onScoreUpdate(index, {
-        score,
+    setSentenceScores((prev) => {
+      const prevScore = prev[index];
+      const attempts = (prevScore?.attempts || 0) + 1;
+      const firstScore = prevScore?.firstScore !== undefined ? prevScore.firstScore : score;
+      const bestScore = Math.max(prevScore?.bestScore || 0, score);
+
+      const newScoreData = {
+        score, // Current score
         finalText: spoken,
         missing: alignment.missing.map((m) => m.expected || ''),
         extra: alignment.extra.map((e) => e.actual),
         alignmentResult: alignment,
-      });
-    }
+        attempts,
+        firstScore,
+        bestScore,
+      };
+
+      // Notify parent about the update
+      if (onScoreUpdate) {
+        onScoreUpdate(index, newScoreData);
+      }
+
+      return {
+        ...prev,
+        [index]: newScoreData,
+      };
+    });
   }, [language, sentences, acuUnits, onScoreUpdate]);
 
   const ensureMicReleased = useCallback(async (delayMs = 150) => {

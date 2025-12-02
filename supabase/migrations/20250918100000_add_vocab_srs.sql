@@ -1,3 +1,20 @@
+-- Ensure vocab_entries table exists before altering
+create table if not exists public.vocab_entries (
+  id uuid default gen_random_uuid() not null primary key,
+  user_id uuid not null,
+  term text not null,
+  lang text not null,
+  native_lang text not null,
+  source text not null,
+  source_id uuid,
+  context text,
+  tags text[],
+  status text default 'new',
+  explanation jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 -- Add SRS fields to vocab_entries for spaced repetition
 ALTER TABLE public.vocab_entries
   ADD COLUMN IF NOT EXISTS srs_due timestamptz DEFAULT now(),

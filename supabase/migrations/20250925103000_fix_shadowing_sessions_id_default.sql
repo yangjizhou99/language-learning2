@@ -1,3 +1,19 @@
+-- Ensure shadowing_sessions table exists
+create table if not exists public.shadowing_sessions (
+  id uuid default gen_random_uuid() not null primary key,
+  user_id uuid not null,
+  item_id uuid not null,
+  status text default 'draft',
+  recordings jsonb default '[]'::jsonb,
+  vocab_entry_ids uuid[] default '{}'::uuid[],
+  picked_preview jsonb default '[]'::jsonb,
+  notes jsonb default '{}'::jsonb,
+  imported_vocab_ids uuid[] default '{}'::uuid[],
+  self_difficulty text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 -- Ensure pgcrypto for gen_random_uuid
 create extension if not exists pgcrypto;
 

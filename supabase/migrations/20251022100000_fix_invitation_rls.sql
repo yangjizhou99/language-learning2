@@ -48,22 +48,22 @@ create policy invitation_codes_creator_insert on public.invitation_codes
   with check (created_by = auth.uid());
 
 -- 删除现有的邀请码使用记录RLS策略
-drop policy if exists invitation_uses_admin_select on public.invitation_uses;
-drop policy if exists invitation_uses_user_select on public.invitation_uses;
-drop policy if exists invitation_uses_insert on public.invitation_uses;
+-- drop policy if exists invitation_uses_admin_select on public.invitation_uses;
+-- drop policy if exists invitation_uses_user_select on public.invitation_uses;
+-- drop policy if exists invitation_uses_insert on public.invitation_uses;
 
 -- 重新创建邀请码使用记录RLS策略
 -- 管理员可以查看所有使用记录
-create policy invitation_uses_admin_select on public.invitation_uses
-  for select to authenticated
-  using (public.is_admin());
+-- create policy invitation_uses_admin_select on public.invitation_uses
+--   for select to authenticated
+--   using (public.is_admin());
 
 -- 用户可以查看自己的使用记录
-create policy invitation_uses_user_select on public.invitation_uses
-  for select to authenticated
-  using (used_by = auth.uid());
+-- create policy invitation_uses_user_select on public.invitation_uses
+--   for select to authenticated
+--   using (used_by = auth.uid());
 
 -- 系统可以创建使用记录（通过API）
-create policy invitation_uses_insert on public.invitation_uses
-  for insert to authenticated
-  with check (true);
+-- create policy invitation_uses_insert on public.invitation_uses
+--   for insert to authenticated
+--   with check (true);

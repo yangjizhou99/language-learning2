@@ -346,6 +346,13 @@ export interface Translations {
     import_failed: string;
     practice_saved: string;
     save_failed: string;
+    // Difficulty Rating
+    difficulty_rating_title: string;
+    difficulty_rating_desc: string;
+    difficulty_too_easy: string;
+    difficulty_just_right: string;
+    difficulty_bit_hard: string;
+    difficulty_too_hard: string;
     // 新增的翻译内容
     filter: string;
     language: string;
@@ -1184,6 +1191,13 @@ const zh: Translations = {
     import_failed: '导入失败：{error}',
     practice_saved: '练习已保存',
     save_failed: '保存失败',
+    // Difficulty Rating
+    difficulty_rating_title: '觉得这个练习怎么样？',
+    difficulty_rating_desc: '您的反馈将帮助我们为您推荐更合适的内容',
+    difficulty_too_easy: '太简单了',
+    difficulty_just_right: '刚刚好',
+    difficulty_bit_hard: '有点难',
+    difficulty_too_hard: '太难了',
     // 新增的翻译内容
     filter: '筛选',
     language: '语言',
@@ -2021,6 +2035,13 @@ const en: Translations = {
     import_failed: 'Import failed: {error}',
     practice_saved: 'Practice saved',
     save_failed: 'Save failed',
+    // Difficulty Rating
+    difficulty_rating_title: 'How was this practice?',
+    difficulty_rating_desc: 'Your feedback helps us recommend better content for you',
+    difficulty_too_easy: 'Too Easy',
+    difficulty_just_right: 'Just Right',
+    difficulty_bit_hard: 'A Bit Hard',
+    difficulty_too_hard: 'Too Hard',
     // 新增的翻译内容
     filter: 'Filter',
     language: 'Language',
@@ -2862,6 +2883,13 @@ const ja: Translations = {
     import_failed: 'インポート失敗：{error}',
     practice_saved: '練習が保存されました',
     save_failed: '保存に失敗しました',
+    // Difficulty Rating
+    difficulty_rating_title: 'この練習はいかがでしたか？',
+    difficulty_rating_desc: 'フィードバックは、より適切なコンテンツを推奨するのに役立ちます',
+    difficulty_too_easy: '簡単すぎる',
+    difficulty_just_right: 'ちょうどいい',
+    difficulty_bit_hard: '少し難しい',
+    difficulty_too_hard: '難しすぎる',
     // 新增的翻译内容
     filter: 'フィルター',
     language: '言語',

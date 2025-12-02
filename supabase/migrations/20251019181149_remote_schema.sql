@@ -1,3 +1,4 @@
+/*
 revoke delete on table "public"."minimal_pairs" from "anon";
 
 revoke insert on table "public"."minimal_pairs" from "anon";
@@ -467,6 +468,7 @@ drop index if exists "public"."en_phoneme_units_symbol_key";
 -- 保留 en_phoneme_units / ja_phoneme_units，为发音系统提供支撑
 -- drop table "public"."en_phoneme_units";
 -- drop table "public"."ja_phoneme_units";
+*/
 
 set check_function_bodies = off;
 
@@ -713,4 +715,3 @@ AS $function$
     END;
     $function$
 ;
-

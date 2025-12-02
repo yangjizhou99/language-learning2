@@ -1,0 +1,234 @@
+import { ThemePreference } from './preferences';
+
+// --- Types ---
+
+export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+// Simplified for internal logic if needed, but keeping full CEFR is better for future proofing
+// For the "A1_A2" style in the prompt, we can map:
+export type BroadCEFR = 'A1_A2' | 'B1_B2' | 'C1_plus';
+
+export interface UserAbilityState {
+    userId: string;
+    level: number; // 1.0 ~ 6.0
+    vocabUnknownRate: Record<BroadCEFR, number>;
+    exploreConfig: {
+        mainRatio: number;
+        downRatio: number;
+        upRatio: number;
+    };
+}
+
+export interface ShadowingItemMetadata {
+    id: string;
+    level: number; // 1.0 ~ 6.0
+    lexProfile: Record<BroadCEFR, number>;
+}
+
+export type SelfDifficulty = 'too_easy' | 'just_right' | 'a_bit_hard' | 'too_hard';
+
+export interface SentencePracticeRecord {
+    sentenceId: string;
+    firstScore: number;
+    bestScore: number;
+    attempts: number;
+}
+
+export interface UserShadowingSession {
+    userId: string;
+    itemId: string;
+    itemLevel: number;
+    sentences: SentencePracticeRecord[];
+    totalTimeSec: number;
+    selfDifficulty?: SelfDifficulty;
+    newWords: {
+        word: string;
+        cefrLevel?: string; // Raw CEFR from DB/AI
+    }[];
+    itemLexProfile?: Record<BroadCEFR, number>; // Passed from item metadata for calculation
+}
+
+// --- Constants & Helpers ---
+
+function mapToBroadCEFR(level: string | undefined): BroadCEFR {
+    if (!level) return 'B1_B2'; // Default fallback
+    const l = level.toUpperCase();
+    if (l.includes('A1') || l.includes('A2')) return 'A1_A2';
+    if (l.includes('B1') || l.includes('B2')) return 'B1_B2';
+    if (l.includes('C1') || l.includes('C2')) return 'C1_plus';
+    return 'B1_B2';
+}
+
+function average(numbers: number[]): number {
+    if (numbers.length === 0) return 0;
+    return numbers.reduce((a, b) => a + b, 0) / numbers.length;
+}
+
+// --- Core Logic: Session Analysis ---
+
+export function calculateSessionSkill(session: UserShadowingSession, totalTokens: number): number {
+    // 1. Pronunciation / Accuracy (First Attempt)
+    const avgFirstScore = average(session.sentences.map((s) => s.firstScore / 100)); // Assuming score is 0-100
+
+    // 2. Attempts Penalty
+    const avgAttempts = average(session.sentences.map((s) => s.attempts));
+    // attempts = 1 -> 1.0, attempts = 3 -> 0.7, attempts >= 5 -> 0.6
+    const attemptsFactor = Math.max(0.6, 1 - 0.15 * (avgAttempts - 1));
+
+    // 3. Subjective Difficulty
+    let selfFactor = 1.0;
+    switch (session.selfDifficulty) {
+        case 'too_easy':
+            selfFactor = 1.1;
+            break;
+        case 'just_right':
+            selfFactor = 1.0;
+            break;
+        case 'a_bit_hard':
+            selfFactor = 0.95;
+            break;
+        case 'too_hard':
+            selfFactor = 0.8;
+            break;
+    }
+
+    // 4. New Word Ratio
+    // If totalTokens is not provided, we might skip this or estimate
+    let newWordFactor = 1.0;
+    if (totalTokens > 0) {
+        const newWordRatio = session.newWords.length / totalTokens;
+        if (newWordRatio < 0.03) {
+            newWordFactor = 0.9; // Too easy vocab-wise
+        } else if (newWordRatio <= 0.25) {
+            newWordFactor = 1.05; // Sweet spot
+        } else {
+            newWordFactor = 0.8; // Too many new words
+        }
+    }
+
+    // Synthesize
+    // Base skill is heavily weighted by actual performance (avgFirstScore)
+    // But adjusted by how much effort it took (attempts) and subjective feeling
+    return avgFirstScore * attemptsFactor * selfFactor * newWordFactor;
+}
+
+// --- Core Logic: State Update ---
+
+export function updateAbilityLevel(
+    currentLevel: number,
+    itemLevel: number,
+    sessionSkill: number
+): number {
+    const step = 0.08;
+    let newLevel = currentLevel;
+
+    // Only update if the item wasn't ridiculously easy (prevent farming low level items)
+    if (itemLevel >= currentLevel - 0.5) {
+        if (sessionSkill > 0.9) {
+            // Performed well on a relevant item
+            newLevel += step;
+        } else if (sessionSkill < 0.5) {
+            // Performed poorly
+            newLevel -= step;
+        }
+    }
+
+    // Clamp
+    return Math.max(1.0, Math.min(6.0, newLevel));
+}
+
+export function updateVocabUnknownRate(
+    currentRate: Record<BroadCEFR, number>,
+    session: UserShadowingSession,
+    totalTokens: number
+): Record<BroadCEFR, number> {
+    if (!session.itemLexProfile || totalTokens === 0) return currentRate;
+
+    const alpha = 0.2; // Learning rate
+    const newCounts: Record<BroadCEFR, number> = { A1_A2: 0, B1_B2: 0, C1_plus: 0 };
+
+    session.newWords.forEach((w) => {
+        const broad = mapToBroadCEFR(w.cefrLevel);
+        newCounts[broad]++;
+    });
+
+    const nextRate = { ...currentRate };
+    const levels: BroadCEFR[] = ['A1_A2', 'B1_B2', 'C1_plus'];
+
+    levels.forEach((level) => {
+        const levelTokenCount = totalTokens * (session.itemLexProfile![level] || 0);
+        if (levelTokenCount > 5) { // Only update if there's enough data points in this text
+            const observedRate = newCounts[level] / levelTokenCount;
+            // Exponential moving average
+            nextRate[level] = (1 - alpha) * (currentRate[level] || 0) + alpha * observedRate;
+        }
+    });
+
+    return nextRate;
+}
+
+// --- Core Logic: Recommendation Scoring ---
+
+export function calculateDifficultyScore(
+    user: UserAbilityState,
+    item: ShadowingItemMetadata,
+    targetBand: 'down' | 'main' | 'up'
+): number {
+    const levelScore = computeLevelMatch(user.level, item.level, targetBand);
+    const lexScore = computeLexMatch(user.vocabUnknownRate, item.lexProfile);
+
+    // Weighting: Level is primary, Lexical profile is secondary fine-tuning
+    return 0.7 * levelScore + 0.3 * lexScore;
+}
+
+function computeLevelMatch(
+    userLevel: number,
+    itemLevel: number,
+    band: 'down' | 'main' | 'up'
+): number {
+    const delta = itemLevel - userLevel;
+    let idealDelta = 0;
+
+    switch (band) {
+        case 'main':
+            idealDelta = 0.2; // Slightly challenging
+            break;
+        case 'down':
+            idealDelta = -0.5; // Easy / Review
+            break;
+        case 'up':
+            idealDelta = 0.6; // Hard / Explore
+            break;
+    }
+
+    const diff = Math.abs(delta - idealDelta);
+    // Score drops as we move away from ideal delta
+    // 1.0 at ideal, 0.0 at +/- 1.0 distance
+    let score = 1 - diff;
+    return Math.max(0, Math.min(1, score));
+}
+
+function computeLexMatch(
+    userUnknownRate: Record<BroadCEFR, number>,
+    itemLexProfile: Record<BroadCEFR, number>
+): number {
+    // Expected unknown ratio = sum(item_level_ratio * user_unknown_prob)
+    const expectedUnknownRatio =
+        (itemLexProfile.A1_A2 || 0) * (userUnknownRate.A1_A2 || 0) +
+        (itemLexProfile.B1_B2 || 0) * (userUnknownRate.B1_B2 || 0) +
+        (itemLexProfile.C1_plus || 0) * (userUnknownRate.C1_plus || 0);
+
+    // Sweet spot: 5% ~ 20% unknown words
+    if (expectedUnknownRatio < 0.02) return 0.5; // Too easy
+    if (expectedUnknownRatio > 0.30) return 0.4; // Too hard
+    if (expectedUnknownRatio >= 0.05 && expectedUnknownRatio <= 0.20) return 1.0; // Perfect
+    return 0.8; // Okay
+}
+
+export function pickTargetBand(user: UserAbilityState): 'down' | 'main' | 'up' {
+    const r = Math.random();
+    const { downRatio, mainRatio } = user.exploreConfig;
+
+    if (r < downRatio) return 'down';
+    if (r < downRatio + mainRatio) return 'main';
+    return 'up';
+}
