@@ -1,3 +1,41 @@
+-- Ensure shadowing_themes table exists
+CREATE TABLE IF NOT EXISTS public.shadowing_themes (
+  id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+  created_at timestamptz DEFAULT now(),
+  lang text NOT NULL,
+  level integer NOT NULL,
+  genre text NOT NULL,
+  dialogue_type text,
+  title text NOT NULL,
+  title_en text,
+  "desc" text,
+  coverage jsonb DEFAULT '[]'::jsonb,
+  ai_provider text,
+  ai_model text,
+  ai_usage jsonb DEFAULT '{}'::jsonb,
+  status text DEFAULT 'active',
+  created_by uuid
+);
+
+-- Ensure shadowing_subtopics table exists
+CREATE TABLE IF NOT EXISTS public.shadowing_subtopics (
+  id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
+  created_at timestamptz DEFAULT now(),
+  theme_id uuid NOT NULL REFERENCES public.shadowing_themes(id) ON DELETE CASCADE,
+  lang text NOT NULL,
+  level integer NOT NULL,
+  genre text NOT NULL,
+  dialogue_type text,
+  title text NOT NULL,
+  seed text,
+  one_line text,
+  ai_provider text,
+  ai_model text,
+  ai_usage jsonb DEFAULT '{}'::jsonb,
+  status text DEFAULT 'active',
+  created_by uuid
+);
+
 -- Rename columns for shadowing_subtopics to unify naming across languages (idempotent)
 DO $$
 BEGIN
