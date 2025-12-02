@@ -246,7 +246,7 @@ ALTER TABLE public.user_api_limits ADD COLUMN IF NOT EXISTS daily_cost_limit flo
 ALTER TABLE public.user_api_limits ADD COLUMN IF NOT EXISTS monthly_calls_limit int;
 ALTER TABLE public.user_api_limits ADD COLUMN IF NOT EXISTS monthly_tokens_limit int;
 ALTER TABLE public.user_api_limits ADD COLUMN IF NOT EXISTS monthly_cost_limit float;
-ALTER TABLE public.user_api_limits ALTER COLUMN limit_type DROP NOT NULL;
+ALTER TABLE public.user_api_limits ADD COLUMN IF NOT EXISTS limit_type text;
 
 ALTER TABLE public.api_limits ADD COLUMN IF NOT EXISTS daily_calls_limit int DEFAULT 0;
 ALTER TABLE public.api_limits ADD COLUMN IF NOT EXISTS daily_tokens_limit int DEFAULT 0;
