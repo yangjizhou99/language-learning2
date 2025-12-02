@@ -218,9 +218,9 @@ ALTER TABLE public.api_usage_logs ADD COLUMN IF NOT EXISTS cost float;
 ALTER TABLE public.api_usage_logs ADD COLUMN IF NOT EXISTS request_data jsonb;
 ALTER TABLE public.api_usage_logs ADD COLUMN IF NOT EXISTS response_data jsonb;
 ALTER TABLE public.api_usage_logs ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
-ALTER TABLE public.api_usage_logs ALTER COLUMN endpoint DROP NOT NULL;
-ALTER TABLE public.api_usage_logs ALTER COLUMN method DROP NOT NULL;
-ALTER TABLE public.api_usage_logs ALTER COLUMN status_code DROP NOT NULL;
+ALTER TABLE public.api_usage_logs ADD COLUMN IF NOT EXISTS endpoint text;
+ALTER TABLE public.api_usage_logs ADD COLUMN IF NOT EXISTS method text;
+ALTER TABLE public.api_usage_logs ADD COLUMN IF NOT EXISTS status_code int;
 
 ALTER TABLE public.shadowing_themes ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
 
