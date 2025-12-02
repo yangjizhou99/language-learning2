@@ -11,6 +11,7 @@ import {
     UserAbilityState,
     ShadowingItemMetadata,
 } from '@/lib/recommendation/difficulty';
+import { getUserPreferenceVectors } from '@/lib/recommendation/preferences';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -49,12 +50,17 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // 1. Fetch User Profile
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('ability_level, vocab_unknown_rate, explore_config')
-            .eq('id', user.id)
-            .single();
+        // 1. Fetch User Profile & Preferences
+        const [profileResult, prefs] = await Promise.all([
+            supabase
+                .from('profiles')
+                .select('ability_level, vocab_unknown_rate, explore_config')
+                .eq('id', user.id)
+                .single(),
+            getUserPreferenceVectors(user.id)
+        ]);
+
+        const { data: profile, error: profileError } = profileResult;
 
         if (profileError) {
             console.error('Error fetching profile:', profileError);
@@ -128,8 +134,19 @@ export async function GET(req: NextRequest) {
                 lexProfile: item.lex_profile || {},
             };
 
-            const score = calculateDifficultyScore(userState, metadata, band);
-            return { item, score, reason: `Band: ${band}, Score: ${score.toFixed(2)}` };
+            const difficultyScore = calculateDifficultyScore(userState, metadata, band);
+
+            // Interest Score (from theme preference)
+            const interestScore = prefs.themeMap.get(item.theme_id || '') || 0;
+
+            // Final Score: 60% Interest + 40% Difficulty
+            const finalScore = 0.6 * interestScore + 0.4 * difficultyScore;
+
+            return {
+                item,
+                score: finalScore,
+                reason: `Band: ${band}, Interest: ${interestScore.toFixed(2)}, Difficulty: ${difficultyScore.toFixed(2)}`
+            };
         });
 
         // 5. Sort and Return
