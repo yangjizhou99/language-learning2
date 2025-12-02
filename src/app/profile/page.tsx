@@ -46,27 +46,7 @@ const LANGUAGES = [
   { value: 'ru', label: 'Русский' },
 ];
 
-const TONE_OPTIONS = [
-  { value: 'formal', label: '正式' },
-  { value: 'casual', label: '随意' },
-  { value: 'professional', label: '专业' },
-  { value: 'friendly', label: '友好' },
-  { value: 'academic', label: '学术' },
-];
 
-// 学习场景 / 话题领域选项（与 shadowing_themes 更贴近）
-const DOMAIN_OPTIONS = [
-  { value: 'daily_life', label: '日常生活（作息、周末计划）' },
-  { value: 'family_relationships', label: '家庭与人际（家人、朋友、社交）' },
-  { value: 'food_and_restaurant', label: '饮食与餐厅（点餐、美食）' },
-  { value: 'shopping', label: '购物与消费（买东西、比价）' },
-  { value: 'travel_and_directions', label: '出行与问路（交通、旅游）' },
-  { value: 'school_campus', label: '学校与校园生活' },
-  { value: 'hobbies', label: '兴趣爱好（运动、娱乐、兴趣）' },
-  { value: 'work_parttime', label: '工作与打工（兼职、职场）' },
-  { value: 'romance', label: '恋爱与感情交流' },
-  { value: 'exam_study', label: '考试与学习 / 学术' },
-];
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -75,6 +55,27 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const t = useTranslation();
   const { language } = useLanguage();
+
+  const TONE_OPTIONS = [
+    { value: 'formal', label: t.profile.tones.formal },
+    { value: 'casual', label: t.profile.tones.casual },
+    { value: 'professional', label: t.profile.tones.professional },
+    { value: 'friendly', label: t.profile.tones.friendly },
+    { value: 'academic', label: t.profile.tones.academic },
+  ];
+
+  const DOMAIN_OPTIONS = [
+    { value: 'daily_life', label: t.profile.domains.daily_life },
+    { value: 'family_relationships', label: t.profile.domains.family_relationships },
+    { value: 'food_and_restaurant', label: t.profile.domains.food_and_restaurant },
+    { value: 'shopping', label: t.profile.domains.shopping },
+    { value: 'travel_and_directions', label: t.profile.domains.travel_and_directions },
+    { value: 'school_campus', label: t.profile.domains.school_campus },
+    { value: 'hobbies', label: t.profile.domains.hobbies },
+    { value: 'work_parttime', label: t.profile.domains.work_parttime },
+    { value: 'romance', label: t.profile.domains.romance },
+    { value: 'exam_study', label: t.profile.domains.exam_study },
+  ];
 
   // 请求中止控制器
   const abortRef = useRef<AbortController | null>(null);
@@ -414,8 +415,8 @@ export default function ProfilePage() {
                   <TrendingUp className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg text-gray-900">学习进度统计</h3>
-                  <p className="text-sm text-gray-600">查看你的能力雷达、练习活跃度和准确率趋势</p>
+                  <h3 className="font-semibold text-lg text-gray-900">{t.profile.stats_card_title}</h3>
+                  <p className="text-sm text-gray-600">{t.profile.stats_card_desc}</p>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-gray-400" />

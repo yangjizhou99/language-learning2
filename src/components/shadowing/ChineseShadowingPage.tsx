@@ -95,6 +95,7 @@ import {
   Sparkles,
   Target,
   FileEdit,
+  ArrowUpDown,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCached, setCached } from '@/lib/clientCache';
@@ -580,14 +581,14 @@ export default function ShadowingPage() {
   ];
 
   const DIALOGUE_TYPE_OPTIONS = [
-    { value: 'all', label: '全部类型' },
-    { value: 'casual', label: '日常闲聊' },
-    { value: 'task', label: '任务导向' },
-    { value: 'emotion', label: '情感表达' },
-    { value: 'opinion', label: '观点讨论' },
-    { value: 'request', label: '请求建议' },
-    { value: 'roleplay', label: '角色扮演' },
-    { value: 'pattern', label: '句型操练' },
+    { value: 'all', label: t.shadowing.dialogue_types.all },
+    { value: 'casual', label: t.shadowing.dialogue_types.casual },
+    { value: 'task', label: t.shadowing.dialogue_types.task },
+    { value: 'emotion', label: t.shadowing.dialogue_types.emotion },
+    { value: 'opinion', label: t.shadowing.dialogue_types.opinion },
+    { value: 'request', label: t.shadowing.dialogue_types.request },
+    { value: 'roleplay', label: t.shadowing.dialogue_types.roleplay },
+    { value: 'pattern', label: t.shadowing.dialogue_types.pattern },
   ];
 
   // 题库相关状态
@@ -4166,8 +4167,8 @@ export default function ShadowingPage() {
               {/* 排序 + 题库按钮 */}
               <div className="flex items-center gap-3">
                 {/* 排序选择器 */}
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border bg-white/70">
-                  <span className="text-xs text-gray-500">排序</span>
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border bg-white/70" title="排序">
+                  <ArrowUpDown className="w-4 h-4 text-gray-500" />
                   <Select value={sortMode} onValueChange={(v) => setSortMode(v as any)}>
                     <SelectTrigger className="h-8 w-[7rem] border-0 shadow-none text-xs">
                       <SelectValue placeholder="推荐" />
@@ -4189,14 +4190,14 @@ export default function ShadowingPage() {
                       setMobileSidebarOpen(true);
                       hideGuide();
                     }}
-                    className={`flex items-center gap-1.5 bg-white/50 hover:bg-white/80 border-white/30 h-9 px-3 transition-all ${showGuide
+                    className={`flex items-center justify-center bg-white/50 hover:bg-white/80 border-white/30 h-9 w-9 p-0 transition-all ${showGuide
                       ? 'shadow-[0_0_20px_rgba(59,130,246,0.5)] ring-2 ring-blue-400/30 ring-offset-2'
                       : 'shadow-md'
                       }`}
                     aria-label={t.shadowing.shadowing_vocabulary}
+                    title={t.shadowing.shadowing_vocabulary}
                   >
                     <Menu className="w-4 h-4" />
-                    <span className="text-sm">题库</span>
                   </Button>
 
                   {/* 呼吸光效 */}
@@ -4222,8 +4223,12 @@ export default function ShadowingPage() {
                   labels={[t.shadowing.step1_tip, t.shadowing.step2_tip, t.shadowing.step3_tip, t.shadowing.step5_tip].map(x => String(x || 'Step'))}
                 />
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setStep((s) => (Math.max(1, (s as number) - 1) as 1 | 2 | 3 | 4))} disabled={step === 1}>Back</Button>
-                  <Button size="sm" onClick={() => setStep((s) => (Math.min(4, (s as number) + 1) as 1 | 2 | 3 | 4))} disabled={step === 4}>Next</Button>
+                  <Button size="sm" variant="outline" onClick={() => setStep((s) => (Math.max(1, (s as number) - 1) as 1 | 2 | 3 | 4))} disabled={step === 1} title={t.common.back}>
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" onClick={() => setStep((s) => (Math.min(4, (s as number) + 1) as 1 | 2 | 3 | 4))} disabled={step === 4} title={t.common.next}>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
               <div className="mt-3 text-xs text-gray-700">
@@ -4482,19 +4487,19 @@ export default function ShadowingPage() {
                       size="sm"
                       variant="outline"
                       onClick={getRandomUnpracticed}
-                      className="flex-1 h-10 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100 hover:border-green-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                      className="flex-1 h-10 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100 hover:border-green-300 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center justify-center"
+                      title={t.shadowing.random}
                     >
-                      <Shuffle className="w-4 h-4 mr-2" />
-                      {t.shadowing.random}
+                      <Shuffle className="w-4 h-4" />
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={getNextUnpracticed}
-                      className="flex-1 h-10 bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-violet-100 hover:border-purple-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                      className="flex-1 h-10 bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-violet-100 hover:border-purple-300 rounded-xl shadow-sm hover:shadow-md transition-all flex items-center justify-center"
+                      title={t.shadowing.next_question}
                     >
-                      <ArrowRight className="w-4 h-4 mr-2" />
-                      {t.shadowing.next_question}
+                      <ArrowRight className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
@@ -4672,17 +4677,19 @@ export default function ShadowingPage() {
                             variant="outline"
                             onClick={() => setStep((s) => (Math.max(1, (s as number) - 1) as 1 | 2 | 3 | 4))}
                             disabled={step === 1}
-                            className="flex-1 h-8 text-xs"
+                            className="flex-1 h-8 text-xs flex items-center justify-center"
+                            title={t.common.back}
                           >
-                            ← 上一步
+                            <ArrowLeft className="w-4 h-4" />
                           </Button>
                           <Button
                             size="sm"
                             onClick={() => setStep((s) => (Math.min(4, (s as number) + 1) as 1 | 2 | 3 | 4))}
                             disabled={step === 4}
-                            className="flex-1 h-8 text-xs"
+                            className="flex-1 h-8 text-xs flex items-center justify-center"
+                            title={t.common.next}
                           >
-                            下一步 →
+                            <ArrowRight className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
@@ -4733,13 +4740,13 @@ export default function ShadowingPage() {
                         variant="outline"
                         size="lg"
                         className={`h-14 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 rounded-xl shadow-sm hover:shadow-md transition-all ${highlightPlay ? 'animate-pulse ring-2 ring-blue-400' : ''}`}
+                        title={isPlaying ? '暂停' : t.shadowing.play_audio}
                       >
                         {isPlaying ? (
-                          <Pause className="w-5 h-5 mr-2" />
+                          <Pause className="w-6 h-6" />
                         ) : (
-                          <Play className="w-5 h-5 mr-2" />
+                          <Play className="w-6 h-6" />
                         )}
-                        {isPlaying ? '暂停' : t.shadowing.play_audio}
                       </Button>
 
                       <Button
@@ -4751,9 +4758,9 @@ export default function ShadowingPage() {
                         aria-disabled={saving}
                         aria-label={saving ? '保存草稿中' : '保存草稿'}
                         className="h-14 bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200 text-yellow-700 hover:from-yellow-100 hover:to-amber-100 hover:border-yellow-300 rounded-xl shadow-sm hover:shadow-md transition-all"
+                        title={t.shadowing.save_draft}
                       >
-                        <Save className="w-5 h-5 mr-2" />
-                        {saving ? t.common.loading : t.shadowing.save_draft}
+                        {saving ? <div className="animate-spin w-5 h-5 border-2 border-yellow-600 border-t-transparent rounded-full" /> : <Save className="w-6 h-6" />}
                       </Button>
 
                       {(!gatingActive || step === 4) && (
@@ -4765,9 +4772,9 @@ export default function ShadowingPage() {
                           aria-disabled={saving}
                           aria-label={saving ? '完成并保存中' : '完成练习'}
                           className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+                          title={t.shadowing.complete_and_save}
                         >
-                          <CheckCircle className="w-5 h-5 mr-2" />
-                          {saving ? (t.shadowing.saving_modal_title || '保存中...') : '完成'}
+                          {saving ? <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" /> : <CheckCircle className="w-6 h-6" />}
                         </Button>
                       )}
                     </div>
@@ -4780,8 +4787,12 @@ export default function ShadowingPage() {
                           size="sm"
                           onClick={() => setIsVocabMode(!isVocabMode)}
                           className={`w-full ${highlightVocab ? 'animate-pulse ring-2 ring-amber-400' : ''}`}
+                          title={isVocabMode ? t.shadowing.vocab_mode_on : t.shadowing.vocab_mode_off}
                         >
-                          {isVocabMode ? t.shadowing.vocab_mode_on : t.shadowing.vocab_mode_off}
+                          <div className="flex items-center justify-center gap-2">
+                            <BookOpen className="w-4 h-4" />
+                            <span>{isVocabMode ? 'ON' : 'OFF'}</span>
+                          </div>
                         </Button>
 
                         {/* ACU 模式切换（仅在生词模式开启时显示） */}

@@ -1351,7 +1351,7 @@ export default function VocabPage() {
                   <h2 className="text-lg font-semibold text-gray-800">{t.vocabulary.messages.filter_conditions}</h2>
                   {(filters.lang !== 'all' || filters.status !== 'all' || filters.explanation !== 'all' || filters.search) && (
                     <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                      筛选中
+                      {t.vocabulary.messages.filtering}
                     </span>
                   )}
                 </div>
@@ -1368,7 +1368,7 @@ export default function VocabPage() {
                     }}
                     className="text-sm text-gray-500 hover:text-gray-700 px-2 py-1 hover:bg-gray-100 rounded"
                   >
-                    重置
+                    {t.vocabulary.filters.reset}
                   </button>
                   <button
                     className="hidden sm:block p-1 hover:bg-gray-100 rounded"
@@ -1528,7 +1528,7 @@ export default function VocabPage() {
                     {/* 复制桌面端的筛选器内容 */}
                     {/* 移动端筛选器内容复制略，应该和桌面端一致 */}
                     <div className="text-sm text-gray-600 text-center py-4">
-                      筛选器功能将在移动端展开时显示
+                      {t.vocabulary.filters.mobile_filter_sheet_hint}
                     </div>
                   </div>
                 </SheetContent>
@@ -1764,7 +1764,7 @@ export default function VocabPage() {
               <a href="/practice/shadowing" className="text-blue-600 hover:underline">
                 {t.nav.shadowing}
               </a>{' '}
-              中添加一些生词吧！
+              {t.vocabulary.messages.no_vocab_desc.replace('去 Shadowing 练习中添加一些生词吧！', '').replace('Go to Shadowing practice to add some words!', '')}
             </div>
           ) : (
             <div className="space-y-4">
@@ -1855,7 +1855,7 @@ export default function VocabPage() {
                   onClick={toggleSelectAll}
                   className="flex-1 h-10"
                 >
-                  {selectedEntries.length === entries.length ? '取消全选' : '全选'}
+                  {selectedEntries.length === entries.length ? t.vocabulary.batch_operations.deselect_all : t.vocabulary.batch_operations.select_all}
                 </Button>
                 <Button
                   variant="outline"
@@ -1863,7 +1863,7 @@ export default function VocabPage() {
                   onClick={selectUnexplainedEntries}
                   className="flex-1 h-10 bg-yellow-50 border-yellow-200 text-yellow-700"
                 >
-                  🎯 选未解释
+                  🎯 {t.vocabulary.batch_operations.select_unexplained.replace('🎯 ', '')}
                 </Button>
               </div>
 
@@ -1932,10 +1932,10 @@ export default function VocabPage() {
                               <div className="flex flex-wrap items-center gap-1.5">
                                 <span
                                   className={`px-2 py-0.5 text-xs font-medium rounded-full ${entry.lang === 'en'
-                                      ? 'bg-blue-100 text-blue-700'
-                                      : entry.lang === 'ja'
-                                        ? 'bg-red-100 text-red-700'
-                                        : 'bg-green-100 text-green-700'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : entry.lang === 'ja'
+                                      ? 'bg-red-100 text-red-700'
+                                      : 'bg-green-100 text-green-700'
                                     }`}
                                 >
                                   {t.vocabulary.language_labels[entry.lang as keyof typeof t.vocabulary.language_labels]}
@@ -1947,7 +1947,7 @@ export default function VocabPage() {
                                 )}
                                 {!hasExplanation && (
                                   <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">
-                                    未解释
+                                    {t.vocabulary.filters.missing_explanation}
                                   </span>
                                 )}
                               </div>
@@ -1997,7 +1997,7 @@ export default function VocabPage() {
                               {/* 上下文 */}
                               {entry.context && (
                                 <div className="mb-3 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-200">
-                                  <p className="text-xs font-medium text-gray-500 mb-1">上下文</p>
+                                  <p className="text-xs font-medium text-gray-500 mb-1">{t.vocabulary.vocab_card.context}</p>
                                   <p className="text-sm text-gray-700 italic break-words">&ldquo;{entry.context}&rdquo;</p>
                                 </div>
                               )}
@@ -2005,7 +2005,7 @@ export default function VocabPage() {
                               {/* 词性 */}
                               {entry.explanation?.pos && (
                                 <div className="mb-3">
-                                  <span className="text-xs font-medium text-gray-500 mr-2">词性:</span>
+                                  <span className="text-xs font-medium text-gray-500 mr-2">{t.vocabulary.vocab_card.part_of_speech}:</span>
                                   <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium">
                                     {entry.explanation.pos}
                                   </span>
@@ -2033,8 +2033,8 @@ export default function VocabPage() {
                               <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100">
                                 <button
                                   className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${entry.status === 'starred'
-                                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                                   onClick={() =>
                                     updateEntryStatus(
@@ -2043,13 +2043,13 @@ export default function VocabPage() {
                                     )
                                   }
                                 >
-                                  {entry.status === 'starred' ? '⭐ 取消标星' : '☆ 标星'}
+                                  {entry.status === 'starred' ? `⭐ ${t.vocabulary.vocab_card.unstar}` : `☆ ${t.vocabulary.vocab_card.star}`}
                                 </button>
                                 <button
                                   className="flex-1 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
                                   onClick={() => deleteEntry(entry.id)}
                                 >
-                                  🗑️ 删除
+                                  🗑️ {t.vocabulary.vocab_card.delete}
                                 </button>
                               </div>
                             </div>
@@ -2095,13 +2095,13 @@ export default function VocabPage() {
           <div className="px-4 py-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
-                已选中 {selectedEntries.length} 项
+                {t.vocabulary.batch_operations.selected_count.replace('{count}', selectedEntries.length.toString())}
               </span>
               <button
                 onClick={() => setSelectedEntries([])}
                 className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 hover:bg-gray-100 rounded"
               >
-                取消选择
+                {t.vocabulary.batch_operations.deselect_all}
               </button>
             </div>
             <div className="flex gap-2">
@@ -2115,10 +2115,10 @@ export default function VocabPage() {
                 {isDeleting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    删除中...
+                    {t.vocabulary.batch_operations.deleting}
                   </>
                 ) : (
-                  <>🗑️ 删除 ({selectedEntries.length})</>
+                  <>🗑️ {t.vocabulary.batch_operations.delete_selected} ({selectedEntries.length})</>
                 )}
               </Button>
               <Button
@@ -2129,10 +2129,10 @@ export default function VocabPage() {
                 {isGenerating ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    生成中...
+                    {t.vocabulary.ai_generation.generating}
                   </>
                 ) : (
-                  <>✨ AI解释</>
+                  <>✨ {t.vocabulary.ai_generation.generate_explanations.replace('生成解释', 'AI解释')}</>
                 )}
               </Button>
             </div>
@@ -2150,7 +2150,7 @@ export default function VocabPage() {
             {t.vocabulary.ai_generation.title}
           </SheetTitle>
           <SheetDescription>
-            为 {selectedEntries.length} 个生词生成AI解释
+            {t.vocabulary.messages.ai_generation_for_selected.replace('{count}', selectedEntries.length.toString())}
           </SheetDescription>
         </SheetHeader>
 
@@ -2333,7 +2333,7 @@ export default function VocabPage() {
                       <span className="text-3xl sm:text-5xl">🎉</span>
                     </div>
                     <div className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">{t.vocabulary.messages.review_completed}</div>
-                    <div className="text-gray-600 mb-8 sm:mb-10 text-base sm:text-lg">恭喜完成本次复习！</div>
+                    <div className="text-gray-600 mb-8 sm:mb-10 text-base sm:text-lg">{t.vocabulary.messages.review_completed_desc}</div>
                     <Button
                       onClick={() => setReviewing(false)}
                       className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 sm:px-10 py-3 sm:py-4 rounded-2xl font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
@@ -2353,7 +2353,7 @@ export default function VocabPage() {
                           <span className="text-white text-lg sm:text-xl">📚</span>
                         </div>
                         <div className="text-white min-w-0 flex-1">
-                          <div className="text-sm sm:text-base font-medium opacity-90">词汇复习</div>
+                          <div className="text-sm sm:text-base font-medium opacity-90">{t.vocabulary.messages.review_title}</div>
                           <div className="text-lg sm:text-xl font-bold truncate">
                             {t.vocabulary.messages.review_progress.replace('{current}', (reviewIndex + 1).toString()).replace('{total}', total.toString())}
                           </div>
@@ -2392,10 +2392,10 @@ export default function VocabPage() {
                       <div className="flex flex-wrap items-center justify-center gap-2 mb-4 sm:mb-6">
                         <span
                           className={`px-3 py-1.5 text-sm font-semibold rounded-full ${cur.lang === 'en'
-                              ? 'bg-blue-100 text-blue-700'
-                              : cur.lang === 'ja'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-green-100 text-green-700'
+                            ? 'bg-blue-100 text-blue-700'
+                            : cur.lang === 'ja'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-green-100 text-green-700'
                             }`}
                         >
                           {t.vocabulary.language_labels[cur.lang as 'en' | 'ja' | 'zh' | 'ko']}
@@ -2414,7 +2414,7 @@ export default function VocabPage() {
                           className="bg-white hover:bg-gray-50 border-gray-200 text-gray-700 hover:text-gray-900 shadow-sm px-3 py-1.5 h-auto"
                         >
                           <span className="mr-1.5">🔊</span>
-                          <span className="text-sm">发音</span>
+                          <span className="text-sm">{t.vocabulary.vocab_card.pronunciation}</span>
                         </Button>
                       </div>
                     </div>
@@ -2506,8 +2506,8 @@ export default function VocabPage() {
                           <>
                             <Button
                               className={`bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[68px] sm:min-h-[76px] relative ${clickedButton === 'again'
-                                  ? 'transform scale-95 shadow-2xl ring-4 ring-red-300 ring-opacity-50'
-                                  : 'transform hover:scale-105'
+                                ? 'transform scale-95 shadow-2xl ring-4 ring-red-300 ring-opacity-50'
+                                : 'transform hover:scale-105'
                                 } ${isTransitioning ? 'pointer-events-none' : ''}`}
                               onClick={() => answerReview('again')}
                               disabled={isTransitioning}
@@ -2530,8 +2530,8 @@ export default function VocabPage() {
 
                             <Button
                               className={`bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[68px] sm:min-h-[76px] relative ${clickedButton === 'hard'
-                                  ? 'transform scale-95 shadow-2xl ring-4 ring-orange-300 ring-opacity-50'
-                                  : 'transform hover:scale-105'
+                                ? 'transform scale-95 shadow-2xl ring-4 ring-orange-300 ring-opacity-50'
+                                : 'transform hover:scale-105'
                                 } ${isTransitioning ? 'pointer-events-none' : ''}`}
                               onClick={() => answerReview('hard')}
                               disabled={isTransitioning}
@@ -2554,8 +2554,8 @@ export default function VocabPage() {
 
                             <Button
                               className={`bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[68px] sm:min-h-[76px] relative ${clickedButton === 'good'
-                                  ? 'transform scale-95 shadow-2xl ring-4 ring-blue-300 ring-opacity-50'
-                                  : 'transform hover:scale-105'
+                                ? 'transform scale-95 shadow-2xl ring-4 ring-blue-300 ring-opacity-50'
+                                : 'transform hover:scale-105'
                                 } ${isTransitioning ? 'pointer-events-none' : ''}`}
                               onClick={() => answerReview('good')}
                               disabled={isTransitioning}
@@ -2578,8 +2578,8 @@ export default function VocabPage() {
 
                             <Button
                               className={`bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 sm:py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 min-h-[68px] sm:min-h-[76px] relative ${clickedButton === 'easy'
-                                  ? 'transform scale-95 shadow-2xl ring-4 ring-green-300 ring-opacity-50'
-                                  : 'transform hover:scale-105'
+                                ? 'transform scale-95 shadow-2xl ring-4 ring-green-300 ring-opacity-50'
+                                : 'transform hover:scale-105'
                                 } ${isTransitioning ? 'pointer-events-none' : ''}`}
                               onClick={() => answerReview('easy')}
                               disabled={isTransitioning}
