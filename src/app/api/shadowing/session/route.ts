@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          set() {},
-          remove() {},
+          set() { },
+          remove() { },
         },
       }) as unknown) as SupabaseClient;
     }
@@ -97,8 +97,8 @@ export async function POST(req: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          set() {},
-          remove() {},
+          set() { },
+          remove() { },
         },
       }) as unknown) as SupabaseClient;
     }
@@ -195,42 +195,142 @@ export async function POST(req: NextRequest) {
     }
 
     // If status is 'completed' and there are selected words to import
-    if (status === 'completed' && selected_words.length > 0) {
-      try {
-        // Import selected words to user's vocabulary
-        const vocabEntries = selected_words.map((word: Record<string, any>) => ({
-          user_id: user.id,
-          source_lang: word.lang || 'en',
-          target_lang: 'zh', // Default to Chinese
-          word: word.text,
-          definition: word.definition || '',
-          context: word.context || '',
-          source_type: 'shadowing',
-          source_id: item_id,
-          frequency_rank: word.frequency_rank || null,
-          created_at: new Date().toISOString(),
-        }));
+    if (status === 'completed') {
+      // 1. Import selected words to user's vocabulary
+      if (selected_words.length > 0) {
+        try {
+          const vocabEntries = selected_words.map((word: Record<string, any>) => ({
+            user_id: user.id,
+            source_lang: word.lang || 'en',
+            target_lang: 'zh', // Default to Chinese
+            word: word.text,
+            definition: word.definition || '',
+            context: word.context || '',
+            source_type: 'shadowing',
+            source_id: item_id,
+            frequency_rank: word.frequency_rank || null,
+            cefr_level: word.cefr || null, // Store CEFR level if available
+            created_at: new Date().toISOString(),
+          }));
 
-        const { data: insertedVocab, error: vocabError } = await supabase
-          .from('vocab_entries')
-          .upsert(vocabEntries, {
-            onConflict: 'user_id,word,source_lang',
-          })
-          .select('id');
-
-        if (!vocabError && insertedVocab) {
-          // Update session with imported vocab IDs
-          const vocabIds = insertedVocab.map((v: { id: string }) => v.id);
-          await supabase
-            .from('shadowing_sessions')
-            .update({
-              imported_vocab_ids: vocabIds,
+          const { data: insertedVocab, error: vocabError } = await supabase
+            .from('vocab_entries')
+            .upsert(vocabEntries, {
+              onConflict: 'user_id,word,source_lang',
             })
-            .eq('id', session.id);
+            .select('id');
+
+          if (!vocabError && insertedVocab) {
+            // Update session with imported vocab IDs
+            const vocabIds = insertedVocab.map((v: { id: string }) => v.id);
+            await supabase
+              .from('shadowing_sessions')
+              .update({
+                imported_vocab_ids: vocabIds,
+              })
+              .eq('id', session.id);
+          }
+        } catch (vocabImportError) {
+          console.error('Error importing vocabulary:', vocabImportError);
+          // Don't fail the session save if vocab import fails
         }
-      } catch (vocabImportError) {
-        console.error('Error importing vocabulary:', vocabImportError);
-        // Don't fail the session save if vocab import fails
+      }
+
+      // 2. Update User Ability & Vocab Profile (Difficulty System)
+      try {
+        // Fetch User Profile & Item Metadata
+        const [profileRes, itemRes] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('ability_level, vocab_unknown_rate, explore_config')
+            .eq('id', user.id)
+            .single(),
+          supabase
+            .from('shadowing_items')
+            .select('level, base_level, lex_profile, tokens')
+            .eq('id', item_id_db)
+            .single(),
+        ]);
+
+        if (profileRes.data && itemRes.data) {
+          const {
+            calculateSessionSkill,
+            updateAbilityLevel,
+            updateVocabUnknownRate,
+          } = await import('@/lib/recommendation/difficulty');
+
+          const profile = profileRes.data;
+          const item = itemRes.data;
+
+          // Prepare Session Data for Calculation
+          // Prepare Session Data for Calculation
+          const sentenceScores = notes?.sentence_scores || {};
+          const sentencesData = Object.values(sentenceScores).map((s: any) => ({
+            sentenceId: 'unknown',
+            firstScore: s.firstScore ?? s.score ?? 0,
+            bestScore: s.bestScore ?? s.score ?? 0,
+            attempts: s.attempts || 1,
+          }));
+
+          // Fallback to recordings if sentence_scores is empty
+          const finalSentences = sentencesData.length > 0 ? sentencesData : (recordings || []).map((r: any) => ({
+            sentenceId: r.fileName || 'unknown',
+            firstScore: r.score || 0,
+            bestScore: r.score || 0,
+            attempts: 1,
+          }));
+
+          const sessionData = {
+            userId: user.id,
+            itemId: item_id_db,
+            itemLevel: item.base_level || item.level || 1.0, // Fallback to integer level
+            sentences: finalSentences,
+            totalTimeSec: 0, // Not critical for now
+            selfDifficulty: body.self_difficulty as any,
+            newWords: selected_words.map((w: any) => ({
+              word: w.text,
+              cefrLevel: w.cefr,
+            })),
+            itemLexProfile: item.lex_profile || {},
+          };
+
+          // Calculate New State
+          const estimatedTokens = item.tokens || 100; // Use actual tokens or fallback
+
+          const sessionSkill = calculateSessionSkill(sessionData, estimatedTokens);
+
+          const newAbilityLevel = updateAbilityLevel(
+            profile.ability_level || 1.0,
+            sessionData.itemLevel,
+            sessionSkill
+          );
+
+          const newVocabRate = updateVocabUnknownRate(
+            profile.vocab_unknown_rate || {},
+            sessionData,
+            estimatedTokens
+          );
+
+          // Update Profile
+          await supabase
+            .from('profiles')
+            .update({
+              ability_level: newAbilityLevel,
+              vocab_unknown_rate: newVocabRate,
+            })
+            .eq('id', user.id);
+
+          // Update Session with self_difficulty
+          if (body.self_difficulty) {
+            await supabase
+              .from('shadowing_sessions')
+              .update({ self_difficulty: body.self_difficulty })
+              .eq('id', session.id);
+          }
+        }
+      } catch (difficultyError) {
+        console.error('Error updating difficulty state:', difficultyError);
+        // Don't fail the request
       }
     }
 

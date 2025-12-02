@@ -596,6 +596,10 @@ export default function ShadowingPage() {
   const [currentItem, setCurrentItem] = useState<ShadowingItem | null>(null);
   const [currentSession, setCurrentSession] = useState<ShadowingSession | null>(null);
 
+  // Difficulty Rating State
+  const [selfDifficulty, setSelfDifficulty] = useState<'too_easy' | 'just_right' | 'a_bit_hard' | 'too_hard' | null>(null);
+  const [showDifficultyModal, setShowDifficultyModal] = useState(false);
+
   // 主题数据状态
   const [themes, setThemes] = useState<Array<{ id: string; title: string; desc?: string }>>([]);
   const [subtopics, setSubtopics] = useState<
@@ -842,32 +846,47 @@ export default function ShadowingPage() {
 
   // 计算下一条推荐
   useEffect(() => {
-    if (!currentItem || !items.length) return;
+    if (!currentItem) return;
 
-    // 仅在有评分结果（即完成练习）时，或者刚加载完 currentItem 时预计算
-    // 这里选择预计算，但只在 UI 上按需显示
-    const candidateItems = items.map(it => ({
-      id: it.id,
-      lang: it.lang,
-      level: it.level,
-      theme_id: it.theme_id,
-      isPracticed: it.isPracticed,
-      status: it.status,
-      title: it.title,
-      genre: it.genre,
-      lastPracticed: it.stats.lastPracticed,
-      themeTitle: it.theme?.title
-    }));
+    const fetchRecommendation = async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch('/api/shadowing/recommendations', { headers });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.recommendations && data.recommendations.length > 0) {
+            const rec = data.recommendations[0];
+            // Ensure stats exist
+            const itemWithStats = {
+              ...rec.item,
+              stats: rec.item.stats || { recordingCount: 0, vocabCount: 0, practiceTime: 0, lastPracticed: null },
+              isPracticed: false,
+              // Ensure other required fields if missing from API
+              lang: rec.item.lang || 'en',
+              level: rec.item.level || 1,
+              title: rec.item.title || 'Untitled',
+              text: rec.item.text || '',
+              audio_url: rec.item.audio_url || '',
+              created_at: rec.item.created_at || new Date().toISOString(),
+            };
 
-    const next = getNextRecommendedItem(
-      currentItem.id,
-      candidateItems,
-      themePrefs, // 需要确保 themePrefs 已加载
-      recommendedLevel,
-      currentItem.lang
-    );
-    setNextRecommendation(next);
-  }, [currentItem, items, themePrefs, recommendedLevel]);
+            setNextRecommendation({
+              item: itemWithStats,
+              reason: rec.reason,
+              score: rec.score
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch recommendations:', error);
+      }
+    };
+
+    // Only fetch when we have a current item (e.g. starting a session or finishing one)
+    // We might want to debounce or only fetch when scoringResult is present (practice complete)
+    // But fetching early is fine too.
+    fetchRecommendation();
+  }, [currentItem?.id, getAuthHeaders]);
 
   const handleStartNext = (nextItemCandidate: any) => {
     const nextItem = items.find(i => i.id === nextItemCandidate.id);
@@ -1973,6 +1992,7 @@ export default function ShadowingPage() {
       pronunciation?: string;
       pos?: string;
       senses?: Array<{ example_target: string; example_native: string }>;
+      cefr?: string;
     };
   }) => {
     // 优先使用缓存中的最新解释，其次使用fallback解释
@@ -1982,6 +2002,7 @@ export default function ShadowingPage() {
         pronunciation?: string;
         pos?: string;
         senses?: Array<{ example_target: string; example_native: string }>;
+        cefr?: string;
       }
       | undefined
     >(explanationCache[word] || fallbackExplanation);
@@ -2078,6 +2099,14 @@ export default function ShadowingPage() {
       <div className="text-sm text-gray-700">
         <div className="mb-2 flex items-center gap-2">
           <strong>{t.shadowing.explanation || '解释'}：</strong>
+          {latestExplanation.cefr && (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mr-2
+              ${latestExplanation.cefr.startsWith('A') ? 'bg-green-100 text-green-800' :
+                latestExplanation.cefr.startsWith('B') ? 'bg-blue-100 text-blue-800' :
+                  'bg-purple-100 text-purple-800'}`}>
+              {latestExplanation.cefr}
+            </span>
+          )}
           {latestExplanation.gloss_native}
           <button
             onClick={refreshExplanation}
@@ -2608,6 +2637,8 @@ export default function ShadowingPage() {
     setStep(1);
     setScoringResult(null);
     setShowSentenceComparison(false);
+    setSelfDifficulty(null);
+    setShowDifficultyModal(false);
 
     // 将当前题目写入 URL，支持刷新后自动恢复
     try {
@@ -3703,8 +3734,22 @@ export default function ShadowingPage() {
 
 
   // 统一的完成并保存函数 - 整合session保存和练习结果记录
-  const unifiedCompleteAndSave = async () => {
+  const unifiedCompleteAndSave = async (explicitDifficulty?: 'too_easy' | 'just_right' | 'a_bit_hard' | 'too_hard') => {
     if (!currentItem || !user) return;
+
+    const difficultyToUse = explicitDifficulty || selfDifficulty;
+
+    // If difficulty not selected yet, show modal and stop
+    if (!difficultyToUse) {
+      setShowDifficultyModal(true);
+      return;
+    }
+
+    // Update state if explicit provided (for UI consistency if we re-render)
+    if (explicitDifficulty) {
+      setSelfDifficulty(explicitDifficulty);
+      setShowDifficultyModal(false);
+    }
 
     setSaving(true);
 
@@ -3811,7 +3856,10 @@ export default function ShadowingPage() {
           item_id: currentItem.id,
           lang: currentItem.lang,
           level: currentItem.level,
-          metrics,
+          metrics: {
+            ...metrics,
+            selfDifficulty: difficultyToUse,
+          },
         }),
       });
 
@@ -3821,14 +3869,30 @@ export default function ShadowingPage() {
 
       // 3. Save session (optional, but good for keeping track of vocab/recordings if any)
       const allWords = [...previousWords, ...selectedWords];
+
+      // Prepare selected_words with CEFR data for backend processing
+      const selected_words_payload = selectedWords.map(w => {
+        const explanation = explanationCache[w.word] || userVocab.find(v => v.term === w.word)?.explanation;
+        return {
+          text: w.word,
+          lang: w.lang,
+          context: w.context,
+          definition: explanation?.gloss_native || '',
+          cefr: (explanation as any)?.cefr || null, // Pass CEFR level
+          explanation: explanation // Pass full explanation if needed
+        };
+      });
+
       await fetch('/api/shadowing/session', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           item_id: currentItem.id,
           status: 'completed',
-          recordings: [],
+          self_difficulty: difficultyToUse,
+          recordings: currentRecordings,
           picked_preview: allWords,
+          selected_words: selected_words_payload,
           notes: {
             sentence_scores: sentenceScores
           },
@@ -4695,7 +4759,7 @@ export default function ShadowingPage() {
                       {(!gatingActive || step === 4) && (
                         <Button
                           size="lg"
-                          onClick={unifiedCompleteAndSave}
+                          onClick={() => unifiedCompleteAndSave()}
                           disabled={saving}
                           aria-busy={saving}
                           aria-disabled={saving}
@@ -5907,7 +5971,7 @@ export default function ShadowingPage() {
                 {!practiceComplete && (!gatingActive || step === 4) && (
                   <div className="flex items-center gap-2 w-full mt-2">
                     <Button
-                      onClick={unifiedCompleteAndSave}
+                      onClick={() => unifiedCompleteAndSave()}
                       className="flex-1 h-11 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
@@ -6016,6 +6080,50 @@ export default function ShadowingPage() {
         )
       }
 
-    </main >
+      {/* Difficulty Rating Modal */}
+      {showDifficultyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-md p-6 bg-white rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold text-center mb-2 text-gray-900">
+              {t.shadowing.difficulty_rating_title || '觉得这个练习怎么样？'}
+            </h3>
+            <p className="text-center text-gray-500 mb-6">
+              {t.shadowing.difficulty_rating_desc || '您的反馈将帮助我们为您推荐更合适的内容'}
+            </p>
+
+            <div className="grid grid-cols-1 gap-3">
+              <Button
+                variant="outline"
+                className="h-12 text-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all"
+                onClick={() => unifiedCompleteAndSave('too_easy')}
+              >
+                😄 {t.shadowing.difficulty_too_easy || '太简单了'}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 text-lg hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all"
+                onClick={() => unifiedCompleteAndSave('just_right')}
+              >
+                😊 {t.shadowing.difficulty_just_right || '刚刚好'}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 text-lg hover:bg-yellow-50 hover:text-yellow-700 hover:border-yellow-200 transition-all"
+                onClick={() => unifiedCompleteAndSave('a_bit_hard')}
+              >
+                😅 {t.shadowing.difficulty_bit_hard || '有点难'}
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 text-lg hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all"
+                onClick={() => unifiedCompleteAndSave('too_hard')}
+              >
+                😫 {t.shadowing.difficulty_too_hard || '太难了'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+    </main>
   );
 }

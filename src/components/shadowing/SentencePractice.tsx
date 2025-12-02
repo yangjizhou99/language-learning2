@@ -64,6 +64,9 @@ interface SentenceScore {
   missing: string[];
   extra: string[];
   alignmentResult?: AlignmentResult; // 新增：对齐分析结果
+  attempts?: number;
+  firstScore?: number;
+  bestScore?: number;
 }
 
 interface SentencePracticeProps {
