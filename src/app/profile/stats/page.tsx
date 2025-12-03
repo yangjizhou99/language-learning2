@@ -8,7 +8,10 @@ import { AbilityRadar } from '@/components/stats/AbilityRadar';
 import { ActivityChart } from '@/components/stats/ActivityChart';
 import { RecentAccuracyChart } from '@/components/stats/RecentAccuracyChart';
 import { ScoreDistributionChart } from '@/components/stats/ScoreDistributionChart';
-import { ArrowLeft, Loader2, TrendingUp, Calendar, Target, PieChart as PieChartIcon } from 'lucide-react';
+import { DifficultyTrendChart } from '@/components/stats/DifficultyTrendChart';
+import { VocabSweetSpotChart } from '@/components/stats/VocabSweetSpotChart';
+import { InterestProficiencyRadar } from '@/components/stats/InterestProficiencyRadar';
+import { ArrowLeft, Loader2, TrendingUp, Calendar, Target, PieChart as PieChartIcon, LineChart, Zap, Compass } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation, useLanguage } from '@/contexts/LanguageContext';
 
@@ -37,6 +40,21 @@ interface StatsData {
         range: string;
         count: number;
         fill: string;
+    }>;
+    difficultyTrend: Array<{
+        date: string;
+        level: number;
+    }>;
+    vocabSweetSpot: Array<{
+        rate: number;
+        score: number;
+        level: number;
+    }>;
+    interestVsProficiency: Array<{
+        theme: string;
+        interest: number;
+        proficiency: number;
+        fullMark: number;
     }>;
 }
 
@@ -168,23 +186,60 @@ export default function LearningStatsPage() {
                     </div>
                 </div>
 
+                {/* New Charts Row 1: Difficulty Trend & Vocab Sweet Spot */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Ability Radar */}
+                    {/* Difficulty Trend */}
+                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '250ms' }}>
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-50 rounded-lg">
+                                    <LineChart className="w-5 h-5 text-indigo-600" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900">难度攀升曲线</h2>
+                            </div>
+                            <span className="text-sm text-gray-400">Level 1-6</span>
+                        </div>
+                        <DifficultyTrendChart data={data?.difficultyTrend || []} />
+                    </div>
+
+                    {/* Vocab Sweet Spot */}
                     <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '300ms' }}>
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-emerald-50 rounded-lg">
+                                    <Zap className="w-5 h-5 text-emerald-600" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900">词汇舒适区</h2>
+                            </div>
+                            <span className="text-sm text-gray-400">最佳区间: 5-20%</span>
+                        </div>
+                        <VocabSweetSpotChart data={data?.vocabSweetSpot || []} />
+                    </div>
+                </div>
+
+                {/* New Charts Row 2: Interest vs Proficiency */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Interest vs Proficiency */}
+                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '350ms' }}>
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-amber-50 rounded-lg">
+                                    <Compass className="w-5 h-5 text-amber-600" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900">兴趣 vs 能力</h2>
+                            </div>
+                            <span className="text-sm text-gray-400">想练的 vs 擅长的</span>
+                        </div>
+                        <InterestProficiencyRadar data={data?.interestVsProficiency || []} />
+                    </div>
+
+                    {/* Ability Radar (Existing) */}
+                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '400ms' }}>
                         <div className="flex items-center justify-between mb-8">
                             <h2 className="text-xl font-bold text-gray-900">{t.stats.ability_radar}</h2>
                             <span className="text-sm text-gray-400">{t.stats.ability_radar_desc}</span>
                         </div>
                         <AbilityRadar data={data?.abilityRadar || []} />
-                    </div>
-
-                    {/* Recent Accuracy */}
-                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '400ms' }}>
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-bold text-gray-900">{t.stats.accuracy_trend}</h2>
-                            <span className="text-sm text-gray-400">{t.stats.accuracy_trend_desc}</span>
-                        </div>
-                        <RecentAccuracyChart data={data?.recentAccuracy || []} />
                     </div>
                 </div>
 
