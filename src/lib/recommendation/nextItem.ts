@@ -1,4 +1,5 @@
 import { ThemePreference } from './preferences';
+import { BroadCEFR } from './difficulty';
 
 export interface RecommendationCandidate {
     id: string;
@@ -20,6 +21,35 @@ export interface RecommendationResult {
 }
 
 /**
+ * Estimate the unknown word rate for an item based on its level and the user's profile.
+ * This is a simplified approach that doesn't require the item to have a detailed lex_profile.
+ */
+function estimateUnknownRate(
+    itemLevel: number,
+    userUnknownRate: Record<BroadCEFR, number>
+): number {
+    // Map Item Level (1-6) to Broad CEFR
+    let band: BroadCEFR = 'A1_A2';
+    if (itemLevel >= 5) band = 'C1_plus';
+    else if (itemLevel >= 3) band = 'B1_B2';
+
+    // Get the user's unknown rate for this band
+    // Default to 0 if missing (optimistic)
+    return userUnknownRate[band] || 0;
+}
+
+/**
+ * Compute a score multiplier based on the estimated unknown rate.
+ * Target: 5% - 20% unknown rate is the "sweet spot".
+ */
+function scoreUnknownRate(rate: number): number {
+    if (rate < 0.02) return 0.6; // Too easy (boring)
+    if (rate > 0.30) return 0.4; // Too hard (frustrating)
+    if (rate >= 0.05 && rate <= 0.20) return 1.0; // Perfect flow
+    return 0.8; // Acceptable
+}
+
+/**
  * Get the next recommended item from a list of candidates.
  */
 export function getNextRecommendedItem(
@@ -27,7 +57,8 @@ export function getNextRecommendedItem(
     candidates: RecommendationCandidate[],
     themePrefs: Record<string, ThemePreference>, // theme_id -> ThemePreference
     recommendedLevel: number | null,
-    currentLang: string
+    currentLang: string,
+    vocabUnknownRate: Record<BroadCEFR, number> = { A1_A2: 0, B1_B2: 0, C1_plus: 0 }
 ): RecommendationResult | null {
     // 1. Basic Filter
     let pool = candidates.filter(
@@ -45,23 +76,28 @@ export function getNextRecommendedItem(
     // 3. Scoring
     const scored = pool.map((item) => {
         // Practice Weight
-        // draft: 0.7 (high priority to finish drafts)
-        // unpracticed: 1.0 (normal)
-        // practiced: 0.1 (review)
         let practiceWeight = 1.0;
         if (item.isPracticed) practiceWeight = 0.1;
         else if (item.status === 'draft') practiceWeight = 0.7;
         else practiceWeight = 1.0;
 
-        // Difficulty Weight
-        let difficultyWeight = 0.5;
+        // Difficulty Weight (Level Match)
+        let levelWeight = 0.5;
         if (recommendedLevel != null) {
             const diff = Math.abs(item.level - recommendedLevel);
-            if (diff === 0) difficultyWeight = 1.0;
-            else if (diff === 1) difficultyWeight = 0.6;
-            else if (diff === 2) difficultyWeight = 0.3;
-            else difficultyWeight = 0.0;
+            if (diff === 0) levelWeight = 1.0;
+            else if (diff === 1) levelWeight = 0.6;
+            else if (diff === 2) levelWeight = 0.3;
+            else levelWeight = 0.0;
         }
+
+        // Vocab Weight (Estimated Unknown Rate)
+        const estimatedRate = estimateUnknownRate(item.level, vocabUnknownRate);
+        const vocabWeight = scoreUnknownRate(estimatedRate);
+
+        // Combined Difficulty Score (60% Level, 40% Vocab)
+        // We give vocab a significant weight to avoid "too hard" items even if level matches
+        const difficultyScore = 0.6 * levelWeight + 0.4 * vocabWeight;
 
         // Theme Weight
         const pref = item.theme_id ? themePrefs[item.theme_id] : undefined;
@@ -69,10 +105,10 @@ export function getNextRecommendedItem(
         const themeWeight = Math.max(0, Math.min(1, basePref));
 
         // Total Score
-        // 0.5 * theme + 0.3 * difficulty + 0.2 * practice
-        const score = 0.5 * themeWeight + 0.3 * difficultyWeight + 0.2 * practiceWeight;
+        // 0.4 * theme + 0.4 * difficulty + 0.2 * practice
+        const score = 0.4 * themeWeight + 0.4 * difficultyScore + 0.2 * practiceWeight;
 
-        return { item, score, themePref: pref };
+        return { item, score, themePref: pref, estimatedRate };
     });
 
     // 4. Sort
@@ -82,7 +118,7 @@ export function getNextRecommendedItem(
     if (!best) return null;
 
     // 5. Generate Reason
-    const reason = getRecommendationReason(best.item, best.themePref, recommendedLevel);
+    const reason = getRecommendationReason(best.item, best.themePref, recommendedLevel, best.estimatedRate);
 
     return {
         item: best.item,
@@ -97,31 +133,29 @@ export function getNextRecommendedItem(
 export function getRecommendationReason(
     item: RecommendationCandidate,
     themePref: ThemePreference | undefined,
-    userLevel: number | null
+    userLevel: number | null,
+    estimatedRate?: number
 ): string {
     // 1. Check for top scenes
     const topScenes = themePref?.topScenes || [];
-
-    // Filter scenes with meaningful weight (e.g. > 0.1)
     const meaningfulScenes = topScenes.filter(s => s.weight > 0.1);
 
     if (meaningfulScenes.length > 0) {
-        // Take top 1-2
         const scenesToShow = meaningfulScenes.slice(0, 2);
         const sceneNames = scenesToShow.map(s => s.name_cn).join(' + ');
-
-        if (scenesToShow.length === 1) {
-            return `因为你想多练【${sceneNames}】场景，这篇【${item.title}】L${item.level} 练习特别适合。`;
-        } else {
-            return `因为你想多练【${sceneNames}】，这篇【${item.title}】L${item.level} 练习特别适合。`;
-        }
+        return `因为你想多练【${sceneNames}】，这篇【${item.title}】L${item.level} 练习特别适合。`;
     }
 
-    // 2. Fallback to Theme Title if available
+    // 2. Vocab Reason (if perfect match)
+    if (estimatedRate !== undefined && estimatedRate >= 0.05 && estimatedRate <= 0.20) {
+        return `这篇 L${item.level} 文章的生词率适中（约 ${(estimatedRate * 100).toFixed(0)}%），非常适合你当前的词汇水平。`;
+    }
+
+    // 3. Fallback to Theme Title
     if (item.themeTitle) {
         return `因为你关注【${item.themeTitle}】主题，推荐这篇 L${item.level} 练习。`;
     }
 
-    // 3. Generic Fallback
+    // 4. Generic Fallback
     return `这篇练习难度为 L${item.level}，适合作为你当前水平的下一步练习。`;
 }

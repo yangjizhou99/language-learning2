@@ -416,11 +416,115 @@ export async function GET(req: NextRequest) {
             }
         });
 
+        // --- Difficulty Trend ---
+        // X: Date, Y: Item Level
+        const difficultyTrend = shadowingAttempts
+            .slice(0, 50) // Last 50 attempts
+            .reverse()
+            .map(attempt => {
+                const item = itemsMap.get(attempt.item_id);
+                return {
+                    date: attempt.created_at,
+                    level: item?.level || 1
+                };
+            });
+
+        // --- Vocab Sweet Spot ---
+        // X: Estimated Unknown Rate, Y: Score
+        // We need to estimate unknown rate for each session item
+        // Since we don't store historical user vocab rate, we use current rate as approximation
+        // or just use the item level mapping logic.
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('vocab_unknown_rate, theme_preferences')
+            .eq('id', user.id)
+            .single();
+
+        const userVocabRate = profile?.vocab_unknown_rate || { A1_A2: 0, B1_B2: 0, C1_plus: 0 };
+        const themePreferences = profile?.theme_preferences || {};
+
+        const vocabSweetSpot = shadowingAttempts
+            .slice(0, 100)
+            .map(attempt => {
+                const item = itemsMap.get(attempt.item_id);
+                if (!item) return null;
+
+                // Estimate rate logic (duplicated from nextItem.ts for now)
+                let band = 'A1_A2';
+                if (item.level >= 5) band = 'C1_plus';
+                else if (item.level >= 3) band = 'B1_B2';
+                const rate = userVocabRate[band] || 0;
+
+                let score = 0;
+                if (attempt.metrics && typeof attempt.metrics === 'object') {
+                    if ('score' in attempt.metrics) score = Number(attempt.metrics.score);
+                    else if ('accuracy' in attempt.metrics) score = Number(attempt.metrics.accuracy) * 100;
+                }
+
+                return {
+                    rate: rate,
+                    score: score,
+                    level: item.level
+                };
+            })
+            .filter(Boolean);
+
+        // --- Interest vs Proficiency ---
+        // Radar chart comparing "Interest" (Theme Preference Weight) vs "Proficiency" (Avg Score for Theme)
+        // We iterate over all themes found in attempts + preferences
+        const allThemeIds = new Set([...themeIds, ...Object.keys(themePreferences)]);
+
+        // Fetch theme titles if not already in itemsMap
+        // We might need to fetch all themes to get titles for preferences that haven't been practiced
+        const { data: allThemes } = await supabase
+            .from('shadowing_themes')
+            .select('id, title');
+
+        const themeTitleMap = new Map();
+        allThemes?.forEach(t => themeTitleMap.set(t.id, t.title));
+
+        const interestVsProficiency = Array.from(allThemeIds).map(themeId => {
+            // Interest: Preference Weight (0-1) -> 0-100
+            const pref = themePreferences[themeId];
+            const interest = pref?.weight ? Math.round(pref.weight * 100) : 30; // Default 30 if no pref
+
+            // Proficiency: Avg Score for this theme
+            const themeAttempts = shadowingAttempts.filter(a => {
+                const item = itemsMap.get(a.item_id);
+                return item?.theme_id === themeId;
+            });
+
+            let proficiency = 0;
+            if (themeAttempts.length > 0) {
+                const totalScore = themeAttempts.reduce((sum, a) => {
+                    let s = 0;
+                    if (a.metrics && 'score' in a.metrics) s = Number(a.metrics.score);
+                    else if (a.metrics && 'accuracy' in a.metrics) s = Number(a.metrics.accuracy) * 100;
+                    return sum + s;
+                }, 0);
+                proficiency = Math.round(totalScore / themeAttempts.length);
+            } else {
+                proficiency = 0; // No data
+            }
+
+            return {
+                theme: themeTitleMap.get(themeId) || 'Unknown',
+                interest,
+                proficiency,
+                fullMark: 100
+            };
+        }).filter(d => d.interest > 0 || d.proficiency > 0)
+            .sort((a, b) => (b.interest + b.proficiency) - (a.interest + a.proficiency))
+            .slice(0, 6); // Top 6 relevant themes
+
         return NextResponse.json({
             abilityRadar,
             recentAccuracy,
             activityChart,
             scoreDistribution,
+            difficultyTrend,
+            vocabSweetSpot,
+            interestVsProficiency,
             stats: {
                 totalAttempts,
                 totalDays: activityMap.size,

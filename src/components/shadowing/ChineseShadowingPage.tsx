@@ -2327,6 +2327,10 @@ export default function ShadowingPage() {
     }
   }, [lang, level, authLoading, user?.id, loadThemes]);
 
+
+  // State for vocab unknown rate
+  const [vocabUnknownRate, setVocabUnknownRate] = useState<Record<string, number>>({ A1_A2: 0, B1_B2: 0, C1_plus: 0 });
+
   // 根据用户历史表现获取推荐等级（按当前筛选语言）
   useEffect(() => {
     const fetchRecommendedLevel = async () => {
@@ -2337,15 +2341,27 @@ export default function ShadowingPage() {
         } = await supabase.auth.getSession();
         if (!session) return;
         const effectiveLang = lang || 'zh';
-        const resp = await fetch(`/api/shadowing/recommended?lang=${effectiveLang}`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          credentials: 'include',
-        });
-        if (!resp.ok) return;
-        const data = await resp.json();
-        if (typeof data?.recommended === 'number') {
-          setRecommendedLevel(data.recommended);
+
+        // Parallel fetch: recommended level API + profile vocab rate
+        const [recResp, profileResp] = await Promise.all([
+          fetch(`/api/shadowing/recommended?lang=${effectiveLang}`, {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            credentials: 'include',
+          }),
+          supabase.from('profiles').select('vocab_unknown_rate').eq('id', user.id).single()
+        ]);
+
+        if (recResp.ok) {
+          const data = await recResp.json();
+          if (typeof data?.recommended === 'number') {
+            setRecommendedLevel(data.recommended);
+          }
         }
+
+        if (profileResp.data?.vocab_unknown_rate) {
+          setVocabUnknownRate(profileResp.data.vocab_unknown_rate);
+        }
+
       } catch {
         // ignore, fallback to仅基于完成状态的排序
       }
@@ -4586,7 +4602,16 @@ export default function ShadowingPage() {
                                   </div>
                                   {(() => {
                                     const pref = it.theme_id ? themePrefs[it.theme_id] : undefined;
-                                    const reason = getRecommendationReason(it, pref, recommendedLevel);
+                                    // Use vocabUnknownRate in recommendation logic
+                                    const recResult = getNextRecommendedItem(
+                                      currentItem?.id || '',
+                                      [it],
+                                      themePrefs,
+                                      recommendedLevel,
+                                      lang || 'zh',
+                                      vocabUnknownRate
+                                    );
+                                    const reason = recResult?.reason;
 
                                     // Debug log for specific item if needed, or just rely on general observation
                                     // if (it.level === 1) console.log('Item:', it.title, 'ThemeID:', it.theme_id, 'Pref:', pref, 'Reason:', reason);
