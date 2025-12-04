@@ -78,7 +78,6 @@ export async function GET(req: NextRequest) {
       audio_bucket: string | null;
       audio_path: string | null;
       notes: { audio_url?: string } | null;
-      audio_url_proxy: string | null;
       duration_ms: number | null;
       tokens: number | null;
       cefr: string | null;
@@ -94,7 +93,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from('shadowing_items')
       .select(
-        'id, lang, level, title, text, audio_url, audio_bucket, audio_path, notes, audio_url_proxy, duration_ms, tokens, cefr, meta, translations, trans_updated_at, created_at, sentence_timeline',
+        'id, lang, level, title, text, audio_url, audio_bucket, audio_path, notes, duration_ms, tokens, cefr, meta, translations, trans_updated_at, created_at, sentence_timeline',
       )
       .eq('id', id)
       .single();
@@ -106,7 +105,7 @@ export async function GET(req: NextRequest) {
 
     const row = data as ItemRow;
     const audioUrl =
-      row.audio_url_proxy || row.audio_url || row.notes?.audio_url ||
+      row.audio_url || row.notes?.audio_url ||
       (row.audio_bucket && row.audio_path
         ? `/api/storage-proxy?path=${encodeURIComponent(row.audio_path)}&bucket=${encodeURIComponent(row.audio_bucket)}`
         : null);

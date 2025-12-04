@@ -34,8 +34,8 @@ export async function GET(req: NextRequest) {
             get(name: string) {
               return cookieMap.get(name);
             },
-            set() {},
-            remove() {},
+            set() { },
+            remove() { },
           },
         },
       ) as unknown) as SupabaseClient;
@@ -49,8 +49,8 @@ export async function GET(req: NextRequest) {
             get(name: string) {
               return cookieStore.get(name)?.value;
             },
-            set() {},
-            remove() {},
+            set() { },
+            remove() { },
           },
         },
       ) as unknown) as SupabaseClient;
@@ -137,9 +137,9 @@ export async function GET(req: NextRequest) {
           .single();
         if (s) subtopic = s as any;
       }
-    } catch {}
+    } catch { }
     const resolvedAudio =
-      raw.audio_url_proxy || raw.audio_url || raw?.notes?.audio_url ||
+      raw.audio_url || raw?.notes?.audio_url ||
       (raw.audio_bucket && raw.audio_path
         ? `/api/storage-proxy?path=${encodeURIComponent(raw.audio_path)}&bucket=${encodeURIComponent(raw.audio_bucket)}`
         : null);
