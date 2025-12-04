@@ -66,6 +66,12 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
         icon: '🚀',
         match: 'startsWith',
       },
+      {
+        href: '/admin/shadowing/test-continuous',
+        label: 'Shadowing 连续故事测试',
+        icon: '📖',
+        match: 'startsWith',
+      },
       { href: '/admin/alignment/review', label: '对齐草稿审核', icon: '🧾', match: 'startsWith' },
       {
         href: '/admin/shadowing/review',

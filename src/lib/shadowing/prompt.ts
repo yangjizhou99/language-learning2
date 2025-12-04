@@ -145,7 +145,7 @@ MAX_SENTENCE_LEN=${maxSent}
 ${genreRules}
 
 OUTPUT JSON:
-{ "title":"...", "passage":"...", "notes":{ "key_phrases":[...], "pacing":"...", "tips":"..." }, "meta":{"lang":"${lang}","level":"L${level}","genre":"${genre}","dialogue_type":"${dialogueType || ''}"}, "violations":[] }
+{ "title":"...", "passage":"...", "notes":{}, "meta":{"lang":"${lang}","level":"L${level}","genre":"${genre}","dialogue_type":"${dialogueType || ''}"}, "violations":[] }
 
 If length is outside ±10% or sentences out of range, self-repair before returning.`;
 }
