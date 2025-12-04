@@ -1067,12 +1067,22 @@ CREATE TABLE IF NOT EXISTS "public"."scene_tags" (
     "name_cn" "text" NOT NULL,
     "name_en" "text",
     "description" "text",
-    "created_at" timestamp with time zone NOT NULL,
-    "updated_at" timestamp with time zone NOT NULL
+    "created_at" timestamp with time zone DEFAULT now() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
 ALTER TABLE "public"."scene_tags" OWNER TO "postgres";
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'scene_tags_pkey'
+    ) THEN
+        ALTER TABLE ONLY "public"."scene_tags"
+            ADD CONSTRAINT "scene_tags_pkey" PRIMARY KEY ("scene_id");
+    END IF;
+END $$;
 
 
 CREATE TABLE IF NOT EXISTS "public"."sentence_units" (
@@ -1735,8 +1745,15 @@ ALTER TABLE ONLY "public"."default_user_permissions"
 
 
 
-ALTER TABLE ONLY "public"."en_phoneme_units"
-    ADD CONSTRAINT "en_phoneme_units_symbol_key" UNIQUE ("symbol");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'en_phoneme_units_symbol_key'
+    ) THEN
+        ALTER TABLE ONLY "public"."en_phoneme_units"
+            ADD CONSTRAINT "en_phoneme_units_symbol_key" UNIQUE ("symbol");
+    END IF;
+END $$;
 
 
 
@@ -1820,13 +1837,27 @@ ALTER TABLE ONLY "public"."unit_alias"
 
 
 
-ALTER TABLE ONLY "public"."unit_catalog"
-    ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'unit_catalog_lang_symbol_key'
+    ) THEN
+        ALTER TABLE ONLY "public"."unit_catalog"
+            ADD CONSTRAINT "unit_catalog_lang_symbol_key" UNIQUE ("lang", "symbol");
+    END IF;
+END $$;
 
 
 
-ALTER TABLE ONLY "public"."unit_catalog"
-    ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'unit_catalog_pkey'
+    ) THEN
+        ALTER TABLE ONLY "public"."unit_catalog"
+            ADD CONSTRAINT "unit_catalog_pkey" PRIMARY KEY ("unit_id");
+    END IF;
+END $$;
 
 
 
@@ -1933,11 +1964,11 @@ CREATE INDEX "idx_cloze_shadowing_items_published" ON "public"."cloze_shadowing_
 
 
 
-CREATE INDEX "idx_en_phoneme_units_category" ON "public"."en_phoneme_units" USING "btree" ("category");
+CREATE INDEX IF NOT EXISTS "idx_en_phoneme_units_category" ON "public"."en_phoneme_units" USING "btree" ("category");
 
 
 
-CREATE INDEX "idx_en_phoneme_units_subcategory" ON "public"."en_phoneme_units" USING "btree" ("subcategory");
+CREATE INDEX IF NOT EXISTS "idx_en_phoneme_units_subcategory" ON "public"."en_phoneme_units" USING "btree" ("subcategory");
 
 
 
