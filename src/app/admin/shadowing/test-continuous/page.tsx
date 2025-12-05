@@ -434,9 +434,10 @@ export default function TestContinuousPage() {
                                             <p className="text-sm"><span className="font-semibold">Type:</span> {subtopic.dialogue_type}</p>
                                         )}
                                         {subtopic.roles && (
-                                            <div className="text-sm bg-slate-50 p-2 rounded">
-                                                <p><span className="font-semibold">Protagonist:</span> {subtopic.roles.protagonist}</p>
-                                                <p><span className="font-semibold">Other:</span> {subtopic.roles.other}</p>
+                                            <div className="text-sm bg-slate-50 p-2 rounded space-y-1">
+                                                {Object.entries(subtopic.roles).map(([key, value]) => (
+                                                    <p key={key}><span className="font-semibold">{key}:</span> {value as string}</p>
+                                                ))}
                                             </div>
                                         )}
                                     </div>

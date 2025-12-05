@@ -66,7 +66,8 @@ ${themeScript ? `- Adhere to the provided THEME_SCRIPT for the overall plot.` : 
 - ${titleGuidance}
 - ${oneLineGuidance}
 - IF GENRE is 'dialogue', you MUST generate a 'dialogue_type' field (e.g., casual, task, emotion, opinion, request, roleplay, pattern) that best fits the scenario.
-- You MUST generate a 'roles' object describing the 'protagonist' and 'other' characters involved.
+- You MUST generate a 'roles' object mapping dialogue placeholders (A, B, C...) to character names.
+- Example: "roles": { "A": "Ken (Protagonist)", "B": "Mary (Teacher)" }
 
 Output JSON ONLY:
 {
@@ -78,8 +79,8 @@ Output JSON ONLY:
       "one_line": "...",
       "dialogue_type": "...",
       "roles": {
-        "protagonist": "...",
-        "other": "..."
+        "A": "...",
+        "B": "..."
       }
     }
   ]
