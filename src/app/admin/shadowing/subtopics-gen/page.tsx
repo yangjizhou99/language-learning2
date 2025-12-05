@@ -1150,12 +1150,27 @@ export default function SubtopicsPage() {
                 <div key={item.id} className="flex items-center gap-2 p-2 border rounded">
                   <Checkbox checked={selected[item.id] || false} onCheckedChange={() => toggleOne(item.id)} />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{item.title}</div>
+                    <div className="font-medium truncate">
+                      {item.sequence_order && (
+                        <span className="inline-flex items-center justify-center w-6 h-6 mr-2 text-xs font-bold text-white bg-blue-600 rounded-full">
+                          {item.sequence_order}
+                        </span>
+                      )}
+                      {item.title}
+                    </div>
                     <div className="text-sm text-muted-foreground">{item.seed} • {item.one_line}</div>
-                    <div className="flex gap-1 mt-1">
+                    <div className="flex gap-1 mt-1 flex-wrap">
                       <Badge variant="outline">{item.lang}</Badge>
                       <Badge variant="outline">L{item.level}</Badge>
                       <Badge variant="outline">{item.genre}</Badge>
+                      {item.dialogue_type && (
+                        <Badge variant="secondary">{item.dialogue_type}</Badge>
+                      )}
+                      {item.roles && Object.keys(item.roles).length > 0 && (
+                        <Badge variant="outline" className="text-purple-600 border-purple-300">
+                          👥 {Object.keys(item.roles).length}角色
+                        </Badge>
+                      )}
                       {item.tags?.map((tag: string, index: number) => (
                         <Badge key={index} variant="secondary" className="text-xs">{tag}</Badge>
                       ))}
@@ -1267,9 +1282,21 @@ export default function SubtopicsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>标题</Label>
-                <Input value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>章节顺序</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={editing.sequence_order || ''}
+                    onChange={(e) => setEditing({ ...editing, sequence_order: parseInt(e.target.value) || null })}
+                    placeholder="1, 2, 3..."
+                  />
+                </div>
+                <div>
+                  <Label>标题</Label>
+                  <Input value={editing.title} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
+                </div>
               </div>
               <div>
                 <Label>关键词（逗号分隔）</Label>
@@ -1292,6 +1319,65 @@ export default function SubtopicsPage() {
                         .filter(Boolean),
                     })
                   }
+                />
+              </div>
+              {/* 对话类型 - 仅对话体裁显示 */}
+              {editing.genre === 'dialogue' && (
+                <div>
+                  <Label>对话类型</Label>
+                  <Select value={editing.dialogue_type || ''} onValueChange={(v) => setEditing({ ...editing, dialogue_type: v })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择对话类型" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="casual">日常闲聊</SelectItem>
+                      <SelectItem value="task">任务导向</SelectItem>
+                      <SelectItem value="emotion">情感表达</SelectItem>
+                      <SelectItem value="opinion">观点讨论</SelectItem>
+                      <SelectItem value="request">请求建议</SelectItem>
+                      <SelectItem value="roleplay">角色扮演</SelectItem>
+                      <SelectItem value="pattern">句型操练</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {/* 角色定义 - 用于连续故事生成 */}
+              <div>
+                <Label>角色定义 <span className="text-xs text-muted-foreground">(包含姓名和性别)</span></Label>
+                {/* 角色快捷查看 */}
+                {editing.roles && typeof editing.roles === 'object' && Object.keys(editing.roles).length > 0 && (
+                  <div className="flex gap-2 flex-wrap mb-2 p-2 bg-muted rounded">
+                    {Object.entries(editing.roles).map(([key, value]: [string, any]) => (
+                      <Badge key={key} variant="outline" className="text-sm">
+                        <span className="font-bold mr-1">{key}:</span>
+                        {typeof value === 'object' ? (
+                          <>
+                            {value.name}
+                            <span className={`ml-1 ${value.gender === 'male' ? 'text-blue-600' : 'text-pink-600'}`}>
+                              {value.gender === 'male' ? '♂' : '♀'}
+                            </span>
+                          </>
+                        ) : (
+                          value
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <Textarea
+                  value={typeof editing.roles === 'object' ? JSON.stringify(editing.roles, null, 2) : (editing.roles || '')}
+                  onChange={(e) => {
+                    try {
+                      const parsed = JSON.parse(e.target.value);
+                      setEditing({ ...editing, roles: parsed });
+                    } catch {
+                      // 如果不是有效JSON，暂存为字符串
+                      setEditing({ ...editing, roles: e.target.value });
+                    }
+                  }}
+                  placeholder='{"A": {"name": "李明", "gender": "male"}, "B": {"name": "王老师", "gender": "female"}}'
+                  rows={4}
+                  className="font-mono text-xs"
                 />
               </div>
               <div className="flex justify-end gap-2">

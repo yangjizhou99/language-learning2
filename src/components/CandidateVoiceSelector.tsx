@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,21 +54,27 @@ export default function CandidateVoiceSelector({
   const [selectedLanguage, setSelectedLanguage] = useState<string>(language);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>('all');
 
-  // 从本地存储加载备选音色
+  // 使用 ref 存储回调以避免无限循环
+  const onCandidateVoicesSetRef = useRef(onCandidateVoicesSet);
+  onCandidateVoicesSetRef.current = onCandidateVoicesSet;
+
+  // 标记是否已初始化
+  const initializedRef = useRef(false);
+
+  // 从本地存储加载备选音色（只在组件挂载时执行一次）
   useEffect(() => {
+    if (initializedRef.current) return;
     const savedCandidates = localStorage.getItem(`candidateVoices_${language}`);
     if (savedCandidates) {
       try {
         const candidateNames = JSON.parse(savedCandidates);
         setCandidateVoices(new Set(candidateNames));
-        // 通知父组件
-        const candidateVoiceObjects = voices.filter((v) => candidateNames.includes(v.name));
-        onCandidateVoicesSet(candidateVoiceObjects);
       } catch (error) {
         console.error('加载备选音色失败:', error);
       }
     }
-  }, [language, voices, onCandidateVoicesSet]);
+    initializedRef.current = true;
+  }, [language]);
 
   // 保存备选音色到本地存储
   useEffect(() => {
@@ -157,9 +163,10 @@ export default function CandidateVoiceSelector({
 
   // 使用useEffect来通知父组件，避免在渲染过程中调用
   useEffect(() => {
+    if (voices.length === 0) return; // 等待音色加载完成
     const candidateVoiceObjects = voices.filter((v) => candidateVoices.has(v.name));
-    onCandidateVoicesSet(candidateVoiceObjects);
-  }, [candidateVoices, voices, onCandidateVoicesSet]);
+    onCandidateVoicesSetRef.current(candidateVoiceObjects);
+  }, [candidateVoices, voices]);
 
   // 音色试听
   const previewVoice = async (voiceName: string, languageCode: string) => {
@@ -472,9 +479,8 @@ export default function CandidateVoiceSelector({
               return (
                 <div
                   key={voice.id ?? `${voice.name}-${index}`}
-                  className={`p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                    isCandidate ? 'ring-2 ring-green-500 bg-green-50' : 'hover:bg-gray-50'
-                  }`}
+                  className={`p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${isCandidate ? 'ring-2 ring-green-500 bg-green-50' : 'hover:bg-gray-50'
+                    }`}
                   onClick={() => handleCandidateSelect(voice.name)}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -494,13 +500,12 @@ export default function CandidateVoiceSelector({
                             <>
                               <span>•</span>
                               <span
-                                className={`px-1 py-0.5 rounded text-xs ${
-                                  voice.provider === 'gemini'
+                                className={`px-1 py-0.5 rounded text-xs ${voice.provider === 'gemini'
                                     ? 'bg-purple-100 text-purple-700'
                                     : voice.provider === 'xunfei'
                                       ? 'bg-orange-100 text-orange-700'
                                       : 'bg-blue-100 text-blue-700'
-                                }`}
+                                  }`}
                               >
                                 {voice.provider === 'gemini'
                                   ? 'Gemini'
@@ -526,13 +531,13 @@ export default function CandidateVoiceSelector({
                       voice.name.includes('xiaoguo') ||
                       voice.name.includes('pengfei') ||
                       voice.display_name?.includes('新闻播报')) && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs bg-red-100 text-red-700 border-red-200"
-                      >
-                        📰 新闻播报
-                      </Badge>
-                    )}
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-red-100 text-red-700 border-red-200"
+                        >
+                          📰 新闻播报
+                        </Badge>
+                      )}
 
                     {/* 对话标签 */}
                     {(voice.name.includes('talk') || voice.display_name?.includes('对话')) && (
@@ -548,13 +553,13 @@ export default function CandidateVoiceSelector({
                     {(voice.name.includes('em') ||
                       voice.name.includes('emo') ||
                       voice.display_name?.includes('情感')) && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs bg-pink-100 text-pink-700 border-pink-200"
-                      >
-                        😊 情感
-                      </Badge>
-                    )}
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-pink-100 text-pink-700 border-pink-200"
+                        >
+                          😊 情感
+                        </Badge>
+                      )}
 
                     {/* 闲聊标签 */}
                     {(voice.name.includes('chat') || voice.display_name?.includes('闲聊')) && (
@@ -570,35 +575,35 @@ export default function CandidateVoiceSelector({
                     {(voice.name.includes('boy') ||
                       voice.display_name?.includes('小男孩') ||
                       voice.display_name?.includes('老人')) && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs bg-yellow-100 text-yellow-700 border-yellow-200"
-                      >
-                        🎭 角色
-                      </Badge>
-                    )}
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-yellow-100 text-yellow-700 border-yellow-200"
+                        >
+                          🎭 角色
+                        </Badge>
+                      )}
 
                     {/* 高质量标签 */}
                     {(voice.name.includes('Chirp3-HD') ||
                       voice.display_name?.includes('Chirp3-HD')) && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs bg-blue-100 text-blue-700 border-blue-200"
-                      >
-                        ⭐ 高质量
-                      </Badge>
-                    )}
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-blue-100 text-blue-700 border-blue-200"
+                        >
+                          ⭐ 高质量
+                        </Badge>
+                      )}
 
                     {/* 基础标签 */}
                     {(voice.name.includes('Standard') ||
                       voice.display_name?.includes('Standard')) && (
-                      <Badge
-                        variant="secondary"
-                        className="text-xs bg-gray-100 text-gray-700 border-gray-200"
-                      >
-                        💰 经济型
-                      </Badge>
-                    )}
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-gray-100 text-gray-700 border-gray-200"
+                        >
+                          💰 经济型
+                        </Badge>
+                      )}
 
                     {/* 通用useCase标签 */}
                     {voice.useCase &&

@@ -608,11 +608,14 @@ export default function ThemesPage() {
 
     try {
       // 任务类型对应的后端端点
+      // 如果是subtopics任务且有theme_script，则使用连续故事生成API
       const endpoint =
         task.type === 'themes'
           ? '/api/admin/shadowing/themes/generate'
           : task.type === 'subtopics'
-            ? '/api/admin/shadowing/subtopics/generate'
+            ? task.params.theme_script
+              ? '/api/admin/shadowing/subtopics/generate-continuous'
+              : '/api/admin/shadowing/subtopics/generate'
             : '/api/admin/shadowing/themes/map-scenes';
 
       const response = await fetch(endpoint, {
@@ -715,6 +718,72 @@ export default function ThemesPage() {
 
         if (!response.ok) {
           throw new Error(result.error || '生成失败');
+        }
+
+        // 如果是主题生成任务，自动为每个主题生成剧本
+        if (task.type === 'themes' && result.themes) {
+          const themes = result.themes || result.inserted_themes || [];
+          let scriptProgress = 70;
+          const progressIncrement = themes.length > 0 ? 25 / themes.length : 0;
+
+          for (let i = 0; i < themes.length; i++) {
+            const theme = themes[i];
+            try {
+              // 更新进度显示
+              setTaskQueue((prev) =>
+                prev.map((t) =>
+                  t.id === taskId
+                    ? { ...t, progress: Math.round(scriptProgress + progressIncrement * i) }
+                    : t,
+                ),
+              );
+
+              // 为每个主题生成剧本
+              const scriptRes = await fetch('/api/admin/shadowing/themes/generate', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(await getAuthHeaders()),
+                },
+                body: JSON.stringify({
+                  step: 'script_only',
+                  lang: task.params.lang,
+                  level: task.params.level,
+                  genre: task.params.genre,
+                  theme: theme,
+                  provider: task.params.provider,
+                  model: task.params.model,
+                  temperature: task.params.temperature,
+                }),
+                signal: abortController.signal,
+              });
+
+              if (scriptRes.ok) {
+                const scriptData = await scriptRes.json();
+                // 更新数据库中的主题记录
+                if (scriptData.script || scriptData.recommended_count) {
+                  await fetch('/api/admin/shadowing/themes', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      ...(await getAuthHeaders()),
+                    },
+                    body: JSON.stringify({
+                      action: 'update_script',
+                      item: {
+                        id: theme.id,
+                        script: scriptData.script,
+                        recommended_count: scriptData.recommended_count,
+                      },
+                    }),
+                  });
+                }
+              }
+            } catch (scriptError) {
+              console.error(`Failed to generate script for theme ${theme.title}:`, scriptError);
+              // 继续处理下一个主题，不中断整个流程
+            }
+          }
         }
 
         // 更新任务状态为完成
@@ -948,14 +1017,18 @@ export default function ThemesPage() {
         return;
       }
 
+      // 使用主题的 recommended_count（如果有），否则使用用户设置的数量
+      const subtopicCount = theme.recommended_count || aiGenerationCount;
+
       addTaskToQueue('subtopics', {
         theme_id: theme.id,
         theme_title_cn: theme.title,
+        theme_script: theme.script, // 传递剧本以保持连续故事
         lang: effectiveLang,
         level: effectiveLevel,
         genre: effectiveGenre,
         dialogue_type: effectiveGenre === 'dialogue' ? effectiveDialogueType : undefined,
-        count: aiGenerationCount,
+        count: subtopicCount,
         provider: aiProvider,
         model: aiModel,
         temperature: aiTemperature,
@@ -1043,14 +1116,18 @@ export default function ThemesPage() {
       return;
     }
 
+    // 使用主题的 recommended_count（如果有），否则使用用户设置的数量
+    const subtopicCount = theme.recommended_count || aiGenerationCount;
+
     addTaskToQueue('subtopics', {
       theme_id: theme.id,
       theme_title_cn: theme.title,
+      theme_script: theme.script, // 传递剧本以保持连续故事
       lang: effectiveLang,
       level: effectiveLevel,
       genre: effectiveGenre,
       dialogue_type: effectiveGenre === 'dialogue' ? effectiveDialogueType : undefined,
-      count: aiGenerationCount,
+      count: subtopicCount,
       provider: aiProvider,
       model: aiModel,
       temperature: aiTemperature,
@@ -1556,7 +1633,14 @@ export default function ThemesPage() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <Badge variant="secondary">{item.subtopic_count || 0}</Badge>
+                        <div className="flex gap-1">
+                          <Badge variant="secondary">{item.subtopic_count || 0}</Badge>
+                          {item.recommended_count && (
+                            <Badge variant="outline" className="text-purple-600 border-purple-300" title="自动生成的推荐小主题数量">
+                              推荐: {item.recommended_count}
+                            </Badge>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4">
                         <Badge variant={item.practice_count ? 'secondary' : 'destructive'}>
@@ -1734,6 +1818,37 @@ export default function ThemesPage() {
                 placeholder="请输入主题描述（可选）"
                 rows={3}
               />
+            </div>
+
+            {/* 剧本字段 - 用于连续故事生成 */}
+            <div>
+              <Label>剧本大纲 <span className="text-xs text-muted-foreground">(自动生成，可编辑)</span></Label>
+              <Textarea
+                value={editing?.script || ''}
+                onChange={(e) => setEditing({ ...editing, script: e.target.value })}
+                placeholder="生成主题后自动填充剧本大纲..."
+                rows={6}
+                className="font-mono text-xs"
+              />
+            </div>
+
+            {/* 推荐小主题数量 */}
+            <div>
+              <Label>推荐小主题数量 <span className="text-xs text-muted-foreground">(根据剧本自动计算)</span></Label>
+              <Input
+                type="number"
+                min={3}
+                max={10}
+                value={editing?.recommended_count || ''}
+                onChange={(e) => setEditing({ ...editing, recommended_count: parseInt(e.target.value) || null })}
+                placeholder="3-10"
+                className="w-24"
+              />
+              {editing?.recommended_count && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  生成小主题时将自动使用此数量
+                </p>
+              )}
             </div>
 
             <div className="flex justify-end gap-2">

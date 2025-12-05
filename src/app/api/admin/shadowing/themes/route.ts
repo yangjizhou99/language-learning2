@@ -145,5 +145,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ item: result });
   }
 
+  // 单独更新剧本和推荐数量（不需要验证title）
+  if (action === 'update_script') {
+    if (!item.id) {
+      return NextResponse.json({ error: '缺少主题ID' }, { status: 400 });
+    }
+
+    const now = new Date().toISOString();
+
+    const { data: result, error } = await supabase
+      .from('shadowing_themes')
+      .update({
+        script: item.script,
+        recommended_count: item.recommended_count,
+        updated_at: now,
+      })
+      .eq('id', item.id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : String(error) },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json({ item: result });
+  }
+
   return NextResponse.json({ error: 'unknown action' }, { status: 400 });
 }

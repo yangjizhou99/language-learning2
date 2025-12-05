@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { requireAdmin } from '@/lib/admin';
 import { chatJSON } from '@/lib/ai/client';
 
@@ -66,8 +67,6 @@ ${themeScript ? `- Adhere to the provided THEME_SCRIPT for the overall plot.` : 
 - ${titleGuidance}
 - ${oneLineGuidance}
 - IF GENRE is 'dialogue', you MUST generate a 'dialogue_type' field (e.g., casual, task, emotion, opinion, request, roleplay, pattern) that best fits the scenario.
-- You MUST generate a 'roles' object mapping dialogue placeholders (A, B, C...) to character names.
-- Example: "roles": { "A": "Ken (Protagonist)", "B": "Mary (Teacher)" }
 
 Output JSON ONLY:
 {
@@ -77,11 +76,7 @@ Output JSON ONLY:
       "title": "...",
       "seed": "keyword, keyword, ...",
       "one_line": "...",
-      "dialogue_type": "...",
-      "roles": {
-        "A": "...",
-        "B": "..."
-      }
+      "dialogue_type": "..."
     }
   ]
 }
@@ -90,16 +85,18 @@ Ensure subtopics.length = ${count} and titles are unique.`;
 
 export async function POST(req: NextRequest) {
     try {
-        // const auth = await requireAdmin(req);
-        // if (!auth.ok) {
-        //     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-        // }
+        const auth = await requireAdmin(req);
+        if (!auth.ok) {
+            return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        }
 
+        const supabase = auth.supabase;
         const body = await req.json();
         const {
+            theme_id, // Required for saving to database
             theme_title,
             theme_title_cn,
-            theme_script, // Add theme_script
+            theme_script,
             lang,
             level,
             genre,
@@ -112,11 +109,11 @@ export async function POST(req: NextRequest) {
 
         const themeTitle = theme_title || theme_title_cn;
 
-        if (!themeTitle || !lang || !level || !genre) {
+        if (!theme_id || !themeTitle || !lang || !level || !genre) {
             return NextResponse.json(
                 {
                     error: 'Missing required parameters',
-                    received: { theme_title, theme_title_cn, lang, level, genre },
+                    received: { theme_id, theme_title, theme_title_cn, lang, level, genre },
                 },
                 { status: 400 },
             );
@@ -158,10 +155,47 @@ export async function POST(req: NextRequest) {
             throw new Error('Invalid response format');
         }
 
+        // Save subtopics to database with sequence order
+        const nowIso = new Date().toISOString();
+        const subtopicsToInsert = parsed.subtopics.map((subtopic: any, index: number) => ({
+            id: randomUUID(),
+            created_at: nowIso,
+            theme_id,
+            lang,
+            level,
+            genre,
+            dialogue_type: subtopic.dialogue_type || dialogue_type,
+            title: subtopic.title,
+            seed: subtopic.seed || '',
+            one_line: subtopic.one_line || '',
+            roles: subtopic.roles || null, // 保存角色定义
+            sequence_order: index + 1, // 保存顺序 (1-based)
+            ai_provider: provider,
+            ai_model: model,
+            ai_usage: result.usage || {},
+            status: 'active',
+            created_by: auth.user?.id,
+        }));
+
+        const { data: insertedData, error: insertError } = await supabase
+            .from('shadowing_subtopics')
+            .insert(subtopicsToInsert)
+            .select('id, title');
+
+        if (insertError) {
+            console.error('Database insert error:', insertError);
+            return NextResponse.json(
+                { error: `Database error: ${insertError.message}` },
+                { status: 500 },
+            );
+        }
+
         return NextResponse.json({
             success: true,
+            inserted_count: insertedData?.length || 0,
+            inserted_subtopics: insertedData,
             generated_subtopics: parsed.subtopics,
-            message: `Successfully generated ${parsed.subtopics.length} continuous story subtopics`,
+            message: `成功生成并保存 ${insertedData?.length || 0} 个连续故事小主题`,
         });
     } catch (error) {
         console.error('Continuous subtopic generation error:', error);
