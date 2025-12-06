@@ -115,7 +115,13 @@ async function callTranslationAPI(
   }
 
   try {
-    const translations = JSON.parse(translatedText);
+    // 清理 markdown 代码块（AI 有时会返回 ```json ... ```）
+    let cleanedText = translatedText;
+    if (cleanedText.startsWith('```')) {
+      cleanedText = cleanedText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const translations = JSON.parse(cleanedText);
 
     // 验证返回的翻译格式
     for (const targetLang of targetLangs) {
@@ -175,6 +181,7 @@ export async function POST(req: NextRequest) {
       model,
       temperature = 0.3,
       force = false, // 是否强制重新翻译
+      targetLanguages, // 可选：指定目标语言，如 ['en', 'ja'] 
     } = body;
 
     if (!id) {
@@ -196,9 +203,21 @@ export async function POST(req: NextRequest) {
     }
 
     // 检查是否需要翻译
+    // 确定目标语言：优先使用传入的 targetLanguages，过滤掉源语言
+    const effectiveTargetLangs = targetLanguages && targetLanguages.length > 0
+      ? targetLanguages.filter((lang: string) => lang !== item.lang)
+      : getTargetLanguages(item.lang);
+
+    if (effectiveTargetLangs.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: '无需翻译（目标语言为空或与源语言相同）',
+        translations: item.translations || {},
+      });
+    }
+
     if (!force && item.translations && Object.keys(item.translations).length > 0) {
-      const targetLangs = getTargetLanguages(item.lang);
-      const hasAllTranslations = targetLangs.every((lang) => item.translations[lang]);
+      const hasAllTranslations = effectiveTargetLangs.every((lang: string) => item.translations[lang]);
 
       if (hasAllTranslations) {
         return NextResponse.json({
@@ -211,11 +230,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 执行翻译
-    const targetLangs = getTargetLanguages(item.lang);
     const translations = await callTranslationAPI(
       item.text,
       item.lang,
-      targetLangs,
+      effectiveTargetLangs,
       provider,
       model,
       temperature,
