@@ -20,6 +20,7 @@ import {
   BarChart3,
   Zap,
   Mic,
+  Map,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import GoalCard from '@/components/GoalCard';
@@ -269,6 +270,14 @@ export default function Home() {
       icon: GraduationCap,
       href: '/practice/shadowing',
       color: 'bg-blue-500',
+      show: permissions.can_access_shadowing,
+    },
+    {
+      title: '故事线学习',
+      description: '跟随故事解锁对话',
+      icon: Map,
+      href: '/shadowing/storyline',
+      color: 'bg-amber-500',
       show: permissions.can_access_shadowing,
     },
     {
