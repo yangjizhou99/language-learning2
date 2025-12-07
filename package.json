@@ -61,7 +61,7 @@
     "jieba": "^1.0.0",
     "lucide-react": "^0.542.0",
     "microsoft-cognitiveservices-speech-sdk": "^1.46.0",
-    "next": "15.4.6",
+    "next": "^16.0.1",
     "nltk": "^0.0.1",
     "openai": "^6.5.0",
     "p-limit": "^7.1.1",
