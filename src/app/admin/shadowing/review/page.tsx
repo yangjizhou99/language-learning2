@@ -19,6 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import VoiceManager from '@/components/VoiceManager';
 import CandidateVoiceSelector from '@/components/CandidateVoiceSelector';
+import ThemeBatchProcessor from '@/components/admin/ThemeBatchProcessor';
 
 const DIALOGUE_TYPE_OPTIONS = [
   { value: 'all', label: '全部类型' },
@@ -2013,6 +2014,9 @@ export default function ShadowingReviewList() {
           </button>
         </div>
       </div>
+
+      {/* 主题批量处理 */}
+      <ThemeBatchProcessor />
 
       {/* 筛选条件 */}
       <Card>
