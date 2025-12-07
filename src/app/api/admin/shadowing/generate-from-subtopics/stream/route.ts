@@ -170,6 +170,7 @@ export async function POST(req: NextRequest) {
                   subtopic_id: subtopic.id,
                   notes: {
                     ...parsed.notes,
+                    roles: parsed.roles || {}, // 保存角色定义
                     violations: parsed.violations || [],
                     source: {
                       kind: 'subtopic',

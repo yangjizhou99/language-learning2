@@ -1184,7 +1184,7 @@ export default function ShadowingReviewList() {
       if (existingAssignment && existingAssignment.type === 'dialogue') {
         speakerVoices = existingAssignment.mapping;
       } else {
-        speakerVoices = getSpeakerVoices(draft.text);
+        speakerVoices = getSpeakerVoices(draft.text, draft.notes?.roles);
         console.log('说话者音色分配:', speakerVoices);
         if (!speakerVoices) {
           throw new Error('无法分配说话者音色');
@@ -1383,8 +1383,8 @@ export default function ShadowingReviewList() {
     return false;
   };
 
-  // 获取说话者音色分配
-  const getSpeakerVoices = (text: string) => {
+  // 获取说话者音色分配（基于角色性别）
+  const getSpeakerVoices = (text: string, roles?: Record<string, any>) => {
     // 提取说话者（A/B/C...）
     const speakerPattern = /^[A-Z]:/gm;
     const matches = text.match(speakerPattern);
@@ -1393,7 +1393,7 @@ export default function ShadowingReviewList() {
 
     const mapping: Record<string, string> = {};
 
-    // 基于"备选音色"随机按性别分配（优先）：A=男声、B=女声
+    // 基于"备选音色"按性别分类
     const maleVoices = (candidateVoices || []).filter((v: any) => {
       const g = (v.ssml_gender || v.ssmlGender || '').toLowerCase();
       return g === 'male' || g.includes('男');
@@ -1405,42 +1405,35 @@ export default function ShadowingReviewList() {
 
     const pickRandomName = (arr: any[]) => arr.length ? arr[Math.floor(Math.random() * arr.length)].name : '';
 
-    if (maleVoices.length > 0 && femaleVoices.length > 0) {
-      mapping['A'] = pickRandomName(maleVoices);
-      mapping['B'] = pickRandomName(femaleVoices);
-    } else if ((candidateVoices || []).length >= 2) {
-      // 若备选没有覆盖到双性别，则从备选中随机两条不同音色
-      const idxA = Math.floor(Math.random() * candidateVoices.length);
-      let idxB = Math.floor(Math.random() * candidateVoices.length);
-      if (idxB === idxA && candidateVoices.length > 1) idxB = (idxA + 1) % candidateVoices.length;
-      mapping['A'] = candidateVoices[idxA].name;
-      mapping['B'] = candidateVoices[idxB].name;
-    } else if ((candidateVoices || []).length === 1) {
-      // 只有一个备选则 A/B 使用同一音色
-      mapping['A'] = candidateVoices[0].name;
-      mapping['B'] = candidateVoices[0].name;
-    } else {
-      // 无备选则回退到旧策略（性别推断/随机）
-      const a = getRandomMaleVoice();
-      const b = getRandomFemaleVoice();
-      mapping['A'] = a || getRandomVoice() || '';
-      mapping['B'] = b || getRandomVoice() || mapping['A'] || '';
-    }
+    // 根据角色的实际性别分配音色
+    for (const speaker of speakers) {
+      const roleInfo = roles?.[speaker];
+      let gender: string | null = null;
 
-    // 其余说话者（C/D...）随机从备选中分配，避免与 A/B 重复尽量优先
-    for (const s of speakers) {
-      if (s === 'A' || s === 'B') continue;
-      let name = '';
-      if ((candidateVoices || []).length) {
-        const pool = candidateVoices
-          .map((v: any) => v.name)
-          .filter((n: string) => n !== mapping['A'] && n !== mapping['B']);
-        name = pool.length ? pool[Math.floor(Math.random() * pool.length)] : (candidateVoices[0].name || '');
+      if (roleInfo && typeof roleInfo === 'object') {
+        gender = roleInfo.gender; // 'male' or 'female'
       }
-      mapping[s] = name || getRandomVoice() || mapping['A'] || mapping['B'] || '';
+
+      if (gender === 'male' && maleVoices.length > 0) {
+        mapping[speaker] = pickRandomName(maleVoices);
+      } else if (gender === 'female' && femaleVoices.length > 0) {
+        mapping[speaker] = pickRandomName(femaleVoices);
+      } else if ((candidateVoices || []).length > 0) {
+        // 没有性别信息或对应性别无音色时，随机选一个
+        mapping[speaker] = pickRandomName(candidateVoices);
+      } else {
+        // 无备选则回退到旧策略
+        if (gender === 'male') {
+          mapping[speaker] = getRandomMaleVoice() || getRandomVoice() || '';
+        } else if (gender === 'female') {
+          mapping[speaker] = getRandomFemaleVoice() || getRandomVoice() || '';
+        } else {
+          mapping[speaker] = getRandomVoice() || '';
+        }
+      }
     }
 
-    console.log('getSpeakerVoices - 最终音色分配(随机性别优先):', mapping);
+    console.log('getSpeakerVoices - 最终音色分配(基于角色性别):', { roles, mapping });
     return mapping;
   };
 

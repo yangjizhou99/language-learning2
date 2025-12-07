@@ -119,7 +119,12 @@ export function buildShadowPrompt({
           break;
       }
     }
-    genreRules = `TYPE=${typeDesc}\nTURNS=${p.sentRange[0]}–${p.sentRange[1]}, alternate speakers "A:"/"B:", avoid long monologues.`;
+    genreRules = `TYPE=${typeDesc}
+TURNS=${p.sentRange[0]}–${p.sentRange[1]}, alternate speakers "A:"/"B:", avoid long monologues.
+IMPORTANT: You MUST provide a "roles" object mapping each speaker (A, B, C...) to their character with name and gender.
+- If a line starts with "A:", then A is the SPEAKER of that line.
+- Gender must be "male" or "female"
+- Example: "roles": { "A": {"name": "老师", "gender": "female"}, "B": {"name": "李明", "gender": "male"} }`;
   } else if (genre === 'news') {
     genreRules = `Headline-style title; explanatory flow; minimal quotations.`;
   } else if (genre === 'lecture') {
@@ -145,7 +150,7 @@ MAX_SENTENCE_LEN=${maxSent}
 ${genreRules}
 
 OUTPUT JSON:
-{ "title":"...", "passage":"...", "notes":{ "key_phrases":[...], "pacing":"...", "tips":"..." }, "meta":{"lang":"${lang}","level":"L${level}","genre":"${genre}","dialogue_type":"${dialogueType || ''}"}, "violations":[] }
+${genre === 'dialogue' ? '{ "title":"...", "passage":"...", "roles":{"A":{"name":"...","gender":"male|female"},"B":{"name":"...","gender":"male|female"}}, "notes":{}, "meta":{}, "violations":[] }' : '{ "title":"...", "passage":"...", "notes":{}, "meta":{}, "violations":[] }'}
 
 If length is outside ±10% or sentences out of range, self-repair before returning.`;
 }
