@@ -93,26 +93,45 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // Fetch Theme Vectors
+        // Fetch Theme Vectors via Subtopics
         // We collect all unique theme_ids
         const themeIds = Array.from(new Set(Array.from(itemsMap.values()).map((i) => i.theme_id).filter(Boolean)));
 
         let themeVectorsMap = new Map(); // theme_id -> [{scene_id, weight}]
         if (themeIds.length > 0) {
-            const { data: vectors, error: vectorsError } = await supabase
-                .from('theme_scene_vectors')
-                .select('theme_id, scene_id, weight')
-                .in('theme_id', themeIds);
+            // First get subtopics for these themes
+            const { data: subtopics, error: subtopicsError } = await supabase
+                .from('shadowing_subtopics')
+                .select('id, theme_id')
+                .in('theme_id', themeIds)
+                .eq('status', 'active');
 
-            if (vectorsError) {
-                console.error('Error fetching vectors:', vectorsError);
-            } else {
-                vectors.forEach(v => {
-                    if (!themeVectorsMap.has(v.theme_id)) {
-                        themeVectorsMap.set(v.theme_id, []);
-                    }
-                    themeVectorsMap.get(v.theme_id).push(v);
-                });
+            if (subtopicsError) {
+                console.error('Error fetching subtopics:', subtopicsError);
+            } else if (subtopics && subtopics.length > 0) {
+                const subtopicIds = subtopics.map((st: any) => st.id);
+                const subtopicToTheme = new Map(subtopics.map((st: any) => [st.id, st.theme_id]));
+
+                // Then get scene vectors for those subtopics
+                const { data: vectors, error: vectorsError } = await supabase
+                    .from('subtopic_scene_vectors')
+                    .select('subtopic_id, scene_id, weight')
+                    .in('subtopic_id', subtopicIds);
+
+                if (vectorsError) {
+                    console.error('Error fetching vectors:', vectorsError);
+                } else if (vectors) {
+                    // Aggregate vectors by theme
+                    vectors.forEach((v: any) => {
+                        const themeId = subtopicToTheme.get(v.subtopic_id);
+                        if (!themeId) return;
+
+                        if (!themeVectorsMap.has(themeId)) {
+                            themeVectorsMap.set(themeId, []);
+                        }
+                        themeVectorsMap.get(themeId).push({ scene_id: v.scene_id, weight: v.weight });
+                    });
+                }
             }
         }
 

@@ -5,17 +5,15 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
-    const themeId = searchParams.get('theme_id');
+    const subtopicId = searchParams.get('subtopic_id');
 
-    if (!themeId) {
-        return NextResponse.json({ error: 'Missing theme_id' }, { status: 400 });
+    if (!subtopicId) {
+        return NextResponse.json({ error: 'Missing subtopic_id' }, { status: 400 });
     }
 
     const authHeader = request.headers.get('authorization') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
     let supabase;
-
-    // console.log('[Vectors API] Auth check:', { hasBearer, authHeader: hasBearer ? 'Bearer ***' : 'None' });
 
     if (hasBearer) {
         supabase = createClient(
@@ -44,16 +42,16 @@ export async function GET(request: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-        console.error('[Vectors API] Unauthorized:', authError);
+        console.error('[Subtopic Vectors API] Unauthorized:', authError);
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
         // Fetch vectors
         const { data: vectors, error } = await supabase
-            .from('theme_scene_vectors')
+            .from('subtopic_scene_vectors')
             .select('scene_id, weight')
-            .eq('theme_id', themeId)
+            .eq('subtopic_id', subtopicId)
             .gt('weight', 0)
             .order('weight', { ascending: false });
 
@@ -76,7 +74,7 @@ export async function GET(request: Request) {
 
         return NextResponse.json({ success: true, vectors: result });
     } catch (error: any) {
-        console.error('Error fetching theme vectors:', error);
+        console.error('Error fetching subtopic vectors:', error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }

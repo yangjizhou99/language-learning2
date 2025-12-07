@@ -1656,27 +1656,6 @@ export default function ThemesPage() {
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button
-                            onClick={() => mapScenesForTheme(item)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-amber-600 hover:text-amber-700"
-                            title="为该主题生成场景标签向量（用于个性化推荐）"
-                          >
-                            <Target className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              setVectorTheme(item);
-                              setVectorModalOpen(true);
-                            }}
-                            variant="ghost"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-700"
-                            title="查看场景向量"
-                          >
-                            <BarChart2 className="w-4 h-4" />
-                          </Button>
-                          <Button
                             onClick={() => {
                               setSelectedThemeForSubtopic(item);
                               setAiGenerationType('subtopics');
