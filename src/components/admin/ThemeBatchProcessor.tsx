@@ -437,9 +437,17 @@ export default function ThemeBatchProcessor() {
                     }
                 }
 
+                // 刷新 session 以确保 token 有效
+                const { data: { session } } = await supabase.auth.getSession();
+                const token = session?.access_token;
+                const currentHeaders = {
+                    ...headers,
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                };
+
                 const response = await fetch('/api/admin/shadowing/synthesize-dialogue', {
                     method: 'POST',
-                    headers,
+                    headers: currentHeaders,
                     body: JSON.stringify({
                         text: draft.text,
                         lang: lang,
