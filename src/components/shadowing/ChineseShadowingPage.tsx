@@ -138,6 +138,7 @@ interface ShadowingItem {
     title: string;
     one_line?: string;
   };
+  top_scenes?: { id: string; name: string; weight: number }[];
   notes?: {
     acu_marked?: string;
     acu_units?: Array<{ span: string; start: number; end: number; sid: number }>;
@@ -4600,6 +4601,20 @@ export default function ShadowingPage() {
                                       {it.subtopic ? it.subtopic.title : it.title}
                                     </h4>
                                   </div>
+                                  {/* Scene Tags */}
+                                  {it.top_scenes && it.top_scenes.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-1 mb-2">
+                                      {it.top_scenes.map((scene) => (
+                                        <Badge
+                                          key={scene.id}
+                                          variant="secondary"
+                                          className="text-[10px] px-1.5 py-0 h-5 bg-slate-100 text-slate-600 border-none"
+                                        >
+                                          {scene.name}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
                                   {(() => {
                                     const pref = it.theme_id ? themePrefs[it.theme_id] : undefined;
                                     // Use vocabUnknownRate in recommendation logic

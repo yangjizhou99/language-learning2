@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Lock, Check, Play } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface StorylineNodeProps {
     id: string;
@@ -15,6 +16,7 @@ interface StorylineNodeProps {
     order: number;
     lang: string;
     isLast: boolean;
+    top_scenes?: { id: string; name: string; weight: number }[];
 }
 
 export function StorylineNode({
@@ -26,6 +28,7 @@ export function StorylineNode({
     order,
     lang,
     isLast,
+    top_scenes = [],
 }: StorylineNodeProps) {
     const router = useRouter();
 
@@ -123,6 +126,22 @@ export function StorylineNode({
                         {oneLine}
                     </p>
                 )}
+
+                {/* Scene Tags */}
+                {top_scenes && top_scenes.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                        {top_scenes.map((scene) => (
+                            <Badge
+                                key={scene.id}
+                                variant="secondary"
+                                className="text-[10px] px-1.5 py-0 h-5 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-none"
+                            >
+                                {scene.name}
+                            </Badge>
+                        ))}
+                    </div>
+                )}
+
                 {status === 'unlocked' && itemId && (
                     <button
                         onClick={handleClick}

@@ -15,6 +15,7 @@ interface SubtopicData {
     itemId: string | null;
     isPracticed: boolean;
     order: number;
+    top_scenes?: { id: string; name: string; weight: number }[];
 }
 
 interface StorylineThemeCardProps {
@@ -162,6 +163,7 @@ export function StorylineThemeCard({
                                                 order={subtopic.order}
                                                 lang={lang}
                                                 isLast={index === subtopics.length - 1}
+                                                top_scenes={subtopic.top_scenes}
                                             />
                                         ))}
                                     </div>
