@@ -423,12 +423,15 @@ export default function ThemeBatchProcessor() {
                 const draftRoles = draft.notes?.roles || {};
                 const speakerVoicesForDraft: Record<string, string> = {};
 
-                if (cachedVoiceMapping) {
+                // 优先使用传入的 voiceMapping，否则使用缓存的
+                const effectiveVoiceMapping = voiceMapping || cachedVoiceMapping;
+
+                if (effectiveVoiceMapping) {
                     for (const [label, roleInfo] of Object.entries(draftRoles)) {
                         if (roleInfo && typeof roleInfo === 'object') {
                             const charName = (roleInfo as any).name;
-                            if (charName && voiceMapping && voiceMapping[charName]) {
-                                speakerVoicesForDraft[label] = voiceMapping[charName];
+                            if (charName && effectiveVoiceMapping[charName]) {
+                                speakerVoicesForDraft[label] = effectiveVoiceMapping[charName];
                             }
                         }
                     }
