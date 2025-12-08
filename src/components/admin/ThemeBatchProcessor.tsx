@@ -204,7 +204,7 @@ export default function ThemeBatchProcessor() {
     });
 
     // 并发处理单个主题
-    async function processTheme(themeId: string, headers: Record<string, string>): Promise<boolean> {
+    async function processTheme(themeId: string, headers: Record<string, string>, voiceMapping: Record<string, string> | null): Promise<boolean> {
         setThemeStatuses(prev => ({ ...prev, [themeId]: 'processing' }));
         const theme = themes.find(t => t.id === themeId);
 
@@ -227,7 +227,7 @@ export default function ThemeBatchProcessor() {
 
             // 生成语音
             if (doAudio) {
-                await processDraftsBatch(drafts, themeId, 'audio', headers, theme?.lang || 'zh');
+                await processDraftsBatch(drafts, themeId, 'audio', headers, theme?.lang || 'zh', voiceMapping);
             }
 
             // 生成ACU
@@ -266,7 +266,8 @@ export default function ThemeBatchProcessor() {
         themeId: string,
         type: 'audio' | 'acu' | 'translation' | 'publish',
         headers: Record<string, string>,
-        lang: string
+        lang: string,
+        voiceMapping: Record<string, string> | null = null
     ) {
         const theme = themes.find(t => t.id === themeId);
         const typeLabels = { audio: '语音', acu: 'ACU', translation: '翻译', publish: '发布' };
@@ -289,7 +290,7 @@ export default function ThemeBatchProcessor() {
                 batch.map(async (draft) => {
                     for (let attempt = 0; attempt <= retries; attempt++) {
                         try {
-                            const result = await processSingleDraft(draft, type, headers, lang);
+                            const result = await processSingleDraft(draft, type, headers, lang, voiceMapping);
                             return result;
                         } catch (e) {
                             if (attempt === retries) return false;
@@ -408,7 +409,8 @@ export default function ThemeBatchProcessor() {
         draft: any,
         type: 'audio' | 'acu' | 'translation' | 'publish',
         headers: Record<string, string>,
-        lang: string
+        lang: string,
+        voiceMapping: Record<string, string> | null = null
     ): Promise<boolean> {
         try {
             if (type === 'audio') {
@@ -425,8 +427,8 @@ export default function ThemeBatchProcessor() {
                     for (const [label, roleInfo] of Object.entries(draftRoles)) {
                         if (roleInfo && typeof roleInfo === 'object') {
                             const charName = (roleInfo as any).name;
-                            if (charName && cachedVoiceMapping[charName]) {
-                                speakerVoicesForDraft[label] = cachedVoiceMapping[charName];
+                            if (charName && voiceMapping && voiceMapping[charName]) {
+                                speakerVoicesForDraft[label] = voiceMapping[charName];
                             }
                         }
                     }
@@ -440,24 +442,24 @@ export default function ThemeBatchProcessor() {
                         lang: lang,
                         speakerVoices: speakerVoicesForDraft,
                         speakingRate: 1.0,
+                        draftId: draft.id,
+                        voiceMapping: voiceMapping,
                     }),
                 });
 
                 if (response.ok) {
                     const result = await response.json();
-                    await supabase
-                        .from('shadowing_drafts')
-                        .update({
-                            notes: {
-                                ...(draft.notes || {}),
-                                audio_url: result.audio_url,
-                                voice_mapping: cachedVoiceMapping,
-                                sentence_timeline: result.sentence_timeline,
-                            },
-                        })
-                        .eq('id', draft.id);
+                    console.log('TTS API Response:', result);
+
+                    if (!result.audio_url) {
+                        console.error('TTS API returned no audio_url');
+                        return false;
+                    }
+
+                    console.log('DB Update handled by API');
                     return true;
                 }
+                console.error('TTS API Failed:', response.status, await response.text());
                 return false;
             } else if (type === 'acu') {
                 // 跳过已有ACU
@@ -533,8 +535,9 @@ export default function ThemeBatchProcessor() {
 
         try {
             // 预先收集所有角色并分配音色
-            if (doAudio && !cachedVoiceMapping) {
-                await prepareVoiceMapping(Array.from(selectedThemes));
+            let voiceMapping: Record<string, string> | null = cachedVoiceMapping;
+            if (doAudio && !voiceMapping) {
+                voiceMapping = await prepareVoiceMapping(Array.from(selectedThemes));
             }
 
             const themeIds = Array.from(selectedThemes);
@@ -550,7 +553,7 @@ export default function ThemeBatchProcessor() {
                 const batch = themeIds.slice(i, Math.min(i + themeConcurrency, themeIds.length));
 
                 await Promise.all(
-                    batch.map(themeId => processTheme(themeId, headers))
+                    batch.map(themeId => processTheme(themeId, headers, voiceMapping))
                 );
 
                 setOverallProgress(prev => ({
@@ -629,6 +632,7 @@ export default function ThemeBatchProcessor() {
             ...prev,
             `🎤 已分配 ${Object.keys(mapping).length} 个角色音色`,
         ]);
+        return mapping;
     }
 
     // 计算男女音色数量
