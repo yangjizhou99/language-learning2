@@ -25,6 +25,7 @@ interface SubtopicData {
     itemId: string | null;
     isPracticed: boolean;
     order: number;
+    top_scenes?: { id: string; name: string; weight: number }[];
 }
 
 interface ThemeData {

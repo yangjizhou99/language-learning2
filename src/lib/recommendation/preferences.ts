@@ -45,8 +45,8 @@ type ScenePreferenceRow = {
   weight: number;
 };
 
-type ThemeSceneVectorRow = {
-  theme_id: string;
+type SubtopicSceneVectorRow = {
+  subtopic_id: string;
   scene_id: string;
   weight: number;
 };
@@ -89,7 +89,8 @@ export async function getUserPreferenceVectors(
 }
 
 /**
- * 从 user_scene_preferences + theme_scene_vectors 中计算 per-theme 得分。
+ * 从 user_scene_preferences + subtopic_scene_vectors 中计算 per-theme 得分。
+ * 策略：对每个主题下的小主题计算场景匹配得分，取平均值作为主题得分。
  */
 async function loadPreferenceVectors(
   supabase: ReturnType<typeof getServiceSupabase>,
@@ -135,13 +136,42 @@ async function loadPreferenceVectors(
 
   const themeIds = themeRows.map((t) => t.id);
 
-  const { data: vectors, error: vectorErr } = await supabase
-    .from('theme_scene_vectors')
-    .select('theme_id, scene_id, weight')
+  // 2.1 先获取这些主题下的所有小主题
+  const { data: subtopics, error: subtopicsErr } = await supabase
+    .from('shadowing_subtopics')
+    .select('id, theme_id')
     .in('theme_id', themeIds);
 
+  if (subtopicsErr) {
+    console.error('Failed to load shadowing_subtopics for scoring:', subtopicsErr);
+    return null;
+  }
+
+  const subtopicRows = (subtopics || []) as { id: string; theme_id: string }[];
+  if (!subtopicRows.length) {
+    // 没有小主题：返回空得分
+    return {
+      themes: [],
+      subtopics: [],
+      themeMap: new Map(),
+      subtopicMap: new Map(),
+    };
+  }
+
+  const subtopicIds = subtopicRows.map((st) => st.id);
+  const subtopicToTheme = new Map<string, string>();
+  for (const st of subtopicRows) {
+    subtopicToTheme.set(st.id, st.theme_id);
+  }
+
+  // 2.2 获取小主题的场景向量
+  const { data: vectors, error: vectorErr } = await supabase
+    .from('subtopic_scene_vectors')
+    .select('subtopic_id, scene_id, weight')
+    .in('subtopic_id', subtopicIds);
+
   if (vectorErr) {
-    console.error('Failed to load theme_scene_vectors:', vectorErr);
+    console.error('Failed to load subtopic_scene_vectors:', vectorErr);
     return null;
   }
 
@@ -157,12 +187,12 @@ async function loadPreferenceVectors(
     });
   }
 
-  const vectorRows = (vectors || []) as ThemeSceneVectorRow[];
+  const vectorRows = (vectors || []) as SubtopicSceneVectorRow[];
 
-  // 3. 对每个 theme 计算 U·M（用户场景偏好 × 主题场景向量）
-  // 同时记录每个主题下贡献度最高的场景
-  const themeScoreMap = new Map<string, number>();
-  const themeSceneContribs = new Map<string, Array<{ scene_id: string; contrib: number }>>();
+  // 3. 对每个 subtopic 计算 U·M（用户场景偏好 × 小主题场景向量）
+  //    然后按 theme 聚合（取平均值）
+  const subtopicScoreMap = new Map<string, number>();
+  const subtopicSceneContribs = new Map<string, Array<{ scene_id: string; contrib: number }>>();
 
   for (const row of vectorRows) {
     const u = sceneMap.get(row.scene_id) ?? 0;
@@ -170,19 +200,48 @@ async function loadPreferenceVectors(
     if (u <= 0 || w <= 0) continue;
 
     const contrib = u * w;
-    const prev = themeScoreMap.get(row.theme_id) ?? 0;
-    themeScoreMap.set(row.theme_id, prev + contrib);
+    const prev = subtopicScoreMap.get(row.subtopic_id) ?? 0;
+    subtopicScoreMap.set(row.subtopic_id, prev + contrib);
 
     // 记录贡献
-    if (!themeSceneContribs.has(row.theme_id)) {
-      themeSceneContribs.set(row.theme_id, []);
+    if (!subtopicSceneContribs.has(row.subtopic_id)) {
+      subtopicSceneContribs.set(row.subtopic_id, []);
     }
-    themeSceneContribs.get(row.theme_id)?.push({ scene_id: row.scene_id, contrib });
+    subtopicSceneContribs.get(row.subtopic_id)?.push({ scene_id: row.scene_id, contrib });
   }
 
-  // 对没有任何场景向量的主题，得分默认为 0
+  // 4. 按 theme 聚合：取该主题下所有小主题得分的平均值
+  const themeScoreMap = new Map<string, number>();
+  const themeSubtopicCounts = new Map<string, number>();
+  const themeSceneContribs = new Map<string, Array<{ scene_id: string; contrib: number }>>();
+
+  for (const st of subtopicRows) {
+    const themeId = st.theme_id;
+    const subtopicScore = subtopicScoreMap.get(st.id) ?? 0;
+
+    const prevScore = themeScoreMap.get(themeId) ?? 0;
+    const prevCount = themeSubtopicCounts.get(themeId) ?? 0;
+
+    themeScoreMap.set(themeId, prevScore + subtopicScore);
+    themeSubtopicCounts.set(themeId, prevCount + 1);
+
+    // 合并场景贡献
+    const contribs = subtopicSceneContribs.get(st.id) || [];
+    if (!themeSceneContribs.has(themeId)) {
+      themeSceneContribs.set(themeId, []);
+    }
+    themeSceneContribs.get(themeId)?.push(...contribs);
+  }
+
+  // 计算平均分并设置没有小主题的主题得分为 0
   for (const t of themeRows) {
-    if (!themeScoreMap.has(t.id)) themeScoreMap.set(t.id, 0);
+    const count = themeSubtopicCounts.get(t.id) ?? 0;
+    if (count > 0) {
+      const totalScore = themeScoreMap.get(t.id) ?? 0;
+      themeScoreMap.set(t.id, totalScore / count); // 平均值
+    } else {
+      themeScoreMap.set(t.id, 0);
+    }
   }
 
   const themesOut: ThemePreference[] = [];

@@ -31,7 +31,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     Volume2, Languages, BookOpen, Play, Users, RefreshCw, Zap, Settings,
-    ChevronDown, CheckCheck, Square, Check, Loader2, AlertCircle, CheckCircle2
+    ChevronDown, CheckCheck, Square, Check, Loader2, AlertCircle, CheckCircle2, Target
 } from 'lucide-react';
 import CandidateVoiceSelector from '@/components/CandidateVoiceSelector';
 
@@ -77,10 +77,12 @@ export default function ThemeBatchProcessor() {
     const [doACU, setDoACU] = useState(true);
     const [doTranslation, setDoTranslation] = useState(true);
     const [doPublish, setDoPublish] = useState(true);
+    const [doSceneVector, setDoSceneVector] = useState(false);
     const [transTargetLanguages, setTransTargetLanguages] = useState<string[]>([]);
 
     // 跳过选项
     const [skipExistingAudio, setSkipExistingAudio] = useState(true);
+    const [skipExistingSceneVector, setSkipExistingSceneVector] = useState(true);
     const [skipExistingACU, setSkipExistingACU] = useState(true);
 
     // 性能参数
@@ -233,6 +235,11 @@ export default function ThemeBatchProcessor() {
                 await processDraftsBatch(drafts, themeId, 'acu', headers, theme?.lang || 'zh');
             }
 
+            // 生成场景向量（针对小主题）
+            if (doSceneVector) {
+                await processSubtopicsSceneVectors(themeId, headers);
+            }
+
             // 生成翻译
             if (doTranslation && transTargetLanguages.length > 0) {
                 await processDraftsBatch(drafts, themeId, 'translation', headers, theme?.lang || 'zh');
@@ -309,6 +316,92 @@ export default function ThemeBatchProcessor() {
 
         setLogs(prev => [...prev, `   ${typeLabels[type]}: ${success}成功 ${fail}失败`]);
     }
+
+    // 处理主题下所有小主题的场景向量生成
+    async function processSubtopicsSceneVectors(themeId: string, headers: Record<string, string>) {
+        const theme = themes.find(t => t.id === themeId);
+
+        // 获取该主题下的所有小主题
+        const { data: subtopics, error: subtopicsError } = await supabase
+            .from('shadowing_subtopics')
+            .select('id, title')
+            .eq('theme_id', themeId)
+            .order('sequence_order', { ascending: true });
+
+        if (subtopicsError || !subtopics || subtopics.length === 0) {
+            console.log('[SceneVector] subtopics query result:', { themeId, subtopics, subtopicsError });
+            setLogs(prev => [...prev, `   场景向量: 无小主题可处理 (theme_id=${themeId}, error=${subtopicsError?.message || 'none'})`]);
+            return;
+        }
+
+        setCurrentProgress({
+            step: `${theme?.title} - 场景向量`,
+            current: 0,
+            total: subtopics.length,
+            currentItem: ''
+        });
+
+        let success = 0;
+        let fail = 0;
+
+        // 按并发数分批处理
+        for (let i = 0; i < subtopics.length; i += draftConcurrency) {
+            const batch = subtopics.slice(i, Math.min(i + draftConcurrency, subtopics.length));
+
+            const results = await Promise.all(
+                batch.map(async (subtopic) => {
+                    for (let attempt = 0; attempt <= retries; attempt++) {
+                        try {
+                            // 检查是否跳过已有向量
+                            if (skipExistingSceneVector) {
+                                const { data: existingVectors } = await supabase
+                                    .from('subtopic_scene_vectors')
+                                    .select('scene_id')
+                                    .eq('subtopic_id', subtopic.id)
+                                    .limit(1);
+
+                                if (existingVectors && existingVectors.length > 0) {
+                                    return true; // 已有向量，跳过
+                                }
+                            }
+
+                            const response = await fetch('/api/admin/shadowing/subtopics/map-scenes', {
+                                method: 'POST',
+                                headers,
+                                body: JSON.stringify({
+                                    subtopic_id: subtopic.id,
+                                    provider: 'deepseek',
+                                    model: 'deepseek-chat',
+                                    temperature: 0.2,
+                                }),
+                            });
+                            return response.ok;
+                        } catch (e) {
+                            if (attempt === retries) return false;
+                            await wait(1000 * (attempt + 1)); // 指数退避
+                        }
+                    }
+                    return false;
+                })
+            );
+
+            success += results.filter(r => r).length;
+            fail += results.filter(r => !r).length;
+
+            setCurrentProgress(prev => ({
+                ...prev,
+                current: Math.min(i + batch.length, subtopics.length)
+            }));
+
+            // 节流延迟
+            if (throttle > 0 && i + draftConcurrency < subtopics.length) {
+                await wait(throttle);
+            }
+        }
+
+        setLogs(prev => [...prev, `   场景向量: ${success}成功 ${fail}失败`]);
+    }
+
 
     // 处理单个草稿
     async function processSingleDraft(
@@ -777,6 +870,11 @@ export default function ThemeBatchProcessor() {
                             <Check className="w-4 h-4" />
                             <span>自动发布</span>
                         </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <Checkbox checked={doSceneVector} onCheckedChange={(c) => setDoSceneVector(!!c)} />
+                            <Target className="w-4 h-4" />
+                            <span>场景向量</span>
+                        </label>
                     </div>
 
                     {/* 翻译目标语言 */}
@@ -809,6 +907,10 @@ export default function ThemeBatchProcessor() {
                         <label className="flex items-center gap-2 cursor-pointer">
                             <Checkbox checked={skipExistingACU} onCheckedChange={(c) => setSkipExistingACU(!!c)} />
                             <span>跳过已有ACU</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <Checkbox checked={skipExistingSceneVector} onCheckedChange={(c) => setSkipExistingSceneVector(!!c)} />
+                            <span>跳过已有场景向量</span>
                         </label>
                     </div>
                 </div>

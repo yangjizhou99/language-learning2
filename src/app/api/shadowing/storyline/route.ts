@@ -22,6 +22,7 @@ interface SubtopicWithProgress {
     itemId: string | null;
     isPracticed: boolean;
     order: number;
+    top_scenes: { id: string; name: string; weight: number }[];
 }
 
 interface ThemeWithSubtopics {
@@ -183,7 +184,37 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // 5. 构建返回数据结构
+        // 5. 获取小主题的场景向量（Top 2）
+        let subtopicScenesMap = new Map<string, { id: string; name: string; weight: number }[]>();
+        if (subtopicIds.length > 0) {
+            const { data: vectors, error: vectorsError } = await supabase
+                .from('subtopic_scene_vectors')
+                .select(`
+                    subtopic_id,
+                    weight,
+                    scene:scene_tags!inner(scene_id, name_cn)
+                `)
+                .in('subtopic_id', subtopicIds)
+                .order('weight', { ascending: false });
+
+            if (!vectorsError && vectors) {
+                vectors.forEach((v: any) => {
+                    const list = subtopicScenesMap.get(v.subtopic_id) || [];
+                    if (list.length < 2) { // 只取前2个
+                        list.push({
+                            id: v.scene.scene_id,
+                            name: v.scene.name_cn,
+                            weight: v.weight
+                        });
+                        subtopicScenesMap.set(v.subtopic_id, list);
+                    }
+                });
+            } else if (vectorsError) {
+                console.error('Scene vectors query error:', vectorsError);
+            }
+        }
+
+        // 6. 构建返回数据结构
         // 创建 subtopic -> item 映射
         const subtopicToItem = new Map<string, string>();
         items.forEach((item) => {
@@ -214,6 +245,7 @@ export async function GET(req: NextRequest) {
                     itemId,
                     isPracticed,
                     order: index + 1,
+                    top_scenes: subtopicScenesMap.get(s.id) || [],
                 };
             });
 

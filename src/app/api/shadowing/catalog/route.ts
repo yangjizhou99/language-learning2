@@ -248,6 +248,39 @@ export async function GET(req: NextRequest) {
         total_count: string | number; // Window function returns bigint
       };
 
+      // 获取相关的 subtopic_ids
+      const subtopicIds = Array.from(new Set((rawItems || []).map((i: any) => i.subtopic_id).filter(Boolean)));
+
+      // 获取场景向量（Top 2）
+      let subtopicScenesMap = new Map<string, { id: string; name: string; weight: number }[]>();
+      if (subtopicIds.length > 0) {
+        const { data: vectors, error: vectorsError } = await supabase
+          .from('subtopic_scene_vectors')
+          .select(`
+            subtopic_id,
+            weight,
+            scene:scene_tags!inner(scene_id, name_cn)
+          `)
+          .in('subtopic_id', subtopicIds)
+          .order('weight', { ascending: false });
+
+        if (!vectorsError && vectors) {
+          vectors.forEach((v: any) => {
+            const list = subtopicScenesMap.get(v.subtopic_id) || [];
+            if (list.length < 2) { // 只取前2个
+              list.push({
+                id: v.scene.scene_id,
+                name: v.scene.name_cn,
+                weight: v.weight
+              });
+              subtopicScenesMap.set(v.subtopic_id, list);
+            }
+          });
+        } else if (vectorsError) {
+          console.error('Scene vectors query error:', vectorsError);
+        }
+      }
+
       // 转换数据库函数返回的扁平结构为前端期望的嵌套结构
       const processedItems = (rawItems || []).map((item: DbCatalogItem) => {
         // 构建 theme 对象
@@ -312,6 +345,9 @@ export async function GET(req: NextRequest) {
             practiceTime: item.practice_time_seconds || 0,
             lastPracticed: item.last_practiced || null,
           },
+
+          // 场景标签
+          top_scenes: (item.subtopic_id && subtopicScenesMap.get(item.subtopic_id)) || [],
         };
       });
 
