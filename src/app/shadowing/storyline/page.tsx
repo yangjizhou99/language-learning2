@@ -80,6 +80,9 @@ export default function StorylinePage() {
     useEffect(() => {
         if (!user || !permissions.can_access_shadowing) return;
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
         const fetchStoryline = async () => {
             setLoading(true);
             setError(null);
@@ -93,6 +96,7 @@ export default function StorylinePage() {
                 const res = await fetch(`/api/shadowing/storyline?${params.toString()}`, {
                     credentials: 'include',
                     headers,
+                    signal: controller.signal,
                 });
 
                 if (!res.ok) {
@@ -100,16 +104,41 @@ export default function StorylinePage() {
                 }
 
                 const data = await res.json();
-                setThemes(data.themes || []);
-            } catch (err) {
-                console.error('Storyline fetch error:', err);
-                setError('加载故事线失败，请稍后重试');
+                if (!controller.signal.aborted) {
+                    setThemes(data.themes || []);
+                }
+            } catch (err: any) {
+                if (err.name === 'AbortError') {
+                    console.log('Storyline fetch aborted or timed out');
+                    if (!controller.signal.aborted) {
+                        // If it was a manual abort (unmount), we don't set error
+                        // But here we use same controller for timeout. 
+                        // Actually, if it times out, we WANT to show error.
+                        setError('加载超时，请刷新重试');
+                    } else {
+                        // If aborted by unmount, ignore.
+                        // But wait, timeout calls abort().
+                        // We need to distinguish.
+                        setError('加载超时，请刷新重试');
+                    }
+                } else {
+                    console.error('Storyline fetch error:', err);
+                    setError('加载故事线失败，请稍后重试');
+                }
             } finally {
-                setLoading(false);
+                clearTimeout(timeoutId);
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchStoryline();
+
+        return () => {
+            controller.abort();
+            clearTimeout(timeoutId);
+        };
     }, [user, permissions.can_access_shadowing, selectedLang, selectedLevel, getAuthHeaders]);
 
     // 自动滚动到展开的主题或第一个未完成的主题
