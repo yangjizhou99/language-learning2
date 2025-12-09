@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import GoalCard from '@/components/GoalCard';
+import { DailyTaskItem } from '@/components/home/DailyTaskItem';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import ParticleCanvas from '@/components/ParticleCanvas';
@@ -479,149 +480,35 @@ export default function Home() {
 
                     {/* 任务 1：主目标语言 Shadowing */}
                     {profile?.target_langs?.[0] && (
-                      <div className="flex items-start justify-between gap-4 sm:gap-6 pt-2 border-t border-slate-200 dark:border-slate-700">
-                        <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
-                          <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl ${daily?.today_done ? 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-blue-500 to-indigo-500 text-white'} flex items-center justify-center text-lg sm:text-xl font-bold shadow-sm`} aria-label={daily?.today_done ? t.home.tasks_completed_badge : undefined}>
-                            {daily?.item ? `L${daily.level}` : '--'}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className={`text-base sm:text-lg font-semibold truncate ${daily?.today_done ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-50'}`} title={daily?.item?.title || ''}>
-                              {daily?.item?.title || (daily?.phase === 'cleared' ? t.home.daily_cleared : t.home.daily_fetching.replace('{hint}', daily?.error ? `（${daily.error}）` : '...'))}
-                            </div>
-                            {daily?.item && (
-                              <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 flex items-center flex-wrap gap-x-3 gap-y-1">
-                                <span>{t.home.daily_language}{daily.lang?.toUpperCase()}</span>
-                                {typeof daily.item.duration_ms === 'number' && (
-                                  <span>{t.home.daily_duration.replace('{seconds}', String(Math.round((daily.item.duration_ms || 0) / 1000)))}</span>
-                                )}
-                                {daily.item.tokens != null && (
-                                  <span>{t.home.daily_length.replace('{tokens}', String(daily.item.tokens))}</span>
-                                )}
-                                {daily.item.cefr && <span>{t.home.daily_cefr.replace('{level}', daily.item.cefr)}</span>}
-                                {daily?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400 font-medium">{t.home.daily_last_unfinished}</span>}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {daily?.today_done ? (
-                            <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 text-sm font-medium shadow-sm">{t.home.tasks_completed_badge}</span>
-                          ) : daily?.item ? (
-                            <Link
-                              className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transition-all min-h-[44px] text-sm sm:text-base font-medium"
-                              href={`/practice/shadowing?lang=${daily.lang}&item=${daily.item.id}&autostart=1&src=daily`}
-                            >
-                              {t.home.daily_quick_start}
-                              <Play className="w-4 h-4 ml-2" />
-                            </Link>
-                          ) : (
-                            <Link
-                              className="inline-flex items-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shadow-sm min-h-[44px] text-sm sm:text-base font-medium"
-                              href={profile?.target_langs?.[0] ? `/practice/shadowing?lang=${profile.target_langs[0] as 'zh' | 'ja' | 'en' | 'ko'}` : '/practice/shadowing'}
-                            >
-                              {t.home.daily_open_practice}
-                            </Link>
-                          )}
-                        </div>
-                      </div>
+                      <DailyTaskItem
+                        data={daily}
+                        t={t}
+                        colorClass="from-blue-500 to-indigo-500"
+                        buttonColorClass="bg-blue-600 hover:bg-blue-700"
+                        fallbackHref={profile?.target_langs?.[0] ? `/practice/shadowing?lang=${profile.target_langs[0] as 'zh' | 'ja' | 'en' | 'ko'}` : '/practice/shadowing'}
+                      />
                     )}
 
                     {/* 任务 2：次目标语言 Shadowing（如有） */}
                     {profile?.target_langs?.[1] && dailySecond && (
-                      <div className="flex items-start justify-between gap-4 sm:gap-6 pt-2 border-t border-slate-200 dark:border-slate-700">
-                        <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
-                          <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl ${dailySecond?.today_done ? 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white'} flex items-center justify-center text-lg sm:text-xl font-bold shadow-sm`} aria-label={dailySecond?.today_done ? t.home.tasks_completed_badge : undefined}>
-                            {dailySecond?.item ? `L${dailySecond.level}` : '--'}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className={`text-base sm:text-lg font-semibold truncate ${dailySecond?.today_done ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-50'}`} title={dailySecond?.item?.title || ''}>
-                              {dailySecond?.item?.title || (dailySecond?.phase === 'cleared' ? t.home.daily_cleared : t.home.daily_fetching.replace('{hint}', dailySecond?.error ? `（${dailySecond.error}）` : '...'))}
-                            </div>
-                            {dailySecond?.item && (
-                              <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 flex items-center flex-wrap gap-x-3 gap-y-1">
-                                <span>{t.home.daily_language}{dailySecond.lang?.toUpperCase()}</span>
-                                {typeof dailySecond.item.duration_ms === 'number' && (
-                                  <span>{t.home.daily_duration.replace('{seconds}', String(Math.round((dailySecond.item.duration_ms || 0) / 1000)))}</span>
-                                )}
-                                {dailySecond.item.tokens != null && (
-                                  <span>{t.home.daily_length.replace('{tokens}', String(dailySecond.item.tokens))}</span>
-                                )}
-                                {dailySecond.item.cefr && <span>{t.home.daily_cefr.replace('{level}', dailySecond.item.cefr)}</span>}
-                                {dailySecond?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400 font-medium">{t.home.daily_last_unfinished}</span>}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {dailySecond?.today_done ? (
-                            <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 text-sm font-medium shadow-sm">{t.home.tasks_completed_badge}</span>
-                          ) : dailySecond?.item ? (
-                            <Link
-                              className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg transition-all min-h-[44px] text-sm sm:text-base font-medium"
-                              href={`/practice/shadowing?lang=${dailySecond.lang}&item=${dailySecond.item.id}&autostart=1&src=daily`}
-                            >
-                              {t.home.daily_quick_start}
-                              <Play className="w-4 h-4 ml-2" />
-                            </Link>
-                          ) : (
-                            <Link
-                              className="inline-flex items-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shadow-sm min-h-[44px] text-sm sm:text-base font-medium"
-                              href={profile?.target_langs?.[1] ? `/practice/shadowing?lang=${profile.target_langs[1] as 'zh' | 'ja' | 'en' | 'ko'}` : '/practice/shadowing'}
-                            >
-                              {t.home.daily_open_practice}
-                            </Link>
-                          )}
-                        </div>
-                      </div>
+                      <DailyTaskItem
+                        data={dailySecond}
+                        t={t}
+                        colorClass="from-indigo-500 to-purple-500"
+                        buttonColorClass="bg-indigo-600 hover:bg-indigo-700"
+                        fallbackHref={profile?.target_langs?.[1] ? `/practice/shadowing?lang=${profile.target_langs[1] as 'zh' | 'ja' | 'en' | 'ko'}` : '/practice/shadowing'}
+                      />
                     )}
 
                     {/* 任务 3：韩语 Shadowing（如目标语言包含韩语但不在前两个位置） */}
                     {dailyKorean && (
-                      <div className="flex items-start justify-between gap-4 sm:gap-6 pt-2 border-t border-slate-200 dark:border-slate-700">
-                        <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
-                          <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl ${dailyKorean?.today_done ? 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400' : 'bg-gradient-to-br from-pink-500 to-rose-500 text-white'} flex items-center justify-center text-lg sm:text-xl font-bold shadow-sm`} aria-label={dailyKorean?.today_done ? t.home.tasks_completed_badge : undefined}>
-                            {dailyKorean?.item ? `L${dailyKorean.level}` : '--'}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className={`text-base sm:text-lg font-semibold truncate ${dailyKorean?.today_done ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-50'}`} title={dailyKorean?.item?.title || ''}>
-                              {dailyKorean?.item?.title || (dailyKorean?.phase === 'cleared' ? t.home.daily_cleared : t.home.daily_fetching.replace('{hint}', dailyKorean?.error ? `（${dailyKorean.error}）` : '...'))}
-                            </div>
-                            {dailyKorean?.item && (
-                              <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1.5 flex items-center flex-wrap gap-x-3 gap-y-1">
-                                <span>{t.home.daily_language}{dailyKorean.lang?.toUpperCase()}</span>
-                                {typeof dailyKorean.item.duration_ms === 'number' && (
-                                  <span>{t.home.daily_duration.replace('{seconds}', String(Math.round((dailyKorean.item.duration_ms || 0) / 1000)))}</span>
-                                )}
-                                {dailyKorean.item.tokens != null && (
-                                  <span>{t.home.daily_length.replace('{tokens}', String(dailyKorean.item.tokens))}</span>
-                                )}
-                                {dailyKorean.item.cefr && <span>{t.home.daily_cefr.replace('{level}', dailyKorean.item.cefr)}</span>}
-                                {dailyKorean?.phase === 'unfinished' && <span className="text-orange-600 dark:text-orange-400 font-medium">{t.home.daily_last_unfinished}</span>}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0">
-                          {dailyKorean?.today_done ? (
-                            <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800 text-sm font-medium shadow-sm">{t.home.tasks_completed_badge}</span>
-                          ) : dailyKorean?.item ? (
-                            <Link
-                              className="inline-flex items-center px-4 py-2 rounded-lg bg-pink-600 text-white hover:bg-pink-700 shadow-md hover:shadow-lg transition-all min-h-[44px] text-sm sm:text-base font-medium"
-                              href={`/practice/shadowing?lang=${dailyKorean.lang}&item=${dailyKorean.item.id}&autostart=1&src=daily`}
-                            >
-                              {t.home.daily_quick_start}
-                              <Play className="w-4 h-4 ml-2" />
-                            </Link>
-                          ) : (
-                            <Link
-                              className="inline-flex items-center px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 shadow-sm min-h-[44px] text-sm sm:text-base font-medium"
-                              href="/practice/shadowing?lang=ko"
-                            >
-                              {t.home.daily_open_practice}
-                            </Link>
-                          )}
-                        </div>
-                      </div>
+                      <DailyTaskItem
+                        data={dailyKorean}
+                        t={t}
+                        colorClass="from-pink-500 to-rose-500"
+                        buttonColorClass="bg-pink-600 hover:bg-pink-700"
+                        fallbackHref="/practice/shadowing?lang=ko"
+                      />
                     )}
 
                     {/* 任务 4：生词复习 */}
