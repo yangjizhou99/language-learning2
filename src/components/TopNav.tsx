@@ -43,6 +43,7 @@ import {
   LogOut,
   Home,
   TrendingUp,
+  Map as MapIcon,
 } from 'lucide-react';
 
 export default function TopNav() {
@@ -172,6 +173,12 @@ export default function TopNav() {
   // 导航菜单项
   const navItems = [
     { href: '/', label: t.nav.home, icon: Home, show: true },
+    {
+      href: '/shadowing/storyline',
+      label: '故事线',
+      icon: MapIcon,
+      show: permissions.can_access_shadowing,
+    },
     {
       href: '/practice/shadowing',
       label: t.nav.shadowing,

@@ -110,20 +110,34 @@ export default function StorylinePage() {
         };
 
         fetchStoryline();
-        fetchStoryline();
     }, [user, permissions.can_access_shadowing, selectedLang, selectedLevel, getAuthHeaders]);
 
-    // 自动滚动到展开的主题
+    // 自动滚动到展开的主题或第一个未完成的主题
     useEffect(() => {
-        if (expandThemeId && !loading && themes.length > 0) {
-            // 给一点时间让 DOM 渲染和卡片展开
-            const timer = setTimeout(() => {
-                const element = document.getElementById(`theme-${expandThemeId}`);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (!loading && themes.length > 0) {
+            // 如果 URL 指定了展开的主题，优先使用
+            let targetThemeId = expandThemeId;
+
+            // 如果没有指定，寻找第一个包含未完成子主题的主题
+            if (!targetThemeId) {
+                const firstUnfinishedTheme = themes.find(theme =>
+                    theme.subtopics.some(sub => !sub.isPracticed)
+                );
+                if (firstUnfinishedTheme) {
+                    targetThemeId = firstUnfinishedTheme.id;
                 }
-            }, 300);
-            return () => clearTimeout(timer);
+            }
+
+            if (targetThemeId) {
+                // 给一点时间让 DOM 渲染和卡片展开
+                const timer = setTimeout(() => {
+                    const element = document.getElementById(`theme-${targetThemeId}`);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 300);
+                return () => clearTimeout(timer);
+            }
         }
     }, [expandThemeId, loading, themes]);
 
@@ -298,7 +312,13 @@ export default function StorylinePage() {
                             <div key={theme.id} id={`theme-${theme.id}`}>
                                 <StorylineThemeCard
                                     {...theme}
-                                    defaultExpanded={expandThemeId ? theme.id === expandThemeId : index === 0}
+                                    defaultExpanded={
+                                        expandThemeId
+                                            ? theme.id === expandThemeId
+                                            : (!themes.every(t => t.progress.completed === t.progress.total)
+                                                ? theme.id === themes.find(t => t.subtopics.some(s => !s.isPracticed))?.id
+                                                : index === 0)
+                                    }
                                 />
                             </div>
                         ))}
