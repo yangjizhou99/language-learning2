@@ -60,7 +60,7 @@ async function mergeAudioBuffers(buffers: Buffer[]): Promise<Buffer> {
       const ffm = (await import('ffmpeg-static')) as unknown as FfmpegStaticModule;
       const v = (typeof ffm === 'string' ? ffm : ffm.default) as string | undefined;
       if (v) ffmpegPath = String(v).replace(/^"+|"+$/g, '');
-    } catch {}
+    } catch { }
 
     // 候选路径（兼容 Windows/Linux）
     const candidates = [
@@ -78,7 +78,7 @@ async function mergeAudioBuffers(buffers: Buffer[]): Promise<Buffer> {
           resolvedFfmpeg = abs;
           break;
         }
-      } catch {}
+      } catch { }
     }
 
     if (!resolvedFfmpeg) {
@@ -130,18 +130,18 @@ async function mergeAudioBuffers(buffers: Buffer[]): Promise<Buffer> {
       // 清理临时文件
       try {
         [...inputFiles, listFile, outputFile].forEach((f) => {
-          try { fs.unlinkSync(f); } catch {}
+          try { fs.unlinkSync(f); } catch { }
         });
-      } catch {}
+      } catch { }
 
       return mergedBuffer;
     } catch (ffmpegError) {
       console.error('FFmpeg 合并失败，回退简单拼接:', ffmpegError);
       try {
         [...inputFiles, outputFile].forEach((f) => {
-          try { fs.unlinkSync(f); } catch {}
+          try { fs.unlinkSync(f); } catch { }
         });
-      } catch {}
+      } catch { }
       return simpleMerge(buffers);
     }
   } catch (error) {
@@ -238,13 +238,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { text, lang, speakingRate = 1.0, pitch = 0, volumeGainDb = 0, speakerVoices } = body as {
+    const { text, lang, speakingRate = 1.0, pitch = 0, volumeGainDb = 0, speakerVoices, draftId, voiceMapping } = body as {
       text: string;
       lang: string;
       speakingRate?: number;
       pitch?: number;
       volumeGainDb?: number;
       speakerVoices?: Record<string, string> | null;
+      draftId?: string;
+      voiceMapping?: Record<string, string>;
     };
 
     if (!text || !lang) {
@@ -352,7 +354,9 @@ export async function POST(req: NextRequest) {
 
     // 合并音频（在内存中完成，不保存独立音频）
     console.log(`合并 ${audioBuffers.length} 个音频片段`);
+    console.log('Starting mergeAudioBuffers...');
     const mergedAudio = await mergeAudioBuffers(audioBuffers);
+    console.log(`Merge complete, size: ${mergedAudio.length}`);
 
     // 使用 ffprobe 获取精确时长，回退轻量估计
     const { getMp3DurationSeconds } = await import('@/lib/media-probe');
@@ -379,14 +383,53 @@ export async function POST(req: NextRequest) {
     const safeLang = String(lang).toLowerCase();
     const filePath = `${safeLang}/dialogue-${timestamp}-${Math.random().toString(36).slice(2)}.mp3`;
 
+    console.log(`Starting uploadAudioFile to bucket: ${bucket}, path: ${filePath}`);
     const uploadResult = await uploadAudioFile(bucket, filePath, mergedAudio);
     if (!uploadResult.success) {
+      console.error(`Upload failed: ${uploadResult.error}`);
       return NextResponse.json({ error: `上传失败: ${uploadResult.error}` }, { status: 500 });
     }
+    console.log('Upload successful');
 
     // 优先返回代理URL（带CDN缓存）
     const audioUrl = uploadResult.proxyUrl || uploadResult.url;
     if (!audioUrl) return NextResponse.json({ error: '获取音频地址失败' }, { status: 500 });
+
+    // 如果提供了 draftId，则直接在服务端更新数据库（绕过客户端 RLS）
+    if (draftId) {
+      console.log(`Updating draft ${draftId} in DB...`);
+      const { supabase } = auth; // 使用 service role client
+
+      // 先获取现有 notes
+      const { data: currentDraft, error: fetchError } = await supabase
+        .from('shadowing_drafts')
+        .select('notes')
+        .eq('id', draftId)
+        .single();
+
+      if (fetchError) {
+        console.error(`Failed to fetch draft ${draftId}:`, fetchError);
+        // 不中断流程，仅记录错误，返回 audio_url 让前端处理（虽然前端可能也无法更新）
+      } else {
+        const newNotes = {
+          ...(currentDraft?.notes || {}),
+          audio_url: audioUrl,
+          voice_mapping: voiceMapping || appliedSpeakerVoices, // 优先使用传入的 mapping，否则使用实际应用的
+          sentence_timeline: sentenceTimeline,
+        };
+
+        const { error: updateError } = await supabase
+          .from('shadowing_drafts')
+          .update({ notes: newNotes })
+          .eq('id', draftId);
+
+        if (updateError) {
+          console.error(`Failed to update draft ${draftId}:`, updateError);
+        } else {
+          console.log(`Draft ${draftId} updated successfully.`);
+        }
+      }
+    }
 
     return NextResponse.json({
       ok: true,
@@ -408,6 +451,7 @@ export async function POST(req: NextRequest) {
           ? error.message
           : String(error)
         : String(error);
+    console.error('对话音频合成失败 (Detailed):', error);
     return NextResponse.json({ error: message || '服务器错误' }, { status: 500 });
   }
 }

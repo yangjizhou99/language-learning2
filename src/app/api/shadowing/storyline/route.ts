@@ -154,16 +154,20 @@ export async function GET(req: NextRequest) {
 
         let items: { id: string; subtopic_id: string | null }[] = [];
         if (subtopicIds.length > 0) {
-            // Note: shadowing_items may not have a status field - just query by subtopic_id
-            const { data: itemsData, error: itemsError } = await supabase
-                .from('shadowing_items')
-                .select('id, subtopic_id')
-                .in('subtopic_id', subtopicIds);
+            // Batch query for items
+            const batchSize = 50;
+            for (let i = 0; i < subtopicIds.length; i += batchSize) {
+                const batch = subtopicIds.slice(i, i + batchSize);
+                const { data: itemsData, error: itemsError } = await supabase
+                    .from('shadowing_items')
+                    .select('id, subtopic_id')
+                    .in('subtopic_id', batch);
 
-            if (itemsError) {
-                console.error('Items query error:', itemsError);
-            } else {
-                items = itemsData || [];
+                if (itemsError) {
+                    console.error('Items query error:', itemsError);
+                } else if (itemsData) {
+                    items = [...items, ...itemsData];
+                }
             }
         }
 
@@ -172,33 +176,63 @@ export async function GET(req: NextRequest) {
         let practicedItemIds: Set<string> = new Set();
 
         if (itemIds.length > 0) {
-            const { data: sessions, error: sessionsError } = await supabase
-                .from('shadowing_sessions')
-                .select('item_id')
-                .eq('user_id', user.id)
-                .eq('status', 'completed')
-                .in('item_id', itemIds);
+            // Batch query for sessions
+            const batchSize = 50;
+            const allSessions: { item_id: string }[] = [];
 
-            if (!sessionsError && sessions) {
-                practicedItemIds = new Set(sessions.map((s) => s.item_id));
+            for (let i = 0; i < itemIds.length; i += batchSize) {
+                const batch = itemIds.slice(i, i + batchSize);
+                const { data: sessions, error: sessionsError } = await supabase
+                    .from('shadowing_sessions')
+                    .select('item_id')
+                    .eq('user_id', user.id)
+                    .eq('status', 'completed')
+                    .in('item_id', batch);
+
+                if (sessionsError) {
+                    console.error('Sessions query error:', sessionsError);
+                } else if (sessions) {
+                    allSessions.push(...sessions);
+                }
             }
+            practicedItemIds = new Set(allSessions.map((s) => s.item_id));
         }
 
         // 5. 获取小主题的场景向量（Top 2）
         let subtopicScenesMap = new Map<string, { id: string; name: string; weight: number }[]>();
         if (subtopicIds.length > 0) {
-            const { data: vectors, error: vectorsError } = await supabase
-                .from('subtopic_scene_vectors')
-                .select(`
-                    subtopic_id,
-                    weight,
-                    scene:scene_tags!inner(scene_id, name_cn)
-                `)
-                .in('subtopic_id', subtopicIds)
-                .order('weight', { ascending: false });
+            console.log('[StorylineAPI] Fetching vectors for subtopics:', subtopicIds.length);
 
-            if (!vectorsError && vectors) {
-                vectors.forEach((v: any) => {
+            // Batch query for vectors
+            const batchSize = 50;
+            let allVectors: any[] = [];
+
+            for (let i = 0; i < subtopicIds.length; i += batchSize) {
+                const batch = subtopicIds.slice(i, i + batchSize);
+                const { data: vectors, error: vectorsError } = await supabase
+                    .from('subtopic_scene_vectors')
+                    .select(`
+                        subtopic_id,
+                        weight,
+                        scene:scene_tags!inner(scene_id, name_cn)
+                    `)
+                    .in('subtopic_id', batch)
+                    .order('weight', { ascending: false });
+
+                if (vectorsError) {
+                    console.error('Scene vectors query error:', vectorsError);
+                } else if (vectors) {
+                    allVectors = [...allVectors, ...vectors];
+                }
+            }
+
+            if (allVectors.length > 0) {
+                console.log('[StorylineAPI] Vectors found:', allVectors.length);
+                if (allVectors.length > 0) {
+                    console.log('[StorylineAPI] Sample vector:', JSON.stringify(allVectors[0], null, 2));
+                }
+
+                allVectors.forEach((v: any) => {
                     const list = subtopicScenesMap.get(v.subtopic_id) || [];
                     if (list.length < 2) { // 只取前2个
                         list.push({
@@ -209,9 +243,10 @@ export async function GET(req: NextRequest) {
                         subtopicScenesMap.set(v.subtopic_id, list);
                     }
                 });
-            } else if (vectorsError) {
-                console.error('Scene vectors query error:', vectorsError);
+                console.log('[StorylineAPI] Map size:', subtopicScenesMap.size);
             }
+
+
         }
 
         // 6. 构建返回数据结构

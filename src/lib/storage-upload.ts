@@ -57,6 +57,8 @@ export async function uploadWithCache(
     // 默认缓存策略：30天缓存
     const defaultCacheControl = 'public, max-age=2592000, immutable';
 
+    console.log(`[uploadWithCache] Uploading to ${options.bucket}/${options.path}`);
+
     const { error } = await supabase.storage
       .from(options.bucket)
       .upload(options.path, options.file, {
@@ -66,6 +68,7 @@ export async function uploadWithCache(
       });
 
     if (error) {
+      console.error(`[uploadWithCache] Supabase upload error: ${error.message}`);
       return { success: false, error: error.message };
     }
 
