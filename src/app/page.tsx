@@ -266,15 +266,15 @@ export default function Home() {
   const quickAccessItems = [
     {
       title: t.nav.shadowing,
-      description: '跟读练习，提升口语和听力',
+      description: t.home.quick_access_shadowing_desc,
       icon: GraduationCap,
       href: '/practice/shadowing',
       color: 'bg-blue-500',
       show: permissions.can_access_shadowing,
     },
     {
-      title: '故事线学习',
-      description: '跟随故事解锁对话',
+      title: t.home.quick_access_storyline,
+      description: t.home.quick_access_storyline_desc,
       icon: Map,
       href: '/shadowing/storyline',
       color: 'bg-amber-500',
