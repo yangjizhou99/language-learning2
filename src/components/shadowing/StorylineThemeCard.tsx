@@ -34,6 +34,7 @@ interface StorylineThemeCardProps {
 }
 
 export function StorylineThemeCard({
+    id,
     title,
     desc,
     lang,
@@ -163,6 +164,7 @@ export function StorylineThemeCard({
                                                 order={subtopic.order}
                                                 lang={lang}
                                                 isLast={index === subtopics.length - 1}
+                                                themeId={id}
                                                 top_scenes={subtopic.top_scenes}
                                             />
                                         ))}

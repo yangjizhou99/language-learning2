@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 interface SubtopicData {
     id: string;
@@ -72,8 +73,15 @@ export default function StorylinePage() {
     const [selectedLang, setSelectedLang] = useState('all');
     const [selectedLevel, setSelectedLevel] = useState('all');
 
+    // 读取 URL 参数，获取要自动展开的主题 ID
+    const searchParams = useSearchParams();
+    const expandThemeId = searchParams?.get('expandTheme') || null;
+
     useEffect(() => {
         if (!user || !permissions.can_access_shadowing) return;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
         const fetchStoryline = async () => {
             setLoading(true);
@@ -88,6 +96,7 @@ export default function StorylinePage() {
                 const res = await fetch(`/api/shadowing/storyline?${params.toString()}`, {
                     credentials: 'include',
                     headers,
+                    signal: controller.signal,
                 });
 
                 if (!res.ok) {
@@ -95,17 +104,71 @@ export default function StorylinePage() {
                 }
 
                 const data = await res.json();
-                setThemes(data.themes || []);
-            } catch (err) {
-                console.error('Storyline fetch error:', err);
-                setError('加载故事线失败，请稍后重试');
+                if (!controller.signal.aborted) {
+                    setThemes(data.themes || []);
+                }
+            } catch (err: any) {
+                if (err.name === 'AbortError') {
+                    console.log('Storyline fetch aborted or timed out');
+                    if (!controller.signal.aborted) {
+                        // If it was a manual abort (unmount), we don't set error
+                        // But here we use same controller for timeout. 
+                        // Actually, if it times out, we WANT to show error.
+                        setError('加载超时，请刷新重试');
+                    } else {
+                        // If aborted by unmount, ignore.
+                        // But wait, timeout calls abort().
+                        // We need to distinguish.
+                        setError('加载超时，请刷新重试');
+                    }
+                } else {
+                    console.error('Storyline fetch error:', err);
+                    setError('加载故事线失败，请稍后重试');
+                }
             } finally {
-                setLoading(false);
+                clearTimeout(timeoutId);
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
             }
         };
 
         fetchStoryline();
+
+        return () => {
+            controller.abort();
+            clearTimeout(timeoutId);
+        };
     }, [user, permissions.can_access_shadowing, selectedLang, selectedLevel, getAuthHeaders]);
+
+    // 自动滚动到展开的主题或第一个未完成的主题
+    useEffect(() => {
+        if (!loading && themes.length > 0) {
+            // 如果 URL 指定了展开的主题，优先使用
+            let targetThemeId = expandThemeId;
+
+            // 如果没有指定，寻找第一个包含未完成子主题的主题
+            if (!targetThemeId) {
+                const firstUnfinishedTheme = themes.find(theme =>
+                    theme.subtopics.some(sub => !sub.isPracticed)
+                );
+                if (firstUnfinishedTheme) {
+                    targetThemeId = firstUnfinishedTheme.id;
+                }
+            }
+
+            if (targetThemeId) {
+                // 给一点时间让 DOM 渲染和卡片展开
+                const timer = setTimeout(() => {
+                    const element = document.getElementById(`theme-${targetThemeId}`);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 300);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [expandThemeId, loading, themes]);
 
     // 计算总进度
     const totalProgress = themes.reduce(
@@ -275,11 +338,18 @@ export default function StorylinePage() {
                 {!loading && !error && themes.length > 0 && (
                     <div className="space-y-4">
                         {themes.map((theme, index) => (
-                            <StorylineThemeCard
-                                key={theme.id}
-                                {...theme}
-                                defaultExpanded={index === 0}
-                            />
+                            <div key={theme.id} id={`theme-${theme.id}`}>
+                                <StorylineThemeCard
+                                    {...theme}
+                                    defaultExpanded={
+                                        expandThemeId
+                                            ? theme.id === expandThemeId
+                                            : (!themes.every(t => t.progress.completed === t.progress.total)
+                                                ? theme.id === themes.find(t => t.subtopics.some(s => !s.isPracticed))?.id
+                                                : index === 0)
+                                    }
+                                />
+                            </div>
                         ))}
                     </div>
                 )}

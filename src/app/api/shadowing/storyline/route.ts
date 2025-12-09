@@ -156,13 +156,19 @@ export async function GET(req: NextRequest) {
         if (subtopicIds.length > 0) {
             // Batch query for items
             const batchSize = 50;
+            const itemPromises = [];
             for (let i = 0; i < subtopicIds.length; i += batchSize) {
                 const batch = subtopicIds.slice(i, i + batchSize);
-                const { data: itemsData, error: itemsError } = await supabase
-                    .from('shadowing_items')
-                    .select('id, subtopic_id')
-                    .in('subtopic_id', batch);
+                itemPromises.push(
+                    supabase
+                        .from('shadowing_items')
+                        .select('id, subtopic_id')
+                        .in('subtopic_id', batch)
+                );
+            }
 
+            const itemResults = await Promise.all(itemPromises);
+            for (const { data: itemsData, error: itemsError } of itemResults) {
                 if (itemsError) {
                     console.error('Items query error:', itemsError);
                 } else if (itemsData) {
@@ -178,17 +184,23 @@ export async function GET(req: NextRequest) {
         if (itemIds.length > 0) {
             // Batch query for sessions
             const batchSize = 50;
+            const sessionPromises = [];
             const allSessions: { item_id: string }[] = [];
 
             for (let i = 0; i < itemIds.length; i += batchSize) {
                 const batch = itemIds.slice(i, i + batchSize);
-                const { data: sessions, error: sessionsError } = await supabase
-                    .from('shadowing_sessions')
-                    .select('item_id')
-                    .eq('user_id', user.id)
-                    .eq('status', 'completed')
-                    .in('item_id', batch);
+                sessionPromises.push(
+                    supabase
+                        .from('shadowing_sessions')
+                        .select('item_id')
+                        .eq('user_id', user.id)
+                        .eq('status', 'completed')
+                        .in('item_id', batch)
+                );
+            }
 
+            const sessionResults = await Promise.all(sessionPromises);
+            for (const { data: sessions, error: sessionsError } of sessionResults) {
                 if (sessionsError) {
                     console.error('Sessions query error:', sessionsError);
                 } else if (sessions) {
@@ -206,19 +218,25 @@ export async function GET(req: NextRequest) {
             // Batch query for vectors
             const batchSize = 50;
             let allVectors: any[] = [];
+            const vectorPromises = [];
 
             for (let i = 0; i < subtopicIds.length; i += batchSize) {
                 const batch = subtopicIds.slice(i, i + batchSize);
-                const { data: vectors, error: vectorsError } = await supabase
-                    .from('subtopic_scene_vectors')
-                    .select(`
-                        subtopic_id,
-                        weight,
-                        scene:scene_tags!inner(scene_id, name_cn)
-                    `)
-                    .in('subtopic_id', batch)
-                    .order('weight', { ascending: false });
+                vectorPromises.push(
+                    supabase
+                        .from('subtopic_scene_vectors')
+                        .select(`
+                            subtopic_id,
+                            weight,
+                            scene:scene_tags!inner(scene_id, name_cn)
+                        `)
+                        .in('subtopic_id', batch)
+                        .order('weight', { ascending: false })
+                );
+            }
 
+            const vectorResults = await Promise.all(vectorPromises);
+            for (const { data: vectors, error: vectorsError } of vectorResults) {
                 if (vectorsError) {
                     console.error('Scene vectors query error:', vectorsError);
                 } else if (vectors) {
@@ -245,8 +263,6 @@ export async function GET(req: NextRequest) {
                 });
                 console.log('[StorylineAPI] Map size:', subtopicScenesMap.size);
             }
-
-
         }
 
         // 6. 构建返回数据结构
