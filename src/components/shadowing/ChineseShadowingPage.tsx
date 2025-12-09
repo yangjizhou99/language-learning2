@@ -96,10 +96,12 @@ import {
   Target,
   FileEdit,
   ArrowUpDown,
+  Map as MapIcon,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCached, setCached } from '@/lib/clientCache';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { loadFilters as loadShadowingFilters, saveFilters as saveShadowingFilters } from '@/lib/shadowingFilterStorage';
 import { deriveKanjiFuriganaSegments, sanitizeJapaneseReadingToHiragana } from '@/lib/japanese/furigana';
 import { performSimpleAnalysis } from '@/lib/shadowing/simpleAnalysis';
@@ -478,6 +480,13 @@ export default function ShadowingPage() {
   // 依据用户历史表现的推荐等级（按语言）
   const [recommendedLevel, setRecommendedLevel] = useState<number | null>(null);
 
+  // 故事线来源信息（用于返回故事线）
+  const [storylineSource, setStorylineSource] = useState<{
+    isFromStoryline: boolean;
+    themeId: string | null;
+    subtopicId: string | null;
+  }>({ isFromStoryline: false, themeId: null, subtopicId: null });
+
   // 列表排序模式
   const [sortMode, setSortMode] = useState<'recommended' | 'recent' | 'completion'>('recommended');
 
@@ -518,6 +527,18 @@ export default function ShadowingPage() {
     const urlRole = params.get('role');
     if (urlRole) {
       setSelectedRole(urlRole.toUpperCase());
+    }
+
+    // 检查是否从故事线进入
+    const urlSrc = params.get('src');
+    const urlThemeId = params.get('themeId');
+    const urlSubtopicId = params.get('subtopicId');
+    if (urlSrc === 'storyline') {
+      setStorylineSource({
+        isFromStoryline: true,
+        themeId: urlThemeId,
+        subtopicId: urlSubtopicId,
+      });
     }
 
     // 如果 URL 未提供，则尝试本地持久化
@@ -3767,6 +3788,17 @@ export default function ShadowingPage() {
           <div className="sticky top-0 z-30">
             <div className="flex items-center justify-between bg-white/95 backdrop-blur-md rounded-2xl p-3 shadow-lg border border-white/20">
               <div className="flex items-center gap-2">
+                {/* 返回故事线按钮 */}
+                {storylineSource.isFromStoryline && (
+                  <Link
+                    href={`/shadowing/storyline${storylineSource.themeId ? `?expandTheme=${storylineSource.themeId}` : ''}`}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 rounded-lg transition-colors"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <MapIcon className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">返回故事线</span>
+                  </Link>
+                )}
                 <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
                   <BookOpen className="w-4 h-4 text-white" />
                 </div>

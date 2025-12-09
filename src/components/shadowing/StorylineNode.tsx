@@ -16,10 +16,12 @@ interface StorylineNodeProps {
     order: number;
     lang: string;
     isLast: boolean;
+    themeId: string;
     top_scenes?: { id: string; name: string; weight: number }[];
 }
 
 export function StorylineNode({
+    id,
     title,
     oneLine,
     itemId,
@@ -28,14 +30,16 @@ export function StorylineNode({
     order,
     lang,
     isLast,
+    themeId,
     top_scenes = [],
 }: StorylineNodeProps) {
     const router = useRouter();
 
     const handleClick = () => {
         if (!isUnlocked || !itemId) return;
-        router.push(`/practice/shadowing?lang=${lang}&item=${itemId}&src=storyline`);
+        router.push(`/practice/shadowing?lang=${lang}&item=${itemId}&src=storyline&themeId=${themeId}&subtopicId=${id}`);
     };
+
 
     const getNodeStatus = () => {
         if (isPracticed) return 'completed';

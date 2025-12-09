@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 interface SubtopicData {
     id: string;
@@ -72,6 +73,10 @@ export default function StorylinePage() {
     const [selectedLang, setSelectedLang] = useState('all');
     const [selectedLevel, setSelectedLevel] = useState('all');
 
+    // 读取 URL 参数，获取要自动展开的主题 ID
+    const searchParams = useSearchParams();
+    const expandThemeId = searchParams?.get('expandTheme') || null;
+
     useEffect(() => {
         if (!user || !permissions.can_access_shadowing) return;
 
@@ -105,7 +110,22 @@ export default function StorylinePage() {
         };
 
         fetchStoryline();
+        fetchStoryline();
     }, [user, permissions.can_access_shadowing, selectedLang, selectedLevel, getAuthHeaders]);
+
+    // 自动滚动到展开的主题
+    useEffect(() => {
+        if (expandThemeId && !loading && themes.length > 0) {
+            // 给一点时间让 DOM 渲染和卡片展开
+            const timer = setTimeout(() => {
+                const element = document.getElementById(`theme-${expandThemeId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [expandThemeId, loading, themes]);
 
     // 计算总进度
     const totalProgress = themes.reduce(
@@ -275,11 +295,12 @@ export default function StorylinePage() {
                 {!loading && !error && themes.length > 0 && (
                     <div className="space-y-4">
                         {themes.map((theme, index) => (
-                            <StorylineThemeCard
-                                key={theme.id}
-                                {...theme}
-                                defaultExpanded={index === 0}
-                            />
+                            <div key={theme.id} id={`theme-${theme.id}`}>
+                                <StorylineThemeCard
+                                    {...theme}
+                                    defaultExpanded={expandThemeId ? theme.id === expandThemeId : index === 0}
+                                />
+                            </div>
                         ))}
                     </div>
                 )}
