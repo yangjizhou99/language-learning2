@@ -496,7 +496,7 @@ alter table "public"."cloze_shadowing_items" drop constraint "cloze_shadowing_it
 
 alter table "public"."shadowing_attempts" drop constraint "shadowing_attempts_user_id_fkey";
 
-alter table "public"."shadowing_subtopics" drop constraint "shadowing_subtopics_id_unique";
+-- alter table "public"."shadowing_subtopics" drop constraint "shadowing_subtopics_id_unique";
 
 alter table "public"."shadowing_themes" drop constraint "shadowing_themes_id_unique";
 
@@ -550,7 +550,7 @@ drop index if exists "public"."shadowing_items_pkey";
 
 drop index if exists "public"."shadowing_sessions_pkey";
 
-drop index if exists "public"."shadowing_subtopics_id_unique";
+-- drop index if exists "public"."shadowing_subtopics_id_unique";
 
 drop index if exists "public"."shadowing_themes_id_unique";
 
