@@ -67,7 +67,7 @@ import { LANG_LABEL } from '@/types/lang';
 import { useMobile } from '@/contexts/MobileContext';
 import FilterLanguageSelector from './FilterLanguageSelector';
 import PracticeStepper, { type StepIndex } from './PracticeStepper';
-import { speakText as speakTextUtil } from '@/lib/speechUtils';
+import { speakText as speakTextUtil, selectBestVoiceAsync } from '@/lib/speechUtils';
 import CollapsibleFilterSection from './CollapsibleFilterSection';
 import CompactStatsCards from './CompactStatsCards';
 import EnhancedAudioPlayer, { type EnhancedAudioPlayerRef } from './EnhancedAudioPlayer';
@@ -1319,206 +1319,10 @@ export default function ShadowingPage() {
         utterance.pitch = 1.0;
         utterance.volume = 1.0;
 
-        // 选择最合适的语音引擎（iPad 上非常重要）
-        // 优先选择女性语音，避免奇怪的男性声音
-        const selectBestVoice = () => {
-          const voices = window.speechSynthesis.getVoices();
-
-          // 对于日语，优先选择女性日语语音引擎
-          if (lang === 'ja') {
-            const japaneseVoices = voices.filter(
-              (voice) =>
-                voice.lang.startsWith('ja') ||
-                voice.name.toLowerCase().includes('japanese') ||
-                voice.name.toLowerCase().includes('japan'),
-            );
-
-            if (japaneseVoices.length > 0) {
-              // 优先选择女性日语语音（常见名称：Kyoko, Siri Female等）
-              const nameLower = (name: string) => name.toLowerCase();
-
-              // 首先尝试找到明确包含女性关键词的语音
-              const preferredFemaleVoices = japaneseVoices.filter(voice => {
-                const name = nameLower(voice.name);
-                return name.includes('kyoko') ||
-                  name.includes('female') ||
-                  name.includes('woman') ||
-                  (name.includes('siri') && !name.includes('male'));
-              });
-
-              if (preferredFemaleVoices.length > 0) {
-                utterance.voice = preferredFemaleVoices[0];
-                return;
-              }
-
-              // 如果没有明确的女性语音，选择不包含男性关键词的语音
-              const nonMaleVoices = japaneseVoices.filter(voice => {
-                const name = nameLower(voice.name);
-                return !name.includes('otoya') &&
-                  !name.includes('male') &&
-                  !name.includes('man');
-              });
-
-              if (nonMaleVoices.length > 0) {
-                utterance.voice = nonMaleVoices[0];
-                return;
-              }
-
-              // 最后，使用第一个可用的日语语音
-              utterance.voice = japaneseVoices[0];
-              return;
-            }
-          }
-
-          // 对于中文，优先选择女性中文语音引擎
-          if (lang === 'zh') {
-            const chineseVoices = voices.filter(
-              (voice) =>
-                voice.lang.startsWith('zh') ||
-                voice.name.toLowerCase().includes('chinese') ||
-                voice.name.toLowerCase().includes('mandarin'),
-            );
-
-            if (chineseVoices.length > 0) {
-              // 优先选择女性中文语音（常见名称：Ting-Ting等）
-              const nameLower = (name: string) => name.toLowerCase();
-
-              // 首先尝试找到明确包含女性关键词的语音
-              const preferredFemaleVoices = chineseVoices.filter(voice => {
-                const name = nameLower(voice.name);
-                return name.includes('ting') ||
-                  name.includes('female') ||
-                  name.includes('woman');
-              });
-
-              if (preferredFemaleVoices.length > 0) {
-                utterance.voice = preferredFemaleVoices[0];
-                return;
-              }
-
-              // 如果没有明确的女性语音，选择不包含男性关键词的语音
-              const nonMaleVoices = chineseVoices.filter(voice => {
-                const name = nameLower(voice.name);
-                return !name.includes('yu-shu') &&
-                  !name.includes('male') &&
-                  !name.includes('man');
-              });
-
-              if (nonMaleVoices.length > 0) {
-                utterance.voice = nonMaleVoices[0];
-                return;
-              }
-
-              // 最后，使用第一个可用的中文语音
-              utterance.voice = chineseVoices[0];
-              return;
-            }
-          }
-
-          // 对于韩语，优先选择女性韩语语音引擎
-          if (lang === 'ko') {
-            const koreanVoices = voices.filter(
-              (voice) =>
-                voice.lang.startsWith('ko') ||
-                voice.name.toLowerCase().includes('korean') ||
-                voice.name.toLowerCase().includes('korea') ||
-                voice.name.toLowerCase().includes('한국어'),
-            );
-
-            if (koreanVoices.length > 0) {
-              // 优先选择女性韩语语音（常见名称：Yuna, Sora等）
-              const nameLower = (name: string) => name.toLowerCase();
-
-              // 首先尝试找到明确包含女性关键词的语音
-              const preferredFemaleVoices = koreanVoices.filter(voice => {
-                const name = nameLower(voice.name);
-                return name.includes('yuna') ||
-                  name.includes('sora') ||
-                  name.includes('female') ||
-                  name.includes('woman') ||
-                  name.includes('여성');
-              });
-
-              if (preferredFemaleVoices.length > 0) {
-                utterance.voice = preferredFemaleVoices[0];
-                return;
-              }
-
-              // 如果没有明确的女性语音，选择不包含男性关键词的语音
-              const nonMaleVoices = koreanVoices.filter(voice => {
-                const name = nameLower(voice.name);
-                return !name.includes('male') &&
-                  !name.includes('man');
-              });
-
-              if (nonMaleVoices.length > 0) {
-                utterance.voice = nonMaleVoices[0];
-                return;
-              }
-
-              // 最后，使用第一个可用的韩语语音
-              utterance.voice = koreanVoices[0];
-              return;
-            }
-          }
-
-          // 如果没有找到特定语言的语音，尝试匹配语言代码
-          const matchingVoices = voices.filter(
-            (voice) => voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0]),
-          );
-
-          if (matchingVoices.length > 0) {
-            // 在匹配的语音中，也优先选择女性语音
-            const nameLower = (name: string) => name.toLowerCase();
-
-            // 首先尝试找到明确包含女性关键词的语音
-            const preferredFemaleVoices = matchingVoices.filter(voice => {
-              const name = nameLower(voice.name);
-              return name.includes('female') ||
-                name.includes('woman');
-            });
-
-            if (preferredFemaleVoices.length > 0) {
-              utterance.voice = preferredFemaleVoices[0];
-              return;
-            }
-
-            // 如果没有明确的女性语音，选择不包含男性关键词的语音
-            const nonMaleVoices = matchingVoices.filter(voice => {
-              const name = nameLower(voice.name);
-              return !name.includes('male') &&
-                !name.includes('man');
-            });
-
-            if (nonMaleVoices.length > 0) {
-              utterance.voice = nonMaleVoices[0];
-            } else {
-              utterance.voice = matchingVoices[0];
-            }
-          }
-        };
-
-        // 尝试选择最佳语音引擎
-        selectBestVoice();
-
-        // 如果语音列表还没有加载完成（iPad 上常见），等待加载
-        if (window.speechSynthesis.getVoices().length === 0) {
-          const handleVoicesChanged = () => {
-            selectBestVoice();
-            window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-          };
-          window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-
-          // 如果一段时间后仍然没有加载，尝试直接播放（使用默认语音）
-          setTimeout(() => {
-            if (window.speechSynthesis.getVoices().length === 0) {
-              window.speechSynthesis.speak(utterance);
-            }
-          }, 1000);
-        } else {
-          // 语音列表已加载，直接播放
+        // 使用共享的语音选择工具函数
+        selectBestVoiceAsync(utterance, lang, langCode, () => {
           window.speechSynthesis.speak(utterance);
-        }
+        });
       } catch (error) {
         console.error('语音合成失败:', error);
       }
@@ -1636,225 +1440,17 @@ export default function ShadowingPage() {
           utterance.pitch = 1.0;
           utterance.volume = 1.0;
 
-          // 选择最合适的语音引擎（iPad 上非常重要）
-          // 优先选择女性语音，避免奇怪的男性声音
-          const selectBestVoice = () => {
-            const voices = window.speechSynthesis.getVoices();
-
-            // 对于日语，优先选择女性日语语音引擎
-            if (lang === 'ja') {
-              const japaneseVoices = voices.filter(
-                (voice) =>
-                  voice.lang.startsWith('ja') ||
-                  voice.name.toLowerCase().includes('japanese') ||
-                  voice.name.toLowerCase().includes('japan'),
-              );
-
-              if (japaneseVoices.length > 0) {
-                // 优先选择女性日语语音（常见名称：Kyoko, Siri Female等）
-                const nameLower = (name: string) => name.toLowerCase();
-
-                // 首先尝试找到明确包含女性关键词的语音
-                const preferredFemaleVoices = japaneseVoices.filter(voice => {
-                  const name = nameLower(voice.name);
-                  return name.includes('kyoko') ||
-                    name.includes('female') ||
-                    name.includes('woman') ||
-                    (name.includes('siri') && !name.includes('male'));
-                });
-
-                if (preferredFemaleVoices.length > 0) {
-                  utterance.voice = preferredFemaleVoices[0];
-                  return;
-                }
-
-                // 如果没有明确的女性语音，选择不包含男性关键词的语音
-                const nonMaleVoices = japaneseVoices.filter(voice => {
-                  const name = nameLower(voice.name);
-                  return !name.includes('otoya') &&
-                    !name.includes('male') &&
-                    !name.includes('man');
-                });
-
-                if (nonMaleVoices.length > 0) {
-                  utterance.voice = nonMaleVoices[0];
-                  return;
-                }
-
-                // 最后，使用第一个可用的日语语音
-                utterance.voice = japaneseVoices[0];
-                return;
-              }
-            }
-
-            // 对于中文，优先选择女性中文语音引擎
-            if (lang === 'zh') {
-              const chineseVoices = voices.filter(
-                (voice) =>
-                  voice.lang.startsWith('zh') ||
-                  voice.name.toLowerCase().includes('chinese') ||
-                  voice.name.toLowerCase().includes('mandarin'),
-              );
-
-              if (chineseVoices.length > 0) {
-                // 优先选择女性中文语音（常见名称：Ting-Ting等）
-                const nameLower = (name: string) => name.toLowerCase();
-
-                // 首先尝试找到明确包含女性关键词的语音
-                const preferredFemaleVoices = chineseVoices.filter(voice => {
-                  const name = nameLower(voice.name);
-                  return name.includes('ting') ||
-                    name.includes('female') ||
-                    name.includes('woman');
-                });
-
-                if (preferredFemaleVoices.length > 0) {
-                  utterance.voice = preferredFemaleVoices[0];
-                  return;
-                }
-
-                // 如果没有明确的女性语音，选择不包含男性关键词的语音
-                const nonMaleVoices = chineseVoices.filter(voice => {
-                  const name = nameLower(voice.name);
-                  return !name.includes('yu-shu') &&
-                    !name.includes('male') &&
-                    !name.includes('man');
-                });
-
-                if (nonMaleVoices.length > 0) {
-                  utterance.voice = nonMaleVoices[0];
-                  return;
-                }
-
-                // 最后，使用第一个可用的中文语音
-                utterance.voice = chineseVoices[0];
-                return;
-              }
-            }
-
-            // 对于韩语，优先选择女性韩语语音引擎
-            if (lang === 'ko') {
-              const koreanVoices = voices.filter(
-                (voice) =>
-                  voice.lang.startsWith('ko') ||
-                  voice.name.toLowerCase().includes('korean') ||
-                  voice.name.toLowerCase().includes('korea') ||
-                  voice.name.toLowerCase().includes('한국어'),
-              );
-
-              if (koreanVoices.length > 0) {
-                // 优先选择女性韩语语音（常见名称：Yuna, Sora等）
-                const nameLower = (name: string) => name.toLowerCase();
-
-                // 首先尝试找到明确包含女性关键词的语音
-                const preferredFemaleVoices = koreanVoices.filter(voice => {
-                  const name = nameLower(voice.name);
-                  return name.includes('yuna') ||
-                    name.includes('sora') ||
-                    name.includes('female') ||
-                    name.includes('woman') ||
-                    name.includes('여성');
-                });
-
-                if (preferredFemaleVoices.length > 0) {
-                  utterance.voice = preferredFemaleVoices[0];
-                  return;
-                }
-
-                // 如果没有明确的女性语音，选择不包含男性关键词的语音
-                const nonMaleVoices = koreanVoices.filter(voice => {
-                  const name = nameLower(voice.name);
-                  return !name.includes('male') &&
-                    !name.includes('man');
-                });
-
-                if (nonMaleVoices.length > 0) {
-                  utterance.voice = nonMaleVoices[0];
-                  return;
-                }
-
-                // 最后，使用第一个可用的韩语语音
-                utterance.voice = koreanVoices[0];
-                return;
-              }
-            }
-
-            // 如果没有找到特定语言的语音，尝试匹配语言代码
-            const matchingVoices = voices.filter(
-              (voice) => voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0]),
-            );
-
-            if (matchingVoices.length > 0) {
-              // 在匹配的语音中，也优先选择女性语音
-              const nameLower = (name: string) => name.toLowerCase();
-
-              // 首先尝试找到明确包含女性关键词的语音
-              const preferredFemaleVoices = matchingVoices.filter(voice => {
-                const name = nameLower(voice.name);
-                return name.includes('female') ||
-                  name.includes('woman');
-              });
-
-              if (preferredFemaleVoices.length > 0) {
-                utterance.voice = preferredFemaleVoices[0];
-                return;
-              }
-
-              // 如果没有明确的女性语音，选择不包含男性关键词的语音
-              const nonMaleVoices = matchingVoices.filter(voice => {
-                const name = nameLower(voice.name);
-                return !name.includes('male') &&
-                  !name.includes('man');
-              });
-
-              if (nonMaleVoices.length > 0) {
-                utterance.voice = nonMaleVoices[0];
-              } else {
-                utterance.voice = matchingVoices[0];
-              }
-            }
+          // 使用共享的语音选择工具函数
+          // 添加状态监听
+          utterance.onend = () => setIsSpeaking(false);
+          utterance.onerror = () => {
+            setIsSpeaking(false);
+            console.error('TTS发音失败');
           };
 
-          // 尝试选择最佳语音引擎
-          selectBestVoice();
-
-          // 如果语音列表还没有加载完成（iPad 上常见），等待加载
-          if (window.speechSynthesis.getVoices().length === 0) {
-            const handleVoicesChanged = () => {
-              selectBestVoice();
-              // 添加状态监听
-              utterance.onend = () => setIsSpeaking(false);
-              utterance.onerror = () => {
-                setIsSpeaking(false);
-                console.error('TTS发音失败');
-              };
-              window.speechSynthesis.speak(utterance);
-              window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-            };
-            window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-
-            // 如果一段时间后仍然没有加载，尝试直接播放（使用默认语音）
-            setTimeout(() => {
-              if (window.speechSynthesis.getVoices().length === 0) {
-                utterance.onend = () => setIsSpeaking(false);
-                utterance.onerror = () => {
-                  setIsSpeaking(false);
-                  console.error('TTS发音失败');
-                };
-                window.speechSynthesis.speak(utterance);
-              }
-            }, 1000);
-          } else {
-            // 语音列表已加载，直接播放
-            // 添加状态监听
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = () => {
-              setIsSpeaking(false);
-              console.error('TTS发音失败');
-            };
-
+          selectBestVoiceAsync(utterance, lang, langCode, () => {
             window.speechSynthesis.speak(utterance);
-          }
+          });
         } catch (error) {
           setIsSpeaking(false);
           console.error('语音合成失败:', error);
@@ -5951,61 +5547,6 @@ export default function ShadowingPage() {
                   </Card>
                 )}
 
-                {/* 评分结果区域 - 恢复的逻辑 */}
-                {practiceMode !== 'role' && scoringResult && (
-                  <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-0 shadow-xl rounded-2xl">
-                    {(() => {
-                      const simpleAnalysis = performSimpleAnalysis(
-                        scoringResult.originalText || '',
-                        scoringResult.transcription || '',
-                        t
-                      );
-                      const { sentenceAnalysis, overallScore } = simpleAnalysis;
-
-                      return (
-                        <div>
-                          {/* 整体评分 */}
-                          <div className="mb-4 p-3 bg-white rounded border">
-                            <div className="text-sm font-medium mb-2">{t.shadowing.overall_score}:</div>
-                            <div className="text-2xl font-bold text-blue-600">{overallScore}%</div>
-                          </div>
-
-                          {/* 句子分析 */}
-                          <div className="space-y-3">
-                            {sentenceAnalysis.map((sentence, idx) => (
-                              <div key={idx} className={`p-3 rounded border ${sentence.status === 'correct' ? 'bg-green-50 border-green-200' :
-                                sentence.status === 'partial' ? 'bg-yellow-50 border-yellow-200' :
-                                  'bg-red-50 border-red-200'
-                                }`}>
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="text-sm font-medium">
-                                    {sentence.status === 'correct' && '✓ '}
-                                    {sentence.status === 'partial' && '⚠ '}
-                                    {sentence.status === 'missing' && '❌ '}
-                                    {t.shadowing.sentence || '句子'} {idx + 1}
-                                  </div>
-                                  <div className="text-sm font-bold">{sentence.score}%</div>
-                                </div>
-                                <div className="text-sm mb-2">
-                                  <span className="font-medium">{t.shadowing.original_text}:</span>
-                                  <span className="text-gray-700 ml-1">&ldquo;{sentence.sentence}&rdquo;</span>
-                                </div>
-                                {sentence.issues.length > 0 && (
-                                  <div className="text-xs text-red-600">
-                                    <div className="font-medium">{t.shadowing.issues || '问题'}:</div>
-                                    <ul className="list-disc list-inside">
-                                      {sentence.issues.map((issue, i) => <li key={i}>{issue}</li>)}
-                                    </ul>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </Card>
-                )}
 
                 {/* 下一条推荐卡片 */}
                 {scoringResult && nextRecommendation && (
@@ -6063,14 +5604,14 @@ export default function ShadowingPage() {
                       {scoringResult && (
                         <div className="mb-6 bg-white/60 rounded-xl p-4 border border-green-100">
                           <div className="flex items-center justify-between mb-4">
-                            <span className="text-gray-700 font-medium">整体准确率</span>
+                            <span className="text-gray-700 font-medium">{t.shadowing.overall_accuracy}</span>
                             <span className="text-2xl font-bold text-green-600">{(scoringResult.score || 0).toFixed(1)}%</span>
                           </div>
                           <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                             {Object.entries(sentenceScores).map(([idx, score]: [string, any]) => (
                               <div key={idx} className="flex items-center justify-between text-sm p-2 bg-white rounded border border-gray-100">
                                 <span className="text-gray-600 truncate max-w-[70%]">
-                                  {score.finalText || `句子 ${Number(idx) + 1}`}
+                                  {score.finalText || (t.shadowing.sentence_fallback || 'Sentence {n}').replace('{n}', String(Number(idx) + 1))}
                                 </span>
                                 <Badge variant={score.score >= 0.8 ? 'default' : score.score >= 0.6 ? 'secondary' : 'destructive'}>
                                   {(score.score * 100).toFixed(0)}%

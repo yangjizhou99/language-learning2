@@ -92,6 +92,9 @@ export interface Translations {
     quick_access_profile_desc: string;
     quick_access_alignment_desc: string;
     quick_access_vocab_desc: string;
+    quick_access_shadowing_desc: string;
+    quick_access_storyline: string;
+    quick_access_storyline_desc: string;
     // Progress
     progress_today: string;
     progress_week: string;
@@ -593,6 +596,8 @@ export interface Translations {
     step5_tip: string;
     practice_done_title: string;
     practice_done_desc: string;
+    overall_accuracy: string;
+    sentence_fallback: string;
     practice_again: string;
     back_to_catalog: string;
     // 新增：警告消息
@@ -955,6 +960,9 @@ const zh: Translations = {
     quick_access_profile_desc: '管理个人信息和学习目标',
     quick_access_alignment_desc: '对齐练习，理解语言结构',
     quick_access_vocab_desc: '生词管理，积累词汇量',
+    quick_access_shadowing_desc: '跟读练习，提升口语和听力',
+    quick_access_storyline: '故事线学习',
+    quick_access_storyline_desc: '跟随故事解锁对话',
     progress_today: '今日学习',
     progress_week: '本周目标',
     progress_vocab: '词汇掌握',
@@ -1474,6 +1482,8 @@ const zh: Translations = {
     step5_tip: 'Step 5 · 完成：练习已完成，可以查看评分结果或重新练习。',
     practice_done_title: '练习已完成',
     practice_done_desc: '成绩与生词已保存，你可以选择继续提升',
+    overall_accuracy: '整体准确率',
+    sentence_fallback: '句子 {n}',
     practice_again: '再练一次',
     back_to_catalog: '返回题库',
     // 新增：警告消息
@@ -1833,6 +1843,9 @@ const en: Translations = {
     quick_access_profile_desc: 'Manage info and learning goals',
     quick_access_alignment_desc: 'Alignment practice, understand structure',
     quick_access_vocab_desc: 'Vocabulary management, build lexicon',
+    quick_access_shadowing_desc: 'Shadowing practice, improve speaking and listening',
+    quick_access_storyline: 'Storyline Learning',
+    quick_access_storyline_desc: 'Unlock dialogues through stories',
     progress_today: 'Today',
     progress_week: 'Weekly Goal',
     progress_vocab: 'Vocabulary',
@@ -2361,6 +2374,8 @@ const en: Translations = {
     step5_tip: 'Step 5 · Complete: practice completed, you can view scores or practice again.',
     practice_done_title: 'Practice Completed',
     practice_done_desc: 'Scores and words saved. You can continue improving.',
+    overall_accuracy: 'Overall Accuracy',
+    sentence_fallback: 'Sentence {n}',
     practice_again: 'Practice Again',
     back_to_catalog: 'Back to Catalog',
     // 新增：警告消息
@@ -2721,6 +2736,9 @@ const ja: Translations = {
     quick_access_profile_desc: '個人情報と学習目標の管理',
     quick_access_alignment_desc: 'アライメント練習、構造を理解する',
     quick_access_vocab_desc: '単語管理、語彙を増やす',
+    quick_access_shadowing_desc: 'シャドーイング練習、スピーキングとリスニングを向上',
+    quick_access_storyline: 'ストーリーライン学習',
+    quick_access_storyline_desc: 'ストーリーで会話をアンロック',
     progress_today: '今日の学習',
     progress_week: '今週の目標',
     progress_vocab: '語彙力',
@@ -3243,8 +3261,10 @@ const ja: Translations = {
     step4_tip: 'Step 4 · 录音评分：开始录音并评分，此时仅保留原文，其它模块隐藏。',
     step5_tip: 'Step 5 · 完成：练习已完成，可以查看评分结果或重新练习。',
     practice_done_title: '练习已完成',
-    practice_done_desc: '成绩与生词已保存，你可以选择继续提升',
-    practice_again: '再练一次',
+    practice_done_desc: '成績と生詞を保存しました。さらなる上達を目指しましょう',
+    overall_accuracy: '総合正確率',
+    sentence_fallback: '文 {n}',
+    practice_again: 'もう一度練習',
     back_to_catalog: '返回题库',
     // 新增：警告消息
     alert_messages: {
