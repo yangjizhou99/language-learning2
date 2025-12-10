@@ -61,7 +61,6 @@ import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
 const SentencePractice = dynamic(() => import('@/components/shadowing/SentencePractice'), { ssr: false });
-const FollowAlongPractice = dynamic(() => import('@/components/shadowing/FollowAlongPractice'), { ssr: false });
 import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LANG_LABEL } from '@/types/lang';
@@ -1139,7 +1138,7 @@ export default function ShadowingPage() {
               size="sm"
               className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600"
             >
-              {t.shadowing?.mode_follow_along || '跟读模式'}
+              {'跟读模式'}
             </Button>
           </div>
         </div>
