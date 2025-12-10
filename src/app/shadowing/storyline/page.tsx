@@ -25,6 +25,7 @@ interface SubtopicData {
     one_line: string | null;
     itemId: string | null;
     isPracticed: boolean;
+    score: number | null;
     order: number;
     top_scenes?: { id: string; name: string; weight: number }[];
 }
@@ -41,6 +42,7 @@ interface ThemeData {
         completed: number;
         total: number;
     };
+    averageScore: number | null;
 }
 
 const LANG_OPTIONS = [
@@ -69,6 +71,14 @@ export default function StorylinePage() {
     const [themes, setThemes] = useState<ThemeData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [lastPractice, setLastPractice] = useState<{
+        themeId: string;
+        subtopicId: string;
+        itemId: string;
+        lang: string;
+        level: number;
+    } | null>(null);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     const [selectedLang, setSelectedLang] = useState('all');
     const [selectedLevel, setSelectedLevel] = useState('all');
@@ -77,77 +87,80 @@ export default function StorylinePage() {
     const searchParams = useSearchParams();
     const expandThemeId = searchParams?.get('expandTheme') || null;
 
+    const fetchStoryline = async (lang: string, level: string) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 增加到60秒
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const headers = await getAuthHeaders();
+            const params = new URLSearchParams();
+            if (lang !== 'all') params.set('lang', lang);
+            if (level !== 'all') params.set('level', level);
+
+            const res = await fetch(`/api/shadowing/storyline?${params.toString()}`, {
+                credentials: 'include',
+                headers,
+                signal: controller.signal,
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed to fetch storyline data');
+            }
+
+            const data = await res.json();
+
+            if (!controller.signal.aborted) {
+                setThemes(data.themes || []);
+
+                // 只在首次加载时处理 lastPractice
+                if (data.lastPractice && isInitialLoad) {
+                    setLastPractice(data.lastPractice);
+
+                    // 如果当前没有筛选条件，自动应用最后做题的筛选
+                    if (lang === 'all' && level === 'all') {
+                        setSelectedLang(data.lastPractice.lang);
+                        setSelectedLevel(data.lastPractice.level.toString());
+                        setIsInitialLoad(false);
+                        // 会触发新的 fetch，带有正确的筛选条件
+                        return;
+                    }
+                }
+                setIsInitialLoad(false);
+            }
+        } catch (err: any) {
+            if (err.name === 'AbortError') {
+                console.log('Storyline fetch aborted or timed out');
+                setError('加载超时，请刷新重试');
+            } else {
+                console.error('Storyline fetch error:', err);
+                setError('加载故事线失败，请稍后重试');
+            }
+        } finally {
+            clearTimeout(timeoutId);
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (!user || !permissions.can_access_shadowing) return;
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-        const fetchStoryline = async () => {
-            setLoading(true);
-            setError(null);
-
-            try {
-                const headers = await getAuthHeaders();
-                const params = new URLSearchParams();
-                if (selectedLang !== 'all') params.set('lang', selectedLang);
-                if (selectedLevel !== 'all') params.set('level', selectedLevel);
-
-                const res = await fetch(`/api/shadowing/storyline?${params.toString()}`, {
-                    credentials: 'include',
-                    headers,
-                    signal: controller.signal,
-                });
-
-                if (!res.ok) {
-                    throw new Error('Failed to fetch storyline data');
-                }
-
-                const data = await res.json();
-                if (!controller.signal.aborted) {
-                    setThemes(data.themes || []);
-                }
-            } catch (err: any) {
-                if (err.name === 'AbortError') {
-                    console.log('Storyline fetch aborted or timed out');
-                    if (!controller.signal.aborted) {
-                        // If it was a manual abort (unmount), we don't set error
-                        // But here we use same controller for timeout. 
-                        // Actually, if it times out, we WANT to show error.
-                        setError('加载超时，请刷新重试');
-                    } else {
-                        // If aborted by unmount, ignore.
-                        // But wait, timeout calls abort().
-                        // We need to distinguish.
-                        setError('加载超时，请刷新重试');
-                    }
-                } else {
-                    console.error('Storyline fetch error:', err);
-                    setError('加载故事线失败，请稍后重试');
-                }
-            } finally {
-                clearTimeout(timeoutId);
-                if (!controller.signal.aborted) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        fetchStoryline();
-
-        return () => {
-            controller.abort();
-            clearTimeout(timeoutId);
-        };
+        fetchStoryline(selectedLang, selectedLevel);
     }, [user, permissions.can_access_shadowing, selectedLang, selectedLevel, getAuthHeaders]);
 
-    // 自动滚动到展开的主题或第一个未完成的主题
+    // 自动滚动到展开的主题或最后练习的主题
     useEffect(() => {
         if (!loading && themes.length > 0) {
-            // 如果 URL 指定了展开的主题，优先使用
+            // 优先级：URL参数 > lastPractice > 第一个未完成
             let targetThemeId = expandThemeId;
 
-            // 如果没有指定，寻找第一个包含未完成子主题的主题
+            // 使用最后练习的主题
+            if (!targetThemeId && lastPractice) {
+                targetThemeId = lastPractice.themeId;
+            }
+
+            // 如果还没有，寻找第一个包含未完成子主题的主题
             if (!targetThemeId) {
                 const firstUnfinishedTheme = themes.find(theme =>
                     theme.subtopics.some(sub => !sub.isPracticed)
@@ -168,7 +181,7 @@ export default function StorylinePage() {
                 return () => clearTimeout(timer);
             }
         }
-    }, [expandThemeId, loading, themes]);
+    }, [expandThemeId, lastPractice, loading, themes]);
 
     // 计算总进度
     const totalProgress = themes.reduce(
@@ -344,9 +357,11 @@ export default function StorylinePage() {
                                     defaultExpanded={
                                         expandThemeId
                                             ? theme.id === expandThemeId
-                                            : (!themes.every(t => t.progress.completed === t.progress.total)
-                                                ? theme.id === themes.find(t => t.subtopics.some(s => !s.isPracticed))?.id
-                                                : index === 0)
+                                            : lastPractice
+                                                ? theme.id === lastPractice.themeId
+                                                : (!themes.every(t => t.progress.completed === t.progress.total)
+                                                    ? theme.id === themes.find(t => t.subtopics.some(s => !s.isPracticed))?.id
+                                                    : index === 0)
                                     }
                                 />
                             </div>

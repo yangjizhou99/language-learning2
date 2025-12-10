@@ -12,6 +12,7 @@ interface StorylineNodeProps {
     oneLine: string | null;
     itemId: string | null;
     isPracticed: boolean;
+    score: number | null;
     isUnlocked: boolean;
     order: number;
     lang: string;
@@ -26,6 +27,7 @@ export function StorylineNode({
     oneLine,
     itemId,
     isPracticed,
+    score,
     isUnlocked,
     order,
     lang,
@@ -49,10 +51,29 @@ export function StorylineNode({
 
     const status = getNodeStatus();
 
+    // Helper to get score color class
+    const getScoreColorClass = (score: number) => {
+        if (score >= 80) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+        if (score >= 60) return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+    };
+
     return (
         <div className="flex items-start gap-3 sm:gap-4">
             {/* Node with connecting line */}
             <div className="flex flex-col items-center">
+                {/* Score Badge */}
+                {score !== null && (
+                    <div className="mb-1">
+                        <span className={cn(
+                            "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                            getScoreColorClass(score)
+                        )}>
+                            {score}
+                        </span>
+                    </div>
+                )}
+
                 {/* Node circle */}
                 <motion.button
                     onClick={handleClick}
@@ -105,6 +126,8 @@ export function StorylineNode({
                 className={cn(
                     'flex-1 pt-1 pb-4',
                     status === 'locked' && 'opacity-60',
+                    // Adjust padding if score is present to align text with node center
+                    score !== null ? 'mt-4' : ''
                 )}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
