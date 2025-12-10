@@ -21,6 +21,7 @@ interface SubtopicWithProgress {
     one_line: string | null;
     itemId: string | null;
     isPracticed: boolean;
+    score: number | null;
     order: number;
     top_scenes: { id: string; name: string; weight: number }[];
 }
@@ -37,6 +38,7 @@ interface ThemeWithSubtopics {
         completed: number;
         total: number;
     };
+    averageScore: number | null;
 }
 
 export async function GET(req: NextRequest) {
@@ -177,44 +179,70 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // 4. 获取用户的练习记录
-        const itemIds = items.map((i) => i.id);
-        let practicedItemIds: Set<string> = new Set();
+        // 4. 获取用户的练习记录 (包含分数信息)
+        let practicedItemsMap = new Map<string, number>(); // itemId -> score
 
-        if (itemIds.length > 0) {
-            // Batch query for sessions
-            const batchSize = 50;
-            const sessionPromises = [];
-            const allSessions: { item_id: string }[] = [];
+        // Optimize: Fetch ALL completed sessions for this user.
+        const { data: allSessionsData, error: sessionsError } = await supabase
+            .from('shadowing_sessions')
+            .select('item_id, notes, recordings')
+            .eq('user_id', user.id)
+            .eq('status', 'completed');
 
-            for (let i = 0; i < itemIds.length; i += batchSize) {
-                const batch = itemIds.slice(i, i + batchSize);
-                sessionPromises.push(
-                    supabase
-                        .from('shadowing_sessions')
-                        .select('item_id')
-                        .eq('user_id', user.id)
-                        .eq('status', 'completed')
-                        .in('item_id', batch)
-                );
-            }
+        if (sessionsError) {
+            console.error('Sessions query error:', sessionsError);
+        }
 
-            const sessionResults = await Promise.all(sessionPromises);
-            for (const { data: sessions, error: sessionsError } of sessionResults) {
-                if (sessionsError) {
-                    console.error('Sessions query error:', sessionsError);
-                } else if (sessions) {
-                    allSessions.push(...sessions);
+        const allSessions = allSessionsData || [];
+
+        // Calculate scores for each session
+        allSessions.forEach((session: any) => {
+            let totalScore = 0;
+            let count = 0;
+
+            // Try to get scores from notes.sentence_scores first
+            if (session.notes && session.notes.sentence_scores) {
+                const scores = Object.values(session.notes.sentence_scores) as any[];
+                if (scores.length > 0) {
+                    // Calculate average of best scores
+                    const sum = scores.reduce((acc: number, curr: any) => {
+                        let score = curr.bestScore || curr.score || 0;
+                        // Fix: If score is <= 1 (decimal), convert to percentage
+                        if (score <= 1 && score > 0) score *= 100;
+                        return acc + score;
+                    }, 0);
+                    totalScore = sum;
+                    count = scores.length;
                 }
             }
-            practicedItemIds = new Set(allSessions.map((s) => s.item_id));
-        }
+
+            // Fallback to recordings if no sentence_scores
+            if (count === 0 && session.recordings && Array.isArray(session.recordings)) {
+                const validRecordings = session.recordings.filter((r: any) => typeof r.score === 'number');
+                if (validRecordings.length > 0) {
+                    const sum = validRecordings.reduce((acc: number, curr: any) => {
+                        let score = curr.score;
+                        // Fix: If score is <= 1 (decimal), convert to percentage
+                        if (score <= 1 && score > 0) score *= 100;
+                        return acc + score;
+                    }, 0);
+                    totalScore = sum;
+                    count = validRecordings.length;
+                }
+            }
+
+            if (count > 0) {
+                const avgScore = Math.round(totalScore / count);
+                practicedItemsMap.set(session.item_id, avgScore);
+            } else {
+                // Mark as practiced but no score (e.g. 0)
+                practicedItemsMap.set(session.item_id, 0);
+            }
+        });
 
         // 5. 获取小主题的场景向量（Top 2）
         let subtopicScenesMap = new Map<string, { id: string; name: string; weight: number }[]>();
         if (subtopicIds.length > 0) {
-            console.log('[StorylineAPI] Fetching vectors for subtopics:', subtopicIds.length);
-
             // Batch query for vectors
             const batchSize = 50;
             let allVectors: any[] = [];
@@ -226,10 +254,10 @@ export async function GET(req: NextRequest) {
                     supabase
                         .from('subtopic_scene_vectors')
                         .select(`
-                            subtopic_id,
-                            weight,
-                            scene:scene_tags!inner(scene_id, name_cn)
-                        `)
+                             subtopic_id,
+                             weight,
+                             scene:scene_tags!inner(scene_id, name_cn)
+                         `)
                         .in('subtopic_id', batch)
                         .order('weight', { ascending: false })
                 );
@@ -245,11 +273,6 @@ export async function GET(req: NextRequest) {
             }
 
             if (allVectors.length > 0) {
-                console.log('[StorylineAPI] Vectors found:', allVectors.length);
-                if (allVectors.length > 0) {
-                    console.log('[StorylineAPI] Sample vector:', JSON.stringify(allVectors[0], null, 2));
-                }
-
                 allVectors.forEach((v: any) => {
                     const list = subtopicScenesMap.get(v.subtopic_id) || [];
                     if (list.length < 2) { // 只取前2个
@@ -261,7 +284,6 @@ export async function GET(req: NextRequest) {
                         subtopicScenesMap.set(v.subtopic_id, list);
                     }
                 });
-                console.log('[StorylineAPI] Map size:', subtopicScenesMap.size);
             }
         }
 
@@ -287,7 +309,8 @@ export async function GET(req: NextRequest) {
 
             const subtopicsWithProgress: SubtopicWithProgress[] = themeSubtopics.map((s, index) => {
                 const itemId = subtopicToItem.get(s.id) || null;
-                const isPracticed = itemId ? practicedItemIds.has(itemId) : false;
+                const isPracticed = itemId ? practicedItemsMap.has(itemId) : false;
+                const score = itemId && isPracticed ? practicedItemsMap.get(itemId)! : null;
 
                 return {
                     id: s.id,
@@ -295,12 +318,21 @@ export async function GET(req: NextRequest) {
                     one_line: s.one_line,
                     itemId,
                     isPracticed,
+                    score,
                     order: index + 1,
                     top_scenes: subtopicScenesMap.get(s.id) || [],
                 };
             });
 
-            const completed = subtopicsWithProgress.filter((s) => s.isPracticed).length;
+            const completedSubtopics = subtopicsWithProgress.filter((s) => s.isPracticed);
+            const completed = completedSubtopics.length;
+
+            // Calculate theme average score
+            let averageScore: number | null = null;
+            if (completed > 0) {
+                const totalScore = completedSubtopics.reduce((acc, curr) => acc + (curr.score || 0), 0);
+                averageScore = Math.round(totalScore / completed);
+            }
 
             return {
                 id: theme.id,
@@ -314,6 +346,7 @@ export async function GET(req: NextRequest) {
                     completed,
                     total: subtopicsWithProgress.length,
                 },
+                averageScore,
             };
         });
 

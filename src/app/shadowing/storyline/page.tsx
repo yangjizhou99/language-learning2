@@ -25,6 +25,7 @@ interface SubtopicData {
     one_line: string | null;
     itemId: string | null;
     isPracticed: boolean;
+    score: number | null;
     order: number;
     top_scenes?: { id: string; name: string; weight: number }[];
 }
@@ -41,6 +42,7 @@ interface ThemeData {
         completed: number;
         total: number;
     };
+    averageScore: number | null;
 }
 
 const LANG_OPTIONS = [
@@ -81,7 +83,7 @@ export default function StorylinePage() {
         if (!user || !permissions.can_access_shadowing) return;
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
         const fetchStoryline = async () => {
             setLoading(true);

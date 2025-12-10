@@ -14,6 +14,7 @@ interface SubtopicData {
     one_line: string | null;
     itemId: string | null;
     isPracticed: boolean;
+    score: number | null;
     order: number;
     top_scenes?: { id: string; name: string; weight: number }[];
 }
@@ -30,6 +31,7 @@ interface StorylineThemeCardProps {
         completed: number;
         total: number;
     };
+    averageScore: number | null;
     defaultExpanded?: boolean;
 }
 
@@ -41,6 +43,7 @@ export function StorylineThemeCard({
     level,
     subtopics,
     progress,
+    averageScore,
     defaultExpanded = false,
 }: StorylineThemeCardProps) {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -51,6 +54,13 @@ export function StorylineThemeCard({
     const getUnlockStatus = (index: number): boolean => {
         if (index === 0) return true; // 第一个始终解锁
         return subtopics[index - 1].isPracticed; // 前一个完成才解锁
+    };
+
+    // Helper to get score color class
+    const getScoreColorClass = (score: number) => {
+        if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
+        if (score >= 60) return 'text-amber-600 dark:text-amber-400';
+        return 'text-red-600 dark:text-red-400';
     };
 
     return (
@@ -114,16 +124,23 @@ export function StorylineThemeCard({
                                     <ChevronDown className="w-5 h-5 text-slate-400" />
                                 )}
                             </motion.div>
-                            <span
-                                className={cn(
-                                    'text-xs font-medium px-2 py-1 rounded-full',
-                                    isCompleted
-                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+                            <div className="flex items-center gap-2">
+                                {averageScore !== null && (
+                                    <span className={cn("text-xs font-bold", getScoreColorClass(averageScore))}>
+                                        {averageScore}分
+                                    </span>
                                 )}
-                            >
-                                {progress.completed}/{progress.total}
-                            </span>
+                                <span
+                                    className={cn(
+                                        'text-xs font-medium px-2 py-1 rounded-full',
+                                        isCompleted
+                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+                                    )}
+                                >
+                                    {progress.completed}/{progress.total}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -160,6 +177,7 @@ export function StorylineThemeCard({
                                                 oneLine={subtopic.one_line}
                                                 itemId={subtopic.itemId}
                                                 isPracticed={subtopic.isPracticed}
+                                                score={subtopic.score}
                                                 isUnlocked={getUnlockStatus(index)}
                                                 order={subtopic.order}
                                                 lang={lang}
