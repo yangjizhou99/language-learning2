@@ -75,7 +75,7 @@ interface SentencePracticeProps {
   className?: string;
   audioUrl?: string | null;
   sentenceTimeline?: Array<{ index: number; text: string; start: number; end: number; speaker?: string }>;
-  practiceMode?: 'default' | 'role';
+  practiceMode?: 'default' | 'role' | 'followAlong';
   activeRole?: string;
   roleSegments?: RolePracticeSegment[];
   onRoleRoundComplete?: (results: RoleSentenceScore[]) => void;
@@ -441,6 +441,94 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     },
     externalScores // Pass external scores to hook
   });
+
+  // 跟读模式状态
+  const isFollowAlongMode = practiceMode === 'followAlong';
+  const [followAlongIndex, setFollowAlongIndex] = useState(0);
+  const [followAlongPhase, setFollowAlongPhase] = useState<'idle' | 'playing' | 'recording' | 'scored'>('idle');
+  const [followAlongPaused, setFollowAlongPaused] = useState(false);
+  const followAlongTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 记录每个句子在本轮录音开始时的尝试次数，用于检测新评分
+  const followAlongAttemptRef = useRef<number>(0);
+
+  // 跟读模式：监听评分完成，自动进入下一句
+  useEffect(() => {
+    if (!isFollowAlongMode || followAlongPaused) return;
+
+    const currentScore = practice.sentenceScores[followAlongIndex];
+    // 只有当录音结束、有评分、且评分尝试次数比开始时多了才进入下一句
+    const hasNewScore = currentScore && (currentScore.attempts || 1) > followAlongAttemptRef.current;
+
+    if (followAlongPhase === 'recording' && hasNewScore && !practice.isRecognizing) {
+      // 录音结束且有新评分，切换到 scored 状态
+      setFollowAlongPhase('scored');
+
+      // 2秒后自动进入下一句
+      if (followAlongTimerRef.current) clearTimeout(followAlongTimerRef.current);
+      followAlongTimerRef.current = setTimeout(() => {
+        if (followAlongIndex < practice.total - 1) {
+          setFollowAlongIndex(prev => prev + 1);
+          setFollowAlongPhase('idle');
+        } else {
+          // 全部完成
+          setFollowAlongPhase('idle');
+          setFollowAlongPaused(true);
+        }
+      }, 2000);
+    }
+  }, [isFollowAlongMode, followAlongPaused, followAlongPhase, followAlongIndex, practice.sentenceScores, practice.isRecognizing, practice.total]);
+
+  // 跟读模式：idle 状态时自动播放
+  useEffect(() => {
+    if (!isFollowAlongMode || followAlongPaused || followAlongPhase !== 'idle') return;
+    if (followAlongIndex >= practice.total) return;
+
+    const runCycle = async () => {
+      // 先停止旧的识别并清空文字
+      practice.stop();
+      practice.clearText();
+
+      setFollowAlongPhase('playing');
+      practice.setExpandedIndex(followAlongIndex);
+
+      try {
+        await practice.speak(followAlongIndex);
+      } catch (e) {
+        console.error('播放失败:', e);
+      }
+
+      // 播放完成后开始录音
+      if (!followAlongPaused) {
+        setTimeout(() => {
+          // 记录当前尝试次数，用于检测新评分
+          const currentScore = practice.sentenceScores[followAlongIndex];
+          followAlongAttemptRef.current = currentScore?.attempts || 0;
+
+          setFollowAlongPhase('recording');
+          // 使用 retry 确保清空上一句的识别文字
+          practice.retry(followAlongIndex);
+        }, 300);
+      }
+    };
+
+    runCycle();
+  }, [isFollowAlongMode, followAlongPaused, followAlongPhase, followAlongIndex, practice.total]);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (followAlongTimerRef.current) clearTimeout(followAlongTimerRef.current);
+    };
+  }, []);
+
+  // 重置跟读模式状态（当切换模式时）
+  useEffect(() => {
+    if (isFollowAlongMode) {
+      setFollowAlongIndex(0);
+      setFollowAlongPhase('idle');
+      setFollowAlongPaused(false);
+    }
+  }, [isFollowAlongMode]);
 
   const nonRoleContent = (
     <Card className={`p-4 ${className}`}>

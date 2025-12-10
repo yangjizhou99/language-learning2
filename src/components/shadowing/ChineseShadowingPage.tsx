@@ -61,6 +61,7 @@ import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
 const SentencePractice = dynamic(() => import('@/components/shadowing/SentencePractice'), { ssr: false });
+const FollowAlongPractice = dynamic(() => import('@/components/shadowing/FollowAlongPractice'), { ssr: false });
 import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LANG_LABEL } from '@/types/lang';
@@ -473,7 +474,7 @@ export default function ShadowingPage() {
   const [theme, setTheme] = useState<string>('all');
   const [selectedThemeId, setSelectedThemeId] = useState<string>('all');
   const [selectedSubtopicId, setSelectedSubtopicId] = useState<string>('all');
-  const [practiceMode, setPracticeMode] = useState<'default' | 'role'>('default');
+  const [practiceMode, setPracticeMode] = useState<'default' | 'role' | 'followAlong'>('default');
   const [selectedRole, setSelectedRole] = useState<string>('A');
   const [completedRoleList, setCompletedRoleList] = useState<string[]>([]);
   const [nextRoleSuggestion, setNextRoleSuggestion] = useState<string | null>(null);
@@ -1127,6 +1128,18 @@ export default function ShadowingPage() {
               size="sm"
             >
               {t.shadowing?.mode_role || '分角色对话'}
+            </Button>
+            <Button
+              variant={practiceMode === 'followAlong' ? 'default' : 'outline'}
+              onClick={() => {
+                setPracticeMode('followAlong');
+                setNextRoleSuggestion(null);
+                setCompletedRoleList([]);
+              }}
+              size="sm"
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600"
+            >
+              {t.shadowing?.mode_follow_along || '跟读模式'}
             </Button>
           </div>
         </div>
@@ -5329,7 +5342,7 @@ export default function ShadowingPage() {
                 {/* 练习模式切换 */}
                 {(!gatingActive || step >= 4) && renderPracticeModeSwitcher()}
 
-                {/* 逐句/分角色练习 */}
+                {/* 逐句/分角色/跟读练习 - 统一使用 SentencePractice */}
                 {(!gatingActive || step >= 4) && (
                   <SentencePractice
                     originalText={currentItem?.text}

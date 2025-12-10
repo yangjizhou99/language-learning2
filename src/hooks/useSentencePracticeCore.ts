@@ -344,6 +344,14 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
     return { score: score.score, missing: score.missing, extra: score.extra } as { score: number; missing: string[]; extra: string[] };
   }, [expandedIndex, sentenceScores]);
 
+  // 清空显示文字（不开始录音）
+  const clearText = useCallback(() => {
+    setDisplayText('');
+    setFinalText('');
+    tempCombinedTextRef.current = '';
+    tempFinalTextRef.current = '';
+  }, []);
+
   return {
     sentences,
     total,
@@ -359,6 +367,7 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
     retry,
     speak,
     ensureMicReleased,
+    clearText,
   };
 }
 
