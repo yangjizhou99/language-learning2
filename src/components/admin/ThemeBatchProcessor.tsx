@@ -31,7 +31,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     Volume2, Languages, BookOpen, Play, Users, RefreshCw, Zap, Settings,
-    ChevronDown, CheckCheck, Square, Check, Loader2, AlertCircle, CheckCircle2, Target
+    ChevronDown, CheckCheck, Square, Check, Loader2, AlertCircle, CheckCircle2, Target, HelpCircle, Undo2
 } from 'lucide-react';
 import CandidateVoiceSelector from '@/components/CandidateVoiceSelector';
 
@@ -78,12 +78,15 @@ export default function ThemeBatchProcessor() {
     const [doTranslation, setDoTranslation] = useState(true);
     const [doPublish, setDoPublish] = useState(true);
     const [doSceneVector, setDoSceneVector] = useState(false);
+    const [doQuiz, setDoQuiz] = useState(false);
+    const [doUnpublish, setDoUnpublish] = useState(false);
     const [transTargetLanguages, setTransTargetLanguages] = useState<string[]>([]);
 
     // 跳过选项
     const [skipExistingAudio, setSkipExistingAudio] = useState(true);
     const [skipExistingSceneVector, setSkipExistingSceneVector] = useState(true);
     const [skipExistingACU, setSkipExistingACU] = useState(true);
+    const [skipExistingQuiz, setSkipExistingQuiz] = useState(true);
 
     // 性能参数
     const [themeConcurrency, setThemeConcurrency] = useState(2);
@@ -209,6 +212,15 @@ export default function ThemeBatchProcessor() {
         const theme = themes.find(t => t.id === themeId);
 
         try {
+            // 如果是撤回发布模式，直接处理
+            if (doUnpublish) {
+                setLogs(prev => [...prev, `📋 ${theme?.title}: 开始撤回发布`]);
+                await processThemeUnpublish(themeId, headers);
+                setThemeStatuses(prev => ({ ...prev, [themeId]: 'done' }));
+                setLogs(prev => [...prev, `✅ ${theme?.title}: 撤回完成`]);
+                return true;
+            }
+
             // 获取主题下所有草稿
             const { data: drafts } = await supabase
                 .from('shadowing_drafts')
@@ -224,6 +236,7 @@ export default function ThemeBatchProcessor() {
             }
 
             setLogs(prev => [...prev, `📋 ${theme?.title}: 开始处理 ${drafts.length} 个草稿`]);
+
 
             // 生成语音
             if (doAudio) {
@@ -248,6 +261,16 @@ export default function ThemeBatchProcessor() {
             // 自动发布
             if (doPublish) {
                 await processDraftsBatch(drafts, themeId, 'publish', headers, theme?.lang || 'zh');
+            }
+
+            // 生成理解题 (在发布后处理，因为需要处理已发布的 items)
+            if (doQuiz) {
+                await processThemeQuiz(themeId, headers);
+            }
+
+            // 撤回发布 (将已发布的 items 删除，并将 drafts 恢复为 draft 状态)
+            if (doUnpublish) {
+                await processThemeUnpublish(themeId, headers);
             }
 
             setThemeStatuses(prev => ({ ...prev, [themeId]: 'done' }));
@@ -403,6 +426,162 @@ export default function ThemeBatchProcessor() {
         setLogs(prev => [...prev, `   场景向量: ${success}成功 ${fail}失败`]);
     }
 
+    // 处理主题下所有草稿的理解题生成
+    async function processThemeQuiz(themeId: string, headers: Record<string, string>) {
+        const theme = themes.find(t => t.id === themeId);
+
+        setCurrentProgress({
+            step: `${theme?.title} - 理解题`,
+            current: 0,
+            total: 1,
+            currentItem: ''
+        });
+
+        try {
+            const response = await fetch('/api/admin/shadowing/quiz/generate', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    theme_id: themeId,
+                    scope: 'drafts', // 在草稿阶段生成理解题
+                    provider: 'deepseek',
+                    model: 'deepseek-chat',
+                    temperature: 0.7,
+                    skip_existing: skipExistingQuiz,
+                    concurrency: 3,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                setLogs(prev => [...prev, `   理解题: 生成失败 - ${errorText}`]);
+                return;
+            }
+
+            // 处理SSE响应
+            const reader = response.body?.getReader();
+            if (!reader) {
+                setLogs(prev => [...prev, `   理解题: 无法读取响应流`]);
+                return;
+            }
+
+            const decoder = new TextDecoder();
+            let completed = 0;
+            let failed = 0;
+            let total = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.type === 'start') {
+                                total = data.total;
+                                setCurrentProgress(prev => ({
+                                    ...prev,
+                                    total: total,
+                                    currentItem: `已跳过 ${data.skipped} 个已有题目`
+                                }));
+                            } else if (data.type === 'progress') {
+                                completed = data.completed;
+                                failed = data.failed;
+                                setCurrentProgress(prev => ({
+                                    ...prev,
+                                    current: completed + failed
+                                }));
+                            } else if (data.type === 'complete') {
+                                completed = data.completed;
+                                failed = data.failed;
+                            }
+                        } catch (e) {
+                            // 忽略解析错误
+                        }
+                    }
+                }
+            }
+
+            setLogs(prev => [...prev, `   理解题: ${completed}成功 ${failed}失败`]);
+        } catch (e: any) {
+            setLogs(prev => [...prev, `   理解题: ${e.message}`]);
+        }
+    }
+
+    // 撤回发布：通过approved状态的drafts调用revert，删除对应items并恢复drafts
+    async function processThemeUnpublish(themeId: string, headers: Record<string, string>) {
+        const theme = themes.find(t => t.id === themeId);
+
+        setCurrentProgress({
+            step: `${theme?.title} - 撤回发布`,
+            current: 0,
+            total: 1,
+            currentItem: ''
+        });
+
+        try {
+            // 1. 获取该主题下所有已发布(approved)的drafts
+            const { data: approvedDrafts, error: draftsError } = await supabase
+                .from('shadowing_drafts')
+                .select('id, title')
+                .eq('theme_id', themeId)
+                .eq('status', 'approved');
+
+            if (draftsError) {
+                setLogs(prev => [...prev, `   撤回发布: 获取drafts失败 - ${draftsError.message}`]);
+                return;
+            }
+
+            if (!approvedDrafts || approvedDrafts.length === 0) {
+                setLogs(prev => [...prev, `   撤回发布: 无已发布drafts`]);
+                return;
+            }
+
+            setCurrentProgress(prev => ({
+                ...prev,
+                total: approvedDrafts.length,
+                currentItem: `共 ${approvedDrafts.length} 个已发布drafts`
+            }));
+
+            // 2. 对每个draft调用revert action
+            let success = 0;
+            let fail = 0;
+
+            for (let i = 0; i < approvedDrafts.length; i++) {
+                const draft = approvedDrafts[i];
+                try {
+                    const response = await fetch(`/api/admin/shadowing/drafts/${draft.id}`, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({ action: 'revert' }),
+                    });
+
+                    if (response.ok) {
+                        success++;
+                    } else {
+                        fail++;
+                        console.error(`Revert failed for draft ${draft.id}:`, await response.text());
+                    }
+                } catch (e) {
+                    fail++;
+                    console.error(`Revert error for draft ${draft.id}:`, e);
+                }
+
+                setCurrentProgress(prev => ({
+                    ...prev,
+                    current: i + 1
+                }));
+            }
+
+            setLogs(prev => [...prev, `   撤回发布: ${success}成功 ${fail}失败`]);
+        } catch (e: any) {
+            setLogs(prev => [...prev, `   撤回发布: ${e.message}`]);
+        }
+    }
 
     // 处理单个草稿
     async function processSingleDraft(
@@ -890,6 +1069,27 @@ export default function ThemeBatchProcessor() {
                             <Target className="w-4 h-4" />
                             <span>场景向量</span>
                         </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <Checkbox checked={doQuiz} onCheckedChange={(c) => setDoQuiz(!!c)} />
+                            <HelpCircle className="w-4 h-4" />
+                            <span>理解题</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-red-600">
+                            <Checkbox checked={doUnpublish} onCheckedChange={(c) => {
+                                setDoUnpublish(!!c);
+                                // 撤回发布时自动关闭其他操作
+                                if (c) {
+                                    setDoAudio(false);
+                                    setDoACU(false);
+                                    setDoTranslation(false);
+                                    setDoPublish(false);
+                                    setDoSceneVector(false);
+                                    setDoQuiz(false);
+                                }
+                            }} />
+                            <Undo2 className="w-4 h-4" />
+                            <span>撤回发布</span>
+                        </label>
                     </div>
 
                     {/* 翻译目标语言 */}
@@ -926,6 +1126,10 @@ export default function ThemeBatchProcessor() {
                         <label className="flex items-center gap-2 cursor-pointer">
                             <Checkbox checked={skipExistingSceneVector} onCheckedChange={(c) => setSkipExistingSceneVector(!!c)} />
                             <span>跳过已有场景向量</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <Checkbox checked={skipExistingQuiz} onCheckedChange={(c) => setSkipExistingQuiz(!!c)} />
+                            <span>跳过已有理解题</span>
                         </label>
                     </div>
                 </div>

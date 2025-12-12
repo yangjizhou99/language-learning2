@@ -39,6 +39,7 @@ import {
   X,
   Target,
   BarChart2,
+  HelpCircle,
 } from 'lucide-react';
 import { SceneVectorModal } from '@/components/admin/shadowing/SceneVectorModal';
 
@@ -237,7 +238,7 @@ export default function ThemesPage() {
   const [taskQueue, setTaskQueue] = useState<
     Array<{
       id: string;
-      type: 'themes' | 'subtopics' | 'scene_map';
+      type: 'themes' | 'subtopics' | 'scene_map' | 'quiz';
       status: 'pending' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
       progress: number;
       title: string;
@@ -561,7 +562,7 @@ export default function ThemesPage() {
   }
 
   // 添加任务到队列
-  function addTaskToQueue(type: 'themes' | 'subtopics' | 'scene_map', params: any) {
+  function addTaskToQueue(type: 'themes' | 'subtopics' | 'scene_map' | 'quiz', params: any) {
     const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const task = {
       id: taskId,
@@ -573,7 +574,9 @@ export default function ThemesPage() {
           ? `生成 ${params.count} 个大主题 (${LANG_OPTIONS.find((l) => l.value === params.lang)?.label} L${params.level} ${GENRE_OPTIONS.find((g) => g.value === params.genre)?.label}${params.dialogue_type ? ` ${DIALOGUE_TYPE_OPTIONS.find(d => d.value === params.dialogue_type)?.label}` : ''})`
           : type === 'subtopics'
             ? `为主题"${params.theme_title_cn}"生成 ${params.count} 个小主题`
-            : `为主题"${params.theme_title_cn}"生成场景向量`,
+            : type === 'quiz'
+              ? `为主题"${params.theme_title_cn}"生成理解题`
+              : `为主题"${params.theme_title_cn}"生成场景向量`,
       params,
       createdAt: new Date(),
     };
@@ -616,7 +619,9 @@ export default function ThemesPage() {
             ? task.params.theme_script
               ? '/api/admin/shadowing/subtopics/generate-continuous'
               : '/api/admin/shadowing/subtopics/generate'
-            : '/api/admin/shadowing/themes/map-scenes';
+            : task.type === 'quiz'
+              ? '/api/admin/shadowing/quiz/generate'
+              : '/api/admin/shadowing/themes/map-scenes';
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -1665,6 +1670,23 @@ export default function ThemesPage() {
                             className="text-purple-600 hover:text-purple-700"
                           >
                             <Brain className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              addTaskToQueue('quiz', {
+                                theme_id: item.id,
+                                theme_title_cn: item.title,
+                                provider: aiProvider,
+                                model: aiModel,
+                                temperature: aiTemperature,
+                              });
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="text-green-600 hover:text-green-700"
+                            title="生成理解题"
+                          >
+                            <HelpCircle className="w-4 h-4" />
                           </Button>
                           <Button asChild variant="ghost" size="sm">
                             <Link href={`/admin/shadowing/subtopics-gen?theme_id=${item.id}`}>

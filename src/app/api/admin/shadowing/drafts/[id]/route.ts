@@ -111,6 +111,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       subtopic_id: d.subtopic_id || null,
       translations: d.translations || {},
       trans_updated_at: d.trans_updated_at,
+      quiz_questions: d.quiz_questions || null,
       meta: { from_draft: d.id, notes: d.notes, published_at: new Date().toISOString() },
     };
 

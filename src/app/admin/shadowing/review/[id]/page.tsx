@@ -29,7 +29,8 @@ import {
   Info,
   Tag,
   BookOpen,
-  MessageSquare
+  MessageSquare,
+  HelpCircle
 } from 'lucide-react';
 
 const LANG_LABELS: Record<string, string> = {
@@ -424,11 +425,12 @@ export default function ShadowingReviewDetail() {
       )}
 
       <Tabs defaultValue="content" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="content"><FileText className="w-4 h-4 mr-2" />内容</TabsTrigger>
           <TabsTrigger value="metadata"><Info className="w-4 h-4 mr-2" />元数据</TabsTrigger>
           <TabsTrigger value="translation"><Languages className="w-4 h-4 mr-2" />翻译</TabsTrigger>
           <TabsTrigger value="acu"><BookOpen className="w-4 h-4 mr-2" />ACU</TabsTrigger>
+          <TabsTrigger value="quiz"><HelpCircle className="w-4 h-4 mr-2" />理解题</TabsTrigger>
           <TabsTrigger value="audio"><Volume2 className="w-4 h-4 mr-2" />语音</TabsTrigger>
         </TabsList>
 
@@ -787,6 +789,113 @@ export default function ShadowingReviewDetail() {
               ) : (
                 <div className="text-center text-muted-foreground py-8">
                   尚未生成 ACU，点击上方按钮生成
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* 理解题标签页 */}
+        <TabsContent value="quiz" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4" />
+                  理解题
+                </span>
+                <Button
+                  onClick={async () => {
+                    try {
+                      setLog('❓ 生成理解题中...');
+                      const { data: { session } } = await supabase.auth.getSession();
+                      const token = session?.access_token;
+                      const response = await fetch('/api/admin/shadowing/quiz/generate', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                        },
+                        body: JSON.stringify({
+                          item_ids: [draft.id],
+                          scope: 'drafts',
+                          provider: 'deepseek',
+                          model: 'deepseek-chat',
+                          temperature: 0.7,
+                          skip_existing: false,
+                        }),
+                      });
+                      if (!response.ok) {
+                        const err = await response.text();
+                        throw new Error(err);
+                      }
+                      // 读取SSE响应
+                      const reader = response.body?.getReader();
+                      if (reader) {
+                        const decoder = new TextDecoder();
+                        while (true) {
+                          const { done, value } = await reader.read();
+                          if (done) break;
+                          const chunk = decoder.decode(value);
+                          const lines = chunk.split('\n');
+                          for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                              try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.type === 'complete') {
+                                  setLog(`✅ 理解题生成完成: ${data.completed}成功`);
+                                  // 重新加载草稿数据
+                                  const r = await fetch(`/api/admin/shadowing/drafts/${id}`, {
+                                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                                  });
+                                  const j = await r.json();
+                                  setDraft(j.draft);
+                                }
+                              } catch { }
+                            }
+                          }
+                        }
+                      }
+                    } catch (e: any) {
+                      setLog(`❌ 理解题生成失败: ${e.message}`);
+                    }
+                  }}
+                >
+                  生成理解题
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {draft.quiz_questions && Array.isArray(draft.quiz_questions) && draft.quiz_questions.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="text-sm text-muted-foreground">
+                    共 {draft.quiz_questions.length} 道题目
+                  </div>
+                  {draft.quiz_questions.map((q: any, idx: number) => (
+                    <div key={idx} className="p-4 bg-muted rounded-lg space-y-3">
+                      <div className="font-medium">
+                        {idx + 1}. {q.question}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['A', 'B', 'C', 'D'].map((opt) => (
+                          <div
+                            key={opt}
+                            className={`p-2 rounded border ${q.answer === opt ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}
+                          >
+                            <span className="font-medium mr-2">{opt}.</span>
+                            {q.options?.[opt]}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="text-sm text-green-600">
+                        正确答案: {q.answer}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  尚未生成理解题，点击上方按钮生成
                 </div>
               )}
             </CardContent>
