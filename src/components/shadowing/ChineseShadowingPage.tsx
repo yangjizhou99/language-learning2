@@ -73,6 +73,7 @@ import CompactStatsCards from './CompactStatsCards';
 import EnhancedAudioPlayer, { type EnhancedAudioPlayerRef } from './EnhancedAudioPlayer';
 import SentenceInlinePlayer from './SentenceInlinePlayer';
 const RightPanelTabs = dynamic(() => import('./RightPanelTabs'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
+const QuizModal = dynamic(() => import('./QuizModal'), { ssr: false });
 import CollapsibleCard from './CollapsibleCard';
 // import { getAuthHeaders } from "@/lib/supabase";
 import {
@@ -141,6 +142,11 @@ interface ShadowingItem {
     one_line?: string;
   };
   top_scenes?: { id: string; name: string; weight: number }[];
+  quiz_questions?: Array<{
+    question: string;
+    options: { A: string; B: string; C: string; D: string };
+    answer: 'A' | 'B' | 'C' | 'D';
+  }>;
   notes?: {
     acu_marked?: string;
     acu_units?: Array<{ span: string; start: number; end: number; sid: number }>;
@@ -731,6 +737,16 @@ export default function ShadowingPage() {
 
   // ACU 模式状态
   const [isACUMode, setIsACUMode] = useState(true); // 默认使用 ACU 模式
+
+  // 理解题状态
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [quizResult, setQuizResult] = useState<{
+    answers: Array<{ questionIndex: number; selected: string; correct: boolean }>;
+    correctCount: number;
+    total: number;
+  } | null>(null);
+  const [quizCompleted, setQuizCompleted] = useState(false);
+  const [selectedQuizAnswers, setSelectedQuizAnswers] = useState<Record<number, string>>({});
 
 
   const stepTips: Record<number, string> = {
@@ -4459,6 +4475,118 @@ export default function ShadowingPage() {
                       )}
                     </div>
 
+                    {/* 理解题测试 - 内联模块（仅步骤1且未完成时显示） */}
+                    {step === 1 && currentItem?.quiz_questions && currentItem.quiz_questions.length > 0 && !quizCompleted && (
+                      <Card className="bg-white border-gray-200 shadow-md overflow-hidden">
+                        <div className="p-4">
+                          {/* 标题 */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center shadow-md">
+                                <span className="text-xl text-white">📝</span>
+                              </div>
+                              <div>
+                                <h3 className="text-base font-bold text-gray-800">理解力测试</h3>
+                                <p className="text-xs text-gray-500">听完音频后，完成测试进入下一步</p>
+                              </div>
+                            </div>
+                            <Badge className="bg-amber-100 text-amber-700 border-amber-200">{currentItem.quiz_questions.length} 道题</Badge>
+                          </div>
+
+                          {/* 问题列表 */}
+                          <div className="space-y-3">
+                            {currentItem.quiz_questions.map((q, idx) => (
+                              <div key={idx} className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                <div className="font-medium text-gray-800 mb-3 text-sm">
+                                  {idx + 1}. {q.question}
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  {(['A', 'B', 'C', 'D'] as const).map((opt) => {
+                                    const isSelected = selectedQuizAnswers[idx] === opt;
+                                    const isSubmitted = quizResult !== null;
+                                    const isCorrect = q.answer === opt;
+
+                                    let className = "p-3 rounded-lg border text-left text-sm transition-all ";
+                                    if (isSubmitted) {
+                                      if (isCorrect) {
+                                        className += "border-green-400 bg-green-50 text-green-700";
+                                      } else if (isSelected && !isCorrect) {
+                                        className += "border-red-400 bg-red-50 text-red-700";
+                                      } else {
+                                        className += "border-gray-200 bg-white text-gray-400";
+                                      }
+                                    } else {
+                                      className += isSelected
+                                        ? "border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-100"
+                                        : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50";
+                                    }
+
+                                    return (
+                                      <button
+                                        key={opt}
+                                        onClick={() => !isSubmitted && setSelectedQuizAnswers(prev => ({ ...prev, [idx]: opt }))}
+                                        disabled={isSubmitted}
+                                        className={className}
+                                      >
+                                        <span className="font-semibold mr-2 text-gray-600">{opt}.</span>
+                                        {q.options[opt]}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* 提交按钮 */}
+                          {!quizResult ? (
+                            <Button
+                              onClick={() => {
+                                const questions = currentItem.quiz_questions!;
+                                const answers = questions.map((q, idx) => ({
+                                  questionIndex: idx,
+                                  selected: selectedQuizAnswers[idx] || '',
+                                  correct: selectedQuizAnswers[idx] === q.answer
+                                }));
+                                const correctCount = answers.filter(a => a.correct).length;
+                                setQuizResult({ answers, correctCount, total: questions.length });
+                                // 自动保存草稿
+                                saveDraft();
+                              }}
+                              disabled={Object.keys(selectedQuizAnswers).length < currentItem.quiz_questions.length}
+                              className="w-full mt-4 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-md font-medium"
+                            >
+                              提交答案
+                            </Button>
+                          ) : (
+                            <div className="mt-4 space-y-3">
+                              <div className={`p-3 rounded-xl text-center font-medium ${quizResult.correctCount === quizResult.total ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>
+                                {quizResult.correctCount === quizResult.total
+                                  ? '🎉 全部正确！'
+                                  : `答对 ${quizResult.correctCount}/${quizResult.total} 题`}
+                              </div>
+                              <Button
+                                onClick={() => {
+                                  setQuizCompleted(true);
+                                  setStep(2);
+                                }}
+                                className="w-full h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-md font-medium"
+                              >
+                                继续下一步 →
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Quiz 完成提示 */}
+                    {step === 1 && quizCompleted && currentItem?.quiz_questions && (
+                      <Card className="bg-green-50 border-green-200 p-3 text-center text-green-700 shadow-sm">
+                        ✅ 理解题已完成 ({quizResult?.correctCount}/{quizResult?.total})
+                      </Card>
+                    )}
+
                     {/* 生词选择模式切换（仅步骤2显示） */}
                     {(!gatingActive || step === 2) && (
                       <div className="mb-4 space-y-3">
@@ -5717,49 +5845,51 @@ export default function ShadowingPage() {
       }
 
       {/* Difficulty Rating Modal */}
-      {showDifficultyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-md p-6 bg-white rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200">
-            <h3 className="text-xl font-bold text-center mb-2 text-gray-900">
-              {t.shadowing.difficulty_rating_title || '觉得这个练习怎么样？'}
-            </h3>
-            <p className="text-center text-gray-500 mb-6">
-              {t.shadowing.difficulty_rating_desc || '您的反馈将帮助我们为您推荐更合适的内容'}
-            </p>
+      {
+        showDifficultyModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <Card className="w-full max-w-md p-6 bg-white rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-200">
+              <h3 className="text-xl font-bold text-center mb-2 text-gray-900">
+                {t.shadowing.difficulty_rating_title || '觉得这个练习怎么样？'}
+              </h3>
+              <p className="text-center text-gray-500 mb-6">
+                {t.shadowing.difficulty_rating_desc || '您的反馈将帮助我们为您推荐更合适的内容'}
+              </p>
 
-            <div className="grid grid-cols-1 gap-3">
-              <Button
-                variant="outline"
-                className="h-12 text-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all"
-                onClick={() => unifiedCompleteAndSave('too_easy')}
-              >
-                😄 {t.shadowing.difficulty_too_easy || '太简单了'}
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12 text-lg hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all"
-                onClick={() => unifiedCompleteAndSave('just_right')}
-              >
-                😊 {t.shadowing.difficulty_just_right || '刚刚好'}
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12 text-lg hover:bg-yellow-50 hover:text-yellow-700 hover:border-yellow-200 transition-all"
-                onClick={() => unifiedCompleteAndSave('a_bit_hard')}
-              >
-                😅 {t.shadowing.difficulty_bit_hard || '有点难'}
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12 text-lg hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all"
-                onClick={() => unifiedCompleteAndSave('too_hard')}
-              >
-                😫 {t.shadowing.difficulty_too_hard || '太难了'}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-    </main>
+              <div className="grid grid-cols-1 gap-3">
+                <Button
+                  variant="outline"
+                  className="h-12 text-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all"
+                  onClick={() => unifiedCompleteAndSave('too_easy')}
+                >
+                  😄 {t.shadowing.difficulty_too_easy || '太简单了'}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 text-lg hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all"
+                  onClick={() => unifiedCompleteAndSave('just_right')}
+                >
+                  😊 {t.shadowing.difficulty_just_right || '刚刚好'}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 text-lg hover:bg-yellow-50 hover:text-yellow-700 hover:border-yellow-200 transition-all"
+                  onClick={() => unifiedCompleteAndSave('a_bit_hard')}
+                >
+                  😅 {t.shadowing.difficulty_bit_hard || '有点难'}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 text-lg hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all"
+                  onClick={() => unifiedCompleteAndSave('too_hard')}
+                >
+                  😫 {t.shadowing.difficulty_too_hard || '太难了'}
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )
+      }
+    </main >
   );
 }

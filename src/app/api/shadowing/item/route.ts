@@ -88,12 +88,13 @@ export async function GET(req: NextRequest) {
       sentence_timeline: unknown;
       theme_id?: string | null;
       subtopic_id?: string | null;
+      quiz_questions?: unknown[];
     };
 
     const { data, error } = await supabaseAdmin
       .from('shadowing_items')
       .select(
-        'id, lang, level, title, text, audio_url, audio_bucket, audio_path, notes, duration_ms, tokens, cefr, meta, translations, trans_updated_at, created_at, sentence_timeline',
+        'id, lang, level, title, text, audio_url, audio_bucket, audio_path, notes, duration_ms, tokens, cefr, meta, translations, trans_updated_at, created_at, sentence_timeline, quiz_questions',
       )
       .eq('id', id)
       .single();
