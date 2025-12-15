@@ -121,6 +121,7 @@ export async function POST(req: NextRequest) {
       picked_preview = [], // 使用正确的列名
       selected_words = [], // 添加selected_words参数
       notes = {},
+      quiz_result = null, // Quiz comprehension test result
     } = body;
 
     if (!item_id) {
@@ -151,6 +152,7 @@ export async function POST(req: NextRequest) {
         vocab_entry_ids,
         picked_preview,
         notes,
+        quiz_result,
         created_at: new Date().toISOString(),
       };
 
@@ -176,6 +178,7 @@ export async function POST(req: NextRequest) {
           vocab_entry_ids,
           picked_preview,
           notes,
+          quiz_result,
         })
         .eq('user_id', user.id)
         .eq('item_id', item_id_db)
@@ -242,7 +245,7 @@ export async function POST(req: NextRequest) {
         const [profileRes, itemRes] = await Promise.all([
           supabase
             .from('profiles')
-            .select('ability_level, vocab_unknown_rate, explore_config')
+            .select('ability_level, vocab_unknown_rate, explore_config, comprehension_rate')
             .eq('id', user.id)
             .single(),
           supabase
@@ -257,6 +260,7 @@ export async function POST(req: NextRequest) {
             calculateSessionSkill,
             updateAbilityLevel,
             updateVocabUnknownRate,
+            updateComprehensionRate,
           } = await import('@/lib/recommendation/difficulty');
 
           const profile = profileRes.data;
@@ -292,6 +296,10 @@ export async function POST(req: NextRequest) {
               cefrLevel: w.cefr,
             })),
             itemLexProfile: item.lex_profile || {},
+            quizResult: quiz_result ? {
+              correctCount: quiz_result.correct_count ?? quiz_result.correctCount ?? 0,
+              total: quiz_result.total ?? 0,
+            } : undefined,
           };
 
           // Calculate New State
@@ -311,12 +319,19 @@ export async function POST(req: NextRequest) {
             estimatedTokens
           );
 
+          // Update comprehension rate based on quiz result
+          const newComprehensionRate = updateComprehensionRate(
+            profile.comprehension_rate ?? 0.8, // Default to 80%
+            sessionData.quizResult
+          );
+
           // Update Profile
           await supabase
             .from('profiles')
             .update({
               ability_level: newAbilityLevel,
               vocab_unknown_rate: newVocabRate,
+              comprehension_rate: newComprehensionRate,
             })
             .eq('id', user.id);
 

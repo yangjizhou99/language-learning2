@@ -3559,6 +3559,11 @@ export default function ShadowingPage() {
           notes: {
             sentence_scores: sentenceScores
           },
+          quiz_result: quizResult ? {
+            answers: quizResult.answers,
+            correct_count: quizResult.correctCount,
+            total: quizResult.total,
+          } : null,
         }),
       });
 

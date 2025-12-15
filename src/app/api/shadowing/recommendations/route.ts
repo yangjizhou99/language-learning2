@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
         const [profileResult, prefs] = await Promise.all([
             supabase
                 .from('profiles')
-                .select('ability_level, vocab_unknown_rate, explore_config')
+                .select('ability_level, vocab_unknown_rate, explore_config, comprehension_rate')
                 .eq('id', user.id)
                 .single(),
             getUserPreferenceVectors(user.id)
@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
             userId: user.id,
             level: profile.ability_level || 1.0,
             vocabUnknownRate: profile.vocab_unknown_rate || {},
+            comprehensionRate: profile.comprehension_rate ?? 0.8,
             exploreConfig: profile.explore_config || {
                 mainRatio: 0.6,
                 downRatio: 0.2,
