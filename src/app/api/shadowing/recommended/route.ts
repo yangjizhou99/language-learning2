@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
     // 1. Fetch User Profile (Ability Level & Explore Config)
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('ability_level, vocab_unknown_rate, explore_config')
+      .select('ability_level, vocab_unknown_rate, explore_config, comprehension_rate')
       .eq('id', user.id)
       .single();
 
@@ -90,6 +90,7 @@ export async function GET(req: NextRequest) {
       userId: user.id,
       level: currentLevel,
       vocabUnknownRate: profile.vocab_unknown_rate || {},
+      comprehensionRate: profile.comprehension_rate ?? 0.8,
       exploreConfig: exploreConfig,
     };
 

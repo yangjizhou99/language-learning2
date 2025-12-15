@@ -11,6 +11,7 @@ export interface UserAbilityState {
     userId: string;
     level: number; // 1.0 ~ 6.0
     vocabUnknownRate: Record<BroadCEFR, number>;
+    comprehensionRate: number; // 0.0 ~ 1.0, EMA of quiz correct rate
     exploreConfig: {
         mainRatio: number;
         downRatio: number;
@@ -45,6 +46,10 @@ export interface UserShadowingSession {
         cefrLevel?: string; // Raw CEFR from DB/AI
     }[];
     itemLexProfile?: Record<BroadCEFR, number>; // Passed from item metadata for calculation
+    quizResult?: {
+        correctCount: number;
+        total: number;
+    };
 }
 
 // --- Constants & Helpers ---
@@ -105,10 +110,26 @@ export function calculateSessionSkill(session: UserShadowingSession, totalTokens
         }
     }
 
+    // 5. Quiz Comprehension Factor
+    // If quiz result is available, adjust based on correct rate
+    let quizFactor = 1.0;
+    if (session.quizResult && session.quizResult.total > 0) {
+        const correctRate = session.quizResult.correctCount / session.quizResult.total;
+        if (correctRate >= 1.0) {
+            quizFactor = 1.1; // Perfect comprehension
+        } else if (correctRate >= 0.7) {
+            quizFactor = 1.0; // Good comprehension
+        } else if (correctRate >= 0.5) {
+            quizFactor = 0.9; // Moderate comprehension
+        } else {
+            quizFactor = 0.8; // Poor comprehension, needs easier content
+        }
+    }
+
     // Synthesize
     // Base skill is heavily weighted by actual performance (avgFirstScore)
-    // But adjusted by how much effort it took (attempts) and subjective feeling
-    return avgFirstScore * attemptsFactor * selfFactor * newWordFactor;
+    // But adjusted by how much effort it took (attempts), subjective feeling, and comprehension
+    return avgFirstScore * attemptsFactor * selfFactor * newWordFactor * quizFactor;
 }
 
 // --- Core Logic: State Update ---
@@ -164,6 +185,28 @@ export function updateVocabUnknownRate(
     });
 
     return nextRate;
+}
+
+/**
+ * Update user's comprehension rate based on quiz results.
+ * Uses Exponential Moving Average (EMA) to smooth out fluctuations.
+ * 
+ * @param currentRate - Current comprehension rate (0.0 ~ 1.0)
+ * @param quizResult - Quiz result with correctCount and total
+ * @returns Updated comprehension rate
+ */
+export function updateComprehensionRate(
+    currentRate: number,
+    quizResult: { correctCount: number; total: number } | undefined | null
+): number {
+    // If no quiz result, return current rate unchanged
+    if (!quizResult || quizResult.total === 0) return currentRate;
+
+    const alpha = 0.3; // Learning rate - higher = more responsive to recent performance
+    const observedRate = quizResult.correctCount / quizResult.total;
+
+    // Exponential moving average
+    return (1 - alpha) * currentRate + alpha * observedRate;
 }
 
 // --- Core Logic: Recommendation Scoring ---
