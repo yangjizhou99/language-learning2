@@ -258,14 +258,14 @@ export default function ThemeBatchProcessor() {
                 await processDraftsBatch(drafts, themeId, 'translation', headers, theme?.lang || 'zh');
             }
 
-            // 自动发布
-            if (doPublish) {
-                await processDraftsBatch(drafts, themeId, 'publish', headers, theme?.lang || 'zh');
-            }
-
-            // 生成理解题 (在发布后处理，因为需要处理已发布的 items)
+            // 生成理解题 (在发布前处理，因为 API 查询 status='draft' 的草稿)
             if (doQuiz) {
                 await processThemeQuiz(themeId, headers);
+            }
+
+            // 自动发布 (在理解题生成后发布，quiz_questions 会一起复制到 items)
+            if (doPublish) {
+                await processDraftsBatch(drafts, themeId, 'publish', headers, theme?.lang || 'zh');
             }
 
             // 撤回发布 (将已发布的 items 删除，并将 drafts 恢复为 draft 状态)
