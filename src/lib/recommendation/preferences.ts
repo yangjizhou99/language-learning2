@@ -164,15 +164,25 @@ async function loadPreferenceVectors(
     subtopicToTheme.set(st.id, st.theme_id);
   }
 
-  // 2.2 获取小主题的场景向量
-  const { data: vectors, error: vectorErr } = await supabase
-    .from('subtopic_scene_vectors')
-    .select('subtopic_id, scene_id, weight')
-    .in('subtopic_id', subtopicIds);
+  // 2.2 获取小主题的场景向量 (分批查询以避免 URI too long)
+  const BATCH_SIZE = 50;
+  let allVectors: SubtopicSceneVectorRow[] = [];
 
-  if (vectorErr) {
-    console.error('Failed to load subtopic_scene_vectors:', vectorErr);
-    return null;
+  for (let i = 0; i < subtopicIds.length; i += BATCH_SIZE) {
+    const batch = subtopicIds.slice(i, i + BATCH_SIZE);
+    const { data: batchVectors, error: batchErr } = await supabase
+      .from('subtopic_scene_vectors')
+      .select('subtopic_id, scene_id, weight')
+      .in('subtopic_id', batch);
+
+    if (batchErr) {
+      console.error('Failed to load subtopic_scene_vectors batch:', batchErr);
+      continue; // Skip this batch but continue with others
+    }
+
+    if (batchVectors) {
+      allVectors = allVectors.concat(batchVectors as SubtopicSceneVectorRow[]);
+    }
   }
 
   // 额外读取 scene_tags 以获取中文名
@@ -187,7 +197,7 @@ async function loadPreferenceVectors(
     });
   }
 
-  const vectorRows = (vectors || []) as SubtopicSceneVectorRow[];
+  const vectorRows = allVectors;
 
   // 3. 对每个 subtopic 计算 U·M（用户场景偏好 × 小主题场景向量）
   //    然后按 theme 聚合（取平均值）

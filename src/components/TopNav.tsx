@@ -44,6 +44,7 @@ import {
   Home,
   TrendingUp,
   Map as MapIcon,
+  Lightbulb,
 } from 'lucide-react';
 
 export default function TopNav() {
@@ -178,6 +179,12 @@ export default function TopNav() {
       label: '故事线',
       icon: MapIcon,
       show: permissions.can_access_shadowing,
+    },
+    {
+      href: '/ai-recommend',
+      label: 'AI推荐',
+      icon: Lightbulb,
+      show: !!email,
     },
     {
       href: '/practice/shadowing',
