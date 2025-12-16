@@ -277,7 +277,46 @@ export async function GET(req: NextRequest) {
             }
           });
         } else if (vectorsError) {
-          console.error('Scene vectors query error:', vectorsError);
+          // Fallback: If foreign key relationship is missing
+          if (vectorsError.code === 'PGRST200') {
+            console.warn('Scene vectors foreign key missing in catalog, using fallback query');
+            try {
+              const { data: rawVectors } = await supabase
+                .from('subtopic_scene_vectors')
+                .select('subtopic_id, scene_id, weight')
+                .in('subtopic_id', subtopicIds)
+                .order('weight', { ascending: false });
+
+              if (rawVectors && rawVectors.length > 0) {
+                const sceneIds = [...new Set(rawVectors.map((v: any) => v.scene_id))];
+                const { data: sceneTags } = await supabase
+                  .from('scene_tags')
+                  .select('scene_id, name_cn')
+                  .in('scene_id', sceneIds);
+
+                const sceneTagsMap = new Map<string, string>();
+                (sceneTags || []).forEach((tag: any) => {
+                  sceneTagsMap.set(tag.scene_id, tag.name_cn);
+                });
+
+                rawVectors.forEach((v: any) => {
+                  const list = subtopicScenesMap.get(v.subtopic_id) || [];
+                  if (list.length < 2) {
+                    list.push({
+                      id: v.scene_id,
+                      name: sceneTagsMap.get(v.scene_id) || v.scene_id,
+                      weight: v.weight
+                    });
+                    subtopicScenesMap.set(v.subtopic_id, list);
+                  }
+                });
+              }
+            } catch (fallbackError) {
+              console.error('Scene vectors fallback query error:', fallbackError);
+            }
+          } else {
+            console.error('Scene vectors query error:', vectorsError);
+          }
         }
       }
 

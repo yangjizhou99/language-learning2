@@ -324,12 +324,60 @@ export async function GET(req: NextRequest) {
         // 5. 获取小主题的场景向量（Top 2）
         const subtopicScenesMap = new Map<string, { id: string; name: string; weight: number }[]>();
         let allVectors: any[] = [];
+        let needsFallback = false;
 
         for (const { data: vectors, error: vectorsError } of vectorResults) {
             if (vectorsError) {
-                console.error('Scene vectors query error:', vectorsError);
+                // Check if this is a foreign key relationship error
+                if (vectorsError.code === 'PGRST200') {
+                    needsFallback = true;
+                    console.warn('Scene vectors foreign key missing, using fallback query');
+                } else {
+                    console.error('Scene vectors query error:', vectorsError);
+                }
             } else if (vectors) {
                 allVectors = [...allVectors, ...vectors];
+            }
+        }
+
+        // Fallback: If foreign key relationship is missing, fetch scene_tags separately
+        if (needsFallback && subtopicIds.length > 0) {
+            try {
+                // Get vectors without join
+                const { data: rawVectors } = await supabase
+                    .from('subtopic_scene_vectors')
+                    .select('subtopic_id, scene_id, weight')
+                    .in('subtopic_id', subtopicIds)
+                    .order('weight', { ascending: false });
+
+                if (rawVectors && rawVectors.length > 0) {
+                    // Get unique scene_ids
+                    const sceneIds = [...new Set(rawVectors.map((v: any) => v.scene_id))];
+
+                    // Fetch scene_tags separately
+                    const { data: sceneTags } = await supabase
+                        .from('scene_tags')
+                        .select('scene_id, name_cn')
+                        .in('scene_id', sceneIds);
+
+                    // Create a lookup map
+                    const sceneTagsMap = new Map<string, string>();
+                    (sceneTags || []).forEach((tag: any) => {
+                        sceneTagsMap.set(tag.scene_id, tag.name_cn);
+                    });
+
+                    // Transform vectors to expected format
+                    allVectors = rawVectors.map((v: any) => ({
+                        subtopic_id: v.subtopic_id,
+                        weight: v.weight,
+                        scene: {
+                            scene_id: v.scene_id,
+                            name_cn: sceneTagsMap.get(v.scene_id) || v.scene_id
+                        }
+                    }));
+                }
+            } catch (fallbackError) {
+                console.error('Scene vectors fallback query error:', fallbackError);
             }
         }
 
