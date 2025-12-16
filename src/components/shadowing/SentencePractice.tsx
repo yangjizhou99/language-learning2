@@ -765,7 +765,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         targetTokens,
         saidTokens,
         acuUnits,
-        currentSentence
+        currentSentence,
+        language
       );
 
       // 计算综合评分

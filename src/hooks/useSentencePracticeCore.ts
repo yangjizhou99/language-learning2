@@ -124,6 +124,25 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
   // Sync with external scores
   useEffect(() => {
     if (externalScores) {
+      // Sync attempts ref
+      Object.entries(externalScores).forEach(([k, v]) => {
+        const idx = Number(k);
+        if (v && typeof v.attempts === 'number') {
+          // Only update if external is greater (to avoid overwriting local increments before sync)
+          // Or if it's a reset (external is 0 or missing? No, v.attempts is number)
+          // Actually, if external is significantly different, we should trust it?
+          // Let's trust external if it exists, but be careful about race conditions.
+          // Since external comes from us, it should be consistent.
+          // But if we just incremented locally, external might be stale by 1.
+          // So max is safer?
+          // But if we reset (attempts=0), max will keep old value.
+          // If reset happens, externalScores will be empty or attempts=0.
+          // If externalScores is empty, this loop won't run for those keys.
+          // We need to handle reset.
+          attemptsRef.current[idx] = v.attempts;
+        }
+      });
+
       setSentenceScores(prev => {
         // Only update if there are changes to avoid infinite loops
         const hasChanges = Object.keys(externalScores).some(key => {
@@ -135,6 +154,9 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
         }
         return prev;
       });
+    } else {
+      // If externalScores is null/undefined, maybe reset?
+      // But usually it's passed as {} initially.
     }
   }, [externalScores]);
 
@@ -144,6 +166,7 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
   const lastResultAtRef = useRef<number>(0);
   const tempCombinedTextRef = useRef('');
   const tempFinalTextRef = useRef('');
+  const attemptsRef = useRef<Record<number, number>>({});
 
   const sentences: SentenceSegment[] = useMemo(() => {
     if (Array.isArray(sentenceTimeline) && sentenceTimeline.length > 0) {
@@ -242,12 +265,17 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
     if (!target) return;
     const targetTokens = tokenize(target.text, language);
     const saidTokens = tokenize(spoken, language);
-    const alignment = performAlignment(targetTokens, saidTokens, acuUnits, target.text);
+    const alignment = performAlignment(targetTokens, saidTokens, acuUnits, target.text, language);
     const score = calculateSimilarityScore(targetTokens, saidTokens, alignment);
 
     setSentenceScores((prev) => {
       const prevScore = prev[index];
-      const attempts = (prevScore?.attempts || 0) + 1;
+
+      // Use ref for reliable increment
+      const currentAttempts = (attemptsRef.current[index] || 0) + 1;
+      attemptsRef.current[index] = currentAttempts;
+      const attempts = currentAttempts;
+
       const firstScore = prevScore?.firstScore !== undefined ? prevScore.firstScore : score;
       const bestScore = Math.max(prevScore?.bestScore || 0, score);
 
