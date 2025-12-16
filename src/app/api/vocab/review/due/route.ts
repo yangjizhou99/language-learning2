@@ -31,8 +31,8 @@ export async function GET(req: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          set() {},
-          remove() {},
+          set() { },
+          remove() { },
         },
       });
     }
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
     // 若 srs_due 列不存在，则降级为按 created_at 查询
     // Postgres 错误码 42703: undefined_column
     if (error && (error as any)?.code === '42703') {
-      const fallbackSelect = 'id,term,lang,native_lang,source,context,tags,status,explanation,created_at,updated_at';
+      const fallbackSelect = 'id,term,lang,native_lang,source,source_id,context,tags,status,explanation,created_at,updated_at';
       const fallback = await supabase
         .from('vocab_entries')
         .select(fallbackSelect, { count: 'exact' })

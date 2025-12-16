@@ -1,17 +1,23 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import React, { useState, useRef } from 'react';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
 import TTSButton from '@/components/TTSButton';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Volume2, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/LanguageContext';
+
+// 清除上下文中的说话人标识符（如 A：、B：、田中：等）
+function cleanContext(context: string): string {
+  return context.replace(/^[A-Za-z\u4e00-\u9fff\u3040-\u30ff]+[：:]\s*/, '').trim();
+}
 
 interface VocabEntry {
   id: string;
   term: string;
   lang: string;
   status: string;
+  source_id?: string;
   explanation?: {
     gloss_native: string;
     pronunciation?: string;
@@ -29,24 +35,30 @@ interface SwipeableVocabCardProps {
   isExpanded: boolean;
   isSelected: boolean;
   speakingId: string | null;
+  isPlayingContextAudio?: boolean;
+  isLoadingContextAudio?: boolean;
   onToggleExpand: (id: string) => void;
   onToggleSelect: (id: string) => void;
   onSpeak: (text: string, lang: string, id: string) => void;
   onStar: (id: string, currentStatus: string) => void;
   onDelete: (id: string) => void;
+  onPlayContextAudio?: (entryId: string, sourceId: string, context: string) => void;
   index: number;
 }
 
-export function SwipeableVocabCard({
+export const SwipeableVocabCard = React.memo(function SwipeableVocabCard({
   entry,
   isExpanded,
   isSelected,
   speakingId,
+  isPlayingContextAudio,
+  isLoadingContextAudio,
   onToggleExpand,
   onToggleSelect,
   onSpeak,
   onStar,
   onDelete,
+  onPlayContextAudio,
   index,
 }: SwipeableVocabCardProps) {
   const t = useTranslation();
@@ -109,14 +121,14 @@ export function SwipeableVocabCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.15 }}
       className="relative"
     >
       {/* 左侧操作按钮（左滑显示） */}
       <motion.div
-        className="absolute right-0 top-0 bottom-0 flex items-center gap-2 px-4"
+        className={`absolute right-0 top-0 bottom-0 flex items-center gap-2 px-4 ${showActions === 'left' ? 'pointer-events-auto' : 'pointer-events-none'}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: showActions === 'left' ? 1 : 0 }}
         transition={{ duration: 0.2 }}
@@ -160,12 +172,11 @@ export function SwipeableVocabCard({
         ref={cardRef}
         {...(bind() as any)}
         style={{ x, backgroundColor }}
-        className={`bg-white rounded-xl shadow-sm border-2 overflow-hidden transition-all touch-pan-y ${
-          !hasExplanation ? 'border-yellow-200' : 'border-gray-200'
-        } ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
+        className={`bg-white rounded-xl shadow-sm border-2 overflow-hidden transition-all touch-pan-y ${!hasExplanation ? 'border-yellow-200' : 'border-gray-200'
+          } ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
       >
         {/* 卡片头部 - 可点击展开 */}
-        <div 
+        <div
           className="p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors active:bg-gray-100"
           onClick={() => onToggleExpand(entry.id)}
         >
@@ -194,13 +205,12 @@ export function SwipeableVocabCard({
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span
-                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                      entry.lang === 'en'
-                        ? 'bg-blue-100 text-blue-700'
-                        : entry.lang === 'ja'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-green-100 text-green-700'
-                    }`}
+                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${entry.lang === 'en'
+                      ? 'bg-blue-100 text-blue-700'
+                      : entry.lang === 'ja'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-green-100 text-green-700'
+                      }`}
                   >
                     {t.vocabulary.language_labels[entry.lang as keyof typeof t.vocabulary.language_labels]}
                   </span>
@@ -236,7 +246,7 @@ export function SwipeableVocabCard({
               </motion.div>
             </div>
           </div>
-          
+
           {/* 精简释义 - 始终显示 */}
           {hasExplanation && (
             <div className="mt-3 pl-8">
@@ -259,9 +269,31 @@ export function SwipeableVocabCard({
             <div className="p-3 sm:p-4" onClick={(e) => e.stopPropagation()}>
               {/* 上下文 */}
               {entry.context && (
-                <div className="mb-3 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-200">
-                  <p className="text-xs font-medium text-gray-500 mb-1">上下文</p>
-                  <p className="text-sm text-gray-700 italic break-words">&ldquo;{entry.context}&rdquo;</p>
+                <div className="mb-3 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-200" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-medium text-gray-500">上下文</p>
+                    {entry.source_id && onPlayContextAudio && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPlayContextAudio(entry.id, entry.source_id!, entry.context!);
+                        }}
+                        className={`p-1.5 rounded-full transition-colors ${isPlayingContextAudio
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                          }`}
+                        disabled={isLoadingContextAudio}
+                        title="播放原文音频"
+                      >
+                        {isLoadingContextAudio ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Volume2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700 italic break-words">&ldquo;{cleanContext(entry.context)}&rdquo;</p>
                 </div>
               )}
 
@@ -295,11 +327,10 @@ export function SwipeableVocabCard({
               {/* 操作按钮 */}
               <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100">
                 <button
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    entry.status === 'starred'
-                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${entry.status === 'starred'
+                    ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
                   onClick={() => onStar(entry.id, entry.status)}
                 >
                   {entry.status === 'starred' ? '⭐ 取消标星' : '☆ 标星'}
@@ -336,5 +367,4 @@ export function SwipeableVocabCard({
       )}
     </motion.div>
   );
-}
-
+});

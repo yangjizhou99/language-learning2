@@ -600,6 +600,17 @@ export interface Translations {
     sentence_fallback: string;
     practice_again: string;
     back_to_catalog: string;
+    // 详细统计相关
+    first_attempt_score: string;
+    final_score: string;
+    attempts_count: string;
+    avg_first_score: string;
+    total_attempts: string;
+    comprehension_accuracy: string;
+    vocab_selected: string;
+    sentence_details: string;
+    stats_overview: string;
+    correct_answers: string;
     // 新增：警告消息
     alert_messages: {
       microphone_permission_https: string;
@@ -1486,6 +1497,17 @@ const zh: Translations = {
     sentence_fallback: '句子 {n}',
     practice_again: '再练一次',
     back_to_catalog: '返回题库',
+    // 详细统计相关
+    first_attempt_score: '首次得分',
+    final_score: '最终得分',
+    attempts_count: '尝试次数',
+    avg_first_score: '平均首次得分',
+    total_attempts: '总尝试次数',
+    comprehension_accuracy: '理解准确率',
+    vocab_selected: '选中生词',
+    sentence_details: '句子详情',
+    stats_overview: '练习统计概览',
+    correct_answers: '正确',
     // 新增：警告消息
     alert_messages: {
       microphone_permission_https: '请确保您的浏览器支持HTTPS连接，否则录音功能可能无法正常工作。',
@@ -2378,6 +2400,17 @@ const en: Translations = {
     sentence_fallback: 'Sentence {n}',
     practice_again: 'Practice Again',
     back_to_catalog: 'Back to Catalog',
+    // Detailed stats
+    first_attempt_score: 'First Attempt',
+    final_score: 'Final Score',
+    attempts_count: 'Attempts',
+    avg_first_score: 'Avg. First Attempt',
+    total_attempts: 'Total Attempts',
+    comprehension_accuracy: 'Comprehension Accuracy',
+    vocab_selected: 'Words Selected',
+    sentence_details: 'Sentence Details',
+    stats_overview: 'Practice Stats Overview',
+    correct_answers: 'Correct',
     // 新增：警告消息
     alert_messages: {
       microphone_permission_https: 'Please ensure your browser supports HTTPS connections, otherwise the recording feature may not work properly.',
@@ -3265,7 +3298,18 @@ const ja: Translations = {
     overall_accuracy: '総合正確率',
     sentence_fallback: '文 {n}',
     practice_again: 'もう一度練習',
-    back_to_catalog: '返回题库',
+    back_to_catalog: '問題集に戻る',
+    // 詳細統計関連
+    first_attempt_score: '初回スコア',
+    final_score: '最終スコア',
+    attempts_count: '試行回数',
+    avg_first_score: '平均初回スコア',
+    total_attempts: '総試行回数',
+    comprehension_accuracy: '理解正確率',
+    vocab_selected: '選択した単語',
+    sentence_details: '文の詳細',
+    stats_overview: '練習統計概要',
+    correct_answers: '正解',
     // 新增：警告消息
     alert_messages: {
       microphone_permission_https: '请确保您的浏览器支持HTTPS连接，否则录音功能可能无法正常工作。',

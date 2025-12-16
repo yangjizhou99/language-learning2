@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Map, Filter, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -78,18 +78,25 @@ export default function StorylinePage() {
         lang: string;
         level: number;
     } | null>(null);
-    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     const [selectedLang, setSelectedLang] = useState('all');
     const [selectedLevel, setSelectedLevel] = useState('all');
+
+    // Refs to prevent race conditions and duplicate fetches
+    const fetchIdRef = useRef(0);
+    const pendingFiltersRef = useRef<{ lang: string; level: string } | null>(null);
+    const hasAppliedLastPracticeFilter = useRef(false);
 
     // 读取 URL 参数，获取要自动展开的主题 ID
     const searchParams = useSearchParams();
     const expandThemeId = searchParams?.get('expandTheme') || null;
 
-    const fetchStoryline = async (lang: string, level: string) => {
+    const fetchStoryline = useCallback(async (lang: string, level: string) => {
+        // Generate unique fetch ID to track this request
+        const currentFetchId = ++fetchIdRef.current;
+
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 增加到60秒
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
 
         setLoading(true);
         setError(null);
@@ -106,31 +113,45 @@ export default function StorylinePage() {
                 signal: controller.signal,
             });
 
+            // Check if this is still the latest request
+            if (currentFetchId !== fetchIdRef.current) {
+                return; // A newer request has been made, discard this response
+            }
+
             if (!res.ok) {
                 throw new Error('Failed to fetch storyline data');
             }
 
             const data = await res.json();
 
-            if (!controller.signal.aborted) {
+            if (!controller.signal.aborted && currentFetchId === fetchIdRef.current) {
                 setThemes(data.themes || []);
 
-                // 只在首次加载时处理 lastPractice
-                if (data.lastPractice && isInitialLoad) {
+                // Handle lastPractice for auto-filter (only once)
+                if (data.lastPractice && !hasAppliedLastPracticeFilter.current) {
                     setLastPractice(data.lastPractice);
 
-                    // 如果当前没有筛选条件，自动应用最后做题的筛选
+                    // If initial load with no filters, schedule filter application
                     if (lang === 'all' && level === 'all') {
-                        setSelectedLang(data.lastPractice.lang);
-                        setSelectedLevel(data.lastPractice.level.toString());
-                        setIsInitialLoad(false);
-                        // 会触发新的 fetch，带有正确的筛选条件
-                        return;
+                        hasAppliedLastPracticeFilter.current = true;
+                        pendingFiltersRef.current = {
+                            lang: data.lastPractice.lang,
+                            level: data.lastPractice.level.toString()
+                        };
+                        // Apply filters after current render completes
+                        setTimeout(() => {
+                            if (pendingFiltersRef.current) {
+                                setSelectedLang(pendingFiltersRef.current.lang);
+                                setSelectedLevel(pendingFiltersRef.current.level);
+                                pendingFiltersRef.current = null;
+                            }
+                        }, 0);
                     }
                 }
-                setIsInitialLoad(false);
             }
         } catch (err: any) {
+            if (currentFetchId !== fetchIdRef.current) return; // Ignore errors from stale requests
+
             if (err.name === 'AbortError') {
                 console.log('Storyline fetch aborted or timed out');
                 setError('加载超时，请刷新重试');
@@ -139,15 +160,17 @@ export default function StorylinePage() {
                 setError('加载故事线失败，请稍后重试');
             }
         } finally {
-            clearTimeout(timeoutId);
-            setLoading(false);
+            if (currentFetchId === fetchIdRef.current) {
+                clearTimeout(timeoutId);
+                setLoading(false);
+            }
         }
-    };
+    }, [getAuthHeaders]);
 
     useEffect(() => {
         if (!user || !permissions.can_access_shadowing) return;
         fetchStoryline(selectedLang, selectedLevel);
-    }, [user, permissions.can_access_shadowing, selectedLang, selectedLevel, getAuthHeaders]);
+    }, [user, permissions.can_access_shadowing, selectedLang, selectedLevel, fetchStoryline]);
 
     // 自动滚动到展开的主题或最后练习的主题
     useEffect(() => {

@@ -89,6 +89,17 @@ export async function getUserPreferenceVectors(
 }
 
 /**
+ * 仅从缓存获取用户偏好向量，不触发 LLM 生成。
+ * 用于 AI 推荐页面快速加载 - 如果没有缓存则返回 null，让前端引导用户去设置资料。
+ */
+export async function getUserPreferenceVectorsCached(
+  userId: string,
+): Promise<UserPreferenceVectors | null> {
+  const supabase = getServiceSupabase();
+  return loadPreferenceVectors(supabase, userId);
+}
+
+/**
  * 从 user_scene_preferences + subtopic_scene_vectors 中计算 per-theme 得分。
  * 策略：对每个主题下的小主题计算场景匹配得分，取平均值作为主题得分。
  */

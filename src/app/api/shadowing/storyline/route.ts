@@ -117,73 +117,74 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // 0. 获取用户最后一次做题记录（分步查询避免复杂join）
-        let lastPractice: {
-            themeId: string;
-            subtopicId: string;
-            itemId: string;
-            lang: string;
-            level: number
-        } | null = null;
-
-        // Step 1: 获取最新的 session
-        const { data: lastSession } = await supabase
-            .from('shadowing_sessions')
-            .select('id, item_id, updated_at')
-            .eq('user_id', user.id)
-            .order('updated_at', { ascending: false })
-            .limit(1)
-            .single();
-
-        if (lastSession?.item_id) {
-            // Step 2: 获取 item 对应的 subtopic
-            const { data: item } = await supabase
-                .from('shadowing_items')
-                .select('id, subtopic_id')
-                .eq('id', lastSession.item_id)
+        // Helper function to get lastPractice in a single query
+        const getLastPractice = async () => {
+            // Get the latest session with nested joins to item -> subtopic -> theme
+            const { data: lastSession } = await supabase
+                .from('shadowing_sessions')
+                .select(`
+                    item_id,
+                    shadowing_items!inner(
+                        id,
+                        subtopic_id,
+                        shadowing_subtopics!inner(
+                            id,
+                            theme_id,
+                            shadowing_themes!inner(
+                                id,
+                                lang,
+                                level
+                            )
+                        )
+                    )
+                `)
+                .eq('user_id', user.id)
+                .order('updated_at', { ascending: false })
+                .limit(1)
                 .single();
 
-            if (item?.subtopic_id) {
-                // Step 3: 获取 subtopic 对应的 theme
-                const { data: subtopic } = await supabase
-                    .from('shadowing_subtopics')
-                    .select('id, theme_id')
-                    .eq('id', item.subtopic_id)
-                    .single();
+            if (lastSession?.shadowing_items) {
+                const item = lastSession.shadowing_items as any;
+                const subtopic = item.shadowing_subtopics;
+                const theme = subtopic?.shadowing_themes;
 
-                if (subtopic?.theme_id) {
-                    // Step 4: 获取 theme 的语言和等级
-                    const { data: theme } = await supabase
-                        .from('shadowing_themes')
-                        .select('id, lang, level')
-                        .eq('id', subtopic.theme_id)
-                        .single();
-
-                    if (theme) {
-                        lastPractice = {
-                            themeId: theme.id,
-                            subtopicId: subtopic.id,
-                            itemId: item.id,
-                            lang: theme.lang,
-                            level: theme.level
-                        };
-                    }
+                if (theme) {
+                    return {
+                        themeId: theme.id,
+                        subtopicId: subtopic.id,
+                        itemId: item.id,
+                        lang: theme.lang,
+                        level: theme.level
+                    };
                 }
             }
-        }
+            return null;
+        };
 
-        // 1. 获取所有活跃的主题（不分页，因为需要按进度排序）
-        let themesQuery = supabase
-            .from('shadowing_themes')
-            .select('id, title, desc, lang, level, genre, created_at')
-            .eq('status', 'active');
+        // Helper function to get themes
+        const getThemes = async () => {
+            let themesQuery = supabase
+                .from('shadowing_themes')
+                .select('id, title, desc, lang, level, genre, created_at')
+                .eq('status', 'active');
 
-        if (lang) themesQuery = themesQuery.eq('lang', lang);
-        if (level) themesQuery = themesQuery.eq('level', parseInt(level));
+            if (lang) themesQuery = themesQuery.eq('lang', lang);
+            if (level) themesQuery = themesQuery.eq('level', parseInt(level));
 
-        const { data: themes, error: themesError } = await themesQuery
-            .order('level', { ascending: true })
-            .order('created_at', { ascending: true });
+            return themesQuery
+                .order('level', { ascending: true })
+                .order('created_at', { ascending: true });
+        };
+
+        // Run lastPractice and themes queries IN PARALLEL
+        const [lastPracticeResult, themesResult] = await Promise.all([
+            getLastPractice(),
+            getThemes()
+        ]);
+
+        const lastPractice = lastPracticeResult;
+        const { data: themes, error: themesError } = themesResult;
+
         if (themesError) {
             console.error('Themes query error:', themesError);
             return NextResponse.json({ error: 'Failed to load themes' }, { status: 400 });
@@ -324,12 +325,60 @@ export async function GET(req: NextRequest) {
         // 5. 获取小主题的场景向量（Top 2）
         const subtopicScenesMap = new Map<string, { id: string; name: string; weight: number }[]>();
         let allVectors: any[] = [];
+        let needsFallback = false;
 
         for (const { data: vectors, error: vectorsError } of vectorResults) {
             if (vectorsError) {
-                console.error('Scene vectors query error:', vectorsError);
+                // Check if this is a foreign key relationship error
+                if (vectorsError.code === 'PGRST200') {
+                    needsFallback = true;
+                    console.warn('Scene vectors foreign key missing, using fallback query');
+                } else {
+                    console.error('Scene vectors query error:', vectorsError);
+                }
             } else if (vectors) {
                 allVectors = [...allVectors, ...vectors];
+            }
+        }
+
+        // Fallback: If foreign key relationship is missing, fetch scene_tags separately
+        if (needsFallback && subtopicIds.length > 0) {
+            try {
+                // Get vectors without join
+                const { data: rawVectors } = await supabase
+                    .from('subtopic_scene_vectors')
+                    .select('subtopic_id, scene_id, weight')
+                    .in('subtopic_id', subtopicIds)
+                    .order('weight', { ascending: false });
+
+                if (rawVectors && rawVectors.length > 0) {
+                    // Get unique scene_ids
+                    const sceneIds = [...new Set(rawVectors.map((v: any) => v.scene_id))];
+
+                    // Fetch scene_tags separately
+                    const { data: sceneTags } = await supabase
+                        .from('scene_tags')
+                        .select('scene_id, name_cn')
+                        .in('scene_id', sceneIds);
+
+                    // Create a lookup map
+                    const sceneTagsMap = new Map<string, string>();
+                    (sceneTags || []).forEach((tag: any) => {
+                        sceneTagsMap.set(tag.scene_id, tag.name_cn);
+                    });
+
+                    // Transform vectors to expected format
+                    allVectors = rawVectors.map((v: any) => ({
+                        subtopic_id: v.subtopic_id,
+                        weight: v.weight,
+                        scene: {
+                            scene_id: v.scene_id,
+                            name_cn: sceneTagsMap.get(v.scene_id) || v.scene_id
+                        }
+                    }));
+                }
+            } catch (fallbackError) {
+                console.error('Scene vectors fallback query error:', fallbackError);
             }
         }
 
