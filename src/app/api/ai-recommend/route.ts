@@ -11,7 +11,7 @@ import {
     ShadowingItemMetadata,
     calculateDifficultyScore,
 } from '@/lib/recommendation/difficulty';
-import { getUserPreferenceVectors } from '@/lib/recommendation/preferences';
+import { getUserPreferenceVectorsCached } from '@/lib/recommendation/preferences';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -50,20 +50,30 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // 1. Fetch User Profile & Preferences
+        // 1. Fetch User Profile & Preferences (using cached-only to avoid LLM wait)
         const [profileResult, prefs, userScenePrefsResult] = await Promise.all([
             supabase
                 .from('profiles')
                 .select('ability_level, vocab_unknown_rate, explore_config, comprehension_rate, target_langs')
                 .eq('id', user.id)
                 .single(),
-            getUserPreferenceVectors(user.id),
+            getUserPreferenceVectorsCached(user.id),
             // Also fetch user's direct scene preferences for scene-based interest matching
             supabase
                 .from('user_scene_preferences')
                 .select('scene_id, weight')
                 .eq('user_id', user.id)
         ]);
+
+        // Check if user has scene preferences - if not, they need to set up their profile first
+        const userScenePrefs = userScenePrefsResult.data || [];
+        if (!prefs || userScenePrefs.length === 0) {
+            return NextResponse.json({
+                success: false,
+                needsProfileSetup: true,
+                error: '请先在个人资料页面完成设置，以获得个性化推荐',
+            }, { status: 200 }); // Use 200 so frontend can handle gracefully
+        }
 
         const { data: profile, error: profileError } = profileResult;
 
@@ -85,7 +95,6 @@ export async function GET(req: NextRequest) {
         };
 
         // Build user scene preference map for direct scene-based interest matching
-        const userScenePrefs = userScenePrefsResult.data || [];
         const userSceneMap = new Map<string, number>();
         for (const pref of userScenePrefs) {
             userSceneMap.set(pref.scene_id, pref.weight);
