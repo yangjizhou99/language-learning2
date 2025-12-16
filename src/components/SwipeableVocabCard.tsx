@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
+import React, { useState, useRef } from 'react';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
 import TTSButton from '@/components/TTSButton';
 import { ChevronDown } from 'lucide-react';
@@ -37,7 +37,7 @@ interface SwipeableVocabCardProps {
   index: number;
 }
 
-export function SwipeableVocabCard({
+export const SwipeableVocabCard = React.memo(function SwipeableVocabCard({
   entry,
   isExpanded,
   isSelected,
@@ -109,9 +109,9 @@ export function SwipeableVocabCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.5) }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.15 }}
       className="relative"
     >
       {/* 左侧操作按钮（左滑显示） */}
@@ -160,12 +160,11 @@ export function SwipeableVocabCard({
         ref={cardRef}
         {...(bind() as any)}
         style={{ x, backgroundColor }}
-        className={`bg-white rounded-xl shadow-sm border-2 overflow-hidden transition-all touch-pan-y ${
-          !hasExplanation ? 'border-yellow-200' : 'border-gray-200'
-        } ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
+        className={`bg-white rounded-xl shadow-sm border-2 overflow-hidden transition-all touch-pan-y ${!hasExplanation ? 'border-yellow-200' : 'border-gray-200'
+          } ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
       >
         {/* 卡片头部 - 可点击展开 */}
-        <div 
+        <div
           className="p-3 sm:p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors active:bg-gray-100"
           onClick={() => onToggleExpand(entry.id)}
         >
@@ -194,13 +193,12 @@ export function SwipeableVocabCard({
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span
-                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                      entry.lang === 'en'
-                        ? 'bg-blue-100 text-blue-700'
-                        : entry.lang === 'ja'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-green-100 text-green-700'
-                    }`}
+                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${entry.lang === 'en'
+                      ? 'bg-blue-100 text-blue-700'
+                      : entry.lang === 'ja'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-green-100 text-green-700'
+                      }`}
                   >
                     {t.vocabulary.language_labels[entry.lang as keyof typeof t.vocabulary.language_labels]}
                   </span>
@@ -236,7 +234,7 @@ export function SwipeableVocabCard({
               </motion.div>
             </div>
           </div>
-          
+
           {/* 精简释义 - 始终显示 */}
           {hasExplanation && (
             <div className="mt-3 pl-8">
@@ -295,11 +293,10 @@ export function SwipeableVocabCard({
               {/* 操作按钮 */}
               <div className="flex items-center justify-between gap-2 pt-3 border-t border-gray-100">
                 <button
-                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    entry.status === 'starred'
-                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                  className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${entry.status === 'starred'
+                    ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
                   onClick={() => onStar(entry.id, entry.status)}
                 >
                   {entry.status === 'starred' ? '⭐ 取消标星' : '☆ 标星'}
@@ -336,5 +333,4 @@ export function SwipeableVocabCard({
       )}
     </motion.div>
   );
-}
-
+});

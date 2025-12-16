@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -1020,11 +1020,11 @@ export default function VocabPage() {
   };
 
   // 切换选择状态
-  const toggleSelection = (id: string) => {
+  const toggleSelection = useCallback((id: string) => {
     setSelectedEntries((prev) =>
       prev.includes(id) ? prev.filter((entryId) => entryId !== id) : [...prev, id],
     );
-  };
+  }, []);
 
   // TTS语音播放功能
   const speakText = (text: string, lang: string, entryId: string) => {
@@ -1155,7 +1155,7 @@ export default function VocabPage() {
   };
 
   // 切换卡片展开状态
-  const toggleCard = (id: string) => {
+  const toggleCard = useCallback((id: string) => {
     setExpandedCards((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
@@ -1165,7 +1165,7 @@ export default function VocabPage() {
       }
       return newSet;
     });
-  };
+  }, []);
 
   // 一键选择未解释的生词
   const selectUnexplainedEntries = () => {
@@ -1868,23 +1868,27 @@ export default function VocabPage() {
               </div>
 
               {/* 生词卡片网格 - 使用滑动手势卡片 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                {entries.map((entry, index) => (
-                  <SwipeableVocabCard
-                    key={entry.id}
-                    entry={entry}
-                    index={index}
-                    isExpanded={expandedCards.has(entry.id)}
-                    isSelected={selectedEntries.includes(entry.id)}
-                    speakingId={speakingId}
-                    onToggleExpand={toggleCard}
-                    onToggleSelect={toggleSelection}
-                    onSpeak={speakText}
-                    onStar={updateEntryStatus}
-                    onDelete={deleteEntry}
-                  />
-                ))}
-              </div>
+              {isLoading && entries.length === 0 ? (
+                <VocabListSkeleton count={itemsPerPage} />
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                  {entries.map((entry, index) => (
+                    <SwipeableVocabCard
+                      key={entry.id}
+                      entry={entry}
+                      index={index}
+                      isExpanded={expandedCards.has(entry.id)}
+                      isSelected={selectedEntries.includes(entry.id)}
+                      speakingId={speakingId}
+                      onToggleExpand={toggleCard}
+                      onToggleSelect={toggleSelection}
+                      onSpeak={speakText}
+                      onStar={updateEntryStatus}
+                      onDelete={deleteEntry}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* 原有的卡片代码备份 - 如果需要切换回来可以用 */}
               <div className="hidden grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
