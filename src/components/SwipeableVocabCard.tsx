@@ -4,14 +4,20 @@ import React, { useState, useRef } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
 import TTSButton from '@/components/TTSButton';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Volume2, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/contexts/LanguageContext';
+
+// 清除上下文中的说话人标识符（如 A：、B：、田中：等）
+function cleanContext(context: string): string {
+  return context.replace(/^[A-Za-z\u4e00-\u9fff\u3040-\u30ff]+[：:]\s*/, '').trim();
+}
 
 interface VocabEntry {
   id: string;
   term: string;
   lang: string;
   status: string;
+  source_id?: string;
   explanation?: {
     gloss_native: string;
     pronunciation?: string;
@@ -29,11 +35,14 @@ interface SwipeableVocabCardProps {
   isExpanded: boolean;
   isSelected: boolean;
   speakingId: string | null;
+  isPlayingContextAudio?: boolean;
+  isLoadingContextAudio?: boolean;
   onToggleExpand: (id: string) => void;
   onToggleSelect: (id: string) => void;
   onSpeak: (text: string, lang: string, id: string) => void;
   onStar: (id: string, currentStatus: string) => void;
   onDelete: (id: string) => void;
+  onPlayContextAudio?: (entryId: string, sourceId: string, context: string) => void;
   index: number;
 }
 
@@ -42,11 +51,14 @@ export const SwipeableVocabCard = React.memo(function SwipeableVocabCard({
   isExpanded,
   isSelected,
   speakingId,
+  isPlayingContextAudio,
+  isLoadingContextAudio,
   onToggleExpand,
   onToggleSelect,
   onSpeak,
   onStar,
   onDelete,
+  onPlayContextAudio,
   index,
 }: SwipeableVocabCardProps) {
   const t = useTranslation();
@@ -116,7 +128,7 @@ export const SwipeableVocabCard = React.memo(function SwipeableVocabCard({
     >
       {/* 左侧操作按钮（左滑显示） */}
       <motion.div
-        className="absolute right-0 top-0 bottom-0 flex items-center gap-2 px-4"
+        className={`absolute right-0 top-0 bottom-0 flex items-center gap-2 px-4 ${showActions === 'left' ? 'pointer-events-auto' : 'pointer-events-none'}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: showActions === 'left' ? 1 : 0 }}
         transition={{ duration: 0.2 }}
@@ -257,9 +269,31 @@ export const SwipeableVocabCard = React.memo(function SwipeableVocabCard({
             <div className="p-3 sm:p-4" onClick={(e) => e.stopPropagation()}>
               {/* 上下文 */}
               {entry.context && (
-                <div className="mb-3 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-200">
-                  <p className="text-xs font-medium text-gray-500 mb-1">上下文</p>
-                  <p className="text-sm text-gray-700 italic break-words">&ldquo;{entry.context}&rdquo;</p>
+                <div className="mb-3 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-200" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-medium text-gray-500">上下文</p>
+                    {entry.source_id && onPlayContextAudio && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPlayContextAudio(entry.id, entry.source_id!, entry.context!);
+                        }}
+                        className={`p-1.5 rounded-full transition-colors ${isPlayingContextAudio
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                          }`}
+                        disabled={isLoadingContextAudio}
+                        title="播放原文音频"
+                      >
+                        {isLoadingContextAudio ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Volume2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700 italic break-words">&ldquo;{cleanContext(entry.context)}&rdquo;</p>
                 </div>
               )}
 

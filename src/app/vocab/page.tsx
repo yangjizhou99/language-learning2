@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FadeInWhenVisible } from '@/components/FadeInWhenVisible';
 import { useCounterAnimation } from '@/hooks/useCounterAnimation';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useAudioThrottle } from '@/hooks/useAudioThrottle';
 import {
   Sheet,
   SheetContent,
@@ -29,7 +30,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filter, ChevronDown, ChevronUp, Volume2, Loader2 } from 'lucide-react';
 import { VocabListSkeleton } from '@/components/VocabCardSkeleton';
 import { SwipeableVocabCard } from '@/components/SwipeableVocabCard';
 
@@ -39,6 +40,7 @@ interface VocabEntry {
   lang: string;
   native_lang: string;
   source: string;
+  source_id?: string;
   context?: string;
   tags: string[];
   status: string;
@@ -61,6 +63,12 @@ interface VocabEntry {
   srs_lapses?: number | null;
   srs_last?: string | null;
   srs_state?: string | null;
+}
+
+// 清除上下文中的说话人标识符（如 A：、B：、田中：等）
+function cleanContext(context: string): string {
+  // 匹配开头的说话人标识符：字母或汉字/假名 + 冒号（全角或半角）
+  return context.replace(/^[A-Za-z\u4e00-\u9fff\u3040-\u30ff]+[：:]\s*/, '').trim();
 }
 
 interface Pagination {
@@ -143,9 +151,19 @@ export default function VocabPage() {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [aiSettingsSheetOpen, setAiSettingsSheetOpen] = useState(false);
 
+  // 上下文音频播放状态
+  const [playingContextEntryId, setPlayingContextEntryId] = useState<string | null>(null);
+  const [loadingContextAudioId, setLoadingContextAudioId] = useState<string | null>(null);
+  const [sourceAudioCache, setSourceAudioCache] = useState<Map<string, { audioUrl: string; startTime?: number; endTime?: number }>>(new Map());
+  const contextAudio = useAudioThrottle({
+    onEnd: () => setPlayingContextEntryId(null),
+    onError: () => setPlayingContextEntryId(null),
+  });
+
   // 请求中止控制器
   const abortRef = useRef<AbortController | null>(null);
-
+  // TTS节流
+  const lastTTSPlayTimeRef = useRef<number>(0);
 
   // 获取用户个人资料
   const fetchUserProfile = async () => {
@@ -1026,13 +1044,24 @@ export default function VocabPage() {
     );
   }, []);
 
-  // TTS语音播放功能
+  // TTS语音播放功能（带节流）
   const speakText = (text: string, lang: string, entryId: string) => {
     // 检查浏览器是否支持Web Speech API
     if (!('speechSynthesis' in window)) {
       console.log('语音合成不支持');
       return;
     }
+
+    // 节流检查（300ms间隔）
+    const now = Date.now();
+    if (now - lastTTSPlayTimeRef.current < 300 && speakingId !== entryId) {
+      return;
+    }
+    lastTTSPlayTimeRef.current = now;
+
+    // 停止上下文音频播放
+    contextAudio.stop();
+    setPlayingContextEntryId(null);
 
     // 如果正在播放相同的内容，先停止
     if (speakingId === entryId) {
@@ -1166,6 +1195,89 @@ export default function VocabPage() {
       return newSet;
     });
   }, []);
+
+  // 播放上下文音频（从原文定位到特定时间段）
+  const playContextAudio = useCallback(async (entryId: string, sourceId: string, context: string) => {
+    // 如果正在播放相同的条目，停止播放
+    if (playingContextEntryId === entryId) {
+      contextAudio.stop();
+      setPlayingContextEntryId(null);
+      return;
+    }
+
+    // 停止TTS播放
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeakingId(null);
+
+    // 检查缓存
+    const cacheKey = `${sourceId}:${context}`;
+    const cached = sourceAudioCache.get(cacheKey);
+
+    if (cached) {
+      setPlayingContextEntryId(entryId);
+      contextAudio.play({
+        url: cached.audioUrl,
+        startTime: cached.startTime,
+        endTime: cached.endTime,
+      });
+      return;
+    }
+
+    // 获取源音频信息
+    setLoadingContextAudioId(entryId);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: HeadersInit = {};
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      const params = new URLSearchParams({
+        source_id: sourceId,
+        context: context,
+      });
+
+      const response = await fetch(`/api/vocab/source-audio?${params}`, { headers });
+
+      if (!response.ok) {
+        console.error('获取源音频失败');
+        setLoadingContextAudioId(null);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!data.audio_url) {
+        console.error('音频URL不可用');
+        setLoadingContextAudioId(null);
+        return;
+      }
+
+      // 缓存音频信息
+      const audioInfo = {
+        audioUrl: data.audio_url,
+        startTime: data.matched_segment?.startTime,
+        endTime: data.matched_segment?.endTime,
+      };
+      setSourceAudioCache((prev) => new Map(prev).set(cacheKey, audioInfo));
+
+      // 播放音频
+      setPlayingContextEntryId(entryId);
+      setLoadingContextAudioId(null);
+
+      contextAudio.play({
+        url: data.audio_url,
+        startTime: data.matched_segment?.startTime,
+        endTime: data.matched_segment?.endTime,
+      });
+    } catch (error) {
+      console.error('播放上下文音频失败:', error);
+      setLoadingContextAudioId(null);
+    }
+  }, [playingContextEntryId, sourceAudioCache, contextAudio]);
 
   // 一键选择未解释的生词
   const selectUnexplainedEntries = () => {
@@ -1880,11 +1992,14 @@ export default function VocabPage() {
                       isExpanded={expandedCards.has(entry.id)}
                       isSelected={selectedEntries.includes(entry.id)}
                       speakingId={speakingId}
+                      isPlayingContextAudio={playingContextEntryId === entry.id}
+                      isLoadingContextAudio={loadingContextAudioId === entry.id}
                       onToggleExpand={toggleCard}
                       onToggleSelect={toggleSelection}
                       onSpeak={speakText}
                       onStar={updateEntryStatus}
                       onDelete={deleteEntry}
+                      onPlayContextAudio={playContextAudio}
                     />
                   ))}
                 </div>
@@ -2429,15 +2544,47 @@ export default function VocabPage() {
                         {!showBack ? (
                           <motion.div
                             key="show-button"
-                            className="text-center"
+                            className="space-y-4"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
                             transition={{ duration: 0.2 }}
                           >
+                            {/* 上下文 - 在点击显示解释之前就显示 */}
+                            {cur.context && (
+                              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-200 shadow-sm">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="text-sm sm:text-base font-semibold text-blue-700 flex items-center gap-2">
+                                    <span className="text-base sm:text-lg">📖</span>
+                                    上下文
+                                  </div>
+                                  {cur.source_id && (
+                                    <button
+                                      onClick={() => playContextAudio(cur.id, cur.source_id!, cur.context!)}
+                                      className={`p-2 rounded-full transition-colors ${playingContextEntryId === cur.id
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                        }`}
+                                      disabled={loadingContextAudioId === cur.id}
+                                      title="播放原文音频"
+                                    >
+                                      {loadingContextAudioId === cur.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Volume2 className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                                <p className="text-gray-700 text-base sm:text-lg italic break-words">
+                                  &ldquo;{cleanContext(cur.context)}&rdquo;
+                                </p>
+                              </div>
+                            )}
                             <motion.div
                               animate={{ scale: [1, 1.02, 1] }}
                               transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                              className="text-center"
                             >
                               <Button
                                 className="w-full py-4 sm:py-5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-lg sm:text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
@@ -2473,6 +2620,38 @@ export default function VocabPage() {
                                   </div>
                                 )}
 
+                                {/* 上下文显示区域 */}
+                                {cur.context && (
+                                  <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-200 shadow-sm">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div className="text-sm sm:text-base font-semibold text-blue-700 flex items-center gap-2">
+                                        <span className="text-base sm:text-lg">📖</span>
+                                        上下文
+                                      </div>
+                                      {cur.source_id && (
+                                        <button
+                                          onClick={() => playContextAudio(cur.id, cur.source_id!, cur.context!)}
+                                          className={`p-2 rounded-full transition-colors ${playingContextEntryId === cur.id
+                                            ? 'bg-blue-500 text-white'
+                                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                            }`}
+                                          disabled={loadingContextAudioId === cur.id}
+                                          title="播放原文音频"
+                                        >
+                                          {loadingContextAudioId === cur.id ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                          ) : (
+                                            <Volume2 className="w-4 h-4" />
+                                          )}
+                                        </button>
+                                      )}
+                                    </div>
+                                    <p className="text-gray-700 text-base sm:text-lg italic break-words">
+                                      &ldquo;{cleanContext(cur.context)}&rdquo;
+                                    </p>
+                                  </div>
+                                )}
+
                                 {Array.isArray(cur.explanation.senses) && cur.explanation.senses.length > 0 && (
                                   <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-amber-200 shadow-sm">
                                     <div className="text-sm sm:text-base font-semibold text-amber-700 mb-3 flex items-center gap-2">
@@ -2491,9 +2670,42 @@ export default function VocabPage() {
                                 )}
                               </div>
                             ) : (
-                              <div className="text-center py-8 sm:py-12">
-                                <div className="text-gray-500 text-lg sm:text-xl">
-                                  {t.vocabulary.messages.review_no_explanation}
+                              <div className="space-y-4">
+                                {/* 上下文 - 即使没有解释也显示 */}
+                                {cur.context && (
+                                  <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-blue-200 shadow-sm">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <div className="text-sm sm:text-base font-semibold text-blue-700 flex items-center gap-2">
+                                        <span className="text-base sm:text-lg">📖</span>
+                                        上下文
+                                      </div>
+                                      {cur.source_id && (
+                                        <button
+                                          onClick={() => playContextAudio(cur.id, cur.source_id!, cur.context!)}
+                                          className={`p-2 rounded-full transition-colors ${playingContextEntryId === cur.id
+                                            ? 'bg-blue-500 text-white'
+                                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                            }`}
+                                          disabled={loadingContextAudioId === cur.id}
+                                          title="播放原文音频"
+                                        >
+                                          {loadingContextAudioId === cur.id ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                          ) : (
+                                            <Volume2 className="w-4 h-4" />
+                                          )}
+                                        </button>
+                                      )}
+                                    </div>
+                                    <p className="text-gray-700 text-base sm:text-lg italic break-words">
+                                      &ldquo;{cleanContext(cur.context)}&rdquo;
+                                    </p>
+                                  </div>
+                                )}
+                                <div className="text-center py-4 sm:py-6">
+                                  <div className="text-gray-500 text-lg sm:text-xl">
+                                    {t.vocabulary.messages.review_no_explanation}
+                                  </div>
                                 </div>
                               </div>
                             )}

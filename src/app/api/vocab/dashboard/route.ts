@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
             get(name: string) {
               return cookieStore.get(name)?.value;
             },
-            set() {},
-            remove() {},
+            set() { },
+            remove() { },
           },
         },
       );
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
     type EntriesResult<T> = { data: T[] | null; error: QueryError; count: number | null };
     type DueCountResult = { count: number | null; error: QueryError };
     type TomorrowCountResult = { count: number | null; error: QueryError };
-    type StatsRpcResult = { 
+    type StatsRpcResult = {
       data: {
         byLanguage: Record<string, number>;
         byStatus: Record<string, number>;
@@ -120,8 +120,8 @@ export async function GET(request: NextRequest) {
       TomorrowCountResult,
     ]> => {
       const selectFields = includeSrs
-        ? 'id,term,lang,native_lang,source,context,tags,status,explanation,created_at,updated_at,srs_due,srs_interval,srs_ease,srs_reps,srs_lapses,srs_last,srs_state'
-        : 'id,term,lang,native_lang,source,context,tags,status,explanation,created_at,updated_at';
+        ? 'id,term,lang,native_lang,source,source_id,context,tags,status,explanation,created_at,updated_at,srs_due,srs_interval,srs_ease,srs_reps,srs_lapses,srs_last,srs_state'
+        : 'id,term,lang,native_lang,source,source_id,context,tags,status,explanation,created_at,updated_at';
 
       const entriesPromise = ((): Promise<EntriesResult<VocabEntryBase | VocabEntrySrs>> => {
         let query = supabase
@@ -151,37 +151,37 @@ export async function GET(request: NextRequest) {
       // - 若缺少 SRS 列：退化为统计当前筛选下的所有未归档条目数量
       const dueCountPromise = includeSrs
         ? supabase
+          .from('vocab_entries')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .or('status.neq.archived,status.is.null')
+          .or(`srs_due.lte.${nowIso},srs_due.is.null`)
+        : (async () => {
+          let q = supabase
             .from('vocab_entries')
             .select('id', { count: 'exact', head: true })
             .eq('user_id', user.id)
-            .or('status.neq.archived,status.is.null')
-            .or(`srs_due.lte.${nowIso},srs_due.is.null`)
-        : (async () => {
-            let q = supabase
-              .from('vocab_entries')
-              .select('id', { count: 'exact', head: true })
-              .eq('user_id', user.id)
-              .or('status.neq.archived,status.is.null');
-            if (lang) q = q.eq('lang', lang);
-            if (status) q = q.eq('status', status);
-            if (explanation) {
-              if (explanation === 'has') q = q.not('explanation', 'is', null);
-              else if (explanation === 'missing') q = q.is('explanation', null);
-            }
-            if (search) q = q.or(`term.ilike.%${search}%,context.ilike.%${search}%`);
-            const { count, error } = await q;
-            return { count: count ?? 0, error: error as QueryError };
-          })();
+            .or('status.neq.archived,status.is.null');
+          if (lang) q = q.eq('lang', lang);
+          if (status) q = q.eq('status', status);
+          if (explanation) {
+            if (explanation === 'has') q = q.not('explanation', 'is', null);
+            else if (explanation === 'missing') q = q.is('explanation', null);
+          }
+          if (search) q = q.or(`term.ilike.%${search}%,context.ilike.%${search}%`);
+          const { count, error } = await q;
+          return { count: count ?? 0, error: error as QueryError };
+        })();
 
       // 统计明天到期数量（UTC）：[明天00:00, 后天00:00)
       const tomorrowCountPromise = includeSrs
         ? supabase
-            .from('vocab_entries')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .or('status.neq.archived,status.is.null')
-            .gte('srs_due', tomorrowStartIso)
-            .lt('srs_due', dayAfterStartIso)
+          .from('vocab_entries')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .or('status.neq.archived,status.is.null')
+          .gte('srs_due', tomorrowStartIso)
+          .lt('srs_due', dayAfterStartIso)
         : Promise.resolve({ count: 0, error: null });
 
       // 使用RPC调用数据库函数获取统计信息（高效）
