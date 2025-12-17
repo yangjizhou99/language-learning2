@@ -830,11 +830,12 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
 
   // 保存评分当finalText更新时
   useEffect(() => {
-    // 只在有有效数据且录音是针对当前句子时才保存评分
-    if (expandedIndex === null || !finalText || !currentMetrics ||
-      (recordingForIndexRef.current !== null && recordingForIndexRef.current !== expandedIndex)) {
+    if (expandedIndex === null || !finalText || !currentMetrics) {
       return;
     }
+
+    // 验证是否应该保存评分（防止录音文本被保存到错误的句子）
+    const shouldSaveScore = recordingForIndexRef.current === null || recordingForIndexRef.current === expandedIndex;
 
     if (isRoleMode) {
       const activeSegment = derivedRoleSegments.find((seg, idx) => {
@@ -850,33 +851,37 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       }
     }
 
-    setSentenceScores(prev => {
-      const existing = prev[expandedIndex];
-      const newScore = {
-        score: currentMetrics.score,
-        finalText: finalText,
-        missing: currentMetrics.missing,
-        extra: currentMetrics.extra,
-        alignmentResult: currentMetrics.alignmentResult,
-        attempts: (existing?.attempts || 0) + 1,
-        firstScore: existing?.firstScore ?? currentMetrics.score,
-        bestScore: Math.max(existing?.bestScore || 0, currentMetrics.score),
-      };
-      return {
-        ...prev,
-        [expandedIndex]: newScore,
-      };
-    });
-
-    // 检查是否优秀并显示反馈
-    if (currentMetrics.score >= 0.8) {
-      setCustomToast({
-        message: '做得很好！这句练得不错👍',
-        type: 'success',
+    // 只在索引匹配时才保存评分
+    if (shouldSaveScore) {
+      setSentenceScores(prev => {
+        const existing = prev[expandedIndex];
+        const newScore = {
+          score: currentMetrics.score,
+          finalText: finalText,
+          missing: currentMetrics.missing,
+          extra: currentMetrics.extra,
+          alignmentResult: currentMetrics.alignmentResult,
+          attempts: (existing?.attempts || 0) + 1,
+          firstScore: existing?.firstScore ?? currentMetrics.score,
+          bestScore: Math.max(existing?.bestScore || 0, currentMetrics.score),
+        };
+        return {
+          ...prev,
+          [expandedIndex]: newScore,
+        };
       });
+
+      // 检查是否优秀并显示反馈
+      if (currentMetrics.score >= 0.8) {
+        setCustomToast({
+          message: '做得很好！这句练得不错👍',
+          type: 'success',
+        });
+      }
     }
 
     // 在分角色模式下，评分保存后，触发回调（回调中会延迟1秒后推进）
+    // 即使没有保存评分（索引不匹配），也要允许推进，避免卡住
     if (isRoleMode && rolePendingResolveRef.current) {
       // 验证当前 expandedIndex 对应的片段是否是用户回合
       const activeSegment = derivedRoleSegments.find((seg, idx) => {
