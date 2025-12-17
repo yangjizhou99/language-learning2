@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { type AcuUnit } from '@/lib/acu-utils';
@@ -21,6 +21,7 @@ interface SelectedUnit {
 
 export default function AcuText({ text, lang, units, onConfirm, selectedWords = [] }: AcuTextProps) {
   const [selectedUnits, setSelectedUnits] = useState<SelectedUnit[]>([]);
+  const [editedText, setEditedText] = useState<string>(''); // 用于编辑生词文本
   const { t } = useLanguage();
 
   // 判断是否为对话标识符（标点符号现在可以选中）
@@ -182,20 +183,27 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
     return contextRaw;
   }, [selectedUnits, units, text]);
 
+  // 当选中单元变化时，同步更新 editedText
+  useEffect(() => {
+    const mergedText = getMergedText();
+    setEditedText(mergedText);
+  }, [getMergedText]);
+
   // 处理确认
   const handleConfirm = useCallback(() => {
-    const mergedText = getMergedText();
     const context = getContext();
 
-    if (mergedText && context) {
-      onConfirm(mergedText, context);
+    if (editedText.trim() && context) {
+      onConfirm(editedText.trim(), context);
       setSelectedUnits([]);
+      setEditedText('');
     }
-  }, [getMergedText, getContext, onConfirm]);
+  }, [editedText, getContext, onConfirm]);
 
   // 处理取消
   const handleCancel = useCallback(() => {
     setSelectedUnits([]);
+    setEditedText('');
   }, []);
 
   // 渲染带格式的文本和ACU块 - 基于原文渲染
@@ -427,9 +435,12 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="text-sm">
             <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
-            <div className="text-blue-600 font-semibold mb-1">
-              {getMergedText()}
-            </div>
+            <input
+              type="text"
+              value={editedText}
+              onChange={(e) => setEditedText(e.target.value)}
+              className="w-full px-2 py-1 text-blue-600 font-semibold mb-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            />
             <div className="text-xs text-gray-600 mb-2">
               {getContext()}
             </div>
@@ -437,7 +448,8 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
               <Button
                 size="sm"
                 onClick={handleConfirm}
-                className="bg-blue-600 hover:bg-blue-700"
+                disabled={!editedText.trim()}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t.shadowing.acu_text.confirm_add_to_vocab}
               </Button>
