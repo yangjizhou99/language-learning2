@@ -659,6 +659,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const rafRef = useRef<number | null>(null);
   const iosUnlockedRef = useRef(false);
   const isStartingRef = useRef(false);
+  // 追踪录音开始时的句子索引，防止文本串扰到其他句子
+  const recordingForIndexRef = useRef<number | null>(null);
 
   // 临时存储识别结果，只在录音真正停止时才提交
   const tempFinalTextRef = useRef<string>('');
@@ -686,6 +688,15 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   useEffect(() => {
     currentSentenceRef.current = currentSentence;
   }, [currentSentence]);
+
+  // 当句子切换时立即清空文本，防止评分串扰到新句子
+  useEffect(() => {
+    setFinalText('');
+    setDisplayText('');
+    tempFinalTextRef.current = '';
+    tempCombinedTextRef.current = '';
+    recordingForIndexRef.current = null;
+  }, [expandedIndex]);
 
   // 是否为对话类型
   const isConversation = useMemo(() => {
@@ -819,7 +830,9 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
 
   // 保存评分当finalText更新时
   useEffect(() => {
-    if (expandedIndex === null || !finalText || !currentMetrics) {
+    // 只在有有效数据且录音是针对当前句子时才保存评分
+    if (expandedIndex === null || !finalText || !currentMetrics ||
+      (recordingForIndexRef.current !== null && recordingForIndexRef.current !== expandedIndex)) {
       return;
     }
 
@@ -837,18 +850,23 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       }
     }
 
-    const newScore = {
-      score: currentMetrics.score,
-      finalText: finalText,
-      missing: currentMetrics.missing,
-      extra: currentMetrics.extra,
-      alignmentResult: currentMetrics.alignmentResult,
-    };
-
-    setSentenceScores(prev => ({
-      ...prev,
-      [expandedIndex]: newScore,
-    }));
+    setSentenceScores(prev => {
+      const existing = prev[expandedIndex];
+      const newScore = {
+        score: currentMetrics.score,
+        finalText: finalText,
+        missing: currentMetrics.missing,
+        extra: currentMetrics.extra,
+        alignmentResult: currentMetrics.alignmentResult,
+        attempts: (existing?.attempts || 0) + 1,
+        firstScore: existing?.firstScore ?? currentMetrics.score,
+        bestScore: Math.max(existing?.bestScore || 0, currentMetrics.score),
+      };
+      return {
+        ...prev,
+        [expandedIndex]: newScore,
+      };
+    });
 
     // 检查是否优秀并显示反馈
     if (currentMetrics.score >= 0.8) {
@@ -1029,10 +1047,15 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       clearSilenceTimer();
 
       // 设置 finalText 以触发评分计算（评分保存后会自动推进）
+      // 捕获当前录音目标索引，防止延迟后索引已变化
       const textToSave = tempFinalTextRef.current || tempCombinedTextRef.current || '';
-      if (textToSave) {
+      const targetIndex = recordingForIndexRef.current;
+      if (textToSave && targetIndex !== null) {
         setTimeout(() => {
-          setFinalText(textToSave);
+          // 只有当索引仍然匹配时才设置finalText
+          if (recordingForIndexRef.current === targetIndex) {
+            setFinalText(textToSave);
+          }
         }, 100);
       }
     };
@@ -1042,10 +1065,15 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       clearSilenceTimer();
 
       // 设置 finalText 以触发评分计算（评分保存后会自动推进）
+      // 捕获当前录音目标索引，防止延迟后索引已变化
       const textToSave = tempFinalTextRef.current || tempCombinedTextRef.current || '';
-      if (textToSave) {
+      const targetIndex = recordingForIndexRef.current;
+      if (textToSave && targetIndex !== null) {
         setTimeout(() => {
-          setFinalText(textToSave);
+          // 只有当索引仍然匹配时才设置finalText
+          if (recordingForIndexRef.current === targetIndex) {
+            setFinalText(textToSave);
+          }
         }, 100);
       }
     };
@@ -1069,6 +1097,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         return;
       }
       isStartingRef.current = true;
+      recordingForIndexRef.current = expandedIndex; // 记录录音目标句子索引
       setDisplayText('');
       setFinalText('');
       tempFinalTextRef.current = '';

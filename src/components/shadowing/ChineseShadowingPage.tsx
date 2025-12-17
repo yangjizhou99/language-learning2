@@ -1081,12 +1081,17 @@ export default function ShadowingPage() {
         const next = { ...prev };
         results.forEach(res => {
           if (res.index !== undefined && res.scorePercent !== undefined) {
+            const existing = next[res.index];
+            const scoreValue = res.scoreRatio || (res.scorePercent / 100);
             next[res.index] = {
-              score: res.scoreRatio || (res.scorePercent / 100),
+              score: scoreValue,
               finalText: res.transcript || res.text,
               missing: res.missing || [],
               extra: res.extra || [],
               // alignmentResult might be missing in role results, but that's acceptable
+              attempts: (existing?.attempts || 0) + 1,
+              firstScore: existing?.firstScore ?? scoreValue,
+              bestScore: Math.max(existing?.bestScore || 0, scoreValue),
             };
           }
         });
