@@ -261,6 +261,7 @@ export async function POST(req: NextRequest) {
             updateAbilityLevel,
             updateVocabUnknownRate,
             updateComprehensionRate,
+            updateExploreConfig,
           } = await import('@/lib/recommendation/difficulty');
 
           const profile = profileRes.data;
@@ -325,6 +326,13 @@ export async function POST(req: NextRequest) {
             sessionData.quizResult
           );
 
+          // Update Explore Config (Learning Strategy)
+          const newExploreConfig = updateExploreConfig(
+            profile.explore_config || { mainRatio: 0.6, downRatio: 0.2, upRatio: 0.2 },
+            newComprehensionRate,
+            sessionSkill
+          );
+
           // Update Profile
           await supabase
             .from('profiles')
@@ -332,6 +340,7 @@ export async function POST(req: NextRequest) {
               ability_level: newAbilityLevel,
               vocab_unknown_rate: newVocabRate,
               comprehension_rate: newComprehensionRate,
+              explore_config: newExploreConfig,
             })
             .eq('id', user.id);
 

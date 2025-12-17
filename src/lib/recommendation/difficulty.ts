@@ -275,3 +275,50 @@ export function pickTargetBand(user: UserAbilityState): 'down' | 'main' | 'up' {
     if (r < downRatio + mainRatio) return 'main';
     return 'up';
 }
+
+export function updateExploreConfig(
+    currentConfig: { mainRatio: number; downRatio: number; upRatio: number },
+    comprehensionRate: number,
+    recentSessionScore: number
+): { mainRatio: number; downRatio: number; upRatio: number } {
+    // Clone to avoid mutation
+    let { mainRatio, downRatio, upRatio } = currentConfig;
+    const step = 0.05; // 5% adjustment step
+
+    // Strategy:
+    // High performance (comp > 0.8) -> Increase Challenge (up), Decrease Consolidation (down)
+    // Low performance (comp < 0.6) -> Increase Consolidation (down), Decrease Challenge (up)
+    // Main ratio acts as a buffer or is adjusted to keep sum = 1.0
+
+    if (comprehensionRate > 0.8) {
+        // Doing well, push for more challenge
+        if (upRatio < 0.4) {
+            upRatio += step;
+            // Take from downRatio first, then mainRatio
+            if (downRatio > 0.1) {
+                downRatio -= step;
+            } else {
+                mainRatio -= step;
+            }
+        }
+    } else if (comprehensionRate < 0.6) {
+        // Struggling, need more consolidation
+        if (downRatio < 0.4) {
+            downRatio += step;
+            // Take from upRatio first, then mainRatio
+            if (upRatio > 0.1) {
+                upRatio -= step;
+            } else {
+                mainRatio -= step;
+            }
+        }
+    }
+
+    // Normalize to ensure strict 1.0 sum (handling floating point errors)
+    const total = mainRatio + downRatio + upRatio;
+    return {
+        mainRatio: Number((mainRatio / total).toFixed(2)),
+        downRatio: Number((downRatio / total).toFixed(2)),
+        upRatio: Number((upRatio / total).toFixed(2)),
+    };
+}
