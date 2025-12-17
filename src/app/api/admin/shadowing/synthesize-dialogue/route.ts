@@ -273,13 +273,13 @@ export async function POST(req: NextRequest) {
 
     for (const { speaker, content } of dialogue) {
       const sKey = toAsciiUpperLetter(speaker);
+      // 严格模式：只使用用户指定的音色，不回退到默认音色
       const preferred =
         (speakerVoices &&
           (speakerVoices[sKey] ||
             speakerVoices[String(sKey).toUpperCase()] ||
             speakerVoices[String(sKey).toLowerCase()])) ||
         null;
-      const fallbackVoice = getVoiceForSpeaker(sKey, lang);
       const voiceParams = getVoiceParamsForSpeaker(sKey, lang);
       const cleaned = content.replace(innerLabelRE, ' ').trim();
 
@@ -288,61 +288,40 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      const candidates: (string | null)[] = [];
-      const normalizedPreferred = preferred?.trim();
-      if (normalizedPreferred) candidates.push(normalizedPreferred);
-      if (fallbackVoice?.trim()) candidates.push(fallbackVoice.trim());
-      candidates.push(null); // 允许使用库内默认音色
-
-      const uniqueCandidates: (string | null)[] = [];
-      const seen = new Set<string>();
-      for (const candidate of candidates) {
-        const key = candidate ? candidate.toLowerCase() : '__default__';
-        if (seen.has(key)) continue;
-        seen.add(key);
-        uniqueCandidates.push(candidate);
+      // 严格模式：必须有用户指定的音色
+      if (!preferred?.trim()) {
+        throw new Error(`VOICE_NOT_SPECIFIED: 角色 ${sKey} 没有指定音色，请检查备选音色设置`);
       }
 
+      const voiceName = preferred.trim();
       let audioBuffer: Buffer | null = null;
-      let usedVoice: string | null = null;
-      let lastError: unknown = null;
 
-      for (const candidate of uniqueCandidates) {
-        const attemptVoice = candidate || undefined;
-        const label = candidate ?? '(library-default)';
-        try {
-          console.log(`为角色 ${sKey} 合成音频，尝试音色: ${label}`);
-          const buffer = await synthesizeTTS({
-            text: cleaned,
-            lang,
-            voiceName: attemptVoice,
-            speakingRate: speakingRate * voiceParams.speakingRate,
-            pitch: pitch + voiceParams.pitch,
-          });
-          audioBuffer = buffer;
-          usedVoice = attemptVoice ?? fallbackVoice ?? '';
-          break;
-        } catch (err) {
-          lastError = err;
-          const message = err instanceof Error ? err.message : String(err);
-          console.error('音色合成失败，尝试回退', {
-            speaker: sKey,
-            attemptedVoice: label,
-            message,
-          });
-          if (isFatalTtsError(err)) {
-            throw err;
-          }
-        }
+      try {
+        console.log(`为角色 ${sKey} 合成音频，使用音色: ${voiceName}`);
+        const buffer = await synthesizeTTS({
+          text: cleaned,
+          lang,
+          voiceName: voiceName,
+          speakingRate: speakingRate * voiceParams.speakingRate,
+          pitch: pitch + voiceParams.pitch,
+        });
+        audioBuffer = buffer;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('音色合成失败（严格模式，不回退）', {
+          speaker: sKey,
+          voice: voiceName,
+          message,
+        });
+        // 标记为音色不可用错误，前端可据此决定是否重新分配音色
+        throw new Error(`VOICE_UNAVAILABLE: 角色 ${sKey} 的音色 ${voiceName} 合成失败: ${message}`);
       }
 
       if (!audioBuffer) {
-        const message =
-          lastError instanceof Error ? lastError.message : String(lastError || '未知错误');
-        throw new Error(`无法为角色 ${sKey} 合成音频: ${message}`);
+        throw new Error(`VOICE_UNAVAILABLE: 角色 ${sKey} 的音色 ${voiceName} 合成返回空结果`);
       }
 
-      appliedSpeakerVoices[sKey] = usedVoice || '';
+      appliedSpeakerVoices[sKey] = voiceName;
       audioBuffers.push(audioBuffer);
       segmentTexts.push(cleaned);
       segmentSpeakers.push(sKey);

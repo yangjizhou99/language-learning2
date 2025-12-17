@@ -147,6 +147,7 @@ export default function ShadowingReviewList() {
   const [status, setStatus] = useState<'all' | 'draft' | 'approved'>('draft');
   const [audioStatus, setAudioStatus] = useState<'all' | 'no_audio' | 'has_audio'>('all');
   const [acuStatus, setAcuStatus] = useState<'all' | 'no_acu' | 'has_acu'>('all');
+  const [voiceStatus, setVoiceStatus] = useState<'all' | 'fallback_voice' | 'custom_voice'>('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [ttsLoading, setTtsLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -306,7 +307,8 @@ export default function ShadowingReviewList() {
       // 处理音频状态和ACU状态筛选 - 需要获取所有数据然后在客户端筛选
       const isAudioStatusFilter = audioStatus === 'no_audio' || audioStatus === 'has_audio';
       const isAcuStatusFilter = acuStatus === 'no_acu' || acuStatus === 'has_acu';
-      const isClientSideFilter = isAudioStatusFilter || isAcuStatusFilter;
+      const isVoiceStatusFilter = voiceStatus === 'fallback_voice' || voiceStatus === 'custom_voice';
+      const isClientSideFilter = isAudioStatusFilter || isAcuStatusFilter || isVoiceStatusFilter;
 
       const params = new URLSearchParams({
         status: status === 'all' ? 'draft' : status,
@@ -349,6 +351,74 @@ export default function ShadowingReviewList() {
         filteredItems = filteredItems.filter((item: Item) => item.notes?.acu_units && item.notes?.acu_units?.length > 0);
       }
 
+      // 客户端音色状态筛选
+      // 调试：显示音色分配数据
+      if (voiceStatus !== 'all') {
+        console.log('音色筛选模式:', voiceStatus);
+        console.log('筛选前数据量:', filteredItems.length);
+        // 检查多个可能的字段名
+        const itemsWithVoice = filteredItems.filter((item: Item) => {
+          const notes = item.notes || {};
+          return notes.random_voice_assignment || notes.voice_mapping || notes.tts_provider;
+        });
+        console.log('有音色相关数据的数量:', itemsWithVoice.length);
+        if (itemsWithVoice.length > 0) {
+          console.log('第一个有音色数据的notes:', itemsWithVoice[0].notes);
+        }
+      }
+
+      // 辅助函数：获取音色分配数据（兼容多个字段名）
+      const getVoiceAssignment = (item: Item) => {
+        const notes = item.notes || {};
+        return notes.random_voice_assignment || notes.voice_mapping || null;
+      };
+
+      // 辅助函数：检查是否包含Standard回退音色
+      const hasStandardVoice = (voiceAssignment: any): boolean => {
+        if (!voiceAssignment) return false;
+        const standardPattern = /Standard|standard/;
+        if (typeof voiceAssignment === 'string') {
+          return standardPattern.test(voiceAssignment);
+        }
+        if (typeof voiceAssignment === 'object') {
+          return Object.values(voiceAssignment).some(
+            (voice) => typeof voice === 'string' && standardPattern.test(voice)
+          );
+        }
+        return false;
+      };
+
+      if (voiceStatus === 'fallback_voice') {
+        // 只显示使用了回退音色（Standard系列）的草稿
+        filteredItems = filteredItems.filter((item: Item) => {
+          const voiceAssignment = getVoiceAssignment(item);
+          return hasStandardVoice(voiceAssignment);
+        });
+        console.log('筛选后（回退音色）:', filteredItems.length);
+      } else if (voiceStatus === 'custom_voice') {
+        // 只显示使用了自定义音色（非Standard，如Chirp3-HD、Neural2等）且有音色数据的草稿
+        filteredItems = filteredItems.filter((item: Item) => {
+          const voiceAssignment = getVoiceAssignment(item);
+          // 必须有音色数据
+          if (!voiceAssignment) return false;
+          // 如果是对象（voice_mapping），检查是否有任何音色值
+          if (typeof voiceAssignment === 'object') {
+            const voices = Object.values(voiceAssignment);
+            if (voices.length === 0) return false;
+            // 全部都不是Standard音色才算自定义音色
+            return voices.every(
+              (voice) => typeof voice === 'string' && !/Standard|standard/.test(voice)
+            );
+          }
+          // 如果是字符串，检查不是Standard
+          if (typeof voiceAssignment === 'string') {
+            return !/Standard|standard/.test(voiceAssignment);
+          }
+          return false;
+        });
+        console.log('筛选后（自定义音色）:', filteredItems.length);
+      }
+
       // 如果是客户端筛选，需要重新计算分页
       if (isClientSideFilter) {
         const totalFiltered = filteredItems.length;
@@ -364,7 +434,7 @@ export default function ShadowingReviewList() {
 
       setItems(filteredItems);
     })();
-  }, [q, lang, genre, dialogueType, level, status, audioStatus, acuStatus, currentPage, pageSize]);
+  }, [q, lang, genre, dialogueType, level, status, audioStatus, acuStatus, voiceStatus, currentPage, pageSize]);
 
   // 加载可用模型
   useEffect(() => {
@@ -374,7 +444,7 @@ export default function ShadowingReviewList() {
   // 当筛选条件改变时，重置到第一页
   useEffect(() => {
     setCurrentPage(1);
-  }, [q, lang, genre, dialogueType, level, status, audioStatus, acuStatus]);
+  }, [q, lang, genre, dialogueType, level, status, audioStatus, acuStatus, voiceStatus]);
 
   // 分页控制函数
   const goToPage = (page: number) => {
@@ -428,6 +498,29 @@ export default function ShadowingReviewList() {
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
     return lines.some((line) => /^[A-Z]:\s/.test(line));
+  }
+
+  // 检测是否使用了回退音色（Standard系列）
+  function hasFallbackVoice(item: Item): boolean {
+    const notes = item.notes || {};
+    const voiceAssignment = notes.random_voice_assignment;
+
+    if (!voiceAssignment) return false;
+
+    // 检查Standard音色模式
+    const standardPattern = /Standard|standard/;
+
+    if (typeof voiceAssignment === 'string') {
+      return standardPattern.test(voiceAssignment);
+    }
+
+    if (typeof voiceAssignment === 'object') {
+      return Object.values(voiceAssignment).some(
+        (voice) => typeof voice === 'string' && standardPattern.test(voice)
+      );
+    }
+
+    return false;
   }
 
   async function deleteOne(id: string) {
@@ -1368,6 +1461,19 @@ export default function ShadowingReviewList() {
           message,
         });
         appendLog(`第 ${taskIndex + 1} 个草稿第 ${attempt}/${maxAttempts} 次尝试失败：${message}`);
+
+        // 检测音色相关错误，清除缓存以便重新分配音色
+        const isVoiceError = message.includes('VOICE_UNAVAILABLE') ||
+          message.includes('VOICE_NOT_SPECIFIED') ||
+          message.includes('音色') ||
+          message.includes('voice');
+
+        if (isVoiceError) {
+          console.log(`检测到音色错误，清除草稿 ${id} 的音色分配缓存，下次重试将重新分配音色`);
+          appendLog(`⚠️ 音色不可用，将重新分配音色后重试`);
+          voiceAssignmentsRef.current.delete(id);
+        }
+
         if (attempt >= maxAttempts) {
           break;
         }
@@ -2136,6 +2242,22 @@ export default function ShadowingReviewList() {
                   <SelectItem value="all">全部</SelectItem>
                   <SelectItem value="no_acu">未生成ACU</SelectItem>
                   <SelectItem value="has_acu">已生成ACU</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">音色状态</label>
+              <Select
+                value={voiceStatus}
+                onValueChange={(value) => setVoiceStatus(value as 'all' | 'fallback_voice' | 'custom_voice')}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部</SelectItem>
+                  <SelectItem value="fallback_voice">⚠️ 回退音色(Standard)</SelectItem>
+                  <SelectItem value="custom_voice">✅ 自定义音色</SelectItem>
                 </SelectContent>
               </Select>
             </div>
