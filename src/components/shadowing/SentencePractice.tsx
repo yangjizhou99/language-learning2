@@ -450,6 +450,15 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const followAlongTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 记录每个句子在本轮录音开始时的尝试次数，用于检测新评分
   const followAlongAttemptRef = useRef<number>(0);
+  // 追踪当前录音会话是否真正开始过语音识别
+  const hasStartedRecordingRef = useRef<boolean>(false);
+
+  // 跟读模式：追踪当前录音会话是否真正开始过语音识别
+  useEffect(() => {
+    if (followAlongPhase === 'recording' && practice.isRecognizing) {
+      hasStartedRecordingRef.current = true;
+    }
+  }, [followAlongPhase, practice.isRecognizing]);
 
   // 跟读模式：监听评分完成，自动进入下一句
   useEffect(() => {
@@ -459,7 +468,9 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     // 只有当录音结束、有评分、且评分尝试次数比开始时多了才进入下一句
     const hasNewScore = currentScore && (currentScore.attempts || 1) > followAlongAttemptRef.current;
 
-    if (followAlongPhase === 'recording' && hasNewScore && !practice.isRecognizing) {
+    // 额外检查：必须是当前录音会话真正开始过识别，且现在停止了
+    // 这样可以避免因外部评分同步导致的误判
+    if (followAlongPhase === 'recording' && hasNewScore && !practice.isRecognizing && hasStartedRecordingRef.current) {
       // 录音结束且有新评分，切换到 scored 状态
       setFollowAlongPhase('scored');
 
@@ -503,6 +514,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           // 记录当前尝试次数，用于检测新评分
           const currentScore = practice.sentenceScores[followAlongIndex];
           followAlongAttemptRef.current = currentScore?.attempts || 0;
+          // 重置录音开始标记，确保新的录音会话需要真正开始过识别
+          hasStartedRecordingRef.current = false;
 
           setFollowAlongPhase('recording');
           // 使用 retry 确保清空上一句的识别文字

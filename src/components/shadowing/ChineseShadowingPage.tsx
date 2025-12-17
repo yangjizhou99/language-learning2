@@ -4934,9 +4934,12 @@ export default function ShadowingPage() {
                                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                   <div className="text-sm">
                                     <div className="font-medium text-gray-800 mb-1">已选择的文本：</div>
-                                    <div className="text-blue-600 font-semibold mb-1">
-                                      {selectedText.word}
-                                    </div>
+                                    <input
+                                      type="text"
+                                      value={selectedText.word}
+                                      onChange={(e) => setSelectedText({ ...selectedText, word: e.target.value })}
+                                      className="w-full px-2 py-1 text-blue-600 font-semibold mb-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                    />
                                     <div className="text-xs text-gray-600 mb-2">
                                       {selectedText.context}
                                     </div>
@@ -4944,7 +4947,7 @@ export default function ShadowingPage() {
                                       <Button
                                         size="sm"
                                         onClick={confirmAddToVocab}
-                                        disabled={isAddingToVocab}
+                                        disabled={isAddingToVocab || !selectedText.word.trim()}
                                         className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                       >
                                         {isAddingToVocab ? (

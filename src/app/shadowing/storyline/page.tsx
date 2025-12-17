@@ -18,6 +18,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { getStorylineCache, setStorylineCache } from '@/lib/storylineCache';
 
 interface SubtopicData {
     id: string;
@@ -70,6 +71,7 @@ export default function StorylinePage() {
 
     const [themes, setThemes] = useState<ThemeData[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false); // 后台刷新状态
     const [error, setError] = useState<string | null>(null);
     const [lastPractice, setLastPractice] = useState<{
         themeId: string;
@@ -95,10 +97,22 @@ export default function StorylinePage() {
         // Generate unique fetch ID to track this request
         const currentFetchId = ++fetchIdRef.current;
 
+        // 优先尝试从缓存加载
+        const cached = getStorylineCache(lang, level);
+        if (cached) {
+            setThemes(cached.themes);
+            setLastPractice(cached.lastPractice);
+            setLoading(false);
+            setIsRefreshing(true); // 显示后台刷新indicator
+        }
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-        setLoading(true);
+        // 如果没有缓存数据，才显示主loading状态
+        if (!cached) {
+            setLoading(true);
+        }
         setError(null);
 
         try {
@@ -127,6 +141,9 @@ export default function StorylinePage() {
             if (!controller.signal.aborted && currentFetchId === fetchIdRef.current) {
                 setThemes(data.themes || []);
 
+                // 缓存获取到的数据
+                setStorylineCache(lang, level, data.themes || [], data.lastPractice);
+
                 // Handle lastPractice for auto-filter (only once)
                 if (data.lastPractice && !hasAppliedLastPracticeFilter.current) {
                     setLastPractice(data.lastPractice);
@@ -152,17 +169,21 @@ export default function StorylinePage() {
         } catch (err: any) {
             if (currentFetchId !== fetchIdRef.current) return; // Ignore errors from stale requests
 
-            if (err.name === 'AbortError') {
-                console.log('Storyline fetch aborted or timed out');
-                setError('加载超时，请刷新重试');
-            } else {
-                console.error('Storyline fetch error:', err);
-                setError('加载故事线失败，请稍后重试');
+            // 如果有缓存数据，网络错误不显示错误状态
+            if (!cached) {
+                if (err.name === 'AbortError') {
+                    console.log('Storyline fetch aborted or timed out');
+                    setError('加载超时，请刷新重试');
+                } else {
+                    console.error('Storyline fetch error:', err);
+                    setError('加载故事线失败，请稍后重试');
+                }
             }
         } finally {
             if (currentFetchId === fetchIdRef.current) {
                 clearTimeout(timeoutId);
                 setLoading(false);
+                setIsRefreshing(false);
             }
         }
     }, [getAuthHeaders]);
@@ -327,6 +348,14 @@ export default function StorylinePage() {
                             ))}
                         </SelectContent>
                     </Select>
+
+                    {/* 后台刷新指示器 */}
+                    {isRefreshing && (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 ml-auto">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>更新中...</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
