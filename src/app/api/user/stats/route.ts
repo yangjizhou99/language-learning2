@@ -261,7 +261,7 @@ export async function GET(req: NextRequest) {
         // Sessions don't have lang directly, so we need to fetch items for them.
         let sessionsQuery = supabase
             .from('shadowing_sessions')
-            .select('id, updated_at, status, item_id')
+            .select('id, updated_at, status, item_id, recordings, notes')
             .eq('user_id', user.id)
             .eq('status', 'completed')
             .order('updated_at', { ascending: false });
@@ -378,6 +378,58 @@ export async function GET(req: NextRequest) {
             activityChart.push({
                 date: dateStr,
                 count: activityMap.get(dateStr) || 0
+            });
+        }
+
+        // --- Hourly Distribution & Cumulative Time ---
+        const hourlyDistribution = new Array(24).fill(0);
+        const dailyDurationMap = new Map<string, number>();
+
+        filteredSessions.forEach(session => {
+            const date = new Date(session.updated_at);
+
+            // Hourly Distribution (All time for these sessions)
+            const hour = date.getHours();
+            if (hour >= 0 && hour < 24) {
+                hourlyDistribution[hour]++;
+            }
+
+            // Cumulative Time (Last 30 days)
+            if (date >= thirtyDaysAgo) {
+                const dateStr = date.toISOString().split('T')[0];
+                let durationSeconds = 0;
+
+                if (session.notes && typeof session.notes === 'object' && (session.notes as any).speaking_duration) {
+                    // Use tracked speaking duration (in ms)
+                    durationSeconds = (session.notes as any).speaking_duration / 1000;
+                } else if (session.recordings && Array.isArray(session.recordings)) {
+                    session.recordings.forEach((r: any) => {
+                        // duration is stored in milliseconds (from AudioRecorder)
+                        if (r.duration) durationSeconds += r.duration / 1000;
+                    });
+                }
+
+                // Fallback: If no recordings or duration, estimate 3 mins (180s) per session
+                if (durationSeconds === 0) durationSeconds = 180;
+
+                dailyDurationMap.set(dateStr, (dailyDurationMap.get(dateStr) || 0) + durationSeconds);
+            }
+        });
+
+        const cumulativeTime = [];
+        let runningTotalMinutes = 0;
+        // Reset date iterator
+        const loopDate = new Date(thirtyDaysAgo);
+        for (let d = loopDate; d <= now; d.setDate(d.getDate() + 1)) {
+            const dateStr = d.toISOString().split('T')[0];
+            const daySeconds = dailyDurationMap.get(dateStr) || 0;
+            const dayMinutes = Math.round(daySeconds / 60);
+            runningTotalMinutes += dayMinutes;
+
+            cumulativeTime.push({
+                date: dateStr,
+                minutes: runningTotalMinutes,
+                dayMinutes: dayMinutes
             });
         }
 
@@ -536,6 +588,8 @@ export async function GET(req: NextRequest) {
             .sort((a, b) => (b.interest + b.proficiency) - (a.interest + a.proficiency))
             .slice(0, 6); // Top 6 relevant themes
 
+
+
         return NextResponse.json({
             abilityRadar,
             recentAccuracy,
@@ -544,6 +598,8 @@ export async function GET(req: NextRequest) {
             difficultyTrend,
             vocabSweetSpot,
             interestVsProficiency,
+            hourlyDistribution: hourlyDistribution.map((count, hour) => ({ hour, count })),
+            cumulativeTime,
             stats: {
                 totalAttempts,
                 totalDays: activityMap.size,

@@ -120,6 +120,7 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
   const [displayText, setDisplayText] = useState('');
   const [finalText, setFinalText] = useState('');
   const [sentenceScores, setSentenceScores] = useState<Record<number, SentenceScore>>({});
+  const [speakingDuration, setSpeakingDuration] = useState(0);
 
   // Sync with external scores
   useEffect(() => {
@@ -167,6 +168,7 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
   const tempCombinedTextRef = useRef('');
   const tempFinalTextRef = useRef('');
   const attemptsRef = useRef<Record<number, number>>({});
+  const speakingStartTimeRef = useRef<number | null>(null);
 
   const sentences: SentenceSegment[] = useMemo(() => {
     if (Array.isArray(sentenceTimeline) && sentenceTimeline.length > 0) {
@@ -192,6 +194,10 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = mapLangToLocale(language);
+
+    rec.onstart = () => {
+      speakingStartTimeRef.current = Date.now();
+    };
 
     rec.onresult = (event: WebSpeechRecognitionEvent) => {
       let interim = '';
@@ -219,6 +225,12 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
 
     rec.onend = () => {
       setIsRecognizing(false);
+      // Accumulate duration
+      if (speakingStartTimeRef.current) {
+        const duration = Date.now() - speakingStartTimeRef.current;
+        setSpeakingDuration(prev => prev + duration);
+        speakingStartTimeRef.current = null;
+      }
       // 保存最终文本
       const textToSave = tempFinalTextRef.current || tempCombinedTextRef.current || '';
       if (textToSave && expandedIndex !== null) {
@@ -396,6 +408,7 @@ export function useSentencePracticeCore({ originalText, language, sentenceTimeli
     speak,
     ensureMicReleased,
     clearText,
+    speakingDuration,
   };
 }
 
