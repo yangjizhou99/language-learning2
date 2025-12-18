@@ -7,15 +7,11 @@ import { supabase } from '@/lib/supabase';
 import { AbilityRadar } from '@/components/stats/AbilityRadar';
 import { ActivityChart } from '@/components/stats/ActivityChart';
 import { RecentAccuracyChart } from '@/components/stats/RecentAccuracyChart';
-import { ScoreDistributionChart } from '@/components/stats/ScoreDistributionChart';
-import { DifficultyTrendChart } from '@/components/stats/DifficultyTrendChart';
 import { VocabSweetSpotChart } from '@/components/stats/VocabSweetSpotChart';
-
-import { LearningInsights } from '@/components/stats/LearningInsights';
 import { PracticeHeatmap } from '@/components/stats/PracticeHeatmap';
 import { CumulativeTimeChart } from '@/components/stats/CumulativeTimeChart';
 import { EfficiencyTimeChart } from '@/components/stats/EfficiencyTimeChart';
-import { ArrowLeft, Loader2, TrendingUp, Calendar, Target, PieChart as PieChartIcon, LineChart, Zap, Compass, Clock } from 'lucide-react';
+import { ArrowLeft, Loader2, TrendingUp, Calendar, Target, Zap, Compass, Clock, BarChart3 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation, useLanguage } from '@/contexts/LanguageContext';
 
@@ -39,16 +35,6 @@ interface StatsData {
     activityChart: Array<{
         date: string;
         count: number;
-    }>;
-    scoreDistribution: Array<{
-        name: string;
-        range: string;
-        count: number;
-        fill: string;
-    }>;
-    difficultyTrend: Array<{
-        date: string;
-        level: number;
     }>;
     vocabSweetSpot: Array<{
         rate: number;
@@ -208,128 +194,106 @@ export default function LearningStatsPage() {
                     </div>
                 </div>
 
-                {/* Learning Insights */}
-                {data && (
-                    <LearningInsights
-                        stats={data.stats}
-                        recentAccuracy={data.recentAccuracy}
-                        activityChart={data.activityChart}
-                        interestVsProficiency={data.interestVsProficiency}
-                    />
-                )}
-
-                {/* New Charts Row 1: Difficulty Trend & Vocab Sweet Spot */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Difficulty Trend */}
-                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '250ms' }}>
-                        <div className="flex items-center justify-between mb-8">
+                {/* Row 1: Ability Radar & Vocab Sweet Spot */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Ability Radar */}
+                    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: '250ms' }}>
+                        <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-indigo-50 rounded-lg">
-                                    <LineChart className="w-5 h-5 text-indigo-600" />
+                                <div className="p-2.5 bg-amber-50 rounded-xl">
+                                    <Compass className="w-5 h-5 text-amber-600" />
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900">难度攀升曲线</h2>
+                                <h2 className="text-lg font-bold text-gray-900">能力 vs 兴趣</h2>
                             </div>
-                            <span className="text-sm text-gray-400">Level 1-6</span>
+                            <span className="text-xs text-gray-400">擅长的 vs 想练的</span>
                         </div>
-                        <DifficultyTrendChart data={data?.difficultyTrend || []} />
+                        <AbilityRadar data={data?.abilityRadar || []} />
                     </div>
 
                     {/* Vocab Sweet Spot */}
-                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '300ms' }}>
-                        <div className="flex items-center justify-between mb-8">
+                    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: '300ms' }}>
+                        <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-emerald-50 rounded-lg">
+                                <div className="p-2.5 bg-emerald-50 rounded-xl">
                                     <Zap className="w-5 h-5 text-emerald-600" />
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900">词汇舒适区</h2>
+                                <h2 className="text-lg font-bold text-gray-900">词汇舒适区</h2>
                             </div>
-                            <span className="text-sm text-gray-400">最佳区间: 5-20%</span>
+                            <span className="text-xs text-gray-400">最佳区间: 5-20%</span>
                         </div>
                         <VocabSweetSpotChart data={data?.vocabSweetSpot || []} />
                     </div>
                 </div>
 
-                {/* New Charts Row 2: Interest vs Proficiency */}
-                {/* Ability Radar (Merged with Interest) */}
-                {/* New Charts Row 2: Ability Radar (Merged) */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '400ms' }}>
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-amber-50 rounded-lg">
-                                    <Compass className="w-5 h-5 text-amber-600" />
-                                </div>
-                                <h2 className="text-xl font-bold text-gray-900">能力 vs 兴趣</h2>
-                            </div>
-                            <span className="text-sm text-gray-400">擅长的 vs 想练的</span>
-                        </div>
-                        <AbilityRadar data={data?.abilityRadar || []} />
-                    </div>
-                </div>
-
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Score Distribution */}
-                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '500ms' }}>
-                        <div className="flex items-center gap-3 mb-8">
-                            <div className="p-2 bg-orange-50 rounded-lg">
-                                <PieChartIcon className="w-5 h-5 text-orange-600" />
-                            </div>
-                            <h2 className="text-xl font-bold text-gray-900">{t.stats.score_distribution}</h2>
-                        </div>
-                        <ScoreDistributionChart data={data?.scoreDistribution || []} />
-                    </div>
-
+                {/* Row 2: Activity Chart & Recent Accuracy */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Activity Chart */}
-                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '600ms' }}>
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-bold text-gray-900">{t.stats.activity_chart}</h2>
-                            <span className="text-sm text-gray-400">{t.stats.last_30_days}</span>
+                    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: '350ms' }}>
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-blue-50 rounded-xl">
+                                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <h2 className="text-lg font-bold text-gray-900">{t.stats.activity_chart}</h2>
+                            </div>
+                            <span className="text-xs text-gray-400">{t.stats.last_30_days}</span>
                         </div>
                         <ActivityChart data={data?.activityChart || []} />
                     </div>
+
+                    {/* Recent Accuracy Trend */}
+                    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: '400ms' }}>
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 bg-purple-50 rounded-xl">
+                                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                                </div>
+                                <h2 className="text-lg font-bold text-gray-900">准确率趋势</h2>
+                            </div>
+                            <span className="text-xs text-gray-400">最近练习</span>
+                        </div>
+                        <RecentAccuracyChart data={data?.recentAccuracy || []} />
+                    </div>
                 </div>
 
-                {/* New Charts Row 3: Practice Heatmap & Cumulative Time */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Row 3: Practice Heatmap & Cumulative Time */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Practice Heatmap */}
-                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '700ms' }}>
-                        <div className="flex items-center justify-between mb-8">
+                    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: '450ms' }}>
+                        <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-rose-50 rounded-lg">
+                                <div className="p-2.5 bg-rose-50 rounded-xl">
                                     <Clock className="w-5 h-5 text-rose-600" />
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900">练习时间分布</h2>
+                                <h2 className="text-lg font-bold text-gray-900">练习时间分布</h2>
                             </div>
-                            <span className="text-sm text-gray-400">24小时热力图</span>
+                            <span className="text-xs text-gray-400">24小时热力图</span>
                         </div>
                         <PracticeHeatmap data={data?.hourlyDistribution || []} />
                     </div>
 
                     {/* Cumulative Time */}
-                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '800ms' }}>
-                        <div className="flex items-center justify-between mb-8">
+                    <div className="bg-white p-6 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: '500ms' }}>
+                        <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-sky-50 rounded-lg">
+                                <div className="p-2.5 bg-sky-50 rounded-xl">
                                     <TrendingUp className="w-5 h-5 text-sky-600" />
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900">累计开口时长</h2>
+                                <h2 className="text-lg font-bold text-gray-900">累计开口时长</h2>
                             </div>
-                            <span className="text-sm text-gray-400">过去30天</span>
+                            <span className="text-xs text-gray-400">过去30天</span>
                         </div>
                         <CumulativeTimeChart data={data?.cumulativeTime || []} />
                     </div>
                 </div>
-            </div>
 
-            {/* New Charts Row 4: Efficiency Analysis */}
-            <div className="grid grid-cols-1 gap-8">
-                <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '900ms' }}>
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="p-2 bg-yellow-50 rounded-lg">
+                {/* Row 4: Efficiency Analysis (Full Width) */}
+                <div className="bg-white p-6 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.06)] transition-shadow duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-backwards" style={{ animationDelay: '550ms' }}>
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2.5 bg-yellow-50 rounded-xl">
                             <Zap className="w-5 h-5 text-yellow-600" />
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900">{(t.stats as any).efficiency_analysis || '学习效率分析'}</h2>
+                        <h2 className="text-lg font-bold text-gray-900">{(t.stats as any).efficiency_analysis || '学习效率分析'}</h2>
                     </div>
                     <EfficiencyTimeChart data={data?.hourlyEfficiencyByLevel || []} />
                 </div>
