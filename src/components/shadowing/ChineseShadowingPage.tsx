@@ -5850,7 +5850,7 @@ export default function ShadowingPage() {
                                 return `${m}m ${s}s`;
                               })()}
                             </div>
-                            <div className="text-xs text-gray-500">{t.shadowing.speaking_duration || '开口时长'}</div>
+                            <div className="text-xs text-gray-500">{(t.shadowing as any).speaking_duration || '开口时长'}</div>
                           </div>
                         </div>
                       </div>
