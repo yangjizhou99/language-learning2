@@ -85,6 +85,7 @@ interface SentencePracticeProps {
   renderText?: (text: string) => React.ReactNode; // 可选：自定义句子渲染（用于注音）
   onSentenceScoreUpdate?: (index: number, score: SentenceScore) => void;
   sentenceScores?: Record<number, SentenceScore>; // New prop
+  onSpeakingDurationUpdate?: (duration: number) => void;
 }
 
 const mapLangToLocale = (lang: Lang): string => {
@@ -394,11 +395,14 @@ const computeRoleScore = (target: string, said: string, lang: Lang) => {
   };
 };
 
-function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits, onPlaySentence, completedSegmentIndex, renderText, onSentenceScoreUpdate, sentenceScores: externalScores }: SentencePracticeProps) {
+function SentencePracticeDefault({ originalText, language, className = '', audioUrl, sentenceTimeline, practiceMode = 'default', activeRole = 'A', roleSegments, onRoleRoundComplete, acuUnits, onPlaySentence, completedSegmentIndex, renderText, onSentenceScoreUpdate, sentenceScores: externalScores, onSpeakingDurationUpdate }: SentencePracticeProps) {
   const { t } = useLanguage();
   const [displayText, setDisplayText] = useState('');
   const [finalText, setFinalText] = useState('');
   const [sentenceScores, setSentenceScores] = useState<Record<number, SentenceScore>>({});
+  const [roleSpeakingDuration, setRoleSpeakingDuration] = useState(0);
+
+
 
   // Sync with external scores
   useEffect(() => {
@@ -441,6 +445,13 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     },
     externalScores // Pass external scores to hook
   });
+
+  // Sync total duration
+  useEffect(() => {
+    if (onSpeakingDurationUpdate) {
+      onSpeakingDurationUpdate((practice.speakingDuration || 0) + roleSpeakingDuration);
+    }
+  }, [practice.speakingDuration, roleSpeakingDuration, onSpeakingDurationUpdate]);
 
   // 跟读模式状态
   const isFollowAlongMode = practiceMode === 'followAlong';
@@ -661,6 +672,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const isStartingRef = useRef(false);
   // 追踪录音开始时的句子索引，防止文本串扰到其他句子
   const recordingForIndexRef = useRef<number | null>(null);
+  const roleSpeakingStartTimeRef = useRef<number | null>(null);
 
   // 临时存储识别结果，只在录音真正停止时才提交
   const tempFinalTextRef = useRef<string>('');
@@ -928,6 +940,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       tempFinalTextRef.current = '';
       tempCombinedTextRef.current = '';
       lastResultAtRef.current = Date.now();
+      roleSpeakingStartTimeRef.current = Date.now();
       clearSilenceTimer();
 
       // 智能静默检测：根据完成度动态调整静默时间
@@ -1068,6 +1081,13 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       isStartingRef.current = false;
       setIsRecognizing(false);
       clearSilenceTimer();
+
+      // Accumulate duration
+      if (roleSpeakingStartTimeRef.current) {
+        const duration = Date.now() - roleSpeakingStartTimeRef.current;
+        setRoleSpeakingDuration(prev => prev + duration);
+        roleSpeakingStartTimeRef.current = null;
+      }
 
       // 设置 finalText 以触发评分计算（评分保存后会自动推进）
       // 捕获当前录音目标索引，防止延迟后索引已变化

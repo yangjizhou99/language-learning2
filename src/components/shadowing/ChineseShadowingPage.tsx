@@ -628,6 +628,7 @@ export default function ShadowingPage() {
   // Difficulty Rating State
   const [selfDifficulty, setSelfDifficulty] = useState<'too_easy' | 'just_right' | 'a_bit_hard' | 'too_hard' | null>(null);
   const [showDifficultyModal, setShowDifficultyModal] = useState(false);
+  const [sessionSpeakingDuration, setSessionSpeakingDuration] = useState(0);
 
   // 主题数据状态
   const [themes, setThemes] = useState<Array<{ id: string; title: string; desc?: string }>>([]);
@@ -3562,7 +3563,8 @@ export default function ShadowingPage() {
           picked_preview: allWords,
           selected_words: selected_words_payload,
           notes: {
-            sentence_scores: sentenceScores
+            sentence_scores: sentenceScores,
+            speaking_duration: sessionSpeakingDuration
           },
           quiz_result: quizResult ? {
             answers: quizResult.answers,
@@ -5496,6 +5498,7 @@ export default function ShadowingPage() {
                     roleSegments={roleSegments}
                     onRoleRoundComplete={handleRoleRoundComplete}
                     acuUnits={currentItem?.notes?.acu_units}
+                    onSpeakingDurationUpdate={setSessionSpeakingDuration}
                     // 统一使用顶部主音频播放器进行分段播放
                     onPlaySentence={(i) => playSentenceByIndex(i)}
                     completedSegmentIndex={completedSegmentIndex}
@@ -5837,6 +5840,18 @@ export default function ShadowingPage() {
                               <div className="text-xs text-gray-500">{t.shadowing.vocab_selected || '选中生词'}</div>
                             </div>
                           )}
+                          {/* 开口时长 */}
+                          <div className="text-center p-2 bg-white rounded-lg border border-gray-100">
+                            <div className="text-2xl font-bold text-teal-600">
+                              {(() => {
+                                const seconds = Math.floor(sessionSpeakingDuration / 1000);
+                                const m = Math.floor(seconds / 60);
+                                const s = seconds % 60;
+                                return `${m}m ${s}s`;
+                              })()}
+                            </div>
+                            <div className="text-xs text-gray-500">{(t.shadowing as any).speaking_duration || '开口时长'}</div>
+                          </div>
                         </div>
                       </div>
 

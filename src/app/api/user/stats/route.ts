@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
         // Fetch Shadowing Attempts
         let query = supabase
             .from('shadowing_attempts')
-            .select('id, created_at, metrics, item_id, lang')
+            .select('id, created_at, metrics, item_id, lang, level')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(1000); // Limit to recent 1000 attempts for performance
@@ -261,7 +261,7 @@ export async function GET(req: NextRequest) {
         // Sessions don't have lang directly, so we need to fetch items for them.
         let sessionsQuery = supabase
             .from('shadowing_sessions')
-            .select('id, updated_at, status, item_id')
+            .select('id, updated_at, status, item_id, recordings, notes')
             .eq('user_id', user.id)
             .eq('status', 'completed')
             .order('updated_at', { ascending: false });
@@ -378,6 +378,58 @@ export async function GET(req: NextRequest) {
             activityChart.push({
                 date: dateStr,
                 count: activityMap.get(dateStr) || 0
+            });
+        }
+
+        // --- Hourly Distribution & Cumulative Time ---
+        const hourlyDistribution = new Array(24).fill(0);
+        const dailyDurationMap = new Map<string, number>();
+
+        filteredSessions.forEach(session => {
+            const date = new Date(session.updated_at);
+
+            // Hourly Distribution (All time for these sessions)
+            const hour = date.getHours();
+            if (hour >= 0 && hour < 24) {
+                hourlyDistribution[hour]++;
+            }
+
+            // Cumulative Time (Last 30 days)
+            if (date >= thirtyDaysAgo) {
+                const dateStr = date.toISOString().split('T')[0];
+                let durationSeconds = 0;
+
+                if (session.notes && typeof session.notes === 'object' && (session.notes as any).speaking_duration) {
+                    // Use tracked speaking duration (in ms)
+                    durationSeconds = (session.notes as any).speaking_duration / 1000;
+                } else if (session.recordings && Array.isArray(session.recordings)) {
+                    session.recordings.forEach((r: any) => {
+                        // duration is stored in milliseconds (from AudioRecorder)
+                        if (r.duration) durationSeconds += r.duration / 1000;
+                    });
+                }
+
+                // Fallback: If no recordings or duration, estimate 3 mins (180s) per session
+                if (durationSeconds === 0) durationSeconds = 180;
+
+                dailyDurationMap.set(dateStr, (dailyDurationMap.get(dateStr) || 0) + durationSeconds);
+            }
+        });
+
+        const cumulativeTime = [];
+        let runningTotalMinutes = 0;
+        // Reset date iterator
+        const loopDate = new Date(thirtyDaysAgo);
+        for (let d = loopDate; d <= now; d.setDate(d.getDate() + 1)) {
+            const dateStr = d.toISOString().split('T')[0];
+            const daySeconds = dailyDurationMap.get(dateStr) || 0;
+            const dayMinutes = Math.round(daySeconds / 60);
+            runningTotalMinutes += dayMinutes;
+
+            cumulativeTime.push({
+                date: dateStr,
+                minutes: runningTotalMinutes,
+                dayMinutes: dayMinutes
             });
         }
 
@@ -536,6 +588,95 @@ export async function GET(req: NextRequest) {
             .sort((a, b) => (b.interest + b.proficiency) - (a.interest + a.proficiency))
             .slice(0, 6); // Top 6 relevant themes
 
+
+
+        // --- Hourly Efficiency by Level (Efficiency vs Time) ---
+        const hourlyEfficiencyByLevel: Record<string, { totalScore: number; count: number }[]> = {};
+
+        // Helper to initialize level data if not exists
+        const initLevelData = (level: string) => {
+            if (!hourlyEfficiencyByLevel[level]) {
+                hourlyEfficiencyByLevel[level] = Array(24).fill(null).map(() => ({ totalScore: 0, count: 0 }));
+            }
+        };
+
+        if (shadowingAttempts) {
+            shadowingAttempts.forEach(attempt => {
+                if (!attempt.created_at) return;
+
+                const date = new Date(attempt.created_at);
+                const hour = date.getHours();
+                if (hour < 0 || hour >= 24) return;
+
+                // Determine Level
+                let level = 'Unknown';
+                if (attempt.level) {
+                    level = `L${attempt.level}`;
+                }
+
+                initLevelData(level);
+
+                // Calculate Efficiency Score (First Attempt Score)
+                let efficiencyScore = 0;
+
+                if (attempt.metrics && typeof attempt.metrics === 'object') {
+                    const metrics = attempt.metrics as any;
+
+                    // Strategy: Use 'firstScore' from sentenceScores if available
+                    if (metrics.sentenceScores && typeof metrics.sentenceScores === 'object') {
+                        const scores = Object.values(metrics.sentenceScores) as any[];
+                        if (scores.length > 0) {
+                            let totalFirstScore = 0;
+                            let validSentences = 0;
+
+                            scores.forEach(s => {
+                                // Prefer firstScore, fallback to score, fallback to 0
+                                const scoreVal = (typeof s.firstScore === 'number') ? s.firstScore : (typeof s.score === 'number' ? s.score : 0);
+                                totalFirstScore += scoreVal;
+                                validSentences++;
+                            });
+
+                            if (validSentences > 0) {
+                                // Normalize to 0-100 scale if it's 0-1
+                                // Assuming scores are 0-1 based on previous code analysis (e.g. 0.85)
+                                // But let's check if they are already 0-100. Usually they are 0-1 in code but displayed as %.
+                                // Let's assume 0-1 and multiply by 100. If > 1, assume 0-100.
+                                let avg = totalFirstScore / validSentences;
+                                if (avg <= 1) avg *= 100;
+                                efficiencyScore = avg;
+                            }
+                        } else {
+                            // Fallback to overall score if no sentence details
+                            let score = metrics.score || 0;
+                            if (score <= 1) score *= 100;
+                            efficiencyScore = score;
+                        }
+                    } else {
+                        // Fallback to overall score
+                        let score = metrics.score || 0;
+                        if (score <= 1) score *= 100;
+                        efficiencyScore = score;
+                    }
+                }
+
+                // Accumulate
+                hourlyEfficiencyByLevel[level][hour].totalScore += efficiencyScore;
+                hourlyEfficiencyByLevel[level][hour].count++;
+            });
+        }
+
+        // Format for frontend
+        const formattedHourlyEfficiency = Object.entries(hourlyEfficiencyByLevel).map(([level, data]) => {
+            return {
+                level,
+                data: data.map((d, h) => ({
+                    hour: h,
+                    efficiency: d.count > 0 ? Math.round(d.totalScore / d.count) : 0,
+                    count: d.count
+                }))
+            };
+        }).filter(group => group.data.some(d => d.count > 0)); // Only return levels with data
+
         return NextResponse.json({
             abilityRadar,
             recentAccuracy,
@@ -544,6 +685,9 @@ export async function GET(req: NextRequest) {
             difficultyTrend,
             vocabSweetSpot,
             interestVsProficiency,
+            hourlyDistribution: hourlyDistribution.map((count, hour) => ({ hour, count })),
+            hourlyEfficiencyByLevel: formattedHourlyEfficiency, // New Data
+            cumulativeTime,
             stats: {
                 totalAttempts,
                 totalDays: activityMap.size,

@@ -11,7 +11,11 @@ import { ScoreDistributionChart } from '@/components/stats/ScoreDistributionChar
 import { DifficultyTrendChart } from '@/components/stats/DifficultyTrendChart';
 import { VocabSweetSpotChart } from '@/components/stats/VocabSweetSpotChart';
 import { InterestProficiencyRadar } from '@/components/stats/InterestProficiencyRadar';
-import { ArrowLeft, Loader2, TrendingUp, Calendar, Target, PieChart as PieChartIcon, LineChart, Zap, Compass } from 'lucide-react';
+import { LearningInsights } from '@/components/stats/LearningInsights';
+import { PracticeHeatmap } from '@/components/stats/PracticeHeatmap';
+import { CumulativeTimeChart } from '@/components/stats/CumulativeTimeChart';
+import { EfficiencyTimeChart } from '@/components/stats/EfficiencyTimeChart';
+import { ArrowLeft, Loader2, TrendingUp, Calendar, Target, PieChart as PieChartIcon, LineChart, Zap, Compass, Clock } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation, useLanguage } from '@/contexts/LanguageContext';
 
@@ -55,6 +59,23 @@ interface StatsData {
         interest: number;
         proficiency: number;
         fullMark: number;
+    }>;
+    hourlyDistribution: Array<{
+        hour: number;
+        count: number;
+    }>;
+    cumulativeTime: Array<{
+        date: string;
+        minutes: number;
+        dayMinutes: number;
+    }>;
+    hourlyEfficiencyByLevel: Array<{
+        level: string;
+        data: Array<{
+            hour: number;
+            efficiency: number;
+            count: number;
+        }>;
     }>;
 }
 
@@ -186,6 +207,16 @@ export default function LearningStatsPage() {
                     </div>
                 </div>
 
+                {/* Learning Insights */}
+                {data && (
+                    <LearningInsights
+                        stats={data.stats}
+                        recentAccuracy={data.recentAccuracy}
+                        activityChart={data.activityChart}
+                        interestVsProficiency={data.interestVsProficiency}
+                    />
+                )}
+
                 {/* New Charts Row 1: Difficulty Trend & Vocab Sweet Spot */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Difficulty Trend */}
@@ -263,6 +294,50 @@ export default function LearningStatsPage() {
                         </div>
                         <ActivityChart data={data?.activityChart || []} />
                     </div>
+                </div>
+
+                {/* New Charts Row 3: Practice Heatmap & Cumulative Time */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Practice Heatmap */}
+                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '700ms' }}>
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-rose-50 rounded-lg">
+                                    <Clock className="w-5 h-5 text-rose-600" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900">练习时间分布</h2>
+                            </div>
+                            <span className="text-sm text-gray-400">24小时热力图</span>
+                        </div>
+                        <PracticeHeatmap data={data?.hourlyDistribution || []} />
+                    </div>
+
+                    {/* Cumulative Time */}
+                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '800ms' }}>
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-sky-50 rounded-lg">
+                                    <TrendingUp className="w-5 h-5 text-sky-600" />
+                                </div>
+                                <h2 className="text-xl font-bold text-gray-900">累计开口时长</h2>
+                            </div>
+                            <span className="text-sm text-gray-400">过去30天</span>
+                        </div>
+                        <CumulativeTimeChart data={data?.cumulativeTime || []} />
+                    </div>
+                </div>
+            </div>
+
+            {/* New Charts Row 4: Efficiency Analysis */}
+            <div className="grid grid-cols-1 gap-8">
+                <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '900ms' }}>
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="p-2 bg-yellow-50 rounded-lg">
+                            <Zap className="w-5 h-5 text-yellow-600" />
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-900">{(t.stats as any).efficiency_analysis || '学习效率分析'}</h2>
+                    </div>
+                    <EfficiencyTimeChart data={data?.hourlyEfficiencyByLevel || []} />
                 </div>
             </div>
         </div>
