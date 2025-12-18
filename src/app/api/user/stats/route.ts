@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
         // Fetch Shadowing Attempts
         let query = supabase
             .from('shadowing_attempts')
-            .select('id, created_at, metrics, item_id, lang')
+            .select('id, created_at, metrics, item_id, lang, level')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(1000); // Limit to recent 1000 attempts for performance
@@ -590,6 +590,93 @@ export async function GET(req: NextRequest) {
 
 
 
+        // --- Hourly Efficiency by Level (Efficiency vs Time) ---
+        const hourlyEfficiencyByLevel: Record<string, { totalScore: number; count: number }[]> = {};
+
+        // Helper to initialize level data if not exists
+        const initLevelData = (level: string) => {
+            if (!hourlyEfficiencyByLevel[level]) {
+                hourlyEfficiencyByLevel[level] = Array(24).fill(null).map(() => ({ totalScore: 0, count: 0 }));
+            }
+        };
+
+        if (shadowingAttempts) {
+            shadowingAttempts.forEach(attempt => {
+                if (!attempt.created_at) return;
+
+                const date = new Date(attempt.created_at);
+                const hour = date.getHours();
+                if (hour < 0 || hour >= 24) return;
+
+                // Determine Level
+                let level = 'Unknown';
+                if (attempt.level) {
+                    level = `L${attempt.level}`;
+                }
+
+                initLevelData(level);
+
+                // Calculate Efficiency Score (First Attempt Score)
+                let efficiencyScore = 0;
+
+                if (attempt.metrics && typeof attempt.metrics === 'object') {
+                    const metrics = attempt.metrics as any;
+
+                    // Strategy: Use 'firstScore' from sentenceScores if available
+                    if (metrics.sentenceScores && typeof metrics.sentenceScores === 'object') {
+                        const scores = Object.values(metrics.sentenceScores) as any[];
+                        if (scores.length > 0) {
+                            let totalFirstScore = 0;
+                            let validSentences = 0;
+
+                            scores.forEach(s => {
+                                // Prefer firstScore, fallback to score, fallback to 0
+                                const scoreVal = (typeof s.firstScore === 'number') ? s.firstScore : (typeof s.score === 'number' ? s.score : 0);
+                                totalFirstScore += scoreVal;
+                                validSentences++;
+                            });
+
+                            if (validSentences > 0) {
+                                // Normalize to 0-100 scale if it's 0-1
+                                // Assuming scores are 0-1 based on previous code analysis (e.g. 0.85)
+                                // But let's check if they are already 0-100. Usually they are 0-1 in code but displayed as %.
+                                // Let's assume 0-1 and multiply by 100. If > 1, assume 0-100.
+                                let avg = totalFirstScore / validSentences;
+                                if (avg <= 1) avg *= 100;
+                                efficiencyScore = avg;
+                            }
+                        } else {
+                            // Fallback to overall score if no sentence details
+                            let score = metrics.score || 0;
+                            if (score <= 1) score *= 100;
+                            efficiencyScore = score;
+                        }
+                    } else {
+                        // Fallback to overall score
+                        let score = metrics.score || 0;
+                        if (score <= 1) score *= 100;
+                        efficiencyScore = score;
+                    }
+                }
+
+                // Accumulate
+                hourlyEfficiencyByLevel[level][hour].totalScore += efficiencyScore;
+                hourlyEfficiencyByLevel[level][hour].count++;
+            });
+        }
+
+        // Format for frontend
+        const formattedHourlyEfficiency = Object.entries(hourlyEfficiencyByLevel).map(([level, data]) => {
+            return {
+                level,
+                data: data.map((d, h) => ({
+                    hour: h,
+                    efficiency: d.count > 0 ? Math.round(d.totalScore / d.count) : 0,
+                    count: d.count
+                }))
+            };
+        }).filter(group => group.data.some(d => d.count > 0)); // Only return levels with data
+
         return NextResponse.json({
             abilityRadar,
             recentAccuracy,
@@ -599,6 +686,7 @@ export async function GET(req: NextRequest) {
             vocabSweetSpot,
             interestVsProficiency,
             hourlyDistribution: hourlyDistribution.map((count, hour) => ({ hour, count })),
+            hourlyEfficiencyByLevel: formattedHourlyEfficiency, // New Data
             cumulativeTime,
             stats: {
                 totalAttempts,

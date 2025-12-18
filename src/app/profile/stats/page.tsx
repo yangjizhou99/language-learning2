@@ -14,6 +14,7 @@ import { InterestProficiencyRadar } from '@/components/stats/InterestProficiency
 import { LearningInsights } from '@/components/stats/LearningInsights';
 import { PracticeHeatmap } from '@/components/stats/PracticeHeatmap';
 import { CumulativeTimeChart } from '@/components/stats/CumulativeTimeChart';
+import { EfficiencyTimeChart } from '@/components/stats/EfficiencyTimeChart';
 import { ArrowLeft, Loader2, TrendingUp, Calendar, Target, PieChart as PieChartIcon, LineChart, Zap, Compass, Clock } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation, useLanguage } from '@/contexts/LanguageContext';
@@ -67,6 +68,14 @@ interface StatsData {
         date: string;
         minutes: number;
         dayMinutes: number;
+    }>;
+    hourlyEfficiencyByLevel: Array<{
+        level: string;
+        data: Array<{
+            hour: number;
+            efficiency: number;
+            count: number;
+        }>;
     }>;
 }
 
@@ -316,6 +325,19 @@ export default function LearningStatsPage() {
                         </div>
                         <CumulativeTimeChart data={data?.cumulativeTime || []} />
                     </div>
+                </div>
+            </div>
+
+            {/* New Charts Row 4: Efficiency Analysis */}
+            <div className="grid grid-cols-1 gap-8">
+                <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '900ms' }}>
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="p-2 bg-yellow-50 rounded-lg">
+                            <Zap className="w-5 h-5 text-yellow-600" />
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-900">{(t.stats as any).efficiency_analysis || '学习效率分析'}</h2>
+                    </div>
+                    <EfficiencyTimeChart data={data?.hourlyEfficiencyByLevel || []} />
                 </div>
             </div>
         </div>
