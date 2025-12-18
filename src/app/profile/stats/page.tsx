@@ -10,7 +10,7 @@ import { RecentAccuracyChart } from '@/components/stats/RecentAccuracyChart';
 import { ScoreDistributionChart } from '@/components/stats/ScoreDistributionChart';
 import { DifficultyTrendChart } from '@/components/stats/DifficultyTrendChart';
 import { VocabSweetSpotChart } from '@/components/stats/VocabSweetSpotChart';
-import { InterestProficiencyRadar } from '@/components/stats/InterestProficiencyRadar';
+
 import { LearningInsights } from '@/components/stats/LearningInsights';
 import { PracticeHeatmap } from '@/components/stats/PracticeHeatmap';
 import { CumulativeTimeChart } from '@/components/stats/CumulativeTimeChart';
@@ -33,6 +33,7 @@ interface StatsData {
         score: number;
         accuracy: number;
         count: number;
+        interest: number;
         fullMark: number;
     }>;
     activityChart: Array<{
@@ -249,30 +250,23 @@ export default function LearningStatsPage() {
                 </div>
 
                 {/* New Charts Row 2: Interest vs Proficiency */}
+                {/* Ability Radar (Merged with Interest) */}
+                {/* New Charts Row 2: Ability Radar (Merged) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Interest vs Proficiency */}
-                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '350ms' }}>
+                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '400ms' }}>
                         <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-amber-50 rounded-lg">
                                     <Compass className="w-5 h-5 text-amber-600" />
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900">兴趣 vs 能力</h2>
+                                <h2 className="text-xl font-bold text-gray-900">能力 vs 兴趣</h2>
                             </div>
-                            <span className="text-sm text-gray-400">想练的 vs 擅长的</span>
-                        </div>
-                        <InterestProficiencyRadar data={data?.interestVsProficiency || []} />
-                    </div>
-
-                    {/* Ability Radar (Existing) */}
-                    <div className="bg-white p-8 rounded-3xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 animate-in fade-in slide-in-from-bottom-8 fill-mode-backwards" style={{ animationDelay: '400ms' }}>
-                        <div className="flex items-center justify-between mb-8">
-                            <h2 className="text-xl font-bold text-gray-900">{t.stats.ability_radar}</h2>
-                            <span className="text-sm text-gray-400">{t.stats.ability_radar_desc}</span>
+                            <span className="text-sm text-gray-400">擅长的 vs 想练的</span>
                         </div>
                         <AbilityRadar data={data?.abilityRadar || []} />
                     </div>
                 </div>
+
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Score Distribution */}
@@ -340,6 +334,6 @@ export default function LearningStatsPage() {
                     <EfficiencyTimeChart data={data?.hourlyEfficiencyByLevel || []} />
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

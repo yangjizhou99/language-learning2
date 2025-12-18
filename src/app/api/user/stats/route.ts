@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { getUserPreferenceVectorsCached } from '@/lib/recommendation/preferences';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -146,6 +147,21 @@ export async function GET(req: NextRequest) {
 
         // 3. Process Data
 
+        // Fetch Profile for Preferences and Vocab Rate
+        // Fetch Profile for Vocab Rate (keep this for vocab rate)
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('vocab_unknown_rate')
+            .eq('id', user.id)
+            .single();
+
+        const userVocabRate = profile?.vocab_unknown_rate || { A1_A2: 0, B1_B2: 0, C1_plus: 0 };
+
+        // Fetch Real Theme Preferences via Service
+        const preferenceVectors = await getUserPreferenceVectorsCached(user.id);
+        const themePreferencesMap = preferenceVectors?.themeMap || new Map();
+
+
         // --- Ability Radar ---
         // Scene Score = Sum(Attempt Score * Theme-Scene Weight) / Sum(Theme-Scene Weight)
         // We need to track total weighted score and total weight for each scene.
@@ -195,14 +211,43 @@ export async function GET(req: NextRequest) {
             const count = Math.round(stats.rawCount * 10) / 10; // Round to 1 decimal
 
             // Bayesian-like Mastery Score
-            // If count is low, score is suppressed.
-            // If count is high, score approaches accuracy.
-            // const masteryScore = accuracy * (count / (count + K));
-            // Use simple average for now as requested by user previously? 
-            // Actually user wanted "Accuracy" and "Count". 
-            // Let's stick to the previous logic but maybe refine if needed.
-            // For now, let's keep the mastery score logic as it seems robust.
             const masteryScore = accuracy * (count / (count + K));
+
+            // Calculate Interest for this scene
+            // We look at which themes use this scene (via themeVectorsMap)
+            // and average their interest (preference weight).
+            // Note: themeVectorsMap is theme_id -> [{scene_id, weight}]
+            // We need reverse mapping: scene_id -> [{theme_id, weight}]
+            // Or just iterate themes and check if they use this scene.
+            // Since we have themeVectorsMap, let's iterate it.
+            let avgInterest = 30;
+            const directSceneWeight = preferenceVectors?.sceneMap?.get(sceneId);
+
+            if (directSceneWeight !== undefined) {
+                // If we have direct scene preference, use it directly
+                avgInterest = Math.round(directSceneWeight * 100);
+            } else {
+                // Fallback: Calculate weighted average from themes
+                let totalInterestWeight = 0;
+                let totalInterest = 0;
+
+                themeVectorsMap.forEach((vectors, themeId) => {
+                    const vector = vectors.find((v: any) => v.scene_id === sceneId);
+                    if (vector) {
+                        // Get theme weight
+                        const weight = themePreferencesMap.get(themeId);
+                        const interestVal = (weight !== undefined) ? Math.round(weight * 100) : 30;
+
+                        // Weight by the scene's relevance to the theme
+                        totalInterest += interestVal * vector.weight;
+                        totalInterestWeight += vector.weight;
+                    }
+                });
+
+                if (totalInterestWeight > 0) {
+                    avgInterest = Math.round(totalInterest / totalInterestWeight);
+                }
+            }
 
             return {
                 scene_id: sceneId,
@@ -210,6 +255,7 @@ export async function GET(req: NextRequest) {
                 score: Math.round(masteryScore), // Display Score (Mastery)
                 accuracy: Math.round(accuracy),  // True Accuracy
                 count: count,                    // Effective Practice Count
+                interest: avgInterest,           // Interest Level
                 fullMark: 100
             };
         }).sort((a, b) => b.score - a.score).slice(0, 12); // Top 12 scenes (User has ~10)
@@ -505,14 +551,7 @@ export async function GET(req: NextRequest) {
         // We need to estimate unknown rate for each session item
         // Since we don't store historical user vocab rate, we use current rate as approximation
         // or just use the item level mapping logic.
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('vocab_unknown_rate, theme_preferences')
-            .eq('id', user.id)
-            .single();
 
-        const userVocabRate = profile?.vocab_unknown_rate || { A1_A2: 0, B1_B2: 0, C1_plus: 0 };
-        const themePreferences = profile?.theme_preferences || {};
 
         const vocabSweetSpot = shadowingAttempts
             .slice(0, 100)
@@ -543,7 +582,7 @@ export async function GET(req: NextRequest) {
         // --- Interest vs Proficiency ---
         // Radar chart comparing "Interest" (Theme Preference Weight) vs "Proficiency" (Avg Score for Theme)
         // We iterate over all themes found in attempts + preferences
-        const allThemeIds = new Set([...themeIds, ...Object.keys(themePreferences)]);
+        const allThemeIds = new Set([...themeIds, ...Array.from(themePreferencesMap.keys())]);
 
         // Fetch theme titles if not already in itemsMap
         // We might need to fetch all themes to get titles for preferences that haven't been practiced
@@ -556,8 +595,8 @@ export async function GET(req: NextRequest) {
 
         const interestVsProficiency = Array.from(allThemeIds).map(themeId => {
             // Interest: Preference Weight (0-1) -> 0-100
-            const pref = themePreferences[themeId];
-            const interest = pref?.weight ? Math.round(pref.weight * 100) : 30; // Default 30 if no pref
+            const weight = themePreferencesMap.get(themeId);
+            const interest = (weight !== undefined) ? Math.round(weight * 100) : 30; // Default 30 if no pref
 
             // Proficiency: Avg Score for this theme
             const themeAttempts = shadowingAttempts.filter(a => {

@@ -21,6 +21,7 @@ export type UserPreferenceVectors = {
   subtopics: SubtopicPreference[]; // 目前不使用，保持为空以兼容调用方
   themeMap: Map<string, number>;
   subtopicMap: Map<string, number>;
+  sceneMap: Map<string, number>; // Direct scene preferences
 };
 
 // 内部使用的行类型
@@ -85,6 +86,7 @@ export async function getUserPreferenceVectors(
     subtopics: [],
     themeMap: new Map(),
     subtopicMap: new Map(),
+    sceneMap: new Map(),
   };
 }
 
@@ -291,6 +293,7 @@ async function loadPreferenceVectors(
     subtopics: [],
     themeMap,
     subtopicMap: new Map(),
+    sceneMap,
   };
 }
 
