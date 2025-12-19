@@ -2,11 +2,18 @@
  * Lex Profile Analyzer - Advanced NLP Version
  * Uses professional NLP libraries for accurate tokenization and lemmatization.
  * - English: compromise.js (lemmatization + POS tagging)
- * - Japanese: kuromoji (morphological analysis + basic form)
+ * - Japanese: kuromoji (default), TinySegmenter, or budoux (configurable)
  * - Chinese: jieba (word segmentation)
  */
 
 import { BroadCEFR } from './difficulty';
+
+// Japanese tokenizer options
+export type JaTokenizer = 'kuromoji' | 'tinysegmenter' | 'budoux';
+
+// TinySegmenter and budoux for alternative Japanese tokenization
+import TinySegmenter from 'tiny-segmenter';
+import { loadDefaultJapaneseParser } from 'budoux';
 
 // Vocabulary data - loaded from JSON files
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -326,6 +333,148 @@ async function getKuromojiTokenizer(): Promise<KuromojiTokenizer> {
     })();
 
     return kuromojiLoading;
+}
+
+// TinySegmenter instance (lazy-loaded)
+let tinySegmenterInstance: TinySegmenter | null = null;
+
+function getTinySegmenter(): TinySegmenter {
+    if (!tinySegmenterInstance) {
+        tinySegmenterInstance = new TinySegmenter();
+    }
+    return tinySegmenterInstance;
+}
+
+// budoux parser (lazy-loaded)
+let budouxParser: ReturnType<typeof loadDefaultJapaneseParser> | null = null;
+
+function getBudouxParser() {
+    if (!budouxParser) {
+        budouxParser = loadDefaultJapaneseParser();
+    }
+    return budouxParser;
+}
+
+/**
+ * Tokenize Japanese using TinySegmenter (lightweight, less accurate)
+ */
+function tokenizeWithTinySegmenter(text: string, dict: Map<string, string>): TokenInfo[] {
+    const segmenter = getTinySegmenter();
+    const segments = segmenter.segment(text);
+
+    return segments
+        .filter(seg => seg.trim().length > 0)
+        .map(segment => {
+            const level = dict.get(segment) || customDictionary[segment];
+
+            // Check LLM rules
+            let finalLevel = level;
+            if (!finalLevel) {
+                const llmRules = getLLMRulesSync();
+                const llmEntry = llmRules.vocab[segment];
+                if (llmEntry?.level) {
+                    finalLevel = llmEntry.level;
+                }
+            }
+
+            // Simple heuristic for content word detection (has kanji or katakana)
+            const hasKanji = /[\u4e00-\u9faf]/.test(segment);
+            const hasKatakana = /[\u30a0-\u30ff]/.test(segment);
+            const isHiraganaOnly = /^[\u3040-\u309f]+$/.test(segment);
+            const isContentWord = hasKanji || hasKatakana || (isHiraganaOnly && segment.length >= 3);
+
+            // Check grammar rules for non-content words
+            let grammarLevel: string | undefined;
+            if (!isContentWord) {
+                grammarLevel = grammarLevelMap.get(segment);
+                if (!grammarLevel) {
+                    const llmRules = getLLMRulesSync();
+                    const llmGrammarEntry = llmRules.grammar[segment];
+                    if (llmGrammarEntry?.level) {
+                        grammarLevel = llmGrammarEntry.level;
+                    }
+                }
+            }
+
+            let levelLabel: string;
+            if (!isContentWord) {
+                levelLabel = grammarLevel ? `grammar (${grammarLevel})` : 'grammar';
+            } else if (finalLevel) {
+                levelLabel = finalLevel;
+            } else {
+                levelLabel = 'unknown';
+            }
+
+            return {
+                token: segment,
+                lemma: segment, // TinySegmenter doesn't provide lemmas
+                pos: isContentWord ? 'Content' : 'Function',
+                originalLevel: levelLabel,
+                broadCEFR: (isContentWord && finalLevel) ? mapToBroadCEFR(finalLevel, 'ja') : 'unknown',
+                isContentWord,
+            };
+        });
+}
+
+/**
+ * Tokenize Japanese using budoux (Google ML-based, better for modern Japanese)
+ */
+function tokenizeWithBudoux(text: string, dict: Map<string, string>): TokenInfo[] {
+    const parser = getBudouxParser();
+    const segments = parser.parse(text);
+
+    return segments
+        .filter(seg => seg.trim().length > 0)
+        .map(segment => {
+            const level = dict.get(segment) || customDictionary[segment];
+
+            // Check LLM rules
+            let finalLevel = level;
+            if (!finalLevel) {
+                const llmRules = getLLMRulesSync();
+                const llmEntry = llmRules.vocab[segment];
+                if (llmEntry?.level) {
+                    finalLevel = llmEntry.level;
+                }
+            }
+
+            // Heuristic for content word detection
+            const hasKanji = /[\u4e00-\u9faf]/.test(segment);
+            const hasKatakana = /[\u30a0-\u30ff]/.test(segment);
+            const isHiraganaOnly = /^[\u3040-\u309f]+$/.test(segment);
+            const isContentWord = hasKanji || hasKatakana || (isHiraganaOnly && segment.length >= 3);
+
+            // Check grammar rules
+            let grammarLevel: string | undefined;
+            if (!isContentWord) {
+                grammarLevel = grammarLevelMap.get(segment);
+                if (!grammarLevel) {
+                    const llmRules = getLLMRulesSync();
+                    const llmGrammarEntry = llmRules.grammar[segment];
+                    if (llmGrammarEntry?.level) {
+                        grammarLevel = llmGrammarEntry.level;
+                    }
+                }
+            }
+
+            let levelLabel: string;
+            if (!isContentWord) {
+                levelLabel = grammarLevel ? `grammar (${grammarLevel})` : 'grammar';
+            } else if (finalLevel) {
+                levelLabel = finalLevel;
+            } else {
+                levelLabel = 'unknown';
+            }
+
+            return {
+                token: segment,
+                lemma: segment, // budoux doesn't provide lemmas
+                pos: isContentWord ? 'Content' : 'Function',
+                originalLevel: levelLabel,
+                broadCEFR: (isContentWord && finalLevel) ? mapToBroadCEFR(finalLevel, 'ja') : 'unknown',
+                isContentWord,
+            };
+        });
 }
 
 /**
@@ -846,8 +995,15 @@ function removeDialogueIdentifiers(text: string): string {
 
 /**
  * Main analysis function (async for Japanese kuromoji)
+ * @param text - Text to analyze
+ * @param lang - Language (en, ja, zh)
+ * @param jaTokenizer - Japanese tokenizer to use (kuromoji, tinysegmenter, budoux) - default: kuromoji
  */
-export async function analyzeLexProfileAsync(text: string, lang: SupportedLang): Promise<LexProfileResult> {
+export async function analyzeLexProfileAsync(
+    text: string,
+    lang: SupportedLang,
+    jaTokenizer: JaTokenizer = 'kuromoji'
+): Promise<LexProfileResult> {
     // Step 0: Normalize text by removing dialogue identifiers
     const cleanText = removeDialogueIdentifiers(text);
 
@@ -864,7 +1020,19 @@ export async function analyzeLexProfileAsync(text: string, lang: SupportedLang):
             tokenInfoList = tokenizeEnglish(cleanText, dict);
             break;
         case 'ja':
-            tokenInfoList = await tokenizeJapaneseAsync(cleanText, dict);
+            // Route to selected Japanese tokenizer
+            switch (jaTokenizer) {
+                case 'tinysegmenter':
+                    tokenInfoList = tokenizeWithTinySegmenter(cleanText, dict);
+                    break;
+                case 'budoux':
+                    tokenInfoList = tokenizeWithBudoux(cleanText, dict);
+                    break;
+                case 'kuromoji':
+                default:
+                    tokenInfoList = await tokenizeJapaneseAsync(cleanText, dict);
+                    break;
+            }
             break;
         case 'zh':
             tokenInfoList = tokenizeChinese(cleanText, dict);

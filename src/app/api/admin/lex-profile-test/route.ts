@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { analyzeLexProfileAsync, toLexProfileForDB, getDictionarySize, SupportedLang } from '@/lib/recommendation/lexProfileAnalyzer';
+import { analyzeLexProfileAsync, toLexProfileForDB, getDictionarySize, SupportedLang, JaTokenizer } from '@/lib/recommendation/lexProfileAnalyzer';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { text, lang } = body;
+        const { text, lang, jaTokenizer } = body;
 
         if (!text || typeof text !== 'string') {
             return NextResponse.json({ error: 'text is required' }, { status: 400 });
@@ -56,8 +56,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'lang must be en, ja, or zh' }, { status: 400 });
         }
 
-        // Analyze the text with async version (supports kuromoji for Japanese)
-        const result = await analyzeLexProfileAsync(text, lang as SupportedLang);
+        // Validate jaTokenizer if provided
+        const validTokenizers: JaTokenizer[] = ['kuromoji', 'tinysegmenter', 'budoux'];
+        const selectedTokenizer: JaTokenizer = validTokenizers.includes(jaTokenizer) ? jaTokenizer : 'kuromoji';
+
+        // Analyze the text with async version (supports multiple Japanese tokenizers)
+        const result = await analyzeLexProfileAsync(text, lang as SupportedLang, selectedTokenizer);
         const lexProfileForDB = toLexProfileForDB(result);
         const dictSize = getDictionarySize(lang as SupportedLang);
 

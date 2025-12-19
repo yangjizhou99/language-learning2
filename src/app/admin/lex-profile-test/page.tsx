@@ -113,6 +113,9 @@ export default function LexProfileTestPage() {
     const [isSavingRules, setIsSavingRules] = useState(false);
     const [savedRulesCount, setSavedRulesCount] = useState<{ vocab: number; grammar: number }>({ vocab: 0, grammar: 0 });
 
+    // Japanese tokenizer selection
+    const [jaTokenizer, setJaTokenizer] = useState<'kuromoji' | 'tinysegmenter' | 'budoux'>('kuromoji');
+
     useEffect(() => {
         const fetchDbItems = async () => {
             setLoadingDbItems(true);
@@ -161,7 +164,7 @@ export default function LexProfileTestPage() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${session.access_token}`,
                 },
-                body: JSON.stringify({ text, lang }),
+                body: JSON.stringify({ text, lang, jaTokenizer }),
             });
 
             const data = await res.json();
@@ -470,6 +473,24 @@ export default function LexProfileTestPage() {
                                         <option value="zh">中文</option>
                                     </select>
                                 </div>
+                                {/* Japanese tokenizer selector - only show when Japanese is selected */}
+                                {lang === 'ja' && (
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">
+                                            日语分词器
+                                            <span className="text-xs text-gray-500 ml-2">(可切换对比效果)</span>
+                                        </label>
+                                        <select
+                                            value={jaTokenizer}
+                                            onChange={(e) => setJaTokenizer(e.target.value as 'kuromoji' | 'tinysegmenter' | 'budoux')}
+                                            className="w-full p-2 border rounded"
+                                        >
+                                            <option value="kuromoji">Kuromoji (默认，完整形态素分析)</option>
+                                            <option value="tinysegmenter">TinySegmenter (轻量级)</option>
+                                            <option value="budoux">Budoux (Google ML模型)</option>
+                                        </select>
+                                    </div>
+                                )}
                                 <div>
                                     <label className="block text-sm font-medium mb-1">文本内容</label>
                                     <textarea
