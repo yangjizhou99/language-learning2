@@ -76,6 +76,36 @@ ${unrecognizedGrammar?.map(g => `- ${g}`).join('\n') || '无'}
 2. 判定 JLPT 等级。`;
         break;
 
+      case 'level_assignment':
+        // Focused task for assigning JLPT levels to unknown tokens
+        systemPrompt = `你是日语JLPT分级专家。任务：为未识别等级的词汇和语法项分配JLPT等级。
+只输出 JSON，必须符合 schema。
+Schema: {
+  "vocab_entries": [
+    {"surface": "string", "reading": "string", "definition": "string", "jlpt": "N1"|"N2"|"N3"|"N4"|"N5"}
+  ],
+  "grammar_chunks": [
+    {"surface": "string", "canonical": "string", "jlpt": "N1"|"N2"|"N3"|"N4"|"N5", "definition": "string"}
+  ],
+  "confidence": number
+}
+
+注意：
+- jlpt 字段必须是 N1, N2, N3, N4, N5 之一
+- 如果词汇是复合词或派生词，根据其复杂度判断等级
+- 如果是口语表达或俗语，通常为 N2 或 N3
+- 如果无法确定，基于词汇的使用频率和复杂度进行合理推测`;
+        userPrompt = `原文上下文：${text}
+
+需要分配JLPT等级的词汇（目前标记为unknown）：
+${unknownTokens.map(t => `- ${t}`).join('\n') || '无'}
+
+需要分配JLPT等级的语法项（目前未分级）：
+${unrecognizedGrammar?.map(g => `- ${g}`).join('\n') || '无'}
+
+请为每个项目分配合适的JLPT等级（N1-N5），并提供简短定义。`;
+        break;
+
       default:
         // Fallback to original "all-in-one" behavior if task is missing (backward compatibility)
         systemPrompt = `你是日语文本的“最小修复器”。任务：修复分词错误、定义生词、分析语法。

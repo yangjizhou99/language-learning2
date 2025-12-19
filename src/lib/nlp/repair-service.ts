@@ -10,7 +10,7 @@ export interface RepairAction {
     notes?: string;
 }
 
-export type RepairTask = 'token_repair' | 'vocab_definition' | 'grammar_analysis';
+export type RepairTask = 'token_repair' | 'vocab_definition' | 'grammar_analysis' | 'level_assignment';
 
 export interface RepairRequest {
     task: RepairTask;
@@ -57,9 +57,8 @@ export function diagnoseNeedsRepair(tokens: TokenInfo[]): boolean {
         (t.token.includes('てる') && t.token.length > 5 && t.pos === 'Unknown')
     );
 
-    // Check for any unknown words or unrecognized grammar (as requested)
+    // Check for any unknown words (function doesn't have access to unrecognizedGrammar)
     const hasUnknownWords = unknownTokens.length > 0;
-    const hasUnrecognizedGrammar = unrecognizedGrammar.length > 0;
 
-    return hasStuckTokens || hasBrokenPatterns || hasUnknownWords || hasUnrecognizedGrammar;
+    return hasStuckTokens || hasBrokenPatterns || hasUnknownWords;
 }

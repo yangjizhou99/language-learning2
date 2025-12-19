@@ -1,0 +1,184 @@
+{
+  "伝統的": {
+    "level": "N3",
+    "reading": "でんとうてき",
+    "definition": "traditional",
+    "source": "llm",
+    "createdAt": "2025-12-19T13:46:07.523Z"
+  },
+  "侘び": {
+    "level": "N1",
+    "reading": "わび",
+    "definition": "aesthetic of rustic simplicity and quietness",
+    "source": "llm",
+    "createdAt": "2025-12-19T13:46:07.523Z"
+  },
+  "寂び": {
+    "level": "N1",
+    "reading": "さび",
+    "definition": "aesthetic of aged beauty and tranquility",
+    "source": "llm",
+    "createdAt": "2025-12-19T13:46:07.523Z"
+  },
+  "美学": {
+    "level": "N2",
+    "reading": "びがく",
+    "definition": "aesthetics",
+    "source": "llm",
+    "createdAt": "2025-12-19T13:46:07.523Z"
+  },
+  "茶道": {
+    "level": "N3",
+    "reading": "さどう",
+    "definition": "tea ceremony",
+    "source": "llm",
+    "createdAt": "2025-12-19T13:46:07.523Z"
+  },
+  "華道": {
+    "level": "N3",
+    "reading": "かどう",
+    "definition": "flower arrangement",
+    "source": "llm",
+    "createdAt": "2025-12-19T13:46:07.523Z"
+  },
+  "研ぎ澄まし": {
+    "level": "N2",
+    "reading": "とぎすまし",
+    "definition": "sharpening or refining (mind, senses)",
+    "source": "llm",
+    "createdAt": "2025-12-19T13:46:07.523Z"
+  },
+  "精進する": {
+    "level": "N2",
+    "reading": "しょうじんする",
+    "definition": "to devote oneself, to strive",
+    "source": "llm",
+    "createdAt": "2025-12-19T13:46:07.523Z"
+  },
+  "肝要": {
+    "level": "N1",
+    "reading": "かんよう",
+    "definition": "essential, crucial",
+    "source": "llm",
+    "createdAt": "2025-12-19T13:46:07.523Z"
+  },
+  "本日": {
+    "level": "N3",
+    "reading": "ほんじつ",
+    "definition": "today (formal)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "連携": {
+    "level": "N2",
+    "reading": "れんけい",
+    "definition": "cooperation, collaboration",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "お話": {
+    "level": "N5",
+    "reading": "おはなし",
+    "definition": "talk, story (polite)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "連携する": {
+    "level": "N2",
+    "reading": "れんけいする",
+    "definition": "to cooperate, to collaborate",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "具体的": {
+    "level": "N3",
+    "reading": "ぐたいてき",
+    "definition": "concrete, specific",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "取り組み": {
+    "level": "N2",
+    "reading": "とりくみ",
+    "definition": "effort, initiative, approach",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "高齢": {
+    "level": "N3",
+    "reading": "こうれい",
+    "definition": "advanced age, elderly",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "見守り": {
+    "level": "N3",
+    "reading": "みまもり",
+    "definition": "watching over, supervision",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "発信する": {
+    "level": "N2",
+    "reading": "はっしんする",
+    "definition": "to transmit, to send out",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "重要性": {
+    "level": "N3",
+    "reading": "じゅうようせい",
+    "definition": "importance",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "社会的": {
+    "level": "N3",
+    "reading": "しゃかいてき",
+    "definition": "social",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "認知": {
+    "level": "N2",
+    "reading": "にんち",
+    "definition": "recognition, awareness",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "視聴": {
+    "level": "N2",
+    "reading": "しちょう",
+    "definition": "viewing (TV, etc.)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "一人ひとり": {
+    "level": "N3",
+    "reading": "ひとりひとり",
+    "definition": "each individual, one by one",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "つながる": {
+    "level": "N4",
+    "reading": "つながる",
+    "definition": "to be connected, to lead to",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "多く": {
+    "level": "N5",
+    "reading": "おおく",
+    "definition": "many, much",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "お願いし": {
+    "level": "N5",
+    "reading": "おねがいし",
+    "definition": "to request, to ask (polite)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  }
+}

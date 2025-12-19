@@ -16,6 +16,58 @@ const zhHsk = require('@/data/vocab/zh-hsk.json') as Record<string, string>;
 
 // Grammar pattern data (YAPAN - 667 patterns)
 const jaGrammarPatterns = require('@/data/grammar/ja-grammar-jlpt.json') as GrammarPattern[];
+
+// LLM-discovered rules (loaded dynamically for hot-reload support)
+let llmVocabRulesCache: Record<string, { level: string }> | null = null;
+let llmGrammarRulesCache: Record<string, { level: string }> | null = null;
+let llmRulesLastLoad: number = 0;
+const LLM_RULES_CACHE_TTL = 5000; // 5 seconds cache
+
+async function loadLLMRules(): Promise<{ vocab: Record<string, { level: string }>, grammar: Record<string, { level: string }> }> {
+    const now = Date.now();
+    if (llmVocabRulesCache && llmGrammarRulesCache && (now - llmRulesLastLoad) < LLM_RULES_CACHE_TTL) {
+        return { vocab: llmVocabRulesCache, grammar: llmGrammarRulesCache };
+    }
+
+    try {
+        // Dynamic import for file system access (server-side only)
+        const fs = await import('fs/promises');
+        const path = await import('path');
+
+        const vocabPath = path.join(process.cwd(), 'src', 'data', 'vocab', 'llm-vocab-rules.json');
+        const grammarPath = path.join(process.cwd(), 'src', 'data', 'grammar', 'llm-grammar-rules.json');
+
+        let vocab: Record<string, { level: string }> = {};
+        let grammar: Record<string, { level: string }> = {};
+
+        try {
+            const vocabContent = await fs.readFile(vocabPath, 'utf-8');
+            vocab = JSON.parse(vocabContent);
+        } catch { /* File might not exist yet */ }
+
+        try {
+            const grammarContent = await fs.readFile(grammarPath, 'utf-8');
+            grammar = JSON.parse(grammarContent);
+        } catch { /* File might not exist yet */ }
+
+        llmVocabRulesCache = vocab;
+        llmGrammarRulesCache = grammar;
+        llmRulesLastLoad = now;
+
+        return { vocab, grammar };
+    } catch {
+        // Fallback for client-side or error cases
+        return { vocab: {}, grammar: {} };
+    }
+}
+
+// Synchronous version using cached values
+function getLLMRulesSync(): { vocab: Record<string, { level: string }>, grammar: Record<string, { level: string }> } {
+    return {
+        vocab: llmVocabRulesCache || {},
+        grammar: llmGrammarRulesCache || {},
+    };
+}
 /* eslint-enable @typescript-eslint/no-var-requires */
 
 // Grammar pattern interface (from YAPAN)
@@ -583,6 +635,15 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
                 // Check custom dictionary first
                 originalLevel = customDictionary[basicForm] || customDictionary[surface];
 
+                // Check LLM-discovered rules (cached from async load)
+                if (!originalLevel) {
+                    const llmRules = getLLMRulesSync();
+                    const llmVocabEntry = llmRules.vocab[basicForm] || llmRules.vocab[surface];
+                    if (llmVocabEntry?.level) {
+                        originalLevel = llmVocabEntry.level;
+                    }
+                }
+
                 if (!originalLevel) {
                     // For content words, try lemma first, then surface
                     originalLevel = dict.get(basicForm);
@@ -590,8 +651,6 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
                         originalLevel = dict.get(surface);
                     }
                 }
-
-                // Special handling for merged Sa-hen verbs (e.g. "利用する")
 
                 // Special handling for merged Sa-hen verbs (e.g. "利用する")
                 // If "利用する" is not found, try looking up "利用" (stem)
@@ -604,8 +663,18 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
             // Determine level label
             let levelLabel: string;
             if (!isContentWord) {
-                // Check if it's a known grammar pattern
-                const grammarLevel = grammarLevelMap.get(surface) || grammarLevelMap.get(basicForm);
+                // Check if it's a known grammar pattern (base dictionary)
+                let grammarLevel = grammarLevelMap.get(surface) || grammarLevelMap.get(basicForm);
+
+                // Also check LLM-discovered grammar rules (cached from async load)
+                if (!grammarLevel) {
+                    const llmRules = getLLMRulesSync();
+                    const llmGrammarEntry = llmRules.grammar[surface] || llmRules.grammar[basicForm];
+                    if (llmGrammarEntry?.level) {
+                        grammarLevel = llmGrammarEntry.level;
+                    }
+                }
+
                 if (grammarLevel) {
                     levelLabel = `grammar (${grammarLevel})`; // e.g. 'grammar (N3)'
                 } else {
@@ -781,6 +850,11 @@ function removeDialogueIdentifiers(text: string): string {
 export async function analyzeLexProfileAsync(text: string, lang: SupportedLang): Promise<LexProfileResult> {
     // Step 0: Normalize text by removing dialogue identifiers
     const cleanText = removeDialogueIdentifiers(text);
+
+    // Pre-load LLM rules for Japanese (warms cache for sync access during tokenization)
+    if (lang === 'ja') {
+        await loadLLMRules();
+    }
 
     const dict = dictionaries[lang];
     let tokenInfoList: TokenInfo[];

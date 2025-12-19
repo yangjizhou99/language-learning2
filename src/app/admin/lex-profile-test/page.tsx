@@ -103,6 +103,16 @@ export default function LexProfileTestPage() {
     const [dbItems, setDbItems] = useState<ShadowingItem[]>([]);
     const [loadingDbItems, setLoadingDbItems] = useState(false);
 
+    // New state for LLM level assignment
+    const [isAssigningLevels, setIsAssigningLevels] = useState(false);
+    const [llmLevelResult, setLlmLevelResult] = useState<{
+        vocab_entries: Array<{ surface: string; reading: string; definition: string; jlpt: string }>;
+        grammar_chunks: Array<{ surface: string; canonical: string; jlpt: string; definition?: string }>;
+        confidence: number;
+    } | null>(null);
+    const [isSavingRules, setIsSavingRules] = useState(false);
+    const [savedRulesCount, setSavedRulesCount] = useState<{ vocab: number; grammar: number }>({ vocab: 0, grammar: 0 });
+
     useEffect(() => {
         const fetchDbItems = async () => {
             setLoadingDbItems(true);
@@ -232,10 +242,110 @@ export default function LexProfileTestPage() {
 
 
 
+    const handleLevelAssignment = async () => {
+        if (!result) return;
+        setIsAssigningLevels(true);
+        setLlmLevelResult(null);
+
+        try {
+            const hasUnknownVocab = result.details.unknownTokens.length > 0;
+
+            // Collect grammar tokens without specific levels (just "grammar" instead of "grammar (Nx)")
+            const grammarWithoutLevel = result.details.tokenList
+                .filter(t => t.originalLevel === 'grammar')  // Just "grammar", no level
+                .map(t => t.token);
+            const uniqueGrammarWithoutLevel = [...new Set(grammarWithoutLevel)];
+
+            // Combine with unrecognizedGrammar patterns from grammarProfile
+            const allUnrecognizedGrammar = [
+                ...uniqueGrammarWithoutLevel,
+                ...(result.grammarProfile?.unrecognizedGrammar || [])
+            ];
+            const uniqueUnrecognizedGrammar = [...new Set(allUnrecognizedGrammar)];
+
+            const hasUnknownGrammar = uniqueUnrecognizedGrammar.length > 0;
+
+            if (!hasUnknownVocab && !hasUnknownGrammar) {
+                toast.info('没有需要分配等级的未知项');
+                return;
+            }
+
+            toast.info(`正在使用 LLM 分配等级... (${result.details.unknownTokens.length} 词汇, ${uniqueUnrecognizedGrammar.length} 语法)`);
+            const res = await fetch('/api/nlp/repair', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    task: 'level_assignment',
+                    text,
+                    tokens: result.details.tokenList,
+                    unknownTokens: result.details.unknownTokens,
+                    unrecognizedGrammar: uniqueUnrecognizedGrammar,
+                }),
+            });
+
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            setLlmLevelResult({
+                vocab_entries: data.vocab_entries || [],
+                grammar_chunks: data.grammar_chunks || [],
+                confidence: data.confidence || 0,
+            });
+
+            toast.success(`LLM 分配完成：${data.vocab_entries?.length || 0} 词汇，${data.grammar_chunks?.length || 0} 语法`);
+        } catch (error) {
+            console.error('Level assignment error:', error);
+            toast.error('LLM 等级分配失败');
+        } finally {
+            setIsAssigningLevels(false);
+        }
+    };
+
+    const handleSaveRules = async () => {
+        if (!llmLevelResult) return;
+        setIsSavingRules(true);
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                toast.error('请先登录');
+                return;
+            }
+
+            const res = await fetch('/api/admin/lex-profile-test/save-rule', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                    vocabEntries: llmLevelResult.vocab_entries,
+                    grammarChunks: llmLevelResult.grammar_chunks,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            setSavedRulesCount(prev => ({
+                vocab: prev.vocab + (data.saved?.vocab || 0),
+                grammar: prev.grammar + (data.saved?.grammar || 0),
+            }));
+
+            toast.success(data.message || '规则保存成功');
+        } catch (error) {
+            console.error('Save rules error:', error);
+            toast.error('规则保存失败');
+        } finally {
+            setIsSavingRules(false);
+        }
+    };
+
     const selectTestCase = (testCase: typeof testCases[0]) => {
         setLang(testCase.lang);
         setText(testCase.text);
         setResult(null);
+        setLlmLevelResult(null);
     };
 
     const formatPercent = (value: number) => `${(value * 100).toFixed(1)}%`;
@@ -641,6 +751,108 @@ export default function LexProfileTestPage() {
                                                                         </div>
                                                                         <span className="text-xs font-bold text-yellow-700 bg-yellow-200 px-2 py-0.5 rounded">
                                                                             {vocab.jlpt}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* LLM JLPT Level Assignment Section */}
+                                    <div className="mt-6 border-t pt-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div>
+                                                <h3 className="text-lg font-medium text-gray-900">🎯 LLM 等级分配</h3>
+                                                <p className="text-xs text-gray-500">为未知词汇和语法分配 JLPT 等级，可保存规则供后续分析使用</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {savedRulesCount.vocab + savedRulesCount.grammar > 0 && (
+                                                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                                        已保存 {savedRulesCount.vocab + savedRulesCount.grammar} 条规则
+                                                    </span>
+                                                )}
+                                                <button
+                                                    onClick={handleLevelAssignment}
+                                                    disabled={isAssigningLevels}
+                                                    className={`px-4 py-2 rounded text-sm font-medium text-white transition-colors
+                                                    ${isAssigningLevels
+                                                            ? 'bg-gray-400 cursor-not-allowed'
+                                                            : 'bg-blue-600 hover:bg-blue-700 shadow-sm'}`}
+                                                >
+                                                    {isAssigningLevels ? '分析中...' : '执行 LLM 分级'}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {llmLevelResult && (
+                                            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-blue-700 font-bold">✅ 分级完成</span>
+                                                        <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
+                                                            置信度: {(llmLevelResult.confidence * 100).toFixed(0)}%
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        onClick={handleSaveRules}
+                                                        disabled={isSavingRules}
+                                                        className="px-3 py-1.5 rounded text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+                                                    >
+                                                        {isSavingRules ? '保存中...' : '💾 保存规则'}
+                                                    </button>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {/* Vocab Levels */}
+                                                    {llmLevelResult.vocab_entries.length > 0 && (
+                                                        <div className="bg-white p-3 rounded border border-blue-100">
+                                                            <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">
+                                                                词汇等级 ({llmLevelResult.vocab_entries.length})
+                                                            </h4>
+                                                            <div className="space-y-2 max-h-48 overflow-auto">
+                                                                {llmLevelResult.vocab_entries.map((vocab, i) => (
+                                                                    <div key={i} className="flex items-center justify-between text-sm bg-yellow-50 p-2 rounded">
+                                                                        <div>
+                                                                            <span className="font-bold text-gray-800">{vocab.surface}</span>
+                                                                            {vocab.reading && <span className="text-xs text-gray-500 ml-1">[{vocab.reading}]</span>}
+                                                                            <span className="text-gray-600 text-xs block">{vocab.definition}</span>
+                                                                        </div>
+                                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${vocab.jlpt === 'N1' ? 'bg-red-100 text-red-700' :
+                                                                            vocab.jlpt === 'N2' ? 'bg-orange-100 text-orange-700' :
+                                                                                vocab.jlpt === 'N3' ? 'bg-yellow-100 text-yellow-700' :
+                                                                                    'bg-green-100 text-green-700'
+                                                                            }`}>
+                                                                            {vocab.jlpt}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Grammar Levels */}
+                                                    {llmLevelResult.grammar_chunks.length > 0 && (
+                                                        <div className="bg-white p-3 rounded border border-blue-100">
+                                                            <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">
+                                                                语法等级 ({llmLevelResult.grammar_chunks.length})
+                                                            </h4>
+                                                            <div className="space-y-2 max-h-48 overflow-auto">
+                                                                {llmLevelResult.grammar_chunks.map((grammar, i) => (
+                                                                    <div key={i} className="flex items-center justify-between text-sm bg-indigo-50 p-2 rounded">
+                                                                        <div>
+                                                                            <span className="font-bold text-gray-800">{grammar.surface}</span>
+                                                                            <span className="text-xs text-gray-500 ml-2">→ {grammar.canonical}</span>
+                                                                        </div>
+                                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${grammar.jlpt === 'N1' ? 'bg-red-100 text-red-700' :
+                                                                            grammar.jlpt === 'N2' ? 'bg-orange-100 text-orange-700' :
+                                                                                grammar.jlpt === 'N3' ? 'bg-yellow-100 text-yellow-700' :
+                                                                                    'bg-green-100 text-green-700'
+                                                                            }`}>
+                                                                            {grammar.jlpt}
                                                                         </span>
                                                                     </div>
                                                                 ))}

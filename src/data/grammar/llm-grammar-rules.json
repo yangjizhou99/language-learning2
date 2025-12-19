@@ -1,0 +1,212 @@
+{
+  "は": {
+    "level": "N5",
+    "canonical": "は",
+    "definition": "topic marker",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "ある": {
+    "level": "N5",
+    "canonical": "ある",
+    "definition": "to exist (inanimate)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "さん": {
+    "level": "N5",
+    "canonical": "さん",
+    "definition": "honorific suffix (Mr./Ms.)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "に": {
+    "level": "N5",
+    "canonical": "に",
+    "definition": "indirect object marker, location marker",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "を": {
+    "level": "N5",
+    "canonical": "を",
+    "definition": "direct object marker",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "ます": {
+    "level": "N5",
+    "canonical": "ます",
+    "definition": "polite verb ending",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "た": {
+    "level": "N5",
+    "canonical": "た",
+    "definition": "past tense marker",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "が": {
+    "level": "N5",
+    "canonical": "が",
+    "definition": "subject marker",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "だ": {
+    "level": "N5",
+    "canonical": "だ",
+    "definition": "copula (plain)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "です": {
+    "level": "N5",
+    "canonical": "です",
+    "definition": "copula (polite)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "よう": {
+    "level": "N4",
+    "canonical": "よう",
+    "definition": "way, manner, like",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "れ": {
+    "level": "N4",
+    "canonical": "れる",
+    "definition": "passive or potential verb ending",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "て": {
+    "level": "N5",
+    "canonical": "て",
+    "definition": "te-form connector",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "い": {
+    "level": "N5",
+    "canonical": "いる",
+    "definition": "to exist (animate), progressive aspect",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "か": {
+    "level": "N5",
+    "canonical": "か",
+    "definition": "question marker",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "例えば": {
+    "level": "N4",
+    "canonical": "例えば",
+    "definition": "for example",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "者": {
+    "level": "N3",
+    "canonical": "者",
+    "definition": "person, one who",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "を通じて": {
+    "level": "N3",
+    "canonical": "を通じて",
+    "definition": "through, via",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "でしょ": {
+    "level": "N5",
+    "canonical": "でしょう",
+    "definition": "probably, I think (polite)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "う": {
+    "level": "N5",
+    "canonical": "う",
+    "definition": "volitional form ending",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "点": {
+    "level": "N3",
+    "canonical": "点",
+    "definition": "point, aspect",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "ください": {
+    "level": "N5",
+    "canonical": "ください",
+    "definition": "please give/do (polite request)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "もらい": {
+    "level": "N4",
+    "canonical": "もらう",
+    "definition": "to receive (humble/benefactive)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "づくり": {
+    "level": "N3",
+    "canonical": "作り",
+    "definition": "making, building",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "へ": {
+    "level": "N5",
+    "canonical": "へ",
+    "definition": "direction marker",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "まずは": {
+    "level": "N3",
+    "canonical": "まずは",
+    "definition": "first of all, to start with",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "いただく": {
+    "level": "N4",
+    "canonical": "いただく",
+    "definition": "to receive (humble)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "み": {
+    "level": "N5",
+    "canonical": "みる",
+    "definition": "to try doing",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "ませ": {
+    "level": "N5",
+    "canonical": "ます",
+    "definition": "polite verb ending (negative form)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "ん": {
+    "level": "N5",
+    "canonical": "ない",
+    "definition": "negative ending",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:15:17.506Z"
+  }
+}
