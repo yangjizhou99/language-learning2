@@ -89,6 +89,21 @@ const dictionaries: Record<SupportedLang, Map<string, string>> = {
     zh: new Map(Object.entries(zhHsk)),
 };
 
+// Custom dictionary for missing words or overrides
+const customDictionary: Record<string, string> = {
+    '落ち着く': 'N3',
+    '焦る': 'N2', // Override N1 -> N2
+    '本当': 'N5',
+    '本当に': 'N5',
+    '追求': 'N3',
+    '追求する': 'N3',
+    '展覧会': 'N3',
+    '方向性': 'N2',
+    '実験的': 'N3',
+    '現実的': 'N3',
+    '創造性': 'N1',
+};
+
 // JLPT level order for difficulty comparison (N5 = easiest, N1 = hardest)
 const JLPT_LEVEL_ORDER = ['N5', 'N4', 'N3', 'N2', 'N1'];
 
@@ -463,6 +478,66 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
             kuromojiTokens.push(t);
         }
 
+        // Post-process: Merge specific broken tokens
+        const mergedTokens: any[] = [];
+        for (let i = 0; i < kuromojiTokens.length; i++) {
+            const current = kuromojiTokens[i];
+            const next = kuromojiTokens[i + 1];
+
+            // Fix 1: "本" + "当" -> "本当"
+            if (next && current.surface_form === '本' && next.surface_form === '当') {
+                mergedTokens.push({
+                    surface_form: '本当',
+                    basic_form: '本当',
+                    pos: '副詞', // Usually used as adverb or noun
+                    pos_detail_1: '一般',
+                });
+                i++; // Skip next token
+                continue;
+            }
+
+            // Fix 2: "Sa-hen Noun" + "Suru" -> Single Verb
+            // e.g. "利用" (Noun) + "する" (Verb) -> "利用する" (Verb)
+            if (next &&
+                current.pos === '名詞' &&
+                (current.pos_detail_1 === 'サ変接続' || current.pos_detail_1 === '一般') &&
+                next.pos === '動詞' &&
+                next.basic_form === 'する') {
+
+                // Merge into a single token
+                mergedTokens.push({
+                    surface_form: current.surface_form + next.surface_form,
+                    basic_form: current.basic_form + 'する', // Construct dictionary form
+                    pos: '動詞',
+                    pos_detail_1: '自立', // Treat as independent verb
+                });
+                i++; // Skip next token
+                continue;
+            }
+
+            // Fix 3: Suffix Merging (Noun + Suffix)
+            // e.g. "展覧" + "会" -> "展覧会"
+            // e.g. "方向" + "性" -> "方向性"
+            // e.g. "実験" + "的" -> "実験的"
+            const commonSuffixes = ['会', '性', '的', '費', '化', '力', '長'];
+            if (next &&
+                current.pos === '名詞' &&
+                commonSuffixes.includes(next.surface_form)) {
+
+                // Merge into a single token
+                mergedTokens.push({
+                    surface_form: current.surface_form + next.surface_form,
+                    basic_form: current.basic_form + next.surface_form,
+                    pos: '名詞', // Treat as noun (or adjective noun for '的')
+                    pos_detail_1: '一般',
+                });
+                i++; // Skip next token
+                continue;
+            }
+
+            mergedTokens.push(current);
+        }
+
         // Grammar fragments that should NEVER be counted as unknown content words
         const grammarFragments = new Set([
             // Auxiliary verb endings (助動詞)
@@ -479,7 +554,7 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
         // Function word POS categories
         const functionWordPOS = ['助詞', '助動詞', '接続詞', '感動詞', 'フィラー', '記号'];
 
-        return kuromojiTokens.map(t => {
+        return mergedTokens.map(t => {
             const surface = t.surface_form;
             const basicForm = t.basic_form !== '*' ? t.basic_form : surface;
             const pos = t.pos || 'Unknown';
@@ -505,10 +580,24 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
             // Step 5: Dictionary lookup - ALWAYS use basicForm (lemma) first
             let originalLevel: string | undefined;
             if (isContentWord && !isPropNoun) {
-                // For content words, try lemma first, then surface
-                originalLevel = dict.get(basicForm);
-                if (!originalLevel && basicForm !== surface) {
-                    originalLevel = dict.get(surface);
+                // Check custom dictionary first
+                originalLevel = customDictionary[basicForm] || customDictionary[surface];
+
+                if (!originalLevel) {
+                    // For content words, try lemma first, then surface
+                    originalLevel = dict.get(basicForm);
+                    if (!originalLevel && basicForm !== surface) {
+                        originalLevel = dict.get(surface);
+                    }
+                }
+
+                // Special handling for merged Sa-hen verbs (e.g. "利用する")
+
+                // Special handling for merged Sa-hen verbs (e.g. "利用する")
+                // If "利用する" is not found, try looking up "利用" (stem)
+                if (!originalLevel && basicForm.endsWith('する')) {
+                    const stem = basicForm.slice(0, -2); // Remove 'する'
+                    originalLevel = dict.get(stem);
                 }
             }
 
@@ -678,21 +767,33 @@ function tokenizeChineseFallback(text: string, dict: Map<string, string>): Token
 }
 
 /**
+ * Remove dialogue identifiers (e.g. "A:", "B:", "John:") from the beginning of lines
+ */
+function removeDialogueIdentifiers(text: string): string {
+    // Matches "A:", "B:", "Name:", "Name1:" at start of line
+    // Also handles potential whitespace before the identifier
+    return text.replace(/^\s*[A-Za-z0-9]+:\s*/gm, '');
+}
+
+/**
  * Main analysis function (async for Japanese kuromoji)
  */
 export async function analyzeLexProfileAsync(text: string, lang: SupportedLang): Promise<LexProfileResult> {
+    // Step 0: Normalize text by removing dialogue identifiers
+    const cleanText = removeDialogueIdentifiers(text);
+
     const dict = dictionaries[lang];
     let tokenInfoList: TokenInfo[];
 
     switch (lang) {
         case 'en':
-            tokenInfoList = tokenizeEnglish(text, dict);
+            tokenInfoList = tokenizeEnglish(cleanText, dict);
             break;
         case 'ja':
-            tokenInfoList = await tokenizeJapaneseAsync(text, dict);
+            tokenInfoList = await tokenizeJapaneseAsync(cleanText, dict);
             break;
         case 'zh':
-            tokenInfoList = tokenizeChinese(text, dict);
+            tokenInfoList = tokenizeChinese(cleanText, dict);
             break;
         default:
             tokenInfoList = [];

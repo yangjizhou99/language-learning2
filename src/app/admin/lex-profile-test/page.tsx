@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,13 @@ import { toast } from 'sonner';
 import { RepairRequest, RepairResponse } from '@/lib/nlp/repair-service';
 
 type Lang = 'en' | 'ja' | 'zh';
+
+interface ShadowingItem {
+    id: string;
+    title: string;
+    text: string;
+    lang: string;
+}
 
 interface GrammarProfileResult {
     total: number;
@@ -93,6 +100,33 @@ export default function LexProfileTestPage() {
     const [result, setResult] = useState<LexProfileResult | null>(null);
     const [isRepairing, setIsRepairing] = useState(false);
     const [repairResult, setRepairResult] = useState<RepairResponse | null>(null);
+    const [dbItems, setDbItems] = useState<ShadowingItem[]>([]);
+    const [loadingDbItems, setLoadingDbItems] = useState(false);
+
+    useEffect(() => {
+        const fetchDbItems = async () => {
+            setLoadingDbItems(true);
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+
+                const res = await fetch('/api/admin/shadowing/items', {
+                    headers: { Authorization: `Bearer ${session.access_token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    // Handle both array and paginated response formats
+                    const items = Array.isArray(data) ? data : (Array.isArray(data?.items) ? data.items : []);
+                    setDbItems(items);
+                }
+            } catch (error) {
+                console.error('Failed to fetch DB items:', error);
+            } finally {
+                setLoadingDbItems(false);
+            }
+        };
+        fetchDbItems();
+    }, []);
 
     const handleAnalyze = async () => {
         if (!text.trim()) {
@@ -280,6 +314,34 @@ export default function LexProfileTestPage() {
                                     </button>
                                 ))}
                             </div>
+                        </div>
+
+                        {/* 数据库素材 */}
+                        <div className="bg-white p-6 rounded-lg shadow">
+                            <h3 className="text-lg font-semibold mb-4">从数据库选择 ({dbItems.length})</h3>
+                            {loadingDbItems ? (
+                                <div className="text-sm text-gray-500">加载中...</div>
+                            ) : (
+                                <select
+                                    className="w-full p-2 border rounded text-sm"
+                                    onChange={(e) => {
+                                        const item = dbItems.find(i => i.id === e.target.value);
+                                        if (item) {
+                                            setText(item.text);
+                                            setLang(item.lang as Lang);
+                                            setResult(null);
+                                        }
+                                    }}
+                                    defaultValue=""
+                                >
+                                    <option value="" disabled>选择一个素材...</option>
+                                    {dbItems.map(item => (
+                                        <option key={item.id} value={item.id}>
+                                            [{item.lang}] {item.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
 
                         {/* 自定义输入 */}
