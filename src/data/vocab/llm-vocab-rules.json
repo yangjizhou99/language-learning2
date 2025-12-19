@@ -180,5 +180,96 @@
     "definition": "to request, to ask (polite)",
     "source": "llm",
     "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "活か": {
+    "level": "N3",
+    "reading": "いか",
+    "definition": "to make use of, to utilize",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "国際的": {
+    "level": "N3",
+    "reading": "こくさいてき",
+    "definition": "international",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "強み": {
+    "level": "N3",
+    "reading": "つよみ",
+    "definition": "strength, advantage",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "スキル": {
+    "level": "N3",
+    "reading": "すきる",
+    "definition": "skill",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "語学力": {
+    "level": "N3",
+    "reading": "ごがくりょく",
+    "definition": "language ability",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "適応力": {
+    "level": "N2",
+    "reading": "てきおうりょく",
+    "definition": "adaptability",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "プロジェクト": {
+    "level": "N3",
+    "reading": "ぷろじぇくと",
+    "definition": "project",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "アピールする": {
+    "level": "N3",
+    "reading": "あぴーるする",
+    "definition": "to appeal, to promote",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "職場": {
+    "level": "N4",
+    "reading": "しょくば",
+    "definition": "workplace, office",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "ネットワーク": {
+    "level": "N3",
+    "reading": "ねっとわーく",
+    "definition": "network",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "実践的": {
+    "level": "N3",
+    "reading": "じっせんてき",
+    "definition": "practical",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "わかり": {
+    "level": "N5",
+    "reading": "わかり",
+    "definition": "understanding (from 分かる)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "総合的": {
+    "level": "N3",
+    "reading": "そうごうてき",
+    "definition": "comprehensive, overall",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
   }
 }

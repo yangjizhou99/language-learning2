@@ -596,24 +596,23 @@ function normalizeJapaneseText(text: string): string {
 
 /**
  * Check if a token is a proper noun (names, titles with さん/ちゃん/くん)
+ * Simplified: only use POS tags and honorific suffixes.
+ * Unknown katakana words will be marked as "unknown" for LLM to assign level later.
  */
 function isProperNoun(surface: string, posDetail: string): boolean {
-    // Katakana-only names (likely foreign/character names) - at least 2 chars
-    if (surface.match(/^[\u30A0-\u30FF]{2,}$/) && !surface.match(/^(テスト|コーヒー|ピクニック|インターネット)$/)) {
+    // POS indicates proper noun - this is reliable from kuromoji
+    if (posDetail.includes('固有名詞') || posDetail.includes('人名') || posDetail.includes('地名')) {
         return true;
     }
 
-    // Titles with honorific suffixes
+    // Titles with honorific suffixes (e.g., 田中さん, みかちゃん)
     const honorificSuffixes = ['さん', 'ちゃん', 'くん', '君', '様', '先生', '氏'];
     if (honorificSuffixes.some(suffix => surface.endsWith(suffix) && surface.length > suffix.length)) {
         return true;
     }
 
-    // POS indicates proper noun
-    if (posDetail.includes('固有名詞') || posDetail.includes('人名') || posDetail.includes('地名')) {
-        return true;
-    }
-
+    // Don't guess based on katakana - just check dictionary
+    // Unknown words will be marked as "unknown" and can be filled by LLM
     return false;
 }
 

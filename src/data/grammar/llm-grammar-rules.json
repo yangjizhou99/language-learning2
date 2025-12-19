@@ -208,5 +208,54 @@
     "definition": "negative ending",
     "source": "llm",
     "createdAt": "2025-12-19T14:15:17.506Z"
+  },
+  "せる": {
+    "level": "N4",
+    "canonical": "せる/させる",
+    "definition": "causative form (make/let someone do)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "そうですね": {
+    "level": "N5",
+    "canonical": "そうですね",
+    "definition": "that's right, I see (agreement)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "異": {
+    "level": "N3",
+    "canonical": "異なる/異文化",
+    "definition": "different, foreign (as in 異文化)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "べき": {
+    "level": "N3",
+    "canonical": "べきだ",
+    "definition": "should, ought to",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "はい": {
+    "level": "N5",
+    "canonical": "はい",
+    "definition": "yes",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "いい": {
+    "level": "N5",
+    "canonical": "いい",
+    "definition": "good, okay",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "お": {
+    "level": "N4",
+    "canonical": "お～する/お～になる",
+    "definition": "honorific prefix (as in お勧めします)",
+    "source": "llm",
+    "createdAt": "2025-12-19T14:49:04.696Z"
   }
 }
