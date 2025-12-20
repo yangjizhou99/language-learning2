@@ -122,6 +122,33 @@ export default function LexProfileTestPage() {
     // Japanese grammar dictionary selection
     const [jaGrammarDict, setJaGrammarDict] = useState<'yapan' | 'hagoromo'>('yapan');
 
+    // === Batch LLM Level Assignment State ===
+    interface BatchScanResult {
+        totalItems: number;
+        analyzedItems: number;
+        unknownVocab: Array<{ token: string; lemma: string; pos: string; count: number; contexts: string[] }>;
+        unmatchedGrammar: Array<{ token: string; lemma: string; pos: string; count: number; contexts: string[] }>;
+        currentCoverage: { vocab: number; grammar: number };
+        stats: { totalVocabTokens: number; vocabWithLevel: number; totalGrammarTokens: number; grammarWithLevel: number };
+    }
+    interface SavedRule {
+        level: string;
+        reading?: string;
+        definition?: string;
+        canonical?: string;
+        source: 'llm';
+        createdAt: string;
+    }
+    const [showBatchPanel, setShowBatchPanel] = useState(false);
+    const [isBatchScanning, setIsBatchScanning] = useState(false);
+    const [batchScanResult, setBatchScanResult] = useState<BatchScanResult | null>(null);
+    const [isBatchAssigning, setIsBatchAssigning] = useState(false);
+    const [batchAssignProgress, setBatchAssignProgress] = useState({ current: 0, total: 0, saved: 0 });
+    const [showRulesPanel, setShowRulesPanel] = useState(false);
+    const [showUnmatchedPanel, setShowUnmatchedPanel] = useState(false);
+    const [savedRules, setSavedRules] = useState<{ vocab: Record<string, SavedRule>; grammar: Record<string, SavedRule> } | null>(null);
+    const [loadingRules, setLoadingRules] = useState(false);
+
     useEffect(() => {
         const fetchDbItems = async () => {
             setLoadingDbItems(true);
@@ -398,6 +425,154 @@ export default function LexProfileTestPage() {
         }
     };
 
+    // === Batch Processing Handlers ===
+    const handleBatchScan = async () => {
+        setIsBatchScanning(true);
+        setBatchScanResult(null);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                toast.error('请先登录');
+                return;
+            }
+
+            toast.info('正在扫描全部题库，请稍候...');
+            const res = await fetch('/api/admin/lex-profile-test/batch-scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            setBatchScanResult(data);
+            toast.success(`扫描完成：${data.unknownVocab.length} 未知词汇, ${data.unmatchedGrammar.length} 未匹配语法`);
+        } catch (error) {
+            console.error('Batch scan error:', error);
+            toast.error('扫描失败');
+        } finally {
+            setIsBatchScanning(false);
+        }
+    };
+
+    const handleBatchLevelAssign = async () => {
+        if (!batchScanResult) return;
+        setIsBatchAssigning(true);
+
+        const allUnknown = [
+            ...batchScanResult.unknownVocab.map(v => ({ type: 'vocab' as const, ...v })),
+            ...batchScanResult.unmatchedGrammar.map(g => ({ type: 'grammar' as const, ...g })),
+        ];
+
+        const batchSize = 30;
+        const totalBatches = Math.ceil(allUnknown.length / batchSize);
+        setBatchAssignProgress({ current: 0, total: allUnknown.length, saved: 0 });
+
+        let totalSaved = 0;
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                toast.error('请先登录');
+                return;
+            }
+
+            for (let i = 0; i < allUnknown.length; i += batchSize) {
+                const batch = allUnknown.slice(i, i + batchSize);
+                const vocabBatch = batch.filter(b => b.type === 'vocab');
+                const grammarBatch = batch.filter(b => b.type === 'grammar');
+
+                setBatchAssignProgress(p => ({ ...p, current: i }));
+
+                // Build context for items
+                const unknownTokensWithContext = vocabBatch.map(v => ({
+                    token: v.token,
+                    context: v.contexts[0] || v.token
+                }));
+                const unrecognizedGrammarWithContext = grammarBatch.map(g => ({
+                    token: g.token,
+                    context: g.contexts[0] || g.token
+                }));
+
+                // Call LLM for level assignment
+                const llmRes = await fetch('/api/nlp/repair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        task: 'level_assignment',
+                        text: '',
+                        tokens: [],
+                        unknownTokens: vocabBatch.map(v => v.token),
+                        unknownTokensWithContext,
+                        unrecognizedGrammar: grammarBatch.map(g => g.token),
+                        unrecognizedGrammarWithContext,
+                    }),
+                });
+
+                const llmData = await llmRes.json();
+                if (llmData.error) {
+                    console.warn(`Batch ${i / batchSize + 1} LLM error:`, llmData.error);
+                    continue;
+                }
+
+                // Save to rules file
+                if ((llmData.vocab_entries?.length > 0) || (llmData.grammar_chunks?.length > 0)) {
+                    const saveRes = await fetch('/api/admin/lex-profile-test/save-rule', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${session.access_token}`,
+                        },
+                        body: JSON.stringify({
+                            vocabEntries: llmData.vocab_entries,
+                            grammarChunks: llmData.grammar_chunks,
+                        }),
+                    });
+                    const saveData = await saveRes.json();
+                    totalSaved += (saveData.saved?.vocab || 0) + (saveData.saved?.grammar || 0);
+                    setBatchAssignProgress(p => ({ ...p, saved: totalSaved }));
+                }
+
+                // Delay between batches
+                await new Promise(r => setTimeout(r, 500));
+            }
+
+            setBatchAssignProgress(p => ({ ...p, current: allUnknown.length }));
+            toast.success(`批量分配完成！共保存 ${totalSaved} 条规则`);
+
+            // Refresh scan results
+            handleBatchScan();
+        } catch (error) {
+            console.error('Batch assign error:', error);
+            toast.error('批量分配过程中出错');
+        } finally {
+            setIsBatchAssigning(false);
+        }
+    };
+
+    const handleLoadSavedRules = async () => {
+        setLoadingRules(true);
+        try {
+            const res = await fetch('/api/admin/lex-profile-test/save-rule');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            setSavedRules({
+                vocab: data.vocabRules || {},
+                grammar: data.grammarRules || {},
+            });
+            setShowRulesPanel(true);
+        } catch (error) {
+            console.error('Load rules error:', error);
+            toast.error('加载规则失败');
+        } finally {
+            setLoadingRules(false);
+        }
+    };
+
     const selectTestCase = (testCase: typeof testCases[0]) => {
         setLang(testCase.lang);
         setText(testCase.text);
@@ -452,6 +627,283 @@ export default function LexProfileTestPage() {
                     <p className="text-gray-600">
                         分析文本的词汇难度分布，计算 tokens 数量和 lex_profile（CEFR 等级分布）
                     </p>
+                </div>
+
+                {/* === 批量 LLM 等级分配模块 === */}
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-purple-800 flex items-center gap-2">
+                            🎯 LLM 批量等级分配
+                            <span className="text-xs font-normal text-gray-500">目标: 100% 覆盖率</span>
+                        </h2>
+                        <div className="flex gap-2">
+                            <Button
+                                onClick={handleLoadSavedRules}
+                                disabled={loadingRules}
+                                variant="outline"
+                                size="sm"
+                            >
+                                {loadingRules ? '加载中...' : `📋 查看补丁列表 ${savedRules ? `(${Object.keys(savedRules.vocab).length + Object.keys(savedRules.grammar).length})` : ''}`}
+                            </Button>
+                            <Button
+                                onClick={() => setShowBatchPanel(!showBatchPanel)}
+                                variant="outline"
+                                size="sm"
+                            >
+                                {showBatchPanel ? '收起' : '展开'}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {showBatchPanel && (
+                        <div className="space-y-4">
+                            {/* Scan and Stats */}
+                            <div className="flex gap-4 items-start">
+                                <Button
+                                    onClick={handleBatchScan}
+                                    disabled={isBatchScanning}
+                                    className="bg-purple-600 hover:bg-purple-700"
+                                >
+                                    {isBatchScanning ? '扫描中...' : '🔍 扫描题库'}
+                                </Button>
+
+                                {batchScanResult && (
+                                    <div className="flex-1 grid grid-cols-4 gap-3">
+                                        <div className="bg-white p-3 rounded shadow-sm text-center">
+                                            <div className="text-xl font-bold text-blue-600">{batchScanResult.analyzedItems}</div>
+                                            <div className="text-xs text-gray-600">分析题目数</div>
+                                        </div>
+                                        <div className="bg-white p-3 rounded shadow-sm text-center">
+                                            <div className="text-xl font-bold text-orange-600">{batchScanResult.unknownVocab.length}</div>
+                                            <div className="text-xs text-gray-600">未知词汇</div>
+                                        </div>
+                                        <div className="bg-white p-3 rounded shadow-sm text-center">
+                                            <div className="text-xl font-bold text-pink-600">{batchScanResult.unmatchedGrammar.length}</div>
+                                            <div className="text-xs text-gray-600">未匹配语法</div>
+                                        </div>
+                                        <div className="bg-white p-3 rounded shadow-sm text-center">
+                                            <div className="text-xl font-bold text-green-600">{batchScanResult.currentCoverage.vocab.toFixed(1)}%</div>
+                                            <div className="text-xs text-gray-600">词汇覆盖率</div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Coverage Progress Bar */}
+                            {batchScanResult && (
+                                <div className="bg-white p-4 rounded shadow-sm">
+                                    <div className="flex justify-between text-sm mb-2">
+                                        <span>词汇覆盖率</span>
+                                        <span className="font-mono">{batchScanResult.currentCoverage.vocab.toFixed(2)}%</span>
+                                    </div>
+                                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500"
+                                            style={{ width: `${Math.min(batchScanResult.currentCoverage.vocab, 100)}%` }}
+                                        />
+                                    </div>
+                                    <div className="flex justify-between text-sm mt-2">
+                                        <span>语法覆盖率</span>
+                                        <span className="font-mono">{batchScanResult.currentCoverage.grammar.toFixed(2)}%</span>
+                                    </div>
+                                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500"
+                                            style={{ width: `${Math.min(batchScanResult.currentCoverage.grammar, 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* LLM Assign Button */}
+                            {batchScanResult && (batchScanResult.unknownVocab.length > 0 || batchScanResult.unmatchedGrammar.length > 0) && (
+                                <div className="bg-white p-4 rounded shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h4 className="font-semibold">🤖 开始 LLM 批量分配</h4>
+                                            <p className="text-sm text-gray-500">
+                                                共 {batchScanResult.unknownVocab.length + batchScanResult.unmatchedGrammar.length} 个待处理项，
+                                                每批 30 个，约需 {Math.ceil((batchScanResult.unknownVocab.length + batchScanResult.unmatchedGrammar.length) / 30)} 次 API 调用
+                                            </p>
+                                        </div>
+                                        <Button
+                                            onClick={handleBatchLevelAssign}
+                                            disabled={isBatchAssigning}
+                                            className="bg-indigo-600 hover:bg-indigo-700"
+                                        >
+                                            {isBatchAssigning ? '处理中...' : '开始分配'}
+                                        </Button>
+                                    </div>
+
+                                    {isBatchAssigning && (
+                                        <div className="mt-4">
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span>进度: {batchAssignProgress.current} / {batchAssignProgress.total}</span>
+                                                <span>已保存: {batchAssignProgress.saved} 条规则</span>
+                                            </div>
+                                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-indigo-500 transition-all"
+                                                    style={{ width: `${(batchAssignProgress.current / batchAssignProgress.total) * 100}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Unmatched Content Preview and Full List Button */}
+                            {batchScanResult && (batchScanResult.unknownVocab.length > 0 || batchScanResult.unmatchedGrammar.length > 0) && (
+                                <div className="bg-white p-4 rounded shadow-sm">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="font-semibold">
+                                            📊 未匹配内容
+                                            <span className="text-sm font-normal text-gray-500 ml-2">
+                                                ({batchScanResult.unknownVocab.length} 词汇 + {batchScanResult.unmatchedGrammar.length} 语法)
+                                            </span>
+                                        </h4>
+                                        <Button
+                                            onClick={() => setShowUnmatchedPanel(!showUnmatchedPanel)}
+                                            variant="outline"
+                                            size="sm"
+                                        >
+                                            {showUnmatchedPanel ? '收起完整列表' : '👁️ 查看完整列表'}
+                                        </Button>
+                                    </div>
+                                    {batchScanResult.unknownVocab.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            <span className="text-xs text-gray-500">词汇:</span>
+                                            {batchScanResult.unknownVocab.slice(0, 15).map((v, i) => (
+                                                <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-sm">
+                                                    {v.token} <span className="text-xs text-gray-500">×{v.count}</span>
+                                                </span>
+                                            ))}
+                                            {batchScanResult.unknownVocab.length > 15 && (
+                                                <span className="text-xs text-gray-400">+{batchScanResult.unknownVocab.length - 15}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                    {batchScanResult.unmatchedGrammar.length > 0 && (
+                                        <div className="flex flex-wrap gap-2">
+                                            <span className="text-xs text-gray-500">语法:</span>
+                                            {batchScanResult.unmatchedGrammar.slice(0, 15).map((g, i) => (
+                                                <span key={i} className="px-2 py-1 bg-pink-100 text-pink-800 rounded text-sm">
+                                                    {g.token} <span className="text-xs text-gray-500">×{g.count}</span>
+                                                </span>
+                                            ))}
+                                            {batchScanResult.unmatchedGrammar.length > 15 && (
+                                                <span className="text-xs text-gray-400">+{batchScanResult.unmatchedGrammar.length - 15}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Full Unmatched Content Panel */}
+                            {showUnmatchedPanel && batchScanResult && (
+                                <div className="bg-white p-4 rounded shadow-sm border-2 border-orange-200">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h4 className="font-bold text-lg">📋 未匹配内容完整列表</h4>
+                                        <Button onClick={() => setShowUnmatchedPanel(false)} variant="ghost" size="sm">关闭</Button>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-6">
+                                        {/* Unknown Vocabulary */}
+                                        <div>
+                                            <h5 className="font-semibold text-orange-700 mb-2 flex items-center gap-2">
+                                                📚 未知词汇
+                                                <span className="text-sm font-normal text-gray-500">({batchScanResult.unknownVocab.length})</span>
+                                            </h5>
+                                            <div className="max-h-80 overflow-y-auto space-y-1 pr-2">
+                                                {batchScanResult.unknownVocab.map((v, i) => (
+                                                    <div key={i} className="flex items-center justify-between p-2 bg-orange-50 rounded text-sm hover:bg-orange-100">
+                                                        <div className="flex-1">
+                                                            <span className="font-medium">{v.token}</span>
+                                                            {v.lemma !== v.token && (
+                                                                <span className="text-gray-400 ml-1">({v.lemma})</span>
+                                                            )}
+                                                            <span className="text-xs text-gray-500 ml-2">{v.pos}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs bg-orange-200 px-1.5 py-0.5 rounded">×{v.count}</span>
+                                                            <span className="text-xs text-gray-400 max-w-24 truncate" title={v.contexts.join(', ')}>
+                                                                {v.contexts[0]}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Unmatched Grammar */}
+                                        <div>
+                                            <h5 className="font-semibold text-pink-700 mb-2 flex items-center gap-2">
+                                                📖 未匹配语法
+                                                <span className="text-sm font-normal text-gray-500">({batchScanResult.unmatchedGrammar.length})</span>
+                                            </h5>
+                                            <div className="max-h-80 overflow-y-auto space-y-1 pr-2">
+                                                {batchScanResult.unmatchedGrammar.map((g, i) => (
+                                                    <div key={i} className="flex items-center justify-between p-2 bg-pink-50 rounded text-sm hover:bg-pink-100">
+                                                        <div className="flex-1">
+                                                            <span className="font-medium">{g.token}</span>
+                                                            <span className="text-xs text-gray-500 ml-2">{g.pos}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs bg-pink-200 px-1.5 py-0.5 rounded">×{g.count}</span>
+                                                            <span className="text-xs text-gray-400 max-w-24 truncate" title={g.contexts.join(', ')}>
+                                                                {g.contexts[0]}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Rules Panel */}
+                    {showRulesPanel && savedRules && (
+                        <div className="mt-4 bg-white p-4 rounded shadow-sm max-h-96 overflow-y-auto">
+                            <div className="flex justify-between items-center mb-3">
+                                <h4 className="font-semibold">📋 已保存的补丁规则</h4>
+                                <Button onClick={() => setShowRulesPanel(false)} variant="ghost" size="sm">关闭</Button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <h5 className="text-sm font-medium text-gray-600 mb-2">词汇规则 ({Object.keys(savedRules.vocab).length})</h5>
+                                    <div className="space-y-1 max-h-60 overflow-y-auto">
+                                        {Object.entries(savedRules.vocab).slice(0, 50).map(([word, rule]) => (
+                                            <div key={word} className="flex justify-between text-sm p-1 bg-gray-50 rounded">
+                                                <span>{word}</span>
+                                                <span className="text-blue-600">{rule.level}</span>
+                                            </div>
+                                        ))}
+                                        {Object.keys(savedRules.vocab).length > 50 && (
+                                            <div className="text-xs text-gray-400 text-center">... 还有 {Object.keys(savedRules.vocab).length - 50} 条</div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h5 className="text-sm font-medium text-gray-600 mb-2">语法规则 ({Object.keys(savedRules.grammar).length})</h5>
+                                    <div className="space-y-1 max-h-60 overflow-y-auto">
+                                        {Object.entries(savedRules.grammar).slice(0, 50).map(([word, rule]) => (
+                                            <div key={word} className="flex justify-between text-sm p-1 bg-gray-50 rounded">
+                                                <span>{word}</span>
+                                                <span className="text-purple-600">{rule.level}</span>
+                                            </div>
+                                        ))}
+                                        {Object.keys(savedRules.grammar).length > 50 && (
+                                            <div className="text-xs text-gray-400 text-center">... 还有 {Object.keys(savedRules.grammar).length - 50} 条</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

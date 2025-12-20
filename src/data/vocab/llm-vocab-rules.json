@@ -271,5 +271,7929 @@
     "definition": "comprehensive, overall",
     "source": "llm",
     "createdAt": "2025-12-19T14:49:04.696Z"
+  },
+  "しれ": {
+    "level": "N4",
+    "reading": "しれ",
+    "definition": "可能形或推量形的一部分，如「知れる」或「かもしれない」",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "い": {
+    "level": "N5",
+    "reading": "い",
+    "definition": "形容词词尾或动词「いる」的一部分",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "アドバイス": {
+    "level": "N3",
+    "reading": "あどばいす",
+    "definition": "建议、忠告",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "イベント": {
+    "level": "N3",
+    "reading": "いべんと",
+    "definition": "活动、事件",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "カフェ": {
+    "level": "N4",
+    "reading": "かふぇ",
+    "definition": "咖啡馆",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "すぐ": {
+    "level": "N5",
+    "reading": "すぐ",
+    "definition": "马上、立刻",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "リスク": {
+    "level": "N2",
+    "reading": "りすく",
+    "definition": "风险",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "ボランティア": {
+    "level": "N3",
+    "reading": "ぼらんてぃあ",
+    "definition": "志愿者",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "サポート": {
+    "level": "N3",
+    "reading": "さぽーと",
+    "definition": "支持、支援",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "ワークショップ": {
+    "level": "N2",
+    "reading": "わーくしょっぷ",
+    "definition": "研讨会、工作坊",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "コスト": {
+    "level": "N2",
+    "reading": "こすと",
+    "definition": "成本、费用",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "ミーティング": {
+    "level": "N3",
+    "reading": "みーてぃんぐ",
+    "definition": "会议",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "フィードバック": {
+    "level": "N2",
+    "reading": "ふぃーどばっく",
+    "definition": "反馈",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "%": {
+    "level": "N4",
+    "reading": "ぱーせんと",
+    "definition": "百分比",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "リスト": {
+    "level": "N3",
+    "reading": "りすと",
+    "definition": "列表、清单",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "機材": {
+    "level": "N2",
+    "reading": "きざい",
+    "definition": "设备、器材",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "ワーク": {
+    "level": "N3",
+    "reading": "わーく",
+    "definition": "工作、作业",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "ユーザー": {
+    "level": "N3",
+    "reading": "ゆーざー",
+    "definition": "用户",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "デジタル": {
+    "level": "N3",
+    "reading": "でじたる",
+    "definition": "数字的、数码的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "いね": {
+    "level": "N5",
+    "reading": "いね",
+    "definition": "可能为「稲」或动词「いる」的否定形",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "すね": {
+    "level": "N5",
+    "reading": "すね",
+    "definition": "可能为「脛」或动词「する」的否定形",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "コンビニ": {
+    "level": "N4",
+    "reading": "こんびに",
+    "definition": "便利店",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "SNS": {
+    "level": "N3",
+    "reading": "えすえぬえす",
+    "definition": "社交媒体",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "スマホ": {
+    "level": "N4",
+    "reading": "すまほ",
+    "definition": "智能手机",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "リーダー": {
+    "level": "N3",
+    "reading": "りーだー",
+    "definition": "领导者、领袖",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "アキラ": {
+    "level": "N5",
+    "reading": "あきら",
+    "definition": "人名或可能为「明らか」的一部分",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "プラットフォーム": {
+    "level": "N2",
+    "reading": "ぷらっとふぉーむ",
+    "definition": "平台、基础",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "つい": {
+    "level": "N3",
+    "reading": "つい",
+    "definition": "不知不觉，无意中",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "お待ちし": {
+    "level": "N4",
+    "reading": "おまちし",
+    "definition": "「お待ちする」的连用形，表示等待",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "ワクワク": {
+    "level": "N4",
+    "reading": "わくわく",
+    "definition": "兴奋、期待",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:05.570Z"
+  },
+  "サポートし": {
+    "level": "N3",
+    "reading": "サポートし",
+    "definition": "支持、支援",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "ウォーキング": {
+    "level": "N4",
+    "reading": "ウォーキング",
+    "definition": "步行、散步",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "活": {
+    "level": "N3",
+    "reading": "かつ",
+    "definition": "活跃、活力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "かせる": {
+    "level": "N4",
+    "reading": "かせる",
+    "definition": "使役形（如させる）的一部分",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "コミュニティ": {
+    "level": "N3",
+    "reading": "コミュニティ",
+    "definition": "社区、社群",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "サイクリング": {
+    "level": "N4",
+    "reading": "サイクリング",
+    "definition": "骑自行车",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "ビジョン": {
+    "level": "N2",
+    "reading": "ビジョン",
+    "definition": "愿景、远景",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "ニーズ": {
+    "level": "N3",
+    "reading": "ニーズ",
+    "definition": "需求、需要",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "トースト": {
+    "level": "N5",
+    "reading": "トースト",
+    "definition": "吐司、烤面包",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "いっ": {
+    "level": "N5",
+    "reading": "いっ",
+    "definition": "口语表达（如いっしょ）的一部分",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "スタッフ": {
+    "level": "N4",
+    "reading": "スタッフ",
+    "definition": "员工、工作人员",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "いただき": {
+    "level": "N4",
+    "reading": "いただき",
+    "definition": "接受、得到（谦让语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "シンプル": {
+    "level": "N4",
+    "reading": "シンプル",
+    "definition": "简单、简洁",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "戸惑っ": {
+    "level": "N3",
+    "reading": "とまどっ",
+    "definition": "困惑、不知所措",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "お客": {
+    "level": "N5",
+    "reading": "おきゃく",
+    "definition": "客人、顾客",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "シフト": {
+    "level": "N3",
+    "reading": "シフト",
+    "definition": "轮班、班次",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "交通費": {
+    "level": "N4",
+    "reading": "こうつうひ",
+    "definition": "交通费",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "主": {
+    "level": "N4",
+    "reading": "しゅ",
+    "definition": "main/chief",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "効率化": {
+    "level": "N2",
+    "reading": "こうりつか",
+    "definition": "效率化、提高效率",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "言える": {
+    "level": "N4",
+    "reading": "いえる",
+    "definition": "可以说、能够说",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "小規模": {
+    "level": "N3",
+    "reading": "しょうきぼ",
+    "definition": "小规模",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "取り合お": {
+    "level": "N3",
+    "reading": "とりあお",
+    "definition": "互相拿取、理会（如取り合う）的一部分",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "三脚": {
+    "level": "N3",
+    "reading": "さんきゃく",
+    "definition": "三脚架",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "設営": {
+    "level": "N2",
+    "reading": "せつえい",
+    "definition": "设置、搭建",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "捉え": {
+    "level": "N3",
+    "reading": "とらえ",
+    "definition": "捕捉、理解",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "店舗": {
+    "level": "N3",
+    "reading": "てんぽ",
+    "definition": "店铺、商店",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "起業": {
+    "level": "N2",
+    "reading": "きぎょう",
+    "definition": "创业、创办企业",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "会長": {
+    "level": "N3",
+    "reading": "かいちょう",
+    "definition": "会长、主席",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "ペース": {
+    "level": "N3",
+    "reading": "ペース",
+    "definition": "步伐、节奏",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "最新": {
+    "level": "N4",
+    "reading": "さいしん",
+    "definition": "最新、最近",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:34:38.815Z"
+  },
+  "委員会": {
+    "level": "N3",
+    "reading": "いいんかい",
+    "definition": "committee",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "サイト": {
+    "level": "N4",
+    "reading": "サイト",
+    "definition": "website",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "お話しし": {
+    "level": "N5",
+    "reading": "おはなしし",
+    "definition": "to talk (polite form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "盆踊り": {
+    "level": "N3",
+    "reading": "ぼんおどり",
+    "definition": "Bon festival dance",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "宿泊費": {
+    "level": "N3",
+    "reading": "しゅくはくひ",
+    "definition": "accommodation expenses",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "検証": {
+    "level": "N2",
+    "reading": "けんしょう",
+    "definition": "verification, validation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "理念": {
+    "level": "N2",
+    "reading": "りねん",
+    "definition": "philosophy, principle",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "支援": {
+    "level": "N3",
+    "reading": "しえん",
+    "definition": "support, assistance",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "なし": {
+    "level": "N5",
+    "reading": "なし",
+    "definition": "without, none",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "感情的": {
+    "level": "N3",
+    "reading": "かんじょうてき",
+    "definition": "emotional",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "第一歩": {
+    "level": "N3",
+    "reading": "だいいっぽ",
+    "definition": "first step",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "最終的": {
+    "level": "N3",
+    "reading": "さいしゅうてき",
+    "definition": "final, ultimate",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "考え方": {
+    "level": "N4",
+    "reading": "かんがえかた",
+    "definition": "way of thinking",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "リモート": {
+    "level": "N3",
+    "reading": "リモート",
+    "definition": "remote",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "多角的": {
+    "level": "N2",
+    "reading": "たかくてき",
+    "definition": "multifaceted, from various angles",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "気づき": {
+    "level": "N3",
+    "reading": "きづき",
+    "definition": "realization, awareness",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "むしろ": {
+    "level": "N3",
+    "reading": "むしろ",
+    "definition": "rather, instead",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "さやか": {
+    "level": "N4",
+    "reading": "さやか",
+    "definition": "clear, bright (often a name)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "プレッシャー": {
+    "level": "N3",
+    "reading": "プレッシャー",
+    "definition": "pressure",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "出願": {
+    "level": "N2",
+    "reading": "しゅつがん",
+    "definition": "application, filing",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "競合": {
+    "level": "N2",
+    "reading": "きょうごう",
+    "definition": "competition, conflict",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "不十分": {
+    "level": "N3",
+    "reading": "ふじゅうぶん",
+    "definition": "insufficient, inadequate",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "テクノロジー": {
+    "level": "N3",
+    "reading": "テクノロジー",
+    "definition": "technology",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "その後": {
+    "level": "N4",
+    "reading": "そのご",
+    "definition": "after that, afterwards",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "使え": {
+    "level": "N4",
+    "reading": "つかえ",
+    "definition": "can use (potential form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "レシピ": {
+    "level": "N4",
+    "reading": "レシピ",
+    "definition": "recipe",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "リラックス": {
+    "level": "N4",
+    "reading": "リラックス",
+    "definition": "relax",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "意外と": {
+    "level": "N3",
+    "reading": "いがいと",
+    "definition": "unexpectedly, surprisingly",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "温か": {
+    "level": "N5",
+    "reading": "あたたか",
+    "definition": "warm",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "仲良": {
+    "level": "N5",
+    "reading": "なかよ",
+    "definition": "friendly, on good terms",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:11.339Z"
+  },
+  "うらやましい": {
+    "level": "N3",
+    "reading": "うらやましい",
+    "definition": "羡慕的，令人羡慕的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "室内": {
+    "level": "N4",
+    "reading": "しつない",
+    "definition": "室内，屋内",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "クレジットカード": {
+    "level": "N4",
+    "reading": "クレジットカード",
+    "definition": "信用卡",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "鮭": {
+    "level": "N4",
+    "reading": "さけ",
+    "definition": "鲑鱼，三文鱼",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "フルーツ": {
+    "level": "N5",
+    "reading": "フルーツ",
+    "definition": "水果",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "お気": {
+    "level": "N3",
+    "reading": "おき",
+    "definition": "心情，情绪（常作为复合词的一部分，如お気に入り）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "出し合い": {
+    "level": "N3",
+    "reading": "だしあい",
+    "definition": "互相拿出，共同提供",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "入部": {
+    "level": "N3",
+    "reading": "にゅうぶ",
+    "definition": "加入社团或部门",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "チェックイン": {
+    "level": "N4",
+    "reading": "チェックイン",
+    "definition": "入住，登记",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "スポット": {
+    "level": "N4",
+    "reading": "スポット",
+    "definition": "地点，景点",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "庭園": {
+    "level": "N3",
+    "reading": "ていえん",
+    "definition": "庭园，花园",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "心がけ": {
+    "level": "N2",
+    "reading": "こころがけ",
+    "definition": "留心，注意，努力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "関わる": {
+    "level": "N3",
+    "reading": "かかわる",
+    "definition": "关系到，涉及",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "当店": {
+    "level": "N3",
+    "reading": "とうてん",
+    "definition": "本店，这家店",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "ダメ": {
+    "level": "N4",
+    "reading": "ダメ",
+    "definition": "不行，不可以",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "たこ焼き": {
+    "level": "N4",
+    "reading": "たこやき",
+    "definition": "章鱼烧",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "たん": {
+    "level": "N3",
+    "reading": "たん",
+    "definition": "短，简短（常作为口语或复合词的一部分）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "盛り上げ": {
+    "level": "N3",
+    "reading": "もりあげ",
+    "definition": "炒热气氛，提升热情",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "パスタ": {
+    "level": "N5",
+    "reading": "パスタ",
+    "definition": "意大利面",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "アレルギー": {
+    "level": "N4",
+    "reading": "アレルギー",
+    "definition": "过敏",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "お手伝い": {
+    "level": "N5",
+    "reading": "おてつだい",
+    "definition": "帮忙，助手",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "なくなっ": {
+    "level": "N5",
+    "reading": "なくなっ",
+    "definition": "消失，用完（なくなる的口语或变形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "綺麗": {
+    "level": "N5",
+    "reading": "きれい",
+    "definition": "漂亮，干净",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "検索": {
+    "level": "N4",
+    "reading": "けんさく",
+    "definition": "搜索，检索",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "メール": {
+    "level": "N5",
+    "reading": "メール",
+    "definition": "邮件，电子邮件",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "渡しし": {
+    "level": "N4",
+    "reading": "わたしし",
+    "definition": "交付，交给（渡す的变形或误写）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "上手く": {
+    "level": "N4",
+    "reading": "うまく",
+    "definition": "顺利地，巧妙地",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "フォン": {
+    "level": "N4",
+    "reading": "フォン",
+    "definition": "电话，手机（常作为复合词的一部分，如スマートフォン）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "健康的": {
+    "level": "N3",
+    "reading": "けんこうてき",
+    "definition": "健康的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "持ち物": {
+    "level": "N4",
+    "reading": "もちもの",
+    "definition": "携带物品，随身物品",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:35:45.660Z"
+  },
+  "書き方": {
+    "level": "N4",
+    "reading": "かきかた",
+    "definition": "书写方法、写法",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "山田": {
+    "level": "N5",
+    "reading": "やまだ",
+    "definition": "姓氏（山田）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "助け合い": {
+    "level": "N3",
+    "reading": "たすけあい",
+    "definition": "互相帮助、互助",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "軽視する": {
+    "level": "N2",
+    "reading": "けいしする",
+    "definition": "轻视、忽视",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "歴史的": {
+    "level": "N3",
+    "reading": "れきしてき",
+    "definition": "历史的、历史性的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "興味深い": {
+    "level": "N3",
+    "reading": "きょうみぶかい",
+    "definition": "有趣的、引人入胜的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "さ": {
+    "level": "N4",
+    "reading": "さ",
+    "definition": "口语终助词，表示轻微断言或强调",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "よそ": {
+    "level": "N3",
+    "reading": "よそ",
+    "definition": "别处、其他地方",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "なんとか": {
+    "level": "N3",
+    "reading": "なんとか",
+    "definition": "设法、想办法",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "エリア": {
+    "level": "N4",
+    "reading": "えりあ",
+    "definition": "区域、地区",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "マーケティング": {
+    "level": "N2",
+    "reading": "まーけてぃんぐ",
+    "definition": "市场营销",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "御社": {
+    "level": "N2",
+    "reading": "おんしゃ",
+    "definition": "贵公司（敬语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "人手": {
+    "level": "N3",
+    "reading": "ひとで",
+    "definition": "人手、劳动力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "町内会": {
+    "level": "N3",
+    "reading": "ちょうないかい",
+    "definition": "社区协会、町内会",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "フェス": {
+    "level": "N4",
+    "reading": "ふぇす",
+    "definition": "节日、庆典（festival的缩写）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "そういう": {
+    "level": "N4",
+    "reading": "そういう",
+    "definition": "那样的、那种",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "温かみ": {
+    "level": "N3",
+    "reading": "あたたかみ",
+    "definition": "温暖感、温馨",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "継承さ": {
+    "level": "N2",
+    "reading": "けいしょうさ",
+    "definition": "继承（动词'継承する'的未然形或口语形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "ステップ": {
+    "level": "N4",
+    "reading": "すてっぷ",
+    "definition": "步骤、阶段",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "表面的": {
+    "level": "N3",
+    "reading": "ひょうめんてき",
+    "definition": "表面的、肤浅的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "数値": {
+    "level": "N3",
+    "reading": "すうち",
+    "definition": "数值、数字",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "サクラ": {
+    "level": "N5",
+    "reading": "さくら",
+    "definition": "樱花；或指托儿、假观众",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "AI": {
+    "level": "N4",
+    "reading": "えーあい",
+    "definition": "人工智能",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "生む": {
+    "level": "N4",
+    "reading": "うむ",
+    "definition": "产生、创造",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "向き合え": {
+    "level": "N3",
+    "reading": "むきあえ",
+    "definition": "面对、正视（动词'向き合う'的命令形或可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "段階的": {
+    "level": "N3",
+    "reading": "だんかいてき",
+    "definition": "阶段性的、逐步的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "構築": {
+    "level": "N2",
+    "reading": "こうちく",
+    "definition": "构建、建设",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "短期的": {
+    "level": "N3",
+    "reading": "たんきてき",
+    "definition": "短期的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "顔し": {
+    "level": "N4",
+    "reading": "かおし",
+    "definition": "脸、面部（可能为'顔する'的变形或口语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "現職": {
+    "level": "N2",
+    "reading": "げんしょく",
+    "definition": "现任职务、现职",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:20.861Z"
+  },
+  "イノベーション": {
+    "level": "N2",
+    "reading": "いのべーしょん",
+    "definition": "innovation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "芸術的": {
+    "level": "N3",
+    "reading": "げいじゅつてき",
+    "definition": "artistic",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "アドバイザー": {
+    "level": "N3",
+    "reading": "あどばいざー",
+    "definition": "advisor",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "デジタル化": {
+    "level": "N3",
+    "reading": "でじたるか",
+    "definition": "digitalization",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "他社": {
+    "level": "N3",
+    "reading": "たしゃ",
+    "definition": "other company",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "どういう": {
+    "level": "N4",
+    "reading": "どういう",
+    "definition": "what kind of",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "懸念さ": {
+    "level": "N2",
+    "reading": "けねんさ",
+    "definition": "concern (noun form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "堆肥化": {
+    "level": "N2",
+    "reading": "たいひか",
+    "definition": "composting",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "アプリ": {
+    "level": "N3",
+    "reading": "あぷり",
+    "definition": "app (application)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "リソース": {
+    "level": "N2",
+    "reading": "りそーす",
+    "definition": "resource",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "師匠": {
+    "level": "N3",
+    "reading": "ししょう",
+    "definition": "master, teacher",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "生産性": {
+    "level": "N2",
+    "reading": "せいさんせい",
+    "definition": "productivity",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "非同期": {
+    "level": "N2",
+    "reading": "ひどうき",
+    "definition": "asynchronous",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "試作": {
+    "level": "N2",
+    "reading": "しさく",
+    "definition": "prototype, trial production",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "漆器": {
+    "level": "N2",
+    "reading": "しっき",
+    "definition": "lacquerware",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "焼き": {
+    "level": "N4",
+    "reading": "やき",
+    "definition": "grilling, baking",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "中華": {
+    "level": "N4",
+    "reading": "ちゅうか",
+    "definition": "Chinese (cuisine)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "リフレッシュ": {
+    "level": "N3",
+    "reading": "りふれっしゅ",
+    "definition": "refresh",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "卵焼き": {
+    "level": "N4",
+    "reading": "たまごやき",
+    "definition": "rolled omelette",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "合える": {
+    "level": "N4",
+    "reading": "あえる",
+    "definition": "can meet, can match",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "エピソード": {
+    "level": "N3",
+    "reading": "えぴそーど",
+    "definition": "episode, anecdote",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "多様性": {
+    "level": "N2",
+    "reading": "たようせい",
+    "definition": "diversity",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "リビング": {
+    "level": "N4",
+    "reading": "りびんぐ",
+    "definition": "living room",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "アクティビティ": {
+    "level": "N3",
+    "reading": "あくてぃびてぃ",
+    "definition": "activity",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "お手伝いし": {
+    "level": "N5",
+    "reading": "おてつだいし",
+    "definition": "help (verb form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "不安定": {
+    "level": "N3",
+    "reading": "ふあんてい",
+    "definition": "unstable",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "だし": {
+    "level": "N4",
+    "reading": "だし",
+    "definition": "broth, stock",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "トマト": {
+    "level": "N5",
+    "reading": "とまと",
+    "definition": "tomato",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "たま": {
+    "level": "N4",
+    "reading": "たま",
+    "definition": "occasionally, sometimes",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "ヨーグルト": {
+    "level": "N5",
+    "reading": "よーぐると",
+    "definition": "yogurt",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:36:53.533Z"
+  },
+  "定番": {
+    "level": "N2",
+    "reading": "ていばん",
+    "definition": "经典、标准、固定项目",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "ラーメン": {
+    "level": "N5",
+    "reading": "ラーメン",
+    "definition": "拉面",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "持ち寄り": {
+    "level": "N3",
+    "reading": "もちより",
+    "definition": "各自带来（食物等）分享",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "夜景": {
+    "level": "N3",
+    "reading": "やけい",
+    "definition": "夜景",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "スーパー": {
+    "level": "N5",
+    "reading": "スーパー",
+    "definition": "超市",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "安定性": {
+    "level": "N2",
+    "reading": "あんていせい",
+    "definition": "稳定性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "リーダーシップ": {
+    "level": "N2",
+    "reading": "リーダーシップ",
+    "definition": "领导力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "バイト": {
+    "level": "N4",
+    "reading": "バイト",
+    "definition": "兼职工作",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "追いつく": {
+    "level": "N3",
+    "reading": "おいつく",
+    "definition": "追上、赶上",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "露天風呂": {
+    "level": "N3",
+    "reading": "ろてんぶろ",
+    "definition": "露天浴池",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "もらえ": {
+    "level": "N4",
+    "reading": "もらえ",
+    "definition": "得到（动词もらう的命令形/可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "父": {
+    "level": "N5",
+    "reading": "ちち",
+    "definition": "父亲",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "いや": {
+    "level": "N4",
+    "reading": "いや",
+    "definition": "不，讨厌（否定或反感）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "伺え": {
+    "level": "N3",
+    "reading": "うかがえ",
+    "definition": "拜访、询问（动词伺う的命令形/可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "印象的": {
+    "level": "N3",
+    "reading": "いんしょうてき",
+    "definition": "印象深刻的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "和室": {
+    "level": "N4",
+    "reading": "わしつ",
+    "definition": "日式房间",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "スキャンし": {
+    "level": "N3",
+    "reading": "スキャンし",
+    "definition": "扫描（动词スキャンする的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "守れ": {
+    "level": "N4",
+    "reading": "まもれ",
+    "definition": "遵守、保护（动词守る的命令形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "ついに": {
+    "level": "N3",
+    "reading": "ついに",
+    "definition": "终于、最终",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "マナー": {
+    "level": "N3",
+    "reading": "マナー",
+    "definition": "礼仪、规矩",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "集中力": {
+    "level": "N3",
+    "reading": "しゅうちゅうりょく",
+    "definition": "集中力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "はかどる": {
+    "level": "N2",
+    "reading": "はかどる",
+    "definition": "进展顺利",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "解消": {
+    "level": "N2",
+    "reading": "かいしょう",
+    "definition": "消除、解决",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "出せる": {
+    "level": "N4",
+    "reading": "だせる",
+    "definition": "能拿出、能展示（动词出す的可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "粘土": {
+    "level": "N4",
+    "reading": "ねんど",
+    "definition": "黏土",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "コツ": {
+    "level": "N3",
+    "reading": "コツ",
+    "definition": "诀窍、技巧",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "焼きそば": {
+    "level": "N5",
+    "reading": "やきそば",
+    "definition": "炒面",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "迫力": {
+    "level": "N2",
+    "reading": "はくりょく",
+    "definition": "震撼力、冲击力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "お知らせし": {
+    "level": "N4",
+    "reading": "おしらせし",
+    "definition": "通知（动词お知らせする的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "掛け声": {
+    "level": "N3",
+    "reading": "かけごえ",
+    "definition": "吆喝、喊声",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:37:27.474Z"
+  },
+  "ー": {
+    "level": "N5",
+    "reading": "ちょうおん",
+    "definition": "长音符号（用于表示长音）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "海鮮": {
+    "level": "N3",
+    "reading": "かいせん",
+    "definition": "海鲜",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "デザイナー": {
+    "level": "N3",
+    "reading": "でざいなー",
+    "definition": "设计师",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "イタリアン": {
+    "level": "N4",
+    "reading": "いたりあん",
+    "definition": "意大利菜",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "寿司": {
+    "level": "N5",
+    "reading": "すし",
+    "definition": "寿司",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "適し": {
+    "level": "N3",
+    "reading": "てきし",
+    "definition": "适合（动词“適する”的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "ぼかし": {
+    "level": "N2",
+    "reading": "ぼかし",
+    "definition": "模糊（摄影或图像处理术语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "まだまだ": {
+    "level": "N4",
+    "reading": "まだまだ",
+    "definition": "还远远不够，还有很多不足",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "ノイズ": {
+    "level": "N3",
+    "reading": "のいず",
+    "definition": "噪音，干扰",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "ログインし": {
+    "level": "N3",
+    "reading": "ろぐいんし",
+    "definition": "登录（动词“ログインする”的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "あまた": {
+    "level": "N1",
+    "reading": "あまた",
+    "definition": "许多，大量（书面语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "入力し": {
+    "level": "N3",
+    "reading": "にゅうりょくし",
+    "definition": "输入（动词“入力する”的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "過ごせ": {
+    "level": "N4",
+    "reading": "すごせ",
+    "definition": "度过（动词“過ごす”的可能形或命令形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "やりがい": {
+    "level": "N2",
+    "reading": "やりがい",
+    "definition": "做事的价值感，成就感",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "仲良く": {
+    "level": "N4",
+    "reading": "なかよく",
+    "definition": "友好地，和睦地（副词）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "夜勤": {
+    "level": "N3",
+    "reading": "やきん",
+    "definition": "夜班",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "C": {
+    "level": "N5",
+    "reading": "しー",
+    "definition": "字母C（作为人名或代号）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "ご用": {
+    "level": "N3",
+    "reading": "ごよう",
+    "definition": "事情，事务（敬语表达）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "チャット": {
+    "level": "N4",
+    "reading": "ちゃっと",
+    "definition": "聊天，在线聊天",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "リゾート": {
+    "level": "N3",
+    "reading": "りぞーと",
+    "definition": "度假胜地",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "後ほど": {
+    "level": "N3",
+    "reading": "のちほど",
+    "definition": "稍后，过后",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "必須": {
+    "level": "N2",
+    "reading": "ひっす",
+    "definition": "必须，必备",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "バドミントン": {
+    "level": "N4",
+    "reading": "ばどみんとん",
+    "definition": "羽毛球",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "シーン": {
+    "level": "N3",
+    "reading": "しーん",
+    "definition": "场景，场面",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "聴く": {
+    "level": "N4",
+    "reading": "きく",
+    "definition": "听（较正式的动词）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "报告会": {
+    "level": "N3",
+    "reading": "ほうこくかい",
+    "definition": "报告会，汇报会",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "実証": {
+    "level": "N2",
+    "reading": "じっしょう",
+    "definition": "实证，验证",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "定例会": {
+    "level": "N3",
+    "reading": "ていれいかい",
+    "definition": "例会，定期会议",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "提起し": {
+    "level": "N2",
+    "reading": "ていきし",
+    "definition": "提出（动词“提起する”的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "市内": {
+    "level": "N4",
+    "reading": "しない",
+    "definition": "市内，市区内",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:02.193Z"
+  },
+  "リストアップし": {
+    "level": "N2",
+    "reading": "リストアップし",
+    "definition": "列出、列举",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "ディスカッション": {
+    "level": "N3",
+    "reading": "ディスカッション",
+    "definition": "讨论、辩论",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "宝物": {
+    "level": "N4",
+    "reading": "たからもの",
+    "definition": "宝物、珍贵的东西",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "撮れ": {
+    "level": "N4",
+    "reading": "とれ",
+    "definition": "拍摄（命令形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "万端": {
+    "level": "N1",
+    "reading": "ばんたん",
+    "definition": "一切、所有方面",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "露出": {
+    "level": "N2",
+    "reading": "ろしゅつ",
+    "definition": "曝光、暴露",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "救急": {
+    "level": "N3",
+    "reading": "きゅうきゅう",
+    "definition": "急救、紧急",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "キット": {
+    "level": "N3",
+    "reading": "キット",
+    "definition": "套装、工具包",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "本番": {
+    "level": "N3",
+    "reading": "ほんばん",
+    "definition": "正式、实际表演",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "士気": {
+    "level": "N2",
+    "reading": "しき",
+    "definition": "士气、斗志",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "備品": {
+    "level": "N3",
+    "reading": "びひん",
+    "definition": "备品、设备",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "グローバル": {
+    "level": "N2",
+    "reading": "グローバル",
+    "definition": "全球的、国际的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "起業し": {
+    "level": "N2",
+    "reading": "きぎょうし",
+    "definition": "创业、创办企业",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "クレーム": {
+    "level": "N3",
+    "reading": "クレーム",
+    "definition": "投诉、索赔",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "町内": {
+    "level": "N3",
+    "reading": "ちょうない",
+    "definition": "町内、社区内",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "模擬": {
+    "level": "N2",
+    "reading": "もぎ",
+    "definition": "模拟、模仿",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "将来的": {
+    "level": "N3",
+    "reading": "しょうらいてき",
+    "definition": "将来的、未来的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "広報": {
+    "level": "N3",
+    "reading": "こうほう",
+    "definition": "宣传、公关",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "本格的": {
+    "level": "N3",
+    "reading": "ほんかくてき",
+    "definition": "正式的、真正的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "ルームメイト": {
+    "level": "N4",
+    "reading": "ルームメイト",
+    "definition": "室友",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "キッチン": {
+    "level": "N5",
+    "reading": "キッチン",
+    "definition": "厨房",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "伝票": {
+    "level": "N3",
+    "reading": "でんぴょう",
+    "definition": "传票、单据",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "働け": {
+    "level": "N5",
+    "reading": "はたらけ",
+    "definition": "工作（命令形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "精一杯": {
+    "level": "N3",
+    "reading": "せいいっぱい",
+    "definition": "竭尽全力、尽最大努力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "体重": {
+    "level": "N4",
+    "reading": "たいじゅう",
+    "definition": "体重",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "塩分": {
+    "level": "N3",
+    "reading": "えんぶん",
+    "definition": "盐分",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "やる気": {
+    "level": "N3",
+    "reading": "やるき",
+    "definition": "干劲、积极性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "km": {
+    "level": "N5",
+    "reading": "キロメートル",
+    "definition": "公里",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "被写体": {
+    "level": "N2",
+    "reading": "ひしゃたい",
+    "definition": "被摄体、拍摄对象",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "展示会": {
+    "level": "N3",
+    "reading": "てんじかい",
+    "definition": "展览会、展示会",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:38:35.215Z"
+  },
+  "昔ながら": {
+    "level": "N2",
+    "reading": "むかしながら",
+    "definition": "as of old, traditional",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "やり方": {
+    "level": "N4",
+    "reading": "やりかた",
+    "definition": "way of doing, method",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "作り上げ": {
+    "level": "N3",
+    "reading": "つくりあげ",
+    "definition": "building up, completion",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "なんだか": {
+    "level": "N3",
+    "reading": "なんだか",
+    "definition": "somehow, for some reason",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "発注": {
+    "level": "N2",
+    "reading": "はっちゅう",
+    "definition": "placing an order",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "アドバイスし": {
+    "level": "N4",
+    "reading": "アドバイスし",
+    "definition": "advising (verb form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "キャンセル": {
+    "level": "N4",
+    "reading": "キャンセル",
+    "definition": "cancellation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "抑え": {
+    "level": "N3",
+    "reading": "おさえ",
+    "definition": "suppression, holding down",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "概要": {
+    "level": "N2",
+    "reading": "がいよう",
+    "definition": "outline, summary",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "よし": {
+    "level": "N4",
+    "reading": "よし",
+    "definition": "good, alright (interjection)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "次世代": {
+    "level": "N2",
+    "reading": "じせだい",
+    "definition": "next generation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "検証する": {
+    "level": "N2",
+    "reading": "けんしょうする",
+    "definition": "to verify, to examine",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "科学的": {
+    "level": "N3",
+    "reading": "かがくてき",
+    "definition": "scientific",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "集結": {
+    "level": "N2",
+    "reading": "しゅうけつ",
+    "definition": "gathering, assembly",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "真": {
+    "level": "N3",
+    "reading": "しん",
+    "definition": "true, genuine",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "見つめる": {
+    "level": "N3",
+    "reading": "みつめる",
+    "definition": "to gaze at, to stare",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "見込める": {
+    "level": "N2",
+    "reading": "みこめる",
+    "definition": "can be expected, promising",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "話し合える": {
+    "level": "N4",
+    "reading": "はなしあえる",
+    "definition": "can discuss, able to talk",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "お送りし": {
+    "level": "N3",
+    "reading": "おおくりし",
+    "definition": "sending (humble form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "光栄": {
+    "level": "N2",
+    "reading": "こうえい",
+    "definition": "honor, privilege",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "立ち": {
+    "level": "N5",
+    "reading": "たち",
+    "definition": "standing, rising",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "上げ": {
+    "level": "N5",
+    "reading": "あげ",
+    "definition": "raising, lifting",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "構築する": {
+    "level": "N2",
+    "reading": "こうちくする",
+    "definition": "to construct, to build",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "画廊": {
+    "level": "N2",
+    "reading": "がろう",
+    "definition": "art gallery",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "商業的": {
+    "level": "N3",
+    "reading": "しょうぎょうてき",
+    "definition": "commercial",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "応答": {
+    "level": "N2",
+    "reading": "おうとう",
+    "definition": "response, reply",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "実用性": {
+    "level": "N2",
+    "reading": "じつようせい",
+    "definition": "practicality",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "秘訣": {
+    "level": "N2",
+    "reading": "ひけつ",
+    "definition": "secret, knack",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "返品": {
+    "level": "N3",
+    "reading": "へんぴん",
+    "definition": "return of goods",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "ヘッド": {
+    "level": "N4",
+    "reading": "ヘッド",
+    "definition": "head (e.g., of department)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:08.769Z"
+  },
+  "応え": {
+    "level": "N3",
+    "reading": "こたえ",
+    "definition": "response, answer",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "サーバー": {
+    "level": "N3",
+    "reading": "サーバー",
+    "definition": "server (computer)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "プレゼン": {
+    "level": "N3",
+    "reading": "プレゼン",
+    "definition": "presentation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "文化的": {
+    "level": "N3",
+    "reading": "ぶんかてき",
+    "definition": "cultural",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "お盆": {
+    "level": "N4",
+    "reading": "おぼん",
+    "definition": "Bon Festival (Buddhist holiday)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "ミナト": {
+    "level": "N5",
+    "reading": "ミナト",
+    "definition": "Minato (place name)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "アクセス": {
+    "level": "N3",
+    "reading": "アクセス",
+    "definition": "access",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "操作性": {
+    "level": "N2",
+    "reading": "そうさせい",
+    "definition": "operability, usability",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "画面": {
+    "level": "N4",
+    "reading": "がめん",
+    "definition": "screen, display",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "収益化": {
+    "level": "N2",
+    "reading": "しゅうえきか",
+    "definition": "monetization",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "弊社": {
+    "level": "N3",
+    "reading": "へいしゃ",
+    "definition": "our company (humble)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "差別化": {
+    "level": "N2",
+    "reading": "さべつか",
+    "definition": "differentiation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "パートナーシップ": {
+    "level": "N3",
+    "reading": "パートナーシップ",
+    "definition": "partnership",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "パートナー": {
+    "level": "N3",
+    "reading": "パートナー",
+    "definition": "partner",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "外食": {
+    "level": "N3",
+    "reading": "がいしょく",
+    "definition": "eating out",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "自体": {
+    "level": "N3",
+    "reading": "じたい",
+    "definition": "itself, in itself",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "近づい": {
+    "level": "N4",
+    "reading": "ちかづい",
+    "definition": "approach, get close",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "とっ": {
+    "level": "N3",
+    "reading": "とっ",
+    "definition": "suddenly (colloquial)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "残業": {
+    "level": "N4",
+    "reading": "ざんぎょう",
+    "definition": "overtime work",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "業界": {
+    "level": "N3",
+    "reading": "ぎょうかい",
+    "definition": "industry, business world",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "顔色": {
+    "level": "N3",
+    "reading": "かおいろ",
+    "definition": "facial expression, complexion",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "お忙しい": {
+    "level": "N4",
+    "reading": "おいそがしい",
+    "definition": "busy (polite)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "条項": {
+    "level": "N2",
+    "reading": "じょうこう",
+    "definition": "clause, article (legal)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "相乗": {
+    "level": "N2",
+    "reading": "そうじょう",
+    "definition": "synergy, multiplicative",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "双方": {
+    "level": "N3",
+    "reading": "そうほう",
+    "definition": "both parties, both sides",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "協業": {
+    "level": "N2",
+    "reading": "きょうぎょう",
+    "definition": "collaboration, joint business",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "ご覧": {
+    "level": "N3",
+    "reading": "ごらん",
+    "definition": "look/see (honorific)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "近隣": {
+    "level": "N3",
+    "reading": "きんりん",
+    "definition": "neighborhood, vicinity",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "ゴミ": {
+    "level": "N5",
+    "reading": "ゴミ",
+    "definition": "garbage, trash",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "同時に": {
+    "level": "N4",
+    "reading": "どうじに",
+    "definition": "at the same time, simultaneously",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:39:41.973Z"
+  },
+  "限定的": {
+    "level": "N2",
+    "reading": "げんていてき",
+    "definition": "限定的な",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "密着": {
+    "level": "N2",
+    "reading": "みっちゃく",
+    "definition": "密着する",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "既存": {
+    "level": "N2",
+    "reading": "きそん",
+    "definition": "既存の",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "特性": {
+    "level": "N2",
+    "reading": "とくせい",
+    "definition": "特性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "定着": {
+    "level": "N2",
+    "reading": "ていちゃく",
+    "definition": "定着する",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "組合長": {
+    "level": "N3",
+    "reading": "くみあいちょう",
+    "definition": "組合長",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "引け": {
+    "level": "N2",
+    "reading": "ひけ",
+    "definition": "引けを取る",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "半年": {
+    "level": "N4",
+    "reading": "はんとし",
+    "definition": "半年",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "農園": {
+    "level": "N3",
+    "reading": "のうえん",
+    "definition": "農園",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "融合さ": {
+    "level": "N2",
+    "reading": "ゆうごうさ",
+    "definition": "融合さ",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "インパクト": {
+    "level": "N2",
+    "reading": "いんぱくと",
+    "definition": "インパクト",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "要件": {
+    "level": "N2",
+    "reading": "ようけん",
+    "definition": "要件",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "セッション": {
+    "level": "N2",
+    "reading": "せっしょん",
+    "definition": "セッション",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "ツール": {
+    "level": "N3",
+    "reading": "つーる",
+    "definition": "ツール",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "商業化": {
+    "level": "N2",
+    "reading": "しょうぎょうか",
+    "definition": "商業化する",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "現代的": {
+    "level": "N3",
+    "reading": "げんだいてき",
+    "definition": "現代的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "工房": {
+    "level": "N3",
+    "reading": "こうぼう",
+    "definition": "工房",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "制度的": {
+    "level": "N2",
+    "reading": "せいどてき",
+    "definition": "制度的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "アーカイブ": {
+    "level": "N2",
+    "reading": "あーかいぶ",
+    "definition": "アーカイブ",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "倫理的": {
+    "level": "N2",
+    "reading": "りんりてき",
+    "definition": "倫理的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "見直し": {
+    "level": "N3",
+    "reading": "みなおし",
+    "definition": "見直し",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "セキュリティ": {
+    "level": "N2",
+    "reading": "せきゅりてぃ",
+    "definition": "セキュリティ",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "アルゴリズム": {
+    "level": "N2",
+    "reading": "あるごりずむ",
+    "definition": "アルゴリズム",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "理想的": {
+    "level": "N3",
+    "reading": "りそうてき",
+    "definition": "理想的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "奨学": {
+    "level": "N2",
+    "reading": "しょうがく",
+    "definition": "奨学",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "返却": {
+    "level": "N3",
+    "reading": "へんきゃく",
+    "definition": "返却する",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "挽回する": {
+    "level": "N2",
+    "reading": "ばんかいする",
+    "definition": "挽回する",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "曇り空": {
+    "level": "N4",
+    "reading": "くもりぞら",
+    "definition": "曇り空",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "リクエスト": {
+    "level": "N3",
+    "reading": "りくえすと",
+    "definition": "リクエスト",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "ょうかいいですね": {
+    "level": "N5",
+    "reading": "ようかいいですね",
+    "definition": "ようかいいですね",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:14.905Z"
+  },
+  "紫色": {
+    "level": "N5",
+    "reading": "むらさきいろ",
+    "definition": "紫色",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "カリフラワー": {
+    "level": "N4",
+    "reading": "かりふらわー",
+    "definition": "花椰菜",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "やつ": {
+    "level": "N3",
+    "reading": "やつ",
+    "definition": "家伙、东西（口语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "ミステリー": {
+    "level": "N4",
+    "reading": "みすてりー",
+    "definition": "神秘、推理小说",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "まったく": {
+    "level": "N4",
+    "reading": "まったく",
+    "definition": "完全、真是（感叹）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "え": {
+    "level": "N5",
+    "reading": "え",
+    "definition": "诶（表示惊讶或疑问）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "締めくくり": {
+    "level": "N2",
+    "reading": "しめくくり",
+    "definition": "conclusion; wrap-up",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "失敗談": {
+    "level": "N3",
+    "reading": "しっぱいだん",
+    "definition": "失败经历",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "通話する": {
+    "level": "N4",
+    "reading": "つうわする",
+    "definition": "通话",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "祖父母": {
+    "level": "N4",
+    "reading": "そふぼ",
+    "definition": "祖父母",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "賑やかそ": {
+    "level": "N3",
+    "reading": "にぎやかそ",
+    "definition": "热闹（口语推测形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "血縁": {
+    "level": "N2",
+    "reading": "けつえん",
+    "definition": "血缘关系",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "水族館": {
+    "level": "N4",
+    "reading": "すいぞくかん",
+    "definition": "水族馆",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "ょうわかりましたでは": {
+    "level": "N3",
+    "reading": "ようわかりましたでは",
+    "definition": "好的明白了那么（口语表达）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "煮付け": {
+    "level": "N3",
+    "reading": "につけ",
+    "definition": "炖煮菜肴",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "サッカーし": {
+    "level": "N5",
+    "reading": "さっかーし",
+    "definition": "踢足球（口语动词形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "満開": {
+    "level": "N3",
+    "reading": "まんかい",
+    "definition": "盛开",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "閉じこもっ": {
+    "level": "N3",
+    "reading": "とじこもっ",
+    "definition": "闭门不出（动词て形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "梅雨入りし": {
+    "level": "N3",
+    "reading": "つゆいりし",
+    "definition": "进入梅雨季（动词形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "ジメジメ": {
+    "level": "N3",
+    "reading": "じめじめ",
+    "definition": "潮湿、闷热（拟态词）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "雨上がり": {
+    "level": "N3",
+    "reading": "あめあがり",
+    "definition": "雨停后",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "ざいますこちらこそありがとうございました": {
+    "level": "N4",
+    "reading": "ざいますこちらこそありがとうございました",
+    "definition": "是的是我该谢谢您（礼貌表达）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "入荷し": {
+    "level": "N3",
+    "reading": "にゅうかし",
+    "definition": "进货（动词形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "キャベツ": {
+    "level": "N5",
+    "reading": "きゃべつ",
+    "definition": "卷心菜",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "半玉": {
+    "level": "N3",
+    "reading": "はんだま",
+    "definition": "半颗（蔬菜等）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "買え": {
+    "level": "N4",
+    "reading": "かえ",
+    "definition": "买（动词可能形或命令形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "ヘルシー": {
+    "level": "N4",
+    "reading": "へるしー",
+    "definition": "健康、有益健康",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "単価": {
+    "level": "N2",
+    "reading": "たんか",
+    "definition": "单价",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "得": {
+    "level": "N3",
+    "reading": "とく",
+    "definition": "划算、有利",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "メイン": {
+    "level": "N4",
+    "reading": "めいん",
+    "definition": "主菜、主要部分",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:40:50.520Z"
+  },
+  "ブランド": {
+    "level": "N3",
+    "reading": "ブランド",
+    "definition": "品牌",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "控えめ": {
+    "level": "N3",
+    "reading": "ひかえめ",
+    "definition": "谦虚的，克制的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "急変し": {
+    "level": "N2",
+    "reading": "きゅうへんし",
+    "definition": "突然变化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "突風": {
+    "level": "N2",
+    "reading": "とっぷう",
+    "definition": "阵风，突然刮起的强风",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "日差し": {
+    "level": "N3",
+    "reading": "ひざし",
+    "definition": "阳光，日光",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "移り変わっ": {
+    "level": "N2",
+    "reading": "うつりかわっ",
+    "definition": "变迁，变化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "つらい": {
+    "level": "N3",
+    "reading": "つらい",
+    "definition": "痛苦的，难受的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "青空": {
+    "level": "N4",
+    "reading": "あおぞら",
+    "definition": "蓝天",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "晴れ間": {
+    "level": "N3",
+    "reading": "はれま",
+    "definition": "晴天，放晴的间隙",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "いろんな": {
+    "level": "N4",
+    "reading": "いろんな",
+    "definition": "各种各样的（口语形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "シリアル": {
+    "level": "N3",
+    "reading": "シリアル",
+    "definition": "谷物早餐，麦片",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "母国": {
+    "level": "N3",
+    "reading": "ぼこく",
+    "definition": "祖国",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "納豆": {
+    "level": "N3",
+    "reading": "なっとう",
+    "definition": "纳豆（日本传统食品）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "粘り気": {
+    "level": "N2",
+    "reading": "ねばりけ",
+    "definition": "黏性，黏度",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "揚げ物": {
+    "level": "N3",
+    "reading": "あげもの",
+    "definition": "油炸食品",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "焼き芋": {
+    "level": "N3",
+    "reading": "やきいも",
+    "definition": "烤红薯",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "いいなそ": {
+    "level": "N3",
+    "reading": "いいなそ",
+    "definition": "好像不错（口语表达）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "ハム": {
+    "level": "N4",
+    "reading": "ハム",
+    "definition": "火腿",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "カップル": {
+    "level": "N3",
+    "reading": "カップル",
+    "definition": "情侣，一对",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "幼少": {
+    "level": "N2",
+    "reading": "ようしょう",
+    "definition": "幼年，童年",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "加算": {
+    "level": "N2",
+    "reading": "かさん",
+    "definition": "加法，合计",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "カート": {
+    "level": "N4",
+    "reading": "カート",
+    "definition": "购物车，手推车",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "クロワッサン": {
+    "level": "N3",
+    "reading": "クロワッサン",
+    "definition": "牛角面包",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "失礼し": {
+    "level": "N4",
+    "reading": "しつれいし",
+    "definition": "失礼，告辞",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "だい": {
+    "level": "N4",
+    "reading": "だい",
+    "definition": "大（口语前缀，如“だい好き”）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "放課後": {
+    "level": "N4",
+    "reading": "ほうかご",
+    "definition": "放学后",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "サーブ": {
+    "level": "N3",
+    "reading": "サーブ",
+    "definition": "发球（体育术语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "河川敷": {
+    "level": "N2",
+    "reading": "かせんしき",
+    "definition": "河滩，河床",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "合宿": {
+    "level": "N2",
+    "reading": "がっしゅく",
+    "definition": "集训，集体住宿训练",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "積極": {
+    "level": "N3",
+    "reading": "せっきょく",
+    "definition": "积极，主动",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:41:24.214Z"
+  },
+  "深化": {
+    "level": "N2",
+    "reading": "しんか",
+    "definition": "深化、加深、深化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "文学部": {
+    "level": "N4",
+    "reading": "ぶんがくぶ",
+    "definition": "文学系、文学院",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "工学部": {
+    "level": "N4",
+    "reading": "こうがくぶ",
+    "definition": "工学院、工程系",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "入部する": {
+    "level": "N3",
+    "reading": "にゅうぶする",
+    "definition": "加入社团、入部",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "びにぴったりだよそうだねでも": {
+    "level": "N3",
+    "reading": "びにぴったりだよそうだねでも",
+    "definition": "口语表达，可能为“びにぴったりだよ、そうだね、でも”的连用，表示“非常适合、是啊、但是”",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "漬物": {
+    "level": "N4",
+    "reading": "つけもの",
+    "definition": "腌菜、泡菜",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "味見し": {
+    "level": "N4",
+    "reading": "あじみし",
+    "definition": "品尝、试味",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "試食": {
+    "level": "N3",
+    "reading": "ししょく",
+    "definition": "试吃、品尝",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "少なめ": {
+    "level": "N3",
+    "reading": "すくなめ",
+    "definition": "较少、少一点",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "雪景色": {
+    "level": "N3",
+    "reading": "ゆきげしき",
+    "definition": "雪景、雪中景色",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "一段と": {
+    "level": "N2",
+    "reading": "いちだんと",
+    "definition": "更加、越发",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "防寒": {
+    "level": "N3",
+    "reading": "ぼうかん",
+    "definition": "防寒、保暖",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "乗れ": {
+    "level": "N4",
+    "reading": "のれ",
+    "definition": "能乘坐、可以上车（动词“乗る”的可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "そっ": {
+    "level": "N3",
+    "reading": "そっ",
+    "definition": "口语缩略，可能为“そう”或“そっか”等，表示“那样啊”",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "最寄り駅": {
+    "level": "N3",
+    "reading": "もよりえき",
+    "definition": "最近的车站、邻近车站",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "本数": {
+    "level": "N3",
+    "reading": "ほんすう",
+    "definition": "数量、根数（如车次）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "洋室": {
+    "level": "N4",
+    "reading": "ようしつ",
+    "definition": "西式房间、洋室",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "散策": {
+    "level": "N2",
+    "reading": "さんさく",
+    "definition": "散步、漫步",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "圏内": {
+    "level": "N2",
+    "reading": "けんない",
+    "definition": "范围内、圈内",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "深呼吸し": {
+    "level": "N4",
+    "reading": "しんこきゅうし",
+    "definition": "深呼吸（动词形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "頂け": {
+    "level": "N3",
+    "reading": "いただけ",
+    "definition": "能得到、可以收到（“頂く”的可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "整頓": {
+    "level": "N3",
+    "reading": "せいとん",
+    "definition": "整理、整顿",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "密着し": {
+    "level": "N2",
+    "reading": "みっちゃくし",
+    "definition": "紧密接触、贴近（动词形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "可否": {
+    "level": "N1",
+    "reading": "かひ",
+    "definition": "可否、是否可行",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "初日": {
+    "level": "N4",
+    "reading": "しょにち",
+    "definition": "第一天、首日",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "水彩": {
+    "level": "N3",
+    "reading": "すいさい",
+    "definition": "水彩画、水彩",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "習得": {
+    "level": "N2",
+    "reading": "しゅうとく",
+    "definition": "学习掌握、习得",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "だいぶ": {
+    "level": "N3",
+    "reading": "だいぶ",
+    "definition": "相当、很、颇",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "こね": {
+    "level": "N3",
+    "reading": "こね",
+    "definition": "揉、捏（动词“こねる”的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "手のひら": {
+    "level": "N4",
+    "reading": "てのひら",
+    "definition": "手掌、手心",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:01.219Z"
+  },
+  "ろ": {
+    "level": "N3",
+    "reading": "ろ",
+    "definition": "陶芸で使う轆轤（ろくろ）の略",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "くろ": {
+    "level": "N3",
+    "reading": "くろ",
+    "definition": "轆轤（ろくろ）の略または誤記",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "両手": {
+    "level": "N5",
+    "reading": "りょうて",
+    "definition": "両方の手",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "釉": {
+    "level": "N1",
+    "reading": "うわぐすり",
+    "definition": "陶器に塗る釉薬",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "熱々": {
+    "level": "N3",
+    "reading": "あつあつ",
+    "definition": "とても熱い状態",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "カリッ": {
+    "level": "N3",
+    "reading": "かりっ",
+    "definition": "軽くて硬い食感を表す擬音語",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "とろとろ": {
+    "level": "N3",
+    "reading": "とろとろ",
+    "definition": "柔らかくてとろけるような食感",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "あめ": {
+    "level": "N5",
+    "reading": "あめ",
+    "definition": "雨または飴",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "舞踊": {
+    "level": "N2",
+    "reading": "ぶよう",
+    "definition": "踊り、ダンス",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "エンタメ": {
+    "level": "N3",
+    "reading": "えんため",
+    "definition": "エンターテインメントの略",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "パフォーマンス": {
+    "level": "N3",
+    "reading": "ぱふぉーまんす",
+    "definition": "演技や演奏などの実演",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "ひい": {
+    "level": "N4",
+    "reading": "ひい",
+    "definition": "祭りのポスターで見つけた可能性のある語（文脈不明）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "結べ": {
+    "level": "N4",
+    "reading": "むすべ",
+    "definition": "結ぶことの命令形",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "賑わい": {
+    "level": "N3",
+    "reading": "にぎわい",
+    "definition": "にぎやかさ、活気",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "うんそう": {
+    "level": "N3",
+    "reading": "うんそう",
+    "definition": "運送、輸送",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "わっ": {
+    "level": "N4",
+    "reading": "わっ",
+    "definition": "驚きや歓声を表す間投詞",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "ょいとかそ": {
+    "level": "N3",
+    "reading": "よいとかそ",
+    "definition": "神輿行列の掛け声「よいとこそ」の可能性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "スパイス": {
+    "level": "N3",
+    "reading": "すぱいす",
+    "definition": "香辛料",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "ふっくら": {
+    "level": "N3",
+    "reading": "ふっくら",
+    "definition": "柔らかくてふくらんだ様子",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "シェフ": {
+    "level": "N3",
+    "reading": "しぇふ",
+    "definition": "料理長、シェフ",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "お呼び": {
+    "level": "N4",
+    "reading": "および",
+    "definition": "呼ぶことの丁寧語",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "ハマっ": {
+    "level": "N3",
+    "reading": "はまっ",
+    "definition": "はまる（夢中になる）の口語形",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "いか": {
+    "level": "N5",
+    "reading": "いか",
+    "definition": "イカ（魚介類）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "ドレッシング": {
+    "level": "N3",
+    "reading": "どれっしんぐ",
+    "definition": "サラダドレッシング",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "ステーキミディアムレア": {
+    "level": "N3",
+    "reading": "すてーきみでぃあむれあ",
+    "definition": "ステーキの焼き加減（ミディアムレア）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "シーザーサラダドレッシング": {
+    "level": "N3",
+    "reading": "しーざーさらだどれっしんぐ",
+    "definition": "シーザーサラダ用ドレッシング",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "魚介": {
+    "level": "N2",
+    "reading": "ぎょかい",
+    "definition": "魚や貝などの海産物",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "カルボナーラ": {
+    "level": "N3",
+    "reading": "かるぼなーら",
+    "definition": "カルボナーラパスタ",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "軽": {
+    "level": "N5",
+    "reading": "かる",
+    "definition": "軽い、軽量",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "シェアしよ": {
+    "level": "N3",
+    "reading": "しぇあしよ",
+    "definition": "シェアする（共有する）の口語形",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:42:41.563Z"
+  },
+  "割り勘": {
+    "level": "N3",
+    "reading": "わりかん",
+    "definition": "splitting the bill",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "ゃないうんそれでいいよいくらになるかな": {
+    "level": "N5",
+    "reading": "じゃないうんそれでいいよいくらになるかな",
+    "definition": "informal conversation fragment (not a standard word)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "お釣り": {
+    "level": "N5",
+    "reading": "おつり",
+    "definition": "change (money)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "ほ": {
+    "level": "N5",
+    "reading": "ほ",
+    "definition": "particle or interjection (e.g., 'ho' for emphasis)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "ラッキー": {
+    "level": "N5",
+    "reading": "らっきー",
+    "definition": "lucky",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "集め": {
+    "level": "N4",
+    "reading": "あつめ",
+    "definition": "collecting",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "散策し": {
+    "level": "N3",
+    "reading": "さんさくし",
+    "definition": "strolling (verb form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "モード": {
+    "level": "N4",
+    "reading": "もーど",
+    "definition": "mode",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "ょうありがとうございますとても": {
+    "level": "N5",
+    "reading": "ようありがとうございますとても",
+    "definition": "conversation fragment (not a standard word)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "賞賛": {
+    "level": "N2",
+    "reading": "しょうさん",
+    "definition": "praise",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "光量": {
+    "level": "N2",
+    "reading": "こうりょう",
+    "definition": "amount of light",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "ISO": {
+    "level": "N3",
+    "reading": "あいえすおー",
+    "definition": "ISO (photography term)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "ありがたい": {
+    "level": "N4",
+    "reading": "ありがたい",
+    "definition": "grateful",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "下手くそ": {
+    "level": "N3",
+    "reading": "へたくそ",
+    "definition": "very unskilled",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "分かち": {
+    "level": "N3",
+    "reading": "わかち",
+    "definition": "sharing",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "返却さ": {
+    "level": "N4",
+    "reading": "へんきゃくさ",
+    "definition": "returned (verb form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "検索し": {
+    "level": "N4",
+    "reading": "けんさくし",
+    "definition": "searching (verb form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "端末": {
+    "level": "N3",
+    "reading": "たんまつ",
+    "definition": "terminal, device",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "キーワード": {
+    "level": "N4",
+    "reading": "きーわーど",
+    "definition": "keyword",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "表示さ": {
+    "level": "N4",
+    "reading": "ひょうじさ",
+    "definition": "displayed (verb form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "現在地": {
+    "level": "N3",
+    "reading": "げんざいち",
+    "definition": "current location",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "長旅": {
+    "level": "N3",
+    "reading": "ながたび",
+    "definition": "long journey",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "備え": {
+    "level": "N3",
+    "reading": "そなえ",
+    "definition": "preparation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "左側": {
+    "level": "N5",
+    "reading": "ひだりがわ",
+    "definition": "left side",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "路地": {
+    "level": "N3",
+    "reading": "ろじ",
+    "definition": "alley",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "さえ": {
+    "level": "N3",
+    "reading": "さえ",
+    "definition": "even (particle)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "釣り銭": {
+    "level": "N3",
+    "reading": "つりせん",
+    "definition": "change (money)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "ょうかうんそうだねまずは": {
+    "level": "N5",
+    "reading": "ようかうんそうだねまずは",
+    "definition": "conversation fragment (not a standard word)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "クリアし": {
+    "level": "N3",
+    "reading": "くりあし",
+    "definition": "clearing (verb form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "アピール": {
+    "level": "N3",
+    "reading": "あぴーる",
+    "definition": "appeal",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:17.737Z"
+  },
+  "ボウリングする": {
+    "level": "N4",
+    "reading": "ボウリングする",
+    "definition": "打保龄球",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "カラオケ": {
+    "level": "N4",
+    "reading": "カラオケ",
+    "definition": "卡拉OK",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "アクティブ": {
+    "level": "N3",
+    "reading": "アクティブ",
+    "definition": "活跃的，积极的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "OK": {
+    "level": "N5",
+    "reading": "オーケー",
+    "definition": "好的，同意",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "ホ": {
+    "level": "N4",
+    "reading": "ホ",
+    "definition": "温泉（温泉的简称）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "よる": {
+    "level": "N5",
+    "reading": "よる",
+    "definition": "夜晚，晚上",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "高鳴る": {
+    "level": "N2",
+    "reading": "たかなる",
+    "definition": "心跳加速，激动",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "安め": {
+    "level": "N4",
+    "reading": "やすめ",
+    "definition": "较便宜的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "もうし": {
+    "level": "N3",
+    "reading": "もうし",
+    "definition": "申请，提议（申し的变形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "添削し": {
+    "level": "N2",
+    "reading": "てんさくし",
+    "definition": "修改，批改（动词形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "歓": {
+    "level": "N3",
+    "reading": "かん",
+    "definition": "欢迎，喜悦（如新歓）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "バーベキュー": {
+    "level": "N4",
+    "reading": "バーベキュー",
+    "definition": "烧烤",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "裏山": {
+    "level": "N3",
+    "reading": "うらやま",
+    "definition": "后山",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "LINE": {
+    "level": "N4",
+    "reading": "ライン",
+    "definition": "通讯应用LINE",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "当今": {
+    "level": "N1",
+    "reading": "とうこん",
+    "definition": "当今，现在",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "組み方": {
+    "level": "N3",
+    "reading": "くみかた",
+    "definition": "组合方式，编排方法",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "いなそ": {
+    "level": "N2",
+    "reading": "いなそ",
+    "definition": "否定的口语表达（いなそう的变形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "バタバタ": {
+    "level": "N3",
+    "reading": "バタバタ",
+    "definition": "忙乱，手忙脚乱",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "段取り": {
+    "level": "N2",
+    "reading": "だんどり",
+    "definition": "安排，步骤",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "手間取っ": {
+    "level": "N2",
+    "reading": "てまどっ",
+    "definition": "费时间，拖延（手間取る的变形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "サイエンス": {
+    "level": "N3",
+    "reading": "サイエンス",
+    "definition": "科学",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "お話し": {
+    "level": "N4",
+    "reading": "おはなし",
+    "definition": "谈话，故事（敬语形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "作れ": {
+    "level": "N4",
+    "reading": "つくれ",
+    "definition": "制作，创造（作る的命令形或可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "植樹": {
+    "level": "N3",
+    "reading": "しょくじゅ",
+    "definition": "植树",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "立案": {
+    "level": "N2",
+    "reading": "りつあん",
+    "definition": "制定计划，立案",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "引き続き": {
+    "level": "N3",
+    "reading": "ひきつづき",
+    "definition": "继续，接着",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "マンネリ化": {
+    "level": "N2",
+    "reading": "マンネリか",
+    "definition": "模式化，僵化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "建造": {
+    "level": "N2",
+    "reading": "けんぞう",
+    "definition": "建造，建筑",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "講座": {
+    "level": "N3",
+    "reading": "こうざ",
+    "definition": "讲座，课程",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "テクニック": {
+    "level": "N3",
+    "reading": "テクニック",
+    "definition": "技巧，技术",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:43:51.674Z"
+  },
+  "次期": {
+    "level": "N2",
+    "reading": "じき",
+    "definition": "next period/term",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "フロー": {
+    "level": "N2",
+    "reading": "ふろー",
+    "definition": "flow (e.g., process flow)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "整合性": {
+    "level": "N2",
+    "reading": "せいごうせい",
+    "definition": "consistency, integrity",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "カルチャー": {
+    "level": "N3",
+    "reading": "かるちゃー",
+    "definition": "culture",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "熱気": {
+    "level": "N3",
+    "reading": "ねっき",
+    "definition": "heat, fervor, excitement",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "グルメ": {
+    "level": "N3",
+    "reading": "ぐるめ",
+    "definition": "gourmet, foodie",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "熱っ": {
+    "level": "N4",
+    "reading": "あつっ",
+    "definition": "hot! (colloquial expression)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "交流会": {
+    "level": "N3",
+    "reading": "こうりゅうかい",
+    "definition": "exchange meeting, social gathering",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "ジェスチャー": {
+    "level": "N3",
+    "reading": "じぇすちゃー",
+    "definition": "gesture",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "話しかけ": {
+    "level": "N4",
+    "reading": "はなしかけ",
+    "definition": "starting a conversation, approach",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "帰国": {
+    "level": "N4",
+    "reading": "きこく",
+    "definition": "returning to one's country",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "思い出深い": {
+    "level": "N3",
+    "reading": "おもいでぶかい",
+    "definition": "memorable, deeply remembered",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "食": {
+    "level": "N5",
+    "reading": "しょく",
+    "definition": "食物，餐饮",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "自主性": {
+    "level": "N2",
+    "reading": "じしゅせい",
+    "definition": "autonomy, initiative",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "けん": {
+    "level": "N5",
+    "reading": "けん",
+    "definition": "likely a name or abbreviation (e.g., Ken)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "歓迎会": {
+    "level": "N4",
+    "reading": "かんげいかい",
+    "definition": "welcome party",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "ゆかり": {
+    "level": "N5",
+    "reading": "ゆかり",
+    "definition": "likely a name (e.g., Yukari) or connection",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "山登り": {
+    "level": "N4",
+    "reading": "やまのぼり",
+    "definition": "mountain climbing",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "たかし": {
+    "level": "N5",
+    "reading": "たかし",
+    "definition": "likely a name (e.g., Takashi)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "朝日": {
+    "level": "N5",
+    "reading": "あさひ",
+    "definition": "morning sun",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "コラボ": {
+    "level": "N3",
+    "reading": "こらぼ",
+    "definition": "collaboration (abbreviation)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "生花": {
+    "level": "N3",
+    "reading": "せいか",
+    "definition": "fresh flowers, flower arrangement",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "飾れる": {
+    "level": "N4",
+    "reading": "かざれる",
+    "definition": "can be decorated, decorative",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "協賛": {
+    "level": "N2",
+    "reading": "きょうさん",
+    "definition": "sponsorship, cooperation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "観葉": {
+    "level": "N2",
+    "reading": "かんよう",
+    "definition": "foliage (as in plants)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "レイアウト": {
+    "level": "N3",
+    "reading": "れいあうと",
+    "definition": "layout",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "壁面": {
+    "level": "N2",
+    "reading": "へきめん",
+    "definition": "wall surface",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "動": {
+    "level": "N5",
+    "reading": "どう",
+    "definition": "movement, motion",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "引き立て": {
+    "level": "N2",
+    "reading": "ひきたて",
+    "definition": "enhancement, bringing out (e.g., beauty)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "ポートレート": {
+    "level": "N3",
+    "reading": "ぽーとれーと",
+    "definition": "portrait",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:44:26.311Z"
+  },
+  "広角": {
+    "level": "N2",
+    "reading": "こうかく",
+    "definition": "wide-angle (e.g., lens)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "ショット": {
+    "level": "N3",
+    "reading": "しょっと",
+    "definition": "shot (e.g., photo, drink)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "小道": {
+    "level": "N3",
+    "reading": "こみち",
+    "definition": "path, trail",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "バーコード": {
+    "level": "N3",
+    "reading": "ばーこーど",
+    "definition": "barcode",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "読み取る": {
+    "level": "N2",
+    "reading": "よみとる",
+    "definition": "to read (e.g., data, barcode)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "棚卸し": {
+    "level": "N2",
+    "reading": "たなおろし",
+    "definition": "inventory, stocktaking",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "実務": {
+    "level": "N2",
+    "reading": "じつむ",
+    "definition": "practical work, business operations",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "東側": {
+    "level": "N4",
+    "reading": "ひがしがわ",
+    "definition": "east side",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "西側": {
+    "level": "N4",
+    "reading": "にしがわ",
+    "definition": "west side",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "一丸": {
+    "level": "N2",
+    "reading": "いちがん",
+    "definition": "united, as one",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "積極性": {
+    "level": "N2",
+    "reading": "せっきょくせい",
+    "definition": "proactiveness, initiative",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "少額": {
+    "level": "N3",
+    "reading": "しょうがく",
+    "definition": "small amount (of money)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "試行": {
+    "level": "N2",
+    "reading": "しこう",
+    "definition": "trial, attempt",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "専門的": {
+    "level": "N2",
+    "reading": "せんもんてき",
+    "definition": "specialized, professional",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "繁忙": {
+    "level": "N2",
+    "reading": "はんぼう",
+    "definition": "busy, hectic",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "抱え込ま": {
+    "level": "N2",
+    "reading": "かかえこま",
+    "definition": "to take on (burden), to shoulder (problem)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "乗り切ろ": {
+    "level": "N2",
+    "reading": "のりきろ",
+    "definition": "to overcome, to get through",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "待ち": {
+    "level": "N5",
+    "reading": "まち",
+    "definition": "等待",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "掲示板": {
+    "level": "N3",
+    "reading": "けいじばん",
+    "definition": "bulletin board, notice board",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "救護": {
+    "level": "N2",
+    "reading": "きゅうご",
+    "definition": "rescue, first aid",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "昨年": {
+    "level": "N4",
+    "reading": "さくねん",
+    "definition": "last year",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "各人": {
+    "level": "N3",
+    "reading": "かくじん",
+    "definition": "each person, individual",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "役員": {
+    "level": "N3",
+    "reading": "やくいん",
+    "definition": "officer, executive",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "ただ今": {
+    "level": "N5",
+    "reading": "ただいま",
+    "definition": "now, at present",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "短時間": {
+    "level": "N3",
+    "reading": "たんじかん",
+    "definition": "short time, brief period",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "強風": {
+    "level": "N3",
+    "reading": "きょうふう",
+    "definition": "strong wind",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "非常口": {
+    "level": "N3",
+    "reading": "ひじょうぐち",
+    "definition": "emergency exit",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "表示": {
+    "level": "N3",
+    "reading": "ひょうじ",
+    "definition": "display, indication",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "蛍光": {
+    "level": "N2",
+    "reading": "けいこう",
+    "definition": "fluorescence",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "ゴミ箱": {
+    "level": "N5",
+    "reading": "ごみばこ",
+    "definition": "trash can, garbage bin",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:01.103Z"
+  },
+  "音響": {
+    "level": "N2",
+    "reading": "おんきょう",
+    "definition": "音响，声音效果",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "おら": {
+    "level": "N3",
+    "reading": "おら",
+    "definition": "我（方言或口语形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "プロジェクター": {
+    "level": "N3",
+    "reading": "プロジェクター",
+    "definition": "投影仪",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "行き届い": {
+    "level": "N2",
+    "reading": "ゆきとどい",
+    "definition": "周到，无微不至",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "返信": {
+    "level": "N3",
+    "reading": "へんしん",
+    "definition": "回信，回复",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "部活": {
+    "level": "N4",
+    "reading": "ぶかつ",
+    "definition": "社团活动",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "専念": {
+    "level": "N2",
+    "reading": "せんねん",
+    "definition": "专心，专注",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "フルサイズ": {
+    "level": "N3",
+    "reading": "フルサイズ",
+    "definition": "全尺寸，完整大小",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "レス": {
+    "level": "N3",
+    "reading": "レス",
+    "definition": "回复（response的缩写）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "たより": {
+    "level": "N3",
+    "reading": "たより",
+    "definition": "依靠，依赖",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "気まずかっ": {
+    "level": "N3",
+    "reading": "きまずかっ",
+    "definition": "尴尬，不自在（过去式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "想い": {
+    "level": "N3",
+    "reading": "おもい",
+    "definition": "想法，感情，思念",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "色んな": {
+    "level": "N4",
+    "reading": "いろんな",
+    "definition": "各种各样的（口语形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "バスケ": {
+    "level": "N4",
+    "reading": "バスケ",
+    "definition": "篮球（basketball的缩写）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "研究会": {
+    "level": "N3",
+    "reading": "けんきゅうかい",
+    "definition": "研究会，研究小组",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "消灯": {
+    "level": "N3",
+    "reading": "しょうとう",
+    "definition": "熄灯",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "交代": {
+    "level": "N3",
+    "reading": "こうたい",
+    "definition": "交替，轮换",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "ラウンジ": {
+    "level": "N3",
+    "reading": "ラウンジ",
+    "definition": "休息室，大厅",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "ライブ": {
+    "level": "N3",
+    "reading": "ライブ",
+    "definition": "现场演出，直播",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "頼り": {
+    "level": "N3",
+    "reading": "たより",
+    "definition": "依靠，依赖",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "思え": {
+    "level": "N4",
+    "reading": "おもえ",
+    "definition": "觉得，认为（可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "頑張り": {
+    "level": "N4",
+    "reading": "がんばり",
+    "definition": "努力，奋斗",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "気遣っ": {
+    "level": "N3",
+    "reading": "きづかっ",
+    "definition": "关心，顾虑（过去式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "食生活": {
+    "level": "N3",
+    "reading": "しょくせいかつ",
+    "definition": "饮食生活",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "モチベーション": {
+    "level": "N3",
+    "reading": "モチベーション",
+    "definition": "动机，积极性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "体調": {
+    "level": "N3",
+    "reading": "たいちょう",
+    "definition": "身体状况",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "ょうんそうなんだでもこのままじゃまずいって": {
+    "level": "N3",
+    "reading": "ようんそうなんだでもこのままじゃまずいって",
+    "definition": "这是口语表达，意为“虽然是这样，但这样下去不行啊”",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "ジョギング": {
+    "level": "N3",
+    "reading": "ジョギング",
+    "definition": "慢跑",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "ウォーキングし": {
+    "level": "N3",
+    "reading": "ウォーキングし",
+    "definition": "散步，步行（动词形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "チャレンジ": {
+    "level": "N3",
+    "reading": "チャレンジ",
+    "definition": "挑战",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:45:35.553Z"
+  },
+  "表彰状": {
+    "level": "N2",
+    "reading": "ひょうしょうじょう",
+    "definition": "certificate of commendation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "トレ": {
+    "level": "N3",
+    "reading": "とれ",
+    "definition": "training (abbreviation)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "高血圧": {
+    "level": "N3",
+    "reading": "こうけつあつ",
+    "definition": "high blood pressure",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "解消する": {
+    "level": "N3",
+    "reading": "かいしょうする",
+    "definition": "to resolve, to eliminate",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "摂る": {
+    "level": "N3",
+    "reading": "とる",
+    "definition": "to take (e.g., food, nutrients)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "バディシステム": {
+    "level": "N2",
+    "reading": "ばでぃしすてむ",
+    "definition": "buddy system",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "ストレッチ": {
+    "level": "N4",
+    "reading": "すとれっち",
+    "definition": "stretching",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "絞り": {
+    "level": "N2",
+    "reading": "しぼり",
+    "definition": "aperture (photography)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "逆光": {
+    "level": "N2",
+    "reading": "ぎゃっこう",
+    "definition": "backlighting",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "補正": {
+    "level": "N2",
+    "reading": "ほせい",
+    "definition": "correction, adjustment",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "挫折し": {
+    "level": "N2",
+    "reading": "ざせつし",
+    "definition": "to fail, to be discouraged",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "やめよ": {
+    "level": "N5",
+    "reading": "やめよ",
+    "definition": "stop (imperative)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "とっても": {
+    "level": "N4",
+    "reading": "とっても",
+    "definition": "very, extremely",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "時に": {
+    "level": "N3",
+    "reading": "ときに",
+    "definition": "sometimes, at times",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "競い合っ": {
+    "level": "N3",
+    "reading": "きそいあっ",
+    "definition": "to compete with each other",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "原動力": {
+    "level": "N2",
+    "reading": "げんどうりょく",
+    "definition": "driving force, motivation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "繊細": {
+    "level": "N2",
+    "reading": "せんさい",
+    "definition": "delicate, sensitive",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "結果的": {
+    "level": "N3",
+    "reading": "けっかてき",
+    "definition": "resultant, as a result",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "情感": {
+    "level": "N2",
+    "reading": "じょうかん",
+    "definition": "emotion, feeling",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "懐かしみ": {
+    "level": "N2",
+    "reading": "なつかしみ",
+    "definition": "nostalgia, fond remembrance",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "回想": {
+    "level": "N2",
+    "reading": "かいそう",
+    "definition": "recollection, reminiscence",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "いやいや": {
+    "level": "N4",
+    "reading": "いやいや",
+    "definition": "no, no way (emphatic)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "委員長": {
+    "level": "N3",
+    "reading": "いいんちょう",
+    "definition": "committee chairperson",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "飲食": {
+    "level": "N3",
+    "reading": "いんしょく",
+    "definition": "eating and drinking",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "頑張れる": {
+    "level": "N4",
+    "reading": "がんばれる",
+    "definition": "can do one's best",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "おいで": {
+    "level": "N4",
+    "reading": "おいで",
+    "definition": "come (polite)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "ひだ": {
+    "level": "N2",
+    "reading": "ひだ",
+    "definition": "pleat, fold",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "まり": {
+    "level": "N5",
+    "reading": "まり",
+    "definition": "ball (e.g., for games)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "来館": {
+    "level": "N3",
+    "reading": "らいかん",
+    "definition": "visiting a facility (e.g., museum)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "役立て": {
+    "level": "N3",
+    "reading": "やくだて",
+    "definition": "to make use of, to utilize",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:10.385Z"
+  },
+  "祝福し": {
+    "level": "N3",
+    "reading": "しゅくふくし",
+    "definition": "to bless; to congratulate",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "株式会社": {
+    "level": "N4",
+    "reading": "かぶしきがいしゃ",
+    "definition": "corporation; joint-stock company",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "サンライズ": {
+    "level": "N5",
+    "reading": "さんらいず",
+    "definition": "sunrise",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "お伝えし": {
+    "level": "N4",
+    "reading": "おつたえし",
+    "definition": "to inform; to tell (polite form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "基本給": {
+    "level": "N3",
+    "reading": "きほんきゅう",
+    "definition": "base salary",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "インセンティブ": {
+    "level": "N2",
+    "reading": "いんせんてぃぶ",
+    "definition": "incentive",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "秘伝": {
+    "level": "N2",
+    "reading": "ひでん",
+    "definition": "secret recipe; secret tradition",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "前日": {
+    "level": "N4",
+    "reading": "ぜんじつ",
+    "definition": "previous day; day before",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "誇らしかっ": {
+    "level": "N3",
+    "reading": "ほこらしかっ",
+    "definition": "was proud (past tense of 誇らしい)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "そうそう": {
+    "level": "N4",
+    "reading": "そうそう",
+    "definition": "right; exactly; that's it (interjection)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "揺らし": {
+    "level": "N3",
+    "reading": "ゆらし",
+    "definition": "to shake; to sway (stem form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "誘える": {
+    "level": "N4",
+    "reading": "さそえる",
+    "definition": "can invite; to be able to invite",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "見返し": {
+    "level": "N3",
+    "reading": "みかえし",
+    "definition": "looking back; re-evaluation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "アレンジ": {
+    "level": "N3",
+    "reading": "あれんじ",
+    "definition": "arrangement; adjustment",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "ショッピング": {
+    "level": "N5",
+    "reading": "しょっぴんぐ",
+    "definition": "shopping",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "ポリシー": {
+    "level": "N3",
+    "reading": "ぽりしー",
+    "definition": "policy",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "折り合い": {
+    "level": "N2",
+    "reading": "おりあい",
+    "definition": "compromise; agreement",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "広大": {
+    "level": "N2",
+    "reading": "こうだい",
+    "definition": "vast; extensive",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "避暑": {
+    "level": "N2",
+    "reading": "ひしょ",
+    "definition": "summer retreat; escaping the heat",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "遺産": {
+    "level": "N2",
+    "reading": "いさん",
+    "definition": "heritage; inheritance",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "難点": {
+    "level": "N2",
+    "reading": "なんてん",
+    "definition": "drawback; weak point",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "見積もっ": {
+    "level": "N3",
+    "reading": "みつもっ",
+    "definition": "to estimate (stem form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "抜き": {
+    "level": "N3",
+    "reading": "ぬき",
+    "definition": "without; excluding",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "発覚し": {
+    "level": "N2",
+    "reading": "はっかくし",
+    "definition": "to be discovered; to come to light",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "順位": {
+    "level": "N3",
+    "reading": "じゅんい",
+    "definition": "ranking; order",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "データベース": {
+    "level": "N3",
+    "reading": "でーたべーす",
+    "definition": "database",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "順に": {
+    "level": "N4",
+    "reading": "じゅんに",
+    "definition": "in order; sequentially",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "考察": {
+    "level": "N2",
+    "reading": "こうさつ",
+    "definition": "consideration; analysis",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "準備会": {
+    "level": "N4",
+    "reading": "じゅんびかい",
+    "definition": "preparation meeting",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:46:45.542Z"
+  },
+  "草案": {
+    "level": "N2",
+    "reading": "そうあん",
+    "definition": "草案、草稿",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "万全": {
+    "level": "N2",
+    "reading": "ばんぜん",
+    "definition": "万全、完全",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "ウェブサイト": {
+    "level": "N4",
+    "reading": "ウェブサイト",
+    "definition": "网站",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "マネージャー": {
+    "level": "N4",
+    "reading": "マネージャー",
+    "definition": "经理、管理者",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "実装": {
+    "level": "N2",
+    "reading": "じっそう",
+    "definition": "实施、实现",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "支障": {
+    "level": "N2",
+    "reading": "ししょう",
+    "definition": "障碍、妨碍",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "探せる": {
+    "level": "N4",
+    "reading": "さがせる",
+    "definition": "能寻找、可搜索",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "グリッド": {
+    "level": "N3",
+    "reading": "グリッド",
+    "definition": "网格、格子",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "掘り下げ": {
+    "level": "N2",
+    "reading": "ほりさげ",
+    "definition": "深入挖掘、探讨",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "バトン": {
+    "level": "N3",
+    "reading": "バトン",
+    "definition": "接力棒、传递物",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "渡せる": {
+    "level": "N4",
+    "reading": "わたせる",
+    "definition": "能传递、能交给",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "自問し": {
+    "level": "N2",
+    "reading": "じもんし",
+    "definition": "自问、反省",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "言い方": {
+    "level": "N3",
+    "reading": "いいかた",
+    "definition": "说法、表达方式",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "押し付け": {
+    "level": "N2",
+    "reading": "おしつけ",
+    "definition": "强加、强迫",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "わか": {
+    "level": "N3",
+    "reading": "わか",
+    "definition": "年轻、稚嫩",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "いん": {
+    "level": "N3",
+    "reading": "いん",
+    "definition": "原因、因素",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "客観的": {
+    "level": "N2",
+    "reading": "きゃっかんてき",
+    "definition": "客观的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "緊急性": {
+    "level": "N2",
+    "reading": "きんきゅうせい",
+    "definition": "紧急性、紧迫性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "実業": {
+    "level": "N2",
+    "reading": "じつぎょう",
+    "definition": "实业、实际业务",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "NGO": {
+    "level": "N3",
+    "reading": "エヌジーオー",
+    "definition": "非政府组织",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "根本的": {
+    "level": "N2",
+    "reading": "こんぽんてき",
+    "definition": "根本的、基本的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "内心": {
+    "level": "N2",
+    "reading": "ないしん",
+    "definition": "内心、心里",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "惹か": {
+    "level": "N2",
+    "reading": "ひか",
+    "definition": "吸引、引起",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "急務": {
+    "level": "N2",
+    "reading": "きゅうむ",
+    "definition": "紧急任务、当务之急",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "知": {
+    "level": "N4",
+    "reading": "ち",
+    "definition": "知识、智慧",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "クライマックス": {
+    "level": "N3",
+    "reading": "クライマックス",
+    "definition": "高潮、顶点",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "ゃなかったかもそうなんだでも": {
+    "level": "N3",
+    "reading": "ゃなかったかもそうなんだでも",
+    "definition": "口语表达，可能不是那样但也许是的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "個室": {
+    "level": "N3",
+    "reading": "こしつ",
+    "definition": "单间、私人房间",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "顔": {
+    "level": "N5",
+    "reading": "かお",
+    "definition": "脸、表情",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "重み": {
+    "level": "N2",
+    "reading": "おもみ",
+    "definition": "重量、重要性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:19.305Z"
+  },
+  "自宅": {
+    "level": "N4",
+    "reading": "じたく",
+    "definition": "one's own home",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "教育費": {
+    "level": "N3",
+    "reading": "きょういくひ",
+    "definition": "education expenses",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "葛藤する": {
+    "level": "N2",
+    "reading": "かっとうする",
+    "definition": "to be conflicted or torn",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "チャレンジし": {
+    "level": "N3",
+    "reading": "チャレンジし",
+    "definition": "to challenge (verb form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "マネジメント": {
+    "level": "N2",
+    "reading": "マネジメント",
+    "definition": "management",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "挑戦的": {
+    "level": "N2",
+    "reading": "ちょうせんてき",
+    "definition": "challenging, aggressive",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "中期的": {
+    "level": "N2",
+    "reading": "ちゅうきてき",
+    "definition": "mid-term, medium-term",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "お待ち": {
+    "level": "N4",
+    "reading": "おまち",
+    "definition": "waiting (polite form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "時代遅れ": {
+    "level": "N2",
+    "reading": "じだいおくれ",
+    "definition": "outdated, old-fashioned",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "押しつぶさ": {
+    "level": "N2",
+    "reading": "おしつぶさ",
+    "definition": "to crush or overwhelm (verb stem)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "福利": {
+    "level": "N2",
+    "reading": "ふくり",
+    "definition": "welfare, benefits",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "厚生": {
+    "level": "N2",
+    "reading": "こうせい",
+    "definition": "welfare, public health",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "ワークライフバランス": {
+    "level": "N2",
+    "reading": "ワークライフバランス",
+    "definition": "work-life balance",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "フレックス": {
+    "level": "N2",
+    "reading": "フレックス",
+    "definition": "flex (e.g., flex time)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "一員": {
+    "level": "N3",
+    "reading": "いちいん",
+    "definition": "a member, part of a group",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "オファー": {
+    "level": "N2",
+    "reading": "オファー",
+    "definition": "offer (e.g., job offer)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "レター": {
+    "level": "N4",
+    "reading": "レター",
+    "definition": "letter",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "近日": {
+    "level": "N3",
+    "reading": "きんじつ",
+    "definition": "in the near future, soon",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "A": {
+    "level": "N5",
+    "reading": "エー",
+    "definition": "letter A (context suggests abbreviation or symbol)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "心待ち": {
+    "level": "N2",
+    "reading": "こころまち",
+    "definition": "eagerly awaiting",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "葛藤": {
+    "level": "N2",
+    "reading": "かっとう",
+    "definition": "conflict, dilemma",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "ノウハウ": {
+    "level": "N2",
+    "reading": "ノウハウ",
+    "definition": "know-how, expertise",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "自負し": {
+    "level": "N1",
+    "reading": "じふし",
+    "definition": "to be proud of, to take pride in (verb form)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "開幕": {
+    "level": "N2",
+    "reading": "かいまく",
+    "definition": "opening (e.g., of an event)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "色調": {
+    "level": "N1",
+    "reading": "しきちょう",
+    "definition": "color tone, hue",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "わずか": {
+    "level": "N3",
+    "reading": "わずか",
+    "definition": "only, merely, a little",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "最小限": {
+    "level": "N2",
+    "reading": "さいしょうげん",
+    "definition": "minimum, minimal",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "生活費": {
+    "level": "N3",
+    "reading": "せいかつひ",
+    "definition": "living expenses",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "新作": {
+    "level": "N3",
+    "reading": "しんさく",
+    "definition": "new work (e.g., art, product)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "浮かび上がり": {
+    "level": "N2",
+    "reading": "うかびあがり",
+    "definition": "to emerge, rise to the surface (verb stem)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:47:54.994Z"
+  },
+  "没頭する": {
+    "level": "N2",
+    "reading": "ぼっとうする",
+    "definition": "to be absorbed in; to devote oneself to",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "代償": {
+    "level": "N2",
+    "reading": "だいしょう",
+    "definition": "price; cost; compensation",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "関係性": {
+    "level": "N3",
+    "reading": "かんけいせい",
+    "definition": "relationship; connection",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "アトリエ": {
+    "level": "N2",
+    "reading": "あとりえ",
+    "definition": "atelier; studio",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "もる": {
+    "level": "N3",
+    "reading": "もる",
+    "definition": "to leak; to be omitted (likely 漏る or 洩る)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "罪悪": {
+    "level": "N2",
+    "reading": "ざいあく",
+    "definition": "sin; guilt",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "当初": {
+    "level": "N3",
+    "reading": "とうしょ",
+    "definition": "at first; originally",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "後半": {
+    "level": "N3",
+    "reading": "こうはん",
+    "definition": "second half; latter half",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "再考さ": {
+    "level": "N2",
+    "reading": "さいこうさ",
+    "definition": "reconsideration (likely 再考 as noun with suffix)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "プレビュー": {
+    "level": "N2",
+    "reading": "ぷれびゅー",
+    "definition": "preview",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "現実離れし": {
+    "level": "N2",
+    "reading": "げんじつばなれし",
+    "definition": "to be unrealistic; to be detached from reality",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "現実離れ": {
+    "level": "N2",
+    "reading": "げんじつばなれ",
+    "definition": "unrealistic; detachment from reality",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "実用的": {
+    "level": "N3",
+    "reading": "じつようてき",
+    "definition": "practical; useful",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "アクセシビリティ": {
+    "level": "N2",
+    "reading": "あくせしびりてぃ",
+    "definition": "accessibility",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "難解": {
+    "level": "N2",
+    "reading": "なんかい",
+    "definition": "difficult to understand; obscure",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "芸術性": {
+    "level": "N2",
+    "reading": "げいじゅつせい",
+    "definition": "artistic quality; artistry",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "描け": {
+    "level": "N4",
+    "reading": "えがけ",
+    "definition": "to draw; to depict (imperative or potential form of 描く)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "ギャラリー": {
+    "level": "N3",
+    "reading": "ぎゃらりー",
+    "definition": "gallery",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "市場性": {
+    "level": "N2",
+    "reading": "しじょうせい",
+    "definition": "marketability",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "クラスメイト": {
+    "level": "N4",
+    "reading": "くらすめいと",
+    "definition": "classmate",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "遠慮なく": {
+    "level": "N3",
+    "reading": "えんりょなく",
+    "definition": "without hesitation; freely",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "お尋ね": {
+    "level": "N3",
+    "reading": "おたずね",
+    "definition": "asking; inquiry (polite form of 尋ね)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "ょうかありがとうございます": {
+    "level": "N4",
+    "reading": "しょうかありがとうございます",
+    "definition": "thank you for showing (likely しょうか from 紹介か or similar)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "マネー": {
+    "level": "N4",
+    "reading": "まねー",
+    "definition": "money",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "レシート": {
+    "level": "N4",
+    "reading": "れしーと",
+    "definition": "receipt",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "お作り": {
+    "level": "N4",
+    "reading": "おつくり",
+    "definition": "making; preparation (polite form of 作り)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "貯まり": {
+    "level": "N3",
+    "reading": "たまり",
+    "definition": "accumulation; saving (from 貯まる)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "勉強会": {
+    "level": "N4",
+    "reading": "べんきょうかい",
+    "definition": "study group; study session",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "サラ": {
+    "level": "N4",
+    "reading": "さら",
+    "definition": "salary (likely from サラリー)",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "ホームシック": {
+    "level": "N3",
+    "reading": "ほーむしっく",
+    "definition": "homesickness",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:48:32.070Z"
+  },
+  "溶け": {
+    "level": "N3",
+    "reading": "とけ",
+    "definition": "融化，溶解（动词「溶ける」的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "眠れ": {
+    "level": "N4",
+    "reading": "ねむれ",
+    "definition": "睡觉（动词「眠る」的可能形或命令形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "えらい": {
+    "level": "N4",
+    "reading": "えらい",
+    "definition": "了不起的，伟大的；辛苦的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "レート": {
+    "level": "N2",
+    "reading": "レート",
+    "definition": "汇率，比率",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "不要": {
+    "level": "N3",
+    "reading": "ふよう",
+    "definition": "不需要，不必要",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "くださ": {
+    "level": "N4",
+    "reading": "くださ",
+    "definition": "给（我）（动词「くださる」的连用形，尊敬语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "ロードし": {
+    "level": "N2",
+    "reading": "ロードし",
+    "definition": "加载，载入（动词「ロードする」的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "ジム": {
+    "level": "N3",
+    "reading": "ジム",
+    "definition": "健身房",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "チューター": {
+    "level": "N2",
+    "reading": "チューター",
+    "definition": "导师，辅导员",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "ライティングセンター": {
+    "level": "N2",
+    "reading": "ライティングセンター",
+    "definition": "写作中心",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "お好み焼き": {
+    "level": "N3",
+    "reading": "おこのみやき",
+    "definition": "御好烧（一种日本料理）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "作り方": {
+    "level": "N4",
+    "reading": "つくりかた",
+    "definition": "制作方法，做法",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "具": {
+    "level": "N3",
+    "reading": "ぐ",
+    "definition": "配料，材料（尤指料理中的）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "のせ": {
+    "level": "N4",
+    "reading": "のせ",
+    "definition": "放上，加上（动词「のせる」的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "居場所": {
+    "level": "N3",
+    "reading": "いばしょ",
+    "definition": "所在之处，位置；归属感",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "フォーマル": {
+    "level": "N2",
+    "reading": "フォーマル",
+    "definition": "正式的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "カジュアル": {
+    "level": "N2",
+    "reading": "カジュアル",
+    "definition": "休闲的，非正式的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "やり直そ": {
+    "level": "N3",
+    "reading": "やりなおそ",
+    "definition": "重新做（动词「やり直す」的意志形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "無理強いする": {
+    "level": "N2",
+    "reading": "むりじいする",
+    "definition": "强迫，强求",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "焦り": {
+    "level": "N2",
+    "reading": "あせり",
+    "definition": "焦急，焦虑",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "納期": {
+    "level": "N2",
+    "reading": "のうき",
+    "definition": "交货期，截止日期",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "人数": {
+    "level": "N5",
+    "reading": "にんずう",
+    "definition": "人数",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "なん": {
+    "level": "N5",
+    "reading": "なん",
+    "definition": "什么（「なに」的口语形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "行き詰まっ": {
+    "level": "N2",
+    "reading": "いきづまっ",
+    "definition": "陷入僵局，停滞（动词「行き詰まる」的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "愚痴っ": {
+    "level": "N3",
+    "reading": "ぐちっ",
+    "definition": "发牢骚（动词「愚痴る」的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "立て直そ": {
+    "level": "N2",
+    "reading": "たてなおそ",
+    "definition": "重建，重整（动词「立て直す」的意志形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "うんそうしよ": {
+    "level": "N3",
+    "reading": "うんそうしよ",
+    "definition": "运输吧（动词「運送する」的意志形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "築け": {
+    "level": "N2",
+    "reading": "きずけ",
+    "definition": "建立，构筑（动词「築く」的命令形或可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "日本人": {
+    "level": "N5",
+    "reading": "にほんじん",
+    "definition": "日本人",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:09.735Z"
+  },
+  "理解し合っ": {
+    "level": "N3",
+    "reading": "りかいしあっ",
+    "definition": "相互理解",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "表面化": {
+    "level": "N2",
+    "reading": "ひょうめんか",
+    "definition": "表面化，变得明显",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "接し": {
+    "level": "N3",
+    "reading": "せっし",
+    "definition": "接触，对待",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "間接的": {
+    "level": "N3",
+    "reading": "かんせつてき",
+    "definition": "间接的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "ざいますいえいえさやかさんのお": {
+    "level": "N4",
+    "reading": "ざいますいえいえさやかさんのお",
+    "definition": "口语表达（可能为礼貌语或寒暄）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "恒例": {
+    "level": "N2",
+    "reading": "こうれい",
+    "definition": "惯例，常规",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "帰省し": {
+    "level": "N3",
+    "reading": "きせいし",
+    "definition": "回乡，回家探亲",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "墓参り": {
+    "level": "N3",
+    "reading": "はかまいり",
+    "definition": "扫墓",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "振る舞わ": {
+    "level": "N3",
+    "reading": "ふるまわ",
+    "definition": "行为，举止",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "リラックスしよ": {
+    "level": "N4",
+    "reading": "リラックスしよ",
+    "definition": "放松（口语形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "それら": {
+    "level": "N5",
+    "reading": "それら",
+    "definition": "那些（事物）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "核心": {
+    "level": "N2",
+    "reading": "かくしん",
+    "definition": "核心，关键",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "進め方": {
+    "level": "N3",
+    "reading": "すすめかた",
+    "definition": "推进方式，做法",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "勝手": {
+    "level": "N3",
+    "reading": "かって",
+    "definition": "任性，随意",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "あたり": {
+    "level": "N3",
+    "reading": "あたり",
+    "definition": "大约，左右",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "直感的": {
+    "level": "N2",
+    "reading": "ちょっかんてき",
+    "definition": "直觉的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "敷居": {
+    "level": "N2",
+    "reading": "しきい",
+    "definition": "门槛，障碍",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "統計的": {
+    "level": "N2",
+    "reading": "とうけいてき",
+    "definition": "统计的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "有意": {
+    "level": "N1",
+    "reading": "ゆうい",
+    "definition": "有意义的，显著的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "エラー": {
+    "level": "N4",
+    "reading": "エラー",
+    "definition": "错误",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "半減さ": {
+    "level": "N2",
+    "reading": "はんげんさ",
+    "definition": "减半（名词化）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "プレゼンテーション": {
+    "level": "N3",
+    "reading": "プレゼンテーション",
+    "definition": "演示，报告",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "取得": {
+    "level": "N3",
+    "reading": "しゅとく",
+    "definition": "取得，获得",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "競争力": {
+    "level": "N2",
+    "reading": "きょうそうりょく",
+    "definition": "竞争力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "試算": {
+    "level": "N2",
+    "reading": "しさん",
+    "definition": "试算，估算",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "立ち直る": {
+    "level": "N2",
+    "reading": "たちなおる",
+    "definition": "恢复，重新振作",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "遠距離": {
+    "level": "N3",
+    "reading": "えんきょり",
+    "definition": "远距离",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "会え": {
+    "level": "N4",
+    "reading": "あえ",
+    "definition": "能见面（可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "愛し": {
+    "level": "N5",
+    "reading": "あいし",
+    "definition": "爱（动词形式）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "外食する": {
+    "level": "N4",
+    "reading": "がいしょくする",
+    "definition": "在外就餐",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:49:43.890Z"
+  },
+  "団らん": {
+    "level": "N2",
+    "reading": "だんらん",
+    "definition": "家庭や仲間内での和やかな集まりや時間",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "考え事": {
+    "level": "N3",
+    "reading": "かんがえごと",
+    "definition": "何かを考えること、思案",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "言い過ぎ": {
+    "level": "N3",
+    "reading": "いいすぎ",
+    "definition": "言うべきでないことまで言ってしまうこと",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "歩み寄り": {
+    "level": "N2",
+    "reading": "あゆみより",
+    "definition": "互いに譲り合って妥協点を見出すこと",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "新入り": {
+    "level": "N3",
+    "reading": "しんいり",
+    "definition": "新しく入った人、新人",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "悪気": {
+    "level": "N3",
+    "reading": "わるぎ",
+    "definition": "悪い意図、害を与えようとする気持ち",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "すぎ": {
+    "level": "N4",
+    "reading": "すぎ",
+    "definition": "past/over (suffix)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "かごめ": {
+    "level": "N3",
+    "reading": "かごめ",
+    "definition": "籠の目、または童謡「かごめかごめ」",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "搭乗": {
+    "level": "N2",
+    "reading": "とうじょう",
+    "definition": "飛行機や船などに乗ること",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "手伝える": {
+    "level": "N5",
+    "reading": "てつだえる",
+    "definition": "手伝うことができる",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "漠然と": {
+    "level": "N2",
+    "reading": "ばくぜんと",
+    "definition": "はっきりしない様子で、ぼんやりと",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "しね": {
+    "level": "N4",
+    "reading": "しね",
+    "definition": "死ね（命令形）、非常に失礼な表現",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "灯火": {
+    "level": "N2",
+    "reading": "とうか",
+    "definition": "ともしび、灯り",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "親和性": {
+    "level": "N1",
+    "reading": "しんわせい",
+    "definition": "互いに調和し合う性質、相性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "テック": {
+    "level": "N3",
+    "reading": "てっく",
+    "definition": "テクノロジーの略",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "転職し": {
+    "level": "N3",
+    "reading": "てんしょくし",
+    "definition": "転職する（動詞の連用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "システムエンジニア": {
+    "level": "N2",
+    "reading": "しすてむえんじにあ",
+    "definition": "システムの設計・開発を行う技術者",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "業種": {
+    "level": "N2",
+    "reading": "ぎょうしゅ",
+    "definition": "産業や事業の種類",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "転身": {
+    "level": "N2",
+    "reading": "てんしん",
+    "definition": "職業や立場を変えること",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "カスタマーサポート": {
+    "level": "N3",
+    "reading": "かすたまーさぽーと",
+    "definition": "顧客支援、カスタマーサービス",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "対人": {
+    "level": "N2",
+    "reading": "たいじん",
+    "definition": "人と人との間、人間関係",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "職種": {
+    "level": "N2",
+    "reading": "しょくしゅ",
+    "definition": "職業の種類",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "機器": {
+    "level": "N3",
+    "reading": "きき",
+    "definition": "機械や装置",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "支え": {
+    "level": "N3",
+    "reading": "ささえ",
+    "definition": "支えること、支援",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "フリーランス": {
+    "level": "N3",
+    "reading": "ふりーらんす",
+    "definition": "特定の組織に属さず仕事を受注する働き方",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "自律性": {
+    "level": "N2",
+    "reading": "じりつせい",
+    "definition": "自分で自分を律する性質、自主性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "クライアント": {
+    "level": "N3",
+    "reading": "くらいあんと",
+    "definition": "依頼人、顧客",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "最大": {
+    "level": "N3",
+    "reading": "さいだい",
+    "definition": "最も大きいこと",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "重荷": {
+    "level": "N2",
+    "reading": "おもに",
+    "definition": "重い荷物、負担",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "見極めれ": {
+    "level": "N3",
+    "reading": "みきわめれ",
+    "definition": "見極める（可能形の口語的表現）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:22.717Z"
+  },
+  "踏み出せる": {
+    "level": "N3",
+    "reading": "ふみだせる",
+    "definition": "能够迈出、能够开始",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "ソフトウェア": {
+    "level": "N4",
+    "reading": "ソフトウェア",
+    "definition": "软件",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "帰属": {
+    "level": "N2",
+    "reading": "きぞく",
+    "definition": "归属、所属",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "法的": {
+    "level": "N2",
+    "reading": "ほうてき",
+    "definition": "法律的、法定的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "関連付ける": {
+    "level": "N2",
+    "reading": "かんれんづける",
+    "definition": "关联、联系起来",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "一般的": {
+    "level": "N3",
+    "reading": "いっぱんてき",
+    "definition": "一般的、普通的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "盛り込ん": {
+    "level": "N2",
+    "reading": "もりこん",
+    "definition": "包含、纳入（动词盛り込む的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "概算": {
+    "level": "N2",
+    "reading": "がいさん",
+    "definition": "概算、估算",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "プレイヤー": {
+    "level": "N3",
+    "reading": "プレイヤー",
+    "definition": "玩家、参与者、播放器",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "核心的": {
+    "level": "N2",
+    "reading": "かくしんてき",
+    "definition": "核心的、关键的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "参入": {
+    "level": "N2",
+    "reading": "さんにゅう",
+    "definition": "进入、加入（市场等）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "最大化": {
+    "level": "N2",
+    "reading": "さいだいか",
+    "definition": "最大化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "収益性": {
+    "level": "N2",
+    "reading": "しゅうえきせい",
+    "definition": "收益性、盈利能力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "締結": {
+    "level": "N2",
+    "reading": "ていけつ",
+    "definition": "缔结、签订（合同等）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "出資": {
+    "level": "N2",
+    "reading": "しゅっし",
+    "definition": "出资、投资",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "取締役会": {
+    "level": "N2",
+    "reading": "とりしまりやくかい",
+    "definition": "董事会",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "影響力": {
+    "level": "N2",
+    "reading": "えいきょうりょく",
+    "definition": "影响力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "監査": {
+    "level": "N2",
+    "reading": "かんさ",
+    "definition": "审计、监察",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "明記する": {
+    "level": "N2",
+    "reading": "めいきする",
+    "definition": "明确记载、写明",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "シミュレーション": {
+    "level": "N2",
+    "reading": "シミュレーション",
+    "definition": "模拟、仿真",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "スナック": {
+    "level": "N3",
+    "reading": "スナック",
+    "definition": "小吃、零食；小酒馆",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "コンテンツ": {
+    "level": "N3",
+    "reading": "コンテンツ",
+    "definition": "内容、节目",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "具体化": {
+    "level": "N2",
+    "reading": "ぐたいか",
+    "definition": "具体化、实现",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "ところ": {
+    "level": "N5",
+    "reading": "ところ",
+    "definition": "地方、点、时候（多义词）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "固定費": {
+    "level": "N2",
+    "reading": "こていひ",
+    "definition": "固定费用",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "変動費": {
+    "level": "N2",
+    "reading": "へんどうひ",
+    "definition": "变动费用",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "現実性": {
+    "level": "N2",
+    "reading": "げんじつせい",
+    "definition": "现实性、可行性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "懐疑的": {
+    "level": "N2",
+    "reading": "かいぎてき",
+    "definition": "怀疑的、质疑的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "LED": {
+    "level": "N3",
+    "reading": "エルイーディー",
+    "definition": "发光二极管",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "切り替え": {
+    "level": "N3",
+    "reading": "きりかえ",
+    "definition": "切换、转换",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:50:58.057Z"
+  },
+  "簡素化": {
+    "level": "N2",
+    "reading": "かんそか",
+    "definition": "简化，使变得简单",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "資材費": {
+    "level": "N2",
+    "reading": "しざいひ",
+    "definition": "材料费，物资费用",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "メリット": {
+    "level": "N3",
+    "reading": "めりっと",
+    "definition": "优点，好处",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "根ざし": {
+    "level": "N2",
+    "reading": "ねざし",
+    "definition": "扎根，基于",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "エコ": {
+    "level": "N3",
+    "reading": "えこ",
+    "definition": "生态，环保",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "客足": {
+    "level": "N2",
+    "reading": "きゃくあし",
+    "definition": "顾客流量，客源",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "活気づい": {
+    "level": "N2",
+    "reading": "かっきづい",
+    "definition": "变得有活力，活跃起来",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "アート": {
+    "level": "N3",
+    "reading": "あーと",
+    "definition": "艺术",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "持続的": {
+    "level": "N2",
+    "reading": "じぞくてき",
+    "definition": "可持续的，持续的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "生み出し": {
+    "level": "N3",
+    "reading": "うみだし",
+    "definition": "产生，创造",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "全国的": {
+    "level": "N3",
+    "reading": "ぜんこくてき",
+    "definition": "全国性的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "新入": {
+    "level": "N3",
+    "reading": "しんにゅう",
+    "definition": "新加入的，新来的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "一時的": {
+    "level": "N3",
+    "reading": "いちじてき",
+    "definition": "暂时的，一时的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "試行的": {
+    "level": "N2",
+    "reading": "しこうてき",
+    "definition": "试验性的，尝试性的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "半信半疑": {
+    "level": "N2",
+    "reading": "はんしんはんぎ",
+    "definition": "半信半疑，将信将疑",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "ガーデニングプロジェクト": {
+    "level": "N2",
+    "reading": "がーでにんぐぷろじぇくと",
+    "definition": "园艺项目",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "フィールドワーク": {
+    "level": "N2",
+    "reading": "ふぃーるどうぁーく",
+    "definition": "实地考察，田野调查",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "リサイクル": {
+    "level": "N3",
+    "reading": "りさいくる",
+    "definition": "回收利用",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "お願いする": {
+    "level": "N5",
+    "reading": "おねがいする",
+    "definition": "请求，拜托",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "協力的": {
+    "level": "N3",
+    "reading": "きょうりょくてき",
+    "definition": "合作的，协作的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "伝承": {
+    "level": "N2",
+    "reading": "でんしょう",
+    "definition": "传承，相传",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "だいたい": {
+    "level": "N4",
+    "reading": "だいたい",
+    "definition": "大概，大致",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "投稿": {
+    "level": "N3",
+    "reading": "とうこう",
+    "definition": "投稿，提交",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "アイデンティティ": {
+    "level": "N2",
+    "reading": "あいでんてぃてぃ",
+    "definition": "身份认同，同一性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "インフラ": {
+    "level": "N2",
+    "reading": "いんふら",
+    "definition": "基础设施",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "老朽化": {
+    "level": "N2",
+    "reading": "ろうきゅうか",
+    "definition": "老化，陈旧化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "景観": {
+    "level": "N2",
+    "reading": "けいかん",
+    "definition": "景观，风景",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "保全": {
+    "level": "N2",
+    "reading": "ほぜん",
+    "definition": "保全，保护",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "現代化": {
+    "level": "N2",
+    "reading": "げんだいか",
+    "definition": "现代化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "過疎化": {
+    "level": "N2",
+    "reading": "かそか",
+    "definition": "人口过疏化，人口减少",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:51:32.881Z"
+  },
+  "マジ": {
+    "level": "N3",
+    "reading": "まじ",
+    "definition": "真的，认真（口语表达）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "きたし": {
+    "level": "N1",
+    "reading": "きたし",
+    "definition": "来（古语或方言形式，可能为'来たし'）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "ねこ": {
+    "level": "N5",
+    "reading": "ねこ",
+    "definition": "猫",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "高齢化": {
+    "level": "N2",
+    "reading": "こうれいか",
+    "definition": "老龄化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "使いこなせ": {
+    "level": "N2",
+    "reading": "つかいこなせ",
+    "definition": "熟练使用（'使いこなす'的命令形或可能形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "結束力": {
+    "level": "N2",
+    "reading": "けっそくりょく",
+    "definition": "团结力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "現実味": {
+    "level": "N2",
+    "reading": "げんじつみ",
+    "definition": "现实感",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "ハウス": {
+    "level": "N4",
+    "reading": "はうす",
+    "definition": "房子，住宅（外来语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "拠点": {
+    "level": "N2",
+    "reading": "きょてん",
+    "definition": "据点，基地",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "君たち": {
+    "level": "N4",
+    "reading": "きみたち",
+    "definition": "你们（较随意的称呼）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "語り合う": {
+    "level": "N3",
+    "reading": "かたりあう",
+    "definition": "互相谈论，交谈",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "つなげる": {
+    "level": "N3",
+    "reading": "つなげる",
+    "definition": "连接，系上",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "巻き込ん": {
+    "level": "N2",
+    "reading": "まきこん",
+    "definition": "卷入，牵连（'巻き込む'的て形或连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "こうした": {
+    "level": "N3",
+    "reading": "こうした",
+    "definition": "这样的，这种（连体词）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "流出": {
+    "level": "N2",
+    "reading": "りゅうしゅつ",
+    "definition": "流出，流失",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "結びつけ": {
+    "level": "N3",
+    "reading": "むすびつけ",
+    "definition": "联系，结合（'結びつける'的命令形或连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "デジタル技術": {
+    "level": "N2",
+    "reading": "でじたるぎじゅつ",
+    "definition": "数字技术",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "見失わ": {
+    "level": "N2",
+    "reading": "みうしなわ",
+    "definition": "迷失，看不见（'見失う'的未然形或否定形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "繰り返し": {
+    "level": "N3",
+    "reading": "くりかえし",
+    "definition": "重复，反复",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "デジタルデバイド": {
+    "level": "N1",
+    "reading": "でじたるでばいど",
+    "definition": "数字鸿沟（外来语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "賛同し": {
+    "level": "N2",
+    "reading": "さんどうし",
+    "definition": "赞同，同意（'賛同する'的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "短期間": {
+    "level": "N3",
+    "reading": "たんきかん",
+    "definition": "短期间",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "ご存知": {
+    "level": "N3",
+    "reading": "ごぞんじ",
+    "definition": "知道（敬语表达）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "おり": {
+    "level": "N3",
+    "reading": "おり",
+    "definition": "时候，时机",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:54:26.226Z"
+  },
+  "時間的": {
+    "level": "N2",
+    "reading": "じかんてき",
+    "definition": "时间上的，时间性的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "デジタルリテラシー": {
+    "level": "N1",
+    "reading": "でじたるりてらしー",
+    "definition": "数字素养（外来语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "想定し": {
+    "level": "N2",
+    "reading": "そうていし",
+    "definition": "假定，设想（'想定する'的连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "適任": {
+    "level": "N2",
+    "reading": "てきにん",
+    "definition": "胜任，适合担任",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "空き家": {
+    "level": "N3",
+    "reading": "あきや",
+    "definition": "空房子，闲置房屋",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "ワークス": {
+    "level": "N3",
+    "reading": "わーくす",
+    "definition": "作品，工作（外来语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:10.705Z"
+  },
+  "ギャップ": {
+    "level": "N2",
+    "reading": "ぎゃっぷ",
+    "definition": "差距、隔阂",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "わざわざ": {
+    "level": "N3",
+    "reading": "わざわざ",
+    "definition": "特意、特地",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "打ち明け": {
+    "level": "N2",
+    "reading": "うちあけ",
+    "definition": "坦白、倾诉",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "ミーティングしよ": {
+    "level": "N3",
+    "reading": "みーてぃんぐしよ",
+    "definition": "开会吧（口语表达）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "長時間": {
+    "level": "N3",
+    "reading": "ちょうじかん",
+    "definition": "长时间",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "前月": {
+    "level": "N3",
+    "reading": "ぜんげつ",
+    "definition": "上个月",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "メンタルヘルス": {
+    "level": "N2",
+    "reading": "めんたるへるす",
+    "definition": "心理健康",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "低調": {
+    "level": "N2",
+    "reading": "ていちょう",
+    "definition": "低调、不活跃",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "明確化": {
+    "level": "N2",
+    "reading": "めいかくか",
+    "definition": "明确化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "和菓子": {
+    "level": "N3",
+    "reading": "わがし",
+    "definition": "日式点心",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "アレンジし": {
+    "level": "N3",
+    "reading": "あれんじし",
+    "definition": "安排、调整",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "抹茶": {
+    "level": "N3",
+    "reading": "まっちゃ",
+    "definition": "抹茶",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "茶筅": {
+    "level": "N1",
+    "reading": "ちゃせん",
+    "definition": "茶筅（茶道工具）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "見た目": {
+    "level": "N3",
+    "reading": "みため",
+    "definition": "外观、外表",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "ファッション": {
+    "level": "N3",
+    "reading": "ふぁっしょん",
+    "definition": "时尚",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "パッケージ": {
+    "level": "N3",
+    "reading": "ぱっけーじ",
+    "definition": "包装、套餐",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "社員": {
+    "level": "N4",
+    "reading": "しゃいん",
+    "definition": "公司职员",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "動ける": {
+    "level": "N4",
+    "reading": "うごける",
+    "definition": "能行动、能动",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "当然": {
+    "level": "N3",
+    "reading": "とうぜん",
+    "definition": "当然、理所当然",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "頻度": {
+    "level": "N2",
+    "reading": "ひんど",
+    "definition": "频率",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "同期": {
+    "level": "N2",
+    "reading": "どうき",
+    "definition": "同期、同届",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "やり取り": {
+    "level": "N3",
+    "reading": "やりとり",
+    "definition": "交流、交换",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "補完": {
+    "level": "N2",
+    "reading": "ほかん",
+    "definition": "补充、完善",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "施策": {
+    "level": "N2",
+    "reading": "しさく",
+    "definition": "措施、政策",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "最適化": {
+    "level": "N2",
+    "reading": "さいてきか",
+    "definition": "最优化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "来期": {
+    "level": "N2",
+    "reading": "らいき",
+    "definition": "下个时期、下一期",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "KPI": {
+    "level": "N2",
+    "reading": "けーぴーあい",
+    "definition": "关键绩效指标",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "スタンドアップミーティング": {
+    "level": "N2",
+    "reading": "すたんどあっぷみーてぃんぐ",
+    "definition": "站立会议",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "スムーズ": {
+    "level": "N3",
+    "reading": "すむーず",
+    "definition": "顺利、流畅",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "透明性": {
+    "level": "N2",
+    "reading": "とうめいせい",
+    "definition": "透明度",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:52:44.808Z"
+  },
+  "直接的": {
+    "level": "N2",
+    "reading": "ちょくせつてき",
+    "definition": "直接的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "定量的": {
+    "level": "N2",
+    "reading": "ていりょうてき",
+    "definition": "定量的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "指標": {
+    "level": "N2",
+    "reading": "しひょう",
+    "definition": "指标",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "散在し": {
+    "level": "N2",
+    "reading": "さんざいし",
+    "definition": "散在",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "プロモーション": {
+    "level": "N3",
+    "reading": "ぷろもーしょん",
+    "definition": "促销",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "図れ": {
+    "level": "N2",
+    "reading": "はかれ",
+    "definition": "谋求",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "機能性": {
+    "level": "N2",
+    "reading": "きのうせい",
+    "definition": "功能性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "美観": {
+    "level": "N2",
+    "reading": "びかん",
+    "definition": "美观",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "無形": {
+    "level": "N2",
+    "reading": "むけい",
+    "definition": "无形",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "後世": {
+    "level": "N2",
+    "reading": "こうせい",
+    "definition": "后世",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "残せ": {
+    "level": "N4",
+    "reading": "のこせ",
+    "definition": "留下",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "有用": {
+    "level": "N2",
+    "reading": "ゆうよう",
+    "definition": "有用",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "連動さ": {
+    "level": "N2",
+    "reading": "れんどうさ",
+    "definition": "联动",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "積める": {
+    "level": "N3",
+    "reading": "つめる",
+    "definition": "积累",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "形骸化": {
+    "level": "N1",
+    "reading": "けいがいか",
+    "definition": "形式化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "手仕事": {
+    "level": "N3",
+    "reading": "てしごと",
+    "definition": "手工活",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "漆": {
+    "level": "N3",
+    "reading": "うるし",
+    "definition": "漆",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "思い": {
+    "level": "N4",
+    "reading": "おもい",
+    "definition": "想法",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "包括的": {
+    "level": "N2",
+    "reading": "ほうかつてき",
+    "definition": "包括的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "国内外": {
+    "level": "N3",
+    "reading": "こくないがい",
+    "definition": "国内外",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "画一的": {
+    "level": "N2",
+    "reading": "かくいつてき",
+    "definition": "划一的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "積み重ねる": {
+    "level": "N3",
+    "reading": "つみかさねる",
+    "definition": "积累",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "接種": {
+    "level": "N2",
+    "reading": "せっしゅ",
+    "definition": "接种",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "礎": {
+    "level": "N2",
+    "reading": "いしずえ",
+    "definition": "基石",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "批判的": {
+    "level": "N2",
+    "reading": "ひはんてき",
+    "definition": "批判的",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "偏重": {
+    "level": "N2",
+    "reading": "へんちょう",
+    "definition": "偏重",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "使い勝手": {
+    "level": "N3",
+    "reading": "つかいかって",
+    "definition": "易用性",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "臨床": {
+    "level": "N2",
+    "reading": "りんしょう",
+    "definition": "临床",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "パラダイムシフト": {
+    "level": "N1",
+    "reading": "ぱらだいむしふと",
+    "definition": "范式转变",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "複雑化": {
+    "level": "N2",
+    "reading": "ふくざつか",
+    "definition": "复杂化",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:16.032Z"
+  },
+  "メンタル": {
+    "level": "N2",
+    "reading": "めんたる",
+    "definition": "心理的、精神的なこと",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "ヘルス": {
+    "level": "N3",
+    "reading": "へるす",
+    "definition": "健康",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "スクリーニング": {
+    "level": "N2",
+    "reading": "すくりーにんぐ",
+    "definition": "選別、ふるい分け",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "ケア": {
+    "level": "N3",
+    "reading": "けあ",
+    "definition": "世話、手入れ",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "学的": {
+    "level": "N2",
+    "reading": "がくてき",
+    "definition": "学問的な、学術的な",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "知見": {
+    "level": "N2",
+    "reading": "ちけん",
+    "definition": "知識や見解",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "交換会": {
+    "level": "N3",
+    "reading": "こうかんかい",
+    "definition": "意見や情報を交換する会",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "プライバシー": {
+    "level": "N3",
+    "reading": "ぷらいばしー",
+    "definition": "私生活の秘密",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "付きまとっ": {
+    "level": "N3",
+    "reading": "つきまとっ",
+    "definition": "付きまとう（つく）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "過度": {
+    "level": "N2",
+    "reading": "かど",
+    "definition": "度を超していること",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "匿名化": {
+    "level": "N2",
+    "reading": "とくめいか",
+    "definition": "名前を隠すこと",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "倫理": {
+    "level": "N2",
+    "reading": "りんり",
+    "definition": "道徳的な規範",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "変容": {
+    "level": "N2",
+    "reading": "へんよう",
+    "definition": "形や性質が変わること",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "継続性": {
+    "level": "N2",
+    "reading": "けいぞくせい",
+    "definition": "続けていく性質",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "解決力": {
+    "level": "N3",
+    "reading": "かいけつりょく",
+    "definition": "問題を解決する能力",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "何もかも": {
+    "level": "N3",
+    "reading": "なにもかも",
+    "definition": "すべてのもの",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "活き": {
+    "level": "N3",
+    "reading": "いき",
+    "definition": "生きる、活かす（いかす）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "培っ": {
+    "level": "N2",
+    "reading": "つちかっ",
+    "definition": "培う（つちかう）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "乗り切れる": {
+    "level": "N3",
+    "reading": "のりきれる",
+    "definition": "困難を切り抜けられる",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "いし": {
+    "level": "N3",
+    "reading": "いし",
+    "definition": "意志、意思",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "選び": {
+    "level": "N5",
+    "reading": "えらび",
+    "definition": "選ぶこと",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "カリキュラム": {
+    "level": "N3",
+    "reading": "かりきゅらむ",
+    "definition": "教育課程",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "学費": {
+    "level": "N4",
+    "reading": "がくひ",
+    "definition": "学校の授業料",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "ビザ": {
+    "level": "N3",
+    "reading": "びざ",
+    "definition": "査証、入国許可",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "山積み": {
+    "level": "N3",
+    "reading": "やまづみ",
+    "definition": "たくさん積み重なること",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "学内": {
+    "level": "N4",
+    "reading": "がくない",
+    "definition": "学校の内部",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "まとまら": {
+    "level": "N3",
+    "reading": "まとまら",
+    "definition": "まとまる（集まる、整う）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "ょうそうすればより": {
+    "level": "N2",
+    "reading": "ようそうすればより",
+    "definition": "様相すればより（様子を見ればより）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "建設的": {
+    "level": "N2",
+    "reading": "けんせつてき",
+    "definition": "前向きで役立つこと",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:53:51.942Z"
+  },
+  "ごめん": {
+    "level": "N5",
+    "reading": "ごめん",
+    "definition": "对不起，抱歉",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:54:26.226Z"
+  },
+  "書": {
+    "level": "N5",
+    "reading": "しょ",
+    "definition": "书写，文件",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:54:26.226Z"
+  },
+  "感": {
+    "level": "N4",
+    "reading": "かん",
+    "definition": "感觉，感受",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:54:26.226Z"
+  },
+  "低": {
+    "level": "N5",
+    "reading": "ひくい",
+    "definition": "低，矮",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "済み": {
+    "level": "N4",
+    "reading": "すみ",
+    "definition": "已完成，结束",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "談": {
+    "level": "N3",
+    "reading": "だん",
+    "definition": "谈话，讨论",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "展": {
+    "level": "N3",
+    "reading": "てん",
+    "definition": "展览，展示",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:54:26.226Z"
+  },
+  "時半": {
+    "level": "N5",
+    "reading": "じはん",
+    "definition": "半点（如：3時半）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "ごろ": {
+    "level": "N5",
+    "reading": "ごろ",
+    "definition": "大约，左右（时间）",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:54:26.226Z"
+  },
+  "つ": {
+    "level": "N5",
+    "reading": "つ",
+    "definition": "助数词（如：一つ）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "くる": {
+    "level": "N5",
+    "reading": "くる",
+    "definition": "来",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:54:26.226Z"
+  },
+  "でる": {
+    "level": "N5",
+    "reading": "でる",
+    "definition": "出去，离开",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:54:26.226Z"
+  },
+  "おく": {
+    "level": "N5",
+    "reading": "おく",
+    "definition": "放置，事先做",
+    "source": "llm",
+    "createdAt": "2025-12-20T13:54:26.226Z"
+  },
+  "ただし": {
+    "level": "N3",
+    "reading": "ただし",
+    "definition": "但是，不过（用于补充条件）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "たび": {
+    "level": "N3",
+    "reading": "たび",
+    "definition": "每次，每当",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "ごと": {
+    "level": "N3",
+    "reading": "ごと",
+    "definition": "每，每个",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "お疲れ様": {
+    "level": "N4",
+    "reading": "おつかれさま",
+    "definition": "辛苦了（问候语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "らっしゃい": {
+    "level": "N5",
+    "reading": "らっしゃい",
+    "definition": "欢迎（招呼语）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "くん": {
+    "level": "N5",
+    "reading": "くん",
+    "definition": "君（称呼后缀，多用于男性）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "じ": {
+    "level": "N5",
+    "reading": "じ",
+    "definition": "时（如：3時）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "ちゃ": {
+    "level": "N5",
+    "reading": "ちゃ",
+    "definition": "茶",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "なぁ": {
+    "level": "N4",
+    "reading": "なぁ",
+    "definition": "感叹词（表示感叹或确认）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "多": {
+    "level": "N5",
+    "reading": "おおい",
+    "definition": "多",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "おい": {
+    "level": "N4",
+    "reading": "おい",
+    "definition": "hey (casual address)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:13:02.161Z"
+  },
+  "ううん": {
+    "level": "N5",
+    "reading": "ううん",
+    "definition": "不，不是（否定回应）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "限り": {
+    "level": "N3",
+    "reading": "かぎり",
+    "definition": "限度，极限",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "付け": {
+    "level": "N3",
+    "reading": "つけ",
+    "definition": "附加，添加",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "論": {
+    "level": "N3",
+    "reading": "ろん",
+    "definition": "理论，讨论",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "材": {
+    "level": "N3",
+    "reading": "ざい",
+    "definition": "材料，素材",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "おこ": {
+    "level": "N4",
+    "reading": "おこ",
+    "definition": "anger (slang)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:13:02.161Z"
+  },
+  "おかえりなさい": {
+    "level": "N5",
+    "reading": "おかえりなさい",
+    "definition": "欢迎回来",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "入り": {
+    "level": "N5",
+    "reading": "いり",
+    "definition": "进入，加入",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "買い": {
+    "level": "N5",
+    "reading": "かい",
+    "definition": "购买",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "選": {
+    "level": "N5",
+    "reading": "えらぶ",
+    "definition": "选择",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "近": {
+    "level": "N5",
+    "reading": "ちかい",
+    "definition": "近，接近",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "おお": {
+    "level": "N5",
+    "reading": "おお",
+    "definition": "大 (prefix meaning big/great)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "じゃん": {
+    "level": "N3",
+    "reading": "じゃん",
+    "definition": "casual particle (like じゃないか)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "給": {
+    "level": "N3",
+    "reading": "きゅう",
+    "definition": "salary/wage",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "当": {
+    "level": "N4",
+    "reading": "とう",
+    "definition": "hit/appropriate",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "分け": {
+    "level": "N3",
+    "reading": "わけ",
+    "definition": "reason/circumstance",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "か所": {
+    "level": "N4",
+    "reading": "かしょ",
+    "definition": "place/location",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "打ち": {
+    "level": "N3",
+    "reading": "うち",
+    "definition": "striking/hitting (prefix)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "出し": {
+    "level": "N4",
+    "reading": "だし",
+    "definition": "taking out/issuing",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "分の": {
+    "level": "N3",
+    "reading": "ぶんの",
+    "definition": "portion/part of",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "こ": {
+    "level": "N5",
+    "reading": "こ",
+    "definition": "small thing/counter for small objects",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:13:35.941Z"
+  },
+  "ようこそ": {
+    "level": "N5",
+    "reading": "ようこそ",
+    "definition": "welcome",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "団": {
+    "level": "N4",
+    "reading": "だん",
+    "definition": "group/team",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "よいしょ": {
+    "level": "N3",
+    "reading": "よいしょ",
+    "definition": "heave-ho (chant)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "がけ": {
+    "level": "N3",
+    "reading": "がけ",
+    "definition": "cliff/edge",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "せい": {
+    "level": "N3",
+    "reading": "せい",
+    "definition": "fault/cause (often in せいで)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "少": {
+    "level": "N5",
+    "reading": "しょう",
+    "definition": "few/little",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "％": {
+    "level": "N5",
+    "reading": "パーセント",
+    "definition": "percent",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "のう": {
+    "level": "N2",
+    "reading": "のう",
+    "definition": "brain (slang/old term)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "えと": {
+    "level": "N3",
+    "reading": "えと",
+    "definition": "zodiac sign (from 干支)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "次に": {
+    "level": "N5",
+    "reading": "つぎに",
+    "definition": "next/then",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "比": {
+    "level": "N3",
+    "reading": "ひ",
+    "definition": "ratio/comparison",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "官": {
+    "level": "N3",
+    "reading": "かん",
+    "definition": "government official",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "塗り": {
+    "level": "N4",
+    "reading": "ぬり",
+    "definition": "painting/coating",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "いけ": {
+    "level": "N5",
+    "reading": "いけ",
+    "definition": "pond (from 池)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "離れ": {
+    "level": "N3",
+    "reading": "はなれ",
+    "definition": "detachment/separation",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "最": {
+    "level": "N4",
+    "reading": "さい",
+    "definition": "most (prefix)",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "協": {
+    "level": "N4",
+    "reading": "きょう",
+    "definition": "cooperation",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:15:08.558Z"
+  },
+  "戸惑い": {
+    "level": "N2",
+    "reading": "とまどい",
+    "definition": "困惑、迷茫",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "なけれ": {
+    "level": "N4",
+    "reading": "なけれ",
+    "definition": "ない的假定形（なければ）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "気づい": {
+    "level": "N4",
+    "reading": "きづい",
+    "definition": "気づく的连用形（気づいて）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "温かい": {
+    "level": "N5",
+    "reading": "あたたかい",
+    "definition": "温暖的、亲切的",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "報告会": {
+    "level": "N3",
+    "reading": "ほうこくかい",
+    "definition": "报告会、汇报会",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "捉える": {
+    "level": "N2",
+    "reading": "とらえる",
+    "definition": "捕捉、理解、把握",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "サポートする": {
+    "level": "N3",
+    "reading": "サポートする",
+    "definition": "支持、支援",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "継承し": {
+    "level": "N2",
+    "reading": "けいしょうし",
+    "definition": "継承する的连用形（継承して）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "なくなる": {
+    "level": "N5",
+    "reading": "なくなる",
+    "definition": "消失、死亡",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "いう": {
+    "level": "N5",
+    "reading": "いう",
+    "definition": "说、称为",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "向き合っ": {
+    "level": "N3",
+    "reading": "むきあっ",
+    "definition": "向き合う的连用形（向き合って）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "出し合お": {
+    "level": "N3",
+    "reading": "だしあお",
+    "definition": "出し合う的意志形（出し合おう）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "取り合い": {
+    "level": "N3",
+    "reading": "とりあい",
+    "definition": "争夺、争抢",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "ぼかす": {
+    "level": "N2",
+    "reading": "ぼかす",
+    "definition": "模糊、淡化",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "盛り上げよ": {
+    "level": "N3",
+    "reading": "もりあげよ",
+    "definition": "盛り上げる的意志形（盛り上げよう）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "助け合わ": {
+    "level": "N3",
+    "reading": "たすけあわ",
+    "definition": "助け合う的未然形（助け合わない）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "守れる": {
+    "level": "N4",
+    "reading": "まもれる",
+    "definition": "守る的可能形（能守护）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "働ける": {
+    "level": "N4",
+    "reading": "はたらける",
+    "definition": "働く的可能形（能工作）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "引ける": {
+    "level": "N4",
+    "reading": "ひける",
+    "definition": "引く的可能形（能拉/能结束）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "融合し": {
+    "level": "N2",
+    "reading": "ゆうごうし",
+    "definition": "融合する的连用形（融合して）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "懸念し": {
+    "level": "N2",
+    "reading": "けねんし",
+    "definition": "懸念する的连用形（懸念して）",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:12:30.133Z"
+  },
+  "向き合う": {
+    "level": "N3",
+    "reading": "むきあう",
+    "definition": "面对，直面",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
+  },
+  "戸惑う": {
+    "level": "N3",
+    "reading": "とまどう",
+    "definition": "困惑，不知所措",
+    "source": "llm",
+    "createdAt": "2025-12-20T14:14:36.736Z"
   }
 }
