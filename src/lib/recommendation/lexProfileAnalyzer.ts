@@ -11,6 +11,12 @@ import { BroadCEFR } from './difficulty';
 // Japanese tokenizer options
 export type JaTokenizer = 'kuromoji' | 'tinysegmenter' | 'budoux';
 
+// Japanese vocabulary dictionary options
+export type JaVocabDict = 'default' | 'elzup' | 'tanos';
+
+// Japanese grammar dictionary options
+export type JaGrammarDict = 'yapan' | 'hagoromo';
+
 // TinySegmenter and budoux for alternative Japanese tokenization
 import TinySegmenter from 'tiny-segmenter';
 import { loadDefaultJapaneseParser } from 'budoux';
@@ -19,10 +25,43 @@ import { loadDefaultJapaneseParser } from 'budoux';
 /* eslint-disable @typescript-eslint/no-var-requires */
 const enCefr = require('@/data/vocab/en-cefr.json') as Record<string, string>;
 const jaJlpt = require('@/data/vocab/ja-jlpt.json') as Record<string, string>;
+const jaJlptElzup = require('@/data/vocab/ja-jlpt-elzup.json') as Record<string, string>;
+const jaJlptTanos = require('@/data/vocab/ja-jlpt-tanos.json') as Record<string, string>;
 const zhHsk = require('@/data/vocab/zh-hsk.json') as Record<string, string>;
 
-// Grammar pattern data (YAPAN - 667 patterns)
-const jaGrammarPatterns = require('@/data/grammar/ja-grammar-jlpt.json') as GrammarPattern[];
+// Japanese vocabulary dictionary maps
+const jaVocabDictionaries: Record<JaVocabDict, Map<string, string>> = {
+    default: new Map(Object.entries(jaJlpt)),
+    elzup: new Map(Object.entries(jaJlptElzup)),
+    tanos: new Map(Object.entries(jaJlptTanos)),
+};
+
+// Dictionary metadata for UI display
+export const JA_VOCAB_DICT_INFO: Record<JaVocabDict, { name: string; size: number; source: string }> = {
+    default: { name: 'Default JLPT', size: Object.keys(jaJlpt).length, source: 'Custom' },
+    elzup: { name: 'Elzup JLPT', size: Object.keys(jaJlptElzup).length, source: 'github.com/elzup/jlpt-word-list' },
+    tanos: { name: 'Tanos JLPT', size: Object.keys(jaJlptTanos).length, source: 'tanos.co.uk (via Bluskyo)' },
+};
+
+// Grammar pattern data
+const jaGrammarYapan = require('@/data/grammar/ja-grammar-jlpt.json') as GrammarPattern[];
+const jaGrammarHagoromo = require('@/data/grammar/ja-grammar-hagoromo-patterns.json') as GrammarPattern[];
+
+// Japanese grammar dictionary maps
+const jaGrammarDictionaries: Record<JaGrammarDict, GrammarPattern[]> = {
+    yapan: jaGrammarYapan,
+    hagoromo: jaGrammarHagoromo,
+};
+
+// Grammar dictionary metadata for UI display
+export const JA_GRAMMAR_DICT_INFO: Record<JaGrammarDict, { name: string; size: number; source: string }> = {
+    yapan: { name: 'YAPAN JLPT', size: jaGrammarYapan.length, source: 'jlptsensei.com / japanesetest4you.com' },
+    hagoromo: { name: 'Hagoromo 4.1', size: jaGrammarHagoromo.length, source: 'hgrm.jpn.org (大学日语教育学术数据库)' },
+};
+
+// Backwards compatibility - default grammar patterns
+const jaGrammarPatterns = jaGrammarYapan;
+
 
 // LLM-discovered rules (loaded dynamically for hot-reload support)
 let llmVocabRulesCache: Record<string, { level: string }> | null = null;
@@ -168,14 +207,17 @@ const JLPT_LEVEL_ORDER = ['N5', 'N4', 'N3', 'N2', 'N1'];
 
 /**
  * Match grammar patterns in Japanese text
- * Uses YAPAN grammar database (667 patterns from jlptsensei.com / japanesetest4you.com)
+ * Uses selected grammar database (YAPAN: 667 patterns, Hagoromo: 1,731 patterns)
  */
-function matchGrammarPatterns(text: string): GrammarProfileResult {
+function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'): GrammarProfileResult {
     const matchedPatterns: GrammarProfileResult['patterns'] = [];
     const byLevel: Record<string, number> = { N1: 0, N2: 0, N3: 0, N4: 0, N5: 0 };
 
+    // Get the selected grammar patterns
+    const grammarPatterns = jaGrammarDictionaries[grammarDict];
+
     // Sort patterns by length (longer first) for greedy matching
-    const sortedPatterns = [...jaGrammarPatterns].sort((a, b) =>
+    const sortedPatterns = [...grammarPatterns].sort((a, b) =>
         b.pattern.length - a.pattern.length
     );
 
@@ -997,11 +1039,15 @@ function removeDialogueIdentifiers(text: string): string {
  * @param text - Text to analyze
  * @param lang - Language (en, ja, zh)
  * @param jaTokenizer - Japanese tokenizer to use (kuromoji, tinysegmenter, budoux) - default: kuromoji
+ * @param jaVocabDict - Japanese vocabulary dictionary to use (default, elzup, tanos) - default: default
+ * @param jaGrammarDict - Japanese grammar dictionary to use (yapan, hagoromo) - default: yapan
  */
 export async function analyzeLexProfileAsync(
     text: string,
     lang: SupportedLang,
-    jaTokenizer: JaTokenizer = 'kuromoji'
+    jaTokenizer: JaTokenizer = 'kuromoji',
+    jaVocabDict: JaVocabDict = 'default',
+    jaGrammarDict: JaGrammarDict = 'yapan'
 ): Promise<LexProfileResult> {
     // Step 0: Normalize text by removing dialogue identifiers
     const cleanText = removeDialogueIdentifiers(text);
@@ -1011,7 +1057,8 @@ export async function analyzeLexProfileAsync(
         await loadLLMRules();
     }
 
-    const dict = dictionaries[lang];
+    // Select dictionary based on language and jaVocabDict parameter
+    const dict = lang === 'ja' ? jaVocabDictionaries[jaVocabDict] : dictionaries[lang];
     let tokenInfoList: TokenInfo[];
 
     switch (lang) {
@@ -1080,7 +1127,7 @@ export async function analyzeLexProfileAsync(
     const coverage = contentWordTotal > 0 ? knownContentCount / contentWordTotal : 0;
 
     // Grammar pattern matching (Japanese only)
-    const grammarProfile = lang === 'ja' ? matchGrammarPatterns(text) : undefined;
+    const grammarProfile = lang === 'ja' ? matchGrammarPatterns(text, jaGrammarDict) : undefined;
 
     // Calculate difficulty summary
     let difficultySummary: LexProfileResult['difficultySummary'];
@@ -1252,7 +1299,12 @@ export function toLexProfileForDB(result: LexProfileResult): Record<BroadCEFR, n
 
 /**
  * Get dictionary size for a language
+ * @param lang - Language code
+ * @param jaVocabDict - Japanese vocabulary dictionary (only used when lang is 'ja')
  */
-export function getDictionarySize(lang: SupportedLang): number {
+export function getDictionarySize(lang: SupportedLang, jaVocabDict: JaVocabDict = 'default'): number {
+    if (lang === 'ja') {
+        return jaVocabDictionaries[jaVocabDict].size;
+    }
     return dictionaries[lang].size;
 }

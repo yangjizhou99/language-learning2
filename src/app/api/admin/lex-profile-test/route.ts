@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
-import { analyzeLexProfileAsync, toLexProfileForDB, getDictionarySize, SupportedLang, JaTokenizer } from '@/lib/recommendation/lexProfileAnalyzer';
+import { analyzeLexProfileAsync, toLexProfileForDB, getDictionarySize, SupportedLang, JaTokenizer, JaVocabDict, JaGrammarDict, JA_VOCAB_DICT_INFO, JA_GRAMMAR_DICT_INFO } from '@/lib/recommendation/lexProfileAnalyzer';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { text, lang, jaTokenizer } = body;
+        const { text, lang, jaTokenizer, jaVocabDict, jaGrammarDict } = body;
 
         if (!text || typeof text !== 'string') {
             return NextResponse.json({ error: 'text is required' }, { status: 400 });
@@ -60,10 +60,18 @@ export async function POST(req: NextRequest) {
         const validTokenizers: JaTokenizer[] = ['kuromoji', 'tinysegmenter', 'budoux'];
         const selectedTokenizer: JaTokenizer = validTokenizers.includes(jaTokenizer) ? jaTokenizer : 'kuromoji';
 
-        // Analyze the text with async version (supports multiple Japanese tokenizers)
-        const result = await analyzeLexProfileAsync(text, lang as SupportedLang, selectedTokenizer);
+        // Validate jaVocabDict if provided
+        const validVocabDicts: JaVocabDict[] = ['default', 'elzup', 'tanos'];
+        const selectedVocabDict: JaVocabDict = validVocabDicts.includes(jaVocabDict) ? jaVocabDict : 'default';
+
+        // Validate jaGrammarDict if provided
+        const validGrammarDicts: JaGrammarDict[] = ['yapan', 'hagoromo'];
+        const selectedGrammarDict: JaGrammarDict = validGrammarDicts.includes(jaGrammarDict) ? jaGrammarDict : 'yapan';
+
+        // Analyze the text with async version (supports multiple Japanese tokenizers and dictionaries)
+        const result = await analyzeLexProfileAsync(text, lang as SupportedLang, selectedTokenizer, selectedVocabDict, selectedGrammarDict);
         const lexProfileForDB = toLexProfileForDB(result);
-        const dictSize = getDictionarySize(lang as SupportedLang);
+        const dictSize = getDictionarySize(lang as SupportedLang, selectedVocabDict);
 
         return NextResponse.json({
             success: true,
@@ -71,6 +79,10 @@ export async function POST(req: NextRequest) {
                 ...result,
                 lexProfileForDB,
                 dictionarySize: dictSize,
+                dictionaryInfo: lang === 'ja' ? JA_VOCAB_DICT_INFO : undefined,
+                grammarDictInfo: lang === 'ja' ? JA_GRAMMAR_DICT_INFO : undefined,
+                selectedVocabDict: lang === 'ja' ? selectedVocabDict : undefined,
+                selectedGrammarDict: lang === 'ja' ? selectedGrammarDict : undefined,
             },
         });
     } catch (error) {

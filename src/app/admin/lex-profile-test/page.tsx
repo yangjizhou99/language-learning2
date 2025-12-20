@@ -116,6 +116,12 @@ export default function LexProfileTestPage() {
     // Japanese tokenizer selection
     const [jaTokenizer, setJaTokenizer] = useState<'kuromoji' | 'tinysegmenter' | 'budoux'>('kuromoji');
 
+    // Japanese vocabulary dictionary selection
+    const [jaVocabDict, setJaVocabDict] = useState<'default' | 'elzup' | 'tanos'>('default');
+
+    // Japanese grammar dictionary selection
+    const [jaGrammarDict, setJaGrammarDict] = useState<'yapan' | 'hagoromo'>('yapan');
+
     useEffect(() => {
         const fetchDbItems = async () => {
             setLoadingDbItems(true);
@@ -164,7 +170,7 @@ export default function LexProfileTestPage() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${session.access_token}`,
                 },
-                body: JSON.stringify({ text, lang, jaTokenizer }),
+                body: JSON.stringify({ text, lang, jaTokenizer, jaVocabDict, jaGrammarDict }),
             });
 
             const data = await res.json();
@@ -490,6 +496,38 @@ export default function LexProfileTestPage() {
                                             <option value="budoux">Budoux (Google ML模型)</option>
                                         </select>
                                     </div>
+                                )}
+                                {/* Japanese vocabulary dictionary selector */}
+                                {lang === 'ja' && (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">
+                                                词汇等级库
+                                                <span className="text-xs text-gray-500 ml-2">(可切换对比覆盖率)</span>
+                                            </label>
+                                            <select
+                                                value={jaVocabDict}
+                                                onChange={(e) => setJaVocabDict(e.target.value as 'default' | 'elzup' | 'tanos')}
+                                                className="w-full p-2 border rounded"
+                                            >
+                                                <option value="default">Default JLPT (8,135词)</option>
+                                                <option value="elzup">Elzup JLPT (7,846词 - elzup/jlpt-word-list)</option>
+                                                <option value="tanos">Tanos JLPT (8,130词 - tanos.co.uk)</option>
+                                            </select>
+                                        </div>
+                                        {/* Grammar Dictionary Selector */}
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">语法库</label>
+                                            <select
+                                                value={jaGrammarDict}
+                                                onChange={(e) => setJaGrammarDict(e.target.value as 'yapan' | 'hagoromo')}
+                                                className="w-full p-2 border rounded"
+                                            >
+                                                <option value="yapan">YAPAN (667模式 - jlptsensei.com)</option>
+                                                <option value="hagoromo">Hagoromo 4.1 (1,731模式 - hgrm.jpn.org)</option>
+                                            </select>
+                                        </div>
+                                    </>
                                 )}
                                 <div>
                                     <label className="block text-sm font-medium mb-1">文本内容</label>
@@ -955,6 +993,198 @@ export default function LexProfileTestPage() {
                                 </div>
                             </div>
                         )}
+                    </div>
+                </div>
+
+                {/* 组合性能对比表 */}
+                <div className="mt-8 bg-white p-6 rounded-lg shadow">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span>📊</span>
+                        分词器 × 词汇库 组合性能对比
+                    </h2>
+                    <p className="text-sm text-gray-600 mb-4">
+                        基于 30 个日语跟读题目的测试结果 (2025-12-20)
+                    </p>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm border-collapse">
+                            <thead>
+                                <tr className="bg-gray-100">
+                                    <th className="border px-3 py-2 text-left">排名</th>
+                                    <th className="border px-3 py-2 text-left">分词器</th>
+                                    <th className="border px-3 py-2 text-left">词汇库</th>
+                                    <th className="border px-3 py-2 text-right">词库大小</th>
+                                    <th className="border px-3 py-2 text-right">覆盖率</th>
+                                    <th className="border px-3 py-2 text-right">未知率</th>
+                                    <th className="border px-3 py-2 text-right">处理时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr className="bg-yellow-50 font-semibold">
+                                    <td className="border px-3 py-2">🥇 1</td>
+                                    <td className="border px-3 py-2">kuromoji</td>
+                                    <td className="border px-3 py-2">default</td>
+                                    <td className="border px-3 py-2 text-right">8,133</td>
+                                    <td className="border px-3 py-2 text-right text-green-600">81.15%</td>
+                                    <td className="border px-3 py-2 text-right">12.09%</td>
+                                    <td className="border px-3 py-2 text-right">663ms</td>
+                                </tr>
+                                <tr className="bg-yellow-50/50">
+                                    <td className="border px-3 py-2">🥈 2</td>
+                                    <td className="border px-3 py-2">kuromoji</td>
+                                    <td className="border px-3 py-2">tanos</td>
+                                    <td className="border px-3 py-2 text-right">8,130</td>
+                                    <td className="border px-3 py-2 text-right text-green-600">81.15%</td>
+                                    <td className="border px-3 py-2 text-right">12.09%</td>
+                                    <td className="border px-3 py-2 text-right">136ms</td>
+                                </tr>
+                                <tr className="bg-yellow-50/30">
+                                    <td className="border px-3 py-2">🥉 3</td>
+                                    <td className="border px-3 py-2">kuromoji</td>
+                                    <td className="border px-3 py-2">elzup</td>
+                                    <td className="border px-3 py-2 text-right">7,846</td>
+                                    <td className="border px-3 py-2 text-right text-green-600">79.64%</td>
+                                    <td className="border px-3 py-2 text-right">13.09%</td>
+                                    <td className="border px-3 py-2 text-right">120ms</td>
+                                </tr>
+                                <tr>
+                                    <td className="border px-3 py-2">4</td>
+                                    <td className="border px-3 py-2">tinysegmenter</td>
+                                    <td className="border px-3 py-2">default</td>
+                                    <td className="border px-3 py-2 text-right">8,133</td>
+                                    <td className="border px-3 py-2 text-right text-yellow-600">68.23%</td>
+                                    <td className="border px-3 py-2 text-right">19.62%</td>
+                                    <td className="border px-3 py-2 text-right">106ms</td>
+                                </tr>
+                                <tr>
+                                    <td className="border px-3 py-2">5</td>
+                                    <td className="border px-3 py-2">tinysegmenter</td>
+                                    <td className="border px-3 py-2">tanos</td>
+                                    <td className="border px-3 py-2 text-right">8,130</td>
+                                    <td className="border px-3 py-2 text-right text-yellow-600">68.23%</td>
+                                    <td className="border px-3 py-2 text-right">19.62%</td>
+                                    <td className="border px-3 py-2 text-right">79ms</td>
+                                </tr>
+                                <tr>
+                                    <td className="border px-3 py-2">6</td>
+                                    <td className="border px-3 py-2">tinysegmenter</td>
+                                    <td className="border px-3 py-2">elzup</td>
+                                    <td className="border px-3 py-2 text-right">7,846</td>
+                                    <td className="border px-3 py-2 text-right text-yellow-600">63.35%</td>
+                                    <td className="border px-3 py-2 text-right">21.92%</td>
+                                    <td className="border px-3 py-2 text-right">87ms</td>
+                                </tr>
+                                <tr className="text-gray-400">
+                                    <td className="border px-3 py-2">7</td>
+                                    <td className="border px-3 py-2">budoux</td>
+                                    <td className="border px-3 py-2">default</td>
+                                    <td className="border px-3 py-2 text-right">8,133</td>
+                                    <td className="border px-3 py-2 text-right text-red-400">6.99%</td>
+                                    <td className="border px-3 py-2 text-right">77.67%</td>
+                                    <td className="border px-3 py-2 text-right">41ms</td>
+                                </tr>
+                                <tr className="text-gray-400">
+                                    <td className="border px-3 py-2">8</td>
+                                    <td className="border px-3 py-2">budoux</td>
+                                    <td className="border px-3 py-2">tanos</td>
+                                    <td className="border px-3 py-2 text-right">8,130</td>
+                                    <td className="border px-3 py-2 text-right text-red-400">6.99%</td>
+                                    <td className="border px-3 py-2 text-right">77.67%</td>
+                                    <td className="border px-3 py-2 text-right">28ms</td>
+                                </tr>
+                                <tr className="text-gray-400">
+                                    <td className="border px-3 py-2">9</td>
+                                    <td className="border px-3 py-2">budoux</td>
+                                    <td className="border px-3 py-2">elzup</td>
+                                    <td className="border px-3 py-2 text-right">7,846</td>
+                                    <td className="border px-3 py-2 text-right text-red-400">6.77%</td>
+                                    <td className="border px-3 py-2 text-right">77.86%</td>
+                                    <td className="border px-3 py-2 text-right">31ms</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="p-4 bg-blue-50 rounded-lg">
+                            <h3 className="font-semibold text-blue-800 mb-2">📊 分词器对比</h3>
+                            <ul className="text-sm space-y-1">
+                                <li><span className="font-medium text-green-600">kuromoji</span>: 80.6% 覆盖率 ✓ 最佳</li>
+                                <li><span className="font-medium text-yellow-600">tinysegmenter</span>: 66.6% 覆盖率 - 中等</li>
+                                <li><span className="font-medium text-red-500">budoux</span>: 6.9% 覆盖率 ✗ 不推荐</li>
+                            </ul>
+                        </div>
+                        <div className="p-4 bg-purple-50 rounded-lg">
+                            <h3 className="font-semibold text-purple-800 mb-2">📚 词汇库对比</h3>
+                            <ul className="text-sm space-y-1">
+                                <li><span className="font-medium">default</span> (8,133词): 52.1% 平均覆盖率</li>
+                                <li><span className="font-medium">tanos</span> (8,130词): 52.1% 平均覆盖率</li>
+                                <li><span className="font-medium">elzup</span> (7,846词): 49.9% 平均覆盖率</li>
+                            </ul>
+                        </div>
+                        <div className="p-4 bg-orange-50 rounded-lg">
+                            <h3 className="font-semibold text-orange-800 mb-2">📖 语法库对比</h3>
+                            <ul className="text-sm space-y-1">
+                                <li><span className="font-medium">YAPAN</span>: 667 模式 (12.0 匹配/文本)</li>
+                                <li><span className="font-medium text-green-600">Hagoromo 4.1</span>: 1,731 模式 (18.0 匹配/文本) ✓</li>
+                                <li className="text-xs text-gray-500 mt-1">Hagoromo 语法覆盖率比 YAPAN 高 50%</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* 最终综合测试报告 */}
+                    <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                        <h3 className="text-lg font-bold text-blue-800 mb-3 flex items-center gap-2">
+                            🏆 最佳组合综合测试报告
+                            <span className="text-xs font-normal text-gray-500">(50个日语题目)</span>
+                        </h3>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div className="bg-white p-3 rounded shadow-sm text-center">
+                                <div className="text-2xl font-bold text-green-600">81.01%</div>
+                                <div className="text-xs text-gray-600">词汇覆盖率</div>
+                            </div>
+                            <div className="bg-white p-3 rounded shadow-sm text-center">
+                                <div className="text-2xl font-bold text-blue-600">17.66</div>
+                                <div className="text-xs text-gray-600">语法匹配/文本</div>
+                            </div>
+                            <div className="bg-white p-3 rounded shadow-sm text-center">
+                                <div className="text-2xl font-bold text-orange-600">12.32%</div>
+                                <div className="text-xs text-gray-600">词汇未知率</div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div className="bg-white p-3 rounded shadow-sm">
+                                <h4 className="font-semibold text-gray-700 mb-2">📚 词汇等级分布</h4>
+                                <div className="space-y-1">
+                                    <div className="flex justify-between"><span>N5</span><span className="font-mono">740 (28.7%)</span></div>
+                                    <div className="flex justify-between"><span>N4</span><span className="font-mono">467 (18.1%)</span></div>
+                                    <div className="flex justify-between"><span>N3</span><span className="font-mono">795 (30.9%)</span></div>
+                                    <div className="flex justify-between"><span>N2</span><span className="font-mono">163 (6.3%)</span></div>
+                                    <div className="flex justify-between"><span>N1</span><span className="font-mono">409 (15.9%)</span></div>
+                                </div>
+                            </div>
+                            <div className="bg-white p-3 rounded shadow-sm">
+                                <h4 className="font-semibold text-gray-700 mb-2">📖 语法等级分布</h4>
+                                <div className="space-y-1">
+                                    <div className="flex justify-between"><span>N5</span><span className="font-mono">310 (35.1%)</span></div>
+                                    <div className="flex justify-between"><span>N4</span><span className="font-mono">383 (43.4%)</span></div>
+                                    <div className="flex justify-between"><span>N3</span><span className="font-mono">115 (13.0%)</span></div>
+                                    <div className="flex justify-between"><span>N2</span><span className="font-mono">70 (7.9%)</span></div>
+                                    <div className="flex justify-between"><span>N1</span><span className="font-mono">5 (0.6%)</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded">
+                            <h4 className="font-semibold text-green-800 mb-1">✅ 最终推荐配置</h4>
+                            <div className="text-sm text-green-700 grid grid-cols-3 gap-2">
+                                <div><strong>分词器:</strong> kuromoji</div>
+                                <div><strong>词汇库:</strong> default (8,133词)</div>
+                                <div><strong>语法库:</strong> Hagoromo (1,731模式)</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
