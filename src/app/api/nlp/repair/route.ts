@@ -78,6 +78,9 @@ ${unrecognizedGrammar?.map(g => `- ${g}`).join('\n') || '无'}
 
       case 'level_assignment':
         // Focused task for assigning JLPT levels to unknown tokens
+        // Now uses contextual snippets instead of full text for better efficiency
+        const { unknownTokensWithContext, unrecognizedGrammarWithContext } = body as any;
+
         systemPrompt = `你是日语JLPT分级专家。任务：为未识别等级的词汇和语法项分配JLPT等级。
 只输出 JSON，必须符合 schema。
 Schema: {
@@ -95,15 +98,27 @@ Schema: {
 - 如果词汇是复合词或派生词，根据其复杂度判断等级
 - 如果是口语表达或俗语，通常为 N2 或 N3
 - 如果无法确定，基于词汇的使用频率和复杂度进行合理推测`;
-        userPrompt = `原文上下文：${text}
 
-需要分配JLPT等级的词汇（目前标记为unknown）：
-${unknownTokens.map(t => `- ${t}`).join('\n') || '无'}
+        // Build focused prompt with context snippets
+        const vocabLines = unknownTokensWithContext?.length > 0
+          ? unknownTokensWithContext.map((item: { token: string; context: string }) =>
+            `- 「${item.token}」 上下文: "${item.context}"`
+          ).join('\n')
+          : '无';
 
-需要分配JLPT等级的语法项（目前未分级）：
-${unrecognizedGrammar?.map(g => `- ${g}`).join('\n') || '无'}
+        const grammarLines = unrecognizedGrammarWithContext?.length > 0
+          ? unrecognizedGrammarWithContext.map((item: { token: string; context: string }) =>
+            `- 「${item.token}」 上下文: "${item.context}"`
+          ).join('\n')
+          : '无';
 
-请为每个项目分配合适的JLPT等级（N1-N5），并提供简短定义。`;
+        userPrompt = `需要分配JLPT等级的词汇（附上下文）：
+${vocabLines}
+
+需要分配JLPT等级的语法项（附上下文）：
+${grammarLines}
+
+请根据上下文为每个项目分配合适的JLPT等级（N1-N5），并提供简短定义。`;
         break;
 
       default:

@@ -33,7 +33,7 @@ async function runTest() {
         .eq('lang', 'ja')
         .not('text', 'is', null)
         .neq('text', '')
-        .limit(50);
+        .limit(300);
 
     if (error || !items?.length) {
         console.error('Error:', error);
@@ -63,6 +63,13 @@ async function runTest() {
     const grammarLevelCounts = { N1: 0, N2: 0, N3: 0, N4: 0, N5: 0 };
     let successCount = 0;
 
+    // New: Track grammar label coverage
+    let totalGrammarTokens = 0;
+    let grammarWithLevel = 0;
+    let grammarWithoutLevel = 0;
+    let totalContentTokens = 0;
+    let contentWithLevel = 0;
+
     console.log('正在分析...');
     const startTime = Date.now();
 
@@ -82,22 +89,39 @@ async function runTest() {
                 totalVocabCoverage += result.details?.coverage || 0;
                 totalUnknownRate += result.details?.unknownTokens?.length / (result.uniqueTokens || 1);
 
-                // Count vocab levels from tokenList
+                // Count vocab levels and track coverage from tokenList
                 result.details?.tokenList?.forEach(t => {
-                    if (t.isContentWord && t.originalLevel?.startsWith('N')) {
-                        const level = t.originalLevel as keyof typeof vocabLevelCounts;
-                        if (vocabLevelCounts[level] !== undefined) {
-                            vocabLevelCounts[level]++;
+                    if (t.isContentWord) {
+                        totalContentTokens++;
+                        if (t.originalLevel?.startsWith('N')) {
+                            const level = t.originalLevel as keyof typeof vocabLevelCounts;
+                            if (vocabLevelCounts[level] !== undefined) {
+                                vocabLevelCounts[level]++;
+                            }
+                            contentWithLevel++;
+                        }
+                    } else {
+                        // Grammar/function word
+                        totalGrammarTokens++;
+                        if (t.originalLevel?.startsWith('grammar (N')) {
+                            grammarWithLevel++;
+                            // Extract level from "grammar (N3)" format
+                            const match = t.originalLevel.match(/grammar \((N\d)\)/);
+                            if (match) {
+                                const level = match[1] as keyof typeof grammarLevelCounts;
+                                if (grammarLevelCounts[level] !== undefined) {
+                                    grammarLevelCounts[level]++;
+                                }
+                            }
+                        } else if (t.originalLevel === 'grammar') {
+                            grammarWithoutLevel++;
                         }
                     }
                 });
 
-                // Count grammar levels
+                // Count grammar pattern matches (from grammarProfile)
                 if (result.grammarProfile) {
                     totalGrammarMatches += result.grammarProfile.total;
-                    for (const level of ['N1', 'N2', 'N3', 'N4', 'N5'] as const) {
-                        grammarLevelCounts[level] += result.grammarProfile.byLevel[level] || 0;
-                    }
                 }
 
                 successCount++;
@@ -114,6 +138,12 @@ async function runTest() {
     const avgVocabCoverage = successCount > 0 ? totalVocabCoverage / successCount : 0;
     const avgUnknownRate = successCount > 0 ? totalUnknownRate / successCount : 0;
     const avgGrammarMatches = successCount > 0 ? totalGrammarMatches / successCount : 0;
+
+    // Calculate label coverage rates
+    const contentLabelCoverage = totalContentTokens > 0 ? contentWithLevel / totalContentTokens : 0;
+    const grammarLabelCoverage = totalGrammarTokens > 0 ? grammarWithLevel / totalGrammarTokens : 0;
+    const overallLabelCoverage = (totalContentTokens + totalGrammarTokens) > 0
+        ? (contentWithLevel + grammarWithLevel) / (totalContentTokens + totalGrammarTokens) : 0;
 
     // Print report
     console.log('='.repeat(80));
@@ -141,6 +171,14 @@ async function runTest() {
         console.log(`    ${level}: ${count} (${pct}%)`);
     }
     console.log('');
+    console.log('🏷️ 等级标签覆盖率 (新增)');
+    console.log('-'.repeat(40));
+    console.log(`  内容词标签覆盖率: ${(contentLabelCoverage * 100).toFixed(2)}% (${contentWithLevel}/${totalContentTokens})`);
+    console.log(`  语法词标签覆盖率: ${(grammarLabelCoverage * 100).toFixed(2)}% (${grammarWithLevel}/${totalGrammarTokens})`);
+    console.log(`    - 有等级: ${grammarWithLevel}`);
+    console.log(`    - 无等级: ${grammarWithoutLevel}`);
+    console.log(`  总体等级标签覆盖率: ${(overallLabelCoverage * 100).toFixed(2)}%`);
+    console.log('');
     console.log('='.repeat(80));
     console.log('🏆 最佳组合总结');
     console.log('='.repeat(80));
@@ -156,6 +194,9 @@ async function runTest() {
     console.log(`| 词汇覆盖率 | ${(avgVocabCoverage * 100).toFixed(2)}% |`);
     console.log(`| 词汇未知率 | ${(avgUnknownRate * 100).toFixed(2)}% |`);
     console.log(`| 语法匹配数 | ${avgGrammarMatches.toFixed(2)} 个/文本 |`);
+    console.log(`| 内容词标签覆盖 | ${(contentLabelCoverage * 100).toFixed(2)}% |`);
+    console.log(`| 语法词标签覆盖 | ${(grammarLabelCoverage * 100).toFixed(2)}% |`);
+    console.log(`| 总体标签覆盖 | ${(overallLabelCoverage * 100).toFixed(2)}% |`);
     console.log('='.repeat(80));
 
     // Save results for page display

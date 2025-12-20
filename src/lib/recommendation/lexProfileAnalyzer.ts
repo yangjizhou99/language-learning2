@@ -436,6 +436,13 @@ function tokenizeWithTinySegmenter(text: string, dict: Map<string, string>): Tok
                         grammarLevel = llmGrammarEntry.level;
                     }
                 }
+                // Fallback: try vocabulary dictionary if grammar level not found
+                if (!grammarLevel) {
+                    const vocabLevel = dict.get(segment);
+                    if (vocabLevel) {
+                        grammarLevel = vocabLevel;
+                    }
+                }
             }
 
             let levelLabel: string;
@@ -495,6 +502,13 @@ function tokenizeWithBudoux(text: string, dict: Map<string, string>): TokenInfo[
                     const llmGrammarEntry = llmRules.grammar[segment];
                     if (llmGrammarEntry?.level) {
                         grammarLevel = llmGrammarEntry.level;
+                    }
+                }
+                // Fallback: try vocabulary dictionary if grammar level not found
+                if (!grammarLevel) {
+                    const vocabLevel = dict.get(segment);
+                    if (vocabLevel) {
+                        grammarLevel = vocabLevel;
                     }
                 }
             }
@@ -862,6 +876,14 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
                     const llmGrammarEntry = llmRules.grammar[surface] || llmRules.grammar[basicForm];
                     if (llmGrammarEntry?.level) {
                         grammarLevel = llmGrammarEntry.level;
+                    }
+                }
+
+                // Fallback: try vocabulary dictionary if grammar level not found
+                if (!grammarLevel) {
+                    const vocabLevel = dict.get(surface) || dict.get(basicForm);
+                    if (vocabLevel) {
+                        grammarLevel = vocabLevel;
                     }
                 }
 

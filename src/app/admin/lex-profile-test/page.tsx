@@ -279,16 +279,64 @@ export default function LexProfileTestPage() {
                 return;
             }
 
+            // Build context snippets for each unknown item (about 1 sentence around it)
+            const buildContextSnippet = (targetToken: string, fullText: string): string => {
+                const idx = fullText.indexOf(targetToken);
+                if (idx === -1) return targetToken;
+
+                // Get surrounding context (up to 20 chars before and after, try to end at sentence boundaries)
+                const contextRadius = 25;
+                let start = Math.max(0, idx - contextRadius);
+                let end = Math.min(fullText.length, idx + targetToken.length + contextRadius);
+
+                // Try to find sentence boundaries (。、！？)
+                const sentenceEndChars = ['。', '！', '？', '、', '\n'];
+
+                // Extend start to previous sentence boundary if close
+                for (let i = idx - 1; i >= start; i--) {
+                    if (sentenceEndChars.includes(fullText[i])) {
+                        start = i + 1;
+                        break;
+                    }
+                }
+
+                // Extend end to next sentence boundary if close
+                for (let i = idx + targetToken.length; i < end; i++) {
+                    if (sentenceEndChars.includes(fullText[i])) {
+                        end = i + 1;
+                        break;
+                    }
+                }
+
+                const prefix = start > 0 ? '...' : '';
+                const suffix = end < fullText.length ? '...' : '';
+                return `${prefix}${fullText.slice(start, end).trim()}${suffix}`;
+            };
+
+            // Build context for unknown vocab tokens
+            const unknownTokensWithContext = result.details.unknownTokens.map(token => ({
+                token,
+                context: buildContextSnippet(token, text)
+            }));
+
+            // Build context for unrecognized grammar
+            const unrecognizedGrammarWithContext = uniqueUnrecognizedGrammar.map(grammar => ({
+                token: grammar,
+                context: buildContextSnippet(grammar, text)
+            }));
+
             toast.info(`正在使用 LLM 分配等级... (${result.details.unknownTokens.length} 词汇, ${uniqueUnrecognizedGrammar.length} 语法)`);
             const res = await fetch('/api/nlp/repair', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     task: 'level_assignment',
-                    text,
+                    text: '', // No longer sending full text
                     tokens: result.details.tokenList,
                     unknownTokens: result.details.unknownTokens,
+                    unknownTokensWithContext,
                     unrecognizedGrammar: uniqueUnrecognizedGrammar,
+                    unrecognizedGrammarWithContext,
                 }),
             });
 
@@ -984,6 +1032,33 @@ export default function LexProfileTestPage() {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* 未匹配等级的语法词 */}
+                                {(() => {
+                                    const unmatchedGrammar = result.details.tokenList
+                                        .filter(t => t.originalLevel === 'grammar')
+                                        .map(t => t.token);
+                                    const uniqueUnmatchedGrammar = [...new Set(unmatchedGrammar)];
+
+                                    return uniqueUnmatchedGrammar.length > 0 && (
+                                        <div className="bg-white p-6 rounded-lg shadow">
+                                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                                <span className="text-orange-500">📝</span>
+                                                未匹配等级的语法词 ({uniqueUnmatchedGrammar.length})
+                                            </h3>
+                                            <p className="text-xs text-gray-500 mb-3">
+                                                这些语法词在语法库和词汇库中都没有找到对应的JLPT等级
+                                            </p>
+                                            <div className="flex flex-wrap gap-1 max-h-32 overflow-auto">
+                                                {uniqueUnmatchedGrammar.map((t, idx) => (
+                                                    <span key={idx} className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">
+                                                        {t}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </>
                         ) : (
                             <div className="bg-white p-6 rounded-lg shadow">
