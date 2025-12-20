@@ -144,6 +144,7 @@ async function loadPreferenceVectors(
       subtopics: [],
       themeMap: new Map(),
       subtopicMap: new Map(),
+      sceneMap: new Map(),
     };
   }
 
@@ -168,6 +169,7 @@ async function loadPreferenceVectors(
       subtopics: [],
       themeMap: new Map(),
       subtopicMap: new Map(),
+      sceneMap: new Map(),
     };
   }
 
