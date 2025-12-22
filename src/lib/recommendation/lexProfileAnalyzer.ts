@@ -65,11 +65,11 @@ const jaGrammarPatterns = jaGrammarYapan;
 
 // LLM-discovered rules (loaded dynamically for hot-reload support)
 let llmVocabRulesCache: Record<string, { level: string }> | null = null;
-let llmGrammarRulesCache: Record<string, { level: string }> | null = null;
+let llmGrammarRulesCache: Record<string, GrammarPattern> | null = null;
 let llmRulesLastLoad: number = 0;
 const LLM_RULES_CACHE_TTL = 5000; // 5 seconds cache
 
-async function loadLLMRules(): Promise<{ vocab: Record<string, { level: string }>, grammar: Record<string, { level: string }> }> {
+async function loadLLMRules(): Promise<{ vocab: Record<string, { level: string }>, grammar: Record<string, GrammarPattern> }> {
     const now = Date.now();
     if (llmVocabRulesCache && llmGrammarRulesCache && (now - llmRulesLastLoad) < LLM_RULES_CACHE_TTL) {
         return { vocab: llmVocabRulesCache, grammar: llmGrammarRulesCache };
@@ -84,7 +84,7 @@ async function loadLLMRules(): Promise<{ vocab: Record<string, { level: string }
         const grammarPath = path.join(process.cwd(), 'src', 'data', 'grammar', 'llm-grammar-rules.json');
 
         let vocab: Record<string, { level: string }> = {};
-        let grammar: Record<string, { level: string }> = {};
+        let grammar: Record<string, GrammarPattern> = {};
 
         try {
             const vocabContent = await fs.readFile(vocabPath, 'utf-8');
@@ -108,7 +108,7 @@ async function loadLLMRules(): Promise<{ vocab: Record<string, { level: string }
 }
 
 // Synchronous version using cached values
-function getLLMRulesSync(): { vocab: Record<string, { level: string }>, grammar: Record<string, { level: string }> } {
+function getLLMRulesSync(): { vocab: Record<string, { level: string }>, grammar: Record<string, GrammarPattern> } {
     return {
         vocab: llmVocabRulesCache || {},
         grammar: llmGrammarRulesCache || {},
@@ -122,18 +122,27 @@ interface GrammarPattern {
     pattern: string;    // Grammar pattern text
     source: string;     // Source URL
     definition: string; // English definition
+    reading?: string;   // Optional reading (for hiragana matching)
+    canonical?: string; // Canonical form (from LLM rules)
+    compoundPattern?: string; // If this is a fragment, points to the full compound pattern
 }
 
-// Grammar profile output
+// Matched grammar pattern with position tracking
+interface MatchedGrammarPattern {
+    pattern: string;       // Original pattern name from dictionary
+    level: string;         // N1, N2, N3, N4, N5
+    definition: string;    // English definition
+    cleanPattern: string;  // Actual matched string in text
+    startIndex: number;    // Start position in cleaned text
+    endIndex: number;      // End position in cleaned text
+    compoundPattern?: string; // If this is a fragment, points to the full compound pattern
+}
+
 // Grammar profile output
 export interface GrammarProfileResult {
     total: number;              // Total grammar patterns detected
     byLevel: Record<string, number>;  // Count by JLPT level
-    patterns: Array<{
-        pattern: string;
-        level: string;
-        definition: string;
-    }>;
+    patterns: MatchedGrammarPattern[];
     hardestGrammar: string | null;  // Most difficult grammar point found
     unrecognizedGrammar: string[];  // Grammar tokens not matched to any known pattern
 }
@@ -151,6 +160,9 @@ export interface TokenInfo {
     originalLevel: string;   // A1, N5, HSK1, etc.
     broadCEFR: BroadCEFR | 'unknown';
     isContentWord: boolean;  // true = 名詞/動詞/形容詞/副詞, false = 助詞/助動詞/etc
+    charStart?: number;      // Start position in cleaned text (for grammar backfill)
+    charEnd?: number;        // End position in cleaned text
+    compoundGrammar?: string; // If part of a compound grammar pattern, the pattern name
 }
 
 export interface LexProfileResult {
@@ -216,7 +228,18 @@ function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'
     const byLevel: Record<string, number> = { N1: 0, N2: 0, N3: 0, N4: 0, N5: 0 };
 
     // Get the selected grammar patterns
-    const grammarPatterns = jaGrammarDictionaries[grammarDict];
+    const staticPatterns = jaGrammarDictionaries[grammarDict];
+
+    // Get LLM grammar rules and convert to GrammarPattern array
+    const { grammar: llmRules } = getLLMRulesSync();
+    const llmPatterns: GrammarPattern[] = Object.entries(llmRules).map(([key, rule]) => ({
+        ...rule,
+        pattern: key, // Use the key (surface form) as the pattern
+        source: 'LLM',
+    })).filter(p => p.pattern && p.pattern.length > 0);
+
+    // Merge patterns
+    const grammarPatterns = [...llmPatterns, ...staticPatterns];
 
     // Sort patterns by length (longer first) for greedy matching
     const sortedPatterns = [...grammarPatterns].sort((a, b) =>
@@ -236,19 +259,34 @@ function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'
         if (cleanPattern.length < 2) continue; // Skip very short patterns
 
         // Check if pattern exists in text (and not already masked)
-        if (maskedText.includes(cleanPattern)) {
+        const matchIndex = maskedText.indexOf(cleanPattern);
+        if (matchIndex !== -1) {
             // Avoid duplicate patterns
             if (!matchedPatterns.some(p => p.pattern === gp.pattern)) {
+                // Find the actual position in the original text
+                // Find the actual position in the original text
+                const originalIndex = text.indexOf(cleanPattern);
+
+                // Calculate the actual grammar part range (excluding stem if applicable)
+                const { start: relativeStart, end: relativeEnd } = alignGrammarSuffix(cleanPattern, gp.canonical);
+                const adjustedStart = originalIndex + relativeStart;
+                const adjustedEnd = originalIndex + relativeEnd;
+                const adjustedPattern = text.substring(adjustedStart, adjustedEnd);
+
                 matchedPatterns.push({
                     pattern: gp.pattern,
                     level: gp.level,
                     definition: gp.definition,
+                    cleanPattern: adjustedPattern,
+                    startIndex: adjustedStart,
+                    endIndex: adjustedEnd,
+                    compoundPattern: gp.compoundPattern || gp.pattern, // Use the full pattern as ID for merging
                 });
                 byLevel[gp.level] = (byLevel[gp.level] || 0) + 1;
 
                 // Mask the matched part to prevent shorter patterns from matching the same text
-                // e.g. "からこそ" matches -> mask it -> "から" won't match later
-                maskedText = maskedText.replace(new RegExp(escapeRegExp(cleanPattern), 'g'), '___');
+                // e.g. \"からこそ\" matches -> mask it -> \"から\" won't match later
+                maskedText = maskedText.replace(new RegExp(escapeRegExpLocal(cleanPattern), 'g'), '█'.repeat(cleanPattern.length));
             }
         }
     }
@@ -281,10 +319,17 @@ function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'
             if (!isCovered) {
                 // If we can map it to a standard pattern, add it as a recognized pattern
                 if (block.mapTo) {
+                    // Find position in text for colloquial pattern
+                    const match = block.pattern.exec(text);
+                    const startIdx = match ? match.index : -1;
+                    const matchedStr = match ? match[0] : block.mapTo.replace('〜', '');
                     matchedPatterns.push({
                         pattern: block.name, // Use the colloquial name for display
                         level: block.level,
                         definition: `Colloquial form of ${block.mapTo}`,
+                        cleanPattern: matchedStr,
+                        startIndex: startIdx,
+                        endIndex: startIdx + matchedStr.length,
                     });
                     byLevel[block.level] = (byLevel[block.level] || 0) + 1;
                 } else if (!unrecognizedGrammar.includes(block.name)) {
@@ -316,6 +361,61 @@ function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'
 function escapeRegExp(string: string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+/*** Backfill grammar pattern information to individual tokens
+ * This updates tokens that are part of a compound grammar pattern
+ * (e.g., にもかかわらず) with the correct pattern level
+ */
+function backfillGrammarPatterns(
+    tokens: TokenInfo[],
+    patterns: MatchedGrammarPattern[],
+    cleanedText: string
+): TokenInfo[] {
+    if (patterns.length === 0) return tokens;
+
+    // Build a mapping of character positions to token indices
+    let currentPos = 0;
+    const tokenPositions: Array<{ start: number; end: number; index: number }> = [];
+
+    for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        const tokenStart = cleanedText.indexOf(token.token, currentPos);
+        if (tokenStart !== -1) {
+            const tokenEnd = tokenStart + token.token.length;
+            tokenPositions.push({ start: tokenStart, end: tokenEnd, index: i });
+            tokens[i] = { ...token, charStart: tokenStart, charEnd: tokenEnd };
+            currentPos = tokenEnd;
+        }
+    }
+
+    // For each matched grammar pattern, find overlapping tokens and update them
+    for (const pattern of patterns) {
+        if (pattern.startIndex < 0) continue;
+
+        const patternStart = pattern.startIndex;
+        const patternEnd = pattern.endIndex;
+
+        for (const tp of tokenPositions) {
+            const overlaps = tp.start < patternEnd && tp.end > patternStart;
+
+            if (overlaps) {
+                const token = tokens[tp.index];
+                const isFullyContained = tp.start >= patternStart && tp.end <= patternEnd;
+
+                // Grammar priority: all tokens fully within a compound pattern get the grammar level
+                if (isFullyContained) {
+                    tokens[tp.index] = {
+                        ...token,
+                        originalLevel: `grammar (${pattern.level})`,
+                        compoundGrammar: pattern.compoundPattern || pattern.pattern,
+                    };
+                }
+            }
+        }
+    }
+
+    return tokens;
+}
+
 
 
 
@@ -1231,6 +1331,20 @@ export async function analyzeLexProfileAsync(
         };
     }
 
+    // Create punctuation-free text for position matching (same cleanup as tokenization)
+    const cleanedForMatching = cleanText
+        .replace(/[\s\u3000]/g, '')
+        .replace(/[。、！？「」『』（）.!?,;:\[\](){}]/g, '');
+
+    // Grammar pattern matching (Japanese only) - done early to enable backfill
+    const grammarProfile = lang === 'ja' ? matchGrammarPatterns(cleanedForMatching, jaGrammarDict) : undefined;
+
+    // Backfill grammar pattern information to tokens (Japanese only)
+    // This updates tokens that are part of compound grammar patterns (e.g., にもかかわらず)
+    if (lang === 'ja' && grammarProfile && grammarProfile.patterns.length > 0) {
+        tokenInfoList = backfillGrammarPatterns(tokenInfoList, grammarProfile.patterns, cleanedForMatching);
+    }
+
     // Separate content words from function words
     const contentWords = tokenInfoList.filter(t => t.isContentWord);
     const functionWords = tokenInfoList.filter(t => !t.isContentWord);
@@ -1259,8 +1373,7 @@ export async function analyzeLexProfileAsync(
     const knownContentCount = contentWordTotal - levelCounts.unknown;
     const coverage = contentWordTotal > 0 ? knownContentCount / contentWordTotal : 0;
 
-    // Grammar pattern matching (Japanese only)
-    const grammarProfile = lang === 'ja' ? matchGrammarPatterns(text, jaGrammarDict) : undefined;
+    // grammarProfile was already calculated earlier for backfilling
 
     // Calculate difficulty summary
     let difficultySummary: LexProfileResult['difficultySummary'];
@@ -1440,4 +1553,67 @@ export function getDictionarySize(lang: SupportedLang, jaVocabDict: JaVocabDict 
         return jaVocabDictionaries[jaVocabDict].size;
     }
     return dictionaries[lang].size;
+}
+
+
+
+function escapeRegExpLocal(string: string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Helper to align grammar suffix (e.g. extract "ざるを得ない" from "言わざるを得ない")
+function alignGrammarSuffix(surface: string, canonical?: string): { start: number, end: number } {
+    if (!canonical) return { start: 0, end: surface.length };
+
+    const cleanCanonical = canonical.replace(/[～〜]/g, '');
+
+    // Simple case: Surface ends with canonical (hiragana match)
+    if (surface.endsWith(cleanCanonical)) {
+        return { start: surface.length - cleanCanonical.length, end: surface.length };
+    }
+
+    // Complex case: Kanji in surface, Hiragana in canonical
+    // Reverse alignment
+    let sIdx = surface.length - 1;
+    let cIdx = cleanCanonical.length - 1;
+
+    while (sIdx >= 0 && cIdx >= 0) {
+        const sChar = surface[sIdx];
+        const cChar = cleanCanonical[cIdx];
+
+        if (sChar === cChar) {
+            sIdx--;
+            cIdx--;
+        } else {
+            // Mismatch. Check if sChar is Kanji
+            if (isKanji(sChar)) {
+                // Assume Kanji matches current Kana. Consume Kanji and Kana.
+                sIdx--;
+                cIdx--;
+
+                // Check if we need to consume more Kana for this Kanji
+                while (cIdx >= 0 && sIdx >= 0) {
+                    const nextS = surface[sIdx];
+                    const nextC = cleanCanonical[cIdx];
+
+                    if (nextS === nextC) break; // Found sync point
+                    if (isKanji(nextS)) break; // Next char is also Kanji, let main loop handle it
+
+                    // nextS is Kana but doesn't match nextC.
+                    // So nextC must be part of the previous Kanji.
+                    cIdx--;
+                }
+            } else {
+                // Mismatch and NOT Kanji (e.g. Kana mismatch).
+                // This implies the stem is different.
+                return { start: sIdx + 1, end: surface.length };
+            }
+        }
+    }
+
+    return { start: sIdx + 1, end: surface.length };
+}
+
+function isKanji(char: string): boolean {
+    return /[\u4e00-\u9faf]/.test(char);
 }

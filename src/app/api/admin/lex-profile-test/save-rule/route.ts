@@ -23,6 +23,7 @@ interface GrammarRule {
     definition?: string;
     source: 'llm';
     createdAt: string;
+    compoundPattern?: string; // For fragments: points to the full compound pattern
 }
 
 interface SaveRuleRequest {
@@ -37,6 +38,7 @@ interface SaveRuleRequest {
         canonical?: string;
         definition?: string;
         jlpt: string;
+        fragments?: string[]; // Original fragments that form this compound pattern
     }>;
 }
 
@@ -125,6 +127,7 @@ export async function POST(req: NextRequest) {
 
             for (const chunk of grammarChunks) {
                 if (chunk.surface && chunk.jlpt) {
+                    // Save the main compound pattern
                     grammarRules[chunk.surface] = {
                         level: chunk.jlpt,
                         canonical: chunk.canonical,
@@ -133,6 +136,23 @@ export async function POST(req: NextRequest) {
                         createdAt: timestamp,
                     };
                     grammarSaved++;
+
+                    // If this is a compound pattern with fragments, also save fragment mappings
+                    if (chunk.fragments && chunk.fragments.length > 0) {
+                        for (const fragment of chunk.fragments) {
+                            // Only add if fragment doesn't already have a rule
+                            if (!grammarRules[fragment]) {
+                                grammarRules[fragment] = {
+                                    level: chunk.jlpt,
+                                    canonical: chunk.surface, // Point to full pattern
+                                    definition: `→ ${chunk.surface} (${chunk.definition || ''})`,
+                                    source: 'llm',
+                                    createdAt: timestamp,
+                                    compoundPattern: chunk.surface,
+                                };
+                            }
+                        }
+                    }
                 }
             }
 
@@ -170,6 +190,57 @@ export async function GET() {
         });
     } catch (error) {
         console.error('Error loading rules:', error);
+        return NextResponse.json(
+            { error: error instanceof Error ? error.message : 'Internal server error' },
+            { status: 500 }
+        );
+    }
+}
+
+export async function DELETE(req: NextRequest) {
+    try {
+        // Auth check
+        const cookieStore = await cookies();
+        const supabase = createServerClient(supabaseUrl, supabaseAnon, {
+            cookies: {
+                get(name: string) {
+                    return cookieStore.get(name)?.value;
+                },
+                set() { },
+                remove() { },
+            },
+        });
+
+        let user = null;
+        const { data: sessionData } = await supabase.auth.getSession();
+
+        if (sessionData?.session?.user) {
+            user = sessionData.session.user;
+        } else {
+            const authHeader = req.headers.get('authorization');
+            if (authHeader?.startsWith('Bearer ')) {
+                const token = authHeader.substring(7);
+                const { data: userData, error } = await supabase.auth.getUser(token);
+                if (!error && userData?.user) {
+                    user = userData.user;
+                }
+            }
+        }
+
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Clear files by saving empty objects
+        await saveJsonFile(VOCAB_RULES_PATH, {});
+        await saveJsonFile(GRAMMAR_RULES_PATH, {});
+
+        return NextResponse.json({
+            success: true,
+            message: '所有补丁规则已删除',
+        });
+    } catch (error) {
+        console.error('Error deleting rules:', error);
         return NextResponse.json(
             { error: error instanceof Error ? error.message : 'Internal server error' },
             { status: 500 }

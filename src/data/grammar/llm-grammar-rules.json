@@ -1,576 +1,81 @@
 {
+  "にもかかわらず": {
+    "level": "N3",
+    "canonical": "にもかかわらず",
+    "definition": "despite, in spite of, although",
+    "source": "llm",
+    "createdAt": "2025-12-22T09:38:43.224Z"
+  },
+  "かかわら": {
+    "level": "N3",
+    "canonical": "にもかかわらず",
+    "definition": "→ にもかかわらず (despite, in spite of, although)",
+    "source": "llm",
+    "createdAt": "2025-12-22T09:38:43.224Z",
+    "compoundPattern": "にもかかわらず"
+  },
+  "しきれない": {
+    "level": "N3",
+    "canonical": "しきれない",
+    "definition": "cannot completely do, unable to finish doing",
+    "source": "llm",
+    "createdAt": "2025-12-22T09:38:43.224Z"
+  },
+  "きれ": {
+    "level": "N3",
+    "canonical": "しきれない",
+    "definition": "→ しきれない (cannot completely do, unable to finish doing)",
+    "source": "llm",
+    "createdAt": "2025-12-22T09:38:43.224Z",
+    "compoundPattern": "しきれない"
+  },
+  "なりかねない": {
+    "level": "N2",
+    "canonical": "なりかねない",
+    "definition": "may become, could result in",
+    "source": "llm",
+    "createdAt": "2025-12-22T09:38:43.224Z"
+  },
+  "ざるをえない": {
+    "level": "N1",
+    "canonical": "ざるをえない",
+    "definition": "cannot help but, have no choice but to",
+    "source": "llm",
+    "createdAt": "2025-12-22T09:38:43.224Z"
+  },
+  "しがち": {
+    "level": "N3",
+    "canonical": "しがち",
+    "definition": "tend to do, prone to do",
+    "source": "llm",
+    "createdAt": "2025-12-22T09:38:43.224Z"
+  },
+  "が": {
+    "level": "N5",
+    "canonical": "が",
+    "definition": "subject marker, but",
+    "source": "llm",
+    "createdAt": "2025-12-22T09:38:43.224Z"
+  },
+  "に": {
+    "level": "N5",
+    "canonical": "に",
+    "definition": "location/time marker, indirect object marker",
+    "source": "llm",
+    "createdAt": "2025-12-22T09:38:43.224Z"
+  },
   "は": {
     "level": "N5",
     "canonical": "は",
     "definition": "topic marker",
     "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "ある": {
-    "level": "N5",
-    "canonical": "ある",
-    "definition": "to exist (inanimate)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "さん": {
-    "level": "N5",
-    "canonical": "さん",
-    "definition": "honorific suffix (Mr./Ms.)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "に": {
-    "level": "N5",
-    "canonical": "に",
-    "definition": "indirect object marker, location marker",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
+    "createdAt": "2025-12-22T09:38:43.224Z"
   },
   "を": {
     "level": "N5",
     "canonical": "を",
     "definition": "direct object marker",
     "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "ます": {
-    "level": "N5",
-    "canonical": "ます",
-    "definition": "polite verb ending",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "た": {
-    "level": "N5",
-    "canonical": "た",
-    "definition": "past tense marker",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "が": {
-    "level": "N5",
-    "canonical": "が",
-    "definition": "subject marker",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "だ": {
-    "level": "N5",
-    "canonical": "だ",
-    "definition": "copula (plain)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "です": {
-    "level": "N5",
-    "canonical": "です",
-    "definition": "copula (polite)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "よう": {
-    "level": "N4",
-    "canonical": "よう",
-    "definition": "way, manner, like",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "れ": {
-    "level": "N4",
-    "canonical": "れる",
-    "definition": "passive or potential verb ending",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "て": {
-    "level": "N5",
-    "canonical": "て",
-    "definition": "te-form connector",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "い": {
-    "level": "N5",
-    "canonical": "いる",
-    "definition": "to exist (animate), progressive aspect",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "か": {
-    "level": "N5",
-    "canonical": "か",
-    "definition": "question marker",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "例えば": {
-    "level": "N4",
-    "canonical": "例えば",
-    "definition": "for example",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "者": {
-    "level": "N3",
-    "canonical": "者",
-    "definition": "person, one who",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "を通じて": {
-    "level": "N3",
-    "canonical": "を通じて",
-    "definition": "through, via",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "でしょ": {
-    "level": "N5",
-    "canonical": "でしょう",
-    "definition": "probably, I think (polite)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "う": {
-    "level": "N5",
-    "canonical": "う",
-    "definition": "volitional form ending",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "点": {
-    "level": "N3",
-    "canonical": "点",
-    "definition": "point, aspect",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "ください": {
-    "level": "N5",
-    "canonical": "ください",
-    "definition": "please give/do (polite request)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "もらい": {
-    "level": "N4",
-    "canonical": "もらう",
-    "definition": "to receive (humble/benefactive)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "づくり": {
-    "level": "N3",
-    "canonical": "作り",
-    "definition": "making, building",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "へ": {
-    "level": "N5",
-    "canonical": "へ",
-    "definition": "direction marker",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "まずは": {
-    "level": "N3",
-    "canonical": "まずは",
-    "definition": "first of all, to start with",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "いただく": {
-    "level": "N4",
-    "canonical": "いただく",
-    "definition": "to receive (humble)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "み": {
-    "level": "N5",
-    "canonical": "みる",
-    "definition": "to try doing",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "ませ": {
-    "level": "N5",
-    "canonical": "ます",
-    "definition": "polite verb ending (negative form)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "ん": {
-    "level": "N5",
-    "canonical": "ない",
-    "definition": "negative ending",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:15:17.506Z"
-  },
-  "せる": {
-    "level": "N4",
-    "canonical": "せる/させる",
-    "definition": "causative form (make/let someone do)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:49:04.696Z"
-  },
-  "そうですね": {
-    "level": "N5",
-    "canonical": "そうですね",
-    "definition": "that's right, I see (agreement)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:49:04.696Z"
-  },
-  "異": {
-    "level": "N3",
-    "canonical": "異なる/異文化",
-    "definition": "different, foreign (as in 異文化)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:49:04.696Z"
-  },
-  "べき": {
-    "level": "N3",
-    "canonical": "べきだ",
-    "definition": "should, ought to",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:49:04.696Z"
-  },
-  "はい": {
-    "level": "N5",
-    "canonical": "はい",
-    "definition": "yes",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:49:04.696Z"
-  },
-  "いい": {
-    "level": "N5",
-    "canonical": "いい",
-    "definition": "good, okay",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:49:04.696Z"
-  },
-  "お": {
-    "level": "N4",
-    "canonical": "お～する/お～になる",
-    "definition": "honorific prefix (as in お勧めします)",
-    "source": "llm",
-    "createdAt": "2025-12-19T14:49:04.696Z"
-  },
-  "ご": {
-    "level": "N4",
-    "canonical": "ご",
-    "definition": "丁寧語の接頭辞（例：ご確認）",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:53:51.942Z"
-  },
-  "え": {
-    "level": "N5",
-    "canonical": "え",
-    "definition": "感叹词，表示惊讶或思考",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "き": {
-    "level": "N5",
-    "canonical": "き",
-    "definition": "感叹词，表示强调或回忆",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "わ": {
-    "level": "N5",
-    "canonical": "わ",
-    "definition": "终助词，表示感叹或强调（女性用语）",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "ねえ": {
-    "level": "N5",
-    "canonical": "ねえ",
-    "definition": "感叹词，用于引起注意或确认",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "えっ": {
-    "level": "N5",
-    "canonical": "えっ",
-    "definition": "感叹词，表示惊讶或疑问",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "うーん": {
-    "level": "N5",
-    "canonical": "うーん",
-    "definition": "感叹词，表示犹豫或思考",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "によって": {
-    "level": "N3",
-    "canonical": "によって",
-    "definition": "根据，由于",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "もしもし": {
-    "level": "N5",
-    "canonical": "もしもし",
-    "definition": "喂（电话用语）",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "どういたしまして": {
-    "level": "N5",
-    "canonical": "どういたしまして",
-    "definition": "不客气",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "いえいえ": {
-    "level": "N5",
-    "canonical": "いえいえ",
-    "definition": "不，没有（谦逊回应）",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "そうね": {
-    "level": "N5",
-    "canonical": "そうね",
-    "definition": "是啊，对吧（表示同意）",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "へえ": {
-    "level": "N5",
-    "canonical": "へえ",
-    "definition": "感叹词，表示惊讶或兴趣",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "やあ": {
-    "level": "N5",
-    "canonical": "やあ",
-    "definition": "感叹词，打招呼或表示惊讶",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "わあ": {
-    "level": "N5",
-    "canonical": "わあ",
-    "definition": "感叹词，表示惊喜或赞叹",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "しか": {
-    "level": "N5",
-    "canonical": "しか",
-    "definition": "只，仅（与否定连用）",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "なあ": {
-    "level": "N5",
-    "canonical": "なあ",
-    "definition": "终助词，表示感叹或愿望",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:26.226Z"
-  },
-  "を通して": {
-    "level": "N3",
-    "canonical": "を通して",
-    "definition": "through, via",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:58.651Z"
-  },
-  "により": {
-    "level": "N3",
-    "canonical": "により",
-    "definition": "by means of, due to",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:58.651Z"
-  },
-  "による": {
-    "level": "N3",
-    "canonical": "による",
-    "definition": "by means of, due to",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:54:58.651Z"
-  },
-  "ぜ": {
-    "level": "N3",
-    "canonical": "ぜ",
-    "definition": "sentence-ending particle for emphasis (masculine/casual)",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "め": {
-    "level": "N3",
-    "canonical": "め",
-    "definition": "suffix for ordinal numbers or emphasis (e.g., 二め for second)",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "のみ": {
-    "level": "N2",
-    "canonical": "のみ",
-    "definition": "only, nothing but (formal/literary)",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "んで": {
-    "level": "N4",
-    "canonical": "んで",
-    "definition": "casual contraction of ので (because)",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "そしたら": {
-    "level": "N3",
-    "canonical": "そしたら",
-    "definition": "then, if so, in that case (casual)",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "うわ": {
-    "level": "N3",
-    "canonical": "うわ",
-    "definition": "interjection for surprise or excitement (e.g., うわっ)",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "ほら": {
-    "level": "N4",
-    "canonical": "ほら",
-    "definition": "interjection meaning 'look!' or 'see?'",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "えー": {
-    "level": "N4",
-    "canonical": "えー",
-    "definition": "interjection for hesitation or thinking (like 'um' or 'uh')",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "・": {
-    "level": "N5",
-    "canonical": "・",
-    "definition": "middle dot used for separation in lists or names",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "ないし": {
-    "level": "N2",
-    "canonical": "ないし",
-    "definition": "or, from... to... (formal)",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "とき": {
-    "level": "N5",
-    "canonical": "とき",
-    "definition": "when, at the time of",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "たり": {
-    "level": "N5",
-    "canonical": "たり",
-    "definition": "suffix for listing actions (e.g., 食べたり飲んだり)",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "もん": {
-    "level": "N3",
-    "canonical": "もん",
-    "definition": "casual contraction of もの (thing, reason)",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "だからこそ": {
-    "level": "N2",
-    "canonical": "だからこそ",
-    "definition": "precisely because, for that very reason",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "り": {
-    "level": "N5",
-    "canonical": "り",
-    "definition": "suffix for listing actions (e.g., 食べたり, part of たり form)",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:35.535Z"
-  },
-  "に関して": {
-    "level": "N3",
-    "canonical": "に関して",
-    "definition": "关于，涉及",
-    "source": "llm",
-    "createdAt": "2025-12-20T13:55:51.723Z"
-  },
-  "ごめん": {
-    "level": "N5",
-    "canonical": "ごめん",
-    "definition": "对不起、抱歉（口语）",
-    "source": "llm",
-    "createdAt": "2025-12-20T14:12:30.133Z"
-  },
-  "書": {
-    "level": "N5",
-    "canonical": "書く",
-    "definition": "写、书写",
-    "source": "llm",
-    "createdAt": "2025-12-20T14:12:30.133Z"
-  },
-  "でる": {
-    "level": "N5",
-    "canonical": "出る",
-    "definition": "出去、出现",
-    "source": "llm",
-    "createdAt": "2025-12-20T14:12:30.133Z"
-  },
-  "感": {
-    "level": "N3",
-    "canonical": "感",
-    "definition": "感觉、感受（作为后缀或独立词）",
-    "source": "llm",
-    "createdAt": "2025-12-20T14:12:30.133Z"
-  },
-  "くる": {
-    "level": "N5",
-    "canonical": "来る",
-    "definition": "来",
-    "source": "llm",
-    "createdAt": "2025-12-20T14:12:30.133Z"
-  },
-  "おり": {
-    "level": "N2",
-    "canonical": "折り",
-    "definition": "时候、时机（书面语）",
-    "source": "llm",
-    "createdAt": "2025-12-20T14:12:30.133Z"
-  },
-  "展": {
-    "level": "N3",
-    "canonical": "展",
-    "definition": "展览（作为后缀或独立词）",
-    "source": "llm",
-    "createdAt": "2025-12-20T14:12:30.133Z"
-  },
-  "おく": {
-    "level": "N4",
-    "canonical": "置く",
-    "definition": "放置、事先做（～ておく）",
-    "source": "llm",
-    "createdAt": "2025-12-20T14:12:30.133Z"
-  },
-  "ごろ": {
-    "level": "N5",
-    "canonical": "頃",
-    "definition": "大约、左右（时间）",
-    "source": "llm",
-    "createdAt": "2025-12-20T14:12:30.133Z"
+    "createdAt": "2025-12-22T09:38:43.224Z"
   }
 }

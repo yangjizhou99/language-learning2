@@ -46,7 +46,7 @@ interface LexProfileResult {
         C1_plus: number;
     };
     details: {
-        tokenList: Array<{ token: string; lemma: string; pos: string; originalLevel: string; broadCEFR: 'A1_A2' | 'B1_B2' | 'C1_plus' | 'unknown'; isContentWord: boolean }>;
+        tokenList: Array<{ token: string; lemma: string; pos: string; originalLevel: string; broadCEFR: 'A1_A2' | 'B1_B2' | 'C1_plus' | 'unknown'; isContentWord: boolean; compoundGrammar?: string }>;
         unknownTokens: string[];
         coverage: number;
         grammarTokens: string[];
@@ -573,6 +573,36 @@ export default function LexProfileTestPage() {
         }
     };
 
+    const handleDeleteAllRules = async () => {
+        if (!confirm('确定要删除所有已保存的补丁规则吗？此操作不可恢复。')) return;
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                toast.error('请先登录');
+                return;
+            }
+
+            const res = await fetch('/api/admin/lex-profile-test/save-rule', {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            setSavedRulesCount({ vocab: 0, grammar: 0 });
+            setSavedRules(null);
+            setShowRulesPanel(false);
+            toast.success(data.message || '规则已清空');
+        } catch (error) {
+            console.error('Delete rules error:', error);
+            toast.error('删除失败');
+        }
+    };
+
     const selectTestCase = (testCase: typeof testCases[0]) => {
         setLang(testCase.lang);
         setText(testCase.text);
@@ -869,7 +899,17 @@ export default function LexProfileTestPage() {
                         <div className="mt-4 bg-white p-4 rounded shadow-sm max-h-96 overflow-y-auto">
                             <div className="flex justify-between items-center mb-3">
                                 <h4 className="font-semibold">📋 已保存的补丁规则</h4>
-                                <Button onClick={() => setShowRulesPanel(false)} variant="ghost" size="sm">关闭</Button>
+                                <div className="flex gap-2">
+                                    <Button
+                                        onClick={handleDeleteAllRules}
+                                        variant="destructive"
+                                        size="sm"
+                                        className="h-8"
+                                    >
+                                        🗑️ 一键删除全部
+                                    </Button>
+                                    <Button onClick={() => setShowRulesPanel(false)} variant="ghost" size="sm">关闭</Button>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -1446,24 +1486,77 @@ export default function LexProfileTestPage() {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y">
-                                                {result.details.tokenList.map((t, idx) => (
-                                                    <tr key={idx} className="hover:bg-gray-50">
-                                                        <td className="px-2 py-1 font-medium">{t.token}</td>
-                                                        <td className="px-2 py-1 text-gray-600">
-                                                            {t.lemma !== t.token ? t.lemma : '-'}
-                                                        </td>
-                                                        <td className="px-2 py-1">
-                                                            <span className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">
-                                                                {t.pos}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-2 py-1">
-                                                            <span className={`px-1.5 py-0.5 rounded text-xs ${getLevelBadgeClass(t.broadCEFR)}`}>
-                                                                {t.originalLevel}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                {(() => {
+                                                    // Merge consecutive tokens with same compoundGrammar
+                                                    const mergedTokens: Array<{
+                                                        token: string;
+                                                        lemma: string;
+                                                        pos: string;
+                                                        originalLevel: string;
+                                                        broadCEFR: string;
+                                                        isCompound: boolean;
+                                                    }> = [];
+
+                                                    let i = 0;
+                                                    while (i < result.details.tokenList.length) {
+                                                        const t = result.details.tokenList[i];
+
+                                                        // Check if this token is part of a compound grammar
+                                                        if (t.compoundGrammar) {
+                                                            // Collect all consecutive tokens with same compoundGrammar
+                                                            const compoundTokens: string[] = [t.token];
+                                                            let j = i + 1;
+                                                            while (j < result.details.tokenList.length &&
+                                                                result.details.tokenList[j].compoundGrammar === t.compoundGrammar) {
+                                                                compoundTokens.push(result.details.tokenList[j].token);
+                                                                j++;
+                                                            }
+
+                                                            // Add merged entry
+                                                            mergedTokens.push({
+                                                                token: compoundTokens.join(''),
+                                                                lemma: t.compoundGrammar,
+                                                                pos: '複合語法',
+                                                                originalLevel: t.originalLevel,
+                                                                broadCEFR: t.broadCEFR,
+                                                                isCompound: true,
+                                                            });
+
+                                                            i = j; // Skip merged tokens
+                                                        } else {
+                                                            // Regular token
+                                                            mergedTokens.push({
+                                                                token: t.token,
+                                                                lemma: t.lemma !== t.token ? t.lemma : '-',
+                                                                pos: t.pos,
+                                                                originalLevel: t.originalLevel,
+                                                                broadCEFR: t.broadCEFR,
+                                                                isCompound: false,
+                                                            });
+                                                            i++;
+                                                        }
+                                                    }
+
+                                                    return mergedTokens.map((t, idx) => (
+                                                        <tr key={idx} className={`hover:bg-gray-50 ${t.isCompound ? 'bg-purple-50' : ''}`}>
+                                                            <td className="px-2 py-1 font-medium">
+                                                                {t.isCompound && <span className="text-purple-600 mr-1">◆</span>}
+                                                                {t.token}
+                                                            </td>
+                                                            <td className="px-2 py-1 text-gray-600">{t.lemma}</td>
+                                                            <td className="px-2 py-1">
+                                                                <span className={`px-1.5 py-0.5 rounded text-xs ${t.isCompound ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'}`}>
+                                                                    {t.pos}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-2 py-1">
+                                                                <span className={`px-1.5 py-0.5 rounded text-xs ${getLevelBadgeClass(t.broadCEFR)}`}>
+                                                                    {t.originalLevel}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ));
+                                                })()}
                                             </tbody>
                                         </table>
                                     </div>
