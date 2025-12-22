@@ -69,6 +69,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Parse request body for dictionary options
+        const body = await req.json().catch(() => ({}));
+        const jaVocabDict = body.jaVocabDict || 'combined';
+        const jaGrammarDict = body.jaGrammarDict || 'combined';
+        const jaTokenizer = body.jaTokenizer || 'kuromoji';
+
         // Fetch all Japanese items
         const adminClient = getServiceSupabase();
         const { data: items, error } = await adminClient
@@ -101,9 +107,9 @@ export async function POST(req: NextRequest) {
                 const result = await analyzeLexProfileAsync(
                     item.text,
                     'ja',
-                    'kuromoji',
-                    'default',
-                    'hagoromo'
+                    jaTokenizer,
+                    jaVocabDict,
+                    jaGrammarDict
                 );
 
                 analyzedItems++;

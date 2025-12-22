@@ -12,10 +12,10 @@ import { BroadCEFR } from './difficulty';
 export type JaTokenizer = 'kuromoji' | 'tinysegmenter' | 'budoux';
 
 // Japanese vocabulary dictionary options
-export type JaVocabDict = 'default' | 'elzup' | 'tanos';
+export type JaVocabDict = 'default' | 'elzup' | 'tanos' | 'combined';
 
 // Japanese grammar dictionary options
-export type JaGrammarDict = 'yapan' | 'hagoromo';
+export type JaGrammarDict = 'yapan' | 'hagoromo' | 'combined';
 
 // TinySegmenter and budoux for alternative Japanese tokenization
 import TinySegmenter from 'tiny-segmenter';
@@ -27,6 +27,7 @@ const enCefr = require('@/data/vocab/en-cefr.json') as Record<string, string>;
 const jaJlpt = require('@/data/vocab/ja-jlpt.json') as Record<string, string>;
 const jaJlptElzup = require('@/data/vocab/ja-jlpt-elzup.json') as Record<string, string>;
 const jaJlptTanos = require('@/data/vocab/ja-jlpt-tanos.json') as Record<string, string>;
+const jaJlptCombined = require('@/data/vocab/ja-jlpt-combined.json') as Record<string, string>;
 const zhHsk = require('@/data/vocab/zh-hsk.json') as Record<string, string>;
 
 // Japanese vocabulary dictionary maps
@@ -34,6 +35,7 @@ const jaVocabDictionaries: Record<JaVocabDict, Map<string, string>> = {
     default: new Map(Object.entries(jaJlpt)),
     elzup: new Map(Object.entries(jaJlptElzup)),
     tanos: new Map(Object.entries(jaJlptTanos)),
+    combined: new Map(Object.entries(jaJlptCombined)),
 };
 
 // Dictionary metadata for UI display
@@ -41,22 +43,26 @@ export const JA_VOCAB_DICT_INFO: Record<JaVocabDict, { name: string; size: numbe
     default: { name: 'Default JLPT', size: Object.keys(jaJlpt).length, source: 'Custom' },
     elzup: { name: 'Elzup JLPT', size: Object.keys(jaJlptElzup).length, source: 'github.com/elzup/jlpt-word-list' },
     tanos: { name: 'Tanos JLPT', size: Object.keys(jaJlptTanos).length, source: 'tanos.co.uk (via Bluskyo)' },
+    combined: { name: 'Combined (Strong)', size: Object.keys(jaJlptCombined).length, source: 'Merged from all sources' },
 };
 
 // Grammar pattern data
 const jaGrammarYapan = require('@/data/grammar/ja-grammar-jlpt.json') as GrammarPattern[];
 const jaGrammarHagoromo = require('@/data/grammar/ja-grammar-hagoromo-patterns.json') as GrammarPattern[];
+const jaGrammarCombined = require('@/data/grammar/ja-grammar-combined.json') as GrammarPattern[];
 
 // Japanese grammar dictionary maps
 const jaGrammarDictionaries: Record<JaGrammarDict, GrammarPattern[]> = {
     yapan: jaGrammarYapan,
     hagoromo: jaGrammarHagoromo,
+    combined: jaGrammarCombined,
 };
 
 // Grammar dictionary metadata for UI display
 export const JA_GRAMMAR_DICT_INFO: Record<JaGrammarDict, { name: string; size: number; source: string }> = {
     yapan: { name: 'YAPAN JLPT', size: jaGrammarYapan.length, source: 'jlptsensei.com / japanesetest4you.com' },
     hagoromo: { name: 'Hagoromo 4.1', size: jaGrammarHagoromo.length, source: 'hgrm.jpn.org (大学日语教育学术数据库)' },
+    combined: { name: 'Combined (Strong)', size: jaGrammarCombined.length, source: 'Merged YAPAN + Hagoromo' },
 };
 
 // Backwards compatibility - default grammar patterns

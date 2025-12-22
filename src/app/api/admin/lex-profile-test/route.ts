@@ -61,11 +61,11 @@ export async function POST(req: NextRequest) {
         const selectedTokenizer: JaTokenizer = validTokenizers.includes(jaTokenizer) ? jaTokenizer : 'kuromoji';
 
         // Validate jaVocabDict if provided
-        const validVocabDicts: JaVocabDict[] = ['default', 'elzup', 'tanos'];
+        const validVocabDicts: JaVocabDict[] = ['default', 'elzup', 'tanos', 'combined'];
         const selectedVocabDict: JaVocabDict = validVocabDicts.includes(jaVocabDict) ? jaVocabDict : 'default';
 
         // Validate jaGrammarDict if provided
-        const validGrammarDicts: JaGrammarDict[] = ['yapan', 'hagoromo'];
+        const validGrammarDicts: JaGrammarDict[] = ['yapan', 'hagoromo', 'combined'];
         const selectedGrammarDict: JaGrammarDict = validGrammarDicts.includes(jaGrammarDict) ? jaGrammarDict : 'yapan';
 
         // Analyze the text with async version (supports multiple Japanese tokenizers and dictionaries)

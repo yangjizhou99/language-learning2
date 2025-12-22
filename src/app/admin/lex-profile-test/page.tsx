@@ -117,10 +117,10 @@ export default function LexProfileTestPage() {
     const [jaTokenizer, setJaTokenizer] = useState<'kuromoji' | 'tinysegmenter' | 'budoux'>('kuromoji');
 
     // Japanese vocabulary dictionary selection
-    const [jaVocabDict, setJaVocabDict] = useState<'default' | 'elzup' | 'tanos'>('default');
+    const [jaVocabDict, setJaVocabDict] = useState<'default' | 'elzup' | 'tanos' | 'combined'>('combined');
 
     // Japanese grammar dictionary selection
-    const [jaGrammarDict, setJaGrammarDict] = useState<'yapan' | 'hagoromo'>('yapan');
+    const [jaGrammarDict, setJaGrammarDict] = useState<'yapan' | 'hagoromo' | 'combined'>('combined');
 
     // === Batch LLM Level Assignment State ===
     interface BatchScanResult {
@@ -443,6 +443,11 @@ export default function LexProfileTestPage() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${session.access_token}`,
                 },
+                body: JSON.stringify({
+                    jaVocabDict,
+                    jaGrammarDict,
+                    jaTokenizer
+                }),
             });
 
             const data = await res.json();
@@ -1047,9 +1052,10 @@ export default function LexProfileTestPage() {
                                             </label>
                                             <select
                                                 value={jaVocabDict}
-                                                onChange={(e) => setJaVocabDict(e.target.value as 'default' | 'elzup' | 'tanos')}
+                                                onChange={(e) => setJaVocabDict(e.target.value as 'default' | 'elzup' | 'tanos' | 'combined')}
                                                 className="w-full p-2 border rounded"
                                             >
+                                                <option value="combined">Combined (Strong) (8,805词 - Merged)</option>
                                                 <option value="default">Default JLPT (8,135词)</option>
                                                 <option value="elzup">Elzup JLPT (7,846词 - elzup/jlpt-word-list)</option>
                                                 <option value="tanos">Tanos JLPT (8,130词 - tanos.co.uk)</option>
@@ -1060,9 +1066,10 @@ export default function LexProfileTestPage() {
                                             <label className="block text-sm font-medium mb-1">语法库</label>
                                             <select
                                                 value={jaGrammarDict}
-                                                onChange={(e) => setJaGrammarDict(e.target.value as 'yapan' | 'hagoromo')}
+                                                onChange={(e) => setJaGrammarDict(e.target.value as 'yapan' | 'hagoromo' | 'combined')}
                                                 className="w-full p-2 border rounded"
                                             >
+                                                <option value="combined">Combined (Strong) (3,273模式 - Merged)</option>
                                                 <option value="yapan">YAPAN (667模式 - jlptsensei.com)</option>
                                                 <option value="hagoromo">Hagoromo 4.1 (1,731模式 - hgrm.jpn.org)</option>
                                             </select>
