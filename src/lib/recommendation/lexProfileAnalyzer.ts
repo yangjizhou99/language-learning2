@@ -17,9 +17,19 @@ export type JaVocabDict = 'default' | 'elzup' | 'tanos' | 'combined';
 // Japanese grammar dictionary options
 export type JaGrammarDict = 'yapan' | 'hagoromo' | 'combined';
 
-// TinySegmenter and budoux for alternative Japanese tokenization
 import TinySegmenter from 'tiny-segmenter';
 import { loadDefaultJapaneseParser } from 'budoux';
+
+// Advanced grammar matching engine
+import {
+    ParsedGrammarRule,
+    GrammarMatchResult,
+    KuromojiTokenInfo,
+    parseGrammarPattern,
+    matchAdvancedGrammar,
+    preprocessGrammarPatterns,
+    getParseStats,
+} from './advancedGrammarMatcher';
 
 // Vocabulary data - loaded from JSON files
 /* eslint-disable @typescript-eslint/no-var-requires */
@@ -228,8 +238,17 @@ const JLPT_LEVEL_ORDER = ['N5', 'N4', 'N3', 'N2', 'N1'];
 /**
  * Match grammar patterns in Japanese text
  * Uses selected grammar database (YAPAN: 667 patterns, Hagoromo: 1,731 patterns)
+ * Enhanced with advanced pattern matching for complex grammar patterns.
+ * 
+ * @param text - The text to analyze
+ * @param grammarDict - Which grammar dictionary to use
+ * @param kuromojiTokens - Optional kuromoji tokens for POS-aware matching
  */
-function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'): GrammarProfileResult {
+function matchGrammarPatterns(
+    text: string,
+    grammarDict: JaGrammarDict = 'yapan',
+    kuromojiTokens?: KuromojiTokenInfo[]
+): GrammarProfileResult {
     const matchedPatterns: GrammarProfileResult['patterns'] = [];
     const byLevel: Record<string, number> = { N1: 0, N2: 0, N3: 0, N4: 0, N5: 0 };
 
@@ -247,7 +266,46 @@ function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'
     // Merge patterns
     const grammarPatterns = [...llmPatterns, ...staticPatterns];
 
-    // Sort patterns by length (longer first) for greedy matching
+    // ========================
+    // Phase 1: Advanced Pattern Matching (for complex patterns)
+    // ========================
+
+    // Preprocess patterns into parsed rules
+    const parsedRules = preprocessGrammarPatterns(grammarPatterns);
+
+    // Use advanced matching with kuromoji tokens if available
+    const advancedMatches = matchAdvancedGrammar(
+        text,
+        parsedRules,
+        kuromojiTokens
+    );
+
+    // Track matched ranges to prevent overlap
+    const matchedRanges: Array<{ start: number; end: number }> = [];
+
+    // Add advanced matches
+    for (const match of advancedMatches) {
+        // Avoid duplicate patterns
+        if (!matchedPatterns.some(p => p.pattern === match.pattern)) {
+            matchedPatterns.push({
+                pattern: match.pattern,
+                level: match.level,
+                definition: match.definition,
+                cleanPattern: match.matchedText,
+                startIndex: match.startIndex,
+                endIndex: match.endIndex,
+                compoundPattern: match.pattern,
+            });
+            byLevel[match.level] = (byLevel[match.level] || 0) + 1;
+            matchedRanges.push({ start: match.startIndex, end: match.endIndex });
+        }
+    }
+
+    // ========================
+    // Phase 2: Simple Literal Matching (for remaining patterns)
+    // ========================
+
+    // Sort unmatched patterns by length (longer first)
     const sortedPatterns = [...grammarPatterns].sort((a, b) =>
         b.pattern.length - a.pattern.length
     );
@@ -256,10 +314,16 @@ function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'
     let maskedText = text;
 
     for (const gp of sortedPatterns) {
-        // Clean pattern for matching (remove placeholders like X, Y, ~)
+        // Skip if already matched by advanced matcher
+        if (matchedPatterns.some(p => p.pattern === gp.pattern)) continue;
+
+        // Clean pattern for matching (remove placeholders)
         const cleanPattern = gp.pattern
             .replace(/[XYZ～〜]/g, '')
             .replace(/[「」『』（）\[\]]/g, '')
+            .replace(/〔[^〕]*〕/g, '')  // Remove semantic placeholders
+            .replace(/＜[^＞]*＞/g, '')  // Remove meaning annotations
+            .replace(/[＋]/g, '')        // Remove connectors
             .trim();
 
         if (cleanPattern.length < 2) continue; // Skip very short patterns
@@ -267,13 +331,14 @@ function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'
         // Check if pattern exists in text (and not already masked)
         const matchIndex = maskedText.indexOf(cleanPattern);
         if (matchIndex !== -1) {
-            // Avoid duplicate patterns
-            if (!matchedPatterns.some(p => p.pattern === gp.pattern)) {
-                // Find the actual position in the original text
-                // Find the actual position in the original text
-                const originalIndex = text.indexOf(cleanPattern);
+            // Check if this overlaps with advanced matches
+            const originalIndex = text.indexOf(cleanPattern);
+            const overlaps = matchedRanges.some(
+                r => originalIndex < r.end && (originalIndex + cleanPattern.length) > r.start
+            );
 
-                // Calculate the actual grammar part range (excluding stem if applicable)
+            if (!overlaps) {
+                // Calculate the actual grammar part range
                 const { start: relativeStart, end: relativeEnd } = alignGrammarSuffix(cleanPattern, gp.canonical);
                 const adjustedStart = originalIndex + relativeStart;
                 const adjustedEnd = originalIndex + relativeEnd;
@@ -286,20 +351,21 @@ function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'
                     cleanPattern: adjustedPattern,
                     startIndex: adjustedStart,
                     endIndex: adjustedEnd,
-                    compoundPattern: gp.compoundPattern || gp.pattern, // Use the full pattern as ID for merging
+                    compoundPattern: gp.compoundPattern || gp.pattern,
                 });
                 byLevel[gp.level] = (byLevel[gp.level] || 0) + 1;
+                matchedRanges.push({ start: adjustedStart, end: adjustedEnd });
 
-                // Mask the matched part to prevent shorter patterns from matching the same text
-                // e.g. \"からこそ\" matches -> mask it -> \"から\" won't match later
+                // Mask the matched part
                 maskedText = maskedText.replace(new RegExp(escapeRegExpLocal(cleanPattern), 'g'), '█'.repeat(cleanPattern.length));
             }
         }
     }
 
+    // ========================
+    // Phase 3: Colloquial Grammar Detection
+    // ========================
 
-
-    // Detect unrecognized grammar blocks (common patterns not in YAPAN)
     const unrecognizedGrammar: string[] = [];
     const commonGrammarBlocks = [
         { pattern: /てる/, name: '〜てる (口語ている)', mapTo: '〜ている', level: 'N5' },
@@ -316,28 +382,33 @@ function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'
 
     for (const block of commonGrammarBlocks) {
         if (block.pattern.test(text)) {
-            // Check if this is covered by matched patterns
             const isCovered = matchedPatterns.some(p =>
                 p.pattern.includes(block.mapTo.replace('〜', '')) ||
                 p.pattern.includes(block.name.split(' ')[0].replace('〜', ''))
             );
 
             if (!isCovered) {
-                // If we can map it to a standard pattern, add it as a recognized pattern
                 if (block.mapTo) {
-                    // Find position in text for colloquial pattern
                     const match = block.pattern.exec(text);
                     const startIdx = match ? match.index : -1;
                     const matchedStr = match ? match[0] : block.mapTo.replace('〜', '');
-                    matchedPatterns.push({
-                        pattern: block.name, // Use the colloquial name for display
-                        level: block.level,
-                        definition: `Colloquial form of ${block.mapTo}`,
-                        cleanPattern: matchedStr,
-                        startIndex: startIdx,
-                        endIndex: startIdx + matchedStr.length,
-                    });
-                    byLevel[block.level] = (byLevel[block.level] || 0) + 1;
+
+                    // Check for overlap
+                    const overlaps = matchedRanges.some(r =>
+                        startIdx < r.end && (startIdx + matchedStr.length) > r.start
+                    );
+
+                    if (!overlaps) {
+                        matchedPatterns.push({
+                            pattern: block.name,
+                            level: block.level,
+                            definition: `Colloquial form of ${block.mapTo}`,
+                            cleanPattern: matchedStr,
+                            startIndex: startIdx,
+                            endIndex: startIdx + matchedStr.length,
+                        });
+                        byLevel[block.level] = (byLevel[block.level] || 0) + 1;
+                    }
                 } else if (!unrecognizedGrammar.includes(block.name)) {
                     unrecognizedGrammar.push(block.name);
                 }
@@ -363,6 +434,7 @@ function matchGrammarPatterns(text: string, grammarDict: JaGrammarDict = 'yapan'
         unrecognizedGrammar,
     };
 }
+
 
 function escapeRegExp(string: string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1342,8 +1414,28 @@ export async function analyzeLexProfileAsync(
         .replace(/[\s\u3000]/g, '')
         .replace(/[。、！？「」『』（）.!?,;:\[\](){}]/g, '');
 
-    // Grammar pattern matching (Japanese only) - done early to enable backfill
-    const grammarProfile = lang === 'ja' ? matchGrammarPatterns(cleanedForMatching, jaGrammarDict) : undefined;
+    // Convert TokenInfo to KuromojiTokenInfo for POS-aware grammar matching
+    // This enables the advanced grammar matcher to use POS information
+    const kuromojiTokensForGrammar: KuromojiTokenInfo[] | undefined = (lang === 'ja' && jaTokenizer === 'kuromoji')
+        ? tokenInfoList.map(t => ({
+            surface_form: t.token,
+            basic_form: t.lemma,
+            // Map simplified POS to kuromoji-style POS
+            pos: t.pos === 'Verb' ? '動詞' :
+                t.pos === 'Noun' ? '名詞' :
+                    t.pos === 'Adjective' ? '形容詞' :
+                        t.pos === 'Adverb' ? '副詞' :
+                            t.pos === 'Particle' ? '助詞' :
+                                t.pos === 'AuxVerb' ? '助動詞' :
+                                    t.isContentWord ? '名詞' : '助詞',
+            pos_detail_1: t.isContentWord ? '自立' : '非自立',
+        }))
+        : undefined;
+
+    // Grammar pattern matching (Japanese only) - with POS-aware matching when available
+    const grammarProfile = lang === 'ja'
+        ? matchGrammarPatterns(cleanedForMatching, jaGrammarDict, kuromojiTokensForGrammar)
+        : undefined;
 
     // Backfill grammar pattern information to tokens (Japanese only)
     // This updates tokens that are part of compound grammar patterns (e.g., にもかかわらず)

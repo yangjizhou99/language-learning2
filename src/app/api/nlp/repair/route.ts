@@ -87,26 +87,33 @@ ${unrecognizedGrammar?.map(g => `- ${g}`).join('\n') || '无'}
 【重要】语法碎片检测：
 如果你发现多个语法碎片可以组合成一个完整的复合语法模式，请识别并返回完整模式，而不是单独的碎片。
 例如：
-- 看到 "かかわら"、"ず" → 应该识别为 "にもかかわらず" (N3) - 尽管~
-- 看到 "ざる"、"を"、"得ない" → 应该识别为 "ざるをえない" (N1) - 不得不~
-- 看到 "かね" → 可能是 "かねない" (N2) - 可能会~
-- 看到 "がち" → 可能是 "しがち" (N3) - 容易~
-- 看到 "からに" → 可能是 "からには" (N2) - 既然~就~
+- 看到 "かかわら"、"ず" → 应该识别为 "にもかかわらず" (N3)
+- 看到 "ざる"、"を"、"得ない" → 应该识别为 "ざるをえない" (N1)
 
-常见复合语法参考：
-N1: ざるをえない, ものを, ところを, ものがある, ないものでもない
-N2: かねない, からには, ものの, としても, にしても, にかけては
-N3: にもかかわらず, しがち, ことにする, ことになる, ようにする
+【重要】模式类型识别：
+请识别语法模式的类型，返回正确的 patternType 字段：
+
+1. **split** - 分段模式，中间有可变内容：
+   - "ば～ほど" → patternType: "split", prefix: "ば", suffix: "ほど"
+   - "ほかに～ない" → patternType: "split", prefix: "ほかに", suffix: "ない"
+   - "だの～だの" → patternType: "split", prefix: "だの", suffix: "だの"
+
+2. **optional** - 可选部分模式（可省略部分用括号标记）：
+   - "のもと（で）" → patternType: "optional", surface: "のもとで"
+   - "とか（で）" → patternType: "optional"
+
+3. **pos_prefix** - 需要特定词性前置：
+   - "Vてやまない" → patternType: "pos_prefix", posRequirement: "V"
+   - "Nずくめ" → patternType: "pos_prefix", posRequirement: "N"
+
+4. **pos_suffix** - 需要特定词性后置：
+   - "あまりV" → patternType: "pos_suffix", posRequirement: "V"
+
+5. **literal** - 简单字面匹配（默认，无特殊符号）：
+   - "においては" → patternType: "literal"
 
 【重要】多形式返回：
 如果一个语法模式有多种常见书写形式（如汉字和假名），请为每种形式返回一个独立的条目。
-例如：
-- 识别出 "ざるを得ない" (N1) -> 返回两个条目：
-  1. surface: "ざるを得ない", canonical: "ざるをえない"
-  2. surface: "ざるをえない", canonical: "ざるをえない"
-- 识别出 "にもかかわらず" (N3) -> 返回两个条目：
-  1. surface: "にも関わらず", canonical: "にもかかわらず"
-  2. surface: "にもかかわらず", canonical: "にもかかわらず"
 
 Schema: {
   "vocab_entries": [
@@ -114,11 +121,15 @@ Schema: {
   ],
   "grammar_chunks": [
     {
-      "surface": "string (最终识别出的语法模式，如果是复合语法则返回完整形式)",
+      "surface": "string (语法模式的surface形式)",
       "canonical": "string (标准形式)",
       "jlpt": "N1"|"N2"|"N3"|"N4"|"N5",
       "definition": "string",
-      "fragments": ["string"] (可选，如果是从多个碎片识别出的复合模式，列出原始碎片)
+      "patternType": "literal"|"split"|"optional"|"pos_prefix"|"pos_suffix" (必填),
+      "prefix": "string (仅split类型需要)",
+      "suffix": "string (仅split类型需要)",
+      "posRequirement": "V"|"N"|"A"|"イA"|"ナA" (仅pos_prefix/pos_suffix类型需要),
+      "fragments": ["string"] (可选，如果是从多个碎片识别出的复合模式)
     }
   ],
   "confidence": number
@@ -126,9 +137,10 @@ Schema: {
 
 注意：
 - jlpt 字段必须是 N1, N2, N3, N4, N5 之一
-- 优先识别复合语法模式，而不是单独的碎片
-- 如果碎片可以组成已知的复合语法，请返回完整的复合语法并在fragments中列出原始碎片
-- 如果无法确定，基于词汇的使用频率和复杂度进行合理推测`;
+- patternType 字段必填，默认为 "literal"
+- 对于 split 类型，必须提供 prefix 和 suffix
+- 对于 pos_prefix/pos_suffix 类型，必须提供 posRequirement
+- 优先识别复合语法模式，而不是单独的碎片`;
 
         // Build focused prompt with context snippets
         const vocabLines = unknownTokensWithContext?.length > 0

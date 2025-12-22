@@ -24,6 +24,11 @@ interface GrammarRule {
     source: 'llm';
     createdAt: string;
     compoundPattern?: string; // For fragments: points to the full compound pattern
+    // New fields for advanced grammar matcher
+    patternType?: 'literal' | 'split' | 'optional' | 'pos_prefix' | 'pos_suffix';
+    prefix?: string;  // For split patterns
+    suffix?: string;  // For split patterns
+    posRequirement?: 'V' | 'N' | 'A' | 'イA' | 'ナA';  // For POS patterns
 }
 
 interface SaveRuleRequest {
@@ -39,6 +44,11 @@ interface SaveRuleRequest {
         definition?: string;
         jlpt: string;
         fragments?: string[]; // Original fragments that form this compound pattern
+        // New fields for advanced grammar matcher
+        patternType?: 'literal' | 'split' | 'optional' | 'pos_prefix' | 'pos_suffix';
+        prefix?: string;
+        suffix?: string;
+        posRequirement?: 'V' | 'N' | 'A' | 'イA' | 'ナA';
     }>;
 }
 
@@ -127,13 +137,18 @@ export async function POST(req: NextRequest) {
 
             for (const chunk of grammarChunks) {
                 if (chunk.surface && chunk.jlpt) {
-                    // Save the main compound pattern
+                    // Save the main compound pattern with all fields
                     grammarRules[chunk.surface] = {
                         level: chunk.jlpt,
                         canonical: chunk.canonical,
                         definition: chunk.definition,
                         source: 'llm',
                         createdAt: timestamp,
+                        // New pattern type fields for advanced grammar matcher
+                        patternType: chunk.patternType || 'literal',
+                        prefix: chunk.prefix,
+                        suffix: chunk.suffix,
+                        posRequirement: chunk.posRequirement,
                     };
                     grammarSaved++;
 
