@@ -371,14 +371,17 @@ function cleanPatternPart(part: string): string {
 
 /**
  * Match parsed rules against text with kuromoji tokens
+ * @param excludeRanges - Ranges already matched in earlier phases to avoid overlap
  */
 export function matchAdvancedGrammar(
     text: string,
     parsedRules: ParsedGrammarRule[],
-    kuromojiTokens?: KuromojiTokenInfo[]
+    kuromojiTokens?: KuromojiTokenInfo[],
+    excludeRanges?: Array<{ start: number; end: number }>
 ): GrammarMatchResult[] {
     const results: GrammarMatchResult[] = [];
-    const matchedRanges: Array<{ start: number; end: number }> = [];
+    // Initialize with any pre-existing exclude ranges (from Phase 0)
+    const matchedRanges: Array<{ start: number; end: number }> = excludeRanges ? [...excludeRanges] : [];
 
     // Sort by priority (higher first)
     const sortedRules = [...parsedRules]

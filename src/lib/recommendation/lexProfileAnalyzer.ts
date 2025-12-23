@@ -152,6 +152,7 @@ interface MatchedGrammarPattern {
     startIndex: number;    // Start position in cleaned text
     endIndex: number;      // End position in cleaned text
     compoundPattern?: string; // If this is a fragment, points to the full compound pattern
+    isVerbSuffix?: boolean;   // If true, this is a V+suffix pattern (e.g., ざるを得ない)
 }
 
 // Grammar profile output
@@ -268,6 +269,67 @@ function matchGrammarPatterns(
     // Merge patterns
     const grammarPatterns = [...llmPatterns, ...staticPatterns];
 
+    // Track matched ranges to prevent overlap
+    const matchedRanges: Array<{ start: number; end: number }> = [];
+
+    // ========================
+    // Phase 0: Verb + Grammar Suffix Detection (highest priority)
+    // Detect patterns like V未然形+ざるを得ない, Vなければならない, etc.
+    // These have higher priority than split patterns to avoid false positives
+    // ========================
+
+    const verbGrammarSuffixPatterns = [
+        // N1 Grammar Suffixes (very important - often incorrectly matched by split patterns)
+        { suffix: 'ざるを得ない', level: 'N1', definition: '不得不～', pattern: '〜ざるを得ない' },
+        { suffix: 'ざるを得ません', level: 'N1', definition: '不得不～', pattern: '〜ざるを得ない' },
+        { suffix: 'ずにはいられない', level: 'N1', definition: '不禁～，忍不住～', pattern: '〜ずにはいられない' },
+        { suffix: 'ないではいられない', level: 'N1', definition: '不能不～', pattern: '〜ないではいられない' },
+        { suffix: 'てやまない', level: 'N1', definition: '非常～，～不止', pattern: '〜てやまない' },
+        { suffix: 'ないものでもない', level: 'N1', definition: '也不是不能～', pattern: '〜ないものでもない' },
+        { suffix: 'ないでもない', level: 'N1', definition: '也不是不～', pattern: '〜ないでもない' },
+
+        // N2 Grammar Suffixes
+        { suffix: 'わけにはいかない', level: 'N2', definition: '不能～', pattern: '〜わけにはいかない' },
+        { suffix: 'わけにもいかない', level: 'N2', definition: '也不能～', pattern: '〜わけにはいかない' },
+        { suffix: 'ないわけにはいかない', level: 'N2', definition: '不能不～', pattern: '〜ないわけにはいかない' },
+        { suffix: 'ざるをえない', level: 'N1', definition: '不得不～', pattern: '〜ざるを得ない' }, // alternative spelling
+        { suffix: 'ようがない', level: 'N2', definition: '没有办法～', pattern: '〜ようがない' },
+        { suffix: 'しかない', level: 'N2', definition: '只能～', pattern: '〜しかない' },
+        { suffix: 'ほかない', level: 'N2', definition: '只能～', pattern: '〜ほかない' },
+        { suffix: 'ほかはない', level: 'N2', definition: '只能～', pattern: '〜ほかない' },
+
+        // N3 Grammar Suffixes
+        { suffix: 'なければならない', level: 'N4', definition: '必须～', pattern: '〜なければならない' },
+        { suffix: 'なくてはならない', level: 'N4', definition: '必须～', pattern: '〜なくてはならない' },
+        { suffix: 'ないといけない', level: 'N4', definition: '必须～', pattern: '〜ないといけない' },
+        { suffix: 'ずにはおかない', level: 'N1', definition: '一定会～', pattern: '〜ずにはおかない' },
+    ];
+
+    for (const vgPattern of verbGrammarSuffixPatterns) {
+        const suffixIdx = text.indexOf(vgPattern.suffix);
+        if (suffixIdx !== -1) {
+            // Check if this range is already covered
+            const overlaps = matchedRanges.some(
+                r => suffixIdx < r.end && (suffixIdx + vgPattern.suffix.length) > r.start
+            );
+
+            if (!overlaps) {
+                matchedPatterns.push({
+                    pattern: vgPattern.pattern,
+                    level: vgPattern.level,
+                    definition: vgPattern.definition,
+                    cleanPattern: vgPattern.suffix,
+                    startIndex: suffixIdx,
+                    endIndex: suffixIdx + vgPattern.suffix.length,
+                    compoundPattern: vgPattern.pattern,
+                    isVerbSuffix: true, // Mark as verb suffix for special handling
+                });
+                byLevel[vgPattern.level] = (byLevel[vgPattern.level] || 0) + 1;
+                matchedRanges.push({ start: suffixIdx, end: suffixIdx + vgPattern.suffix.length });
+            }
+        }
+    }
+
     // ========================
     // Phase 1: Advanced Pattern Matching (for complex patterns)
     // ========================
@@ -279,11 +341,9 @@ function matchGrammarPatterns(
     const advancedMatches = matchAdvancedGrammar(
         text,
         parsedRules,
-        kuromojiTokens
+        kuromojiTokens,
+        matchedRanges // Pass already matched ranges to avoid overlap
     );
-
-    // Track matched ranges to prevent overlap
-    const matchedRanges: Array<{ start: number; end: number }> = [];
 
     // Add advanced matches
     for (const match of advancedMatches) {
