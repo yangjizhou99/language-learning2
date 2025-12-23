@@ -179,6 +179,8 @@ export interface TokenInfo {
     charStart?: number;      // Start position in cleaned text (for grammar backfill)
     charEnd?: number;        // End position in cleaned text
     compoundGrammar?: string; // If part of a compound grammar pattern, the pattern name
+    isGrammarRoot?: boolean;  // For split patterns: true if this token is the grammar root (prefix/suffix)
+    isSplitMiddle?: boolean;  // For split patterns: true if this token is the middle content (not grammar)
 }
 
 export interface LexProfileResult {

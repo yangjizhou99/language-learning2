@@ -1495,6 +1495,7 @@ export default function LexProfileTestPage() {
                                             <tbody className="divide-y">
                                                 {(() => {
                                                     // Merge consecutive tokens with same compoundGrammar
+                                                    // BUT: for split patterns (ば～ほど), only mark prefix/suffix as grammar
                                                     const mergedTokens: Array<{
                                                         token: string;
                                                         lemma: string;
@@ -1502,7 +1503,20 @@ export default function LexProfileTestPage() {
                                                         originalLevel: string;
                                                         broadCEFR: string;
                                                         isCompound: boolean;
+                                                        isGrammarRoot?: boolean; // true for split pattern prefix/suffix
                                                     }> = [];
+
+                                                    // Common split pattern markers (will be marked as grammar roots)
+                                                    const grammarRootPatterns = [
+                                                        'ないと', 'ない', 'ば', 'ほど', 'から', 'まで', 'ながら',
+                                                        'たら', 'なら', 'ても', 'でも', 'のに', 'ものの', 'つつ',
+                                                        'ざるを得', 'を得ない', 'わけにはいかない', 'しかない',
+                                                        'ほかない', 'べき', 'はず', 'わけ', 'こと', 'もの',
+                                                    ];
+
+                                                    const isGrammarRoot = (token: string): boolean => {
+                                                        return grammarRootPatterns.some(p => token === p || token.endsWith(p) || token.startsWith(p));
+                                                    };
 
                                                     let i = 0;
                                                     while (i < result.details.tokenList.length) {
@@ -1510,26 +1524,57 @@ export default function LexProfileTestPage() {
 
                                                         // Check if this token is part of a compound grammar
                                                         if (t.compoundGrammar) {
-                                                            // Collect all consecutive tokens with same compoundGrammar
-                                                            const compoundTokens: string[] = [t.token];
-                                                            let j = i + 1;
-                                                            while (j < result.details.tokenList.length &&
-                                                                result.details.tokenList[j].compoundGrammar === t.compoundGrammar) {
-                                                                compoundTokens.push(result.details.tokenList[j].token);
-                                                                j++;
+                                                            // Check if this looks like a split pattern (contains ～)
+                                                            const isSplitPattern = t.compoundGrammar.includes('〜') || t.compoundGrammar.includes('～');
+
+                                                            if (isSplitPattern) {
+                                                                // For split patterns: check if this token is grammar root
+                                                                if (isGrammarRoot(t.token) || t.pos === '助詞' || t.pos === '助動詞') {
+                                                                    // This is a grammar root - show with grammar level
+                                                                    mergedTokens.push({
+                                                                        token: t.token,
+                                                                        lemma: t.compoundGrammar,
+                                                                        pos: '語法詞根',
+                                                                        originalLevel: t.originalLevel,
+                                                                        broadCEFR: t.broadCEFR,
+                                                                        isCompound: true,
+                                                                        isGrammarRoot: true,
+                                                                    });
+                                                                } else {
+                                                                    // This is middle content - show as regular vocabulary
+                                                                    mergedTokens.push({
+                                                                        token: t.token,
+                                                                        lemma: t.lemma !== t.token ? t.lemma : '-',
+                                                                        pos: t.pos,
+                                                                        // Remove grammar level from middle content
+                                                                        originalLevel: t.originalLevel.replace(/grammar \(.*?\)/, 'vocab'),
+                                                                        broadCEFR: t.broadCEFR,
+                                                                        isCompound: false,
+                                                                    });
+                                                                }
+                                                                i++;
+                                                            } else {
+                                                                // Non-split compound pattern: collect all consecutive tokens
+                                                                const compoundTokens: string[] = [t.token];
+                                                                let j = i + 1;
+                                                                while (j < result.details.tokenList.length &&
+                                                                    result.details.tokenList[j].compoundGrammar === t.compoundGrammar) {
+                                                                    compoundTokens.push(result.details.tokenList[j].token);
+                                                                    j++;
+                                                                }
+
+                                                                // Add merged entry
+                                                                mergedTokens.push({
+                                                                    token: compoundTokens.join(''),
+                                                                    lemma: t.compoundGrammar,
+                                                                    pos: '複合語法',
+                                                                    originalLevel: t.originalLevel,
+                                                                    broadCEFR: t.broadCEFR,
+                                                                    isCompound: true,
+                                                                });
+
+                                                                i = j; // Skip merged tokens
                                                             }
-
-                                                            // Add merged entry
-                                                            mergedTokens.push({
-                                                                token: compoundTokens.join(''),
-                                                                lemma: t.compoundGrammar,
-                                                                pos: '複合語法',
-                                                                originalLevel: t.originalLevel,
-                                                                broadCEFR: t.broadCEFR,
-                                                                isCompound: true,
-                                                            });
-
-                                                            i = j; // Skip merged tokens
                                                         } else {
                                                             // Regular token
                                                             mergedTokens.push({
@@ -1545,14 +1590,15 @@ export default function LexProfileTestPage() {
                                                     }
 
                                                     return mergedTokens.map((t, idx) => (
-                                                        <tr key={idx} className={`hover:bg-gray-50 ${t.isCompound ? 'bg-purple-50' : ''}`}>
+                                                        <tr key={idx} className={`hover:bg-gray-50 ${t.isCompound ? (t.isGrammarRoot ? 'bg-indigo-50' : 'bg-purple-50') : ''}`}>
                                                             <td className="px-2 py-1 font-medium">
-                                                                {t.isCompound && <span className="text-purple-600 mr-1">◆</span>}
+                                                                {t.isGrammarRoot && <span className="text-indigo-600 mr-1">◇</span>}
+                                                                {t.isCompound && !t.isGrammarRoot && <span className="text-purple-600 mr-1">◆</span>}
                                                                 {t.token}
                                                             </td>
                                                             <td className="px-2 py-1 text-gray-600">{t.lemma}</td>
                                                             <td className="px-2 py-1">
-                                                                <span className={`px-1.5 py-0.5 rounded text-xs ${t.isCompound ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'}`}>
+                                                                <span className={`px-1.5 py-0.5 rounded text-xs ${t.isGrammarRoot ? 'bg-indigo-100 text-indigo-700' : t.isCompound ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'}`}>
                                                                     {t.pos}
                                                                 </span>
                                                             </td>
