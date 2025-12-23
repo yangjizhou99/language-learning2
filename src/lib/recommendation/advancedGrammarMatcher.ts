@@ -74,6 +74,13 @@ export interface GrammarMatchResult {
     endIndex: number;
     matchType: GrammarRuleType;
     confidence: number;  // 0-1, higher = more reliable match
+
+    // For split patterns: separate grammar roots from middle content
+    splitParts?: {
+        prefix: { text: string; startIndex: number; endIndex: number };
+        suffix: { text: string; startIndex: number; endIndex: number };
+        middleContent: { text: string; startIndex: number; endIndex: number };
+    };
 }
 
 // ========================
@@ -527,8 +534,10 @@ function matchSplitRule(
 
     if (excluded) return [];
 
-    // Return match covering prefix and suffix
+    // Return match covering prefix and suffix, with splitParts for separate analysis
     const fullMatch = text.substring(prefixIdx, suffixIdx + suffix.length);
+    const prefixEndIdx = prefixIdx + prefix.length;
+    const suffixEndIdx = suffixIdx + suffix.length;
 
     return [{
         pattern: rule.originalPattern,
@@ -536,9 +545,27 @@ function matchSplitRule(
         definition: rule.definition,
         matchedText: fullMatch,
         startIndex: prefixIdx,
-        endIndex: suffixIdx + rule.suffix.length,
+        endIndex: suffixEndIdx,
         matchType: 'split',
-        confidence: 0.85, // Slightly lower confidence for split matches
+        confidence: 0.85,
+        // NEW: Split parts for separate grammar root marking
+        splitParts: {
+            prefix: {
+                text: prefix,
+                startIndex: prefixIdx,
+                endIndex: prefixEndIdx
+            },
+            suffix: {
+                text: suffix,
+                startIndex: suffixIdx,
+                endIndex: suffixEndIdx
+            },
+            middleContent: {
+                text: middleContent,
+                startIndex: prefixEndIdx,
+                endIndex: suffixIdx
+            }
+        }
     }];
 }
 
