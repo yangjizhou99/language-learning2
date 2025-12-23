@@ -1524,10 +1524,21 @@ export default function LexProfileTestPage() {
 
                                                         // Check if this token is part of a compound grammar
                                                         if (t.compoundGrammar) {
-                                                            // Check if this looks like a split pattern (contains ～)
-                                                            const isSplitPattern = t.compoundGrammar.includes('〜') || t.compoundGrammar.includes('～');
+                                                            // Determine if this is a TRUE split pattern (content on BOTH sides of ～)
+                                                            // vs a suffix pattern (〜ざるを得ない - only content after ～)
+                                                            // vs a prefix pattern (ても〜 - only content before ～)
+                                                            const pattern = t.compoundGrammar;
+                                                            const tildeIndex = pattern.indexOf('〜') !== -1 ? pattern.indexOf('〜') : pattern.indexOf('～');
 
-                                                            if (isSplitPattern) {
+                                                            // True split pattern: has substantial content on BOTH sides of 〜
+                                                            // e.g., "ば〜ほど" (tildeIndex=1, beforeTilde="ば", afterTilde="ほど")
+                                                            // NOT: "〜ざるを得ない" (tildeIndex=0, beforeTilde="", afterTilde="ざるを得ない")
+                                                            const isTrueSplitPattern = tildeIndex > 0 &&
+                                                                tildeIndex < pattern.length - 1 &&
+                                                                pattern.substring(0, tildeIndex).trim().length > 0 &&
+                                                                pattern.substring(tildeIndex + 1).trim().length > 0;
+
+                                                            if (isTrueSplitPattern) {
                                                                 // For split patterns: check if this token is grammar root
                                                                 if (isGrammarRoot(t.token) || t.pos === '助詞' || t.pos === '助動詞') {
                                                                     // This is a grammar root - show with grammar level
