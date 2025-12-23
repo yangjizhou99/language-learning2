@@ -472,6 +472,9 @@ function matchLiteralRule(
 
 /**
  * Match split patterns (ば～ほど)
+ * 
+ * IMPORTANT: Split patterns require careful validation to avoid false positives.
+ * Patterns like は〜が are too generic and should be handled with stricter rules.
  */
 function matchSplitRule(
     text: string,
@@ -484,6 +487,20 @@ function matchSplitRule(
     const prefix = rule.prefix;
     const suffix = rule.suffix;
 
+    // STRICT VALIDATION: Skip patterns that are too short/generic
+    // Patterns like は〜が (1 char each) match far too many false positives
+    const combinedLength = prefix.length + suffix.length;
+    if (combinedLength < 4) {
+        // Skip patterns where prefix+suffix is less than 4 chars
+        // Examples: は〜が (2), も〜なら (4 - OK)
+        return [];
+    }
+
+    // Very short prefixes (1 char) are too common, require longer suffix
+    if (prefix.length === 1 && suffix.length < 3) {
+        return [];
+    }
+
     const prefixIdx = text.indexOf(prefix);
     if (prefixIdx === -1) return [];
 
@@ -492,9 +509,15 @@ function matchSplitRule(
     const suffixIdx = text.indexOf(suffix, suffixSearchStart);
     if (suffixIdx === -1) return [];
 
-    // Check reasonable distance (not too far apart)
+    // Check reasonable distance (stricter now: max 20 chars between prefix and suffix)
     const distance = suffixIdx - (prefixIdx + prefix.length);
-    if (distance > 50) return []; // Too far apart
+    if (distance > 20) return []; // Reduced from 50 to 20
+
+    // CRITICAL: Don't match across sentence boundaries
+    const middleContent = text.substring(prefixIdx + prefix.length, suffixIdx);
+    const sentenceBreakers = ['。', '！', '？', '\n', '、'];
+    const hasSentenceBreak = sentenceBreakers.some(b => middleContent.includes(b));
+    if (hasSentenceBreak) return [];
 
     // Check exclusions
     const excluded = excludeRanges?.some(r =>
