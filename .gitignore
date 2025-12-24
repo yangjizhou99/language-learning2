@@ -60,3 +60,11 @@ temp/
 *password*
 *credential*
 *private*
+# KenLM models (large binary files)
+models/*.bin
+models/*.arpa
+
+# Python
+__pycache__/
+*.pyc
+.venv/
