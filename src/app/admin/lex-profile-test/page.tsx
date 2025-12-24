@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { RepairRequest, RepairResponse } from '@/lib/nlp/repair-service';
+import { getFrequencyRank, getFrequencyColorClass } from '@/lib/nlp/wordFrequency';
 
 type Lang = 'en' | 'ja' | 'zh';
 
@@ -122,14 +123,18 @@ export default function LexProfileTestPage() {
     // Japanese grammar dictionary selection
     const [jaGrammarDict, setJaGrammarDict] = useState<'yapan' | 'hagoromo' | 'combined'>('combined');
 
+    // Word frequency display (simple JLPT-based scoring)
+    const [showFrequency, setShowFrequency] = useState(false);
+
     // === Batch LLM Level Assignment State ===
     interface BatchScanResult {
         totalItems: number;
         analyzedItems: number;
         unknownVocab: Array<{ token: string; lemma: string; pos: string; count: number; contexts: string[] }>;
         unmatchedGrammar: Array<{ token: string; lemma: string; pos: string; count: number; contexts: string[] }>;
-        currentCoverage: { vocab: number; grammar: number };
-        stats: { totalVocabTokens: number; vocabWithLevel: number; totalGrammarTokens: number; grammarWithLevel: number };
+        unknownFrequency: Array<{ token: string; lemma: string; pos: string; count: number; contexts: string[] }>;
+        currentCoverage: { vocab: number; grammar: number; frequency: number };
+        stats: { totalVocabTokens: number; vocabWithLevel: number; totalGrammarTokens: number; grammarWithLevel: number; vocabWithFrequency: number };
     }
     interface SavedRule {
         level: string;
@@ -148,6 +153,155 @@ export default function LexProfileTestPage() {
     const [showUnmatchedPanel, setShowUnmatchedPanel] = useState(false);
     const [savedRules, setSavedRules] = useState<{ vocab: Record<string, SavedRule>; grammar: Record<string, SavedRule> } | null>(null);
     const [loadingRules, setLoadingRules] = useState(false);
+
+    // === Batch Frequency Assignment State ===
+    const [assignmentTab, setAssignmentTab] = useState<'level' | 'frequency'>('level');
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanResult, setScanResult] = useState<{
+        totalItems: number;
+        totalTokens: number;
+        uniqueTokens: number;
+        unknownVocabCount: number;
+        vocabCoverage: number;
+        unknownVocabList: Array<{ token: string; count: number }>;
+    } | null>(null);
+    const [isPatchingFrequency, setIsPatchingFrequency] = useState(false);
+    const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
+    const [frequencyPatchList, setFrequencyPatchList] = useState<Record<string, number>>({});
+    const [frequencyPatches, setFrequencyPatches] = useState<Record<string, number> | null>(null);
+    const [showFrequencyPatches, setShowFrequencyPatches] = useState(false);
+    const [showUnknownList, setShowUnknownList] = useState(false);
+
+    useEffect(() => {
+        loadFrequencyPatches();
+    }, []);
+
+    const loadFrequencyPatches = async () => {
+        try {
+            const res = await fetch('/api/nlp/frequency-repair?action=list');
+            const data = await res.json();
+            if (data.patches) {
+                setFrequencyPatchList(data.patches);
+            }
+        } catch (error) {
+            console.error('Failed to load frequency patches:', error);
+        }
+    };
+
+    const handleScan = async () => {
+        setIsScanning(true);
+        try {
+            const res = await fetch('/api/nlp/frequency-repair?action=scan');
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            setScanResult(data);
+            if (data.unknownVocabCount === 0) {
+                toast.success('扫描完成：未发现缺失词频的单词 (100% 覆盖)');
+            } else {
+                toast.info(`扫描完成：发现 ${data.unknownVocabCount} 个缺失词频的单词`);
+            }
+        } catch (error) {
+            console.error('Scan error:', error);
+            toast.error('扫描失败');
+        } finally {
+            setIsScanning(false);
+        }
+    };
+
+    const handleBatchPatch = async () => {
+        if (!scanResult || scanResult.unknownVocabList.length === 0) return;
+
+        setIsPatchingFrequency(true);
+        const tokensToPatch = scanResult.unknownVocabList.map(item => item.token);
+        const total = tokensToPatch.length;
+        setBatchProgress({ current: 0, total });
+
+        const BATCH_SIZE = 30;
+        let processed = 0;
+
+        try {
+            for (let i = 0; i < total; i += BATCH_SIZE) {
+                const batch = tokensToPatch.slice(i, i + BATCH_SIZE);
+
+                const res = await fetch('/api/nlp/frequency-repair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tokens: batch }),
+                });
+
+                if (!res.ok) throw new Error('Batch failed');
+
+                processed += batch.length;
+                setBatchProgress({ current: processed, total });
+            }
+
+            await loadFrequencyPatches();
+            toast.success(`批量分配完成：${total} 个单词`);
+            // Re-scan to update stats
+            handleScan();
+        } catch (error) {
+            console.error('Batch patch error:', error);
+            toast.error('批量分配过程中出错');
+        } finally {
+            setIsPatchingFrequency(false);
+        }
+    };
+
+    const handleBatchFrequencyAssign = async () => {
+        if (!batchScanResult || batchScanResult.unknownFrequency.length === 0) return;
+
+        setIsPatchingFrequency(true);
+        const tokensToPatch = batchScanResult.unknownFrequency.map(item => item.token);
+        const total = tokensToPatch.length;
+        setBatchProgress({ current: 0, total });
+
+        const BATCH_SIZE = 30;
+        let processed = 0;
+
+        try {
+            for (let i = 0; i < total; i += BATCH_SIZE) {
+                const batch = tokensToPatch.slice(i, i + BATCH_SIZE);
+
+                const res = await fetch('/api/nlp/frequency-repair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tokens: batch }),
+                });
+
+                if (!res.ok) throw new Error('Batch failed');
+
+                processed += batch.length;
+                setBatchProgress({ current: processed, total });
+            }
+
+            await loadFrequencyPatches();
+            toast.success(`批量词频分配完成：${total} 个单词`);
+            // Re-scan to update stats
+            handleBatchScan();
+        } catch (error) {
+            console.error('Batch frequency assign error:', error);
+            toast.error('批量词频分配过程中出错');
+        } finally {
+            setIsPatchingFrequency(false);
+        }
+    };
+
+    const handleDeleteAll = async () => {
+        if (!confirm('确定要删除所有已保存的词频补丁吗？此操作不可撤销。')) return;
+
+        try {
+            const res = await fetch('/api/nlp/frequency-repair?action=delete_all');
+            if (!res.ok) throw new Error('Delete failed');
+
+            await loadFrequencyPatches();
+            toast.success('已清空所有词频补丁');
+            handleScan(); // Refresh scan results
+        } catch (error) {
+            console.error('Delete error:', error);
+            toast.error('删除失败');
+        }
+    };
 
     useEffect(() => {
         const fetchDbItems = async () => {
@@ -422,6 +576,110 @@ export default function LexProfileTestPage() {
             toast.error('规则保存失败');
         } finally {
             setIsSavingRules(false);
+        }
+    };
+
+    const handleFrequencyPatch = async () => {
+        if (!result) return;
+
+        // Find tokens with unknown frequency (rank -1)
+        // We need to replicate the table logic to handle compound grammar tokens (e.g. がある)
+        const unknownFreqTokens: string[] = [];
+        const tokenList = result.details.tokenList;
+        let i = 0;
+
+        while (i < tokenList.length) {
+            const t = tokenList[i];
+
+            if (t.compoundGrammar) {
+                // Check if it's a split pattern
+                const pattern = t.compoundGrammar;
+                const tildeIndex = pattern.indexOf('〜') !== -1 ? pattern.indexOf('〜') : pattern.indexOf('～');
+                const isTrueSplitPattern = tildeIndex > 0 &&
+                    tildeIndex < pattern.length - 1 &&
+                    pattern.substring(0, tildeIndex).trim().length > 0 &&
+                    pattern.substring(tildeIndex + 1).trim().length > 0;
+
+                if (isTrueSplitPattern) {
+                    // For split patterns, check individual tokens
+                    if (getFrequencyRank(t.token, t.lemma) === -1) {
+                        unknownFreqTokens.push(t.token);
+                    }
+                    i++;
+                } else {
+                    // Non-split compound: merge tokens
+                    const compoundTokens: string[] = [t.token];
+                    let j = i + 1;
+                    while (j < tokenList.length && tokenList[j].compoundGrammar === t.compoundGrammar) {
+                        compoundTokens.push(tokenList[j].token);
+                        j++;
+                    }
+                    const mergedToken = compoundTokens.join('');
+
+                    // Check frequency of the merged token
+                    // Use the compound grammar pattern as lemma if available
+                    if (getFrequencyRank(mergedToken, t.compoundGrammar) === -1) {
+                        unknownFreqTokens.push(mergedToken);
+                    }
+                    i = j;
+                }
+            } else {
+                // Regular token
+                if (getFrequencyRank(t.token, t.lemma) === -1) {
+                    unknownFreqTokens.push(t.token);
+                }
+                i++;
+            }
+        }
+
+        const uniqueTokens = [...new Set(unknownFreqTokens)];
+
+        if (uniqueTokens.length === 0) {
+            toast.info('没有发现缺失词频的单词');
+            return;
+        }
+
+        setIsPatchingFrequency(true);
+        try {
+            toast.info(`正在估算 ${uniqueTokens.length} 个单词的词频...`);
+
+            const res = await fetch('/api/nlp/frequency-repair', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tokens: uniqueTokens }),
+            });
+
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            setFrequencyPatches(data.patches);
+            toast.success(`估算完成：${Object.keys(data.patches).length} 个单词`);
+        } catch (error) {
+            console.error('Frequency patch error:', error);
+            toast.error('词频估算失败');
+        } finally {
+            setIsPatchingFrequency(false);
+        }
+    };
+
+    const handleSaveFrequencyPatch = async () => {
+        if (!frequencyPatches) return;
+
+        try {
+            const res = await fetch('/api/admin/save-frequency-patch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ patches: frequencyPatches }),
+            });
+
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            toast.success('词频补丁保存成功！请刷新页面查看效果。');
+            setFrequencyPatches(null);
+        } catch (error) {
+            console.error('Save patch error:', error);
+            toast.error('保存补丁失败');
         }
     };
 
@@ -703,7 +961,7 @@ export default function LexProfileTestPage() {
                                 </Button>
 
                                 {batchScanResult && (
-                                    <div className="flex-1 grid grid-cols-4 gap-3">
+                                    <div className="flex-1 grid grid-cols-5 gap-3">
                                         <div className="bg-white p-3 rounded shadow-sm text-center">
                                             <div className="text-xl font-bold text-blue-600">{batchScanResult.analyzedItems}</div>
                                             <div className="text-xs text-gray-600">分析题目数</div>
@@ -717,6 +975,10 @@ export default function LexProfileTestPage() {
                                             <div className="text-xs text-gray-600">未匹配语法</div>
                                         </div>
                                         <div className="bg-white p-3 rounded shadow-sm text-center">
+                                            <div className="text-xl font-bold text-purple-600">{batchScanResult.unknownFrequency?.length || 0}</div>
+                                            <div className="text-xs text-gray-600">未知词频</div>
+                                        </div>
+                                        <div className="bg-white p-3 rounded shadow-sm text-center">
                                             <div className="text-xl font-bold text-green-600">{batchScanResult.currentCoverage.vocab.toFixed(1)}%</div>
                                             <div className="text-xs text-gray-600">词汇覆盖率</div>
                                         </div>
@@ -724,7 +986,6 @@ export default function LexProfileTestPage() {
                                 )}
                             </div>
 
-                            {/* Coverage Progress Bar */}
                             {batchScanResult && (
                                 <div className="bg-white p-4 rounded shadow-sm">
                                     <div className="flex justify-between text-sm mb-2">
@@ -747,39 +1008,73 @@ export default function LexProfileTestPage() {
                                             style={{ width: `${Math.min(batchScanResult.currentCoverage.grammar, 100)}%` }}
                                         />
                                     </div>
+                                    <div className="flex justify-between text-sm mt-2">
+                                        <span>词频覆盖率</span>
+                                        <span className="font-mono">{(batchScanResult.currentCoverage.frequency || 0).toFixed(2)}%</span>
+                                    </div>
+                                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500"
+                                            style={{ width: `${Math.min(batchScanResult.currentCoverage.frequency || 0, 100)}%` }}
+                                        />
+                                    </div>
                                 </div>
                             )}
 
                             {/* LLM Assign Button */}
-                            {batchScanResult && (batchScanResult.unknownVocab.length > 0 || batchScanResult.unmatchedGrammar.length > 0) && (
+                            {batchScanResult && (batchScanResult.unknownVocab.length > 0 || batchScanResult.unmatchedGrammar.length > 0 || (batchScanResult.unknownFrequency?.length || 0) > 0) && (
                                 <div className="bg-white p-4 rounded shadow-sm">
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <h4 className="font-semibold">🤖 开始 LLM 批量分配</h4>
                                             <p className="text-sm text-gray-500">
-                                                共 {batchScanResult.unknownVocab.length + batchScanResult.unmatchedGrammar.length} 个待处理项，
-                                                每批 30 个，约需 {Math.ceil((batchScanResult.unknownVocab.length + batchScanResult.unmatchedGrammar.length) / 30)} 次 API 调用
+                                                等级: {batchScanResult.unknownVocab.length + batchScanResult.unmatchedGrammar.length} 个待处理项 |
+                                                词频: {batchScanResult.unknownFrequency?.length || 0} 个待处理项
                                             </p>
                                         </div>
-                                        <Button
-                                            onClick={handleBatchLevelAssign}
-                                            disabled={isBatchAssigning}
-                                            className="bg-indigo-600 hover:bg-indigo-700"
-                                        >
-                                            {isBatchAssigning ? '处理中...' : '开始分配'}
-                                        </Button>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                onClick={handleBatchLevelAssign}
+                                                disabled={isBatchAssigning}
+                                                className="bg-indigo-600 hover:bg-indigo-700"
+                                            >
+                                                {isBatchAssigning ? '处理中...' : '分配等级'}
+                                            </Button>
+                                            <Button
+                                                onClick={handleBatchFrequencyAssign}
+                                                disabled={isPatchingFrequency || (batchScanResult.unknownFrequency?.length || 0) === 0}
+                                                className="bg-amber-600 hover:bg-amber-700"
+                                            >
+                                                {isPatchingFrequency ? '处理中...' : '分配词频'}
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     {isBatchAssigning && (
                                         <div className="mt-4">
                                             <div className="flex justify-between text-sm mb-1">
-                                                <span>进度: {batchAssignProgress.current} / {batchAssignProgress.total}</span>
+                                                <span>等级分配进度: {batchAssignProgress.current} / {batchAssignProgress.total}</span>
                                                 <span>已保存: {batchAssignProgress.saved} 条规则</span>
                                             </div>
                                             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                                                 <div
                                                     className="h-full bg-indigo-500 transition-all"
                                                     style={{ width: `${(batchAssignProgress.current / batchAssignProgress.total) * 100}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {isPatchingFrequency && (
+                                        <div className="mt-4">
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span>词频分配进度: {batchProgress.current} / {batchProgress.total}</span>
+                                                <span className="text-amber-600">自动保存中...</span>
+                                            </div>
+                                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-amber-500 transition-all"
+                                                    style={{ width: `${batchProgress.total > 0 ? (batchProgress.current / batchProgress.total) * 100 : 0}%` }}
                                                 />
                                             </div>
                                         </div>
@@ -917,7 +1212,7 @@ export default function LexProfileTestPage() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <h5 className="text-sm font-medium text-gray-600 mb-2">词汇规则 ({Object.keys(savedRules.vocab).length})</h5>
                                     <div className="space-y-1 max-h-60 overflow-y-auto">
@@ -943,6 +1238,20 @@ export default function LexProfileTestPage() {
                                         ))}
                                         {Object.keys(savedRules.grammar).length > 50 && (
                                             <div className="text-xs text-gray-400 text-center">... 还有 {Object.keys(savedRules.grammar).length - 50} 条</div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h5 className="text-sm font-medium text-gray-600 mb-2">词频规则 ({frequencyPatchList ? Object.keys(frequencyPatchList).length : 0})</h5>
+                                    <div className="space-y-1 max-h-60 overflow-y-auto">
+                                        {frequencyPatchList && Object.entries(frequencyPatchList).slice(0, 50).map(([word, rank]) => (
+                                            <div key={word} className="flex justify-between text-sm p-1 bg-gray-50 rounded">
+                                                <span>{word}</span>
+                                                <span className="text-amber-600">#{rank}</span>
+                                            </div>
+                                        ))}
+                                        {frequencyPatchList && Object.keys(frequencyPatchList).length > 50 && (
+                                            <div className="text-xs text-gray-400 text-center">... 还有 {Object.keys(frequencyPatchList).length - 50} 条</div>
                                         )}
                                     </div>
                                 </div>
@@ -1074,6 +1383,20 @@ export default function LexProfileTestPage() {
                                                 <option value="hagoromo">Hagoromo 4.1 (1,731模式 - hgrm.jpn.org)</option>
                                             </select>
                                         </div>
+                                        {/* Word Frequency Display Toggle */}
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="showFrequency"
+                                                checked={showFrequency}
+                                                onChange={(e) => setShowFrequency(e.target.checked)}
+                                                className="w-4 h-4"
+                                            />
+                                            <label htmlFor="showFrequency" className="text-sm font-medium">
+                                                显示词频排名
+                                                <span className="text-xs text-gray-500 ml-2">(基于常用词表)</span>
+                                            </label>
+                                        </div>
                                     </>
                                 )}
                                 <div>
@@ -1085,9 +1408,13 @@ export default function LexProfileTestPage() {
                                         className="w-full p-3 border rounded h-32 font-mono text-sm"
                                     />
                                 </div>
-                                <Button onClick={handleAnalyze} disabled={loading} className="w-full">
-                                    {loading ? '分析中...' : '开始分析'}
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button onClick={handleAnalyze} disabled={loading} className="w-full">
+                                        {loading ? '分析中...' : '开始分析'}
+                                    </Button>
+
+
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1366,106 +1693,399 @@ export default function LexProfileTestPage() {
                                                 </div>
                                             </div>
                                         )}
+
+                                        {/* LLM Frequency Assignment Section */}
+                                        <div className="mt-6 border-t pt-6">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div>
+                                                    <h3 className="text-lg font-medium text-gray-900">🎯 LLM 批量词频分配</h3>
+                                                    <p className="text-xs text-gray-500">目标: 100% 覆盖率</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setShowFrequencyPatches(!showFrequencyPatches)}
+                                                        className="px-3 py-2 rounded text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors flex items-center gap-2"
+                                                    >
+                                                        📋 查看补丁列表 ({frequencyPatchList ? Object.keys(frequencyPatchList).length : 0})
+                                                        {showFrequencyPatches && <span className="text-xs text-gray-500 ml-1">收起</span>}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Frequency Patch List & Actions */}
+                                            {showFrequencyPatches && (
+                                                <div className="bg-purple-50 rounded-lg p-4 border border-purple-100 mb-4">
+                                                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                                                        <button
+                                                            onClick={handleScan}
+                                                            disabled={isScanning}
+                                                            className={`px-3 py-1.5 rounded text-sm font-medium text-white transition-colors flex items-center gap-2 ${isScanning ? 'bg-purple-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 shadow-sm'}`}
+                                                        >
+                                                            {isScanning ? (
+                                                                <>
+                                                                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                                    扫描中...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                                    </svg>
+                                                                    扫描题库
+                                                                </>
+                                                            )}
+                                                        </button>
+
+                                                        <span className="text-sm font-bold text-purple-800 flex-grow">📋 已保存的补丁规则</span>
+
+                                                        <button
+                                                            onClick={handleDeleteAll}
+                                                            className="px-3 py-1.5 rounded text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors flex items-center gap-1"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                            一键删除全部
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => setShowFrequencyPatches(false)}
+                                                            className="px-3 py-1.5 rounded text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors"
+                                                        >
+                                                            关闭
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="bg-white p-3 rounded border border-purple-100 max-h-60 overflow-auto">
+                                                        {frequencyPatchList && Object.keys(frequencyPatchList).length > 0 ? (
+                                                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                                                {Object.entries(frequencyPatchList).map(([token, rank]) => (
+                                                                    <div key={token} className="flex items-center justify-between text-xs bg-gray-50 px-2 py-1 rounded">
+                                                                        <span className="font-medium text-gray-700">{token}</span>
+                                                                        <span className="font-mono text-purple-600">#{rank}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-center text-gray-500 py-8 flex flex-col items-center justify-center">
+                                                                <p>暂无补丁规则</p>
+                                                                <p className="text-xs mt-1">点击"扫描题库"来查找缺失词频的单词</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="mt-2 flex gap-4 text-xs text-gray-500">
+                                                        <span>词汇规则 ({frequencyPatchList ? Object.keys(frequencyPatchList).length : 0})</span>
+                                                        <span>语法规则 (0)</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {/* LLM JLPT Level Assignment Section */}
+                                    {/* Integrated LLM Assignment Module */}
                                     <div className="mt-6 border-t pt-6">
                                         <div className="flex items-center justify-between mb-4">
                                             <div>
-                                                <h3 className="text-lg font-medium text-gray-900">🎯 LLM 等级分配</h3>
-                                                <p className="text-xs text-gray-500">为未知词汇和语法分配 JLPT 等级，可保存规则供后续分析使用</p>
+                                                <h3 className="text-lg font-medium text-gray-900">🎯 LLM 批量分配</h3>
+                                                <p className="text-xs text-gray-500">为未知词汇/语法分配等级或词频</p>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                {savedRulesCount.vocab + savedRulesCount.grammar > 0 && (
-                                                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
-                                                        已保存 {savedRulesCount.vocab + savedRulesCount.grammar} 条规则
-                                                    </span>
-                                                )}
+                                            <div className="flex bg-gray-100 p-1 rounded-lg">
                                                 <button
-                                                    onClick={handleLevelAssignment}
-                                                    disabled={isAssigningLevels}
-                                                    className={`px-4 py-2 rounded text-sm font-medium text-white transition-colors
-                                                    ${isAssigningLevels
-                                                            ? 'bg-gray-400 cursor-not-allowed'
-                                                            : 'bg-blue-600 hover:bg-blue-700 shadow-sm'}`}
+                                                    onClick={() => setAssignmentTab('level')}
+                                                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${assignmentTab === 'level'
+                                                        ? 'bg-white text-blue-600 shadow-sm'
+                                                        : 'text-gray-500 hover:text-gray-700'
+                                                        }`}
                                                 >
-                                                    {isAssigningLevels ? '分析中...' : '执行 LLM 分级'}
+                                                    等级分配 (JLPT)
+                                                </button>
+                                                <button
+                                                    onClick={() => setAssignmentTab('frequency')}
+                                                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${assignmentTab === 'frequency'
+                                                        ? 'bg-white text-purple-600 shadow-sm'
+                                                        : 'text-gray-500 hover:text-gray-700'
+                                                        }`}
+                                                >
+                                                    词频分配 (Rank)
                                                 </button>
                                             </div>
                                         </div>
 
-                                        {llmLevelResult && (
-                                            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                                                <div className="flex items-center justify-between mb-3">
+                                        {/* Level Assignment Tab */}
+                                        {assignmentTab === 'level' && (
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-sm text-gray-600">
+                                                        当前分析结果中包含 {result.details.unknownTokens.length} 个未知词汇和 {result.grammarProfile?.unrecognizedGrammar?.length || 0} 个未知语法。
+                                                    </p>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-blue-700 font-bold">✅ 分级完成</span>
-                                                        <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
-                                                            置信度: {(llmLevelResult.confidence * 100).toFixed(0)}%
-                                                        </span>
+                                                        {savedRulesCount.vocab + savedRulesCount.grammar > 0 && (
+                                                            <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                                                已保存 {savedRulesCount.vocab + savedRulesCount.grammar} 条规则
+                                                            </span>
+                                                        )}
+                                                        <button
+                                                            onClick={handleLevelAssignment}
+                                                            disabled={isAssigningLevels}
+                                                            className={`px-4 py-2 rounded text-sm font-medium text-white transition-colors
+                                                            ${isAssigningLevels
+                                                                    ? 'bg-gray-400 cursor-not-allowed'
+                                                                    : 'bg-blue-600 hover:bg-blue-700 shadow-sm'}`}
+                                                        >
+                                                            {isAssigningLevels ? '分析中...' : '执行 LLM 分级'}
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        onClick={handleSaveRules}
-                                                        disabled={isSavingRules}
-                                                        className="px-3 py-1.5 rounded text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 transition-colors"
-                                                    >
-                                                        {isSavingRules ? '保存中...' : '💾 保存规则'}
-                                                    </button>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    {/* Vocab Levels */}
-                                                    {llmLevelResult.vocab_entries.length > 0 && (
-                                                        <div className="bg-white p-3 rounded border border-blue-100">
-                                                            <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">
-                                                                词汇等级 ({llmLevelResult.vocab_entries.length})
-                                                            </h4>
-                                                            <div className="space-y-2 max-h-48 overflow-auto">
-                                                                {llmLevelResult.vocab_entries.map((vocab, i) => (
-                                                                    <div key={i} className="flex items-center justify-between text-sm bg-yellow-50 p-2 rounded">
-                                                                        <div>
-                                                                            <span className="font-bold text-gray-800">{vocab.surface}</span>
-                                                                            {vocab.reading && <span className="text-xs text-gray-500 ml-1">[{vocab.reading}]</span>}
-                                                                            <span className="text-gray-600 text-xs block">{vocab.definition}</span>
-                                                                        </div>
-                                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${vocab.jlpt === 'N1' ? 'bg-red-100 text-red-700' :
-                                                                            vocab.jlpt === 'N2' ? 'bg-orange-100 text-orange-700' :
-                                                                                vocab.jlpt === 'N3' ? 'bg-yellow-100 text-yellow-700' :
-                                                                                    'bg-green-100 text-green-700'
+                                                {llmLevelResult && (
+                                                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-blue-700 font-bold">✅ 分级完成</span>
+                                                                <span className="text-xs bg-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
+                                                                    置信度: {(llmLevelResult.confidence * 100).toFixed(0)}%
+                                                                </span>
+                                                            </div>
+                                                            <button
+                                                                onClick={handleSaveRules}
+                                                                disabled={isSavingRules}
+                                                                className="px-3 py-1.5 rounded text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+                                                            >
+                                                                {isSavingRules ? '保存中...' : '💾 保存规则'}
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            {/* Vocab Levels */}
+                                                            {llmLevelResult.vocab_entries.length > 0 && (
+                                                                <div className="bg-white p-3 rounded border border-blue-100">
+                                                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">
+                                                                        词汇等级 ({llmLevelResult.vocab_entries.length})
+                                                                    </h4>
+                                                                    <div className="space-y-2 max-h-48 overflow-auto">
+                                                                        {llmLevelResult.vocab_entries.map((vocab, i) => (
+                                                                            <div key={i} className="flex items-center justify-between text-sm bg-yellow-50 p-2 rounded">
+                                                                                <div>
+                                                                                    <span className="font-bold text-gray-800">{vocab.surface}</span>
+                                                                                    {vocab.reading && <span className="text-xs text-gray-500 ml-1">[{vocab.reading}]</span>}
+                                                                                    <span className="text-gray-600 text-xs block">{vocab.definition}</span>
+                                                                                </div>
+                                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${vocab.jlpt === 'N1' ? 'bg-red-100 text-red-700' :
+                                                                                    vocab.jlpt === 'N2' ? 'bg-orange-100 text-orange-700' :
+                                                                                        vocab.jlpt === 'N3' ? 'bg-yellow-100 text-yellow-700' :
+                                                                                            'bg-green-100 text-green-700'
+                                                                                    }`}>
+                                                                                    {vocab.jlpt}
+                                                                                </span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Grammar Levels */}
+                                                            {llmLevelResult.grammar_chunks.length > 0 && (
+                                                                <div className="bg-white p-3 rounded border border-blue-100">
+                                                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">
+                                                                        语法等级 ({llmLevelResult.grammar_chunks.length})
+                                                                    </h4>
+                                                                    <div className="space-y-2 max-h-48 overflow-auto">
+                                                                        {llmLevelResult.grammar_chunks.map((grammar, i) => (
+                                                                            <div key={i} className="flex items-center justify-between text-sm bg-indigo-50 p-2 rounded">
+                                                                                <div>
+                                                                                    <span className="font-bold text-gray-800">{grammar.surface}</span>
+                                                                                    <span className="text-xs text-gray-500 ml-2">→ {grammar.canonical}</span>
+                                                                                </div>
+                                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${grammar.jlpt === 'N1' ? 'bg-red-100 text-red-700' :
+                                                                                    grammar.jlpt === 'N2' ? 'bg-orange-100 text-orange-700' :
+                                                                                        grammar.jlpt === 'N3' ? 'bg-yellow-100 text-yellow-700' :
+                                                                                            'bg-green-100 text-green-700'
+                                                                                    }`}>
+                                                                                    {grammar.jlpt}
+                                                                                </span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Frequency Assignment Tab */}
+                                        {assignmentTab === 'frequency' && (
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <h4 className="text-sm font-bold text-gray-900">目标: 100% 覆盖率</h4>
+                                                        <button
+                                                            onClick={() => setShowFrequencyPatches(!showFrequencyPatches)}
+                                                            className="text-xs text-purple-600 hover:text-purple-800 underline mt-1"
+                                                        >
+                                                            📋 查看补丁列表 ({frequencyPatchList ? Object.keys(frequencyPatchList).length : 0})
+                                                            {showFrequencyPatches ? ' (收起)' : ''}
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Patch List View */}
+                                                {showFrequencyPatches && (
+                                                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-100 mb-4">
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <span className="text-sm font-bold text-purple-800">已保存的补丁规则</span>
+                                                            <button
+                                                                onClick={handleDeleteAll}
+                                                                className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1"
+                                                            >
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                                一键删除全部
+                                                            </button>
+                                                        </div>
+                                                        <div className="bg-white p-2 rounded border border-purple-100 max-h-40 overflow-auto grid grid-cols-3 gap-2 text-xs">
+                                                            {frequencyPatchList && Object.entries(frequencyPatchList).map(([token, rank]) => (
+                                                                <div key={token} className="flex justify-between bg-gray-50 px-2 py-1 rounded">
+                                                                    <span>{token}</span>
+                                                                    <span className="text-purple-600">#{rank}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Scan & Stats */}
+                                                <div className="grid grid-cols-3 gap-4 text-center">
+                                                    <div className="col-span-1 flex flex-col gap-2">
+                                                        <button
+                                                            onClick={handleScan}
+                                                            disabled={isScanning}
+                                                            className={`w-full py-2 rounded text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 ${isScanning ? 'bg-purple-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 shadow-sm'
+                                                                }`}
+                                                        >
+                                                            {isScanning ? '扫描中...' : '🔍 扫描题库'}
+                                                        </button>
+                                                        {scanResult && (
+                                                            <div className="text-xs text-gray-500">
+                                                                分析题目数: <span className="font-bold text-gray-800">{scanResult.totalItems}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="bg-gray-50 p-2 rounded">
+                                                        <div className="text-xl font-bold text-red-600">
+                                                            {scanResult ? scanResult.unknownVocabCount : '-'}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">未知词汇</div>
+                                                    </div>
+                                                    <div className="bg-gray-50 p-2 rounded">
+                                                        <div className="text-xl font-bold text-green-600">
+                                                            {scanResult ? `${scanResult.vocabCoverage.toFixed(1)}%` : '-'}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">词汇覆盖率</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Batch Action */}
+                                                {scanResult && scanResult.unknownVocabCount > 0 && (
+                                                    <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                                                        <div className="flex items-center justify-between mb-4">
+                                                            <div>
+                                                                <h4 className="text-sm font-bold text-purple-900">🤖 开始 LLM 批量分配</h4>
+                                                                <p className="text-xs text-purple-600 mt-1">
+                                                                    共 {scanResult.unknownVocabCount} 个待处理项，每批 30 个，约需 {Math.ceil(scanResult.unknownVocabCount / 30)} 次 API 调用
+                                                                </p>
+                                                            </div>
+                                                            <button
+                                                                onClick={handleBatchPatch}
+                                                                disabled={isPatchingFrequency}
+                                                                className={`px-4 py-2 rounded text-sm font-medium text-white transition-colors ${isPatchingFrequency ? 'bg-purple-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 shadow-sm'
+                                                                    }`}
+                                                            >
+                                                                {isPatchingFrequency ? '处理中...' : '开始分配'}
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Progress Bar */}
+                                                        {isPatchingFrequency && (
+                                                            <div className="w-full bg-purple-200 rounded-full h-2.5 mb-4">
+                                                                <div
+                                                                    className="bg-purple-600 h-2.5 rounded-full transition-all duration-300"
+                                                                    style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Unknown List Preview */}
+                                                        <div>
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <h5 className="text-xs font-bold text-gray-700">📊 未匹配内容 ({scanResult.unknownVocabCount} 词汇)</h5>
+                                                                <button
+                                                                    onClick={() => setShowUnknownList(!showUnknownList)}
+                                                                    className="text-xs text-purple-600 hover:underline"
+                                                                >
+                                                                    {showUnknownList ? '收起列表' : '👁️ 查看完整列表'}
+                                                                </button>
+                                                            </div>
+
+                                                            {showUnknownList && (
+                                                                <div className="bg-white p-2 rounded border border-purple-100 max-h-60 overflow-auto">
+                                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                                        {scanResult.unknownVocabList.map((item: any, i: number) => (
+                                                                            <div key={i} className="flex justify-between text-xs bg-gray-50 px-2 py-1 rounded">
+                                                                                <span className="font-medium text-gray-700">{item.token}</span>
+                                                                                <span className="text-gray-500">×{item.count}</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Frequency Patch Results (Single Item) */}
+                                                {frequencyPatches && (
+                                                    <div className="mt-4 bg-purple-50 rounded-lg p-4 border border-purple-100">
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-purple-700 font-bold">⚡ 词频估算完成</span>
+                                                                <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">
+                                                                    {Object.keys(frequencyPatches).length} 个单词
+                                                                </span>
+                                                            </div>
+                                                            <button
+                                                                onClick={handleSaveFrequencyPatch}
+                                                                className="px-3 py-1.5 rounded text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center gap-2"
+                                                            >
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                                保存补丁
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="bg-white p-3 rounded border border-purple-100">
+                                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-auto">
+                                                                {Object.entries(frequencyPatches).map(([word, rank]) => (
+                                                                    <div key={word} className="flex justify-between text-sm p-2 bg-gray-50 rounded border border-gray-100">
+                                                                        <span className="font-medium text-gray-700">{word}</span>
+                                                                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${rank <= 1000 ? 'bg-green-100 text-green-700' :
+                                                                            rank <= 5000 ? 'bg-yellow-100 text-yellow-700' :
+                                                                                rank <= 10000 ? 'bg-orange-100 text-orange-700' :
+                                                                                    'bg-red-100 text-red-700'
                                                                             }`}>
-                                                                            {vocab.jlpt}
+                                                                            #{rank}
                                                                         </span>
                                                                     </div>
                                                                 ))}
                                                             </div>
                                                         </div>
-                                                    )}
-
-                                                    {/* Grammar Levels */}
-                                                    {llmLevelResult.grammar_chunks.length > 0 && (
-                                                        <div className="bg-white p-3 rounded border border-blue-100">
-                                                            <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">
-                                                                语法等级 ({llmLevelResult.grammar_chunks.length})
-                                                            </h4>
-                                                            <div className="space-y-2 max-h-48 overflow-auto">
-                                                                {llmLevelResult.grammar_chunks.map((grammar, i) => (
-                                                                    <div key={i} className="flex items-center justify-between text-sm bg-indigo-50 p-2 rounded">
-                                                                        <div>
-                                                                            <span className="font-bold text-gray-800">{grammar.surface}</span>
-                                                                            <span className="text-xs text-gray-500 ml-2">→ {grammar.canonical}</span>
-                                                                        </div>
-                                                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${grammar.jlpt === 'N1' ? 'bg-red-100 text-red-700' :
-                                                                            grammar.jlpt === 'N2' ? 'bg-orange-100 text-orange-700' :
-                                                                                grammar.jlpt === 'N3' ? 'bg-yellow-100 text-yellow-700' :
-                                                                                    'bg-green-100 text-green-700'
-                                                                            }`}>
-                                                                            {grammar.jlpt}
-                                                                        </span>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -1490,6 +2110,9 @@ export default function LexProfileTestPage() {
                                                     <th className="px-2 py-1 text-left">词根</th>
                                                     <th className="px-2 py-1 text-left">词性</th>
                                                     <th className="px-2 py-1 text-left">等级</th>
+                                                    {showFrequency && (
+                                                        <th className="px-2 py-1 text-left">词频排名</th>
+                                                    )}
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y">
@@ -1618,6 +2241,17 @@ export default function LexProfileTestPage() {
                                                                     {t.originalLevel}
                                                                 </span>
                                                             </td>
+                                                            {showFrequency && (() => {
+                                                                const rank = getFrequencyRank(t.token, t.lemma);
+                                                                return (
+                                                                    <td className="px-2 py-1">
+                                                                        <span className={`px-1.5 py-0.5 rounded text-xs font-mono ${getFrequencyColorClass(rank)}`}
+                                                                            title={rank === -1 ? '未在词频表中找到' : `词频排名: #${rank}`}>
+                                                                            {rank === -1 ? '-' : `#${rank}`}
+                                                                        </span>
+                                                                    </td>
+                                                                );
+                                                            })()}
                                                         </tr>
                                                     ));
                                                 })()}

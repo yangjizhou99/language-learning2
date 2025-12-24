@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
 import { analyzeLexProfileAsync } from '@/lib/recommendation/lexProfileAnalyzer';
+import { getFrequencyRank } from '@/lib/nlp/wordFrequency';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300; // 5 minutes for scanning all items
@@ -23,15 +24,18 @@ interface ScanResult {
     analyzedItems: number;
     unknownVocab: UnknownToken[];
     unmatchedGrammar: UnknownToken[];
+    unknownFrequency: UnknownToken[];
     currentCoverage: {
         vocab: number;
         grammar: number;
+        frequency: number;
     };
     stats: {
         totalVocabTokens: number;
         vocabWithLevel: number;
         totalGrammarTokens: number;
         grammarWithLevel: number;
+        vocabWithFrequency: number;
     };
 }
 
@@ -95,10 +99,12 @@ export async function POST(req: NextRequest) {
         // Collect unknown tokens
         const unknownVocabMap = new Map<string, UnknownToken>();
         const unmatchedGrammarMap = new Map<string, UnknownToken>();
+        const unknownFrequencyMap = new Map<string, UnknownToken>();
 
         let analyzedItems = 0;
         let totalVocabTokens = 0;
         let vocabWithLevel = 0;
+        let vocabWithFrequency = 0;
         let totalGrammarTokens = 0;
         let grammarWithLevel = 0;
 
@@ -117,6 +123,31 @@ export async function POST(req: NextRequest) {
                 for (const token of result.details.tokenList) {
                     if (token.isContentWord) {
                         totalVocabTokens++;
+
+                        // Check frequency coverage
+                        const freqRank = getFrequencyRank(token.token, token.lemma);
+                        if (freqRank === -1) {
+                            // Collect unknown frequency
+                            const key = token.lemma || token.token;
+                            const existing = unknownFrequencyMap.get(key);
+                            if (existing) {
+                                existing.count++;
+                                if (existing.contexts.length < 3) {
+                                    existing.contexts.push(item.title || 'Untitled');
+                                }
+                            } else {
+                                unknownFrequencyMap.set(key, {
+                                    token: token.token,
+                                    lemma: token.lemma,
+                                    pos: token.pos,
+                                    count: 1,
+                                    contexts: [item.title || 'Untitled'],
+                                });
+                            }
+                        } else {
+                            vocabWithFrequency++;
+                        }
+
                         if (token.originalLevel === 'unknown') {
                             // Collect unknown vocab
                             const key = token.lemma || token.token;
@@ -172,19 +203,23 @@ export async function POST(req: NextRequest) {
         // Sort by frequency
         const sortedVocab = [...unknownVocabMap.values()].sort((a, b) => b.count - a.count);
         const sortedGrammar = [...unmatchedGrammarMap.values()].sort((a, b) => b.count - a.count);
+        const sortedFrequency = [...unknownFrequencyMap.values()].sort((a, b) => b.count - a.count);
 
         const result: ScanResult = {
             totalItems: items.length,
             analyzedItems,
             unknownVocab: sortedVocab,
             unmatchedGrammar: sortedGrammar,
+            unknownFrequency: sortedFrequency,
             currentCoverage: {
                 vocab: totalVocabTokens > 0 ? (vocabWithLevel / totalVocabTokens) * 100 : 0,
                 grammar: totalGrammarTokens > 0 ? (grammarWithLevel / totalGrammarTokens) * 100 : 0,
+                frequency: totalVocabTokens > 0 ? (vocabWithFrequency / totalVocabTokens) * 100 : 0,
             },
             stats: {
                 totalVocabTokens,
                 vocabWithLevel,
+                vocabWithFrequency,
                 totalGrammarTokens,
                 grammarWithLevel,
             },
