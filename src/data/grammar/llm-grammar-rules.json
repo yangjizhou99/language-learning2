@@ -1,1 +1,759 @@
-{}
+{
+  "活かせる": {
+    "level": "N3",
+    "canonical": "活かせる",
+    "definition": "能够活用，能够发挥",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:46:20.061Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "N"
+  },
+  "活": {
+    "level": "N3",
+    "canonical": "活かせる",
+    "definition": "→ 活かせる (能够活用，能够发挥)",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:46:20.061Z",
+    "compoundPattern": "活かせる"
+  },
+  "かせる": {
+    "level": "N3",
+    "canonical": "活かせる",
+    "definition": "→ 活かせる (能够活用，能够发挥)",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:46:20.061Z",
+    "compoundPattern": "活かせる"
+  },
+  "ざいますこちらこそありがとうございました": {
+    "level": "N5",
+    "canonical": "こちらこそありがとうございました",
+    "definition": "我才要谢谢你（礼貌表达）",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:54:27.945Z",
+    "patternType": "literal"
+  },
+  "ざいます": {
+    "level": "N5",
+    "canonical": "ざいますこちらこそありがとうございました",
+    "definition": "→ ざいますこちらこそありがとうございました (我才要谢谢你（礼貌表达）)",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:54:27.945Z",
+    "compoundPattern": "ざいますこちらこそありがとうございました"
+  },
+  "こちらこそありがとうございました": {
+    "level": "N5",
+    "canonical": "ざいますこちらこそありがとうございました",
+    "definition": "→ ざいますこちらこそありがとうございました (我才要谢谢你（礼貌表达）)",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:54:27.945Z",
+    "compoundPattern": "ざいますこちらこそありがとうございました"
+  },
+  "ょうわかりましたでは": {
+    "level": "N5",
+    "canonical": "わかりました",
+    "definition": "明白了，知道了（礼貌表达）",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:54:27.945Z",
+    "patternType": "literal"
+  },
+  "ょう": {
+    "level": "N5",
+    "canonical": "ょうわかりましたでは",
+    "definition": "→ ょうわかりましたでは (明白了，知道了（礼貌表达）)",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:54:27.945Z",
+    "compoundPattern": "ょうわかりましたでは"
+  },
+  "わかりました": {
+    "level": "N5",
+    "canonical": "ょうわかりましたでは",
+    "definition": "→ ょうわかりましたでは (明白了，知道了（礼貌表达）)",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:54:27.945Z",
+    "compoundPattern": "ょうわかりましたでは"
+  },
+  "では": {
+    "level": "N5",
+    "canonical": "ょうわかりましたでは",
+    "definition": "→ ょうわかりましたでは (明白了，知道了（礼貌表达）)",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:54:27.945Z",
+    "compoundPattern": "ょうわかりましたでは"
+  },
+  "ょうかうんそうだねまずは": {
+    "level": "N3",
+    "canonical": "ようかうんそうだねまずは",
+    "definition": "likely a conversational fragment meaning \"I wonder if it's... well, first of all\" (from ようか + うんそうだね + まずは)",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:57:27.451Z",
+    "patternType": "literal"
+  },
+  "ょうか": {
+    "level": "N3",
+    "canonical": "ょうかうんそうだねまずは",
+    "definition": "→ ょうかうんそうだねまずは (likely a conversational fragment meaning \"I wonder if it's... well, first of all\" (from ようか + うんそうだね + まずは))",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:57:27.451Z",
+    "compoundPattern": "ょうかうんそうだねまずは"
+  },
+  "うんそうだね": {
+    "level": "N3",
+    "canonical": "ょうかうんそうだねまずは",
+    "definition": "→ ょうかうんそうだねまずは (likely a conversational fragment meaning \"I wonder if it's... well, first of all\" (from ようか + うんそうだね + まずは))",
+    "source": "llm",
+    "createdAt": "2025-12-26T09:57:27.451Z",
+    "compoundPattern": "ょうかうんそうだねまずは"
+  },
+  "まずは": {
+    "level": "N3",
+    "canonical": "まずは",
+    "definition": "首先，暂且",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "ょうんそうなんだでもこのままじゃまずいって": {
+    "level": "N4",
+    "canonical": "ようんそうなんだでもこのままじゃまずいって",
+    "definition": "It seems like I'm in a bad mood, but if things continue like this, it's no good, they say (colloquial expression combining various elements)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:00:16.760Z",
+    "patternType": "literal"
+  },
+  "ょうんそうなんだ": {
+    "level": "N4",
+    "canonical": "ょうんそうなんだでもこのままじゃまずいって",
+    "definition": "→ ょうんそうなんだでもこのままじゃまずいって (It seems like I'm in a bad mood, but if things continue like this, it's no good, they say (colloquial expression combining various elements))",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:00:16.760Z",
+    "compoundPattern": "ょうんそうなんだでもこのままじゃまずいって"
+  },
+  "でも": {
+    "level": "N4",
+    "canonical": "ょうんそうなんだでもこのままじゃまずいって",
+    "definition": "→ ょうんそうなんだでもこのままじゃまずいって (It seems like I'm in a bad mood, but if things continue like this, it's no good, they say (colloquial expression combining various elements))",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:00:16.760Z",
+    "compoundPattern": "ょうんそうなんだでもこのままじゃまずいって"
+  },
+  "このままじゃ": {
+    "level": "N4",
+    "canonical": "ょうんそうなんだでもこのままじゃまずいって",
+    "definition": "→ ょうんそうなんだでもこのままじゃまずいって (It seems like I'm in a bad mood, but if things continue like this, it's no good, they say (colloquial expression combining various elements))",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:00:16.760Z",
+    "compoundPattern": "ょうんそうなんだでもこのままじゃまずいって"
+  },
+  "まずいって": {
+    "level": "N4",
+    "canonical": "ょうんそうなんだでもこのままじゃまずいって",
+    "definition": "→ ょうんそうなんだでもこのままじゃまずいって (It seems like I'm in a bad mood, but if things continue like this, it's no good, they say (colloquial expression combining various elements))",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:00:16.760Z",
+    "compoundPattern": "ょうんそうなんだでもこのままじゃまずいって"
+  },
+  "ゃなかったかもそうなんだでも": {
+    "level": "N3",
+    "canonical": "じゃなかったかもそうなんだでも",
+    "definition": "informal combination meaning \"might not have been, but that's how it is, even so\"",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:02:21.976Z",
+    "patternType": "literal"
+  },
+  "ゃなかった": {
+    "level": "N3",
+    "canonical": "ゃなかったかもそうなんだでも",
+    "definition": "→ ゃなかったかもそうなんだでも (informal combination meaning \"might not have been, but that's how it is, even so\")",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:02:21.976Z",
+    "compoundPattern": "ゃなかったかもそうなんだでも"
+  },
+  "かも": {
+    "level": "N3",
+    "canonical": "ゃなかったかもそうなんだでも",
+    "definition": "→ ゃなかったかもそうなんだでも (informal combination meaning \"might not have been, but that's how it is, even so\")",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:02:21.976Z",
+    "compoundPattern": "ゃなかったかもそうなんだでも"
+  },
+  "そうなんだ": {
+    "level": "N3",
+    "canonical": "ゃなかったかもそうなんだでも",
+    "definition": "→ ゃなかったかもそうなんだでも (informal combination meaning \"might not have been, but that's how it is, even so\")",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:02:21.976Z",
+    "compoundPattern": "ゃなかったかもそうなんだでも"
+  },
+  "ょうかありがとうございます": {
+    "level": "N4",
+    "canonical": "しょうかありがとうございます",
+    "definition": "thank you for... (from しょうか, likely a typo or variant of しょうか, but treated as a polite expression)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:03:49.846Z",
+    "patternType": "literal"
+  },
+  "ありがとうございます": {
+    "level": "N4",
+    "canonical": "ょうかありがとうございます",
+    "definition": "→ ょうかありがとうございます (thank you for... (from しょうか, likely a typo or variant of しょうか, but treated as a polite expression))",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:03:49.846Z",
+    "compoundPattern": "ょうかありがとうございます"
+  },
+  "くださ": {
+    "level": "N3",
+    "canonical": "くださる",
+    "definition": "to give (honorific form of くれる)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:03:49.846Z",
+    "patternType": "pos_suffix",
+    "posRequirement": "V"
+  },
+  "を": {
+    "level": "N5",
+    "canonical": "を",
+    "definition": "表示动作的对象或目标",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "が": {
+    "level": "N5",
+    "canonical": "が",
+    "definition": "表示主语或对象",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "は": {
+    "level": "N5",
+    "canonical": "は",
+    "definition": "表示主题或对比",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "に": {
+    "level": "N5",
+    "canonical": "に",
+    "definition": "表示时间、地点、方向、对象等",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "か": {
+    "level": "N5",
+    "canonical": "か",
+    "definition": "表示疑问或选择",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "う": {
+    "level": "N4",
+    "canonical": "う",
+    "definition": "表示意志或推测（如动词未然形+う）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "ん": {
+    "level": "N4",
+    "canonical": "ん",
+    "definition": "表示否定（如动词未然形+ん）或口语中的强调",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "お": {
+    "level": "N4",
+    "canonical": "お",
+    "definition": "表示尊敬或美化（如お+动词连用形+になる）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "ご": {
+    "level": "N4",
+    "canonical": "ご",
+    "definition": "表示尊敬或美化（如ご+名词+です）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "N"
+  },
+  "へ": {
+    "level": "N5",
+    "canonical": "へ",
+    "definition": "表示方向或目的地",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "そうですね": {
+    "level": "N5",
+    "canonical": "そうですね",
+    "definition": "是啊，表示同意或附和",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "せ": {
+    "level": "N4",
+    "canonical": "せる",
+    "definition": "causative auxiliary verb",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:25:19.954Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "え": {
+    "level": "N4",
+    "canonical": "え",
+    "definition": "表示可能或尊敬（如动词未然形+える/られる）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "き": {
+    "level": "N4",
+    "canonical": "き",
+    "definition": "表示过去或完成（如动词连用形+た/だ）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "わ": {
+    "level": "N5",
+    "canonical": "わ",
+    "definition": "表示感叹或强调（女性用语）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "ごめん": {
+    "level": "N5",
+    "canonical": "ごめん",
+    "definition": "对不起，抱歉",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "書": {
+    "level": "N5",
+    "canonical": "書",
+    "definition": "写，书写（如动词连用形）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "ねえ": {
+    "level": "N5",
+    "canonical": "ねえ",
+    "definition": "喂，表示呼唤或引起注意",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "えっ": {
+    "level": "N5",
+    "canonical": "えっ",
+    "definition": "啊？表示惊讶或疑问",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "感": {
+    "level": "N3",
+    "canonical": "感",
+    "definition": "感觉，感受（如名词后缀）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "pos_suffix",
+    "posRequirement": "N"
+  },
+  "うーん": {
+    "level": "N5",
+    "canonical": "うーん",
+    "definition": "嗯…表示思考或犹豫",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "次に": {
+    "level": "N4",
+    "canonical": "次に",
+    "definition": "接下来，其次",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "べき": {
+    "level": "N3",
+    "canonical": "べき",
+    "definition": "应该，必须（如动词连体形+べき）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "どういたしまして": {
+    "level": "N5",
+    "canonical": "どういたしまして",
+    "definition": "不客气，不用谢",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "いえいえ": {
+    "level": "N5",
+    "canonical": "いえいえ",
+    "definition": "不，不是（表示谦虚或否定）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:05.491Z",
+    "patternType": "literal"
+  },
+  "そうね": {
+    "level": "N5",
+    "canonical": "そうね",
+    "definition": "表示同意或思考的感叹词，相当于“是啊”、“嗯”",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "へえ": {
+    "level": "N5",
+    "canonical": "へえ",
+    "definition": "表示惊讶或兴趣的感叹词，相当于“哦”、“嘿”",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "やあ": {
+    "level": "N5",
+    "canonical": "やあ",
+    "definition": "打招呼的感叹词，相当于“嗨”、“你好”",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "いや": {
+    "level": "N5",
+    "canonical": "いや",
+    "definition": "表示否定或犹豫的感叹词，相当于“不”、“嗯”",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "わあ": {
+    "level": "N5",
+    "canonical": "わあ",
+    "definition": "表示惊喜或赞叹的感叹词，相当于“哇”",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "お疲れ様": {
+    "level": "N4",
+    "canonical": "お疲れ様",
+    "definition": "用于问候或感谢他人辛苦的短语，相当于“辛苦了”",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "らっしゃい": {
+    "level": "N5",
+    "canonical": "いらっしゃい",
+    "definition": "欢迎的招呼语，常用于商店或家庭",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "くん": {
+    "level": "N5",
+    "canonical": "くん",
+    "definition": "用于男性名字后的敬称后缀，表示亲切或尊重",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "pos_suffix",
+    "posRequirement": "N"
+  },
+  "待ち": {
+    "level": "N5",
+    "canonical": "待ち",
+    "definition": "等待，作为名词或动词连用形",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "なぁ": {
+    "level": "N5",
+    "canonical": "なあ",
+    "definition": "表示感叹或确认的终助词，相当于“吧”、“啊”",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "おい": {
+    "level": "N5",
+    "canonical": "おい",
+    "definition": "用于引起注意或打招呼的感叹词，相当于“喂”",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "ううん": {
+    "level": "N5",
+    "canonical": "ううん",
+    "definition": "表示否定或犹豫的感叹词，相当于“嗯不”",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "おこ": {
+    "level": "N5",
+    "canonical": "おこ",
+    "definition": "可能为“怒る”的口语缩略或昵称，表示生气",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "づくり": {
+    "level": "N4",
+    "canonical": "作り",
+    "definition": "制作，建造，作为名词后缀",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "pos_suffix",
+    "posRequirement": "N"
+  },
+  "ごろ": {
+    "level": "N5",
+    "canonical": "ごろ",
+    "definition": "表示大约时间的后缀，如“3時ごろ”（大约3点）",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "pos_suffix",
+    "posRequirement": "N"
+  },
+  "おかえりなさい": {
+    "level": "N5",
+    "canonical": "おかえりなさい",
+    "definition": "欢迎回家的问候语，相当于“欢迎回来”",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:10:53.024Z",
+    "patternType": "literal"
+  },
+  "おお": {
+    "level": "N5",
+    "canonical": "おお",
+    "definition": "interjection expressing surprise, admiration, or emphasis",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "literal"
+  },
+  "め": {
+    "level": "N5",
+    "canonical": "め",
+    "definition": "suffix indicating ordinal number or turn",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "N"
+  },
+  "そしたら": {
+    "level": "N4",
+    "canonical": "そしたら",
+    "definition": "then, if so, in that case (casual form of そうしたら)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "literal"
+  },
+  "うわ": {
+    "level": "N5",
+    "canonical": "うわ",
+    "definition": "interjection expressing surprise or excitement",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "literal"
+  },
+  "ほら": {
+    "level": "N5",
+    "canonical": "ほら",
+    "definition": "interjection meaning \"look!\" or \"see?\" to draw attention",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "literal"
+  },
+  "つ": {
+    "level": "N5",
+    "canonical": "つ",
+    "definition": "counter for small objects or occurrences",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "N"
+  },
+  "えー": {
+    "level": "N5",
+    "canonical": "えー",
+    "definition": "interjection expressing hesitation, thinking, or filler sound",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "literal"
+  },
+  "・": {
+    "level": "N5",
+    "canonical": "・",
+    "definition": "middle dot used as a separator in lists or compound words",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "literal"
+  },
+  "こ": {
+    "level": "N5",
+    "canonical": "こ",
+    "definition": "prefix or suffix indicating smallness, affection, or this (as in これ)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "pos_suffix",
+    "posRequirement": "N"
+  },
+  "ようこそ": {
+    "level": "N5",
+    "canonical": "ようこそ",
+    "definition": "welcome (greeting)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "literal"
+  },
+  "を通じて": {
+    "level": "N3",
+    "canonical": "を通じて",
+    "definition": "through, via, by means of",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "N"
+  },
+  "り": {
+    "level": "N5",
+    "canonical": "り",
+    "definition": "suffix for adverbs or informal past tense (as in たり)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "のう": {
+    "level": "N5",
+    "canonical": "のう",
+    "definition": "interjection expressing agreement, emphasis, or filler (dialectal or archaic)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "literal"
+  },
+  "えと": {
+    "level": "N5",
+    "canonical": "えと",
+    "definition": "interjection meaning \"um\" or \"well\" as a filler while thinking",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "literal"
+  },
+  "により": {
+    "level": "N3",
+    "canonical": "により",
+    "definition": "by, due to, according to",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:43.540Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "N"
+  },
+  "すぎ": {
+    "level": "N5",
+    "canonical": "すぎ",
+    "definition": "表示程度过度，接在动词ます形或形容词词干后",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:52.556Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "最": {
+    "level": "N3",
+    "canonical": "最",
+    "definition": "表示最高程度，接在名词或形容词前构成复合词",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:52.556Z",
+    "patternType": "pos_suffix",
+    "posRequirement": "N"
+  },
+  "協": {
+    "level": "N3",
+    "canonical": "協",
+    "definition": "表示协作、合作，常用于复合词中",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:11:52.556Z",
+    "patternType": "literal"
+  },
+  "ょうそうすればより": {
+    "level": "N3",
+    "canonical": "ようすればより",
+    "definition": "“如果做…的话，就会更…”，表示条件与比较的组合",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:17:20.074Z",
+    "patternType": "split",
+    "prefix": "ようすれば",
+    "suffix": "より",
+    "posRequirement": null
+  },
+  "ょうそうすれば": {
+    "level": "N3",
+    "canonical": "ょうそうすればより",
+    "definition": "→ ょうそうすればより (“如果做…的话，就会更…”，表示条件与比较的组合)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:17:20.074Z",
+    "compoundPattern": "ょうそうすればより"
+  },
+  "より": {
+    "level": "N3",
+    "canonical": "ょうそうすればより",
+    "definition": "→ ょうそうすればより (“如果做…的话，就会更…”，表示条件与比较的组合)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:17:20.074Z",
+    "compoundPattern": "ょうそうすればより"
+  },
+  "られ": {
+    "level": "N4",
+    "canonical": "られる",
+    "definition": "passive, potential, or respectful auxiliary verb",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:25:19.954Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "れ": {
+    "level": "N4",
+    "canonical": "れる",
+    "definition": "passive, potential, or respectful auxiliary verb (short form)",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:25:19.954Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  },
+  "させ": {
+    "level": "N4",
+    "canonical": "させる",
+    "definition": "causative auxiliary verb",
+    "source": "llm",
+    "createdAt": "2025-12-26T10:25:19.954Z",
+    "patternType": "pos_prefix",
+    "posRequirement": "V"
+  }
+}

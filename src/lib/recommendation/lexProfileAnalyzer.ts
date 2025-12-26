@@ -1076,7 +1076,24 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
             'みよ',    // みる volitional (19 occurrences)
             'おき',    // ておく auxiliary (10 occurrences)
             'れる',    // Passive/potential (10 occurrences)
+            'られる',  // Passive/potential full form
+            'られ',    // Passive/potential stem (52 occurrences)
+            'れ',      // Passive/potential stem (49 occurrences)
+            'せる',    // Causative full form
+            'させる',  // Causative full form
+            'せ',      // Causative stem (43 occurrences)
+            'させ',    // Causative stem (6 occurrences)
+            'れれ',    // Doubled passive/potential stem (tokenization artifact)
+            'せよ',    // Causative imperative form
             'もらえる', // Receiving favor potential (8 occurrences)
+
+            // Honorific prefixes (敬語接頭辞) - should be grammar, not vocabulary
+            'お',      // Honorific prefix (99 occurrences)
+            'ご',      // Honorific prefix for Sino-Japanese words (54 occurrences)
+            '御',      // Kanji form of お/ご
+
+            // Superlative/Comparative prefixes
+            '最',      // Most/Superlative prefix (最も, 最高, etc.)
 
             // Common suffixes
             'たち',    // Plural suffix (32 occurrences)
@@ -1111,6 +1128,16 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
             'ただし',  // However
             'いけ',    // From いける (can do)
 
+            // Auxiliary verb stems and fragments
+            'じ',      // ず (negative) 連用形
+            'ず',      // Negative auxiliary
+            'ぬ',      // Classical negative
+
+            // Honorific/humble expressions (敬語)
+            'ご覧',    // ご覧になる honorific form of 見る
+            'おっしゃ', // おっしゃる honorific form of 言う
+            'いらっしゃ', // いらっしゃる honorific
+
             // Keep only grammar-related items, NOT nouns
             // Nouns like 時半, 談, 官, etc. are now in customDictionary
         ]);
@@ -1136,6 +1163,24 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
             'よう': 'N3', 'らしい': 'N3', 'かも': 'N3',
             'おき': 'N3', 'くらい': 'N3', 'ため': 'N3',
             'いたし': 'N3', 'なんて': 'N3', 'もの': 'N3',
+            'ご覧': 'N3', 'おっしゃ': 'N3', 'いらっしゃ': 'N3',
+
+            // Passive/Causative (N4)
+            'られる': 'N4', 'られ': 'N4', 'れ': 'N4',
+            'せる': 'N4', 'させる': 'N4', 'せ': 'N4', 'させ': 'N4',
+
+            // Classical/formal negative (N3-N2)
+            'じ': 'N2', 'ず': 'N3', 'ぬ': 'N2',
+
+            // Misc common expressions
+            'よいしょ': 'N3',
+            'れれ': 'N4', 'せよ': 'N4',
+
+            // Honorific prefixes (N4-N5 basic, N3 for formal usage)
+            'お': 'N5', 'ご': 'N4', '御': 'N4',
+
+            // Superlative prefix
+            '最': 'N3',
         };
 
         // Function word POS categories
@@ -1154,10 +1199,14 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
             const isFunctionWordPOS = functionWordPOS.some(p => pos.includes(p));
 
             // Step 3: Check if this is a non-independent word (補助動詞, etc.)
-            const isNonIndependent = posDetail.includes('非自立') || posDetail.includes('接尾');
+            // Note: We explicitly EXCLUDE 接尾 (suffix) and 接頭 (prefix) from being non-independent
+            // because they are meaningful word components (e.g., 展, 低, 済み, 付け) that should be 
+            // classified as vocabulary, not grammar fragments. They have their own JLPT levels.
+            const isNonIndependent = posDetail.includes('非自立') && !posDetail.includes('接尾') && !posDetail.includes('接頭');
 
-            // Content words: only independent 名詞/動詞/形容詞/形容動詞/副詞/連体詞
-            const contentWordPOS = ['名詞', '動詞', '形容詞', '形容動詞', '副詞', '連体詞'];
+            // Content words: only independent 名詞/動詞/形容詞/形容動詞/副詞/連体詞/接頭詞
+            // Note: 接頭詞 (prefixes like 低, 多, 近, 当, 少) are vocabulary building blocks
+            const contentWordPOS = ['名詞', '動詞', '形容詞', '形容動詞', '副詞', '連体詞', '接頭詞'];
             const isContentWordPOS = contentWordPOS.some(p => pos.includes(p));
 
             // Check if this word is in customDictionary (override kuromoji's non-independent classification)
