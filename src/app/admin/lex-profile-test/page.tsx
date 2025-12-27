@@ -172,6 +172,35 @@ export default function LexProfileTestPage() {
     const [showFrequencyPatches, setShowFrequencyPatches] = useState(false);
     const [showUnknownList, setShowUnknownList] = useState(false);
 
+    // === Bayesian Vocabulary Prediction State ===
+    interface VocabularyPrediction {
+        word: string;
+        knownProbability: number;
+        confidence: 'high' | 'medium' | 'low';
+        contributingFactors: {
+            levelFactor: number;
+            frequencyFactor: number;
+            evidenceFactor: number;
+        };
+    }
+    interface ArticlePrediction {
+        predictions: VocabularyPrediction[];
+        expectedUnknownCount: number;
+        predictedUnknownRate: number;
+        highConfidenceUnknown: string[];
+        uncertainWords: string[];
+    }
+    interface UserProfileInfo {
+        jlptMastery: Record<'N5' | 'N4' | 'N3' | 'N2' | 'N1', number>;
+        frequencyThreshold: number;
+        evidenceCount: number;
+        estimatedLevel: number;
+    }
+    const [showPrediction, setShowPrediction] = useState(false);
+    const [isPredicting, setIsPredicting] = useState(false);
+    const [predictionResult, setPredictionResult] = useState<ArticlePrediction | null>(null);
+    const [userProfileInfo, setUserProfileInfo] = useState<UserProfileInfo | null>(null);
+
     useEffect(() => {
         loadFrequencyPatches();
     }, []);
@@ -680,6 +709,54 @@ export default function LexProfileTestPage() {
         } catch (error) {
             console.error('Save patch error:', error);
             toast.error('保存补丁失败');
+        }
+    };
+
+    // === Bayesian Vocabulary Prediction Handler ===
+    const handleVocabularyPrediction = async () => {
+        if (!result) return;
+        setIsPredicting(true);
+        setPredictionResult(null);
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                toast.error('请先登录');
+                return;
+            }
+
+            // Prepare tokens for prediction API
+            const tokens = result.details.tokenList.map(t => ({
+                token: t.token,
+                lemma: t.lemma,
+                originalLevel: t.originalLevel,
+                frequencyRank: getFrequencyRank(t.token, t.lemma),
+                isContentWord: t.isContentWord,
+            }));
+
+            toast.info('正在预测词汇认识概率...');
+            const res = await fetch('/api/vocabulary/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({ tokens }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            setPredictionResult(data.prediction);
+            if (data.userProfile) {
+                setUserProfileInfo(data.userProfile);
+            }
+            toast.success(`预测完成：预计 ${(data.prediction.predictedUnknownRate * 100).toFixed(1)}% 生词率`);
+        } catch (error) {
+            console.error('Prediction error:', error);
+            toast.error('预测失败');
+        } finally {
+            setIsPredicting(false);
         }
     };
 
@@ -2097,6 +2174,147 @@ export default function LexProfileTestPage() {
                                             {JSON.stringify(result.lexProfileForDB, null, 2)}
                                         </code>
                                     </div>
+                                </div>
+
+                                {/* 🔮 贝叶斯词汇预测 */}
+                                <div className="bg-white p-6 rounded-lg shadow border-l-4 border-indigo-400">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                                            <span className="text-xl">🔮</span>
+                                            贝叶斯词汇预测
+                                        </h3>
+                                        <button
+                                            onClick={handleVocabularyPrediction}
+                                            disabled={isPredicting}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-all ${isPredicting
+                                                ? 'bg-indigo-400 cursor-not-allowed'
+                                                : 'bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow'
+                                                }`}
+                                        >
+                                            {isPredicting ? '预测中...' : '🧠 运行预测'}
+                                        </button>
+                                    </div>
+
+                                    {predictionResult && (
+                                        <div className="space-y-4">
+                                            {/* 预测摘要 */}
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg border border-indigo-100">
+                                                    <div className="text-2xl font-bold text-indigo-600">
+                                                        {(predictionResult.predictedUnknownRate * 100).toFixed(1)}%
+                                                    </div>
+                                                    <div className="text-xs text-gray-600">预测生词率</div>
+                                                </div>
+                                                <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-lg border border-orange-100">
+                                                    <div className="text-2xl font-bold text-orange-600">
+                                                        {predictionResult.expectedUnknownCount.toFixed(1)}
+                                                    </div>
+                                                    <div className="text-xs text-gray-600">预计生词数</div>
+                                                </div>
+                                                <div className="bg-gradient-to-br from-red-50 to-rose-50 p-4 rounded-lg border border-rose-100">
+                                                    <div className="text-2xl font-bold text-rose-600">
+                                                        {predictionResult.highConfidenceUnknown.length}
+                                                    </div>
+                                                    <div className="text-xs text-gray-600">高置信度生词</div>
+                                                </div>
+                                                <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-4 rounded-lg border border-slate-100">
+                                                    <div className="text-2xl font-bold text-slate-600">
+                                                        {predictionResult.uncertainWords.length}
+                                                    </div>
+                                                    <div className="text-xs text-gray-600">不确定词汇</div>
+                                                </div>
+                                            </div>
+
+                                            {/* 认识概率分布 */}
+                                            <div className="bg-gray-50 p-4 rounded-lg">
+                                                <h4 className="font-medium mb-3 text-sm">词汇认识概率分布</h4>
+                                                <div className="flex flex-wrap gap-1.5 max-h-40 overflow-auto">
+                                                    {predictionResult.predictions
+                                                        .sort((a, b) => a.knownProbability - b.knownProbability)
+                                                        .map((p, idx) => {
+                                                            // Color gradient from red (unknown) to green (known)
+                                                            const prob = p.knownProbability;
+                                                            const bgColor = prob < 0.3
+                                                                ? 'bg-red-100 text-red-800 border-red-200'
+                                                                : prob < 0.5
+                                                                    ? 'bg-orange-100 text-orange-800 border-orange-200'
+                                                                    : prob < 0.7
+                                                                        ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                                                        : prob < 0.85
+                                                                            ? 'bg-lime-100 text-lime-800 border-lime-200'
+                                                                            : 'bg-green-100 text-green-800 border-green-200';
+                                                            return (
+                                                                <span
+                                                                    key={idx}
+                                                                    className={`px-2 py-1 rounded text-xs border ${bgColor} cursor-help transition-transform hover:scale-105`}
+                                                                    title={`认识概率: ${(prob * 100).toFixed(0)}% | 置信度: ${p.confidence}`}
+                                                                >
+                                                                    {p.word}
+                                                                    <span className="ml-1 opacity-60">{(prob * 100).toFixed(0)}%</span>
+                                                                </span>
+                                                            );
+                                                        })}
+                                                </div>
+                                            </div>
+
+                                            {/* 高置信度生词 */}
+                                            {predictionResult.highConfidenceUnknown.length > 0 && (
+                                                <div className="bg-rose-50 p-4 rounded-lg border border-rose-100">
+                                                    <h4 className="font-medium mb-2 text-sm text-rose-700">
+                                                        ⚠️ 高度可能不认识的词 ({predictionResult.highConfidenceUnknown.length})
+                                                    </h4>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {predictionResult.highConfidenceUnknown.map((word, idx) => (
+                                                            <span key={idx} className="px-2 py-1 bg-rose-100 text-rose-700 rounded text-sm font-medium">
+                                                                {word}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* 用户JLPT掌握度 */}
+                                            {userProfileInfo && (
+                                                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-4 rounded-lg border border-purple-100">
+                                                    <h4 className="font-medium mb-3 text-sm text-purple-700 flex items-center gap-2">
+                                                        📊 你的JLPT掌握度
+                                                        <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full">
+                                                            证据: {userProfileInfo.evidenceCount}词
+                                                        </span>
+                                                    </h4>
+                                                    <div className="grid grid-cols-5 gap-2">
+                                                        {(['N5', 'N4', 'N3', 'N2', 'N1'] as const).map(level => {
+                                                            const mastery = userProfileInfo.jlptMastery[level] || 0;
+                                                            const percent = Math.round(mastery * 100);
+                                                            const colorClass = percent >= 80 ? 'bg-green-500' : percent >= 60 ? 'bg-lime-500' : percent >= 40 ? 'bg-yellow-500' : percent >= 20 ? 'bg-orange-500' : 'bg-red-500';
+                                                            return (
+                                                                <div key={level} className="text-center">
+                                                                    <div className="text-sm font-bold text-gray-700">{level}</div>
+                                                                    <div className="h-16 bg-gray-200 rounded-full relative overflow-hidden mt-1 w-6 mx-auto">
+                                                                        <div
+                                                                            className={`absolute bottom-0 left-0 right-0 ${colorClass} transition-all`}
+                                                                            style={{ height: `${percent}%` }}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="text-xs font-medium mt-1">{percent}%</div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <div className="mt-3 text-center text-sm text-purple-600 font-medium">
+                                                        推断能力: Lv.{userProfileInfo.estimatedLevel.toFixed(1)}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {!predictionResult && !isPredicting && (
+                                        <div className="text-center py-6 text-gray-400">
+                                            <div className="text-4xl mb-2">🔮</div>
+                                            <p className="text-sm">点击"运行预测"查看贝叶斯词汇认识概率</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* 分词详情 */}

@@ -7,6 +7,7 @@
  */
 
 import { BroadCEFR } from './difficulty';
+import { getFrequencyRank } from '@/lib/nlp/wordFrequency';
 
 // Japanese tokenizer options
 export type JaTokenizer = 'kuromoji' | 'tinysegmenter' | 'budoux';
@@ -182,6 +183,9 @@ export interface TokenInfo {
     compoundGrammar?: string; // If part of a compound grammar pattern, the pattern name
     isGrammarRoot?: boolean;  // For split patterns: true if this token is the grammar root (prefix/suffix)
     isSplitMiddle?: boolean;  // For split patterns: true if this token is the middle content (not grammar)
+    // Bayesian prediction fields
+    frequencyRank?: number;   // Frequency rank (1-based), -1 if not found
+    knownProbability?: number; // Predicted probability user knows this word (0-1)
 }
 
 export interface LexProfileResult {
@@ -1311,6 +1315,7 @@ async function tokenizeJapaneseAsync(text: string, dict: Map<string, string>): P
                 originalLevel: levelLabel,
                 broadCEFR,
                 isContentWord,
+                frequencyRank: isContentWord ? getFrequencyRank(surface, basicForm) : undefined,
             };
         }).filter(t => t.token && !t.token.match(/^[\s\u3000]+$/));
     } catch (err) {
