@@ -239,6 +239,89 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // 1.5. Record vocabulary knowledge for Bayesian prediction
+      // Track all content words: marked as unknown vs seen but not marked
+      try {
+        // Fetch article text to get all tokens
+        const { data: itemData } = await supabase
+          .from('shadowing_items')
+          .select('text, lang')
+          .eq('id', item_id_db)
+          .single();
+
+        if (itemData?.text && itemData?.lang === 'ja') {
+          const { analyzeLexProfileAsync } = await import('@/lib/recommendation/lexProfileAnalyzer');
+          const { getFrequencyRank } = await import('@/lib/nlp/wordFrequency');
+
+          const result = await analyzeLexProfileAsync(itemData.text, 'ja');
+          const contentTokens = result.details.tokenList.filter(t => t.isContentWord);
+
+          // Build set of marked unknown words
+          const markedUnknownSet = new Set(
+            selected_words.map((w: Record<string, any>) => w.text)
+          );
+
+          const now = new Date().toISOString();
+
+          // Process each content word
+          for (const token of contentTokens) {
+            const word = token.token;
+            const isMarkedUnknown = markedUnknownSet.has(word);
+
+            // Check if record exists
+            const { data: existing } = await supabase
+              .from('user_vocabulary_knowledge')
+              .select('id, exposure_count, not_marked_count, marked_unknown')
+              .eq('user_id', user.id)
+              .eq('word', word)
+              .single();
+
+            if (existing) {
+              // Update existing record
+              const updates: Record<string, unknown> = {
+                exposure_count: (existing.exposure_count || 0) + 1,
+                last_seen_at: now,
+              };
+
+              if (isMarkedUnknown) {
+                updates.marked_unknown = true;
+                updates.marked_at = now;
+              } else if (!existing.marked_unknown) {
+                // Seen but not marked → weak positive evidence
+                updates.not_marked_count = (existing.not_marked_count || 0) + 1;
+              }
+
+              await supabase
+                .from('user_vocabulary_knowledge')
+                .update(updates)
+                .eq('id', existing.id);
+            } else {
+              // Insert new record
+              await supabase
+                .from('user_vocabulary_knowledge')
+                .insert({
+                  user_id: user.id,
+                  word,
+                  lemma: token.lemma || word,
+                  jlpt_level: token.originalLevel?.match(/N[1-5]/)?.[0] || null,
+                  frequency_rank: getFrequencyRank(word, token.lemma) || null,
+                  marked_unknown: isMarkedUnknown,
+                  marked_at: isMarkedUnknown ? now : null,
+                  exposure_count: 1,
+                  not_marked_count: isMarkedUnknown ? 0 : 1,
+                  first_seen_at: now,
+                  last_seen_at: now,
+                });
+            }
+          }
+
+          console.log(`[VocabKnowledge] Recorded ${contentTokens.length} tokens, ${markedUnknownSet.size} marked unknown`);
+        }
+      } catch (vocabKnowledgeError) {
+        console.error('Error recording vocabulary knowledge:', vocabKnowledgeError);
+        // Don't fail the session save if this fails
+      }
+
       // 2. Update User Ability & Vocab Profile (Difficulty System)
       try {
         // Fetch User Profile & Item Metadata

@@ -1,0 +1,4398 @@
+[
+  {
+    "pattern": "あっての",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "あっての",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "いかんだ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "いかんだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "いかんでは",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "いかんでは",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "いかんによっては",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "いかんによっては",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "いかんに関わらず",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "いかんにかかわらず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "いかんによらず",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "いかんによらず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "いかんを問わず",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "いかんをとわず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かたがた",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "かたがた",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かたわら",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "かたわら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "がてら",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "がてら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かと思いきや",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "かとおもいきや",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "が早いか",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "がはやいか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "からある",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "からある",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "からする",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "からする",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "からの",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "からの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かれ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "かれ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "きっての",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "きっての",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "きらいがある",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "きらいがある",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "極まる",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "きわまる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "極まりない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "きわまりない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ごとき",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ごとき",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ごとく",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ごとく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ごとし",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ごとし",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "こととて",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "こととて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "始末だ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "しまつだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ずくめ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ずくめ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ずにはおかない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ずにはおかない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないではおかない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないではおかない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ずにはすまない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ずにはすまない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないではすまない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないではすまない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "術がない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "すべがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "すら",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "すら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "そばから",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "そばから",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ただ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ただ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "のみ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "のみ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たためしがない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たためしがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たためしがある",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たためしがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たところで",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たところで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "だに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "だに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "だの",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "だの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "た弾みに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たはずみに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "た拍子に",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たひょうしに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "た分だけ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たぶんだけ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たまでだ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たまでだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たまでのことだ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たまでのことだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たら最後",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たらさいご",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たが最後",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たがさいご",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たら",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たで",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たりとも",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たりとも",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たるもの",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たるもの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "尽くす",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "つくす",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "つ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "つ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "であれ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "であれ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てからというもの",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "てからというもの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ではあるまいし",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ではあるまいし",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "でもあるまいし",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "でもあるまいし",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てまえ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "てまえ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てやまない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "てやまない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てやむ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "てやまない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "と相まって",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "とあいまって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とあれば",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "とあれば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "といい",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "といい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "といえども",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "といえども",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "というもの",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "というもの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ときたら",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ときたら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ところを",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ところを",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とはいえ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "とはいえ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ともあろう",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ともあろう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ともなく",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ともなく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ともなしに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ともなしに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ともなると",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ともなると",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ともなれば",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ともなれば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ながら",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "ながら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なくしては",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "なくしては",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なくもない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "なくもない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なくもある",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "なくもない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なしに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "なしに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なしで",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "なしで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ならでは",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ならでは",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないまでも",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないまでも",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なり",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "なり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なり",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "なり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なりとも",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "なりとも",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なりに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "なりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にあって",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にあって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に至る",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にいたる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に至るまで",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にいたるまで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に言わせれば",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にいわせれば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にかかっては",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかかっては",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にかかったら",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかかったら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にかかると",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかかると",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にかかれば",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかかれば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に関わる",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかかわる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に限ったことではない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかぎったことではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にかこつけて",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかこつけて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に難くない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかたくない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にかまけて",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかまけて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にして",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に忍びない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にしのびない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に即して",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にそくして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に則して",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にそくして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に堪える",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にたえる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に堪えない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にたえない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に足る",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にたる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にとどまらず",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にとどまらず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に則って",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にのっとって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "には当たらない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にはあたらない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "には当たる",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にはあたらない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "には及ばない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にはおよばない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "には及ぶ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にはおよばない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "には無理がある",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にはむりがある",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にひきかえ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にひきかえ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にもほどがある",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にもほどがある",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にもまして",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "にもまして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "に",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を重ねて",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をかさねて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ねばならない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ねばならない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ねばなる",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ねばならない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "の至り",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "のいたり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "の極み",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "のきわみ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "のやら",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "のやら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "はおろか",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "はおろか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ばそれまでだ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ばそれまでだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たらそれまでだ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "たらそれまでだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "びる",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "びる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "べからず",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "べからず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "べく",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "べく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ほどのことではない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ほどのことではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ほどのことではある",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ほどのことではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "まじき",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "まじき",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "までだ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "までだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "までのことだ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "までのことだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "までもない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "までもない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "までもなく",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "までもなく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "まみれ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "まみれ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "めく",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "めく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "もさることながら",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "もさることながら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "もそこそこに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "もそこそこに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "も同然だ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "もどうぜんだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ものを",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ものを",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "や否や",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "やいなや",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ゆえに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ゆえに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "よう",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "よう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようによっては",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようによっては",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようが",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようが",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようと",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようと",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようにも",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようにも",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "より",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "より",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "わ",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "わ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "わで",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "わで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "をおいて",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をおいて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を押して",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をおして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を押し切って",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をおしきって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を顧みず",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をかえりみず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "も顧みず",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "もかえりみず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を限りに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をかぎりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を兼ねて",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をかねて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を皮切りに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をかわきりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を皮切りとして",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をかわきりとして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を禁じ得ない",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をきんじえない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を境に",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をさかいに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "をもって",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をもって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "をものともせず",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をものともせず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を踏まえて",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をふまえて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を経て",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をへて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を余儀なくされる",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をよぎなくされる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "をよそに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "をよそに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "んがために",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "んがために",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "んばかりに",
+    "level": "N1",
+    "definition": "nihongo kyoushi link",
+    "reading": "んばかりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "あげく",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "あげく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "あまり",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "あまり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "あまり",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "あまり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "あまりの",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "あまりの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "以上は",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "いじょうは",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "一方で",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "いっぽうで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "以来",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "いらい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "上で",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "うえで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "上で",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "うえで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "上は",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "うえは",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "得る",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "うる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "得ない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "えない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "折に",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "おりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かいがあって",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "かいがあって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かいもなく",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "かいもなく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "限り",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "かぎり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "限り",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "かぎり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "がたい",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "がたい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かと思うと",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "かとおもうと",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かと思ったら",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "かとおもったら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "か",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "か",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないかのうちに",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないかのうちに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かねない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "かねない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かねる",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "かねる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かのようだ",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "かのようだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かのように",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "かのように",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "からいうと",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "からいうと",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "からいって",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "からいって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "からいえば",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "からいえば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "からして",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "からして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "からすると",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "からすると",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "からといって",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "からといって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "気味",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ぎみ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "きり",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "きり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "くせに",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "くせに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "くせして",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "くせして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "くらいなら",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "くらいなら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "げ",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "げ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことだ",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことだし",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことだし",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことなく",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことなく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことだろう",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことだろう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことか",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことになると",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことになると",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "こととなると",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "こととなると",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことに",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ざるを得ない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ざるをえない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "次第",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "しだい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "次第だ",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "しだいだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "次第で",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "しだいで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "末に",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "すえに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "末の",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "すえの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ずじまい",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ずじまい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ずにはいられない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ずにはいられない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ずにはいる",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ずにはいられない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないではいられない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないではいられない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないではいる",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないではいられない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "っぽい",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "っぽい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "そうにない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "そうにない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "だけあって",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "だけあって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "だけのことはあって",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "だけのことはあって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "だけに",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "だけに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "だけまし",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "だけまし",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たて",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "たて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たものではない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "たものではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たものではある",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "たものではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "っこない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "っこない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "つつ",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "つつ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "つつある",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "つつある",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てこのかた",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "てこのかた",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てでも",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "てでも",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てならない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "てならない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てなる",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "てならない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てはいられない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "てはいられない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てはいる",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "てはいられない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てはならない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "てはならない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てはなる",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "てはならない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てまで",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "てまで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "までして",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "までして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てみせる",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "てみせる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "というものではない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "というものではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "というものではある",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "というものではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "といった",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "といった",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "といったら",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "といったら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とかで",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "とかで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "どころか",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "どころか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ところだった",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ところだった",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "どころではない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "どころではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "どころではある",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "どころではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "として",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "として",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とともに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "とともに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とともに",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "とともに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "となると",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "となると",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "となれば",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "となれば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "となったら",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "となったら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とは",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "とは",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に越したことはない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にこしたことはない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に越したことはある",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にこしたことはない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に応えて",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にこたえて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に際して",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にさいして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に限って",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかぎって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に相違ない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にそういない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にて",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "のみならず",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "のみならず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ぱなし",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ぱなし",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ぶる",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ぶる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないことには",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないことには",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないことはない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないことはない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないことはある",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないことはない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないこともない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないこともない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないこともある",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないこともない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないで済む",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないですむ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ずに済む",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ずにすむ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないでもない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないでもない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないでもある",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないでもない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないものでもない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないものでもない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないものでもある",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないものでもない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないとも限らない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないともかぎらない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないとも限る",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないともかぎらない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なんて",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "なんて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にあたり",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にあたり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にあたって",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にあたって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に応じて",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "におうじて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に限らず",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかぎらず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に限り",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかぎり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に加えて",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にくわえて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に先立って",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にさきだって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に先立ち",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にさきだち",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にしたら",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にしたら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にすれば",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にすれば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にしてみたら",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にしてみたら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にしては",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にしては",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にすぎない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にすぎない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に沿って",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にそって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "につき",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "につき",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "につけて",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "につけて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にともなって",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にともなって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にほかならない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にほかならない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にほかなる",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にほかならない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にも関わらず",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にもかかわらず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に基づいて",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "にもとづいて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ぬ",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ぬ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ぬきにして",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ぬきにして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ぬきで",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ぬきで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ぬく",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ぬく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "の上では",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "のうえでは",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "上の",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "じょうの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "のことだから",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "のことだから",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "のもとで",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "のもとで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ばかりか",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ばかりか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ばかりだ",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ばかりだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ばかりに",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ばかりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "はさておき",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "はさておき",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "はともかくとして",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "はともかくとして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "はまだしも",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "はまだしも",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ならまだしも",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ならまだしも",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "はもとより",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "はもとより",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "反面",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "はんめん",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "まい",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "まい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ままに",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ままに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "もかまわず",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "もかまわず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "もしない",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "もしない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "もする",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "もしない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ものか",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ものか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ものですか",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ものですか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ものがある",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ものがある",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ものだ",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ものだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ものだ",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ものだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ものだから",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ものだから",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ものなら",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ものなら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ものの",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ものの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "もん",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "もん",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "んだもん",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "んだもん",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "やら",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "やら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようとしている",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようとしている",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようとする",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようとしている",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようものなら",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようものなら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を契機に",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をけいきに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を契機として",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をけいきとして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を頼りに",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をたよりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を頼りとして",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をたよりとして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を問わず",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をとわず",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を除いて",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をのぞいて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を除き",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をのぞき",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を除けば",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をのぞけば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "をはじめ",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をはじめ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "をめぐって",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をめぐって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "をもとに",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "をもとに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "んだから",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "んだから",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "のだから",
+    "level": "N2",
+    "definition": "nihongo kyoushi link",
+    "reading": "のだから",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "合う",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "あう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "いくら",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "いくら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "どんなに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "どんなに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "一方だ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "いっぽうだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "上に",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "うえに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "うちに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "うちに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "おかげで",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "おかげで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "おきに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "おきに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "おそれがある",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "おそれがある",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "お",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "お",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "がきっかけで",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "がきっかけで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かける",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "かける",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かけの",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "かけの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "がち",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "がち",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かな",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "かな",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かなあ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "かなあ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "から",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "から",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にかけて",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかけて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "からには",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "からには",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かわりに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "かわりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かわりに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "かわりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "きる",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "きる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "くらい",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "くらい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "結果",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "けっか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "こそ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "こそ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "こと",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "こと",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ごとに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ごとに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことから",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことから",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことになっている",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことになっている",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことはない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことはない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことはある",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことはない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "込む",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ごむ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "最中に",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "さいちゅうに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "際に",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "さいに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "際の",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "さいの",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "さえ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "さえ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "しかない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "しかない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ほかない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ほかない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "じゃない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "じゃない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ずに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ずに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "せいで",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "せいで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たがる",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "たがる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "だけ",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "だけ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "だけでなく",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "だけでなく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たとえ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "たとえ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ても",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ても",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たところ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "たところ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たびに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "たびに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ために",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ために",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たものだ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "たものだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "だらけ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "だらけ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "だろう",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "だろう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なんて",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "なんて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "つい",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "つい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てしまう",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "てしまう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ついでに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ついでに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "っけ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "っけ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "つもりだ",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "つもりだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ている",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ている",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ている場合じゃない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ているばあいじゃない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てからでないと",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てからでないと",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てしかたがない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てしかたがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てしょうがない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てしょうがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "て済む",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てすむ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てたまらない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てたまらない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てはいけないから",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てはいけないから",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "といけないから",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "といけないから",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てはじめて",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てはじめて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ても構わない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てもかまわない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てもしかたがない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てもしかたがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てもしょうがない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てもしょうがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ても始まらない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "てもはじまらない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "といえば",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "といえば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ということだ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ということだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "というよりも",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "というよりも",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "といっても",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "といっても",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "通す",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "とおす",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とおりに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "とおりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とか",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "とか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "としたら",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "としたら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "としても",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "としても",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とたん",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "とたん",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "途中で",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "とちゅうで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "途中に",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "とちゅうに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "としたって",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "としたって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とのことだ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "とのことだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とは限らない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "とはかぎらない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とみえる",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "とみえる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なあ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "なあ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "直す",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "なおす",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "など",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "など",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なんか",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "なんか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "において",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "において",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "における",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "における",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に限る",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかぎる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にかけては",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかけては",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に代わって",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかわって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に関して",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかんして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に決まっている",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にきまっている",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に比べて",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にくらべて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にしたがって",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にしたがって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にしても",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にしても",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に対して",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にたいして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に違いない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にちがいない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "について",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "について",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "につれて",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "につれて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にとって",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にとって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "には",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "には",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に反して",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にはんして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に反する",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にはんする",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "によって",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "によって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "によって",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "によって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "によって",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "によって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "によっては",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "によっては",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "によると",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "によると",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にわたって",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "にわたって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "のでしょうか",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "のでしょうか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "んでしょうか",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "んでしょうか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "は",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "は",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "は",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "は",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "場合",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ばあい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ばかりなく",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ばかりなく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "はずがない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "はずがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ば",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ば",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ば",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "のに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "のに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "のに",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "のに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "は別として",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "はべつとして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "はもちろん",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "はもちろん",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ぶり",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ぶり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ふりをする",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ふりをする",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "べきだ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "べきだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "べきではない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "べきではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "べきだった",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "べきだった",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "べきではなかった",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "べきではなかった",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ほど",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ほど",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ほど",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ほど",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ほど",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ほど",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ほど",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ほど",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "はない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "はない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "まるで",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "まるで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようだ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "まるで",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "まるで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "みたいだ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "みたいだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "向けに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "むけに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "も",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "も",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようがない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようがある",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようとする",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようとする",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "連用中止",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "れんようちゅうし",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "わけがない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "わけがない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "わけだ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "わけだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "というわけだ",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "というわけだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "わけではない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "わけではない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "わけじゃない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "わけじゃない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "わけにはいかない",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "わけにはいかない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "わけにはいく",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "わけにはいかない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "わりに",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "わりに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を込めて",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "をこめて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を中心に",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "をちゅうしんに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を通して",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "をとおして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を通じて",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "をつうじて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を通して",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "をとおして",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "を通じて",
+    "level": "N3",
+    "definition": "nihongo kyoushi link",
+    "reading": "をつうじて",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "間",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "あいだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "間に",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "あいだに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "終わる",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "おわる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "がする",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "がする",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かどうか",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "かどうか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "かもしれない",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "かもしれない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことがある",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことがある",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことにする",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことにする",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ことになる",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ことになる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "させてください",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "させてください",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "しか",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "しか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "し",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "し",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "すぎる",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "すぎる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "する",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "する",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "そうです",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "そうです",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "出す",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "だす",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たばかり",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "たばかり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たらいいですか",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "たらいいですか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たらどうですか",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "たらどうですか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "続ける",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "つづける",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "って",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "って",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "て",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "て",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てある",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "てある",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ていく",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ていく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ておく",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ておく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ていただけませんか",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ていただけませんか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てくる",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "てくる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "でしょう",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "でしょう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てみる",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "てみる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "と",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "と",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ところだ",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ところだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "という",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "という",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なかなか",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "なかなか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なさい",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "なさい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なら",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "なら",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にくい",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "にくい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にする",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "にする",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ので",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ので",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "のは",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "のは",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "が",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "が",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ばかり",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ばかり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "はずだ",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "はずだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "始める",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "はじめる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "必要がある",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ひつようがある",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ほうがいい",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ほうがいい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "まだ",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "まだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ていない",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ていない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "までに",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "までに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "まま",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "まま",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "みたいだ",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "みたいだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "みたいな",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "みたいな",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "みたいに",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "みたいに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "やすい",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "やすい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようだ",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようと思う",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようとおもう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようと思っている",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようとおもっている",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ような",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ような",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ように",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ように",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようにしている",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようにしている",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようにする",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようにする",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ようになる",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "ようになる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "予定だ",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "よていだ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "らしい",
+    "level": "N4",
+    "definition": "nihongo kyoushi link",
+    "reading": "らしい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "あとで",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "あとで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "がいちばん",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "がいちばん",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "方",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "かた",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "が欲しい",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "がほしい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ぜひ",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "ぜひ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "で",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "で",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てから",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "てから",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てはいけない",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "てはいけない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てはいく",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "てはいけない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "てもいいですか",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "てもいいですか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "どうやって",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "どうやって",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "と思う",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "とおもう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とても",
+    "level": "Unknown",
+    "definition": "nihongo kyoushi link",
+    "reading": "とても",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "どんな",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "どんな",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たい",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "たい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "たり",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "たりたり",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "とき",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "とき",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないで",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないで",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ないでください",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "ないでください",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なくてもいい",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "なくてもいい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なければならない",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "なければならない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なければなる",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "なければならない",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "なる",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "なる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "に行く",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "にいく",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "来る",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "くる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "帰る",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "かえる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "はどうですか",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "はどうですか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "前に",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "まえに",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ましょう",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "ましょう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ましょうか",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "ましょうか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "ませんか",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "ませんか",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "もう",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "もう",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "をください",
+    "level": "N5",
+    "definition": "nihongo kyoushi link",
+    "reading": "をください",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "すぎです",
+    "level": "Unknown",
+    "definition": "nihongo kyoushi link",
+    "reading": "すぎです",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "でも",
+    "level": "Unknown",
+    "definition": "nihongo kyoushi link",
+    "reading": "でも",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "づらい",
+    "level": "Unknown",
+    "definition": "nihongo kyoushi link",
+    "reading": "づらい",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "並み",
+    "level": "Unknown",
+    "definition": "nihongo kyoushi link",
+    "reading": "なみ",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "にかけても",
+    "level": "Unknown",
+    "definition": "nihongo kyoushi link",
+    "reading": "にかけても",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "まくる",
+    "level": "Unknown",
+    "definition": "nihongo kyoushi link",
+    "reading": "まくる",
+    "source": "NihongoNet"
+  },
+  {
+    "pattern": "やつ",
+    "level": "Unknown",
+    "definition": "nihongo kyoushi link",
+    "reading": "やつ",
+    "source": "NihongoNet"
+  }
+]

@@ -1,0 +1,7576 @@
+[
+  {
+    "pattern": "間",
+    "level": "Unknown",
+    "definition": "throughout (the time…)",
+    "reading": "あいだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "間に",
+    "level": "Unknown",
+    "definition": "during; when",
+    "reading": "あいだに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "相まって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "あいまって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "挙句",
+    "level": "Unknown",
+    "definition": "いろいろ～した後で、とうとう最後に after much…ended up…",
+    "reading": "あげく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "上げる",
+    "level": "Unknown",
+    "definition": "give",
+    "reading": "あげる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "当って",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "あたって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "当たらない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "あたらない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "あって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "あって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "あっての",
+    "level": "Unknown",
+    "definition": "～があるから成り立つ comprised of; indispensable to",
+    "reading": "あっての",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "後",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "あと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "後で",
+    "level": "Unknown",
+    "definition": "after",
+    "reading": "あとで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "あまり",
+    "level": "Unknown",
+    "definition": "～すぎるので、～すぎるために so… that",
+    "reading": "あまり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "あまりの",
+    "level": "Unknown",
+    "definition": "～すぎるので so… that",
+    "reading": "あまりの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "いかんだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いかんだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "いかんで",
+    "level": "Unknown",
+    "definition": "～に対応して in accordance with; is contingent on",
+    "reading": "いかんで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "いかんでは",
+    "level": "Unknown",
+    "definition": "ある～の場合は in case of",
+    "reading": "いかんでは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "いかんに関わらず",
+    "level": "Unknown",
+    "definition": "～がどうであっても、それに関係なく doesn't matter whether",
+    "reading": "いかんにかかわらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "いかんに因って",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いかんによって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "いかんに依って",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いかんによって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "いかんに因っては",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いかんによっては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "いかんに因らず",
+    "level": "Unknown",
+    "definition": "～がどうであっても、それに関係なく doesn't depend on whether",
+    "reading": "いかんによらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "いざ知らず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いざしらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "以上",
+    "level": "Unknown",
+    "definition": "～のだから so long as",
+    "reading": "いじょう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "頂く",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いただく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "至って",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いたって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "至っては",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いたっては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "至り",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いたり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "至る",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いたる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "至るまで",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いたるまで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "いちばん",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いちばん",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "一方",
+    "level": "Unknown",
+    "definition": "それから、また on the one hand",
+    "reading": "いっぽう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "一方だ",
+    "level": "Unknown",
+    "definition": "ますます～していく will just continue",
+    "reading": "いっぽうだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "否や",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いなや",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "以来",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "いらい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "上",
+    "level": "Unknown",
+    "definition": "～。それに on top of that",
+    "reading": "うえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "上で",
+    "level": "Unknown",
+    "definition": "まず～してから after having",
+    "reading": "うえで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "上で",
+    "level": "Unknown",
+    "definition": "～のに for, in order to",
+    "reading": "うえで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "上で",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "うえで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "上は",
+    "level": "Unknown",
+    "definition": "～のだから since things have reached such a pass",
+    "reading": "うえは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "うちに",
+    "level": "Unknown",
+    "definition": "～している間に before you know it",
+    "reading": "うちに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "うちに",
+    "level": "Unknown",
+    "definition": "ある状況になる前に while",
+    "reading": "うちに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "得る",
+    "level": "Unknown",
+    "definition": "できる／～の可能性がある can",
+    "reading": "うる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "得ない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "えない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "得る",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "える",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "お",
+    "level": "Unknown",
+    "definition": "polite nominal and adjectival prefixes",
+    "reading": "お",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "お",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "お",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "おいて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "おいて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "おいて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "おいて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "応じて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "おうじて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "応ずる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "おうずる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "おかげか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "おかげか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "おかげで",
+    "level": "Unknown",
+    "definition": "～の助けがあったので thanks to",
+    "reading": "おかげで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "お",
+    "level": "Unknown",
+    "definition": "please…",
+    "reading": "お",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "於ける",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "おける",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "お",
+    "level": "Unknown",
+    "definition": "the speaker humbly (does verb)",
+    "reading": "お",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "恐れがある",
+    "level": "Unknown",
+    "definition": "～という心配がある there is fear that",
+    "reading": "おそれがある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "お",
+    "level": "Unknown",
+    "definition": "the honorable listener does (verb)",
+    "reading": "お",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "お",
+    "level": "Unknown",
+    "definition": "someone does (verb) honorifically",
+    "reading": "お",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "折",
+    "level": "Unknown",
+    "definition": "～機会に whenever there is an occasion",
+    "reading": "おり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "折に",
+    "level": "Unknown",
+    "definition": "～機会に whenever there is an occasion",
+    "reading": "おりに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "おろか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "おろか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "終わる",
+    "level": "Unknown",
+    "definition": "finished",
+    "reading": "おわる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "が",
+    "level": "Unknown",
+    "definition": "but",
+    "reading": "が",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "が",
+    "level": "Unknown",
+    "definition": "excuse me; I'm sorry, but",
+    "reading": "が",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "がい",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "がい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "甲斐があって",
+    "level": "Unknown",
+    "definition": "効果があって effort of…paid off",
+    "reading": "かいがあって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "がいちばん",
+    "level": "Unknown",
+    "definition": "best",
+    "reading": "がいちばん",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かいもなく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かいもなく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かかわらず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かかわらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かかわりなく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かかわりなく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "関わる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かかわる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "限って",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かぎって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "限らず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かぎらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "限り",
+    "level": "Unknown",
+    "definition": "～の状態が続く間は (range of conditions) so long as",
+    "reading": "かぎり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "限り",
+    "level": "Unknown",
+    "definition": "～の限界ぎりぎりまで as much as possible",
+    "reading": "かぎり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "限り",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かぎり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "限り",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かぎり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "限りだ",
+    "level": "Unknown",
+    "definition": "最高に～だと感じる absolutely; extremely",
+    "reading": "かぎりだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "限りでは",
+    "level": "Unknown",
+    "definition": "～の範囲のことに限れば as far as can be deduced from…",
+    "reading": "かぎりでは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "限りに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かぎりに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "限る",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かぎる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かけだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かけだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かけては",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かけては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かける",
+    "level": "Unknown",
+    "definition": "途中まで～して、～し終わらない partially; in the process of",
+    "reading": "かける",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "が最後",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "がさいご",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "がする",
+    "level": "Unknown",
+    "definition": "feel; hear; smell; taste",
+    "reading": "がする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "難い",
+    "level": "Unknown",
+    "definition": "～するのは難しい difficult to",
+    "reading": "がたい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かたがた",
+    "level": "Unknown",
+    "definition": "～も同時にするつもりで by way of; while happening to…; also",
+    "reading": "かたがた",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "難くない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かたくない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "が",
+    "level": "Unknown",
+    "definition": "特別の～だから on account of",
+    "reading": "が",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "傍ら",
+    "level": "Unknown",
+    "definition": "～一方で、別に as a sideline; besides",
+    "reading": "かたわら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "がち",
+    "level": "Unknown",
+    "definition": "よく～になる／～の状態になることが多い liable to; prone to",
+    "reading": "がち",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "がてら",
+    "level": "Unknown",
+    "definition": "～を兼ねて take the opportunity to; on the same occasion",
+    "reading": "がてら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と思うと",
+    "level": "Unknown",
+    "definition": "～すると、すぐに no sooner than",
+    "reading": "とおもうと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かと思うと",
+    "level": "Unknown",
+    "definition": "～すると、すぐに no sooner than",
+    "reading": "かとおもうと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かと思うほど",
+    "level": "Unknown",
+    "definition": "まるで～かのように so…that",
+    "reading": "かとおもうほど",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と思ったら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とおもったら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "か",
+    "level": "Unknown",
+    "definition": "～すると、同時に just barely…when",
+    "reading": "か",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないかのうちに",
+    "level": "Unknown",
+    "definition": "～すると、同時に just barely…when",
+    "reading": "ないかのうちに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "兼ねない",
+    "level": "Unknown",
+    "definition": "～かもしれない could",
+    "reading": "かねない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "兼ねる",
+    "level": "Unknown",
+    "definition": "～できない cannot deal with",
+    "reading": "かねる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かのようだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かのようだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かのように",
+    "level": "Unknown",
+    "definition": "～ように (seems) as if",
+    "reading": "かのように",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かのよう",
+    "level": "Unknown",
+    "definition": "～ように (seems) as if",
+    "reading": "かのよう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "が早いか",
+    "level": "Unknown",
+    "definition": "～すると、同時に no sooner than",
+    "reading": "がはやいか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "がほしい",
+    "level": "Unknown",
+    "definition": "(I) want",
+    "reading": "がほしい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かまわず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かまわず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かもしれない",
+    "level": "Unknown",
+    "definition": "perhaps; it may be that",
+    "reading": "かもしれない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "から",
+    "level": "Unknown",
+    "definition": "so; since",
+    "reading": "から",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "から",
+    "level": "Unknown",
+    "definition": "～が原因で from; on account of",
+    "reading": "から",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からある",
+    "level": "Unknown",
+    "definition": "～か、それ以上もある～ extends from",
+    "reading": "からある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からする",
+    "level": "Unknown",
+    "definition": "～か、それ以上もある～ extends from",
+    "reading": "からする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "から言うと",
+    "level": "Unknown",
+    "definition": "～の方面から判断すると judging from…",
+    "reading": "からいうと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "から言えば",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "からいえば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "から言って",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "からいって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "から言っても",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "からいっても",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からこそ",
+    "level": "Unknown",
+    "definition": "～から it is precisely because; that",
+    "reading": "からこそ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からして",
+    "level": "Unknown",
+    "definition": "第一の例をあげれば even",
+    "reading": "からして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "からして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からしても",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "からしても",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "からする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からすると",
+    "level": "Unknown",
+    "definition": "～の立場で考えると from the standpoint of",
+    "reading": "からすると",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からすれば",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "からすれば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "からって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からでないと",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "からでないと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からといって",
+    "level": "Unknown",
+    "definition": "～ということから当然考えられることとは違って just because…doesn't necessarily mean",
+    "reading": "からといって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "から",
+    "level": "Unknown",
+    "definition": "～から～までの間 from…till",
+    "reading": "から",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からには",
+    "level": "Unknown",
+    "definition": "のなら／のだから now that…then naturally",
+    "reading": "からには",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "からの",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "からの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "がる",
+    "level": "Unknown",
+    "definition": "(he, she, it is) eager to; tends to",
+    "reading": "がる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かわきりに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かわきりに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "変わって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かわって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "変わりに",
+    "level": "Unknown",
+    "definition": "～の代償として the other side is; in exchange; in lieu of",
+    "reading": "かわりに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "変わりに",
+    "level": "Unknown",
+    "definition": "～の代理として／～するのではなく in place of",
+    "reading": "かわりに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かんして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かんして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "かんする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "かんする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "きっかけにして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "きっかけにして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "きまっている",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "きまっている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "気味",
+    "level": "Unknown",
+    "definition": "少し～の感じがする be a little; have a touch of",
+    "reading": "ぎみ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "嫌いがある",
+    "level": "Unknown",
+    "definition": "～の傾向がある be liable to; be inclined to",
+    "reading": "きらいがある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "きり",
+    "level": "Unknown",
+    "definition": "～して、そのままずっと from the time…haven't…since",
+    "reading": "きり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "きりだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "きりだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "きる",
+    "level": "Unknown",
+    "definition": "全部～する ompletely; finish the whole…",
+    "reading": "きる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "きれない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "きれない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "きれる",
+    "level": "Unknown",
+    "definition": "全部～できる (do) all",
+    "reading": "きれる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "極まりない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "きわまりない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "極まる",
+    "level": "Unknown",
+    "definition": "この上なく～だ utterly; inexcusably",
+    "reading": "きわまる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "極み",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "きわみ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "禁じ得ない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "きんじえない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "禁じ得る",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "きんじえる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くする",
+    "level": "Unknown",
+    "definition": "–en; make…",
+    "reading": "くする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くせして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "くせして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くせに",
+    "level": "Unknown",
+    "definition": "～のに despite the fact that",
+    "reading": "くせに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ください",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ください",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くださいませんか",
+    "level": "Unknown",
+    "definition": "➡ をくださいませんかくださいませんか",
+    "reading": "くださいませんか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くださる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "くださる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くなる",
+    "level": "Unknown",
+    "definition": "become",
+    "reading": "くなる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くらい",
+    "level": "Unknown",
+    "definition": "～の程度に almost",
+    "reading": "くらい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くらい",
+    "level": "Unknown",
+    "definition": "～のような軽いことや簡単なこと at least",
+    "reading": "くらい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くらいだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "くらいだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くらいなら",
+    "level": "Unknown",
+    "definition": "～ことをがまんするより if end up, then; would sooner…than",
+    "reading": "くらいなら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ぐらいなら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ぐらいなら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くらい",
+    "level": "Unknown",
+    "definition": "～は最高に～だ there's nothing/no one more…",
+    "reading": "くらい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くらべて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "くらべて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "くれる",
+    "level": "Unknown",
+    "definition": "…gives to speaker",
+    "reading": "くれる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "加えて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "くわえて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "け",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "け",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "げ",
+    "level": "Unknown",
+    "definition": "～そう show signs of; look",
+    "reading": "げ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "けいきにして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "けいきにして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "けど",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "けど",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "けれど",
+    "level": "Unknown",
+    "definition": "although; nevertheless; but",
+    "reading": "けれど",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "けれど",
+    "level": "Unknown",
+    "definition": "(preface, softening) actually; excuse me, but",
+    "reading": "けれど",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ご",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ご",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "越したことはない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "こしたことはない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "超したことはない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "こしたことはない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "超したことはある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "こしたことはある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "こそ",
+    "level": "Unknown",
+    "definition": "it is (this time; me; it; etc.) that…",
+    "reading": "こそ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "こそ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "こそ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "応えて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "こたえて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "応える",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "こたえる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "こと",
+    "level": "Unknown",
+    "definition": "～しなさい (you) should",
+    "reading": "こと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事か",
+    "level": "Unknown",
+    "definition": "非常に～だ How…!",
+    "reading": "ことか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事がある",
+    "level": "Unknown",
+    "definition": "there are times",
+    "reading": "ことがある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事ができる",
+    "level": "Unknown",
+    "definition": "can",
+    "reading": "ことができる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事から",
+    "level": "Unknown",
+    "definition": "～が由来となって／～ことが理由で from the fact that",
+    "reading": "ことから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ごとき",
+    "level": "Unknown",
+    "definition": "～のような like; as",
+    "reading": "ごとき",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ごとき",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ごとき",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ごとく",
+    "level": "Unknown",
+    "definition": "～ように like; as",
+    "reading": "ごとく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ごとく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ごとく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事だ",
+    "level": "Unknown",
+    "definition": "非常に～だ (deep emotion) how very…!",
+    "reading": "ことだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事だ",
+    "level": "Unknown",
+    "definition": "～しなさい (advice, admonition) (you) must…",
+    "reading": "ことだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事だ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ことだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事だから",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ことだから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事だし",
+    "level": "Unknown",
+    "definition": "から／ので since",
+    "reading": "ことだし",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事だろう",
+    "level": "Unknown",
+    "definition": "非常に～だ how…!",
+    "reading": "ことだろう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "こととて",
+    "level": "Unknown",
+    "definition": "ことだから on account of the fact that",
+    "reading": "こととて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事となっている",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "こととなっている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事となると",
+    "level": "Unknown",
+    "definition": "～の話題になると when it comes to…; when the subject turns to…",
+    "reading": "こととなると",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事なく",
+    "level": "Unknown",
+    "definition": "～ないで without",
+    "reading": "ことなく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事なしに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ことなしに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事に",
+    "level": "Unknown",
+    "definition": "非常に～ことだが terribly; extremely",
+    "reading": "ことに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事にする",
+    "level": "Unknown",
+    "definition": "make up one's mind to",
+    "reading": "ことにする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事になっている",
+    "level": "Unknown",
+    "definition": "～という決まり（予定、習慣など）になっている the case that…; the custom that…",
+    "reading": "ことになっている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事になる",
+    "level": "Unknown",
+    "definition": "(decision) has been decided that",
+    "reading": "ことになる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事になる",
+    "level": "Unknown",
+    "definition": "つまり、そうなる will end up",
+    "reading": "ことになる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事には",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ことには",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事は",
+    "level": "Unknown",
+    "definition": "一応～が、しかし it's true that…but",
+    "reading": "ことは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事はない",
+    "level": "Unknown",
+    "definition": "～する必要はない／～しない方がいい no need to; shouldn't",
+    "reading": "ことはない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "事はない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ことはない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "こない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "こない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "込めて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "こめて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "際",
+    "level": "Unknown",
+    "definition": "～ときに when; on the occasion of",
+    "reading": "さい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "際に",
+    "level": "Unknown",
+    "definition": "～ときに when; on the occasion of",
+    "reading": "さい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "際して",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "さいして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "さいちゅう",
+    "level": "Unknown",
+    "definition": "ちょうど～中に in the middle of",
+    "reading": "さいちゅう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "さいちゅうだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "さいちゅうだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "さえ",
+    "level": "Unknown",
+    "definition": "～も even",
+    "reading": "さえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "さえ",
+    "level": "Unknown",
+    "definition": "～ば、それだけで whenever; if only",
+    "reading": "さえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "先立つ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "さきだつ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "先立って",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "さきだって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "差し上げる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "さしあげる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "させていただけませんか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "させていただけませんか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "させてください",
+    "level": "Unknown",
+    "definition": "let me",
+    "reading": "させてください",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "させてくれませんか",
+    "level": "Unknown",
+    "definition": "won't you let me?",
+    "reading": "させてくれませんか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "させてもらえませんか",
+    "level": "Unknown",
+    "definition": "would you mind letting me?",
+    "reading": "させてもらえませんか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "させられる",
+    "level": "Unknown",
+    "definition": "be made to",
+    "reading": "させられる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "させる",
+    "level": "Unknown",
+    "definition": "make to do",
+    "reading": "させる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "させる",
+    "level": "Unknown",
+    "definition": "induce to ❶ ジム：……その人は本当は……おばけだったのです……。 子どもたち：キャーッ、こわあい……。 →ジムはおばけの話をして、子どもたちをこわがらせました。 ❷ よしおさんはいつもおもしろい話をして、みんなを笑わせます。 ❸ 花子さんはオリンピックの選手になって、両親をびっくりさせました。 ❹ いつも親や先生を泣かせていた太郎は、今は3人の子の親です。 ❺ リー：先生、この問題は……。 先生：むずかしい質問ばかりして、わたしを困らせないでください。",
+    "reading": "させる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "させる",
+    "level": "Unknown",
+    "definition": "let",
+    "reading": "させる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "させる",
+    "level": "Unknown",
+    "definition": "ended up making",
+    "reading": "させる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "させる",
+    "level": "Unknown",
+    "definition": "to cause",
+    "reading": "させる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "さておき",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "さておき",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "さるこ事がら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "さることながら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ざるをえない",
+    "level": "Unknown",
+    "definition": "どうしても～する必要がある／～しなければならない cannot avoid; have no choice but",
+    "reading": "ざるをえない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "し",
+    "level": "Unknown",
+    "definition": "and, besides",
+    "reading": "し",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "しかたがない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "しかたがない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "しかない",
+    "level": "Unknown",
+    "definition": "それ以外に方法はない can't but, can only",
+    "reading": "しかない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "次第",
+    "level": "Unknown",
+    "definition": "～したらすぐ as soon as; the moment that",
+    "reading": "しだい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "次第だ",
+    "level": "Unknown",
+    "definition": "～わけだ the case that",
+    "reading": "しだいだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "次第だ",
+    "level": "Unknown",
+    "definition": "～わけだ the case that",
+    "reading": "しだいだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "次第だ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "しだいだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "次第で",
+    "level": "Unknown",
+    "definition": "～で depends on",
+    "reading": "しだいで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "次第では",
+    "level": "Unknown",
+    "definition": "ある～の場合は depending on",
+    "reading": "しだいでは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "従って",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "したがって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "したって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "したって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "したところで",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "したところで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "したら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "したら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "している",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "している",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "しては",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "しては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "しても",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "しても",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "しても",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "しても",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "してる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "してる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "始末だ",
+    "level": "Unknown",
+    "definition": "～という悪い結末だ turn out badly; end up",
+    "reading": "しまつだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "じゃいけない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "じゃいけない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "じゃいける",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "じゃいける",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "じゃう",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "じゃう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "じゃ敵わない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "じゃかなわない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "じゃないか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "じゃないか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "しろ",
+    "level": "Unknown",
+    "definition": "(command) do…! ❶ （交通標識）止まれ ❷ （けんかをしている人に）やめろ！ ❸ （父が子どもをしかって）静かにしろ！ ❹ （友だち同士で）よかったら、今晩うちに来いよ。 ❺ （社長が社員に）あしたまでにレポートを出してくれ。 ❻ 母はいつも使ったものはかたづけろと言います。",
+    "reading": "しろ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "しろ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "しろ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "しろ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "しろ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "しろと",
+    "level": "Unknown",
+    "definition": "「～しなさい」と言う (command) said to do… ❶ 母の手紙にはいつも体を大切にしろと書いてあります。 ❷ 森先生は若いときに本を読めとおっしゃいます。 ❸ 先輩は失恋したわたしに、終わったことは忘れろと言った。 ❹ 祖父はわたしに３歩前を見て歩けと言った。",
+    "reading": "しろと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "しろ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "しろ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "すえ",
+    "level": "Unknown",
+    "definition": "～いろいろした後、最後に finally, at last after…",
+    "reading": "すえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "すぎない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "すぎない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "すぎる",
+    "level": "Unknown",
+    "definition": "too",
+    "reading": "すぎる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ずくめ",
+    "level": "Unknown",
+    "definition": "～が多い／～が身の回りに続いて起こる totally immersed in; all in…",
+    "reading": "ずくめ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ずじまい",
+    "level": "Unknown",
+    "definition": "～ないで終わる ended up not…",
+    "reading": "ずじまい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ずに",
+    "level": "Unknown",
+    "definition": "～ないで without",
+    "reading": "ずに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ずにはいられない",
+    "level": "Unknown",
+    "definition": "どうしても～しないでいることはできない just had to",
+    "reading": "ずにはいられない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ずにはいられる",
+    "level": "Unknown",
+    "definition": "どうしても～しないでいることはできない just had to",
+    "reading": "ずにはいられる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ずにはおかない",
+    "level": "Unknown",
+    "definition": "そのようなことが引き起こされる can't help but",
+    "reading": "ずにはおかない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ずにはおかない",
+    "level": "Unknown",
+    "definition": "必ず～する will most certainly",
+    "reading": "ずにはおかない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ずにはすまない",
+    "level": "Unknown",
+    "definition": "必ず～しなければならない must certainly",
+    "reading": "ずにはすまない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "すら",
+    "level": "Unknown",
+    "definition": "～も／でも even",
+    "reading": "すら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "する",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "する",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "すれば",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "すれば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "せいか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "せいか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "せいで",
+    "level": "Unknown",
+    "definition": "～が原因で on account of",
+    "reading": "せいで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "せよ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "せよ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "せよ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "せよ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "せよ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "せよ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そう",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "そう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そういない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "そういない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そうだ",
+    "level": "Unknown",
+    "definition": "it's said that; I hear that",
+    "reading": "そうだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そうだ",
+    "level": "Unknown",
+    "definition": "it appears that",
+    "reading": "そうだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そうだ",
+    "level": "Unknown",
+    "definition": "about to",
+    "reading": "そうだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そうだ",
+    "level": "Unknown",
+    "definition": "it seems that",
+    "reading": "そうだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そうもない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "そうもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そうもある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "そうもある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そくした",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "そくした",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そくして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "そくして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "そって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "そばから",
+    "level": "Unknown",
+    "definition": "～しても、すぐまた just as soon as",
+    "reading": "そばから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "それまでだ",
+    "level": "Unknown",
+    "definition": "➡ ばそれまでだ",
+    "reading": "それまでだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たい",
+    "level": "Unknown",
+    "definition": "(I) want to",
+    "reading": "たい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たいして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たいして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たいする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たいする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たいものだ",
+    "level": "Unknown",
+    "definition": "～たいなあ (I) really want to…!",
+    "reading": "たいものだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たいもの",
+    "level": "Unknown",
+    "definition": "～たいなあ (I) really want to…!",
+    "reading": "たいもの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たいもんだ",
+    "level": "Unknown",
+    "definition": "～たいなあ (I) really want to…!",
+    "reading": "たいもんだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たいもん",
+    "level": "Unknown",
+    "definition": "～たいなあ (I) really want to…!",
+    "reading": "たいもん",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "耐えない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たえない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "耐える",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たえる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たが最後",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たがさいご",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だから",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "だから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だけ",
+    "level": "Unknown",
+    "definition": "～の範囲は全部 as much as",
+    "reading": "だけ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だけあって",
+    "level": "Unknown",
+    "definition": "～ので、それにふさわしく as might be expected",
+    "reading": "だけあって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だけある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "だけある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だけでなく",
+    "level": "Unknown",
+    "definition": "➡ （ただ）～だけでなく",
+    "reading": "だけでなく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だけに",
+    "level": "Unknown",
+    "definition": "～ので、それにふさわしく as befitting",
+    "reading": "だけに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だけに",
+    "level": "Unknown",
+    "definition": "～ので、反対に… precisely because; contrary to expectations",
+    "reading": "だけに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だけの",
+    "level": "Unknown",
+    "definition": "～に相当する be worth",
+    "reading": "だけの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だけの事はある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "だけのことはある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だけまし",
+    "level": "Unknown",
+    "definition": "別の状況よりまだいい at least",
+    "reading": "だけまし",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "た事がある",
+    "level": "Unknown",
+    "definition": "have the experience of; have…",
+    "reading": "たことがある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "た事がある",
+    "level": "Unknown",
+    "definition": "have the situation of…in the past",
+    "reading": "たことがある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だす",
+    "level": "Unknown",
+    "definition": "suddenly begin to",
+    "reading": "だす",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だけでなく",
+    "level": "Unknown",
+    "definition": "～だけでなく not only…but also",
+    "reading": "だけでなく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のみ",
+    "level": "Unknown",
+    "definition": "ただ～だけ the only thing that…",
+    "reading": "のみ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ただ",
+    "level": "Unknown",
+    "definition": "ただ～だけ the only thing that…",
+    "reading": "ただ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のみならず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "のみならず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たって",
+    "level": "Unknown",
+    "definition": "no matter how",
+    "reading": "たって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "だって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たとえ",
+    "level": "Unknown",
+    "definition": "もし～ということになっても even if",
+    "reading": "たとえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たところ",
+    "level": "Unknown",
+    "definition": "～したら／～した結果 when",
+    "reading": "たところ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たところだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たところだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たところで",
+    "level": "Unknown",
+    "definition": "～ても supposing; even if",
+    "reading": "たところで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たとたん",
+    "level": "Unknown",
+    "definition": "～したら、その瞬間に just at the very moment",
+    "reading": "たとたん",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たなら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たなら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だに",
+    "level": "Unknown",
+    "definition": "～だけでも／～も even just～/also",
+    "reading": "だに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たばかりだ",
+    "level": "Unknown",
+    "definition": "just (finished, did)",
+    "reading": "たばかりだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たび",
+    "level": "Unknown",
+    "definition": "～のときはいつも every time",
+    "reading": "たび",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "た方がいい",
+    "level": "Unknown",
+    "definition": "it would be best to",
+    "reading": "たほうがいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ため",
+    "level": "Unknown",
+    "definition": "in order to",
+    "reading": "ため",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ため",
+    "level": "Unknown",
+    "definition": "for",
+    "reading": "ため",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ため",
+    "level": "Unknown",
+    "definition": "because of",
+    "reading": "ため",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たら",
+    "level": "Unknown",
+    "definition": "after",
+    "reading": "たら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たら",
+    "level": "Unknown",
+    "definition": "if",
+    "reading": "たら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たら",
+    "level": "Unknown",
+    "definition": "if (only)",
+    "reading": "たら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たらいい",
+    "level": "Unknown",
+    "definition": "why don't (you)?",
+    "reading": "たらいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たらいい",
+    "level": "Unknown",
+    "definition": "it would be nice if",
+    "reading": "たらいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たらいい",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たらいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たらいいですか",
+    "level": "Unknown",
+    "definition": "may I?",
+    "reading": "たらいいですか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だらけ",
+    "level": "Unknown",
+    "definition": "見たところ～がたくさんある／よくない～がたくさんついている covered in; full of",
+    "reading": "だらけ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たら最後",
+    "level": "Unknown",
+    "definition": "もし～のようなことをしたら／もし～のようなことになったら if…that will be the end of it",
+    "reading": "たらさいご",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たら",
+    "level": "Unknown",
+    "definition": "もし～たら、～のに would have if",
+    "reading": "たら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だろう",
+    "level": "Unknown",
+    "definition": "もし～たら、～のに would have if",
+    "reading": "だろう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たらどうですか",
+    "level": "Unknown",
+    "definition": "how about if you…",
+    "reading": "たらどうですか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たり",
+    "level": "Unknown",
+    "definition": "do…and do…",
+    "reading": "たり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たり",
+    "level": "Unknown",
+    "definition": "sometimes…and sometimes…",
+    "reading": "たり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たり",
+    "level": "Unknown",
+    "definition": "repeatedly do …and…",
+    "reading": "たり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "たりとも",
+    "level": "Unknown",
+    "definition": "～も not even",
+    "reading": "たりとも",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "足る",
+    "level": "Unknown",
+    "definition": "～の立場にある has the job of; who is",
+    "reading": "たる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "足る",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "たる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だろう",
+    "level": "Unknown",
+    "definition": "probably, most likely",
+    "reading": "だろう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だろう",
+    "level": "Unknown",
+    "definition": "非常に～だ how very!",
+    "reading": "だろう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だろう",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "だろう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "だろうと思う",
+    "level": "Unknown",
+    "definition": "I think perhaps",
+    "reading": "だろうとおもう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ちがいない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ちがいない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ちゃ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ちゃ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ちゃいけない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ちゃいけない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ちゃいける",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ちゃいける",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ちゃう",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ちゃう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ちゃ敵わない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ちゃかなわない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ちゃ敵う",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ちゃかなう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "中心にする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ちゅうしんにする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ついて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ついて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ついでに",
+    "level": "Unknown",
+    "definition": "～する機会につけ加えて while; incidentally; at the same time",
+    "reading": "ついでに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "通じて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "つうじて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "つき",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "つき",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "っけ",
+    "level": "Unknown",
+    "definition": "～？／～だった？ what was that?/was it…?",
+    "reading": "っけ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "つけて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "つけて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "っこない",
+    "level": "Unknown",
+    "definition": "絶対に～ない there's no chance, no way",
+    "reading": "っこない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ったらない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ったらない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "つつ",
+    "level": "Unknown",
+    "definition": "～ているが even though",
+    "reading": "つつ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "つつ",
+    "level": "Unknown",
+    "definition": "～ながら while",
+    "reading": "つつ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "つ",
+    "level": "Unknown",
+    "definition": "～たり～たり and; or; now…now",
+    "reading": "つ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "つつある",
+    "level": "Unknown",
+    "definition": "今ちょうど～している (progression) be doing",
+    "reading": "つつある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "続ける",
+    "level": "Unknown",
+    "definition": "keep on; do on and on",
+    "reading": "つづける",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "つつも",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "つつも",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "って",
+    "level": "Unknown",
+    "definition": "～ということだ (hearsay) they say that",
+    "reading": "って",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "って",
+    "level": "Unknown",
+    "definition": "～とは／～というのは who; what; that",
+    "reading": "って",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "って",
+    "level": "Unknown",
+    "definition": "named",
+    "reading": "って",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "って",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "って",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "って言う",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "っていう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "って言うことは",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "っていうことは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "って言うのは",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "っていうのは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "って言えば",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "っていえば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ってことは",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ってことは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "っぱなし",
+    "level": "Unknown",
+    "definition": "～したままだ leave on; leave out; leave as is",
+    "reading": "っぱなし",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "っぽい",
+    "level": "Unknown",
+    "definition": "その感じがする／よくそうする -ish; somewhat",
+    "reading": "っぽい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "つもりだ",
+    "level": "Unknown",
+    "definition": "intends to",
+    "reading": "つもりだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "つもりだ",
+    "level": "Unknown",
+    "definition": "その意図はあるが supposed to be, but",
+    "reading": "つもりだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "つれて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "つれて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "て",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て",
+    "level": "Unknown",
+    "definition": "then",
+    "reading": "て",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て",
+    "level": "Unknown",
+    "definition": "then",
+    "reading": "て",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て",
+    "level": "Unknown",
+    "definition": "by; while",
+    "reading": "て",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て",
+    "level": "Unknown",
+    "definition": "for; because",
+    "reading": "て",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て",
+    "level": "Unknown",
+    "definition": "both; and",
+    "reading": "て",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "で",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "で",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てあげる",
+    "level": "Unknown",
+    "definition": "give; do for; be kind and",
+    "reading": "てあげる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てある",
+    "level": "Unknown",
+    "definition": "is; are…",
+    "reading": "てある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "であれ",
+    "level": "Unknown",
+    "definition": "～でも regardless of",
+    "reading": "であれ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "であれ",
+    "level": "Unknown",
+    "definition": "～でも～でも whether it is…or…",
+    "reading": "であれ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "であろうと",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "であろうと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ていく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ていく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ていただく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ていただく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ていない",
+    "level": "Unknown",
+    "definition": "not yet",
+    "reading": "ていない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ていらい",
+    "level": "Unknown",
+    "definition": "～してから、今までずっと ever since",
+    "reading": "ていらい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ている",
+    "level": "Unknown",
+    "definition": "is -ing",
+    "reading": "ている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ている",
+    "level": "Unknown",
+    "definition": "always",
+    "reading": "ている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ている",
+    "level": "Unknown",
+    "definition": "has been; is",
+    "reading": "ている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ている",
+    "level": "Unknown",
+    "definition": "-s, -ing",
+    "reading": "ている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ている",
+    "level": "Unknown",
+    "definition": "過去に～した narrative present tense",
+    "reading": "ている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ているところだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ているところだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ておく",
+    "level": "Unknown",
+    "definition": "in advance; leave",
+    "reading": "ておく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てから",
+    "level": "Unknown",
+    "definition": "after",
+    "reading": "てから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てから",
+    "level": "Unknown",
+    "definition": "since",
+    "reading": "てから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てからでないと",
+    "level": "Unknown",
+    "definition": "～した後でなければ not until after",
+    "reading": "てからでないと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てからでなければ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "てからでなければ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てからというもの",
+    "level": "Unknown",
+    "definition": "～してから、今までずっと from the time…",
+    "reading": "てからというもの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てからは",
+    "level": "Unknown",
+    "definition": "～してから、今までずっと ever since",
+    "reading": "てからは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "出来る",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "できる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てください",
+    "level": "Unknown",
+    "definition": "please do…",
+    "reading": "てください",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくださいませんか",
+    "level": "Unknown",
+    "definition": "won't you…?",
+    "reading": "てくださいませんか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て下さる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "てくださる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくる",
+    "level": "Unknown",
+    "definition": "go and",
+    "reading": "てくる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくる",
+    "level": "Unknown",
+    "definition": "first, then",
+    "reading": "てくる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくる",
+    "level": "Unknown",
+    "definition": "has become",
+    "reading": "てくる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくる",
+    "level": "Unknown",
+    "definition": "have…; will continue",
+    "reading": "てくる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくる",
+    "level": "Unknown",
+    "definition": "state of movement",
+    "reading": "てくる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくる",
+    "level": "Unknown",
+    "definition": "to; into",
+    "reading": "てくる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくる",
+    "level": "Unknown",
+    "definition": "approaching or leaving the speaker",
+    "reading": "てくる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくる",
+    "level": "Unknown",
+    "definition": "come to",
+    "reading": "てくる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくる",
+    "level": "Unknown",
+    "definition": "start to",
+    "reading": "てくる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てくれる",
+    "level": "Unknown",
+    "definition": "does for (me)",
+    "reading": "てくれる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てこそ",
+    "level": "Unknown",
+    "definition": "～が実現することによって it's only when; by",
+    "reading": "てこそ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "でさえ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "でさえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てさし上げる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "てさしあげる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てしかたがない",
+    "level": "Unknown",
+    "definition": "非常に～だ extremely",
+    "reading": "てしかたがない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "でしかたがない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "でしかたがない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て仕舞う",
+    "level": "Unknown",
+    "definition": "do the whole thing; end up",
+    "reading": "てしまう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て仕舞う",
+    "level": "Unknown",
+    "definition": "ended up",
+    "reading": "てしまう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "でしょう",
+    "level": "Unknown",
+    "definition": "don't you think?",
+    "reading": "でしょう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "でしょう",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "でしょう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てしょうがない",
+    "level": "Unknown",
+    "definition": "非常に～だ extremely",
+    "reading": "てしょうがない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ですら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ですら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てたまらない",
+    "level": "Unknown",
+    "definition": "非常に～、我慢できないほど～ be dying to; unbearably",
+    "reading": "てたまらない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てでも",
+    "level": "Unknown",
+    "definition": "～のような手段をとってでも even if have to",
+    "reading": "てでも",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "てない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "でなくてなんだろう",
+    "level": "Unknown",
+    "definition": "これこそ～そのものだ if this isn’t…, then what is it?",
+    "reading": "でなくてなんだろう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てならない",
+    "level": "Unknown",
+    "definition": "抑えられないほど～ can't help but",
+    "reading": "てならない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ては",
+    "level": "Unknown",
+    "definition": "何度も～して、～して alternately did…and…",
+    "reading": "ては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ではありません",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ではありません",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ではあるまいし",
+    "level": "Unknown",
+    "definition": "～ではないのだから it's not as though",
+    "reading": "ではあるまいし",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てはいけない",
+    "level": "Unknown",
+    "definition": "(you) must not",
+    "reading": "てはいけない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てはいける",
+    "level": "Unknown",
+    "definition": "(you) must not",
+    "reading": "てはいける",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ではいられない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ではいられない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ではいられる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ではいられる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ては敵わない",
+    "level": "Unknown",
+    "definition": "～のはいやだ、困る doesn't like; be vexed; be more than one can bear",
+    "reading": "てはかなわない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ては敵う",
+    "level": "Unknown",
+    "definition": "～のはいやだ、困る doesn't like; be vexed; be more than one can bear",
+    "reading": "てはかなう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "では敵わない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ではかなわない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "では敵う",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ではかなう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ては初めて",
+    "level": "Unknown",
+    "definition": "～た後でようやく it is/ was not until…that",
+    "reading": "てはじめて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ではないか",
+    "level": "Unknown",
+    "definition": "驚いたことに～ to (my) amazement",
+    "reading": "ではないか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ではないか",
+    "level": "Unknown",
+    "definition": "～だと思う it seems (to me)",
+    "reading": "ではないか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てほしい",
+    "level": "Unknown",
+    "definition": "want to happen or be done",
+    "reading": "てほしい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て欲しいものだ",
+    "level": "Unknown",
+    "definition": "～たらいいなあ really wish",
+    "reading": "てほしいものだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "て欲しいもんだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "てほしいもんだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てまえ",
+    "level": "Unknown",
+    "definition": "～した自分のメンツがあるから because I said/did, to save face, I must",
+    "reading": "てまえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てまで",
+    "level": "Unknown",
+    "definition": "～のような程度まで will go so far as to",
+    "reading": "てまで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てみせる",
+    "level": "Unknown",
+    "definition": "がんばって～するつもりだ determined to accomplish",
+    "reading": "てみせる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てみる",
+    "level": "Unknown",
+    "definition": "try doing",
+    "reading": "てみる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ても",
+    "level": "Unknown",
+    "definition": "even if",
+    "reading": "ても",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "でも",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "でも",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てもいい",
+    "level": "Unknown",
+    "definition": "may",
+    "reading": "てもいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てもいい",
+    "level": "Unknown",
+    "definition": "(I) don't mind if",
+    "reading": "てもいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "でもいい",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "でもいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てもかまわない",
+    "level": "Unknown",
+    "definition": "all right to",
+    "reading": "てもかまわない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てもかまわない",
+    "level": "Unknown",
+    "definition": "all right with (me)",
+    "reading": "てもかまわない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "でもかまわない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "でもかまわない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ても差し支えない",
+    "level": "Unknown",
+    "definition": "～ても問題ない no problem even if",
+    "reading": "てもさしつかえない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "でも差し支えない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "でもさしつかえない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "でもない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "でもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てもらう",
+    "level": "Unknown",
+    "definition": "have someone do something for (me)",
+    "reading": "てもらう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てやまない",
+    "level": "Unknown",
+    "definition": "心から～ている from the depths of one's heart",
+    "reading": "てやまない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てやる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "てやる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "てる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "てるところ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "てるところ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と",
+    "level": "Unknown",
+    "definition": "once; when",
+    "reading": "と",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と",
+    "level": "Unknown",
+    "definition": "～てすぐ (conditions) when",
+    "reading": "と",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と",
+    "level": "Unknown",
+    "definition": "says; said",
+    "reading": "と",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と",
+    "level": "Unknown",
+    "definition": "said",
+    "reading": "と",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と",
+    "level": "Unknown",
+    "definition": "(non-actual supposition) if only",
+    "reading": "と",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のに",
+    "level": "Unknown",
+    "definition": "(non-actual supposition) if only",
+    "reading": "のに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と相まって",
+    "level": "Unknown",
+    "definition": "～と影響し合って go hand in hand with",
+    "reading": "とあいまって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とあって",
+    "level": "Unknown",
+    "definition": "～という状況なので/～ので being",
+    "reading": "とあって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とあれば",
+    "level": "Unknown",
+    "definition": "～なら if for…",
+    "reading": "とあれば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と良い",
+    "level": "Unknown",
+    "definition": "(hope) would be good if",
+    "reading": "といい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と良い",
+    "level": "Unknown",
+    "definition": "(recommendation) good if (you)",
+    "reading": "といい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と良い",
+    "level": "Unknown",
+    "definition": "～も～も both…and",
+    "reading": "といい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言う",
+    "level": "Unknown",
+    "definition": "is called",
+    "reading": "という",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言う",
+    "level": "Unknown",
+    "definition": "N called N",
+    "reading": "という",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言う",
+    "level": "Unknown",
+    "definition": "explaining that",
+    "reading": "という",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うか",
+    "level": "Unknown",
+    "definition": "～と言ったらいいのか～と言ったらいいのか don't know if should call it…or…",
+    "reading": "というか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うことだ",
+    "level": "Unknown",
+    "definition": "～そうだ／～と聞いている (I) hear that",
+    "reading": "ということだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うことだ",
+    "level": "Unknown",
+    "definition": "つまり～だ (conclusion) in other words",
+    "reading": "ということだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うことは",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ということは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うと",
+    "level": "Unknown",
+    "definition": "～という言葉を使うと whenever…comes to mind",
+    "reading": "というと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うと",
+    "level": "Unknown",
+    "definition": "あなたが今言った～は when (you) say… do (you) mean…",
+    "reading": "というと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うと",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "というと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うところだ",
+    "level": "Unknown",
+    "definition": "最高でも～だ／せいぜい～だ at the most",
+    "reading": "というところだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うのは",
+    "level": "Unknown",
+    "definition": "～は a…is…",
+    "reading": "というのは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うもの",
+    "level": "Unknown",
+    "definition": "～という長い間 for this long time",
+    "reading": "というもの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うものだ",
+    "level": "Unknown",
+    "definition": "本当に～だと思う feel from the heart",
+    "reading": "というものだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うものではない",
+    "level": "Unknown",
+    "definition": "～とはいえない It can't be said that; it's not the case",
+    "reading": "というものではない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うものではある",
+    "level": "Unknown",
+    "definition": "～とはいえない It can't be said that; it's not the case",
+    "reading": "というものではある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うものでもない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "というものでもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うものでもある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "というものでもある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うものは",
+    "level": "Unknown",
+    "definition": "～は is; are",
+    "reading": "というものは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言うより",
+    "level": "Unknown",
+    "definition": "～という言い方をするより、むしろ more than calling it…; rather than calling it…",
+    "reading": "というより",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言えども",
+    "level": "Unknown",
+    "definition": "～であっても／といっても even though",
+    "reading": "といえども",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言えども",
+    "level": "Unknown",
+    "definition": "～も not even (one)",
+    "reading": "といえども",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言えば",
+    "level": "Unknown",
+    "definition": "～を話題にすれば speaking of which",
+    "reading": "といえば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言った",
+    "level": "Unknown",
+    "definition": "～のような like, such as",
+    "reading": "といった",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言ったところだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "といったところだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言ったら",
+    "level": "Unknown",
+    "definition": "～は when it comes to",
+    "reading": "といったら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言ったらありはしない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "といったらありはしない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言ったらありはする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "といったらありはする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言ったらありゃしない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "といったらありゃしない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言ったらありゃする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "といったらありゃする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言ったらない",
+    "level": "Unknown",
+    "definition": "口では表現できないほど～と思う／非常に～だ inexpressibly; extremely",
+    "reading": "といったらない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言ったらある",
+    "level": "Unknown",
+    "definition": "口では表現できないほど～と思う／非常に～だ inexpressibly; extremely",
+    "reading": "といったらある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "といっても",
+    "level": "Unknown",
+    "definition": "～というけれども、実は may be, but…in name only",
+    "reading": "といっても",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "といわず",
+    "level": "Unknown",
+    "definition": "～も～も区別なく not only, but",
+    "reading": "といわず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とおして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とおして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とおもいきや",
+    "level": "Unknown",
+    "definition": "～かと思ったが、そうではなく though (I) thought…, it wasn't the case",
+    "reading": "とおもいきや",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とおもうと",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とおもうと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とおり",
+    "level": "Unknown",
+    "definition": "～と同じに same as; just as",
+    "reading": "とおり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "どおり",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "どおり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とおりだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とおりだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とか",
+    "level": "Unknown",
+    "definition": "～そうだが／～と聞いたが I heard something to the effect that",
+    "reading": "とか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とか",
+    "level": "Unknown",
+    "definition": "～や～など and such",
+    "reading": "とか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とき",
+    "level": "Unknown",
+    "definition": "when",
+    "reading": "とき",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ときたら",
+    "level": "Unknown",
+    "definition": "～は as for",
+    "reading": "ときたら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所",
+    "level": "Unknown",
+    "definition": "➡ ところだところ ＋ <ruby>助<rt>じょ</rt>詞<rt>し</rt></ruby>",
+    "reading": "ところ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所か",
+    "level": "Unknown",
+    "definition": "～なんてとんでもない、事実は～だ (exact opposite) hardly the case that; actually",
+    "reading": "どころか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所か",
+    "level": "Unknown",
+    "definition": "～はもちろん、～も (contrast in level) of course…, but also…, of course…, can't even",
+    "reading": "どころか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所から",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ところから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所だ",
+    "level": "Unknown",
+    "definition": "about to",
+    "reading": "ところだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所だった",
+    "level": "Unknown",
+    "definition": "もう少しで～のような結果になりそうだった nearly ended up",
+    "reading": "ところだった",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所ではない",
+    "level": "Unknown",
+    "definition": "～はとてもできない no way",
+    "reading": "どころではない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所ではある",
+    "level": "Unknown",
+    "definition": "～はとてもできない no way",
+    "reading": "どころではある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所ではない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "どころではない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所ではなく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "どころではなく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所を",
+    "level": "Unknown",
+    "definition": "～のに／～だったのに even though",
+    "reading": "ところを",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "所を見ると",
+    "level": "Unknown",
+    "definition": "～から判断すると when looked at from this point of view",
+    "reading": "ところをみると",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "としたって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "としたって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "としたって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "としたって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とした所で",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "としたところで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "としたら",
+    "level": "Unknown",
+    "definition": "～と仮定したら if judged that",
+    "reading": "としたら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "として",
+    "level": "Unknown",
+    "definition": "～の立場で／～の資格で／～の名目で as",
+    "reading": "として",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "として",
+    "level": "Unknown",
+    "definition": "まったくない not even (one)",
+    "reading": "として",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "としても",
+    "level": "Unknown",
+    "definition": "～と仮定しても even supposing",
+    "reading": "としても",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "としない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "としない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とすると",
+    "level": "Unknown",
+    "definition": "～と仮定したら supposing",
+    "reading": "とすると",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とすれば",
+    "level": "Unknown",
+    "definition": "～と仮定したら supposing",
+    "reading": "とすれば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と",
+    "level": "Unknown",
+    "definition": "when…did…",
+    "reading": "と",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と",
+    "level": "Unknown",
+    "definition": "when, whenever",
+    "reading": "と",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と",
+    "level": "Unknown",
+    "definition": "ちょうど、そのとき just when",
+    "reading": "と",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とたん",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とたん",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "どちら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "どちら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "どっち",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "どっち",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と",
+    "level": "Unknown",
+    "definition": "of A and B, which",
+    "reading": "と",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とどちら",
+    "level": "Unknown",
+    "definition": "of A and B, which",
+    "reading": "とどちら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とどまらず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とどまらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とともに",
+    "level": "Unknown",
+    "definition": "～といっしょに／～に添えて together with",
+    "reading": "とともに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とともに",
+    "level": "Unknown",
+    "definition": "～すると、それに応じてだんだん as…gradually…",
+    "reading": "とともに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とともに",
+    "level": "Unknown",
+    "definition": "～すると同時に at the same time",
+    "reading": "とともに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とともに",
+    "level": "Unknown",
+    "definition": "～と、さらに and in addition",
+    "reading": "とともに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "となると",
+    "level": "Unknown",
+    "definition": "もしそうなった場合は／そうなったのなら if…happens, then",
+    "reading": "となると",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "となると",
+    "level": "Unknown",
+    "definition": "～のような特別なことは when it comes to",
+    "reading": "となると",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とのことだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とのことだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とは",
+    "level": "Unknown",
+    "definition": "～は is defined as",
+    "reading": "とは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とは",
+    "level": "Unknown",
+    "definition": "～という事実は／～ということは the fact that",
+    "reading": "とは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とは言うものの",
+    "level": "Unknown",
+    "definition": "～だが、しかし granted that; it's true, but",
+    "reading": "とはいうものの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "と言いえ",
+    "level": "Unknown",
+    "definition": "～けれども／～といっても nevertheless; be that as it may",
+    "reading": "とはいえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とはかぎらない",
+    "level": "Unknown",
+    "definition": "～ということがいつも本当だとは言えない not necessarily; not always true that",
+    "reading": "とはかぎらない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とばかり",
+    "level": "Unknown",
+    "definition": "いかにも～というような様子で virtually seems to; as if",
+    "reading": "とばかり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とみえて",
+    "level": "Unknown",
+    "definition": "～らしく／～らしい seems; looks like",
+    "reading": "とみえて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とみえる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とみえる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ともあろう",
+    "level": "Unknown",
+    "definition": "～のようなりっぱな for such a prestigious…",
+    "reading": "ともあろう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ともかく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ともかく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ともなく",
+    "level": "Unknown",
+    "definition": "特にそうしようというつもりでなく unconsciously; without paying attention",
+    "reading": "ともなく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ともなしに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ともなしに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ともなって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ともなって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ともなると",
+    "level": "Unknown",
+    "definition": "～という程度の立場になると when you get to the position of",
+    "reading": "ともなると",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ともなれば",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ともなれば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "とわず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "とわず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "な",
+    "level": "Unknown",
+    "definition": "don't! no…!",
+    "reading": "な",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なと",
+    "level": "Unknown",
+    "definition": "says not to…",
+    "reading": "なと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないうちに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないうちに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないかぎり",
+    "level": "Unknown",
+    "definition": "～しなければ unless",
+    "reading": "ないかぎり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないかのうちに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないかのうちに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないことがある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないことがある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないことにする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないことにする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないことになる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないことになる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないことには",
+    "level": "Unknown",
+    "definition": "～しなければ unless",
+    "reading": "ないことには",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないことはない",
+    "level": "Unknown",
+    "definition": "～かもしれない perhaps",
+    "reading": "ないことはない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないことはある",
+    "level": "Unknown",
+    "definition": "～かもしれない perhaps",
+    "reading": "ないことはある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないこともない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないこともない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないこともある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないこともある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないつもりだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないつもりだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないで",
+    "level": "Unknown",
+    "definition": "without",
+    "reading": "ないで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないでおく",
+    "level": "Unknown",
+    "definition": "refrain from",
+    "reading": "ないでおく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないでください",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないでください",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないではいられない",
+    "level": "Unknown",
+    "definition": "どうしても～しないでいることはできない can't help but; feel must",
+    "reading": "ないではいられない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないではいられる",
+    "level": "Unknown",
+    "definition": "どうしても～しないでいることはできない can't help but; feel must",
+    "reading": "ないではいられる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないではおかない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないではおかない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないではすまない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないではすまない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないでもない",
+    "level": "Unknown",
+    "definition": "まったく～ないのではない not totally unable",
+    "reading": "ないでもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないと",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないどく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないどく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないほうがいい",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないほうがいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないまでも",
+    "level": "Unknown",
+    "definition": "～まではできないが／～まではできなくても can't go so far as; even if can't go as far as to",
+    "reading": "ないまでも",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないものか",
+    "level": "Unknown",
+    "definition": "～ないだろうか isn't there some way?",
+    "reading": "ないものか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないものでもない",
+    "level": "Unknown",
+    "definition": "まったく～ないのではない／～可能性がある it isn't that…can't/don't",
+    "reading": "ないものでもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないものでもある",
+    "level": "Unknown",
+    "definition": "まったく～ないのではない／～可能性がある it isn't that…can't/don't",
+    "reading": "ないものでもある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないもんでもない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないもんでもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないもんでもある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないもんでもある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないように",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないように",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないようにする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ないようにする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないわけにはいかない",
+    "level": "Unknown",
+    "definition": "どうしても～しなければならない can't avoid; can't help; must",
+    "reading": "ないわけにはいかない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ないわけにはいく",
+    "level": "Unknown",
+    "definition": "どうしても～しなければならない can't avoid; can't help; must",
+    "reading": "ないわけにはいく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ながら",
+    "level": "Unknown",
+    "definition": "while",
+    "reading": "ながら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ながら",
+    "level": "Unknown",
+    "definition": "～ているのに／～ですが even while; although",
+    "reading": "ながら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ながら",
+    "level": "Unknown",
+    "definition": "～の状態のまま as, with",
+    "reading": "ながら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ながらに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ながらに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ながらにして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ながらにして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ながらの",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ながらの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ながらも",
+    "level": "Unknown",
+    "definition": "～けれども／～のに even though",
+    "reading": "ながらも",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なきゃ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なきゃ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なきゃいけない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なきゃいけない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なきゃならない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なきゃならない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくして",
+    "level": "Unknown",
+    "definition": "～がなければ if don't; without",
+    "reading": "なくして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくたっていい",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なくたっていい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくたってかまわない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なくたってかまわない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくちゃならない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なくちゃならない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくっていい",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なくっていい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくて",
+    "level": "Unknown",
+    "definition": "and; because",
+    "reading": "なくて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくて",
+    "level": "Unknown",
+    "definition": "since; the fact that",
+    "reading": "なくて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくてはいけない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なくてはいけない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくてはならない",
+    "level": "Unknown",
+    "definition": "must",
+    "reading": "なくてはならない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくてもいい",
+    "level": "Unknown",
+    "definition": "don't have to; not necessary to",
+    "reading": "なくてもいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくてもいい",
+    "level": "Unknown",
+    "definition": "doesn't have to be",
+    "reading": "なくてもいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくてもかまわない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なくてもかまわない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくなる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なくなる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なくもない",
+    "level": "Unknown",
+    "definition": "まったく～ないのではない some; somewhat",
+    "reading": "なくもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なければ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なければ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なければいけない",
+    "level": "Unknown",
+    "definition": "must",
+    "reading": "なければいけない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なければならない",
+    "level": "Unknown",
+    "definition": "must",
+    "reading": "なければならない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なさい",
+    "level": "Unknown",
+    "definition": "do…!",
+    "reading": "なさい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なしに",
+    "level": "Unknown",
+    "definition": "～ないで／～なく without, don't",
+    "reading": "なしに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "など",
+    "level": "Unknown",
+    "definition": "～のようなものは something like, someone like",
+    "reading": "など",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なら",
+    "level": "Unknown",
+    "definition": "if",
+    "reading": "なら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ならいい",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ならいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ならいざしらず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ならいざしらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ならでは",
+    "level": "Unknown",
+    "definition": "～でなければ不可能な if not; unless",
+    "reading": "ならでは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なり",
+    "level": "Unknown",
+    "definition": "～すると、同時に as soon as",
+    "reading": "なり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なり",
+    "level": "Unknown",
+    "definition": "～でもいい～でもいい either…or",
+    "reading": "なり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なりに",
+    "level": "Unknown",
+    "definition": "～にふさわしい程度に appropriate to/appropriate for～",
+    "reading": "なりに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なんか",
+    "level": "Unknown",
+    "definition": "～のようなものは something like, someone like",
+    "reading": "なんか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なんて",
+    "level": "Unknown",
+    "definition": "～という事実は／～ということは I had no idea!",
+    "reading": "なんて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "なんて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "なんて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に",
+    "level": "Unknown",
+    "definition": "to; for the purpose of",
+    "reading": "に",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "に",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に当たって",
+    "level": "Unknown",
+    "definition": "～をするときに on the occasion of",
+    "reading": "にあたって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にあたらない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にあたらない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にあって",
+    "level": "Unknown",
+    "definition": "～に／～で in, at",
+    "reading": "にあって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に至って",
+    "level": "Unknown",
+    "definition": "～という重大な事態になって being in such straits",
+    "reading": "にいたって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に至っては",
+    "level": "Unknown",
+    "definition": "～の場合は極端で in extreme cases; in worst-case scenarios",
+    "reading": "にいたっては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に至る",
+    "level": "Unknown",
+    "definition": "～までになる reached",
+    "reading": "にいたる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に至るまで",
+    "level": "Unknown",
+    "definition": "～までも even",
+    "reading": "にいたるまで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に於いて",
+    "level": "Unknown",
+    "definition": "～で／～に in; at",
+    "reading": "において",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に応じた",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "におうじた",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に応じて",
+    "level": "Unknown",
+    "definition": "～に対応して for, according to",
+    "reading": "におうじて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に於ける",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "における",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にかかわらず",
+    "level": "Unknown",
+    "definition": "～に関係なく doesn't matter whether, regardless if",
+    "reading": "にかかわらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にかかわりなく",
+    "level": "Unknown",
+    "definition": "～に関係なく regardless of",
+    "reading": "にかかわりなく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に関わる",
+    "level": "Unknown",
+    "definition": "～のような重大なことに関係する concerned with; have bearing on",
+    "reading": "にかかわる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に限って",
+    "level": "Unknown",
+    "definition": "～の場合だけは only in the case of; only at times when",
+    "reading": "にかぎって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に限らず",
+    "level": "Unknown",
+    "definition": "～だけでなく not limited to",
+    "reading": "にかぎらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に限り",
+    "level": "Unknown",
+    "definition": "～だけは only for",
+    "reading": "にかぎり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に限る",
+    "level": "Unknown",
+    "definition": "～が一番いい just the thing; the best",
+    "reading": "にかぎる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にかけては",
+    "level": "Unknown",
+    "definition": "～では when it comes to",
+    "reading": "にかけては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にかたくない",
+    "level": "Unknown",
+    "definition": "～できる／～するのはやさしい can; easy to",
+    "reading": "にかたくない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にかわって",
+    "level": "Unknown",
+    "definition": "～の代理として／～ではなく instead of, in place of",
+    "reading": "にかわって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にかんして",
+    "level": "Unknown",
+    "definition": "～について about; regarding",
+    "reading": "にかんして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にかんする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にかんする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にきまっている",
+    "level": "Unknown",
+    "definition": "きっと～だ／必ず～だ matter of course; certain; definite",
+    "reading": "にきまっている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にくい",
+    "level": "Unknown",
+    "definition": "hard to",
+    "reading": "にくい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にくらべて",
+    "level": "Unknown",
+    "definition": "～より compared to",
+    "reading": "にくらべて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にくわえて",
+    "level": "Unknown",
+    "definition": "～と、さらに in addition to",
+    "reading": "にくわえて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にこしたことはない",
+    "level": "Unknown",
+    "definition": "～方がいい、～方が安全だ is best, safest",
+    "reading": "にこしたことはない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にこたえて",
+    "level": "Unknown",
+    "definition": "～に沿うように in response to; in accordance with",
+    "reading": "にこたえて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にこたえる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にこたえる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にさいして",
+    "level": "Unknown",
+    "definition": "～をするときに when; on the occasion",
+    "reading": "にさいして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にさきだつ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にさきだつ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にさきだって",
+    "level": "Unknown",
+    "definition": "～の前に必要なこととして as a precursor to; before",
+    "reading": "にさきだって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしたがって",
+    "level": "Unknown",
+    "definition": "～すると、だんだん as; in consequence",
+    "reading": "にしたがって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしたって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にしたって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしたって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にしたって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしたところで",
+    "level": "Unknown",
+    "definition": "～の立場でも even from the point of view of",
+    "reading": "にしたところで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしたら",
+    "level": "Unknown",
+    "definition": "～の立場に立ってみれば even for",
+    "reading": "にしたら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にして",
+    "level": "Unknown",
+    "definition": "～だから／～でも for; considering",
+    "reading": "にして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしては",
+    "level": "Unknown",
+    "definition": "～にふさわしくなく for",
+    "reading": "にしては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしても",
+    "level": "Unknown",
+    "definition": "～と仮定しても (hypothetical adversative conjunction) even if",
+    "reading": "にしても",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしても",
+    "level": "Unknown",
+    "definition": "～のはわかるが、しかし (concession) no matter how; even if",
+    "reading": "にしても",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしても",
+    "level": "Unknown",
+    "definition": "～でも～でも whether (it's)",
+    "reading": "にしても",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしろ",
+    "level": "Unknown",
+    "definition": "～と仮定しても even if; whether or not",
+    "reading": "にしろ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしろ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にしろ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にしろ",
+    "level": "Unknown",
+    "definition": "～でも～でも whether it's",
+    "reading": "にしろ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にすぎない",
+    "level": "Unknown",
+    "definition": "ただ～だけだ merely; nothing more than",
+    "reading": "にすぎない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にする",
+    "level": "Unknown",
+    "definition": "will have; decide on",
+    "reading": "にする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にすれば",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にすれば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にせよ",
+    "level": "Unknown",
+    "definition": "と仮定しても no matter how; no matter where",
+    "reading": "にせよ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にせよ",
+    "level": "Unknown",
+    "definition": "～でも～でも whether…or…",
+    "reading": "にせよ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に沿う",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にそう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に相違ない",
+    "level": "Unknown",
+    "definition": "きっと～と思う no doubt that",
+    "reading": "にそういない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に即した",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にそくした",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に即して",
+    "level": "Unknown",
+    "definition": "～に従って in conformance with",
+    "reading": "にそくして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に沿った",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にそった",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に沿って",
+    "level": "Unknown",
+    "definition": "～に合うように／～に従って follow",
+    "reading": "にそって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に対して",
+    "level": "Unknown",
+    "definition": "～に／～を相手として (target) toward",
+    "reading": "にたいして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に対して",
+    "level": "Unknown",
+    "definition": "～と対比して考えると (contrast) as opposed to; in contrast to",
+    "reading": "にたいして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に対する",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にたいする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に耐えない",
+    "level": "Unknown",
+    "definition": "～することに耐えられない can't bear",
+    "reading": "にたえない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に耐える",
+    "level": "Unknown",
+    "definition": "～するだけの価値がある worthy of; equal to",
+    "reading": "にたえる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に足る",
+    "level": "Unknown",
+    "definition": "～できる／～するだけの価値がある suffice; worthy of",
+    "reading": "にたる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にちがいない",
+    "level": "Unknown",
+    "definition": "きっと～と思う no doubt",
+    "reading": "にちがいない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "について",
+    "level": "Unknown",
+    "definition": "～のことを about",
+    "reading": "について",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "につき",
+    "level": "Unknown",
+    "definition": "～のため because of; on account of",
+    "reading": "につき",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "につけて",
+    "level": "Unknown",
+    "definition": "～に関連していつも whenever; whatever",
+    "reading": "につけて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "につれて",
+    "level": "Unknown",
+    "definition": "～すると、だんだん as; in proportion to",
+    "reading": "につれて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にとって",
+    "level": "Unknown",
+    "definition": "～の立場から考えると for; from the point of view of",
+    "reading": "にとって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にとどまらず",
+    "level": "Unknown",
+    "definition": "～だけでなく not only, but",
+    "reading": "にとどまらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にともなって",
+    "level": "Unknown",
+    "definition": "～すると、それに応じて as; with",
+    "reading": "にともなって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "になる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "になる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "になる",
+    "level": "Unknown",
+    "definition": "become; end up",
+    "reading": "になる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に当たらない",
+    "level": "Unknown",
+    "definition": "～のは適当ではない ～is inappropriate",
+    "reading": "にあたらない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "には当たらない",
+    "level": "Unknown",
+    "definition": "～のは適当ではない ～is inappropriate",
+    "reading": "にはあたらない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にはかかわりなく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にはかかわりなく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に反して",
+    "level": "Unknown",
+    "definition": "～とは反対に contrary to",
+    "reading": "にはんして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に反する",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にはんする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に引き換え",
+    "level": "Unknown",
+    "definition": "～とは反対に／～とは大きく変わって in contrast to",
+    "reading": "にひきかえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にほかならない",
+    "level": "Unknown",
+    "definition": "～だ／～以外のものではない nothing other than",
+    "reading": "にほかならない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にもかかわらず",
+    "level": "Unknown",
+    "definition": "～のに even though",
+    "reading": "にもかかわらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にもとづいた",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にもとづいた",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にもとづいて",
+    "level": "Unknown",
+    "definition": "～を基本にして based on",
+    "reading": "にもとづいて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "に基づく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にもとづく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にもまして",
+    "level": "Unknown",
+    "definition": "～以上に more than",
+    "reading": "にもまして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "によって",
+    "level": "Unknown",
+    "definition": "～が原因で because of; owing to",
+    "reading": "によって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "によって",
+    "level": "Unknown",
+    "definition": "～で through; by",
+    "reading": "によって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "によって",
+    "level": "Unknown",
+    "definition": "～に by",
+    "reading": "によって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "によって",
+    "level": "Unknown",
+    "definition": "それぞれの～に対応して depending on",
+    "reading": "によって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "によっては",
+    "level": "Unknown",
+    "definition": "ある～の場合は some (people, cases)",
+    "reading": "によっては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "により",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "により",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "による",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "による",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "によると",
+    "level": "Unknown",
+    "definition": "～では according to",
+    "reading": "によると",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "によれば",
+    "level": "Unknown",
+    "definition": "➡ によるとによれば",
+    "reading": "によれば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にわたった",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にわたった",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にわたって",
+    "level": "Unknown",
+    "definition": "～の全体に throughout the entire",
+    "reading": "にわたって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にわたり",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "にわたり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "にわたる",
+    "level": "Unknown",
+    "definition": "➡ にわたって ヌ行にわたる",
+    "reading": "にわたる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ぬきで",
+    "level": "Unknown",
+    "definition": "～を入れないで omitting; leaving out",
+    "reading": "ぬきで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ぬきに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ぬきに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ぬきにしては",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ぬきにしては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ぬきの",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ぬきの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "抜く",
+    "level": "Unknown",
+    "definition": "最後まで～する from beginning to end",
+    "reading": "ぬく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のいたり",
+    "level": "Unknown",
+    "definition": "最高の～ most; supreme",
+    "reading": "のいたり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のうえで",
+    "level": "Unknown",
+    "definition": "～の方面では／～を見て評価すると in terms of; as far as…is concerned",
+    "reading": "のうえで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のきわみ",
+    "level": "Unknown",
+    "definition": "最高の～／～の最高だ the height, zenith",
+    "reading": "のきわみ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のことだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "のことだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のことだから",
+    "level": "Unknown",
+    "definition": "～なのだから being; the fact that",
+    "reading": "のことだから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のだ",
+    "level": "Unknown",
+    "definition": "it's the case that",
+    "reading": "のだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のだ",
+    "level": "Unknown",
+    "definition": "that is",
+    "reading": "のだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のだ",
+    "level": "Unknown",
+    "definition": "really want to say",
+    "reading": "のだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のだ",
+    "level": "Unknown",
+    "definition": "that's why",
+    "reading": "のだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のだから",
+    "level": "Unknown",
+    "definition": "since",
+    "reading": "のだから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のだった",
+    "level": "Unknown",
+    "definition": "(deep emotion) and became",
+    "reading": "のだった",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のだった",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "のだった",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のだろう",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "のだろう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ので",
+    "level": "Unknown",
+    "definition": "so",
+    "reading": "ので",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のですか",
+    "level": "Unknown",
+    "definition": "what; are (you)?",
+    "reading": "のですか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のですが",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "のですが",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のではありません",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "のではありません",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のに",
+    "level": "Unknown",
+    "definition": "in spite of the fact",
+    "reading": "のに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のに",
+    "level": "Unknown",
+    "definition": "even though",
+    "reading": "のに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のに",
+    "level": "Unknown",
+    "definition": "for",
+    "reading": "のに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のに",
+    "level": "Unknown",
+    "definition": "➡ ➡",
+    "reading": "のに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のは",
+    "level": "Unknown",
+    "definition": "when; who; why",
+    "reading": "のは",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のほう",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "のほう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のみ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "のみ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のみならず",
+    "level": "Unknown",
+    "definition": "～だけでなく not only, but",
+    "reading": "のみならず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のもとで",
+    "level": "Unknown",
+    "definition": "～を頼って／～の下で under; under the auspices of",
+    "reading": "のもとで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のもとに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "のもとに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ば",
+    "level": "Unknown",
+    "definition": "if",
+    "reading": "ば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ば",
+    "level": "Unknown",
+    "definition": "would have",
+    "reading": "ば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のに",
+    "level": "Unknown",
+    "definition": "would have",
+    "reading": "のに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ばいい",
+    "level": "Unknown",
+    "definition": "would be good if, should",
+    "reading": "ばいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ばいい",
+    "level": "Unknown",
+    "definition": "hope that; would if be good if",
+    "reading": "ばいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ばいいですか",
+    "level": "Unknown",
+    "definition": "how / why / when / who / where should",
+    "reading": "ばいいですか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はいざしらず",
+    "level": "Unknown",
+    "definition": "～は特別だから例外だが might be true for…, but not for…",
+    "reading": "はいざしらず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はおろか",
+    "level": "Unknown",
+    "definition": "～は普通としても not to mention",
+    "reading": "はおろか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "は",
+    "level": "Unknown",
+    "definition": "as for…has…",
+    "reading": "は",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "は",
+    "level": "Unknown",
+    "definition": "(does) this, but not that",
+    "reading": "は",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ばかりか",
+    "level": "Unknown",
+    "definition": "～だけでなく not just",
+    "reading": "ばかりか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ばかりだ",
+    "level": "Unknown",
+    "definition": "ますます～していく just continues to",
+    "reading": "ばかりだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ばかりだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ばかりだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ばかりでなく",
+    "level": "Unknown",
+    "definition": "～だけでなく not only, but",
+    "reading": "ばかりでなく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ばかりに",
+    "level": "Unknown",
+    "definition": "～だけが原因で simply because",
+    "reading": "ばかりに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ばこそ",
+    "level": "Unknown",
+    "definition": "～から precisely because",
+    "reading": "ばこそ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はさておき",
+    "level": "Unknown",
+    "definition": "～は今は考えの外に置いて leave for the time being",
+    "reading": "はさておき",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はじめ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "はじめ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はじめとして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "はじめとして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はじめとする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "はじめとする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はじめる",
+    "level": "Unknown",
+    "definition": "begin to",
+    "reading": "はじめる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はずがない",
+    "level": "Unknown",
+    "definition": "hardly possible that",
+    "reading": "はずがない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はずだ",
+    "level": "Unknown",
+    "definition": "(inevitable result) must surely",
+    "reading": "はずだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はずだ",
+    "level": "Unknown",
+    "definition": "～のは当然だ (natural) should be",
+    "reading": "はずだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はずはない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "はずはない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ばそれまでだ",
+    "level": "Unknown",
+    "definition": "そのようなことになればすべて終わりだ that's the end",
+    "reading": "ばそれまでだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ば",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はというと",
+    "level": "Unknown",
+    "definition": "一方～はどうかというと on the other hand; when it comes to",
+    "reading": "はというと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はともかく",
+    "level": "Unknown",
+    "definition": "～は今は問題にしないで leaving aside the problem of",
+    "reading": "はともかく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はとわず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "はとわず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "は別として",
+    "level": "Unknown",
+    "definition": "～を除外して考えて putting aside; except for",
+    "reading": "はべつとして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ば",
+    "level": "Unknown",
+    "definition": "～すれば…になり、もっと～すればもっと…になる the more…the more; the less…the less",
+    "reading": "ば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほど",
+    "level": "Unknown",
+    "definition": "～すれば…になり、もっと～すればもっと…になる the more…the more; the less…the less",
+    "reading": "ほど",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はもちろん",
+    "level": "Unknown",
+    "definition": "～は当然として of course; naturally",
+    "reading": "はもちろん",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "はもとより",
+    "level": "Unknown",
+    "definition": "～は当然として of course",
+    "reading": "はもとより",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "は",
+    "level": "Unknown",
+    "definition": "more than; less than",
+    "reading": "は",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "反した",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "はんした",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "反して",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "はんして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "反する",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "はんする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "反面",
+    "level": "Unknown",
+    "definition": "一面では～と考えられるが、別の面から見ると at the same time, on the other hand",
+    "reading": "はんめん",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "引き換え",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ひきかえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ひとり",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ひとり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "のみならず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "のみならず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "踏まえて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ふまえて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "べからざる",
+    "level": "Unknown",
+    "definition": "してはいけない must not",
+    "reading": "べからざる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "べからず",
+    "level": "Unknown",
+    "definition": "～してはいけない must not",
+    "reading": "べからず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "べきだ",
+    "level": "Unknown",
+    "definition": "～した方がいい should",
+    "reading": "べきだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "べきではない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "べきではない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "べく",
+    "level": "Unknown",
+    "definition": "～しようと思って thinking to; for the purpose of",
+    "reading": "べく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "べつとして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "べつとして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほう",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ほう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほうがいい",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ほうがいい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほかしかたがない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ほかしかたがない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほかしかたがある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ほかしかたがある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほかない",
+    "level": "Unknown",
+    "definition": "それ以外に方法はない nothing to be done but",
+    "reading": "ほかない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほかならない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ほかならない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほかなる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ほかなる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほど",
+    "level": "Unknown",
+    "definition": "～の程度に to the extent that; so much that",
+    "reading": "ほど",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほど",
+    "level": "Unknown",
+    "definition": "～すれば…になり、もっと～すればもっと…になる if do…becomes…, the more…the more",
+    "reading": "ほど",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほどだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ほどだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほど",
+    "level": "Unknown",
+    "definition": "not as…as",
+    "reading": "ほど",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ほど",
+    "level": "Unknown",
+    "definition": "～は最高に～だ nothing is as supremely…as",
+    "reading": "ほど",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "早いか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "はやいか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まい",
+    "level": "Unknown",
+    "definition": "～ようとは思わない I (we) will never…",
+    "reading": "まい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まい",
+    "level": "Unknown",
+    "definition": "～ないだろう probably won't",
+    "reading": "まい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まいか",
+    "level": "Unknown",
+    "definition": "～ないだろうか probably not the case that",
+    "reading": "まいか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まいか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "まいか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まいが",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "まいが",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まいと",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "まいと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まえに",
+    "level": "Unknown",
+    "definition": "before",
+    "reading": "まえに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まし",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "まし",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まじき",
+    "level": "Unknown",
+    "definition": "～てはいけない／～べきではない ought not to, impermissible",
+    "reading": "まじき",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "まして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ましょう",
+    "level": "Unknown",
+    "definition": "let's",
+    "reading": "ましょう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ましょうか",
+    "level": "Unknown",
+    "definition": "shall I?",
+    "reading": "ましょうか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ましょうか",
+    "level": "Unknown",
+    "definition": "shall we?",
+    "reading": "ましょうか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ませんか",
+    "level": "Unknown",
+    "definition": "why don't you…?",
+    "reading": "ませんか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ませんか",
+    "level": "Unknown",
+    "definition": "won't you?; don't you want to…?",
+    "reading": "ませんか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まで",
+    "level": "Unknown",
+    "definition": "～も／～さえ even",
+    "reading": "まで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "までして",
+    "level": "Unknown",
+    "definition": "～さえして／～もして go to the extent of",
+    "reading": "までして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "までだ",
+    "level": "Unknown",
+    "definition": "～しただけなのだ (not serious) merely; simply",
+    "reading": "までだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "までだ",
+    "level": "Unknown",
+    "definition": "ほかに方法がないから～する覚悟がある (resignation) just have to",
+    "reading": "までだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "までのことだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "までのことだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "までのこともない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "までのこともない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "までのこともある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "までのこともある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "までも",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "までも",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "までもない",
+    "level": "Unknown",
+    "definition": "～しなくてもいい no need to",
+    "reading": "までもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "までもある",
+    "level": "Unknown",
+    "definition": "～しなくてもいい no need to",
+    "reading": "までもある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まま",
+    "level": "Unknown",
+    "definition": "stay; remain; as is",
+    "reading": "まま",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "まみれ",
+    "level": "Unknown",
+    "definition": "～がたくさんついている completely covered in",
+    "reading": "まみれ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "みえて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "みえて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "みたいだ",
+    "level": "Unknown",
+    "definition": "looks as if",
+    "reading": "みたいだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "みたいだ",
+    "level": "Unknown",
+    "definition": "just like",
+    "reading": "みたいだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "むきだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "むきだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "むきに",
+    "level": "Unknown",
+    "definition": "～にちょうど合うように specially for",
+    "reading": "むきに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "むけだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "むけだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "むけに",
+    "level": "Unknown",
+    "definition": "～のために for",
+    "reading": "むけに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "めいた",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "めいた",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "めく",
+    "level": "Unknown",
+    "definition": "～らしくなる／～らしく感じられる take on the air of",
+    "reading": "めく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "巡って",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "めぐって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "巡る",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "めぐる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もかまわず",
+    "level": "Unknown",
+    "definition": "～も気にしないで with disregard for",
+    "reading": "もかまわず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もさることながら",
+    "level": "Unknown",
+    "definition": "～も無視できないが can't ignore…, but",
+    "reading": "もさることながら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もしない",
+    "level": "Unknown",
+    "definition": "全然～しない without even",
+    "reading": "もしない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "も",
+    "level": "Unknown",
+    "definition": "both…and…",
+    "reading": "も",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もちろん",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もちろん",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "基づいた",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もとづいた",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "基づいて",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もとづいて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "基づく",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もとづく",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もとで",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もとで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もとに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もとに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もとに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もとに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もとにした",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もとにした",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もとにして",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もとにして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もとより",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もとより",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "も",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "も",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もの",
+    "level": "Unknown",
+    "definition": "から（だ） because",
+    "reading": "もの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものか",
+    "level": "Unknown",
+    "definition": "決して～ない how could; who could; what could",
+    "reading": "ものか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ものか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものがある",
+    "level": "Unknown",
+    "definition": "とても～だ／なんとなく～感じる (deep emotion, enthusiasm) very; somehow feel",
+    "reading": "ものがある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものだ",
+    "level": "Unknown",
+    "definition": "よく～したなあ used to",
+    "reading": "ものだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものだ",
+    "level": "Unknown",
+    "definition": "ほんとうに～だなあ really…; truly something",
+    "reading": "ものだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものだ",
+    "level": "Unknown",
+    "definition": "～するのが当然だ should",
+    "reading": "ものだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものだから",
+    "level": "Unknown",
+    "definition": "～ので because",
+    "reading": "ものだから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もので",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もので",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものではない",
+    "level": "Unknown",
+    "definition": "～するのは常識に反する certainly shouldn't",
+    "reading": "ものではない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものではある",
+    "level": "Unknown",
+    "definition": "～するのは常識に反する certainly shouldn't",
+    "reading": "ものではある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものでもない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ものでもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものでもある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ものでもある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものともせず",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ものともせず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものなら",
+    "level": "Unknown",
+    "definition": "もしできるなら if can",
+    "reading": "ものなら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものなら",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ものなら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものの",
+    "level": "Unknown",
+    "definition": "～だが、しかし although; notwithstanding",
+    "reading": "ものの",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ものを",
+    "level": "Unknown",
+    "definition": "～のに even though…how could",
+    "reading": "ものを",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "も",
+    "level": "Unknown",
+    "definition": "～も～し～も both…and…",
+    "reading": "も",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "貰う",
+    "level": "Unknown",
+    "definition": "receive from",
+    "reading": "もらう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もん",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もん",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もんか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もんか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もんじゃない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もんじゃない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もんだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もんだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もんだから",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もんだから",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もんで",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "もんで",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "もんでもない",
+    "level": "Unknown",
+    "definition": "➡ ないものでもない ヤ行もんでもない",
+    "reading": "もんでもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "や",
+    "level": "Unknown",
+    "definition": "➡ やいなや",
+    "reading": "や",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "やいなや",
+    "level": "Unknown",
+    "definition": "～すると、同時に no sooner than; the moment that",
+    "reading": "やいなや",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "やすい",
+    "level": "Unknown",
+    "definition": "easy to",
+    "reading": "やすい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "やら",
+    "level": "Unknown",
+    "definition": "～のか what; where; who; whether",
+    "reading": "やら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "やら",
+    "level": "Unknown",
+    "definition": "～や～など and so forth",
+    "reading": "やら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "やる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "やる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ゆえ",
+    "level": "Unknown",
+    "definition": "のために／が原因で on account of",
+    "reading": "ゆえ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "よう",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "よう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "よう",
+    "level": "Unknown",
+    "definition": "I think I will",
+    "reading": "よう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ようか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようが",
+    "level": "Unknown",
+    "definition": "～ても no matter what",
+    "reading": "ようが",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようがない",
+    "level": "Unknown",
+    "definition": "～できない no way to",
+    "reading": "ようがない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようか",
+    "level": "Unknown",
+    "definition": "～をしようか、するのはやめようか whether to…or not",
+    "reading": "ようか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようが",
+    "level": "Unknown",
+    "definition": "もし～ても～なくても regardless if or if not",
+    "reading": "ようが",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようだ",
+    "level": "Unknown",
+    "definition": "looks like",
+    "reading": "ようだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようだ",
+    "level": "Unknown",
+    "definition": "seems that",
+    "reading": "ようだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようだ",
+    "level": "Unknown",
+    "definition": "it does seem that",
+    "reading": "ようだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようではないか",
+    "level": "Unknown",
+    "definition": "～しよう don't you think we should",
+    "reading": "ようではないか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようと",
+    "level": "Unknown",
+    "definition": "～ても whether…or…, even; no matter how…",
+    "reading": "ようと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようと思う",
+    "level": "Unknown",
+    "definition": "I think I will…",
+    "reading": "ようとおもう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようとしている",
+    "level": "Unknown",
+    "definition": "まもなく～する／今～するところ about to",
+    "reading": "ようとしている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようとしない",
+    "level": "Unknown",
+    "definition": "doesn't even think about",
+    "reading": "ようとしない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようとする",
+    "level": "Unknown",
+    "definition": "just when about to, try to",
+    "reading": "ようとする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようと",
+    "level": "Unknown",
+    "definition": "もし～ても～なくても whether do…or not",
+    "reading": "ようと",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ような",
+    "level": "Unknown",
+    "definition": "things like",
+    "reading": "ような",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ような",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ような",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ように",
+    "level": "Unknown",
+    "definition": "～を期待して in order to; so that",
+    "reading": "ように",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ように",
+    "level": "Unknown",
+    "definition": "～とだいたい同じに as",
+    "reading": "ように",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ように",
+    "level": "Unknown",
+    "definition": "(indirect discourse）says to",
+    "reading": "ように",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ように",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ように",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようにして",
+    "level": "Unknown",
+    "definition": "少しそのような動作をして do something so that",
+    "reading": "ようにして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようにする",
+    "level": "Unknown",
+    "definition": "make a point of",
+    "reading": "ようにする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようになる",
+    "level": "Unknown",
+    "definition": "become such that; start to do",
+    "reading": "ようになる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようにも",
+    "level": "Unknown",
+    "definition": "～しようと思ってもできない can't even though want to",
+    "reading": "ようにも",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようもない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ようもない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようもある",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "ようもある",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "ようものなら",
+    "level": "Unknown",
+    "definition": "もし～のようなことをしたら／もし～のようなことになったら if something like that were to happen, then",
+    "reading": "ようものなら",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "よぎなくさせる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "よぎなくさせる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "よぎなくされる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "よぎなくされる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "よし",
+    "level": "Unknown",
+    "definition": "～そうで have heard that",
+    "reading": "よし",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "よそに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "よそに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "よって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "よって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "より",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "より",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "より",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "より",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "より",
+    "level": "Unknown",
+    "definition": "is more/less than",
+    "reading": "より",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "よりほかしかたがない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "よりほかしかたがない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "よりほかない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "よりほかない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "依る",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "よる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "依ると",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "よると",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "依れば",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "よれば",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "らしい",
+    "level": "Unknown",
+    "definition": "seems that",
+    "reading": "らしい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "らしい",
+    "level": "Unknown",
+    "definition": "the epitome of",
+    "reading": "らしい",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "られる",
+    "level": "Unknown",
+    "definition": "can",
+    "reading": "られる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "られる",
+    "level": "Unknown",
+    "definition": "can; do",
+    "reading": "られる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "られる",
+    "level": "Unknown",
+    "definition": "was; is",
+    "reading": "られる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "られる",
+    "level": "Unknown",
+    "definition": "is; will be",
+    "reading": "られる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "られる",
+    "level": "Unknown",
+    "definition": "is; was",
+    "reading": "られる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "られる",
+    "level": "Unknown",
+    "definition": "adversely affected by",
+    "reading": "られる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "られる",
+    "level": "Unknown",
+    "definition": "social superior does action",
+    "reading": "られる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "られる",
+    "level": "Unknown",
+    "definition": "is thought, felt, etc.",
+    "reading": "られる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "わけがない",
+    "level": "Unknown",
+    "definition": "当然～ない can't possibly",
+    "reading": "わけがない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "わけだ",
+    "level": "Unknown",
+    "definition": "～のだ it's the case that",
+    "reading": "わけだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "わけではない",
+    "level": "Unknown",
+    "definition": "全部が～とは言えない／必ず～とは言えない not necessarily; not always",
+    "reading": "わけではない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "わけにはいかない",
+    "level": "Unknown",
+    "definition": "～できない can't",
+    "reading": "わけにはいかない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "わけはない",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "わけはない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "わたった",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "わたった",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "わたって",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "わたって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "わたり",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "わたり",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "わたる",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "わたる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "わりに",
+    "level": "Unknown",
+    "definition": "～こととは不釣り合いに considering",
+    "reading": "わりに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をおいて",
+    "level": "Unknown",
+    "definition": "～以外に nothing/no one besides",
+    "reading": "をおいて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を限りに",
+    "level": "Unknown",
+    "definition": "～を最後として the last time",
+    "reading": "をかぎりに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を皮切りに",
+    "level": "Unknown",
+    "definition": "～から始まって make the beginning",
+    "reading": "をかわきりに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をきっかけに",
+    "level": "Unknown",
+    "definition": "～が行動の発端や動機になって use the opportunity of",
+    "reading": "をきっかけに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を禁じ得ない",
+    "level": "Unknown",
+    "definition": "～を抑えることができない can't help but",
+    "reading": "をきんじえない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をください",
+    "level": "Unknown",
+    "definition": "please",
+    "reading": "をください",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をくださいませんか",
+    "level": "Unknown",
+    "definition": "won't you give…?",
+    "reading": "をくださいませんか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を契機に",
+    "level": "Unknown",
+    "definition": "～をちょうどいい機会だと考えて use the opportunity of",
+    "reading": "をけいきに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を込めて",
+    "level": "Unknown",
+    "definition": "～を入れて／とともに with",
+    "reading": "をこめて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をしている",
+    "level": "Unknown",
+    "definition": "has",
+    "reading": "をしている",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をちゅうしんとして",
+    "level": "Unknown",
+    "definition": "centering around",
+    "reading": "をちゅうしんとして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をちゅうしんとする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "をちゅうしんとする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をちゅうしんに",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "をちゅうしんに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をちゅうしんにする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "をちゅうしんにする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を通じて",
+    "level": "Unknown",
+    "definition": "～の間ずっと throughout",
+    "reading": "をつうじて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を通じて",
+    "level": "Unknown",
+    "definition": "～を手段として／～を媒介として through",
+    "reading": "をつうじて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を通して",
+    "level": "Unknown",
+    "definition": "～の間ずっと throughout",
+    "reading": "をとおして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を通して",
+    "level": "Unknown",
+    "definition": "～を手段として／～を媒介として through",
+    "reading": "をとおして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を",
+    "level": "Unknown",
+    "definition": "～は～であると考えて deem; consider",
+    "reading": "を",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を",
+    "level": "Unknown",
+    "definition": "➡ を～として",
+    "reading": "を",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を問わず",
+    "level": "Unknown",
+    "definition": "～に関係なく irrespective of",
+    "reading": "をとわず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を",
+    "level": "Unknown",
+    "definition": "➡ を～として",
+    "reading": "を",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を抜きにして",
+    "level": "Unknown",
+    "definition": "～を入れないで omit",
+    "reading": "をぬきにして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を抜きにしては",
+    "level": "Unknown",
+    "definition": "～を考えに入れずには without",
+    "reading": "をぬきにしては",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をはじめ",
+    "level": "Unknown",
+    "definition": "～を第一に including",
+    "reading": "をはじめ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をはじめとして",
+    "level": "Unknown",
+    "definition": "～を第一に beginning with",
+    "reading": "をはじめとして",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をはじめとする",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "をはじめとする",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を踏まえて",
+    "level": "Unknown",
+    "definition": "～を土台や前提にして based on",
+    "reading": "をふまえて",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を巡って",
+    "level": "Unknown",
+    "definition": "～を議論や争いの中心点として centering around; concerning",
+    "reading": "をめぐって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を巡る",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "をめぐる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をもって",
+    "level": "Unknown",
+    "definition": "～で by; with",
+    "reading": "をもって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をもって",
+    "level": "Unknown",
+    "definition": "～で as of",
+    "reading": "をもって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をもとに",
+    "level": "Unknown",
+    "definition": "～を素材にして／～からヒントを得て derived from",
+    "reading": "をもとに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をもとにした",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "をもとにした",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をものともせず",
+    "level": "Unknown",
+    "definition": "～に負けないで undaunted by",
+    "reading": "をものともせず",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を余儀なくさせる",
+    "level": "Unknown",
+    "definition": "しかたなく～させる compel",
+    "reading": "をよぎなくさせる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "を余儀なくされる",
+    "level": "Unknown",
+    "definition": "しかたなく～しなければならない be compelled to",
+    "reading": "をよぎなくされる",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "をよそに",
+    "level": "Unknown",
+    "definition": "～を自分とは関係ないものとして indifferent to",
+    "reading": "をよそに",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んがため",
+    "level": "Unknown",
+    "definition": "～ようという目的をもって in order to",
+    "reading": "んがため",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んじゃない",
+    "level": "Unknown",
+    "definition": "～てはいけない don't…",
+    "reading": "んじゃない",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んだ",
+    "level": "Unknown",
+    "definition": "～なさい must",
+    "reading": "んだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "んだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んだった",
+    "level": "Unknown",
+    "definition": "～すればよかった (regret) should have",
+    "reading": "んだった",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んだって",
+    "level": "Unknown",
+    "definition": "のだそうです hear that",
+    "reading": "んだって",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んだろう",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "んだろう",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んですか",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "んですか",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んですが",
+    "level": "Unknown",
+    "definition": "(uh)",
+    "reading": "んですが",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んばかりだ",
+    "level": "Unknown",
+    "definition": "➡",
+    "reading": "んばかりだ",
+    "source": "Donnatoki"
+  },
+  {
+    "pattern": "んばかりに",
+    "level": "Unknown",
+    "definition": "ほとんど～しそうな様子で on the point of",
+    "reading": "んばかりに",
+    "source": "Donnatoki"
+  }
+]

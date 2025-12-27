@@ -47,14 +47,14 @@ const nextConfig: NextConfig = {
 
   // 使用 Turbopack 时，通过 serverExternalPackages 处理外部包
   // 这替代了之前的 webpack 配置
-  turbopack: {
-    rules: {
-      '*.node': {
-        loaders: ['file-loader'],
-        as: '*.js',
-      },
-    },
-  },
+  // turbopack: {
+  //   rules: {
+  //     '*.node': {
+  //       loaders: ['file-loader'],
+  //       as: '*.js',
+  //     },
+  //   },
+  // },
 };
 
 export default nextConfig;

@@ -1,0 +1,3747 @@
+[
+  {
+    "pattern": "くらい",
+    "level": "N4",
+    "definition": "Approximately; about",
+    "reading": "くらい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "へ",
+    "level": "N4",
+    "definition": "To; towards",
+    "reading": "へ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "て",
+    "level": "N4",
+    "definition": "And; -ing",
+    "reading": "て",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だけ",
+    "level": "N4",
+    "definition": "Only; just; alone; merely; that’s all",
+    "reading": "だけ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "し",
+    "level": "N4",
+    "definition": "And what’s more; not only ~ but also ~; so",
+    "reading": "し",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "という",
+    "level": "N4",
+    "definition": "Called; that says ~; that",
+    "reading": "という",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "つもり",
+    "level": "N4",
+    "definition": "Intend to ~; be convinced that ~; believe; feel sure that ~; be going to; mean",
+    "reading": "つもり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "はず",
+    "level": "N4",
+    "definition": "I expect that ~; it is expected that ~; ~ is expected to; I am fairly certain that ~; should; ought to; it is natural that ~; no wonder ~",
+    "reading": "はず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ほうがいい",
+    "level": "N4",
+    "definition": "Had better do something",
+    "reading": "ほうがいい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たって",
+    "level": "N4",
+    "definition": "Even if ~",
+    "reading": "たって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "として",
+    "level": "N4",
+    "definition": "As; in the capacity of",
+    "reading": "として",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ないで",
+    "level": "N4",
+    "definition": "Do not do something and; without doing ~",
+    "reading": "ないで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なくて",
+    "level": "N4",
+    "definition": "Do not do something and ~; is not ~ and ~; because ~ do not do something",
+    "reading": "なくて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ようだ",
+    "level": "N4",
+    "definition": "Look like; look as if; be like; appear; seem",
+    "reading": "ようだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だい",
+    "level": "N4",
+    "definition": "",
+    "reading": "だい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "がる",
+    "level": "N4",
+    "definition": "Show signs of ~",
+    "reading": "がる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あとで",
+    "level": "N4",
+    "definition": "After",
+    "reading": "あとで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ば",
+    "level": "N4",
+    "definition": "If",
+    "reading": "ば",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たら",
+    "level": "N4",
+    "definition": "If; when; after",
+    "reading": "たら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なら",
+    "level": "N4",
+    "definition": "If it is true that; if it is the case that; if; would; could",
+    "reading": "なら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "はいけない",
+    "level": "N4",
+    "definition": "Cannot do something; must not do something; don’t do something; should not do something",
+    "reading": "はいけない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なければならない",
+    "level": "N4",
+    "definition": "Have to; must; need",
+    "reading": "なければならない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "な",
+    "level": "N4",
+    "definition": "Don't do ~",
+    "reading": "な",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ても",
+    "level": "N4",
+    "definition": "Even if; although",
+    "reading": "ても",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "てもいい",
+    "level": "N4",
+    "definition": "May; It is all right if",
+    "reading": "てもいい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "みる",
+    "level": "N4",
+    "definition": "Do something and see; try to do something",
+    "reading": "みる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "しまう",
+    "level": "N4",
+    "definition": "Have dome something; finish doing something; finish something up",
+    "reading": "しまう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "おく",
+    "level": "N4",
+    "definition": "Do something in advance; go ahead and do something; let someone/something remain as he/it is",
+    "reading": "おく",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だろう",
+    "level": "N4",
+    "definition": "Probably",
+    "reading": "だろう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "かもしれない",
+    "level": "N4",
+    "definition": "Might",
+    "reading": "かもしれない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なさい",
+    "level": "N4",
+    "definition": "Do something",
+    "reading": "なさい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あげる",
+    "level": "N4",
+    "definition": "Give",
+    "reading": "あげる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "もらう",
+    "level": "N4",
+    "definition": "Get; receive; be given",
+    "reading": "もらう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それで",
+    "level": "N4",
+    "definition": "And; because of that; that is why; therefore; so",
+    "reading": "それで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "らしい",
+    "level": "N4",
+    "definition": "Seem; look like; apparently; I heard",
+    "reading": "らしい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "さ",
+    "level": "N4",
+    "definition": "-ness; -ly",
+    "reading": "さ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "など",
+    "level": "N4",
+    "definition": "And so on; and the like; for example; things like ~",
+    "reading": "など",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ばかり",
+    "level": "N4",
+    "definition": "Only; just; be ready to do something; have just done something; just did something; be just doing something; about",
+    "reading": "ばかり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ごろ",
+    "level": "N4",
+    "definition": "About; around",
+    "reading": "ごろ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ようと思う",
+    "level": "N4",
+    "definition": "~ think ~ will",
+    "reading": "ようとおもう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ことになる",
+    "level": "N4",
+    "definition": "It will be decided that ~; come about ~; be arranged that ~; turn out that ~",
+    "reading": "ことになる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それなら",
+    "level": "N4",
+    "definition": "Then; in that case",
+    "reading": "それなら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "やはり",
+    "level": "N4",
+    "definition": "Still; also; after all; as expected; you know",
+    "reading": "やはり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "や",
+    "level": "N4",
+    "definition": "And",
+    "reading": "や",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "けれども",
+    "level": "N4",
+    "definition": "Although; though",
+    "reading": "けれども",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "そして",
+    "level": "N4",
+    "definition": "And; and then",
+    "reading": "そして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それから",
+    "level": "N4",
+    "definition": "After that; and then; in addition to that",
+    "reading": "それから",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ことは",
+    "level": "N4",
+    "definition": "Indeed one does something alright, (but ~); indeed ~ (but ~); do ~ (but ~)",
+    "reading": "ことは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にしては",
+    "level": "N4",
+    "definition": "For ~; considering that ~",
+    "reading": "にしては",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それでは",
+    "level": "N4",
+    "definition": "If so; then; well then",
+    "reading": "それでは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ばよかった",
+    "level": "N4",
+    "definition": "I wish ~ had done something",
+    "reading": "ばよかった",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たらどうですか",
+    "level": "N4",
+    "definition": "Why don't you do ~?; what about doing ~?",
+    "reading": "たらどうですか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "としては",
+    "level": "N4",
+    "definition": "For",
+    "reading": "としては",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あまり",
+    "level": "N4",
+    "definition": "(not) very much; (not) very",
+    "reading": "あまり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ほど",
+    "level": "N4",
+    "definition": "To the extent of; to the extent that ~; (not as) ~ as ~; about",
+    "reading": "ほど",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "まで",
+    "level": "N4",
+    "definition": "As far as; till; up to; until; through; even",
+    "reading": "まで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "もらう",
+    "level": "N4",
+    "definition": "Receive benefit from an action by someone; have something done by someone; have someone do something.",
+    "reading": "もらう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "られる",
+    "level": "N4",
+    "definition": "Be –ed; get –ed",
+    "reading": "られる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "しか",
+    "level": "N4",
+    "definition": "Nothing/nobody/no ~ but; only",
+    "reading": "しか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とか",
+    "level": "N4",
+    "definition": "And; or",
+    "reading": "とか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ところだ",
+    "level": "N4",
+    "definition": "~ is (in) a place where it takes ~ to get to",
+    "reading": "ところだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "って",
+    "level": "N4",
+    "definition": "That",
+    "reading": "って",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "わけだ",
+    "level": "N4",
+    "definition": "No wonder; so it means that ~; that's why; should ~; I take it that ~; naturally",
+    "reading": "わけだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "までに",
+    "level": "N4",
+    "definition": "By; by the time (when)",
+    "reading": "までに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "まま",
+    "level": "N4",
+    "definition": "As it is; unchanged; undisturbed; leave as is; remain",
+    "reading": "まま",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ながら",
+    "level": "N4",
+    "definition": "While; over; with",
+    "reading": "ながら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "より",
+    "level": "N4",
+    "definition": "In ~ of; inside; outside; before; after",
+    "reading": "より",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "と言えば",
+    "level": "N4",
+    "definition": "Speaking of ~",
+    "reading": "といえば",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ことにする",
+    "level": "N4",
+    "definition": "Decide to",
+    "reading": "ことにする",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なくなる",
+    "level": "N4",
+    "definition": "Not ~ any more",
+    "reading": "なくなる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "させる",
+    "level": "N4",
+    "definition": "Make someone/something do something; cause someone/something to do something; let someone/something do something; allow someone/something to do something; have someone/something do something; get someone/something to do something.",
+    "reading": "させる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "堪らない",
+    "level": "N4",
+    "definition": "Unbearably ~; extremely; be dying to do ~",
+    "reading": "たまらない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ところだ",
+    "level": "N4",
+    "definition": "Be just about to do something; be in the midst of doing something; have just done something; have been doing something; almost did something",
+    "reading": "ところだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にする",
+    "level": "N4",
+    "definition": "Decide on ~; make it ~",
+    "reading": "にする",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "られる",
+    "level": "N4",
+    "definition": "Be able to do something; can do something; be –able; ~ can be done",
+    "reading": "られる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ようにする",
+    "level": "N4",
+    "definition": "Do ~ in such a way that ~; see to it that ~; make sure that ~; bring it about that ~",
+    "reading": "ようにする",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "せっかく",
+    "level": "N4",
+    "definition": "With effort; at great pain; take the trouble to do ~",
+    "reading": "せっかく",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "すると",
+    "level": "N4",
+    "definition": "Thereupon ~; then ~; and ~",
+    "reading": "すると",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それとも",
+    "level": "N4",
+    "definition": "Or; either ~ or ~",
+    "reading": "それとも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "しい",
+    "level": "N4",
+    "definition": "",
+    "reading": "しい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たい",
+    "level": "N4",
+    "definition": "Want (to do something); would like (to do something)",
+    "reading": "たい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ごとに",
+    "level": "N4",
+    "definition": "Every",
+    "reading": "ごとに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "うちに",
+    "level": "N4",
+    "definition": "While; before; during",
+    "reading": "うちに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ようになる",
+    "level": "N4",
+    "definition": "Reach the point where ~; come to ~; it has come to be that ~; have finally become",
+    "reading": "ようになる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ように言う",
+    "level": "N4",
+    "definition": "Tell ~ to ~; say ~ in such a way",
+    "reading": "ようにいう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ずつ",
+    "level": "N4",
+    "definition": "By; at a time.",
+    "reading": "ずつ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あまり",
+    "level": "N2",
+    "definition": "Because of too much ~; because ~ too much; so ~ that ~",
+    "reading": "あまり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ばかりか",
+    "level": "N2",
+    "definition": "Not only ~ but also",
+    "reading": "ばかりか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "べきだ",
+    "level": "N2",
+    "definition": "Should; ought to",
+    "reading": "べきだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "分",
+    "level": "N2",
+    "definition": "For ~; ~ worth; amount equivalent to ~; portion",
+    "reading": "分",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だが",
+    "level": "N2",
+    "definition": "But; however; yet; nevertheless",
+    "reading": "だが",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だからと言って",
+    "level": "N2",
+    "definition": "However, it doesn't follow from this that ~; but it doesn't mean that ~; because of that",
+    "reading": "だからといって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だけで",
+    "level": "N2",
+    "definition": "Just V-ing is enough; can just ~; just by V-ing",
+    "reading": "だけで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だらけ",
+    "level": "N2",
+    "definition": "Full of; filled with; covered with",
+    "reading": "だらけ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "で",
+    "level": "N2",
+    "definition": "For; per",
+    "reading": "で",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "であろう",
+    "level": "N2",
+    "definition": "Probably",
+    "reading": "であろう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "である",
+    "level": "N2",
+    "definition": "Be",
+    "reading": "である",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "どころか",
+    "level": "N2",
+    "definition": "Far from; not just; even",
+    "reading": "どころか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "どうも",
+    "level": "N2",
+    "definition": "I don't know why but; I cannot manage to; just; from what I gather; seem; no matter how ~; I gather that ~; for some reason",
+    "reading": "どうも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "どんなに",
+    "level": "N2",
+    "definition": "How ~ (!)",
+    "reading": "どんなに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "どうせ",
+    "level": "N2",
+    "definition": "In any case; anyway; at all events; after all; at all",
+    "reading": "どうせ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "風に",
+    "level": "N2",
+    "definition": "In ~ manner; after ~ style; a la ~; like",
+    "reading": "ふうに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "がち",
+    "level": "N2",
+    "definition": "Tend to; be prone to; be apt to; be liable to; be subject to; often",
+    "reading": "がち",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "がたい",
+    "level": "N2",
+    "definition": "Cannot; un—able; can hardly; difficult to; impossible",
+    "reading": "がたい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "逆に",
+    "level": "N2",
+    "definition": "Contrary to one's expectation; contrary to one's intention; conversely",
+    "reading": "ぎゃくに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ほど",
+    "level": "N2",
+    "definition": "The ~, the ~; as; to the extent",
+    "reading": "ほど",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "以外",
+    "level": "N2",
+    "definition": "Other than; except (for); but; besides; as well as",
+    "reading": "いがい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "以上",
+    "level": "N2",
+    "definition": "Since; now that; once; if ~ at all; as long as; so long as",
+    "reading": "いじょう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "いかにも",
+    "level": "N2",
+    "definition": "Really; truly; indeed",
+    "reading": "いかにも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "一方で",
+    "level": "N2",
+    "definition": "On the one hand ~, on the other hand",
+    "reading": "いっぽうで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "上",
+    "level": "N2",
+    "definition": "From the viewpoint of; for (the sake of); for (the reason); in (terms of); relating to; in –ing",
+    "reading": "うえ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "かえって",
+    "level": "N2",
+    "definition": "On the contrary; rather",
+    "reading": "かえって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "限り",
+    "level": "N2",
+    "definition": "As long as; as far as; while; to the extent; until; unless",
+    "reading": "かぎり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "限り",
+    "level": "N2",
+    "definition": "The last; only until; from ~ on; limited to; only",
+    "reading": "かぎり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "かな",
+    "level": "N2",
+    "definition": "I wonder if ~",
+    "reading": "かな",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "必ずしも",
+    "level": "N2",
+    "definition": "Not always; not necessarily",
+    "reading": "かならずしも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "かねる",
+    "level": "N2",
+    "definition": "Cannot; be not in a position to; hardly possible; hard; hesitate to do",
+    "reading": "かねる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に至るまで",
+    "level": "N2",
+    "definition": "Starting with ~ ending with ~; from ~ to ~",
+    "reading": "にいたるまで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にかけて",
+    "level": "N2",
+    "definition": "Through ~ into ~; through ~ on to; from ~ till/to",
+    "reading": "にかけて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "からと言って",
+    "level": "N2",
+    "definition": "Just because; even if; even though",
+    "reading": "からといって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "かろう",
+    "level": "N2",
+    "definition": "Probably",
+    "reading": "かろう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "方をする",
+    "level": "N2",
+    "definition": "Do something in a ~ fashion/manner/way",
+    "reading": "かたをする",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "かと言うと",
+    "level": "N2",
+    "definition": "You would think that ~ but (that is not right)",
+    "reading": "かというと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "代わりに",
+    "level": "N2",
+    "definition": "Instead of; instead; but (to make up for ~); so (to make up for ~); in place of",
+    "reading": "かわりに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "結果",
+    "level": "N2",
+    "definition": "As a result of; after; upon",
+    "reading": "けっか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "結構",
+    "level": "N2",
+    "definition": "Quite; rather; pretty",
+    "reading": "けっか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "この",
+    "level": "N2",
+    "definition": "The last; this past; this; this coming",
+    "reading": "この",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "こうした",
+    "level": "N2",
+    "definition": "Such; like this",
+    "reading": "こうした",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "こそ",
+    "level": "N2",
+    "definition": "The very ~; it is ~; that ~; only (when, after, because, etc.); in particular; precisely; definitely;",
+    "reading": "こそ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "こと",
+    "level": "N2",
+    "definition": "(don't) V; should (not); (not) ought to; may not",
+    "reading": "こと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ことで",
+    "level": "N2",
+    "definition": "By V-ing; because; result in; cause",
+    "reading": "ことで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ことになる",
+    "level": "N2",
+    "definition": "End up (with); cause; come to mean that",
+    "reading": "ことになる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ことによる",
+    "level": "N2",
+    "definition": "Be due to the fact that; be caused by; be brought about by; be the result of; because",
+    "reading": "ことによる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ことはない",
+    "level": "N2",
+    "definition": "There is no need to; not necessary; there is no possibility that; there is no chance to",
+    "reading": "ことはない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "く",
+    "level": "N2",
+    "definition": "And; so",
+    "reading": "く",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "くらい",
+    "level": "N2",
+    "definition": "To the extent that; so ~ that ~ (almost) ~; at least; the only ~; rather than ~",
+    "reading": "くらい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "くせに",
+    "level": "N2",
+    "definition": "Although; in spite of the fact that; and yet; but",
+    "reading": "くせに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "までもない",
+    "level": "N2",
+    "definition": "Not necessary (to bother) to; do not need (to go as far as) to; do not have to",
+    "reading": "までもない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "まい",
+    "level": "N2",
+    "definition": "Will not; will probably not; be probably not",
+    "reading": "まい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "まさか",
+    "level": "N2",
+    "definition": "Incredible; never thought; never dreamed; surely not; impossible; don't tell me that ~; not at all likely; absolutely not.",
+    "reading": "まさか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ましだ",
+    "level": "N2",
+    "definition": "Better; less objectionable; preferable; might as well ~",
+    "reading": "ましだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "または",
+    "level": "N2",
+    "definition": "Or; either ~ or ~",
+    "reading": "または",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "目",
+    "level": "N2",
+    "definition": "-th; -th one",
+    "reading": "め",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "面",
+    "level": "N2",
+    "definition": "(on) the side of; (from) the aspect of; (from) the standpoint/viewpoint of; in terms of",
+    "reading": "めん",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "みせる",
+    "level": "N2",
+    "definition": "Can manage to; will definitely do; am determined to",
+    "reading": "みせる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "も",
+    "level": "N2",
+    "definition": "Also; too; (not) either; (not) even",
+    "reading": "も",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なあ",
+    "level": "N2",
+    "definition": "How ~!; what ~! ~!; I wonder; I wish",
+    "reading": "なあ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "などと",
+    "level": "N2",
+    "definition": "(things) like ~; ~ or something like",
+    "reading": "などと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ながら",
+    "level": "N2",
+    "definition": "Although; even though; nevertheless",
+    "reading": "ながら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ないことも",
+    "level": "N2",
+    "definition": "It isn't the case that ~ not ~; it is not that ~ not ~",
+    "reading": "ないことも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ないことは",
+    "level": "N2",
+    "definition": "It isn't the case that ~ not ~; it is not that ~ not ~",
+    "reading": "ないことも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なかなか",
+    "level": "N2",
+    "definition": "Quite; fairly; considerably; (not) easily; pretty; (not) readily",
+    "reading": "なかなか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なく",
+    "level": "N2",
+    "definition": "Not ~ and; not ~ but",
+    "reading": "なく",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "何でも",
+    "level": "N2",
+    "definition": "I don't know for sure, but",
+    "reading": "なんでも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "何しろ",
+    "level": "N2",
+    "definition": "As a matter of fact; no matter what; believe it or not; you may be surprised, but ~; in fact; unbelievably",
+    "reading": "なにしろ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ならない",
+    "level": "N2",
+    "definition": "Cannot help -ing; irresistibly; unbearably",
+    "reading": "ならない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なりに",
+    "level": "N2",
+    "definition": "In one's own way; in one's own style",
+    "reading": "なりに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なしでは",
+    "level": "N2",
+    "definition": "Without",
+    "reading": "なしでは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ねばならない",
+    "level": "N2",
+    "definition": "Must; have to; should",
+    "reading": "ねばならない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に",
+    "level": "N2",
+    "definition": "",
+    "reading": "に",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に当たって",
+    "level": "N2",
+    "definition": "On the occasion of; at; in; before; prior to",
+    "reading": "にあたって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に当たり",
+    "level": "N2",
+    "definition": "On the occasion of; at; in; before; prior to",
+    "reading": "にあたり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に反して",
+    "level": "N2",
+    "definition": "Against; contrary to; in contrast to; in violation of; while; whereas",
+    "reading": "にはんして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に反する",
+    "level": "N2",
+    "definition": "Against; contrary to; in contrast to; in violation of; while; whereas",
+    "reading": "にはんする",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にほかならない",
+    "level": "N2",
+    "definition": "Be nothing but ~; be simply ~",
+    "reading": "にほかならない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に限らず",
+    "level": "N2",
+    "definition": "Not limited to ~ (but also); not only ~ (but also)",
+    "reading": "にかぎらず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に限って",
+    "level": "N2",
+    "definition": "(X) of all (X's); only",
+    "reading": "にかぎって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に関して",
+    "level": "N2",
+    "definition": "Concerning; with regard to; about; on",
+    "reading": "にかんして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に代わって",
+    "level": "N2",
+    "definition": "In place of; replacing; on behalf of",
+    "reading": "にかわって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に比べる",
+    "level": "N2",
+    "definition": "Compared with/to; when compared with/to; in comparison to",
+    "reading": "にくらべる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にもかかわらず",
+    "level": "N2",
+    "definition": "Although; though; in spite of; despite; notwithstanding; nevertheless",
+    "reading": "にもかかわらず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に基づいて",
+    "level": "N2",
+    "definition": "Based upon",
+    "reading": "にもとづいて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "になると",
+    "level": "N2",
+    "definition": "When it becomes; when it comes to; when; if",
+    "reading": "になると",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "において",
+    "level": "N2",
+    "definition": "At; on; in; during",
+    "reading": "において",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "における",
+    "level": "N2",
+    "definition": "At; on; in; during",
+    "reading": "における",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に従って",
+    "level": "N2",
+    "definition": "As, accordingly; in proportion to; in accordance with; following",
+    "reading": "にしたがって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に従い",
+    "level": "N2",
+    "definition": "As, accordingly; in proportion to; in accordance with; following",
+    "reading": "にしたがい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に過ぎない",
+    "level": "N2",
+    "definition": "Nothing more than; not more than; mere; merely; only; just; as little/few as; that's all",
+    "reading": "にすぎない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に対して",
+    "level": "N2",
+    "definition": "Toward; to; in contrast to; whereas; in regard to; in; per",
+    "reading": "にたいして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に対する",
+    "level": "N2",
+    "definition": "Toward; to; in contrast to; whereas; in regard to; in; per",
+    "reading": "にたいする",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にとって",
+    "level": "N2",
+    "definition": "To; for",
+    "reading": "にとって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "について",
+    "level": "N2",
+    "definition": "About; on; concerning; regarding; with regard to; of",
+    "reading": "について",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "につき",
+    "level": "N2",
+    "definition": "A; per; for; on; to",
+    "reading": "につき",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "につれて",
+    "level": "N2",
+    "definition": "As; in proportion to; with",
+    "reading": "につれて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "には",
+    "level": "N2",
+    "definition": "To; in order to; for; for the purpose of ~",
+    "reading": "には",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "によって",
+    "level": "N2",
+    "definition": "According to; due to; owing to; because of; depending on; from ~ to; by means of; on the basis of; with; by",
+    "reading": "によって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "により",
+    "level": "N2",
+    "definition": "According to; due to; owing to; because of; depending on; from ~ to; by means of; on the basis of; with; by",
+    "reading": "により",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "の関係で",
+    "level": "N2",
+    "definition": "Because of",
+    "reading": "のかんけいで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "のこと",
+    "level": "N2",
+    "definition": "About; in terms of; related to",
+    "reading": "のこと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "のことだから",
+    "level": "N2",
+    "definition": "Because ~ is habitually/usually/often that way; because",
+    "reading": "のことだから",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "のみ",
+    "level": "N2",
+    "definition": "Only; just; alone",
+    "reading": "のみ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "の下で",
+    "level": "N2",
+    "definition": "Under; in; with",
+    "reading": "のしたで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "の上では",
+    "level": "N2",
+    "definition": "As far as ~ is concerned; as far as ~ goes; from the viewpoint/standpoint of; according to; in terms of",
+    "reading": "のうえでは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "のことだ",
+    "level": "N2",
+    "definition": "It will be/was ~ when/that ~",
+    "reading": "のことだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ぬ",
+    "level": "N2",
+    "definition": "Not",
+    "reading": "ぬ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "思われる",
+    "level": "N2",
+    "definition": "Seem; appear; apparently",
+    "reading": "おもわれる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "おり",
+    "level": "N2",
+    "definition": "Be ~ and",
+    "reading": "おり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "を通して",
+    "level": "N2",
+    "definition": "Through; by the medium of; via; throughout",
+    "reading": "をとおして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "っぱなし",
+    "level": "N2",
+    "definition": "Keep -ing; have been -ing; leave",
+    "reading": "っぱなし",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "っぽい",
+    "level": "N2",
+    "definition": "Apt to; easy to; -ish; -like",
+    "reading": "っぽい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "来",
+    "level": "N2",
+    "definition": "For; in; since",
+    "reading": "らい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "例の",
+    "level": "N2",
+    "definition": "The ~ (in question); that (same); the usual",
+    "reading": "れいの",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "さ",
+    "level": "N2",
+    "definition": "You know; sure; I tell you",
+    "reading": "さ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "さえ",
+    "level": "N2",
+    "definition": "Even; if ~ only; if ~ just; as long as; the only thing ~ need is",
+    "reading": "さえ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "さすが",
+    "level": "N2",
+    "definition": "As might be expected; after all; it is only natural that ~; naturally; truly; really; indeed; impressive",
+    "reading": "さすが",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "せい",
+    "level": "N2",
+    "definition": "Because; due to",
+    "reading": "せい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "せめて",
+    "level": "N2",
+    "definition": "At least",
+    "reading": "せめて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "次第",
+    "level": "N2",
+    "definition": "As soon as; depend on",
+    "reading": "しだい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "しかも",
+    "level": "N2",
+    "definition": "Moreover; furthermore; besides; on top of that; what's more; what's worse; more surprisingly; at that; nevertheless; and yet; even so",
+    "reading": "しかも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "したがって",
+    "level": "N2",
+    "definition": "Therefore; accordingly; consequently",
+    "reading": "したがって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "そうかと言って",
+    "level": "N2",
+    "definition": "But; yet; even so",
+    "reading": "そうかといって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "そこで",
+    "level": "N2",
+    "definition": "So; because of that; therefore",
+    "reading": "そこで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "そこで",
+    "level": "N2",
+    "definition": "Then; at that time",
+    "reading": "そこで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "そこを",
+    "level": "N2",
+    "definition": "But; in spite of that",
+    "reading": "そこを",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "そうになる",
+    "level": "N2",
+    "definition": "Almost",
+    "reading": "そうになる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "そうになった",
+    "level": "N2",
+    "definition": "Almost",
+    "reading": "そうになった",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "その上",
+    "level": "N2",
+    "definition": "On top of that; besides; moreover; furthermore; what's more; what's worse; not only ~ but also",
+    "reading": "その上",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それでも",
+    "level": "N2",
+    "definition": "Nevertheless; yet; but in spite of that; even so",
+    "reading": "それでも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それどころか",
+    "level": "N2",
+    "definition": "On the contrary; far from that; as a matter of fact",
+    "reading": "それどころか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それが",
+    "level": "N2",
+    "definition": "Well (contrary to your expectation; I'm afraid to say this, but)",
+    "reading": "それが",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それも",
+    "level": "N2",
+    "definition": "What's more; what's worse; at that; furthermore; moreover; on top of that",
+    "reading": "それも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それに",
+    "level": "N2",
+    "definition": "(and) in addition; moreover; furthermore; what's more; on top of that",
+    "reading": "それに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それと",
+    "level": "N2",
+    "definition": "And; also; in addition; as well",
+    "reading": "それと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それは",
+    "level": "N2",
+    "definition": "(yes,) naturally; (yes,) of course; oh, surely",
+    "reading": "それは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それぞれ",
+    "level": "N2",
+    "definition": "Each; respectively",
+    "reading": "それぞれ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "すぐ",
+    "level": "N2",
+    "definition": "At once; soon; right away; immediately; readily; instantly; easily; right",
+    "reading": "すぐ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たびに",
+    "level": "N2",
+    "definition": "Every time; each time; on every occasion; whenever",
+    "reading": "たびに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ただ",
+    "level": "N2",
+    "definition": "Only; just; simply; that's all",
+    "reading": "ただ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ただの",
+    "level": "N2",
+    "definition": "Usual; ordinary; plain; common; rank and file",
+    "reading": "ただの",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たところで",
+    "level": "N2",
+    "definition": "Even if",
+    "reading": "たところで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "て",
+    "level": "N2",
+    "definition": "And; since; having done something",
+    "reading": "て",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "て初めて",
+    "level": "N2",
+    "definition": "Not until; only after; for the first time",
+    "reading": "てはじめて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ては",
+    "level": "N2",
+    "definition": "If; when; because",
+    "reading": "ては",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "と",
+    "level": "N2",
+    "definition": "(thinking/saying) that ~; because; like; in such a way that ~",
+    "reading": "と",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "と同時に",
+    "level": "N2",
+    "definition": "At the same time (as); at the time; when; as; while; as well as ~",
+    "reading": "とどうじに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "と言っても",
+    "level": "N2",
+    "definition": "Although ~ say/said that ~; even though ~ say/said that ~",
+    "reading": "といっても",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "という風に",
+    "level": "N2",
+    "definition": "In such a way that; in such a fashion to suggest/show (etc.) that; as if to say/show (etc.) that",
+    "reading": "というふうに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ということは",
+    "level": "N2",
+    "definition": "That; the fact that",
+    "reading": "ということは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "というのに",
+    "level": "N2",
+    "definition": "But; although; in spite of the fact that ~",
+    "reading": "というのに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "というのは",
+    "level": "N2",
+    "definition": "Mean; the meaning of ~ is; what ~ means is",
+    "reading": "というのは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "と言うと",
+    "level": "N2",
+    "definition": "When ~ mention; if ~ say that ~; when ~ say that ~; when it comes to",
+    "reading": "というと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "というより",
+    "level": "N2",
+    "definition": "Rather than; more ~ than ~",
+    "reading": "というより",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "というよりは",
+    "level": "N2",
+    "definition": "Rather than; more ~ than ~",
+    "reading": "というよりは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とかで",
+    "level": "N2",
+    "definition": "For some reason like ~; saying something like ~; because ~ or something like that",
+    "reading": "とかで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ところ",
+    "level": "N2",
+    "definition": "When; then",
+    "reading": "ところ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ところが",
+    "level": "N2",
+    "definition": "However; but",
+    "reading": "ところが",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とも",
+    "level": "N2",
+    "definition": "No matter ~ may be; even if; at ~ -est",
+    "reading": "とも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "となる",
+    "level": "N2",
+    "definition": "Become",
+    "reading": "となる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "となると",
+    "level": "N2",
+    "definition": "When it comes to; if it is true that ~; if it is the case that ~; if it turns out that ~",
+    "reading": "となると",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "通り",
+    "level": "N2",
+    "definition": "(in) the same way as; (in) the way; as",
+    "reading": "どおり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "通りに",
+    "level": "N2",
+    "definition": "(in) the same way as; (in) the way; as",
+    "reading": "どおりに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とする",
+    "level": "N2",
+    "definition": "Assume that; regard ~ as; let; suppose",
+    "reading": "とする",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とする",
+    "level": "N2",
+    "definition": "Feel ~; look ~",
+    "reading": "とする",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "途端",
+    "level": "N2",
+    "definition": "The moment; just as; as soon as; then",
+    "reading": "とたん",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とうとう",
+    "level": "N2",
+    "definition": "Finally; at (long) last; eventually; in the end; after all",
+    "reading": "とうとう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "と共に",
+    "level": "N2",
+    "definition": "As well as; with; along with; at the same time; when, as; while",
+    "reading": "とともに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とは限らない",
+    "level": "N2",
+    "definition": "Not always; not necessarily",
+    "reading": "とはかぎらない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "つまり",
+    "level": "N2",
+    "definition": "That is (to say); namely; in short; to sum up; in other words; after all; that means",
+    "reading": "つまり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "つつ",
+    "level": "N2",
+    "definition": "-ing; while; although",
+    "reading": "つつ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "の上で",
+    "level": "N2",
+    "definition": "Upon ~; after ~",
+    "reading": "のうえで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "上で",
+    "level": "N2",
+    "definition": "Upon ~; after ~",
+    "reading": "うえで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "上に",
+    "level": "N2",
+    "definition": "As well; in addition; besides; furthermore; moreover; not only ~ but also",
+    "reading": "うえに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "得る",
+    "level": "N2",
+    "definition": "Can; possible; -able",
+    "reading": "うる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "は",
+    "level": "N2",
+    "definition": "",
+    "reading": "は",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "は言うまでもなく",
+    "level": "N2",
+    "definition": "Not to speak of; let alone; not to mention; to say nothing of",
+    "reading": "はいうまでもなく",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "わけだ",
+    "level": "N2",
+    "definition": "As you know; the fact is that ~; the truth of the matter is that ~",
+    "reading": "わけだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "わけではない",
+    "level": "N2",
+    "definition": "It does not mean that ~; I don't mean that ~; it is not that ~; it is not true that ~; it is not the case that",
+    "reading": "わけではない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "わけがない",
+    "level": "N2",
+    "definition": "There is no reason why ~; it is impossible (for ~) to ~; cannot",
+    "reading": "わけがない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "わけにはいかない",
+    "level": "N2",
+    "definition": "Cannot; cannot but ~; cannot help -ing; have no (other) choice but to ~",
+    "reading": "わけにはいかない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "やる",
+    "level": "N2",
+    "definition": "Send; give; do; play; operate; eat; drink",
+    "reading": "やる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "やる",
+    "level": "N2",
+    "definition": "(knowing that it will cause someone trouble/difficulty)",
+    "reading": "やる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "やっと",
+    "level": "N2",
+    "definition": "Finally; at last; barely",
+    "reading": "やっと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "よう",
+    "level": "N2",
+    "definition": "A/the way to; a/the way of -ing; the way (someone does something)",
+    "reading": "よう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "よう",
+    "level": "N2",
+    "definition": "Probably; likely; must be; should; ought; naturally",
+    "reading": "よう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "より",
+    "level": "N2",
+    "definition": "More ~ (than now; than something at present; than otherwise)",
+    "reading": "より",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ざるを得ない",
+    "level": "N2",
+    "definition": "Cannot help -ing; cannot (help) but; have no choice but to ~; have to",
+    "reading": "ざるをえない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ぞ",
+    "level": "N2",
+    "definition": "I tell you; I'm telling you; you know",
+    "reading": "ぞ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あえて",
+    "level": "N1",
+    "definition": "Daringly; boldly; dare to ~; venture to ~; force oneself to ~",
+    "reading": "あえて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あげく",
+    "level": "N1",
+    "definition": "in the end; finally; eventually; after",
+    "reading": "あげく",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あげくに",
+    "level": "N1",
+    "definition": "in the end; finally; eventually; after",
+    "reading": "あげくに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あくまでも",
+    "level": "N1",
+    "definition": "to the end; persistently; insist; strictly; just; under any circumstance; absolutely; never; completely; ultimately",
+    "reading": "あくまでも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あながち",
+    "level": "N1",
+    "definition": "(not) necessarily; (not) always",
+    "reading": "あながち",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あるいは",
+    "level": "N1",
+    "definition": "or; either ~ or; perhaps",
+    "reading": "あるいは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "あたかも",
+    "level": "N1",
+    "definition": "(just) as if ~ were; (just) as if ~ did ~; just like; just; exactly",
+    "reading": "あたかも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ばかりに",
+    "level": "N1",
+    "definition": "Simply because; just because; simply on account of ~",
+    "reading": "ばかりに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ばこそ",
+    "level": "N1",
+    "definition": "it is precisely because ~ that ~; only because ~; to the extent that ~",
+    "reading": "ばこそ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ればこそ",
+    "level": "N1",
+    "definition": "it is precisely because ~ that ~; only because ~; to the extent that ~",
+    "reading": "ればこそ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "べからず",
+    "level": "N1",
+    "definition": "Shouldn’t; must not; ought not to ~; cannot; don’t ~",
+    "reading": "べからず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "べからざる",
+    "level": "N1",
+    "definition": "Shouldn’t; must not; ought not to ~; cannot; don’t ~",
+    "reading": "べからざる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "べく",
+    "level": "N1",
+    "definition": "In order to; to; for the purpose of; for; so that ~ (can)",
+    "reading": "べく",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "べくもない",
+    "level": "N1",
+    "definition": "Impossible; there is no way for someone to ~; cannot be expected to",
+    "reading": "べくもない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "べくして",
+    "level": "N1",
+    "definition": "Exactly as expected",
+    "reading": "べくして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ちなみに",
+    "level": "N1",
+    "definition": "Incidentally; in this connection",
+    "reading": "ちなみに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だけ",
+    "level": "N1",
+    "definition": "As much as; as ~ as possible; as much as one wants",
+    "reading": "だけ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だけあって",
+    "level": "N1",
+    "definition": "And as one would expect; so (naturally); for good reason",
+    "reading": "だけあって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だけに",
+    "level": "N1",
+    "definition": "And as one would expect; so (naturally); because",
+    "reading": "だけに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だけのことはある",
+    "level": "N1",
+    "definition": "Don’t do something for nothing; ~ explains it; no wonder; it’s no surprise",
+    "reading": "だけのことはある",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だに",
+    "level": "N1",
+    "definition": "Just; (not) even",
+    "reading": "だに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だの",
+    "level": "N1",
+    "definition": "And (~ and); or (~ or); and things like that",
+    "reading": "だの",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だって",
+    "level": "N1",
+    "definition": "Because",
+    "reading": "だって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "だって",
+    "level": "N1",
+    "definition": "Too; also; (not) ~ either; even; any; no matter what/who/how/etc.",
+    "reading": "だって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "であれ",
+    "level": "N1",
+    "definition": "Even; even if; even though; no matter what/who/how/etc.~ may be; whatever/whoever/etc.~ may be",
+    "reading": "であれ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "であれ",
+    "level": "N1",
+    "definition": "Whether X or Y; be it X or Y; or",
+    "reading": "であれ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "じゃあるまいし",
+    "level": "N1",
+    "definition": "You are not ~, so; it isn’t ~, so",
+    "reading": "じゃあるまいし",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "でもあるまいし",
+    "level": "N1",
+    "definition": "You are not ~, so; it isn’t ~, so",
+    "reading": "でもあるまいし",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "でも",
+    "level": "N1",
+    "definition": "~ whatever; ~ whoever; ~ whenever; ~ whichever",
+    "reading": "でも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "どちらかと言うと",
+    "level": "N1",
+    "definition": "Rather; more like ~; more of ~; rather on the ~ side; rather than otherwise; more ~ than ~",
+    "reading": "どちらかと言うと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "どうか",
+    "level": "N1",
+    "definition": "Please",
+    "reading": "どうか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "どころではない",
+    "level": "N1",
+    "definition": "Cannot; be simply impossible; simply don’t/doesn’t have time; be far from ~; anything but ~; no way; far from; be out of question",
+    "reading": "どころではない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ども",
+    "level": "N1",
+    "definition": "Even though; although; though; no matter how much/often/hard/etc.",
+    "reading": "ども",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "どうにも",
+    "level": "N1",
+    "definition": "Not ~ by any means; no matter how hard ~ try, ~ cannot ~; there is no way to ~; cannot do ~ at all",
+    "reading": "どうにも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "同士",
+    "level": "N1",
+    "definition": "Each other; between/among (things/people of the same kind, group, etc.); together; with",
+    "reading": "どうし",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "が早いか",
+    "level": "N1",
+    "definition": "As soon as; the moment; no sooner ~ than",
+    "reading": "がはやいか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ごとし",
+    "level": "N1",
+    "definition": "Like; look like",
+    "reading": "ごとし",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ごとき",
+    "level": "N1",
+    "definition": "Like; look like",
+    "reading": "ごとき",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "反面",
+    "level": "N1",
+    "definition": "While; on the other hand",
+    "reading": "はんめん",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "はたして",
+    "level": "N1",
+    "definition": "Just as ~ though; as expected; really; in fact; sure enough; indeed; at all; lo and behold",
+    "reading": "はたして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ひいては",
+    "level": "N1",
+    "definition": "Eventually (lead to) ~; even",
+    "reading": "ひいては",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ひとつ",
+    "level": "N1",
+    "definition": "Give something a try",
+    "reading": "ひとつ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "一つには",
+    "level": "N1",
+    "definition": "Partly; for one thing",
+    "reading": "ひとつには",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "一応",
+    "level": "N1",
+    "definition": "For the time being; for the present; for now; tentatively; for formality’s sake; nominally; kind of; sort of",
+    "reading": "いちおう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "如何",
+    "level": "N1",
+    "definition": "How; what; (depending on) how/what; (according to) how/what; depend on",
+    "reading": "いかん",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "いかなる",
+    "level": "N1",
+    "definition": "What kind of ~; no matter what ~; whatever; any kind of",
+    "reading": "いかなる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "いかに",
+    "level": "N1",
+    "definition": "How; how much; how hard",
+    "reading": "いかに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "いくら",
+    "level": "N1",
+    "definition": "How much; how",
+    "reading": "いくら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "今更",
+    "level": "N1",
+    "definition": "Too late (for/to ~); now",
+    "reading": "いまさら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "一方",
+    "level": "N1",
+    "definition": "Only; always; continue to; keep ~ing; be steadily ~ing; become ~er and ~er",
+    "reading": "いっぽう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "一方だ",
+    "level": "N1",
+    "definition": "Only; always; continue to; keep ~ing; be steadily ~ing; become ~er and ~er",
+    "reading": "いっぽうだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "一方",
+    "level": "N1",
+    "definition": "While; when; (but) at the same time; on the other hand; even though; although",
+    "reading": "いっぽう",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "一方で",
+    "level": "N1",
+    "definition": "While; when; (but) at the same time; on the other hand; even though; although",
+    "reading": "いっぽうで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "以来",
+    "level": "N1",
+    "definition": "Since",
+    "reading": "いらい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "一切",
+    "level": "N1",
+    "definition": "Not ~ at all; absolutely not; not ~ whatsoever",
+    "reading": "いっさい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "一旦",
+    "level": "N1",
+    "definition": "Once; for a time; temporarily; for the moment; for the present; now",
+    "reading": "いったん",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "言ってみれば",
+    "level": "N1",
+    "definition": "Figuratively speaking; so to speak; metaphorically speaking; in a manner of saying",
+    "reading": "いってみれば",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "言うまでもない",
+    "level": "N1",
+    "definition": "It is needless to say that ~; needless to say; it goes without saying",
+    "reading": "いうまでもない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "言わば",
+    "level": "N1",
+    "definition": "So to speak; as it were; like; sort of",
+    "reading": "いわば",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "いわゆる",
+    "level": "N1",
+    "definition": "So-called; what we call; known as",
+    "reading": "いわゆる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "自体",
+    "level": "N1",
+    "definition": "Oneself; in and of itself; the very",
+    "reading": "じたい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "限りだ",
+    "level": "N1",
+    "definition": "extremely",
+    "reading": "かぎりだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "限りです",
+    "level": "N1",
+    "definition": "extremely",
+    "reading": "かぎりです",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "限りだった",
+    "level": "N1",
+    "definition": "extremely",
+    "reading": "かぎりだった",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "甲斐",
+    "level": "N1",
+    "definition": "Worth; meaning; effect; result",
+    "reading": "かい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "か否か",
+    "level": "N1",
+    "definition": "Whether X or not",
+    "reading": "かいなか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "かな",
+    "level": "N1",
+    "definition": "How ~ !; what a(n) ~ !; to my/our ~; it is ~ that",
+    "reading": "かな",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "かのように",
+    "level": "N1",
+    "definition": "As if",
+    "reading": "かのように",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "から言って",
+    "level": "N1",
+    "definition": "In terms of; from the viewpoint of; judging from",
+    "reading": "から言って",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "からなる",
+    "level": "N1",
+    "definition": "Consist of; be composed of",
+    "reading": "からなる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "からなっている",
+    "level": "N1",
+    "definition": "Consist of; be composed of",
+    "reading": "からなっている",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "からには",
+    "level": "N1",
+    "definition": "Once; now that ~; as long as ~; so long as ~; if",
+    "reading": "からには",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "からして",
+    "level": "N1",
+    "definition": "Even; judging from",
+    "reading": "からして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "仮に",
+    "level": "N1",
+    "definition": "Supposing that; suppose; providing that; (even) if",
+    "reading": "かりに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "かと思うと",
+    "level": "N1",
+    "definition": "As soon as (one notices that) ~; soon after; when one thinks/feels that ~",
+    "reading": "かとおもうと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "且つ",
+    "level": "N1",
+    "definition": "And; and also; yet; but; and ~ as well; as well as; moreover",
+    "reading": "かつ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "きらいがある",
+    "level": "N1",
+    "definition": "Have a tendency to; tend to; have a touch of ~; have a dash of ~; smack of ~; be slightly ~",
+    "reading": "きらいがある",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "きり",
+    "level": "N1",
+    "definition": "Since; only",
+    "reading": "きり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "っきり",
+    "level": "N1",
+    "definition": "Since; only",
+    "reading": "っきり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "っけ",
+    "level": "N1",
+    "definition": "",
+    "reading": "っけ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "この上ない",
+    "level": "N1",
+    "definition": "Extremely; utterly; very; so; cannot be more; extreme; utmost",
+    "reading": "このうえない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ことか",
+    "level": "N1",
+    "definition": "How ~!; what a(n) ~!",
+    "reading": "ことか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ことから",
+    "level": "N1",
+    "definition": "Because; due to; from the fact that ~; cause; trigger",
+    "reading": "ことから",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ことに",
+    "level": "N1",
+    "definition": "It is ~ that; I am ~ that; we are ~ that; to my/our ~; ~ly",
+    "reading": "ことに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "加えて",
+    "level": "N1",
+    "definition": "In addition; and additionally; what’s more",
+    "reading": "くわえて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "まして",
+    "level": "N1",
+    "definition": "To say nothing of; not to speak of; let alone; still more; much less; all the more reason why",
+    "reading": "まして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ましてや",
+    "level": "N1",
+    "definition": "To say nothing of; not to speak of; let alone; still more; much less; all the more reason why",
+    "reading": "ましてや",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "また",
+    "level": "N1",
+    "definition": "Again; also; too; (not) ~ either; and; additionally; or",
+    "reading": "また",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "滅多に",
+    "level": "N1",
+    "definition": "Rarely; seldom; hardly; almost never",
+    "reading": "めったに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "見るからに",
+    "level": "N1",
+    "definition": "Visibly; obviously; really look; can be easily recognised as; can tell just by looking at ~",
+    "reading": "みるからに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ものではない",
+    "level": "N1",
+    "definition": "Shouldn’t; not possibly; naturally cannot; cannot bear",
+    "reading": "ものではない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ものか",
+    "level": "N1",
+    "definition": "Definitely not; absolutely not; impossible",
+    "reading": "ものか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ものか",
+    "level": "N1",
+    "definition": "Wish; wonder if; should",
+    "reading": "ものか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ものなら",
+    "level": "N1",
+    "definition": "If; if ~ at all",
+    "reading": "ものなら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ものの",
+    "level": "N1",
+    "definition": "Although; though; even though; but",
+    "reading": "ものの",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ものを",
+    "level": "N1",
+    "definition": "Although; but",
+    "reading": "ものを",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "もさることながら",
+    "level": "N1",
+    "definition": "~ is one thing, but; it is true that ~, but; it is the case that ~, but; but more importantly",
+    "reading": "もさることながら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "もしくは",
+    "level": "N1",
+    "definition": "or",
+    "reading": "もしくは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "もっとも",
+    "level": "N1",
+    "definition": "Although; though; but; yet; however",
+    "reading": "もっとも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "向け",
+    "level": "N1",
+    "definition": "For; made for; for the use of; aimed at; directed towards; (directed/shipped/etc.) to",
+    "reading": "むけ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "むしろ",
+    "level": "N1",
+    "definition": "Rather; instead",
+    "reading": "むしろ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ないでもない",
+    "level": "N1",
+    "definition": "Seem to ~; somewhat; rather; may",
+    "reading": "ないでもない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ないことには",
+    "level": "N1",
+    "definition": "If ~ not ~ then; unless",
+    "reading": "ないことには",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ないまでも",
+    "level": "N1",
+    "definition": "May not ~ but; even though ~ not; although ~ not",
+    "reading": "ないまでも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ないし",
+    "level": "N1",
+    "definition": "From ~ to ~; between ~ and ~; or",
+    "reading": "ないし",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ないしは",
+    "level": "N1",
+    "definition": "From ~ to ~; between ~ and ~; or",
+    "reading": "ないしは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "中を",
+    "level": "N1",
+    "definition": "In the midst of; when; while; through; among",
+    "reading": "中を",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なくして",
+    "level": "N1",
+    "definition": "Without; if it were not for ~",
+    "reading": "なくして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なくしては",
+    "level": "N1",
+    "definition": "Without; if it were not for ~",
+    "reading": "なくしては",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なまじ",
+    "level": "N1",
+    "definition": "Halfheartedly; slightly; thoughtlessly; unwisely; inadequately; imperfectly; sort of; a little; somewhat; a bit of",
+    "reading": "なまじ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なまじっか",
+    "level": "N1",
+    "definition": "Halfheartedly; slightly; thoughtlessly; unwisely; inadequately; imperfectly; sort of; a little; somewhat; a bit of",
+    "reading": "なまじっか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "並み",
+    "level": "N1",
+    "definition": "About the same level as; like; as (much ~) as; to match; to rival; on a par with; equivalent to",
+    "reading": "なみ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "何らかの",
+    "level": "N1",
+    "definition": "Some; some kind of",
+    "reading": "なんらかの",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なんて",
+    "level": "N1",
+    "definition": "What; how ~!; what a(n) ~!; so",
+    "reading": "なんて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なんて",
+    "level": "N1",
+    "definition": "That; things like",
+    "reading": "なんて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "何とか",
+    "level": "N1",
+    "definition": "Somehow; in some way; in one way or another; manage to",
+    "reading": "なんとか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なお",
+    "level": "N1",
+    "definition": "Still; even more; all the more for ~; additional; and; additionally; furthermore",
+    "reading": "なお",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なおさら",
+    "level": "N1",
+    "definition": "Still more; much more; all the more; even more",
+    "reading": "なおさら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ならでは",
+    "level": "N1",
+    "definition": "Impossible if it’s not ~; only possible with/by/at/etc.; not possible with/by/at/etc. other ~; very difficult with/by/at/etc. any other ~ but; you can expect only/at/from/etc.; unless",
+    "reading": "ならでは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ならではの",
+    "level": "N1",
+    "definition": "Impossible if it’s not ~; only possible with/by/at/etc.; not possible with/by/at/etc. other ~; very difficult with/by/at/etc. any other ~ but; you can expect only/at/from/etc.; unless",
+    "reading": "ならではの",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "並びに",
+    "level": "N1",
+    "definition": "And; both ~ and ~; as well as",
+    "reading": "ならびに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なり",
+    "level": "N1",
+    "definition": "The moment; when; as soon as; soon after; no sooner ~ than",
+    "reading": "なり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なるほど",
+    "level": "N1",
+    "definition": "Indeed; it is true ~ (but); really; I see",
+    "reading": "なるほど",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なしに",
+    "level": "N1",
+    "definition": "Without",
+    "reading": "なしに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なす",
+    "level": "N1",
+    "definition": "Do; perform; make; change; constitute",
+    "reading": "なす",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なぜか",
+    "level": "N1",
+    "definition": "I don’t know why; without knowing why; for an unknown reason",
+    "reading": "なぜか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なぜなら",
+    "level": "N1",
+    "definition": "The reason is that ~; because",
+    "reading": "なぜなら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "なぜならば",
+    "level": "N1",
+    "definition": "The reason is that ~; because",
+    "reading": "なぜならば",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "んばかり",
+    "level": "N1",
+    "definition": "As if ~ were about to ~; almost",
+    "reading": "んばかり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "んばかりに",
+    "level": "N1",
+    "definition": "As if ~ were about to ~; almost",
+    "reading": "んばかりに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にひきかえ",
+    "level": "N1",
+    "definition": "In contrast to ~; while; whereas",
+    "reading": "にひきかえ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にいたっては",
+    "level": "N1",
+    "definition": "When it comes to ~; as for; for example",
+    "reading": "にいたっては",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にかかわらず",
+    "level": "N1",
+    "definition": "Regardless of; independent of; without reference to; without distinguishing; whether X or Y; whether X or not; whatever/whoever/etc.",
+    "reading": "にかかわらず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に関わらず",
+    "level": "N1",
+    "definition": "Regardless of; independent of; without reference to; without distinguishing; whether X or Y; whether X or not; whatever/whoever/etc.",
+    "reading": "にかかわらず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に拘わらず",
+    "level": "N1",
+    "definition": "Regardless of; independent of; without reference to; without distinguishing; whether X or Y; whether X or not; whatever/whoever/etc.",
+    "reading": "にかかわらず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に係わらず",
+    "level": "N1",
+    "definition": "Regardless of; independent of; without reference to; without distinguishing; whether X or Y; whether X or not; whatever/whoever/etc.",
+    "reading": "にかかわらず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にかけては",
+    "level": "N1",
+    "definition": "When it comes to ~; as for; in point of; in terms of; about; regarding",
+    "reading": "にかけては",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に難くない",
+    "level": "N1",
+    "definition": "Not hard; easy ~",
+    "reading": "にかたくない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に決まっている",
+    "level": "N1",
+    "definition": "Surely; be bound to; be a given; of course; must be; we all know that",
+    "reading": "に決まっている",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に越したことはない",
+    "level": "N1",
+    "definition": "Nothing is better than; if possible; be the best; be ideal; the ~ the ~",
+    "reading": "に越したことはない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にもなると",
+    "level": "N1",
+    "definition": "When; if; as",
+    "reading": "にもなると",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ともなると",
+    "level": "N1",
+    "definition": "When; if; as",
+    "reading": "ともなると",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にもなく",
+    "level": "N1",
+    "definition": "Unusually; more ~ than usual ------------- 〖example〗: (ks). 彼女は今日はいつに（も）なく陽気だった。 She was unusually cheerful today.",
+    "reading": "にもなく",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "になく",
+    "level": "N1",
+    "definition": "Unusually; more ~ than usual ------------- 〖example〗: (ks). 彼女は今日はいつに（も）なく陽気だった。 She was unusually cheerful today.",
+    "reading": "になく",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に向けて",
+    "level": "N1",
+    "definition": "Toward; to; at; aiming at; targeting; for; for the purpose of; in order to",
+    "reading": "にむけて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に向けた",
+    "level": "N1",
+    "definition": "Toward; to; at; aiming at; targeting; for; for the purpose of; in order to",
+    "reading": "にむけた",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に応じて",
+    "level": "N1",
+    "definition": "In response to; according to; depending on; appropriate for; suitable for; suited to; meet",
+    "reading": "におうじて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "に応じた",
+    "level": "N1",
+    "definition": "In response to; according to; depending on; appropriate for; suitable for; suited to; meet",
+    "reading": "におうじた",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にしろ",
+    "level": "N1",
+    "definition": "Even though (it is/was the case that); even if (it is true that); although (it is/was the case that); whatever/whoever/etc.; no matter what/who/how/etc.; whether X or Y",
+    "reading": "にしろ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にせよ",
+    "level": "N1",
+    "definition": "Even though (it is/was the case that); even if (it is true that); although (it is/was the case that); whatever/whoever/etc.; no matter what/who/how/etc.; whether X or Y",
+    "reading": "にせよ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にしたところで",
+    "level": "N1",
+    "definition": "Also; (even) for ~",
+    "reading": "にしたところで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にして",
+    "level": "N1",
+    "definition": "In; at; over; while",
+    "reading": "にして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にして",
+    "level": "N1",
+    "definition": "And; both ~ and ~",
+    "reading": "にして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にしてからが",
+    "level": "N1",
+    "definition": "even",
+    "reading": "にしてからが",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にしても",
+    "level": "N1",
+    "definition": "Even if (someone decides to/it is true that); although/even though (it is true that/it is the case that/we admit that/we agree that/etc.); whatever/whoever/etc.; no matter what/who/how/etc.; whether X or Y; as for ~, too; even (so)",
+    "reading": "にしても",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にとどまらず",
+    "level": "N1",
+    "definition": "Doesn’t stop with ~; doesn’t end with ~; not limited to ~; going beyond ~; not only ~ (but also ~)",
+    "reading": "にとどまらず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "につけ",
+    "level": "N1",
+    "definition": "As; every time; whenever",
+    "reading": "につけ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にわたって",
+    "level": "N1",
+    "definition": "For; over; extending; stretching; ranging; covering",
+    "reading": "にわたって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "にわたる",
+    "level": "N1",
+    "definition": "For; over; extending; stretching; ranging; covering",
+    "reading": "にわたる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "によらず",
+    "level": "N1",
+    "definition": "Without; without ~ing; regardless of; independently of; without reference to; whether X or Y; whether X or not; whatever/whoever/etc.; no matter what/who/how/etc.",
+    "reading": "によらず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "によると",
+    "level": "N1",
+    "definition": "According to; based on",
+    "reading": "によると",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "のみならず",
+    "level": "N1",
+    "definition": "Not only ~ (but also ~); not only that",
+    "reading": "のみならず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "のなんのって",
+    "level": "N1",
+    "definition": "So (~ that); so much/well (~ that); so ~ and",
+    "reading": "のなんのって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "の無さ",
+    "level": "N1",
+    "definition": "Lack of; absence of",
+    "reading": "のなさ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "んとする",
+    "level": "N1",
+    "definition": "Try to do; be about to",
+    "reading": "んとする",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "んとしていた",
+    "level": "N1",
+    "definition": "Try to do; be about to",
+    "reading": "んとしていた",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "んとしている",
+    "level": "N1",
+    "definition": "Try to do; be about to",
+    "reading": "んとしている",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "を中心に",
+    "level": "N1",
+    "definition": "Centering around; around; focusing on; mainly; primarily; with ~ as the center; with ~ as the leader; with ~ as the primary ~; take the lead",
+    "reading": "をちゅうしんに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "を介して",
+    "level": "N1",
+    "definition": "Through; via; by means of; by ~ing",
+    "reading": "をかいして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "を介した",
+    "level": "N1",
+    "definition": "Through; via; by means of; by ~ing",
+    "reading": "をかいした",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "を禁じ得ない",
+    "level": "N1",
+    "definition": "Cannot hold; cannot hold back; cannot keep back; cannot help ~ing; cannot keep ~ from ~ing",
+    "reading": "をきんじえない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "を禁じ得なかった",
+    "level": "N1",
+    "definition": "Cannot hold; cannot hold back; cannot keep back; cannot help ~ing; cannot keep ~ from ~ing",
+    "reading": "をきんじえなかった",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "をめぐって",
+    "level": "N1",
+    "definition": "Centering around; in connection with; over; concerning; regarding; with regard to",
+    "reading": "をめぐって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "をめぐる",
+    "level": "N1",
+    "definition": "Centering around; in connection with; over; concerning; regarding; with regard to",
+    "reading": "をめぐる",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "思えば",
+    "level": "N1",
+    "definition": "Come ot think of it; when I think back; on reflection",
+    "reading": "思えば",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "をものともせず",
+    "level": "N1",
+    "definition": "In spite of ~; undaunted by ~; in definance of ~; in the face of ~",
+    "reading": "をものともせず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "思うに",
+    "level": "N1",
+    "definition": "In my view; it seems to me that ~; when I think (about ~); considering",
+    "reading": "思うに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "をおいてほかに",
+    "level": "N1",
+    "definition": "(there is) no ~ but X; X is the only one; nothing else is ~ but X; no other ~ are/do something as ~ as X",
+    "reading": "をおいてほかに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "をおいてほかには",
+    "level": "N1",
+    "definition": "(there is) no ~ but X; X is the only one; nothing else is ~ but X; no other ~ are/do something as ~ as X",
+    "reading": "をおいてほかには",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "折に",
+    "level": "N1",
+    "definition": "On the occasion; at the time; when; if; opportunity; chance",
+    "reading": "おりに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "恐れがある",
+    "level": "N1",
+    "definition": "It is feared (that); we fear (that); we are worried/concerned (that); there is a fear/risk/chance/concern/etc.; can; could; may; it is possible (that); be in danger of",
+    "reading": "おそれがある",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "を問わず",
+    "level": "N1",
+    "definition": "Regardless of; irrespective of; without reference to; whether X or Y; whether X or not; whatever/whoever/etc.; no matter what/who/how/etc.",
+    "reading": "をとわず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "及び",
+    "level": "N1",
+    "definition": "And",
+    "reading": "および",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "およそ",
+    "level": "N1",
+    "definition": "Generally; commonly; all; quite entirely; totally; utterly; (not) at all; for the most part; mostly; almost; approximately; roughly; about; rough; general",
+    "reading": "およそ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "をよそに",
+    "level": "N1",
+    "definition": "Indifferent to ~; contrary to ~; ignoring ~; despite",
+    "reading": "をよそに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "さも",
+    "level": "N1",
+    "definition": "Truly; really; as if; so; that way; like that",
+    "reading": "さも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "更に",
+    "level": "N1",
+    "definition": "Even ~er; even more; additional; more; further; furthermore; in addition",
+    "reading": "さらに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "さて",
+    "level": "N1",
+    "definition": "Well; now; well now; so",
+    "reading": "さて",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "さぞ",
+    "level": "N1",
+    "definition": "I believe/I’m sure/I’m certain ~ very/really/truly ~; must be very/really/truly ~",
+    "reading": "さぞ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "さぞかし",
+    "level": "N1",
+    "definition": "I believe/I’m sure/I’m certain ~ very/really/truly ~; must be very/really/truly ~",
+    "reading": "さぞかし",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "そもそも",
+    "level": "N1",
+    "definition": "In the first place; to begin with; first of all; the very (beginning/origin/etc.); original; first; fundamental",
+    "reading": "そもそも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "そもそもの",
+    "level": "N1",
+    "definition": "In the first place; to begin with; first of all; the very (beginning/origin/etc.); original; first; fundamental",
+    "reading": "そもそもの",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "そのもの",
+    "level": "N1",
+    "definition": "Itself; themselves; very; perfect; the definition of; the picture of; absolutely; totally; utterly; perfectly",
+    "reading": "そのもの",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それだけ",
+    "level": "N1",
+    "definition": "That much; to the same extent; to the same degree; equally",
+    "reading": "それだけ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それなりに",
+    "level": "N1",
+    "definition": "In one’s own way; accompanying; proportionate; suitable; expected; agreeable; reasonable; one’s own; proper to",
+    "reading": "それなりに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "それなりの",
+    "level": "N1",
+    "definition": "In one’s own way; accompanying; proportionate; suitable; expected; agreeable; reasonable; one’s own; proper to",
+    "reading": "それなりの",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "末に",
+    "level": "N1",
+    "definition": "After; at the end of",
+    "reading": "すえに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "済む",
+    "level": "N1",
+    "definition": "Take/cost/need/etc. only ~; do/manage (without/only with); get by/get away (without/only with); be let off (without/only with); be enough (if); be all right (if); not to have to: there is no need for",
+    "reading": "すむ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ただ",
+    "level": "N1",
+    "definition": "But; however; only; the only thing is that ~",
+    "reading": "ただ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "但し",
+    "level": "N1",
+    "definition": "However; but; only; here; provided that",
+    "reading": "ただし",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たかが",
+    "level": "N1",
+    "definition": "Only; just; mere",
+    "reading": "たかが",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たなり",
+    "level": "N1",
+    "definition": "Without; while ~ staying; while ~ keep ~ing",
+    "reading": "たなり",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たなりで",
+    "level": "N1",
+    "definition": "Without; while ~ staying; while ~ keep ~ing",
+    "reading": "たなりで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "単位で",
+    "level": "N1",
+    "definition": "By the; in sets/groups/lots/etc. of; in multiples of; each; every",
+    "reading": "たんいで",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "単に",
+    "level": "N1",
+    "definition": "Just; only; simply; no more than; nothing but; solely; merely; alone",
+    "reading": "たんに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たるや",
+    "level": "N1",
+    "definition": "When it comes to ~; speaking of",
+    "reading": "たるや",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たって",
+    "level": "N1",
+    "definition": "Even if; if; whether; no matter what/who/how/etc.",
+    "reading": "たって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "たって",
+    "level": "N1",
+    "definition": "Even if (someone says that); even if someone tries to; although",
+    "reading": "たって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "てばかりはいられない",
+    "level": "N1",
+    "definition": "Cannot just; cannot always; cannot just keep ~ing; cannot spend time just ~ing; cannot waste time just ~ing",
+    "reading": "てばかりはいられない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ばかりして",
+    "level": "N1",
+    "definition": "Cannot just; cannot always; cannot just keep ~ing; cannot spend time just ~ing; cannot waste time just ~ing",
+    "reading": "ばかりして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "でばかりはいられない",
+    "level": "N1",
+    "definition": "Cannot just; cannot always; cannot just keep ~ing; cannot spend time just ~ing; cannot waste time just ~ing",
+    "reading": "でばかりはいられない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "て仕方がない",
+    "level": "N1",
+    "definition": "Cannot help ~ing; cannot stop feeling; (so ~ and) cannot control ~; so ~ and ~ cannot bare it; so; unbearably",
+    "reading": "てしかたがない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "てはいられない",
+    "level": "N1",
+    "definition": "Cannot/shouldn’t be ~ing; cannot/shouldn’t keep ~ing; cannot/shouldn’t (stay/remain/etc.); cannot/shouldn’t waste time ~ing; cannot afford to; cannot help ~ing",
+    "reading": "てはいられない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とあって",
+    "level": "N1",
+    "definition": "Because ~, ~ as expected; because ~, naturally ~; because",
+    "reading": "とあって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とあっては",
+    "level": "N1",
+    "definition": "If it is true that; if it is the case that; if; because; since",
+    "reading": "とあっては",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とばかりに",
+    "level": "N1",
+    "definition": "As if; as if to say that; as if ~ were convinced that; as if ~ believed that; as if ~ decided that",
+    "reading": "とばかりに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とでも言うべき",
+    "level": "N1",
+    "definition": "Which could/may be called; which can/could be described as",
+    "reading": "とでもいうべき",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "といえども",
+    "level": "N1",
+    "definition": "Even; any; although; though; even though",
+    "reading": "といえども",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "といい",
+    "level": "N1",
+    "definition": "In terms of both ~ and ~; in terms of ~ as well as ~; from the perspective of both ~ and ~",
+    "reading": "といい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "といった",
+    "level": "N1",
+    "definition": "Like; such as; among others",
+    "reading": "といった",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "といったところだ",
+    "level": "N1",
+    "definition": "I would say ~; ~ is how I’d put it",
+    "reading": "といったところだ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "と言って",
+    "level": "N1",
+    "definition": "However; but; having said that",
+    "reading": "といって",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "と言うか",
+    "level": "N1",
+    "definition": "Or; or rather; or I’d (rather) call it; or I may call it; or I’d (rather) say; or I may say",
+    "reading": "というか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "と言うのは",
+    "level": "N1",
+    "definition": "(I’m saying this) because; the reason (why I’m saying this) is that; by ~ I mean that; what I mean is that",
+    "reading": "というのは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "言わず",
+    "level": "N1",
+    "definition": "A, B and many other ~; A, B and every ~ else; including: whether X or Y",
+    "reading": "いわず",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ところから",
+    "level": "N1",
+    "definition": "Because; be caused by the fact that ~; from the fact that ~",
+    "reading": "ところから",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ともなく",
+    "level": "N1",
+    "definition": "Without intending to; without paying much attention; unconsciously; mindlessly; don’t know (exactly) who/where/etc. (but); cannot tell (exactly) who/where/etc. (but); (to/from) no particular (person, etc.)",
+    "reading": "ともなく",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ともすると",
+    "level": "N1",
+    "definition": "Tend to; apt to; be likely to; easily; be bound to",
+    "reading": "ともすると",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "との",
+    "level": "N1",
+    "definition": "That",
+    "reading": "との",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とは",
+    "level": "N1",
+    "definition": "(not think/expect/etc.) that; (be surprised/be glad/regret/etc.) that",
+    "reading": "とは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "とは言え",
+    "level": "N1",
+    "definition": "Although (it is said that/someone says that); even though (it is said that/someone says that); admitting that; that being said; however; nevertheless",
+    "reading": "とはいえ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "つい",
+    "level": "N1",
+    "definition": "Unintentionally; without being able to control onself; without meaning to; carelessly; involuntarily; in spite of oneself; just; only",
+    "reading": "つい",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ついでに",
+    "level": "N1",
+    "definition": "When; while (~ at it); as; on one’s way to; since ~ (anyway); as well; at one’s convenience",
+    "reading": "ついでに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ついては",
+    "level": "N1",
+    "definition": "Therefore; thus; so; because of this; for this reason; with regard to this",
+    "reading": "ついては",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ったらない",
+    "level": "N1",
+    "definition": "So; extremely; indescribably; indescribable; incredibly; awfully; terribly; cannot tell you/describe/etc. how; too much of",
+    "reading": "ったらない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "と言ったらない",
+    "level": "N1",
+    "definition": "So; extremely; indescribably; indescribable; incredibly; awfully; terribly; cannot tell you/describe/etc. how; too much of",
+    "reading": "といったらない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ったらない",
+    "level": "N1",
+    "definition": "So; extremely; indescribably; indescribable; incredibly; awfully; terribly; cannot tell you/describe/etc. how; too much of",
+    "reading": "ったらない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "はあれ",
+    "level": "N1",
+    "definition": "Even though there is; although there is; there is ~ but",
+    "reading": "はあれ",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "は別として",
+    "level": "N1",
+    "definition": "Except for; putting/setting aside; whether X or Y",
+    "reading": "はべつとして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "はいいとしても",
+    "level": "N1",
+    "definition": "Be all right, but; might be all right, but; would be fine, but; would accept ~, but; even if ~ accept; even though ~ accept; although ~ accept",
+    "reading": "はいいとしても",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "はおろか",
+    "level": "N1",
+    "definition": "Let alone; not only ~ (but also ~); not to mention; to say nothing of; never mind; much less",
+    "reading": "はおろか",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "割に",
+    "level": "N1",
+    "definition": "For; despite; although; (not) as much as; (not) ~ because of that; considering",
+    "reading": "わりに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "割には",
+    "level": "N1",
+    "definition": "For; despite; although; (not) as much as; (not) ~ because of that; considering",
+    "reading": "わりには",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "や否や",
+    "level": "N1",
+    "definition": "As soon as; no sooner ~ than; the moment; soon after; immediately after",
+    "reading": "やいなや",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "やら",
+    "level": "N1",
+    "definition": "I wonder (if)",
+    "reading": "やら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "やら",
+    "level": "N1",
+    "definition": "X and Y; things like X and Y; X, Y and so on; whether X or Y; whether X or not",
+    "reading": "やら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ようでは",
+    "level": "N1",
+    "definition": "If; if it is true that; if it is the case that",
+    "reading": "ようでは",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ようものなら",
+    "level": "N1",
+    "definition": "If ~ happen to; if ~ at all; if ~ choose to",
+    "reading": "ようものなら",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ようにも",
+    "level": "N1",
+    "definition": "Even though ~ try/want to ~; even though ~ be thinking of doing ~; although ~ try/want to ~; although ~ be thinking of doing ~",
+    "reading": "ようにも",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "由",
+    "level": "N1",
+    "definition": "(I heard/It is said/etc.) that",
+    "reading": "よし",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "よし",
+    "level": "N1",
+    "definition": "(I heard/It is said/etc.) that",
+    "reading": "よし",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ようと",
+    "level": "N1",
+    "definition": "Even if; whatever/whoever/ etc.; no matter what/who/how/etc.; whether X or Y",
+    "reading": "ようと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "うと",
+    "level": "N1",
+    "definition": "Even if; whatever/whoever/ etc.; no matter what/who/how/etc.; whether X or Y",
+    "reading": "うと",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "うが",
+    "level": "N1",
+    "definition": "Even if; whatever/whoever/ etc.; no matter what/who/how/etc.; whether X or Y",
+    "reading": "うが",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "故に",
+    "level": "N1",
+    "definition": "Because; because of; due to; therefore",
+    "reading": "ゆえに",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ずにはおかない",
+    "level": "N1",
+    "definition": "Be bound to; definitely; unmistakably; unquestionably; undoubtedly; without fail; without doubt",
+    "reading": "ずにはおかない",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ずして",
+    "level": "N1",
+    "definition": "Without ~ing; before (~ing); with no ~; if ~ do not; when ~ do not",
+    "reading": "ずして",
+    "source": "DOJG"
+  },
+  {
+    "pattern": "ずとも",
+    "level": "N1",
+    "definition": "Without ~ing; even if ~ not; if ~ not",
+    "reading": "ずとも",
+    "source": "DOJG"
+  }
+]

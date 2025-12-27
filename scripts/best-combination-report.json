@@ -1,0 +1,31 @@
+{
+  "timestamp": "2025-12-20T06:44:31.687Z",
+  "testCount": 300,
+  "config": {
+    "tokenizer": "kuromoji",
+    "vocabDict": "default",
+    "vocabDictSize": 8133,
+    "grammarDict": "hagoromo",
+    "grammarDictSize": 1731
+  },
+  "results": {
+    "vocabCoverage": "83.91",
+    "unknownRate": "9.93",
+    "grammarMatchesPerText": "14.58",
+    "vocabLevelDistribution": {
+      "N1": 1292,
+      "N2": 679,
+      "N3": 3058,
+      "N4": 2276,
+      "N5": 4495
+    },
+    "grammarLevelDistribution": {
+      "N1": 184,
+      "N2": 76,
+      "N3": 806,
+      "N4": 1912,
+      "N5": 14925
+    }
+  },
+  "processingTimeMs": 1706
+}

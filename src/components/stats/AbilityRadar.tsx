@@ -11,6 +11,7 @@ interface AbilityRadarProps {
         score: number;
         accuracy: number;
         count: number;
+        interest: number;
         fullMark: number;
     }[];
 }
@@ -30,9 +31,9 @@ export function AbilityRadar({ data }: AbilityRadarProps) {
         <div className="w-full h-80">
             <ResponsiveRadar
                 data={data}
-                keys={['score']}
+                keys={['score', 'interest']}
                 indexBy="scene_name"
-                valueFormat=">-.2f"
+                valueFormat=">-.0f"
                 maxValue={100}
                 margin={{ top: 40, right: 80, bottom: 40, left: 80 }}
                 borderColor={{ from: 'color' }}
@@ -40,10 +41,31 @@ export function AbilityRadar({ data }: AbilityRadarProps) {
                 dotSize={10}
                 dotColor={{ theme: 'background' }}
                 dotBorderWidth={2}
-                colors={['#3b82f6']}
+                colors={['#3b82f6', '#f59e0b']} // Blue (Score), Amber (Interest)
                 blendMode="multiply"
                 motionConfig="wobbly"
                 fillOpacity={0.25}
+                legends={[
+                    {
+                        anchor: 'top-left',
+                        direction: 'column',
+                        translateX: -50,
+                        translateY: -40,
+                        itemWidth: 80,
+                        itemHeight: 20,
+                        itemTextColor: '#999',
+                        symbolSize: 12,
+                        symbolShape: 'circle',
+                        effects: [
+                            {
+                                on: 'hover',
+                                style: {
+                                    itemTextColor: '#000'
+                                }
+                            }
+                        ]
+                    }
+                ]}
                 theme={{
                     axis: {
                         ticks: {

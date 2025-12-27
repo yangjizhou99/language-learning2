@@ -1,0 +1,105 @@
+{
+  "timestamp": "2025-12-20T05:45:31.697Z",
+  "testCount": 30,
+  "results": [
+    {
+      "vocabDict": "default",
+      "tokenizer": "kuromoji",
+      "dictSize": 8133,
+      "avgCoverage": 0.8115161781664321,
+      "avgUnknownRate": 0.12090481555741045,
+      "avgLeveledTokens": 78.2,
+      "avgUniqueTokens": 89.2,
+      "totalTexts": 30,
+      "processingTime": 663
+    },
+    {
+      "vocabDict": "tanos",
+      "tokenizer": "kuromoji",
+      "dictSize": 8130,
+      "avgCoverage": 0.8115161781664321,
+      "avgUnknownRate": 0.12090481555741045,
+      "avgLeveledTokens": 78.2,
+      "avgUniqueTokens": 89.2,
+      "totalTexts": 30,
+      "processingTime": 136
+    },
+    {
+      "vocabDict": "elzup",
+      "tokenizer": "kuromoji",
+      "dictSize": 7846,
+      "avgCoverage": 0.79644306613038,
+      "avgUnknownRate": 0.1308578965518144,
+      "avgLeveledTokens": 77.26666666666667,
+      "avgUniqueTokens": 89.2,
+      "totalTexts": 30,
+      "processingTime": 120
+    },
+    {
+      "vocabDict": "default",
+      "tokenizer": "tinysegmenter",
+      "dictSize": 8133,
+      "avgCoverage": 0.6822658751331585,
+      "avgUnknownRate": 0.19615018848283672,
+      "avgLeveledTokens": 79.96666666666667,
+      "avgUniqueTokens": 99.43333333333334,
+      "totalTexts": 30,
+      "processingTime": 106
+    },
+    {
+      "vocabDict": "tanos",
+      "tokenizer": "tinysegmenter",
+      "dictSize": 8130,
+      "avgCoverage": 0.6822658751331585,
+      "avgUnknownRate": 0.19615018848283672,
+      "avgLeveledTokens": 79.96666666666667,
+      "avgUniqueTokens": 99.43333333333334,
+      "totalTexts": 30,
+      "processingTime": 79
+    },
+    {
+      "vocabDict": "elzup",
+      "tokenizer": "tinysegmenter",
+      "dictSize": 7846,
+      "avgCoverage": 0.633458195852175,
+      "avgUnknownRate": 0.21924686896012943,
+      "avgLeveledTokens": 77.76666666666667,
+      "avgUniqueTokens": 99.43333333333334,
+      "totalTexts": 30,
+      "processingTime": 87
+    },
+    {
+      "vocabDict": "default",
+      "tokenizer": "budoux",
+      "dictSize": 8133,
+      "avgCoverage": 0.06985452997980496,
+      "avgUnknownRate": 0.7767465800290021,
+      "avgLeveledTokens": 13.766666666666667,
+      "avgUniqueTokens": 63.4,
+      "totalTexts": 30,
+      "processingTime": 41
+    },
+    {
+      "vocabDict": "tanos",
+      "tokenizer": "budoux",
+      "dictSize": 8130,
+      "avgCoverage": 0.06985452997980496,
+      "avgUnknownRate": 0.7767465800290021,
+      "avgLeveledTokens": 13.766666666666667,
+      "avgUniqueTokens": 63.4,
+      "totalTexts": 30,
+      "processingTime": 28
+    },
+    {
+      "vocabDict": "elzup",
+      "tokenizer": "budoux",
+      "dictSize": 7846,
+      "avgCoverage": 0.06767199919030899,
+      "avgUnknownRate": 0.7786413561363019,
+      "avgLeveledTokens": 13.633333333333333,
+      "avgUniqueTokens": 63.4,
+      "totalTexts": 30,
+      "processingTime": 31
+    }
+  ]
+}
