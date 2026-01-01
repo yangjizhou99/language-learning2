@@ -213,6 +213,19 @@ export interface LexProfileResult {
         grammarHardest: string[]; // e.g. ["からこそ", "だって"]
         overallLevel: string;   // e.g. "N2"
     };
+    // Bayesian prediction fields (optional, populated when user profile available)
+    bayesianPrediction?: {
+        predictedUnknownRate: number;      // 0.0 - 1.0
+        expectedUnknownCount: number;      // Estimated unknown word count
+        highConfidenceUnknown: string[];   // Words very likely unknown
+        uncertainWords: string[];          // Words needing more evidence
+        articleDifficulty?: {
+            vocabDifficulty: number;       // 1.0 - 6.0
+            grammarDifficulty: number;     // 1.0 - 6.0
+            overallDifficulty: number;     // 1.0 - 6.0
+            confidenceScore: number;       // 0.0 - 1.0
+        };
+    };
 }
 
 // Create dictionaries from imported JSON

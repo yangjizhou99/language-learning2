@@ -68,3 +68,4 @@ models/*.arpa
 __pycache__/
 *.pyc
 .venv/
+docs/paper/

@@ -70,6 +70,15 @@ export interface ArticleVocabularyPrediction {
     uncertainWords: string[];           // Words needing more data
 }
 
+/** Article difficulty calculation result */
+export interface ArticleDifficultyResult {
+    vocabDifficulty: number;           // 1.0 - 6.0
+    grammarDifficulty: number;         // 1.0 - 6.0
+    overallDifficulty: number;         // 1.0 - 6.0 (weighted average)
+    confidenceScore: number;           // 0.0 - 1.0
+    explanation: string;               // Human-readable difficulty description
+}
+
 // ==================== New User Profile Types ====================
 
 /** JLPT level keys */
@@ -495,5 +504,65 @@ export function predictArticleVocabulary(
         predictedUnknownRate,
         highConfidenceUnknown,
         uncertainWords,
+    };
+}
+
+/**
+ * Calculate overall article difficulty based on Bayesian predictions
+ * Returns a difficulty score from 1.0 (very easy) to 6.0 (very hard)
+ */
+export function calculateArticleDifficulty(
+    articlePrediction: ArticleVocabularyPrediction,
+    grammarProfile?: { overallLevel: string }
+): ArticleDifficultyResult {
+    const unknownRate = articlePrediction.predictedUnknownRate;
+
+    // Map unknown rate to difficulty (1.0-6.0)
+    // 0% unknown → 1.0, 5% → 2.0, 15% → 3.5, 30%+ → 6.0
+    let vocabDifficulty: number;
+    if (unknownRate < 0.02) {
+        vocabDifficulty = 1.0;
+    } else if (unknownRate < 0.05) {
+        vocabDifficulty = 1.0 + (unknownRate - 0.02) / 0.03 * 1.0;
+    } else if (unknownRate < 0.15) {
+        vocabDifficulty = 2.0 + (unknownRate - 0.05) / 0.10 * 1.5;
+    } else if (unknownRate < 0.30) {
+        vocabDifficulty = 3.5 + (unknownRate - 0.15) / 0.15 * 1.5;
+    } else {
+        vocabDifficulty = Math.min(6.0, 5.0 + (unknownRate - 0.30) / 0.20 * 1.0);
+    }
+
+    // Grammar difficulty from JLPT level
+    const grammarLevelMap: Record<string, number> = {
+        N5: 1.5, N4: 2.5, N3: 3.5, N2: 4.5, N1: 5.5, unknown: 3.0
+    };
+    const grammarDifficulty = grammarLevelMap[grammarProfile?.overallLevel || 'unknown'] || 3.0;
+
+    // Overall: weighted average (60% vocab, 40% grammar)
+    const overallDifficulty = 0.6 * vocabDifficulty + 0.4 * grammarDifficulty;
+
+    // Confidence based on evidence quality
+    const highConfidence = articlePrediction.predictions.filter(p => p.confidence === 'high').length;
+    const totalPredictions = articlePrediction.predictions.length;
+    const confidenceScore = totalPredictions > 0 ? highConfidence / totalPredictions : 0;
+
+    // Generate explanation
+    let explanation: string;
+    if (overallDifficulty < 2.5) {
+        explanation = '适合入门学习者';
+    } else if (overallDifficulty < 4.0) {
+        explanation = '适合中级学习者';
+    } else if (overallDifficulty < 5.0) {
+        explanation = '适合高级学习者';
+    } else {
+        explanation = '适合精通者';
+    }
+
+    return {
+        vocabDifficulty: Math.round(vocabDifficulty * 10) / 10,
+        grammarDifficulty,
+        overallDifficulty: Math.round(overallDifficulty * 10) / 10,
+        confidenceScore: Math.round(confidenceScore * 100) / 100,
+        explanation
     };
 }

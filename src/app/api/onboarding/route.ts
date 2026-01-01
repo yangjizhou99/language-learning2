@@ -103,19 +103,36 @@ export async function POST(req: NextRequest) {
         }
 
         // Update profile
-        const { error: updateError } = await supabase
+        console.log('Updating profile for user:', user.id);
+        console.log('Update data:', {
+            self_reported_jlpt: selfReportedJlpt,
+            onboarding_completed: true,
+            quick_test_completed: quickTestCompleted,
+        });
+
+        const { error: updateError, data: updateData } = await supabase
             .from('profiles')
             .update({
                 self_reported_jlpt: selfReportedJlpt,
                 onboarding_completed: true,
                 quick_test_completed: quickTestCompleted,
             })
-            .eq('id', user.id);
+            .eq('id', user.id)
+            .select();
 
         if (updateError) {
             console.error('Error updating profile:', updateError);
-            return NextResponse.json({ error: 'Failed to save onboarding' }, { status: 500 });
+            console.error('Error code:', updateError.code);
+            console.error('Error details:', updateError.details);
+            console.error('Error hint:', updateError.hint);
+            return NextResponse.json({
+                error: 'Failed to save onboarding',
+                details: updateError.message,
+                code: updateError.code
+            }, { status: 500 });
         }
+
+        console.log('Profile updated successfully:', updateData);
 
         return NextResponse.json({
             success: true,

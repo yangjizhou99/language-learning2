@@ -1,5 +1,41 @@
 import { ThemePreference } from './preferences';
 import { BroadCEFR } from './difficulty';
+import { BayesianUserProfile, JLPTLevel } from './vocabularyPredictor';
+
+/**
+ * Convert BayesianUserProfile to BroadCEFR unknown rates for compatibility
+ * Maps JLPT mastery to unknown rates:
+ * - N5/N4 → A1_A2
+ * - N3 → B1_B2  
+ * - N2/N1 → C1_plus
+ */
+export function bayesianToUnknownRate(profile: BayesianUserProfile): Record<BroadCEFR, number> {
+    const mastery = profile.jlptMastery;
+
+    // Average N5/N4 mastery for A1_A2 level
+    const n5n4Mastery = (mastery.N5 + mastery.N4) / 2;
+
+    // N3 mastery for B1_B2 level
+    const n3Mastery = mastery.N3;
+
+    // Average N2/N1 mastery for C1_plus level
+    const n2n1Mastery = (mastery.N2 + mastery.N1) / 2;
+
+    // Unknown rate = 1 - mastery
+    return {
+        A1_A2: Math.max(0, Math.min(1, 1 - n5n4Mastery)),
+        B1_B2: Math.max(0, Math.min(1, 1 - n3Mastery)),
+        C1_plus: Math.max(0, Math.min(1, 1 - n2n1Mastery)),
+    };
+}
+
+/**
+ * Get estimated level from BayesianUserProfile (1.0-6.0 scale)
+ * This can be used as recommendedLevel parameter
+ */
+export function bayesianToRecommendedLevel(profile: BayesianUserProfile): number {
+    return profile.estimatedLevel;
+}
 
 export interface RecommendationCandidate {
     id: string;
