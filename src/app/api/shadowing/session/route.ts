@@ -122,6 +122,7 @@ export async function POST(req: NextRequest) {
       selected_words = [], // 添加selected_words参数
       notes = {},
       quiz_result = null, // Quiz comprehension test result
+      prediction_stats = null, // 预测统计数据 { predictedUnknown: string[], threshold: number }
     } = body;
 
     if (!item_id) {
@@ -237,6 +238,153 @@ export async function POST(req: NextRequest) {
           console.error('Error importing vocabulary:', vocabImportError);
           // Don't fail the session save if vocab import fails
         }
+      }
+
+      // 1.5 Calculate and save prediction accuracy statistics
+      // Record stats even if no words marked (this means all predictions were "false positives" from user's perspective)
+      if (prediction_stats?.predictedUnknown?.length > 0) {
+        try {
+          const predictedSet = new Set<string>(prediction_stats.predictedUnknown as string[]);
+          const markedSet = new Set<string>(selected_words.map((w: Record<string, any>) => w.text as string));
+
+          // Calculate TP, FP, FN
+          let truePositive = 0;
+          let falsePositive = 0;
+          let falseNegative = 0;
+
+          for (const word of predictedSet) {
+            if (markedSet.has(word)) {
+              truePositive++;
+            } else {
+              falsePositive++;
+            }
+          }
+          for (const word of markedSet) {
+            if (!predictedSet.has(word)) {
+              falseNegative++;
+            }
+          }
+
+          // Calculate precision, recall, F1
+          const precision = truePositive / (truePositive + falsePositive) || 0;
+          const recall = truePositive / (truePositive + falseNegative) || 0;
+          const f1Score = precision + recall > 0
+            ? (2 * precision * recall) / (precision + recall)
+            : 0;
+
+          const accuracyStats = {
+            predictedCount: predictedSet.size,
+            markedCount: markedSet.size,
+            truePositive,
+            falsePositive,
+            falseNegative,
+            precision: Math.round(precision * 1000) / 1000,
+            recall: Math.round(recall * 1000) / 1000,
+            f1Score: Math.round(f1Score * 1000) / 1000,
+            threshold: prediction_stats.threshold || 0.5,
+            timestamp: new Date().toISOString(),
+          };
+
+          // Save to session notes
+          const existingNotes = session.notes || {};
+          await supabase
+            .from('shadowing_sessions')
+            .update({
+              notes: {
+                ...existingNotes,
+                prediction_accuracy: accuracyStats,
+              },
+            })
+            .eq('id', session.id);
+
+          console.log('[PredictionStats] Saved accuracy:', accuracyStats);
+        } catch (predStatsError) {
+          console.error('Error saving prediction stats:', predStatsError);
+          // Don't fail the session save if prediction stats fails
+        }
+      }
+
+      // 1.5. Record vocabulary knowledge for Bayesian prediction
+      // Track all content words: marked as unknown vs seen but not marked
+      try {
+        // Fetch article text to get all tokens
+        const { data: itemData } = await supabase
+          .from('shadowing_items')
+          .select('text, lang')
+          .eq('id', item_id_db)
+          .single();
+
+        if (itemData?.text && itemData?.lang === 'ja') {
+          const { analyzeLexProfileAsync } = await import('@/lib/recommendation/lexProfileAnalyzer');
+          const { getFrequencyRank } = await import('@/lib/nlp/wordFrequency');
+
+          const result = await analyzeLexProfileAsync(itemData.text, 'ja');
+          const contentTokens = result.details.tokenList.filter(t => t.isContentWord);
+
+          // Build set of marked unknown words
+          const markedUnknownSet = new Set(
+            selected_words.map((w: Record<string, any>) => w.text)
+          );
+
+          const now = new Date().toISOString();
+
+          // Process each content word
+          for (const token of contentTokens) {
+            const word = token.token;
+            const isMarkedUnknown = markedUnknownSet.has(word);
+
+            // Check if record exists
+            const { data: existing } = await supabase
+              .from('user_vocabulary_knowledge')
+              .select('id, exposure_count, not_marked_count, marked_unknown')
+              .eq('user_id', user.id)
+              .eq('word', word)
+              .single();
+
+            if (existing) {
+              // Update existing record
+              const updates: Record<string, unknown> = {
+                exposure_count: (existing.exposure_count || 0) + 1,
+                last_seen_at: now,
+              };
+
+              if (isMarkedUnknown) {
+                updates.marked_unknown = true;
+                updates.marked_at = now;
+              } else if (!existing.marked_unknown) {
+                // Seen but not marked → weak positive evidence
+                updates.not_marked_count = (existing.not_marked_count || 0) + 1;
+              }
+
+              await supabase
+                .from('user_vocabulary_knowledge')
+                .update(updates)
+                .eq('id', existing.id);
+            } else {
+              // Insert new record
+              await supabase
+                .from('user_vocabulary_knowledge')
+                .insert({
+                  user_id: user.id,
+                  word,
+                  lemma: token.lemma || word,
+                  jlpt_level: token.originalLevel?.match(/N[1-5]/)?.[0] || null,
+                  frequency_rank: getFrequencyRank(word, token.lemma) || null,
+                  marked_unknown: isMarkedUnknown,
+                  marked_at: isMarkedUnknown ? now : null,
+                  exposure_count: 1,
+                  not_marked_count: isMarkedUnknown ? 0 : 1,
+                  first_seen_at: now,
+                  last_seen_at: now,
+                });
+            }
+          }
+
+          console.log(`[VocabKnowledge] Recorded ${contentTokens.length} tokens, ${markedUnknownSet.size} marked unknown`);
+        }
+      } catch (vocabKnowledgeError) {
+        console.error('Error recording vocabulary knowledge:', vocabKnowledgeError);
+        // Don't fail the session save if this fails
       }
 
       // 2. Update User Ability & Vocab Profile (Difficulty System)

@@ -94,6 +94,7 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
       { href: '/admin/backup', label: '数据备份', icon: '💾' },
       { href: '/admin/pronunciation-test', label: '发音评测实验', icon: '🗣️', match: 'startsWith' },
       { href: '/admin/test-chunking', label: '分块测试', icon: '🧪', match: 'startsWith' },
+      { href: '/admin/lex-profile-test', label: '词汇分析测试', icon: '🔬', match: 'startsWith' },
     ],
   },
   {

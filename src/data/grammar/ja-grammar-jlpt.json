@@ -1,0 +1,4004 @@
+[
+  {
+    "level": "N1",
+    "pattern": "XがXなら、YもYだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "like [father] like [son] (negative meaning)"
+  },
+  {
+    "level": "N1",
+    "pattern": "案の定",
+    "source": "https://japanesetest4you.com/",
+    "definition": "just as one thought; sure enough"
+  },
+  {
+    "level": "N1",
+    "pattern": "あっての",
+    "source": "https://jlptsensei.com/",
+    "definition": "which owes everything to"
+  },
+  {
+    "level": "N1",
+    "pattern": "それまでだ",
+    "source": "https://japanesetest4you.com/",
+    "definition": "if… then it’s over"
+  },
+  {
+    "level": "N1",
+    "pattern": "べからず",
+    "source": "https://japanesetest4you.com/",
+    "definition": "must not; should not; do not"
+  },
+  {
+    "level": "N1",
+    "pattern": "べく",
+    "source": "https://japanesetest4you.com/",
+    "definition": "in order to; for the purpose of"
+  },
+  {
+    "level": "N1",
+    "pattern": "べくもない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "can’t; cannot possibly be"
+  },
+  {
+    "level": "N1",
+    "pattern": "びる",
+    "source": "https://japanesetest4you.com/",
+    "definition": "seeming to be; behaving as"
+  },
+  {
+    "level": "N1",
+    "pattern": "ぶり",
+    "source": "https://japanesetest4you.com/",
+    "definition": "style; manner"
+  },
+  {
+    "level": "N1",
+    "pattern": "だに",
+    "source": "https://japanesetest4you.com/",
+    "definition": "Even"
+  },
+  {
+    "level": "N1",
+    "pattern": "だの～だの",
+    "source": "https://jlptsensei.com/",
+    "definition": "and; and the like; and so forth"
+  },
+  {
+    "level": "N1",
+    "pattern": "であれ/であろうと",
+    "source": "https://jlptsensei.com/",
+    "definition": "whoever / whatever / however"
+  },
+  {
+    "level": "N1",
+    "pattern": "であれ～であれ",
+    "source": "https://jlptsensei.com/",
+    "definition": "whether [A] or [B]"
+  },
+  {
+    "level": "N1",
+    "pattern": "でも何でもない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "not in the least"
+  },
+  {
+    "level": "N1",
+    "pattern": "でなくてなんだろう",
+    "source": "https://japanesetest4you.com/",
+    "definition": "must be; is definitely"
+  },
+  {
+    "level": "N1",
+    "pattern": "ではあるまいか",
+    "source": "https://japanesetest4you.com/",
+    "definition": "I wonder if it’s not…"
+  },
+  {
+    "level": "N1",
+    "pattern": "ではあるまいし",
+    "source": "https://japanesetest4you.com/",
+    "definition": "it’s not like; it isn’t as if"
+  },
+  {
+    "level": "N1",
+    "pattern": "ではすまない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "it doesn’t end with just…"
+  },
+  {
+    "level": "N1",
+    "pattern": "どうにも",
+    "source": "https://japanesetest4you.com/",
+    "definition": "not … by any means; no matter how hard one tries, cannot…"
+  },
+  {
+    "level": "N1",
+    "pattern": "が早いか",
+    "source": "https://jlptsensei.com/",
+    "definition": "as soon as~"
+  },
+  {
+    "level": "N1",
+    "pattern": "がてら",
+    "source": "https://jlptsensei.com/",
+    "definition": "while; on the same occasion; at the same time; coincidentally~"
+  },
+  {
+    "level": "N1",
+    "pattern": "ごとき/ごとく",
+    "source": "https://japanesetest4you.com/",
+    "definition": "like; as if; the same as"
+  },
+  {
+    "level": "N1",
+    "pattern": "ぐるみ",
+    "source": "https://jlptsensei.com/",
+    "definition": "together (with); -wide"
+  },
+  {
+    "level": "N1",
+    "pattern": "羽目になる",
+    "source": "https://japanesetest4you.com/",
+    "definition": "to end up with (something unpleasant)"
+  },
+  {
+    "level": "N1",
+    "pattern": "ほかに～ない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "no other; nothing else"
+  },
+  {
+    "level": "N1",
+    "pattern": "ほうがましだ",
+    "source": "https://japanesetest4you.com/",
+    "definition": "would rather"
+  },
+  {
+    "level": "N1",
+    "pattern": "いかんでは",
+    "source": "https://japanesetest4you.com/",
+    "definition": "depending on"
+  },
+  {
+    "level": "N1",
+    "pattern": "いかなる",
+    "source": "https://japanesetest4you.com/",
+    "definition": "any kind of"
+  },
+  {
+    "level": "N1",
+    "pattern": "いかにも",
+    "source": "https://japanesetest4you.com/",
+    "definition": "indeed; really"
+  },
+  {
+    "level": "N1",
+    "pattern": "いずれにせよ",
+    "source": "https://japanesetest4you.com/",
+    "definition": "at any rate; anyway; in any case"
+  },
+  {
+    "level": "N1",
+    "pattern": "じみた",
+    "source": "https://japanesetest4you.com/",
+    "definition": "to look like"
+  },
+  {
+    "level": "N1",
+    "pattern": "か否か",
+    "source": "https://japanesetest4you.com/",
+    "definition": "whether or not"
+  },
+  {
+    "level": "N1",
+    "pattern": "限りだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "to feel strongly"
+  },
+  {
+    "level": "N1",
+    "pattern": "かいもなく",
+    "source": "https://japanesetest4you.com/",
+    "definition": "even though"
+  },
+  {
+    "level": "N1",
+    "pattern": "からある/からする/からの",
+    "source": "https://jlptsensei.com/",
+    "definition": "at least; approximately X or more"
+  },
+  {
+    "level": "N1",
+    "pattern": "かれ～かれ",
+    "source": "https://japanesetest4you.com/",
+    "definition": "or"
+  },
+  {
+    "level": "N1",
+    "pattern": "かたがた",
+    "source": "https://jlptsensei.com/",
+    "definition": "while; at the same time; for the purpose of"
+  },
+  {
+    "level": "N1",
+    "pattern": "かたわら",
+    "source": "https://jlptsensei.com/",
+    "definition": "while; at the same time; in addition"
+  },
+  {
+    "level": "N1",
+    "pattern": "かつて",
+    "source": "https://japanesetest4you.com/",
+    "definition": "once; before; never before"
+  },
+  {
+    "level": "N1",
+    "pattern": "きっての",
+    "source": "https://japanesetest4you.com/",
+    "definition": "the most … of all"
+  },
+  {
+    "level": "N1",
+    "pattern": "こそあれ",
+    "source": "https://jlptsensei.com/",
+    "definition": "although; even though"
+  },
+  {
+    "level": "N1",
+    "pattern": "こそ「～が・けれど」",
+    "source": "https://jlptsensei.com/",
+    "definition": "but; although (emphasis)"
+  },
+  {
+    "level": "N1",
+    "pattern": "こそすれ",
+    "source": "https://jlptsensei.com/",
+    "definition": "only the first point is true, the second point cannot be true"
+  },
+  {
+    "level": "N1",
+    "pattern": "ことなしに",
+    "source": "https://jlptsensei.com/",
+    "definition": "without doing something"
+  },
+  {
+    "level": "N1",
+    "pattern": "ことのないように",
+    "source": "https://jlptsensei.com/",
+    "definition": "so as not to; to not~"
+  },
+  {
+    "level": "N1",
+    "pattern": "くらいなら",
+    "source": "https://jlptsensei.com/",
+    "definition": "rather than (do …)"
+  },
+  {
+    "level": "N1",
+    "pattern": "くらいのものだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "only (emphasis)"
+  },
+  {
+    "level": "N1",
+    "pattern": "までだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "only; just; nothing else"
+  },
+  {
+    "level": "N1",
+    "pattern": "までもない",
+    "source": "https://jlptsensei.com/",
+    "definition": "it is not necessary to~"
+  },
+  {
+    "level": "N1",
+    "pattern": "まじき",
+    "source": "https://japanesetest4you.com/",
+    "definition": "should not; must not"
+  },
+  {
+    "level": "N1",
+    "pattern": "まみれ",
+    "source": "https://jlptsensei.com/",
+    "definition": "covered with; stained; smeared with"
+  },
+  {
+    "level": "N1",
+    "pattern": "も同然だ",
+    "source": "https://jlptsensei.com/",
+    "definition": "just like; same as~"
+  },
+  {
+    "level": "N1",
+    "pattern": "もしないで",
+    "source": "https://japanesetest4you.com/",
+    "definition": "without even doing"
+  },
+  {
+    "level": "N1",
+    "pattern": "もはや",
+    "source": "https://japanesetest4you.com/",
+    "definition": "already; no longer; not any more"
+  },
+  {
+    "level": "N1",
+    "pattern": "もので",
+    "source": "https://japanesetest4you.com/",
+    "definition": "because; for that reason"
+  },
+  {
+    "level": "N1",
+    "pattern": "ものを",
+    "source": "https://jlptsensei.com/",
+    "definition": "although; but; even though; I wish that"
+  },
+  {
+    "level": "N1",
+    "pattern": "ものとする",
+    "source": "https://jlptsensei.com/",
+    "definition": "shall; to assume; understood as"
+  },
+  {
+    "level": "N1",
+    "pattern": "ものとして",
+    "source": "https://jlptsensei.com/",
+    "definition": "to assume; to suppose"
+  },
+  {
+    "level": "N1",
+    "pattern": "ないまでも",
+    "source": "https://jlptsensei.com/",
+    "definition": "even if [A] is not done, then [B]"
+  },
+  {
+    "level": "N1",
+    "pattern": "ないものか",
+    "source": "https://japanesetest4you.com/",
+    "definition": "can’t we…?; can’t I…?"
+  },
+  {
+    "level": "N1",
+    "pattern": "なくして",
+    "source": "https://jlptsensei.com/",
+    "definition": "without"
+  },
+  {
+    "level": "N1",
+    "pattern": "並み",
+    "source": "https://jlptsensei.com/",
+    "definition": "same level as; equal to; on par with; each; row of"
+  },
+  {
+    "level": "N1",
+    "pattern": "ならでは",
+    "source": "https://jlptsensei.com/",
+    "definition": "distinctive of~; special to~"
+  },
+  {
+    "level": "N1",
+    "pattern": "なり",
+    "source": "https://jlptsensei.com/",
+    "definition": "as soon as"
+  },
+  {
+    "level": "N1",
+    "pattern": "なりに / なりの",
+    "source": "https://jlptsensei.com/",
+    "definition": "In one's own way/style"
+  },
+  {
+    "level": "N1",
+    "pattern": "なりとも",
+    "source": "https://jlptsensei.com/",
+    "definition": "at least; even a little"
+  },
+  {
+    "level": "N1",
+    "pattern": "なり～なり",
+    "source": "https://jlptsensei.com/",
+    "definition": "or"
+  },
+  {
+    "level": "N1",
+    "pattern": "なしに",
+    "source": "https://jlptsensei.com/",
+    "definition": "without"
+  },
+  {
+    "level": "N1",
+    "pattern": "にあたらない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "it’s not worth; there’s no need to"
+  },
+  {
+    "level": "N1",
+    "pattern": "にあって",
+    "source": "https://jlptsensei.com/",
+    "definition": "at; on; during; in the condition of"
+  },
+  {
+    "level": "N1",
+    "pattern": "に至るまで",
+    "source": "https://japanesetest4you.com/",
+    "definition": "Until"
+  },
+  {
+    "level": "N1",
+    "pattern": "に至っては",
+    "source": "https://japanesetest4you.com/",
+    "definition": "when it comes to; as for"
+  },
+  {
+    "level": "N1",
+    "pattern": "に言わせれば",
+    "source": "https://jlptsensei.com/",
+    "definition": "if you ask...; if one may say…"
+  },
+  {
+    "level": "N1",
+    "pattern": "に限ったことではない",
+    "source": "https://jlptsensei.com/",
+    "definition": "not limited to only~"
+  },
+  {
+    "level": "N1",
+    "pattern": "にかたくない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "it’s not hard to"
+  },
+  {
+    "level": "N1",
+    "pattern": "にまつわる",
+    "source": "https://japanesetest4you.com/",
+    "definition": "to be related to"
+  },
+  {
+    "level": "N1",
+    "pattern": "にもまして",
+    "source": "https://japanesetest4you.com/",
+    "definition": "more than…; above…"
+  },
+  {
+    "level": "N1",
+    "pattern": "に則って",
+    "source": "https://japanesetest4you.com/",
+    "definition": "in accordance with"
+  },
+  {
+    "level": "N1",
+    "pattern": "に先駆けて",
+    "source": "https://japanesetest4you.com/",
+    "definition": "to be the first"
+  },
+  {
+    "level": "N1",
+    "pattern": "にしたって",
+    "source": "https://japanesetest4you.com/",
+    "definition": "even; even if"
+  },
+  {
+    "level": "N1",
+    "pattern": "にして",
+    "source": "https://jlptsensei.com/",
+    "definition": "only; just because; although; even; at (place, time); in (time span)"
+  },
+  {
+    "level": "N1",
+    "pattern": "に即して",
+    "source": "https://japanesetest4you.com/",
+    "definition": "to agree with; in keeping with; to be based on"
+  },
+  {
+    "level": "N1",
+    "pattern": "に照らして",
+    "source": "https://japanesetest4you.com/",
+    "definition": "in comparison with, according to, in light of, in view of"
+  },
+  {
+    "level": "N1",
+    "pattern": "にとどまらず",
+    "source": "https://japanesetest4you.com/",
+    "definition": "not limited to; not only… but also"
+  },
+  {
+    "level": "N1",
+    "pattern": "によらず",
+    "source": "https://japanesetest4you.com/",
+    "definition": "regardless of"
+  },
+  {
+    "level": "N1",
+    "pattern": "にもほどがある",
+    "source": "https://japanesetest4you.com/",
+    "definition": "to have a limit; to go too far"
+  },
+  {
+    "level": "N1",
+    "pattern": "には及ばない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "there’s no need to; does not match"
+  },
+  {
+    "level": "N1",
+    "pattern": "の至り",
+    "source": "https://japanesetest4you.com/",
+    "definition": "utmost; extremely"
+  },
+  {
+    "level": "N1",
+    "pattern": "の極み",
+    "source": "https://japanesetest4you.com/",
+    "definition": "the utmost"
+  },
+  {
+    "level": "N1",
+    "pattern": "のやら・ものやら・ことやら",
+    "source": "https://jlptsensei.com/",
+    "definition": "I wonder..; unsure"
+  },
+  {
+    "level": "N1",
+    "pattern": "のやら～のやら",
+    "source": "https://jlptsensei.com/",
+    "definition": "contemplating two opposing choices"
+  },
+  {
+    "level": "N1",
+    "pattern": "のみか",
+    "source": "https://japanesetest4you.com/",
+    "definition": "not only… but also"
+  },
+  {
+    "level": "N1",
+    "pattern": "を踏まえて",
+    "source": "https://japanesetest4you.com/",
+    "definition": "based on"
+  },
+  {
+    "level": "N1",
+    "pattern": "を経て",
+    "source": "https://japanesetest4you.com/",
+    "definition": "through; after; via"
+  },
+  {
+    "level": "N1",
+    "pattern": "を顧みず",
+    "source": "https://japanesetest4you.com/",
+    "definition": "despite; regardless of"
+  },
+  {
+    "level": "N1",
+    "pattern": "を限りに",
+    "source": "https://jlptsensei.com/",
+    "definition": "starting from..; to the full extent of"
+  },
+  {
+    "level": "N1",
+    "pattern": "を兼ねて",
+    "source": "https://japanesetest4you.com/",
+    "definition": "also for the purpose of"
+  },
+  {
+    "level": "N1",
+    "pattern": "を皮切りに",
+    "source": "https://jlptsensei.com/",
+    "definition": "starting with"
+  },
+  {
+    "level": "N1",
+    "pattern": "を機に",
+    "source": "https://japanesetest4you.com/",
+    "definition": "as an opportunity to"
+  },
+  {
+    "level": "N1",
+    "pattern": "を禁じ得ない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "can’t help but; can’t refrain from"
+  },
+  {
+    "level": "N1",
+    "pattern": "をものともせず",
+    "source": "https://japanesetest4you.com/",
+    "definition": "in defiance of"
+  },
+  {
+    "level": "N1",
+    "pattern": "をもって",
+    "source": "https://japanesetest4you.com/",
+    "definition": "1) by means of; with. 2) at the time"
+  },
+  {
+    "level": "N1",
+    "pattern": "をよそに",
+    "source": "https://japanesetest4you.com/",
+    "definition": "despite; without regards to"
+  },
+  {
+    "level": "N1",
+    "pattern": "さもないと",
+    "source": "https://japanesetest4you.com/",
+    "definition": "otherwise; else; if not so"
+  },
+  {
+    "level": "N1",
+    "pattern": "始末だ",
+    "source": "https://japanesetest4you.com/",
+    "definition": "end up; in the end"
+  },
+  {
+    "level": "N1",
+    "pattern": "そばから",
+    "source": "https://jlptsensei.com/",
+    "definition": "as soon as"
+  },
+  {
+    "level": "N1",
+    "pattern": "すら / ですら",
+    "source": "https://jlptsensei.com/",
+    "definition": "even (with emphasis)"
+  },
+  {
+    "level": "N1",
+    "pattern": "た拍子に",
+    "source": "https://japanesetest4you.com/",
+    "definition": "the moment; the instance"
+  },
+  {
+    "level": "N1",
+    "pattern": "たことにして",
+    "source": "https://jlptsensei.com/",
+    "definition": "expresses a decision or news that does not reflect the truth"
+  },
+  {
+    "level": "N1",
+    "pattern": "た瞬間に",
+    "source": "https://japanesetest4you.com/",
+    "definition": "the moment (something happens)"
+  },
+  {
+    "level": "N1",
+    "pattern": "たところで",
+    "source": "https://jlptsensei.com/",
+    "definition": "even if~"
+  },
+  {
+    "level": "N1",
+    "pattern": "ただ～のみだ",
+    "source": "https://japanesetest4you.com/",
+    "definition": "just; can do nothing but; only"
+  },
+  {
+    "level": "N1",
+    "pattern": "たが最後",
+    "source": "https://jlptsensei.com/",
+    "definition": "once [A] occurs, [B] happens"
+  },
+  {
+    "level": "N1",
+    "pattern": "ためしがない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "is never the case; has never happened"
+  },
+  {
+    "level": "N1",
+    "pattern": "たら～たで",
+    "source": "https://jlptsensei.com/",
+    "definition": "whether or not"
+  },
+  {
+    "level": "N1",
+    "pattern": "たりとも",
+    "source": "https://jlptsensei.com/",
+    "definition": "(not) even; (not) any"
+  },
+  {
+    "level": "N1",
+    "pattern": "たる",
+    "source": "https://jlptsensei.com/",
+    "definition": "(those) who are; (that) which is;"
+  },
+  {
+    "level": "N1",
+    "pattern": "てからというもの",
+    "source": "https://japanesetest4you.com/",
+    "definition": "after; since"
+  },
+  {
+    "level": "N1",
+    "pattern": "手前",
+    "source": "https://jlptsensei.com/",
+    "definition": "considering; before; in front of; one’s standpoint"
+  },
+  {
+    "level": "N1",
+    "pattern": "とあれば",
+    "source": "https://jlptsensei.com/",
+    "definition": "if; if it is the case that"
+  },
+  {
+    "level": "N1",
+    "pattern": "とあって",
+    "source": "https://jlptsensei.com/",
+    "definition": "because of; due to the fact"
+  },
+  {
+    "level": "N1",
+    "pattern": "とばかりに",
+    "source": "https://jlptsensei.com/",
+    "definition": "as if to say; as though~"
+  },
+  {
+    "level": "N1",
+    "pattern": "といえども",
+    "source": "https://jlptsensei.com/",
+    "definition": "even; even if"
+  },
+  {
+    "level": "N1",
+    "pattern": "といい～といい",
+    "source": "https://jlptsensei.com/",
+    "definition": "and; or; both; regarding"
+  },
+  {
+    "level": "N1",
+    "pattern": "というか～というか",
+    "source": "https://jlptsensei.com/",
+    "definition": "not sure whether [A] or [B]"
+  },
+  {
+    "level": "N1",
+    "pattern": "というもの",
+    "source": "https://jlptsensei.com/",
+    "definition": "during/over a period of time; since; after~"
+  },
+  {
+    "level": "N1",
+    "pattern": "というところだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "about; approximately"
+  },
+  {
+    "level": "N1",
+    "pattern": "というわけだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "this means; this is why; it is the case that"
+  },
+  {
+    "level": "N1",
+    "pattern": "というわけではない",
+    "source": "https://jlptsensei.com/",
+    "definition": "it’s not that; it doesn’t mean that"
+  },
+  {
+    "level": "N1",
+    "pattern": "といわず",
+    "source": "https://jlptsensei.com/",
+    "definition": "not only; both (without distinction)"
+  },
+  {
+    "level": "N1",
+    "pattern": "ときている",
+    "source": "https://japanesetest4you.com/",
+    "definition": "because"
+  },
+  {
+    "level": "N1",
+    "pattern": "とみられる",
+    "source": "https://jlptsensei.com/",
+    "definition": "regarded as; appears/expected to.."
+  },
+  {
+    "level": "N1",
+    "pattern": "とみると",
+    "source": "https://jlptsensei.com/",
+    "definition": "upon realizing"
+  },
+  {
+    "level": "N1",
+    "pattern": "とみるや",
+    "source": "https://japanesetest4you.com/",
+    "definition": "at the sight of; upon seeing"
+  },
+  {
+    "level": "N1",
+    "pattern": "と思いきや",
+    "source": "https://jlptsensei.com/",
+    "definition": "To think [A], but [B]"
+  },
+  {
+    "level": "N1",
+    "pattern": "とされる",
+    "source": "https://jlptsensei.com/",
+    "definition": "is considered to; it is said that~"
+  },
+  {
+    "level": "N1",
+    "pattern": "としたって",
+    "source": "https://jlptsensei.com/",
+    "definition": "even if..."
+  },
+  {
+    "level": "N1",
+    "pattern": "",
+    "source": "https://japanesetest4you.com/",
+    "definition": "when it comes to…; concerning…"
+  },
+  {
+    "level": "N1",
+    "pattern": "ところがある",
+    "source": "https://japanesetest4you.com/",
+    "definition": "to have; there is"
+  },
+  {
+    "level": "N1",
+    "pattern": "ところから",
+    "source": "https://japanesetest4you.com/",
+    "definition": "because; from the fact that"
+  },
+  {
+    "level": "N1",
+    "pattern": "ところを",
+    "source": "https://jlptsensei.com/",
+    "definition": "although/despite a certain time/situation"
+  },
+  {
+    "level": "N1",
+    "pattern": "ともあろう",
+    "source": "https://jlptsensei.com/",
+    "definition": "of all people (expression showing surprise at a high standing person's misbehavior)"
+  },
+  {
+    "level": "N1",
+    "pattern": "となると/となれば",
+    "source": "https://japanesetest4you.com/",
+    "definition": "if; when it comes to…; where … is concerned; if it’s the case that…"
+  },
+  {
+    "level": "N1",
+    "pattern": "とも～とも",
+    "source": "https://jlptsensei.com/",
+    "definition": "unable to draw a conclusion; unable to judge"
+  },
+  {
+    "level": "N1",
+    "pattern": "ともなく",
+    "source": "https://jlptsensei.com/",
+    "definition": "uncertainty; lack of intent"
+  },
+  {
+    "level": "N1",
+    "pattern": "とりわけ",
+    "source": "https://japanesetest4you.com/",
+    "definition": "especially"
+  },
+  {
+    "level": "N1",
+    "pattern": "として～ない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "not even one"
+  },
+  {
+    "level": "N1",
+    "pattern": "とて",
+    "source": "https://japanesetest4you.com/",
+    "definition": "even"
+  },
+  {
+    "level": "N1",
+    "pattern": "とは",
+    "source": "https://jlptsensei.com/",
+    "definition": "indicates word or phrase being defined with emphasis/surprise"
+  },
+  {
+    "level": "N1",
+    "pattern": "とはいうものの",
+    "source": "https://japanesetest4you.com/",
+    "definition": "having said that; be that as it may"
+  },
+  {
+    "level": "N1",
+    "pattern": "とはいえ",
+    "source": "https://jlptsensei.com/",
+    "definition": "although; nonetheless; be that as it may"
+  },
+  {
+    "level": "N1",
+    "pattern": "つ～つ",
+    "source": "https://jlptsensei.com/",
+    "definition": "two contrasting actions"
+  },
+  {
+    "level": "N1",
+    "pattern": "ってば",
+    "source": "https://japanesetest4you.com/",
+    "definition": "I said; I told you to"
+  },
+  {
+    "level": "N1",
+    "pattern": "うと～うと/うが～うが",
+    "source": "https://jlptsensei.com/",
+    "definition": "whether/even if [A] or [B]."
+  },
+  {
+    "level": "N1",
+    "pattern": "はおろか",
+    "source": "https://japanesetest4you.com/",
+    "definition": "let alone; not to mention; needless to say"
+  },
+  {
+    "level": "N1",
+    "pattern": "はさておき",
+    "source": "https://japanesetest4you.com/",
+    "definition": "setting aside"
+  },
+  {
+    "level": "N1",
+    "pattern": "や否や",
+    "source": "https://jlptsensei.com/",
+    "definition": "as soon as; the moment~"
+  },
+  {
+    "level": "N1",
+    "pattern": "やしない",
+    "source": "https://japanesetest4you.com/",
+    "definition": "not (emphatic negative)"
+  },
+  {
+    "level": "N1",
+    "pattern": "ようによっては",
+    "source": "https://japanesetest4you.com/",
+    "definition": "depending on"
+  },
+  {
+    "level": "N1",
+    "pattern": "(よ)うと～まいと・(よ)うが～まいが",
+    "source": "https://jlptsensei.com/",
+    "definition": "whether or not; regardless"
+  },
+  {
+    "level": "N1",
+    "pattern": "ざる",
+    "source": "https://japanesetest4you.com/",
+    "definition": "not; un-"
+  },
+  {
+    "level": "N1",
+    "pattern": "ずじまい",
+    "source": "https://japanesetest4you.com/",
+    "definition": "never; did not (have the chance to)"
+  },
+  {
+    "level": "N1",
+    "pattern": "ずとも",
+    "source": "https://japanesetest4you.com/",
+    "definition": "even without doing"
+  },
+  {
+    "level": "N1",
+    "pattern": "ずくめ",
+    "source": "https://jlptsensei.com/",
+    "definition": "completely; entirely; nothing but"
+  },
+  {
+    "level": "N2",
+    "pattern": "あげく",
+    "source": "https://jlptsensei.com/",
+    "definition": "to end up; in the end; finally; after all~"
+  },
+  {
+    "level": "N2",
+    "pattern": "あるいは",
+    "source": "https://jlptsensei.com/",
+    "definition": "or; either; maybe; perhaps; possibly~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ばかりだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "continue to (go in negative direction)"
+  },
+  {
+    "level": "N2",
+    "pattern": "ばかりか",
+    "source": "https://jlptsensei.com/",
+    "definition": "not only.. but also; as well as~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ばかりに",
+    "source": "https://jlptsensei.com/",
+    "definition": "simply because; on account of~ (negative result)"
+  },
+  {
+    "level": "N2",
+    "pattern": "ちなみに",
+    "source": "https://jlptsensei.com/",
+    "definition": "by the way; in this connection; incidentally; (conjunction)"
+  },
+  {
+    "level": "N2",
+    "pattern": "ちっとも～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "(not) at all; (not) in the least~"
+  },
+  {
+    "level": "N2",
+    "pattern": "だけあって",
+    "source": "https://jlptsensei.com/",
+    "definition": "being the case; precisely because; as expected from~"
+  },
+  {
+    "level": "N2",
+    "pattern": "だけましだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "it’s better than; one should feel grateful for~"
+  },
+  {
+    "level": "N2",
+    "pattern": "だけに",
+    "source": "https://jlptsensei.com/",
+    "definition": "being the case; precisely because; as one would expect"
+  },
+  {
+    "level": "N2",
+    "pattern": "だけのことはある",
+    "source": "https://jlptsensei.com/",
+    "definition": "no wonder; as expected of; not ... for nothing; not ... with nothing to show for it"
+  },
+  {
+    "level": "N2",
+    "pattern": "だけは",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do all that one can"
+  },
+  {
+    "level": "N2",
+    "pattern": "だって",
+    "source": "https://jlptsensei.com/",
+    "definition": "even; too"
+  },
+  {
+    "level": "N2",
+    "pattern": "でしかない",
+    "source": "https://jlptsensei.com/",
+    "definition": "merely; nothing but; no more than; there is only~"
+  },
+  {
+    "level": "N2",
+    "pattern": "どころではない",
+    "source": "https://jlptsensei.com/",
+    "definition": "not the time for; not the place for; far from; anything but~"
+  },
+  {
+    "level": "N2",
+    "pattern": "どころか",
+    "source": "https://jlptsensei.com/",
+    "definition": "far from; anything but; let alone; not to mention; much less~"
+  },
+  {
+    "level": "N2",
+    "pattern": "得ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "unable to; cannot; it is not possible to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "得る",
+    "source": "https://jlptsensei.com/",
+    "definition": "can; to be able to; is possible to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ふうに",
+    "source": "https://jlptsensei.com/",
+    "definition": "this way; that way; in such a way; how"
+  },
+  {
+    "level": "N2",
+    "pattern": "がきっかけで /をきっかけに",
+    "source": "https://jlptsensei.com/",
+    "definition": "with… as a start; as a result of; taking advantage of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "げ",
+    "source": "https://jlptsensei.com/",
+    "definition": "looks like; seems like; appears to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "反面",
+    "source": "https://jlptsensei.com/",
+    "definition": "while, although; on the other hand~"
+  },
+  {
+    "level": "N2",
+    "pattern": "以外（いがい）",
+    "source": "https://jlptsensei.com/",
+    "definition": "with the exception of; excepting~"
+  },
+  {
+    "level": "N2",
+    "pattern": "以上に（いじょうに）",
+    "source": "https://jlptsensei.com/",
+    "definition": "more than; not less than; beyond~"
+  },
+  {
+    "level": "N2",
+    "pattern": "以上は",
+    "source": "https://jlptsensei.com/",
+    "definition": "because; since; seeing that~"
+  },
+  {
+    "level": "N2",
+    "pattern": "一方で",
+    "source": "https://jlptsensei.com/",
+    "definition": "on one hand, on the other hand; although~"
+  },
+  {
+    "level": "N2",
+    "pattern": "いわゆる",
+    "source": "https://jlptsensei.com/",
+    "definition": "what is called; as it is called; the so-called; so to speak"
+  },
+  {
+    "level": "N2",
+    "pattern": "上",
+    "source": "https://jlptsensei.com/",
+    "definition": "for the sake of; from the standpoint of; as a matter of; in terms of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "かのように",
+    "source": "https://jlptsensei.com/",
+    "definition": "as if; just like~"
+  },
+  {
+    "level": "N2",
+    "pattern": "かと思ったら",
+    "source": "https://jlptsensei.com/",
+    "definition": "just when; no sooner than~"
+  },
+  {
+    "level": "N2",
+    "pattern": "か～ないかのうちに",
+    "source": "https://jlptsensei.com/",
+    "definition": "just as; right after; as soon as~"
+  },
+  {
+    "level": "N2",
+    "pattern": "限り（かぎり）",
+    "source": "https://jlptsensei.com/",
+    "definition": "as long as; while… is the case; as far as; while~"
+  },
+  {
+    "level": "N2",
+    "pattern": "甲斐がある",
+    "source": "https://jlptsensei.com/",
+    "definition": "it’s worth one’s efforts to do something"
+  },
+  {
+    "level": "N2",
+    "pattern": "かねない",
+    "source": "https://jlptsensei.com/",
+    "definition": "(someone) might do something; something might happen"
+  },
+  {
+    "level": "N2",
+    "pattern": "かねる",
+    "source": "https://jlptsensei.com/",
+    "definition": "unable to do something; can’t do something"
+  },
+  {
+    "level": "N2",
+    "pattern": "から言うと",
+    "source": "https://jlptsensei.com/",
+    "definition": "in terms of; from the point of view of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "からこそ",
+    "source": "https://jlptsensei.com/",
+    "definition": "precisely because~"
+  },
+  {
+    "level": "N2",
+    "pattern": "から見ると",
+    "source": "https://jlptsensei.com/",
+    "definition": "from the point of view of; by the look of; judging from~"
+  },
+  {
+    "level": "N2",
+    "pattern": "からには",
+    "source": "https://jlptsensei.com/",
+    "definition": "now that; since; so long as; because~"
+  },
+  {
+    "level": "N2",
+    "pattern": "からして",
+    "source": "https://jlptsensei.com/",
+    "definition": "judging from; based on; since; from; even~"
+  },
+  {
+    "level": "N2",
+    "pattern": "からすると / からすれば",
+    "source": "https://jlptsensei.com/",
+    "definition": "judging from; considering; by the look of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "からと言って",
+    "source": "https://jlptsensei.com/",
+    "definition": "just because; even if; even though~"
+  },
+  {
+    "level": "N2",
+    "pattern": "っこない",
+    "source": "https://jlptsensei.com/",
+    "definition": "no chance of; …is definitely not possible"
+  },
+  {
+    "level": "N2",
+    "pattern": "ことだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "should do~ (used for suggestions or giving advice)"
+  },
+  {
+    "level": "N2",
+    "pattern": "ことだから",
+    "source": "https://jlptsensei.com/",
+    "definition": "because; since~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ことか",
+    "source": "https://jlptsensei.com/",
+    "definition": "how…!; what…!"
+  },
+  {
+    "level": "N2",
+    "pattern": "ことなく",
+    "source": "https://jlptsensei.com/",
+    "definition": "without doing something even once"
+  },
+  {
+    "level": "N2",
+    "pattern": "ことに",
+    "source": "https://jlptsensei.com/",
+    "definition": "emphasize speaker's feelings; to my (surprise/etc)"
+  },
+  {
+    "level": "N2",
+    "pattern": "ことにはならない",
+    "source": "https://jlptsensei.com/",
+    "definition": "just because… doesn’t mean~"
+  },
+  {
+    "level": "N2",
+    "pattern": "くせして",
+    "source": "https://jlptsensei.com/",
+    "definition": "although~; despite the fact that~; even though~"
+  },
+  {
+    "level": "N2",
+    "pattern": "まだしも",
+    "source": "https://jlptsensei.com/",
+    "definition": "rather; better~"
+  },
+  {
+    "level": "N2",
+    "pattern": "まい",
+    "source": "https://jlptsensei.com/",
+    "definition": "will not; will probably not; intend not to; must not~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ままに",
+    "source": "https://jlptsensei.com/",
+    "definition": "as, to do as~"
+  },
+  {
+    "level": "N2",
+    "pattern": "全く～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "not at all~"
+  },
+  {
+    "level": "N2",
+    "pattern": "もかまわず",
+    "source": "https://jlptsensei.com/",
+    "definition": "without caring; without worrying about~"
+  },
+  {
+    "level": "N2",
+    "pattern": "も当然だ",
+    "source": "https://jlptsensei.com/",
+    "definition": "it’s only natural; no wonder; might as well~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ものだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "describe feeling; express memories; state fact"
+  },
+  {
+    "level": "N2",
+    "pattern": "ものだから",
+    "source": "https://jlptsensei.com/",
+    "definition": "so; therefore; the reason for something"
+  },
+  {
+    "level": "N2",
+    "pattern": "ものではない",
+    "source": "https://jlptsensei.com/",
+    "definition": "shouldn’t do something; it’s impossible to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ものがある",
+    "source": "https://jlptsensei.com/",
+    "definition": "there is such a thing; to be the case that; feels like~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ものか / もんか",
+    "source": "https://jlptsensei.com/",
+    "definition": "as if (something untrue were actually true); there's no way~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ものなら",
+    "source": "https://jlptsensei.com/",
+    "definition": "if I/we could; if [A] is possible, then [B]; if one can do something, then~"
+  },
+  {
+    "level": "N2",
+    "pattern": "もの / もん",
+    "source": "https://jlptsensei.com/",
+    "definition": "because; indicates reason/ excuse/ dissatisfaction"
+  },
+  {
+    "level": "N2",
+    "pattern": "ものの",
+    "source": "https://jlptsensei.com/",
+    "definition": "but; although; even though~"
+  },
+  {
+    "level": "N2",
+    "pattern": "もっとも",
+    "source": "https://jlptsensei.com/",
+    "definition": "but then; although; though~"
+  },
+  {
+    "level": "N2",
+    "pattern": "もう少しで",
+    "source": "https://jlptsensei.com/",
+    "definition": "almost; nearly, close to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ないではいられない",
+    "source": "https://jlptsensei.com/",
+    "definition": "can’t help but feel; can’t help but do~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ないことには～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "unless you~"
+  },
+  {
+    "level": "N2",
+    "pattern": "中を /中では",
+    "source": "https://jlptsensei.com/",
+    "definition": "in; on; in the midst of; when; while~"
+  },
+  {
+    "level": "N2",
+    "pattern": "なくはない",
+    "source": "https://jlptsensei.com/",
+    "definition": "it’s not that; I may (double negative)"
+  },
+  {
+    "level": "N2",
+    "pattern": "なくて済む",
+    "source": "https://jlptsensei.com/",
+    "definition": "get by without doing~"
+  },
+  {
+    "level": "N2",
+    "pattern": "何も～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "nothing; (not) ~ at all; there’s no need to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ねばならない",
+    "source": "https://jlptsensei.com/",
+    "definition": "have to do; must; should~"
+  },
+  {
+    "level": "N2",
+    "pattern": "にあたって",
+    "source": "https://jlptsensei.com/",
+    "definition": "at the time; on the occasion of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "にほかならない",
+    "source": "https://jlptsensei.com/",
+    "definition": "nothing but; none other than~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に限らず",
+    "source": "https://jlptsensei.com/",
+    "definition": "not just; not only.. but also~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に限る",
+    "source": "https://jlptsensei.com/",
+    "definition": "is best; nothing is better than~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に限って",
+    "source": "https://jlptsensei.com/",
+    "definition": "only; in particular~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に関わらず",
+    "source": "https://jlptsensei.com/",
+    "definition": "in spite of; regardless of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に関わる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to relate to; to have to do with; relating to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に決まっている",
+    "source": "https://jlptsensei.com/",
+    "definition": "certainly; I’m sure/certain that; it must be the case that~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に越したことはない",
+    "source": "https://jlptsensei.com/",
+    "definition": "it’s best that, there’s nothing better than~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に応えて",
+    "source": "https://jlptsensei.com/",
+    "definition": "in response to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に加えて",
+    "source": "https://jlptsensei.com/",
+    "definition": "in addition~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に基づいて",
+    "source": "https://jlptsensei.com/",
+    "definition": "based on; on the basis of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に向かって",
+    "source": "https://jlptsensei.com/",
+    "definition": "to face; to go towards; to head to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に応じて",
+    "source": "https://jlptsensei.com/",
+    "definition": "depending on; in accordance with~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に際して",
+    "source": "https://jlptsensei.com/",
+    "definition": "on the occasion of; at the time of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に先立ち",
+    "source": "https://jlptsensei.com/",
+    "definition": "before; prior to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "にせよ/ にしろ",
+    "source": "https://jlptsensei.com/",
+    "definition": "even if; regardless; whether... or"
+  },
+  {
+    "level": "N2",
+    "pattern": "にしろ～にしろ",
+    "source": "https://jlptsensei.com/",
+    "definition": "whether… or~"
+  },
+  {
+    "level": "N2",
+    "pattern": "にしたら / にすれば",
+    "source": "https://jlptsensei.com/",
+    "definition": "from one’s perspective; from the point of view of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "にしても～にしても",
+    "source": "https://jlptsensei.com/",
+    "definition": "regardless of whether~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に沿って",
+    "source": "https://jlptsensei.com/",
+    "definition": "along with; in accordance with"
+  },
+  {
+    "level": "N2",
+    "pattern": "に相違ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "without a doubt; certain; sure"
+  },
+  {
+    "level": "N2",
+    "pattern": "に過ぎない",
+    "source": "https://jlptsensei.com/",
+    "definition": "no more than; just; merely; only~"
+  },
+  {
+    "level": "N2",
+    "pattern": "に伴って",
+    "source": "https://jlptsensei.com/",
+    "definition": "as; due to; with; along with; following; accordingly~"
+  },
+  {
+    "level": "N2",
+    "pattern": "につけ",
+    "source": "https://jlptsensei.com/",
+    "definition": "every time; whenever; as; whether; in (either case)"
+  },
+  {
+    "level": "N2",
+    "pattern": "につき",
+    "source": "https://jlptsensei.com/",
+    "definition": "due to; because of; per; each"
+  },
+  {
+    "level": "N2",
+    "pattern": "にわたって",
+    "source": "https://jlptsensei.com/",
+    "definition": "throughout; over a period of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "にも関わらず",
+    "source": "https://jlptsensei.com/",
+    "definition": "despite; in spite of; nevertheless; although~"
+  },
+  {
+    "level": "N2",
+    "pattern": "にて",
+    "source": "https://jlptsensei.com/",
+    "definition": "in, at, with, by (formal particle)"
+  },
+  {
+    "level": "N2",
+    "pattern": "のももっともだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "no wonder; …is only natural"
+  },
+  {
+    "level": "N2",
+    "pattern": "の下で",
+    "source": "https://jlptsensei.com/",
+    "definition": "under; with~"
+  },
+  {
+    "level": "N2",
+    "pattern": "の上では",
+    "source": "https://jlptsensei.com/",
+    "definition": "according to; from the viewpoint of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "のみならず",
+    "source": "https://jlptsensei.com/",
+    "definition": "not only; besides; as well as~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ぬ",
+    "source": "https://jlptsensei.com/",
+    "definition": "negative verb conjugation; traditional version of ない"
+  },
+  {
+    "level": "N2",
+    "pattern": "抜きにして / 抜きで",
+    "source": "https://jlptsensei.com/",
+    "definition": "without; leaving out; cutting out~"
+  },
+  {
+    "level": "N2",
+    "pattern": "抜く",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do something from beginning to end; completely, extremely~"
+  },
+  {
+    "level": "N2",
+    "pattern": "を契機に",
+    "source": "https://jlptsensei.com/",
+    "definition": "as a good opportunity/chance to; as a result of; make the best of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "をめぐって",
+    "source": "https://jlptsensei.com/",
+    "definition": "concerning; in regard to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "をもとに",
+    "source": "https://jlptsensei.com/",
+    "definition": "based on; derived from; building on; beginning with~"
+  },
+  {
+    "level": "N2",
+    "pattern": "を除いて",
+    "source": "https://jlptsensei.com/",
+    "definition": "except; with the exception of; excluding~"
+  },
+  {
+    "level": "N2",
+    "pattern": "を問わず",
+    "source": "https://jlptsensei.com/",
+    "definition": "regardless of; irrespective of; no matter"
+  },
+  {
+    "level": "N2",
+    "pattern": "お～願う",
+    "source": "https://jlptsensei.com/",
+    "definition": "please do; could you please…; I ask of you to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "おまけに",
+    "source": "https://jlptsensei.com/",
+    "definition": "to make matters worse; besides; what's more; in addition; on top of that"
+  },
+  {
+    "level": "N2",
+    "pattern": "恐れがある",
+    "source": "https://jlptsensei.com/",
+    "definition": "it is feared that; to be in danger of; to be liable to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "及び",
+    "source": "https://jlptsensei.com/",
+    "definition": "and; as well as~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ろくに～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "not well; not enough; improperly; insufficiently; unsatisfactorily~"
+  },
+  {
+    "level": "N2",
+    "pattern": "幸いなことに",
+    "source": "https://jlptsensei.com/",
+    "definition": "fortunately; luckily; thankfully~"
+  },
+  {
+    "level": "N2",
+    "pattern": "せいか",
+    "source": "https://jlptsensei.com/",
+    "definition": "perhaps because~"
+  },
+  {
+    "level": "N2",
+    "pattern": "せっかく",
+    "source": "https://jlptsensei.com/",
+    "definition": "especially; (thank you for) troubling to, going to great pains for~"
+  },
+  {
+    "level": "N2",
+    "pattern": "次第",
+    "source": "https://jlptsensei.com/",
+    "definition": "as soon as, dependent upon"
+  },
+  {
+    "level": "N2",
+    "pattern": "次第で",
+    "source": "https://jlptsensei.com/",
+    "definition": "depending on; so~"
+  },
+  {
+    "level": "N2",
+    "pattern": "しかも",
+    "source": "https://jlptsensei.com/",
+    "definition": "moreover; furthermore; and yet; what’s more~"
+  },
+  {
+    "level": "N2",
+    "pattern": "その上",
+    "source": "https://jlptsensei.com/",
+    "definition": "besides; in addition; furthermore~"
+  },
+  {
+    "level": "N2",
+    "pattern": "それなのに",
+    "source": "https://jlptsensei.com/",
+    "definition": "and yet; despite this; but even so~"
+  },
+  {
+    "level": "N2",
+    "pattern": "それなら",
+    "source": "https://jlptsensei.com/",
+    "definition": "if that’s the case; if so~"
+  },
+  {
+    "level": "N2",
+    "pattern": "それにしても",
+    "source": "https://jlptsensei.com/",
+    "definition": "nevertheless; at any rate; even so; be that as it may~"
+  },
+  {
+    "level": "N2",
+    "pattern": "そう言えば",
+    "source": "https://jlptsensei.com/",
+    "definition": "come to think of it…; now that you mention it…"
+  },
+  {
+    "level": "N2",
+    "pattern": "そうすると",
+    "source": "https://jlptsensei.com/",
+    "definition": "having done that; if that is done; if it is done in that way"
+  },
+  {
+    "level": "N2",
+    "pattern": "末に",
+    "source": "https://jlptsensei.com/",
+    "definition": "finally; after; following; at the end/ conclusion of~"
+  },
+  {
+    "level": "N2",
+    "pattern": "少しも～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "not one bit; not even a little~"
+  },
+  {
+    "level": "N2",
+    "pattern": "少なくとも",
+    "source": "https://jlptsensei.com/",
+    "definition": "at least~"
+  },
+  {
+    "level": "N2",
+    "pattern": "たまえ",
+    "source": "https://jlptsensei.com/",
+    "definition": "do~; order somebody to do something"
+  },
+  {
+    "level": "N2",
+    "pattern": "てばかりはいられない",
+    "source": "https://jlptsensei.com/",
+    "definition": "can’t keep doing~"
+  },
+  {
+    "level": "N2",
+    "pattern": "てでも",
+    "source": "https://jlptsensei.com/",
+    "definition": "even if I have to; by all means~"
+  },
+  {
+    "level": "N2",
+    "pattern": "て以来",
+    "source": "https://jlptsensei.com/",
+    "definition": "since; henceforth~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ていては",
+    "source": "https://jlptsensei.com/",
+    "definition": "if one keeps doing~"
+  },
+  {
+    "level": "N2",
+    "pattern": "てこそ",
+    "source": "https://jlptsensei.com/",
+    "definition": "now that; since (something happened)"
+  },
+  {
+    "level": "N2",
+    "pattern": "てまで",
+    "source": "https://jlptsensei.com/",
+    "definition": "even; will go far so as to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "てならない",
+    "source": "https://jlptsensei.com/",
+    "definition": "can't help but; dying to; extremely~"
+  },
+  {
+    "level": "N2",
+    "pattern": "てたまらない",
+    "source": "https://jlptsensei.com/",
+    "definition": "can't help but; dying to; extremely~"
+  },
+  {
+    "level": "N2",
+    "pattern": "て当然だ",
+    "source": "https://jlptsensei.com/",
+    "definition": "natural; as a matter of course"
+  },
+  {
+    "level": "N2",
+    "pattern": "てはいられない",
+    "source": "https://jlptsensei.com/",
+    "definition": "can’t afford to; unable to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "てはならない",
+    "source": "https://jlptsensei.com/",
+    "definition": "must not; cannot; should not~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ては / では",
+    "source": "https://jlptsensei.com/",
+    "definition": "whenever; if; when~; repetitive action"
+  },
+  {
+    "level": "N2",
+    "pattern": "ては～ては",
+    "source": "https://jlptsensei.com/",
+    "definition": "repetitive situations/actions"
+  },
+  {
+    "level": "N2",
+    "pattern": "と同時に",
+    "source": "https://jlptsensei.com/",
+    "definition": "at the same time as; while; simultaneously~"
+  },
+  {
+    "level": "N2",
+    "pattern": "といった",
+    "source": "https://jlptsensei.com/",
+    "definition": "like; such as~"
+  },
+  {
+    "level": "N2",
+    "pattern": "というふうに",
+    "source": "https://jlptsensei.com/",
+    "definition": "in such a way that~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ということは",
+    "source": "https://jlptsensei.com/",
+    "definition": "that is to say; so that means; in other words~"
+  },
+  {
+    "level": "N2",
+    "pattern": "というものだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "something like; something called~"
+  },
+  {
+    "level": "N2",
+    "pattern": "というものではない",
+    "source": "https://jlptsensei.com/",
+    "definition": "there is no guarantee that…; not necessarily~"
+  },
+  {
+    "level": "N2",
+    "pattern": "と考えられる",
+    "source": "https://jlptsensei.com/",
+    "definition": "one can think that; it is conceivable that; considered~"
+  },
+  {
+    "level": "N2",
+    "pattern": "とか（で）",
+    "source": "https://jlptsensei.com/",
+    "definition": "I heard that~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ところだった",
+    "source": "https://jlptsensei.com/",
+    "definition": "was just about to do something; something almost happened"
+  },
+  {
+    "level": "N2",
+    "pattern": "ところに",
+    "source": "https://jlptsensei.com/",
+    "definition": "at the time; just as I was~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ところを見ると",
+    "source": "https://jlptsensei.com/",
+    "definition": "judging from; seeing that~"
+  },
+  {
+    "level": "N2",
+    "pattern": "とも",
+    "source": "https://jlptsensei.com/",
+    "definition": "even if; no matter (who, what, when, where, why, how); though~"
+  },
+  {
+    "level": "N2",
+    "pattern": "としても",
+    "source": "https://jlptsensei.com/",
+    "definition": "assuming; even if~"
+  },
+  {
+    "level": "N2",
+    "pattern": "つつ",
+    "source": "https://jlptsensei.com/",
+    "definition": "while; even though; despite~"
+  },
+  {
+    "level": "N2",
+    "pattern": "つつある",
+    "source": "https://jlptsensei.com/",
+    "definition": "to be doing; to be in the process of doing~"
+  },
+  {
+    "level": "N2",
+    "pattern": "上は",
+    "source": "https://jlptsensei.com/",
+    "definition": "now that; since; as long as~"
+  },
+  {
+    "level": "N2",
+    "pattern": "はもとより",
+    "source": "https://jlptsensei.com/",
+    "definition": "also; let alone; from the beginning"
+  },
+  {
+    "level": "N2",
+    "pattern": "はともかく",
+    "source": "https://jlptsensei.com/",
+    "definition": "anyhow; anyway; regardless; in any case; whether or not~"
+  },
+  {
+    "level": "N2",
+    "pattern": "やら～やら",
+    "source": "https://jlptsensei.com/",
+    "definition": "such things as A and B; A and B and so on~"
+  },
+  {
+    "level": "N2",
+    "pattern": "よりほかない",
+    "source": "https://jlptsensei.com/",
+    "definition": "to have no choice but~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ようでは",
+    "source": "https://jlptsensei.com/",
+    "definition": "if~ (bad result)"
+  },
+  {
+    "level": "N2",
+    "pattern": "ようではないか",
+    "source": "https://jlptsensei.com/",
+    "definition": "let’s do (something); why don’t we~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ようか～まいか",
+    "source": "https://jlptsensei.com/",
+    "definition": "whether or not; considering options"
+  },
+  {
+    "level": "N2",
+    "pattern": "ざるを得ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "cannot help (doing); have no choice but to~"
+  },
+  {
+    "level": "N2",
+    "pattern": "ずに済む",
+    "source": "https://jlptsensei.com/",
+    "definition": "get by without doing~"
+  },
+  {
+    "level": "N3",
+    "pattern": "上げる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to finish doing~"
+  },
+  {
+    "level": "N3",
+    "pattern": "あまり",
+    "source": "https://jlptsensei.com/",
+    "definition": "so much… that"
+  },
+  {
+    "level": "N3",
+    "pattern": "あまりにも",
+    "source": "https://jlptsensei.com/",
+    "definition": "too much; so much… that; excessively~"
+  },
+  {
+    "level": "N3",
+    "pattern": "合う",
+    "source": "https://jlptsensei.com/",
+    "definition": "do something together"
+  },
+  {
+    "level": "N3",
+    "pattern": "ばいい",
+    "source": "https://jlptsensei.com/",
+    "definition": "should, can, it’d be good if~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ばよかった",
+    "source": "https://jlptsensei.com/",
+    "definition": "should have; would have been better if~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ば～ほど",
+    "source": "https://jlptsensei.com/",
+    "definition": "the more… the more"
+  },
+  {
+    "level": "N3",
+    "pattern": "ば～のに",
+    "source": "https://jlptsensei.com/",
+    "definition": "would have; should have; if only~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ばかりで",
+    "source": "https://jlptsensei.com/",
+    "definition": "only; just (negative description)"
+  },
+  {
+    "level": "N3",
+    "pattern": "ばかりでなく",
+    "source": "https://jlptsensei.com/",
+    "definition": "not only.. but also; as well as~"
+  },
+  {
+    "level": "N3",
+    "pattern": "べきだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "should do; must do~"
+  },
+  {
+    "level": "N3",
+    "pattern": "べきではない",
+    "source": "https://jlptsensei.com/",
+    "definition": "should not do~; must not do~"
+  },
+  {
+    "level": "N3",
+    "pattern": "別に～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "not really, not particularly"
+  },
+  {
+    "level": "N3",
+    "pattern": "ぶりに",
+    "source": "https://jlptsensei.com/",
+    "definition": "for the first time in (period of time)"
+  },
+  {
+    "level": "N3",
+    "pattern": "中",
+    "source": "https://jlptsensei.com/",
+    "definition": "currently; during; at some point; throughout; before the end of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "だけでなく",
+    "source": "https://jlptsensei.com/",
+    "definition": "not only… but also"
+  },
+  {
+    "level": "N3",
+    "pattern": "どんなに～ても",
+    "source": "https://jlptsensei.com/",
+    "definition": "no matter how (much)"
+  },
+  {
+    "level": "N3",
+    "pattern": "ふりをする",
+    "source": "https://jlptsensei.com/",
+    "definition": "to pretend; to act as if~"
+  },
+  {
+    "level": "N3",
+    "pattern": "がち",
+    "source": "https://jlptsensei.com/",
+    "definition": "tend to; tendency to; frequently; often; to do something easily"
+  },
+  {
+    "level": "N3",
+    "pattern": "がたい",
+    "source": "https://jlptsensei.com/",
+    "definition": "very difficult to; hard to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "気味",
+    "source": "https://jlptsensei.com/",
+    "definition": "-like; -looking; -looked; tending to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ごとに",
+    "source": "https://jlptsensei.com/",
+    "definition": "each; every; at intervals of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "程",
+    "source": "https://jlptsensei.com/",
+    "definition": "degree; extent; bounds; upper limit"
+  },
+  {
+    "level": "N3",
+    "pattern": "ほど～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "is not as… as~"
+  },
+  {
+    "level": "N3",
+    "pattern": "いくら～ても",
+    "source": "https://jlptsensei.com/",
+    "definition": "no matter how~"
+  },
+  {
+    "level": "N3",
+    "pattern": "一方だ",
+    "source": "https://jlptsensei.com/",
+    "definition": "more and more; continue to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "じゃない",
+    "source": "https://jlptsensei.com/",
+    "definition": "maybe; most likely; confirmation of information; express surprise towards listener"
+  },
+  {
+    "level": "N3",
+    "pattern": "か何か",
+    "source": "https://jlptsensei.com/",
+    "definition": "or something~"
+  },
+  {
+    "level": "N3",
+    "pattern": "かける",
+    "source": "https://jlptsensei.com/",
+    "definition": "half-; not yet finished; in the middle of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "から〜にかけて",
+    "source": "https://jlptsensei.com/",
+    "definition": "through; from [A] to [B]"
+  },
+  {
+    "level": "N3",
+    "pattern": "代わりに",
+    "source": "https://jlptsensei.com/",
+    "definition": "instead of; as a substitute for; in exchange for; in return for"
+  },
+  {
+    "level": "N3",
+    "pattern": "結果",
+    "source": "https://jlptsensei.com/",
+    "definition": "as a result of; after~"
+  },
+  {
+    "level": "N3",
+    "pattern": "決して～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "never; by no means~"
+  },
+  {
+    "level": "N3",
+    "pattern": "切れない",
+    "source": "https://jlptsensei.com/",
+    "definition": "unable to do; too much to finish/complete"
+  },
+  {
+    "level": "N3",
+    "pattern": "きり",
+    "source": "https://jlptsensei.com/",
+    "definition": "only; just; since; after~"
+  },
+  {
+    "level": "N3",
+    "pattern": "切る",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do something completely to the end"
+  },
+  {
+    "level": "N3",
+    "pattern": "っけ",
+    "source": "https://jlptsensei.com/",
+    "definition": "a casual suffix to confirm something you are trying to remember"
+  },
+  {
+    "level": "N3",
+    "pattern": "込む",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do something for a long time or to move something inside"
+  },
+  {
+    "level": "N3",
+    "pattern": "こそ",
+    "source": "https://jlptsensei.com/",
+    "definition": "for sure (emphasize preceding word); precisely; definitely~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ことから",
+    "source": "https://jlptsensei.com/",
+    "definition": "from the fact that~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ことになっている",
+    "source": "https://jlptsensei.com/",
+    "definition": "to be expected to; to be scheduled to; it has been decided as a rule that"
+  },
+  {
+    "level": "N3",
+    "pattern": "ことはない",
+    "source": "https://jlptsensei.com/",
+    "definition": "there is no need to; (something) never happens; there is no possibility that~"
+  },
+  {
+    "level": "N3",
+    "pattern": "こと",
+    "source": "https://jlptsensei.com/",
+    "definition": "(must) do"
+  },
+  {
+    "level": "N3",
+    "pattern": "くらい・ぐらい",
+    "source": "https://jlptsensei.com/",
+    "definition": "approximately; about; around; to the extent~"
+  },
+  {
+    "level": "N3",
+    "pattern": "くせに",
+    "source": "https://jlptsensei.com/",
+    "definition": "and yet; although; despite the fact that~"
+  },
+  {
+    "level": "N3",
+    "pattern": "まるで",
+    "source": "https://jlptsensei.com/",
+    "definition": "as if; as though; just like~"
+  },
+  {
+    "level": "N3",
+    "pattern": "まさか",
+    "source": "https://jlptsensei.com/",
+    "definition": "there's no way; that's impossible; you must be joking"
+  },
+  {
+    "level": "N3",
+    "pattern": "滅多に～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "hardly; rarely; seldom"
+  },
+  {
+    "level": "N3",
+    "pattern": "も～ば～も",
+    "source": "https://jlptsensei.com/",
+    "definition": "and; also; as well; either/or; neither/nor"
+  },
+  {
+    "level": "N3",
+    "pattern": "もしかしたら",
+    "source": "https://jlptsensei.com/",
+    "definition": "perhaps; maybe; perchance; by any chance~"
+  },
+  {
+    "level": "N3",
+    "pattern": "もしも〜たら",
+    "source": "https://jlptsensei.com/",
+    "definition": "if; in the case; supposing~"
+  },
+  {
+    "level": "N3",
+    "pattern": "向け",
+    "source": "https://jlptsensei.com/",
+    "definition": "intended for; aimed at~"
+  },
+  {
+    "level": "N3",
+    "pattern": "向き",
+    "source": "https://jlptsensei.com/",
+    "definition": "suitable for~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ながらも",
+    "source": "https://jlptsensei.com/",
+    "definition": "but; although; despite~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ないことはない",
+    "source": "https://jlptsensei.com/",
+    "definition": "can do; is not impossible to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ないと",
+    "source": "https://jlptsensei.com/",
+    "definition": "must do; unless/if you don't~"
+  },
+  {
+    "level": "N3",
+    "pattern": "直す",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do something again; to do over"
+  },
+  {
+    "level": "N3",
+    "pattern": "んだって",
+    "source": "https://jlptsensei.com/",
+    "definition": "I hear that; heard that~"
+  },
+  {
+    "level": "N3",
+    "pattern": "に違いない",
+    "source": "https://jlptsensei.com/",
+    "definition": "I’m sure/ certain; no doubt that~"
+  },
+  {
+    "level": "N3",
+    "pattern": "に反する",
+    "source": "https://jlptsensei.com/",
+    "definition": "against; contrary to; in contrast to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "にかけて",
+    "source": "https://jlptsensei.com/",
+    "definition": "over (a period); through~; concerning~; regarding~"
+  },
+  {
+    "level": "N3",
+    "pattern": "に関する / に関して",
+    "source": "https://jlptsensei.com/",
+    "definition": "about; regarding; related to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "にかわって / にかわり",
+    "source": "https://jlptsensei.com/",
+    "definition": "instead of~; replacing~; on behalf of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "に比べて",
+    "source": "https://jlptsensei.com/",
+    "definition": "compared to~; in comparison to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "に慣れる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to be used to something"
+  },
+  {
+    "level": "N3",
+    "pattern": "において / における",
+    "source": "https://jlptsensei.com/",
+    "definition": "in; at (place); regarding~; as for~; in relation to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "に従って",
+    "source": "https://jlptsensei.com/",
+    "definition": "as; therefore; in accordance with; according to; consequently"
+  },
+  {
+    "level": "N3",
+    "pattern": "にしても",
+    "source": "https://jlptsensei.com/",
+    "definition": "even if; even though; regardless of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "にしては",
+    "source": "https://jlptsensei.com/",
+    "definition": "for; considering it’s (something or someone)"
+  },
+  {
+    "level": "N3",
+    "pattern": "に対して",
+    "source": "https://jlptsensei.com/",
+    "definition": "towards; against; regarding; in contrast with"
+  },
+  {
+    "level": "N3",
+    "pattern": "にとって",
+    "source": "https://jlptsensei.com/",
+    "definition": "to; for; concerning; as far as ... is concerned; regarding~"
+  },
+  {
+    "level": "N3",
+    "pattern": "について",
+    "source": "https://jlptsensei.com/",
+    "definition": "concerning; regarding; about; on~"
+  },
+  {
+    "level": "N3",
+    "pattern": "につれて",
+    "source": "https://jlptsensei.com/",
+    "definition": "as; in proportion to; with; as… then~"
+  },
+  {
+    "level": "N3",
+    "pattern": "には",
+    "source": "https://jlptsensei.com/",
+    "definition": "for the purpose of; in order to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "によると /によれば",
+    "source": "https://jlptsensei.com/",
+    "definition": "according to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "によって / による",
+    "source": "https://jlptsensei.com/",
+    "definition": "by means of; due to; owing to; because of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "のでしょうか",
+    "source": "https://jlptsensei.com/",
+    "definition": "ask a question in a polite way"
+  },
+  {
+    "level": "N3",
+    "pattern": "を中心に",
+    "source": "https://jlptsensei.com/",
+    "definition": "focused on; centered on"
+  },
+  {
+    "level": "N3",
+    "pattern": "をはじめ",
+    "source": "https://jlptsensei.com/",
+    "definition": "for example; starting with"
+  },
+  {
+    "level": "N3",
+    "pattern": "を込めて",
+    "source": "https://jlptsensei.com/",
+    "definition": "filled with; full of"
+  },
+  {
+    "level": "N3",
+    "pattern": "を通じて /を通して",
+    "source": "https://jlptsensei.com/",
+    "definition": "through; via; throughout; by"
+  },
+  {
+    "level": "N3",
+    "pattern": "おかげで",
+    "source": "https://jlptsensei.com/",
+    "definition": "thanks to; owing to; because of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "っぱなし",
+    "source": "https://jlptsensei.com/",
+    "definition": "leaving (something) on; leaving (something) still in use"
+  },
+  {
+    "level": "N3",
+    "pattern": "っぽい",
+    "source": "https://jlptsensei.com/",
+    "definition": "seems like; somewhat~; -ish; easily does~; often does~"
+  },
+  {
+    "level": "N3",
+    "pattern": "さえ",
+    "source": "https://jlptsensei.com/",
+    "definition": "even; so much as; not even"
+  },
+  {
+    "level": "N3",
+    "pattern": "さえ～ば",
+    "source": "https://jlptsensei.com/",
+    "definition": "if only; as long as"
+  },
+  {
+    "level": "N3",
+    "pattern": "際に",
+    "source": "https://jlptsensei.com/",
+    "definition": "when; at the time of; in the case of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "最中に",
+    "source": "https://jlptsensei.com/",
+    "definition": "while; during; in the middle of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "さて",
+    "source": "https://jlptsensei.com/",
+    "definition": "conjunction: well; now; then~"
+  },
+  {
+    "level": "N3",
+    "pattern": "せいで",
+    "source": "https://jlptsensei.com/",
+    "definition": "because of; due to; as a result of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "しかない",
+    "source": "https://jlptsensei.com/",
+    "definition": "have no choice but~"
+  },
+  {
+    "level": "N3",
+    "pattern": "そうもない /そうにない",
+    "source": "https://jlptsensei.com/",
+    "definition": "very unlikely to~; showing no signs of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "たものだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "used to do; would often do"
+  },
+  {
+    "level": "N3",
+    "pattern": "たとたん",
+    "source": "https://jlptsensei.com/",
+    "definition": "as soon as; just as~"
+  },
+  {
+    "level": "N3",
+    "pattern": "たびに",
+    "source": "https://jlptsensei.com/",
+    "definition": "whenever; every time~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ために",
+    "source": "https://jlptsensei.com/",
+    "definition": "for; in order to; for the benefit of; because of; as a result of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "たて",
+    "source": "https://jlptsensei.com/",
+    "definition": "just done; freshly done; newly done"
+  },
+  {
+    "level": "N3",
+    "pattern": "たとえ～ても",
+    "source": "https://jlptsensei.com/",
+    "definition": "even if… is the case"
+  },
+  {
+    "level": "N3",
+    "pattern": "たって",
+    "source": "https://jlptsensei.com/",
+    "definition": "even if; even though; no matter how~"
+  },
+  {
+    "level": "N3",
+    "pattern": "てばかりいる",
+    "source": "https://jlptsensei.com/",
+    "definition": "only; nothing but~"
+  },
+  {
+    "level": "N3",
+    "pattern": "てごらん",
+    "source": "https://jlptsensei.com/",
+    "definition": "(please) try to; (please) look"
+  },
+  {
+    "level": "N3",
+    "pattern": "てはじめて",
+    "source": "https://jlptsensei.com/",
+    "definition": "not until; only after [x] did I"
+  },
+  {
+    "level": "N3",
+    "pattern": "てからでないと",
+    "source": "https://jlptsensei.com/",
+    "definition": "must first do; cannot do without first doing~"
+  },
+  {
+    "level": "N3",
+    "pattern": "てしょうがない・てしかたがない",
+    "source": "https://jlptsensei.com/",
+    "definition": "can't help but~; very; extremely"
+  },
+  {
+    "level": "N3",
+    "pattern": "て済む",
+    "source": "https://jlptsensei.com/",
+    "definition": "sufficient by; no problem to; resolve by~"
+  },
+  {
+    "level": "N3",
+    "pattern": "てはいけないから",
+    "source": "https://jlptsensei.com/",
+    "definition": "in order to not~; to prevent a negative situation"
+  },
+  {
+    "level": "N3",
+    "pattern": "ている場合じゃない",
+    "source": "https://jlptsensei.com/",
+    "definition": "this is no time to be doing~"
+  },
+  {
+    "level": "N3",
+    "pattern": "的",
+    "source": "https://jlptsensei.com/",
+    "definition": "change noun into na-adjective (-ish; -like; -ish)"
+  },
+  {
+    "level": "N3",
+    "pattern": "ても始まらない",
+    "source": "https://jlptsensei.com/",
+    "definition": "even if you... it’s no use; there is no point to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "てもかまわない",
+    "source": "https://jlptsensei.com/",
+    "definition": "it doesn't matter if ~"
+  },
+  {
+    "level": "N3",
+    "pattern": "てもしょうがない / ても仕方がない",
+    "source": "https://jlptsensei.com/",
+    "definition": "there's no point to~; it's no use to~; it cannot be helped"
+  },
+  {
+    "level": "N3",
+    "pattern": "と言えば",
+    "source": "https://jlptsensei.com/",
+    "definition": "speaking of; when you talk of; when you say; if it were the case that~"
+  },
+  {
+    "level": "N3",
+    "pattern": "といい / たらいい",
+    "source": "https://jlptsensei.com/",
+    "definition": "it would be nice if; should; I hope~"
+  },
+  {
+    "level": "N3",
+    "pattern": "といっても",
+    "source": "https://jlptsensei.com/",
+    "definition": "although I say; although one might say~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ということだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "I heard~; it means that~; in other words~"
+  },
+  {
+    "level": "N3",
+    "pattern": "というのは",
+    "source": "https://jlptsensei.com/",
+    "definition": "this means; the meaning of … is; because; that is to say~"
+  },
+  {
+    "level": "N3",
+    "pattern": "と言うと",
+    "source": "https://jlptsensei.com/",
+    "definition": "speaking of; when you talk of; when you say~"
+  },
+  {
+    "level": "N3",
+    "pattern": "というより",
+    "source": "https://jlptsensei.com/",
+    "definition": "rather than~"
+  },
+  {
+    "level": "N3",
+    "pattern": "とみえる / とみえて",
+    "source": "https://jlptsensei.com/",
+    "definition": "it seems that~"
+  },
+  {
+    "level": "N3",
+    "pattern": "とすれば・としたら・とすると",
+    "source": "https://jlptsensei.com/",
+    "definition": "in the case of~; assuming~; if A then B"
+  },
+  {
+    "level": "N3",
+    "pattern": "と共に",
+    "source": "https://jlptsensei.com/",
+    "definition": "together with; at the same time as; as well as~"
+  },
+  {
+    "level": "N3",
+    "pattern": "途中で/途中に",
+    "source": "https://jlptsensei.com/",
+    "definition": "on the way; in the middle of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ところで",
+    "source": "https://jlptsensei.com/",
+    "definition": "by the way~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ところが",
+    "source": "https://jlptsensei.com/",
+    "definition": "even so; however; even though~"
+  },
+  {
+    "level": "N3",
+    "pattern": "とおりに",
+    "source": "https://jlptsensei.com/",
+    "definition": "in the same way as; in the way; as~"
+  },
+  {
+    "level": "N3",
+    "pattern": "通す（とおす）",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do until the end; to continually do; through~"
+  },
+  {
+    "level": "N3",
+    "pattern": "として",
+    "source": "https://jlptsensei.com/",
+    "definition": "as~; in the role of~"
+  },
+  {
+    "level": "N3",
+    "pattern": "とても～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "cannot possibly be; hardly~"
+  },
+  {
+    "level": "N3",
+    "pattern": "とは限らない",
+    "source": "https://jlptsensei.com/",
+    "definition": "not necessarily so; is not always true"
+  },
+  {
+    "level": "N3",
+    "pattern": "ついでに",
+    "source": "https://jlptsensei.com/",
+    "definition": "while, incidentally, at the same time, on the way~"
+  },
+  {
+    "level": "N3",
+    "pattern": "つもりだった",
+    "source": "https://jlptsensei.com/",
+    "definition": "I thought I~; I believe I~; was planning to~; was intending to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "つもりで",
+    "source": "https://jlptsensei.com/",
+    "definition": "with the intention of doing~"
+  },
+  {
+    "level": "N3",
+    "pattern": "うちに",
+    "source": "https://jlptsensei.com/",
+    "definition": "while; before~"
+  },
+  {
+    "level": "N3",
+    "pattern": "上で",
+    "source": "https://jlptsensei.com/",
+    "definition": "upon; after; when; for; in order to"
+  },
+  {
+    "level": "N3",
+    "pattern": "上に",
+    "source": "https://jlptsensei.com/",
+    "definition": "as well; besides; in addition to; not only… but also~"
+  },
+  {
+    "level": "N3",
+    "pattern": "は別として",
+    "source": "https://jlptsensei.com/",
+    "definition": "aside from; apart from; except for; whether or not~"
+  },
+  {
+    "level": "N3",
+    "pattern": "は～で有名",
+    "source": "https://jlptsensei.com/",
+    "definition": "famous for~"
+  },
+  {
+    "level": "N3",
+    "pattern": "わけだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "for that reason; no wonder; as you’d expect; the fact is; so you mean~"
+  },
+  {
+    "level": "N3",
+    "pattern": "わけではない",
+    "source": "https://jlptsensei.com/",
+    "definition": "it doesn’t mean that; it is not the case that; I don’t mean that; it is not true that~"
+  },
+  {
+    "level": "N3",
+    "pattern": "わけがない",
+    "source": "https://jlptsensei.com/",
+    "definition": "there is no way that~; it is impossible to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "わけにはいかない",
+    "source": "https://jlptsensei.com/",
+    "definition": "must not; cannot afford to; must, have no choice but to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "割に（わりに）",
+    "source": "https://jlptsensei.com/",
+    "definition": "considering; comparatively; relatively; unexpectedly; unusually~"
+  },
+  {
+    "level": "N3",
+    "pattern": "よりも",
+    "source": "https://jlptsensei.com/",
+    "definition": "in comparison to; rather than~; more than~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ようがない",
+    "source": "https://jlptsensei.com/",
+    "definition": "there is no way to; it’s impossible to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ような気がする",
+    "source": "https://jlptsensei.com/",
+    "definition": "have a feeling that; feels like; seems like; think that~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ように見える",
+    "source": "https://jlptsensei.com/",
+    "definition": "to look; to seem; to appear~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ようとしない",
+    "source": "https://jlptsensei.com/",
+    "definition": "not try to; not make an effort to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ようとする",
+    "source": "https://jlptsensei.com/",
+    "definition": "try to; attempt to; be about to~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ずに",
+    "source": "https://jlptsensei.com/",
+    "definition": "without doing~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ずにはいられない",
+    "source": "https://jlptsensei.com/",
+    "definition": "can’t help but feel; can’t help but do; must do~"
+  },
+  {
+    "level": "N3",
+    "pattern": "ずつ",
+    "source": "https://jlptsensei.com/",
+    "definition": "apiece; each; at a time"
+  },
+  {
+    "level": "N4",
+    "pattern": "間",
+    "source": "https://jlptsensei.com/",
+    "definition": "while; during; between"
+  },
+  {
+    "level": "N4",
+    "pattern": "間に",
+    "source": "https://jlptsensei.com/",
+    "definition": "while/during~ something happened"
+  },
+  {
+    "level": "N4",
+    "pattern": "あまり～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "not very, not much~"
+  },
+  {
+    "level": "N4",
+    "pattern": "後で",
+    "source": "https://jlptsensei.com/",
+    "definition": "after~; later"
+  },
+  {
+    "level": "N4",
+    "pattern": "ば",
+    "source": "https://jlptsensei.com/",
+    "definition": "if… then (ば conditional),1,便利ならば"
+  },
+  {
+    "level": "N4",
+    "pattern": "場合は",
+    "source": "https://jlptsensei.com/",
+    "definition": "in the event of; in the case that"
+  },
+  {
+    "level": "N4",
+    "pattern": "ばかり",
+    "source": "https://jlptsensei.com/",
+    "definition": "only; nothing but~"
+  },
+  {
+    "level": "N4",
+    "pattern": "\"だけで",
+    "source": "https://jlptsensei.com/",
+    "definition": ""
+  },
+  {
+    "level": "N4",
+    "pattern": "出す",
+    "source": "https://jlptsensei.com/",
+    "definition": "to begin to; to start to; to burst into; ... out (e.g. to jump out, to carry out)"
+  },
+  {
+    "level": "N4",
+    "pattern": "ではないか",
+    "source": "https://jlptsensei.com/",
+    "definition": "right?; isn't it?"
+  },
+  {
+    "level": "N4",
+    "pattern": "が必要",
+    "source": "https://jlptsensei.com/",
+    "definition": "need; necessary"
+  },
+  {
+    "level": "N4",
+    "pattern": "がする",
+    "source": "https://jlptsensei.com/",
+    "definition": "to smell; hear; taste"
+  },
+  {
+    "level": "N4",
+    "pattern": "がり",
+    "source": "https://jlptsensei.com/",
+    "definition": "someone tends to; has a tendency to; has a sensitivity to~"
+  },
+  {
+    "level": "N4",
+    "pattern": "がる・がっている",
+    "source": "https://jlptsensei.com/",
+    "definition": "to show signs of; to appear; to feel, to think"
+  },
+  {
+    "level": "N4",
+    "pattern": "始める",
+    "source": "https://jlptsensei.com/",
+    "definition": "to start; to begin to~"
+  },
+  {
+    "level": "N4",
+    "pattern": "はずだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "it must be; it should be (expectation)"
+  },
+  {
+    "level": "N4",
+    "pattern": "はずがない",
+    "source": "https://jlptsensei.com/",
+    "definition": "cannot be (impossible)"
+  },
+  {
+    "level": "N4",
+    "pattern": "必要がある",
+    "source": "https://jlptsensei.com/",
+    "definition": "need to; it is necessary to"
+  },
+  {
+    "level": "N4",
+    "pattern": "意向形",
+    "source": "https://jlptsensei.com/",
+    "definition": "volitional form; let's do~,1,,,#8fbc8f"
+  },
+  {
+    "level": "N4",
+    "pattern": "じゃないか",
+    "source": "https://jlptsensei.com/",
+    "definition": "right? isn't it? let's~; confirmation"
+  },
+  {
+    "level": "N4",
+    "pattern": "かどうか",
+    "source": "https://jlptsensei.com/",
+    "definition": "whether or not~"
+  },
+  {
+    "level": "N4",
+    "pattern": "かい",
+    "source": "https://jlptsensei.com/",
+    "definition": "turns a sentence into a yes/no question"
+  },
+  {
+    "level": "N4",
+    "pattern": "かもしれない",
+    "source": "https://jlptsensei.com/",
+    "definition": "might; perhaps; indicates possibility"
+  },
+  {
+    "level": "N4",
+    "pattern": "かな",
+    "source": "https://jlptsensei.com/",
+    "definition": "I wonder; should I?"
+  },
+  {
+    "level": "N4",
+    "pattern": "から作る",
+    "source": "https://jlptsensei.com/",
+    "definition": "made from; made with"
+  },
+  {
+    "level": "N4",
+    "pattern": "かしら",
+    "source": "https://jlptsensei.com/",
+    "definition": "I wonder~"
+  },
+  {
+    "level": "N4",
+    "pattern": "頃",
+    "source": "https://jlptsensei.com/",
+    "definition": "around; about; when"
+  },
+  {
+    "level": "N4",
+    "pattern": "ことがある",
+    "source": "https://jlptsensei.com/",
+    "definition": "there are times when"
+  },
+  {
+    "level": "N4",
+    "pattern": "ことができる",
+    "source": "https://jlptsensei.com/",
+    "definition": "can; able to"
+  },
+  {
+    "level": "N4",
+    "pattern": "ことになる",
+    "source": "https://jlptsensei.com/",
+    "definition": "It has been decided that..; it turns out that.."
+  },
+  {
+    "level": "N4",
+    "pattern": "ことにする",
+    "source": "https://jlptsensei.com/",
+    "definition": "to decide on"
+  },
+  {
+    "level": "N4",
+    "pattern": "こと",
+    "source": "https://jlptsensei.com/",
+    "definition": "Verb nominalizer"
+  },
+  {
+    "level": "N4",
+    "pattern": "くする",
+    "source": "https://jlptsensei.com/",
+    "definition": "to make something ~"
+  },
+  {
+    "level": "N4",
+    "pattern": "までに",
+    "source": "https://jlptsensei.com/",
+    "definition": "by; by the time; indicates time limit"
+  },
+  {
+    "level": "N4",
+    "pattern": "まま",
+    "source": "https://jlptsensei.com/",
+    "definition": "as it is; current state; without changing~"
+  },
+  {
+    "level": "N4",
+    "pattern": "または",
+    "source": "https://jlptsensei.com/",
+    "definition": "both; or; otherwise; choice between [A] or [B]"
+  },
+  {
+    "level": "N4",
+    "pattern": "みたいだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "like, similar to, resembling"
+  },
+  {
+    "level": "N4",
+    "pattern": "みたいな",
+    "source": "https://jlptsensei.com/",
+    "definition": "like, similar to~"
+  },
+  {
+    "level": "N4",
+    "pattern": "みたいに",
+    "source": "https://jlptsensei.com/",
+    "definition": "like; similar to~"
+  },
+  {
+    "level": "N4",
+    "pattern": "な",
+    "source": "https://jlptsensei.com/",
+    "definition": "don’t ~ (order somebody to not do something)"
+  },
+  {
+    "level": "N4",
+    "pattern": "など",
+    "source": "https://jlptsensei.com/",
+    "definition": "such as, things like~"
+  },
+  {
+    "level": "N4",
+    "pattern": "ながら",
+    "source": "https://jlptsensei.com/",
+    "definition": "while; during; as; simultaneously"
+  },
+  {
+    "level": "N4",
+    "pattern": "なかなか～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "not easy to; struggling to; not able to~"
+  },
+  {
+    "level": "N4",
+    "pattern": "なければいけない",
+    "source": "https://jlptsensei.com/",
+    "definition": "must do something; have to do something"
+  },
+  {
+    "level": "N4",
+    "pattern": "なければならない",
+    "source": "https://jlptsensei.com/",
+    "definition": "must do something; have to do something"
+  },
+  {
+    "level": "N4",
+    "pattern": "なら",
+    "source": "https://jlptsensei.com/",
+    "definition": "if; in the case that~"
+  },
+  {
+    "level": "N4",
+    "pattern": "なさい",
+    "source": "https://jlptsensei.com/",
+    "definition": "do this (soft/firm command)"
+  },
+  {
+    "level": "N4",
+    "pattern": "に気がつく",
+    "source": "https://jlptsensei.com/",
+    "definition": "to notice; to realize"
+  },
+  {
+    "level": "N4",
+    "pattern": "にみえる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to look; to seem; to appear"
+  },
+  {
+    "level": "N4",
+    "pattern": "にする",
+    "source": "https://jlptsensei.com/",
+    "definition": "to make something ~"
+  },
+  {
+    "level": "N4",
+    "pattern": "にくい",
+    "source": "https://jlptsensei.com/",
+    "definition": "difficult to do~"
+  },
+  {
+    "level": "N4",
+    "pattern": "のに",
+    "source": "https://jlptsensei.com/",
+    "definition": "although, in spite of, even though~"
+  },
+  {
+    "level": "N4",
+    "pattern": "のに",
+    "source": "https://jlptsensei.com/",
+    "definition": "to (do something); in order to~"
+  },
+  {
+    "level": "N4",
+    "pattern": "のは〜だ",
+    "source": "https://jlptsensei.com/",
+    "definition": "[A] is [B]; the reason for [A] is [B]"
+  },
+  {
+    "level": "N4",
+    "pattern": "お～ください",
+    "source": "https://jlptsensei.com/",
+    "definition": "please do (honorific)"
+  },
+  {
+    "level": "N4",
+    "pattern": "お～になる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do (honorific)"
+  },
+  {
+    "level": "N4",
+    "pattern": "おきに",
+    "source": "https://jlptsensei.com/",
+    "definition": "repeated at intervals, every~"
+  },
+  {
+    "level": "N4",
+    "pattern": "終わる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to finish; to end~"
+  },
+  {
+    "level": "N4",
+    "pattern": "られる",
+    "source": "https://jlptsensei.com/",
+    "definition": "potential form; ability or inability to do something"
+  },
+  {
+    "level": "N4",
+    "pattern": "らしい",
+    "source": "https://jlptsensei.com/",
+    "definition": "it seems like; I heard; apparently~"
+  },
+  {
+    "level": "N4",
+    "pattern": "さ",
+    "source": "https://jlptsensei.com/",
+    "definition": "-ness; nominalizer for adjective"
+  },
+  {
+    "level": "N4",
+    "pattern": "させられる",
+    "source": "https://jlptsensei.com/",
+    "definition": "causative-passive; to be made to do something"
+  },
+  {
+    "level": "N4",
+    "pattern": "させる",
+    "source": "https://jlptsensei.com/",
+    "definition": "causative form; to make/let somebody do something"
+  },
+  {
+    "level": "N4",
+    "pattern": "させてください",
+    "source": "https://jlptsensei.com/",
+    "definition": "please let me do"
+  },
+  {
+    "level": "N4",
+    "pattern": "さすが",
+    "source": "https://jlptsensei.com/",
+    "definition": "as one would expect; as is to be expected; even~"
+  },
+  {
+    "level": "N4",
+    "pattern": "し",
+    "source": "https://jlptsensei.com/",
+    "definition": "and; and what’s more; emphasis~"
+  },
+  {
+    "level": "N4",
+    "pattern": "そんなに",
+    "source": "https://jlptsensei.com/",
+    "definition": "so much; so; like that"
+  },
+  {
+    "level": "N4",
+    "pattern": "それでも",
+    "source": "https://jlptsensei.com/",
+    "definition": "but still; and yet; even so~"
+  },
+  {
+    "level": "N4",
+    "pattern": "それに",
+    "source": "https://jlptsensei.com/",
+    "definition": "besides; in addition; also; moreover~"
+  },
+  {
+    "level": "N4",
+    "pattern": "そうだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "I heard that; it is said that~"
+  },
+  {
+    "level": "N4",
+    "pattern": "そうだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "looks like; appears like; seeming~"
+  },
+  {
+    "level": "N4",
+    "pattern": "そうに・そうな",
+    "source": "https://jlptsensei.com/",
+    "definition": "seems like; looks like~"
+  },
+  {
+    "level": "N4",
+    "pattern": "たばかり",
+    "source": "https://jlptsensei.com/",
+    "definition": "just finished; something just occurred"
+  },
+  {
+    "level": "N4",
+    "pattern": "たところ",
+    "source": "https://jlptsensei.com/",
+    "definition": "just finished doing, was just doing"
+  },
+  {
+    "level": "N4",
+    "pattern": "たがる",
+    "source": "https://jlptsensei.com/",
+    "definition": "wants to do~ (third person)"
+  },
+  {
+    "level": "N4",
+    "pattern": "たら",
+    "source": "https://jlptsensei.com/",
+    "definition": "if; after; when~"
+  },
+  {
+    "level": "N4",
+    "pattern": "たらどう",
+    "source": "https://jlptsensei.com/",
+    "definition": "why don't you (used to give advice)"
+  },
+  {
+    "level": "N4",
+    "pattern": "たらいいですか",
+    "source": "https://jlptsensei.com/",
+    "definition": "what should I do?; speaker seeking instructions from listener"
+  },
+  {
+    "level": "N4",
+    "pattern": "てあげる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do for; to do a favor"
+  },
+  {
+    "level": "N4",
+    "pattern": "てほしい",
+    "source": "https://jlptsensei.com/",
+    "definition": "I want you to; need you to~"
+  },
+  {
+    "level": "N4",
+    "pattern": "ていく",
+    "source": "https://jlptsensei.com/",
+    "definition": "to start; to continue; to go on"
+  },
+  {
+    "level": "N4",
+    "pattern": "ていた",
+    "source": "https://jlptsensei.com/",
+    "definition": "was doing something (past continuous)"
+  },
+  {
+    "level": "N4",
+    "pattern": "ていただけませんか",
+    "source": "https://jlptsensei.com/",
+    "definition": "could you please~"
+  },
+  {
+    "level": "N4",
+    "pattern": "てくれる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do a favor; do something for someone"
+  },
+  {
+    "level": "N4",
+    "pattern": "てくる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do… and come back; to become; to continue; to start~"
+  },
+  {
+    "level": "N4",
+    "pattern": "てみる",
+    "source": "https://jlptsensei.com/",
+    "definition": "try doing"
+  },
+  {
+    "level": "N4",
+    "pattern": "てもらう",
+    "source": "https://jlptsensei.com/",
+    "definition": "to get somebody to do something"
+  },
+  {
+    "level": "N4",
+    "pattern": "ておく",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do something in advance"
+  },
+  {
+    "level": "N4",
+    "pattern": "てしまう / ちゃう",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do something by accident, to finish completely"
+  },
+  {
+    "level": "N4",
+    "pattern": "てすみません",
+    "source": "https://jlptsensei.com/",
+    "definition": "I’m sorry for"
+  },
+  {
+    "level": "N4",
+    "pattern": "てやる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to do for; to do a favor (casual)"
+  },
+  {
+    "level": "N4",
+    "pattern": "てよかった",
+    "source": "https://jlptsensei.com/",
+    "definition": "I’m glad that.."
+  },
+  {
+    "level": "N4",
+    "pattern": "ているところ",
+    "source": "https://jlptsensei.com/",
+    "definition": "in the process of doing"
+  },
+  {
+    "level": "N4",
+    "pattern": "ても",
+    "source": "https://jlptsensei.com/",
+    "definition": "even; even if; even though~"
+  },
+  {
+    "level": "N4",
+    "pattern": "と言ってもいい",
+    "source": "https://jlptsensei.com/",
+    "definition": "you could say; one might say; I'd say~"
+  },
+  {
+    "level": "N4",
+    "pattern": "という",
+    "source": "https://jlptsensei.com/",
+    "definition": "called; named; that~"
+  },
+  {
+    "level": "N4",
+    "pattern": "ということ",
+    "source": "https://jlptsensei.com/",
+    "definition": "convert phrase into noun"
+  },
+  {
+    "level": "N4",
+    "pattern": "と言われている",
+    "source": "https://jlptsensei.com/",
+    "definition": "it is said that~"
+  },
+  {
+    "level": "N4",
+    "pattern": "と聞いた",
+    "source": "https://jlptsensei.com/",
+    "definition": "I heard…"
+  },
+  {
+    "level": "N4",
+    "pattern": "と思う",
+    "source": "https://jlptsensei.com/",
+    "definition": "to think…; I think…; you think…"
+  },
+  {
+    "level": "N4",
+    "pattern": "とか～とか",
+    "source": "https://jlptsensei.com/",
+    "definition": "among other things; such as; like~"
+  },
+  {
+    "level": "N4",
+    "pattern": "ところ",
+    "source": "https://jlptsensei.com/",
+    "definition": "just about to; on the verge of doing something"
+  },
+  {
+    "level": "N4",
+    "pattern": "続ける",
+    "source": "https://jlptsensei.com/",
+    "definition": "continue to; keen on~"
+  },
+  {
+    "level": "N4",
+    "pattern": "って",
+    "source": "https://jlptsensei.com/",
+    "definition": "named; called~"
+  },
+  {
+    "level": "N4",
+    "pattern": "受身形",
+    "source": "https://jlptsensei.com/",
+    "definition": "passive form; passive voice"
+  },
+  {
+    "level": "N4",
+    "pattern": "は〜が… は",
+    "source": "https://jlptsensei.com/",
+    "definition": "[A] but [B]; however; comparison"
+  },
+  {
+    "level": "N4",
+    "pattern": "やすい",
+    "source": "https://jlptsensei.com/",
+    "definition": "easy to; likely to; prone to; have a tendency to~"
+  },
+  {
+    "level": "N4",
+    "pattern": "より",
+    "source": "https://jlptsensei.com/",
+    "definition": "than; rather than; more than~"
+  },
+  {
+    "level": "N4",
+    "pattern": "予定だ",
+    "source": "https://jlptsensei.com/",
+    "definition": "plan to, intend to"
+  },
+  {
+    "level": "N4",
+    "pattern": "ようだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "appears; seems; looks as if~"
+  },
+  {
+    "level": "N4",
+    "pattern": "ようになる",
+    "source": "https://jlptsensei.com/",
+    "definition": "to reach the point that; to come to be that; to turn into~"
+  },
+  {
+    "level": "N4",
+    "pattern": "ようにする",
+    "source": "https://jlptsensei.com/",
+    "definition": "to try to; to make sure that~"
+  },
+  {
+    "level": "N4",
+    "pattern": "ように / ような",
+    "source": "https://jlptsensei.com/",
+    "definition": "like; as; similar to~"
+  },
+  {
+    "level": "N4",
+    "pattern": "ようと思う",
+    "source": "https://jlptsensei.com/",
+    "definition": "thinking of doing; planning to~"
+  },
+  {
+    "level": "N4",
+    "pattern": "全然～ない",
+    "source": "https://jlptsensei.com/",
+    "definition": "(not) at all"
+  },
+  {
+    "level": "N4",
+    "pattern": "づらい",
+    "source": "https://jlptsensei.com/",
+    "definition": "difficult to do~"
+  },
+  {
+    "level": "N5",
+    "pattern": "ちゃいけない/やいけない",
+    "source": "https://jlptsensei.com/",
+    "definition": "must not do (spoken Japanese)"
+  },
+  {
+    "level": "N5",
+    "pattern": "だけ",
+    "source": "https://jlptsensei.com/",
+    "definition": "as much as"
+  },
+  {
+    "level": "N5",
+    "pattern": "だろう",
+    "source": "https://jlptsensei.com/",
+    "definition": "I think; it seems; probably; right?"
+  },
+  {
+    "level": "N5",
+    "pattern": "で",
+    "source": "https://jlptsensei.com/",
+    "definition": "in; at; on; by; with; via"
+  },
+  {
+    "level": "N5",
+    "pattern": "でも",
+    "source": "https://jlptsensei.com/",
+    "definition": "but; however; though~"
+  },
+  {
+    "level": "N5",
+    "pattern": "でしょう",
+    "source": "https://jlptsensei.com/",
+    "definition": "Verb (dictionary form) + でしょう"
+  },
+  {
+    "level": "N5",
+    "pattern": "どんな",
+    "source": "https://jlptsensei.com/",
+    "definition": "I think; it seems; probably; right?"
+  },
+  {
+    "level": "N5",
+    "pattern": "がある",
+    "source": "https://jlptsensei.com/",
+    "definition": "there is; is (non-living things)"
+  },
+  {
+    "level": "N5",
+    "pattern": "がほしい",
+    "source": "https://jlptsensei.com/",
+    "definition": "to want something"
+  },
+  {
+    "level": "N5",
+    "pattern": "がいる",
+    "source": "https://jlptsensei.com/",
+    "definition": "there is; to be; is (living things)"
+  },
+  {
+    "level": "N5",
+    "pattern": "方がいい",
+    "source": "https://japanesetest4you.com/",
+    "definition": "had better; it'd be better to; should~"
+  },
+  {
+    "level": "N5",
+    "pattern": "一番",
+    "source": "https://japanesetest4you.com/",
+    "definition": "the most, the best"
+  },
+  {
+    "level": "N5",
+    "pattern": "か〜か",
+    "source": "https://jlptsensei.com/",
+    "definition": "or"
+  },
+  {
+    "level": "N5",
+    "pattern": "から",
+    "source": "https://jlptsensei.com/",
+    "definition": "from, ever since"
+  },
+  {
+    "level": "N5",
+    "pattern": "から",
+    "source": "https://jlptsensei.com/",
+    "definition": "since, because"
+  },
+  {
+    "level": "N5",
+    "pattern": "方",
+    "source": "https://jlptsensei.com/",
+    "definition": "the way of doing something; how to do"
+  },
+  {
+    "level": "N5",
+    "pattern": "けど/けれど/けれども",
+    "source": "https://jlptsensei.com/",
+    "definition": "but; however; although"
+  },
+  {
+    "level": "N5",
+    "pattern": "まだ",
+    "source": "https://jlptsensei.com/",
+    "definition": "still; not yet"
+  },
+  {
+    "level": "N5",
+    "pattern": "まで",
+    "source": "https://jlptsensei.com/",
+    "definition": "until; till; to; as far as; to (an extent); even"
+  },
+  {
+    "level": "N5",
+    "pattern": "前に",
+    "source": "https://jlptsensei.com/",
+    "definition": "before, in front of"
+  },
+  {
+    "level": "N5",
+    "pattern": "ませんか",
+    "source": "https://jlptsensei.com/",
+    "definition": "let’s, won’t you, wouldn’t you"
+  },
+  {
+    "level": "N5",
+    "pattern": "ましょう",
+    "source": "https://jlptsensei.com/",
+    "definition": "let's ~; shall we ~"
+  },
+  {
+    "level": "N5",
+    "pattern": "ましょうか",
+    "source": "https://jlptsensei.com/",
+    "definition": "shall I ~; used to offer help to the listener"
+  },
+  {
+    "level": "N5",
+    "pattern": "も",
+    "source": "https://jlptsensei.com/",
+    "definition": "also, too, as well"
+  },
+  {
+    "level": "N5",
+    "pattern": "ないで",
+    "source": "https://jlptsensei.com/",
+    "definition": "without doing…; don’t"
+  },
+  {
+    "level": "N5",
+    "pattern": "ないでください",
+    "source": "https://jlptsensei.com/",
+    "definition": "please don't do"
+  },
+  {
+    "level": "N5",
+    "pattern": "ないといけない",
+    "source": "https://jlptsensei.com/",
+    "definition": "must do; have an obligation to do"
+  },
+  {
+    "level": "N5",
+    "pattern": "なくてもいい",
+    "source": "https://jlptsensei.com/",
+    "definition": "don't have to"
+  },
+  {
+    "level": "N5",
+    "pattern": "なくちゃ",
+    "source": "https://jlptsensei.com/",
+    "definition": "must do; need to; gotta do"
+  },
+  {
+    "level": "N5",
+    "pattern": "なくてはいけない",
+    "source": "https://jlptsensei.com/",
+    "definition": "must do; need to do"
+  },
+  {
+    "level": "N5",
+    "pattern": "なくてはならない",
+    "source": "https://jlptsensei.com/",
+    "definition": "must do; need to do"
+  },
+  {
+    "level": "N5",
+    "pattern": "んです/のです",
+    "source": "https://jlptsensei.com/",
+    "definition": "to explain something; show emphasis"
+  },
+  {
+    "level": "N5",
+    "pattern": "ね",
+    "source": "https://jlptsensei.com/",
+    "definition": "isn't it? right? Eh?"
+  },
+  {
+    "level": "N5",
+    "pattern": "に行く",
+    "source": "https://jlptsensei.com/",
+    "definition": "go to do"
+  },
+  {
+    "level": "N5",
+    "pattern": "なる",
+    "source": "https://jlptsensei.com/",
+    "definition": "Noun + になる"
+  },
+  {
+    "level": "N5",
+    "pattern": "にする",
+    "source": "https://jlptsensei.com/",
+    "definition": "to decide on"
+  },
+  {
+    "level": "N5",
+    "pattern": "に/へ",
+    "source": "https://jlptsensei.com/",
+    "definition": "to (indicates direction / destination)"
+  },
+  {
+    "level": "N5",
+    "pattern": "の",
+    "source": "https://jlptsensei.com/",
+    "definition": "possessive particle"
+  },
+  {
+    "level": "N5",
+    "pattern": "のが下手",
+    "source": "https://jlptsensei.com/",
+    "definition": "to be bad at doing something"
+  },
+  {
+    "level": "N5",
+    "pattern": "のが上手",
+    "source": "https://jlptsensei.com/",
+    "definition": "to be good at"
+  },
+  {
+    "level": "N5",
+    "pattern": "のが好き",
+    "source": "https://jlptsensei.com/",
+    "definition": "to like doing something"
+  },
+  {
+    "level": "N5",
+    "pattern": "の中で",
+    "source": "https://japanesetest4you.com/",
+    "definition": "in; among"
+  },
+  {
+    "level": "N5",
+    "pattern": "ので",
+    "source": "https://jlptsensei.com/",
+    "definition": "because of; given that; since"
+  },
+  {
+    "level": "N5",
+    "pattern": "をください",
+    "source": "https://jlptsensei.com/",
+    "definition": "please give me~"
+  },
+  {
+    "level": "N5",
+    "pattern": "お/ご",
+    "source": "https://jlptsensei.com/",
+    "definition": "polite marker; honorific prefix particle"
+  },
+  {
+    "level": "N5",
+    "pattern": "すぎる",
+    "source": "https://jlptsensei.com/",
+    "definition": "too much"
+  },
+  {
+    "level": "N5",
+    "pattern": "たことがある",
+    "source": "https://jlptsensei.com/",
+    "definition": "to have done something before"
+  },
+  {
+    "level": "N5",
+    "pattern": "たい",
+    "source": "https://jlptsensei.com/",
+    "definition": "want to do something"
+  },
+  {
+    "level": "N5",
+    "pattern": "たり～たり",
+    "source": "https://jlptsensei.com/",
+    "definition": "do such things like A and B"
+  },
+  {
+    "level": "N5",
+    "pattern": "てある",
+    "source": "https://jlptsensei.com/",
+    "definition": "is/has been done (resulting state)"
+  },
+  {
+    "level": "N5",
+    "pattern": "てから",
+    "source": "https://jlptsensei.com/",
+    "definition": "after doing~"
+  },
+  {
+    "level": "N5",
+    "pattern": "てください",
+    "source": "https://jlptsensei.com/",
+    "definition": "please do"
+  },
+  {
+    "level": "N5",
+    "pattern": "てわいけない",
+    "source": "https://jlptsensei.com/",
+    "definition": "must not; may not; cannot"
+  },
+  {
+    "level": "N5",
+    "pattern": "ている",
+    "source": "https://jlptsensei.com/",
+    "definition": "ongoing action or current state"
+  },
+  {
+    "level": "N5",
+    "pattern": "てもいいです",
+    "source": "https://jlptsensei.com/",
+    "definition": "is OK to..; is alright to..; may I..?"
+  },
+  {
+    "level": "N5",
+    "pattern": "と",
+    "source": "https://jlptsensei.com/",
+    "definition": "and"
+  },
+  {
+    "level": "N5",
+    "pattern": "時",
+    "source": "https://jlptsensei.com/",
+    "definition": "when; at this time"
+  },
+  {
+    "level": "N5",
+    "pattern": "つもり",
+    "source": "https://japanesetest4you.com/",
+    "definition": "plan to ~; intend to ~"
+  },
+  {
+    "level": "N5",
+    "pattern": "はどうですか",
+    "source": "https://jlptsensei.com/",
+    "definition": "how about; how is"
+  },
+  {
+    "level": "N5",
+    "pattern": "は〜より・・・です",
+    "source": "https://jlptsensei.com/",
+    "definition": "[1] is more ~ than [2]"
+  },
+  {
+    "level": "N5",
+    "pattern": "や",
+    "source": "https://jlptsensei.com/",
+    "definition": "and; or; connecting particle"
+  },
+  {
+    "level": "N5",
+    "pattern": "よ",
+    "source": "https://jlptsensei.com/",
+    "definition": "you know; emphasis (ending particle)"
+  },
+  {
+    "level": "N5",
+    "pattern": "より〜方が",
+    "source": "https://jlptsensei.com/",
+    "definition": "[2] is more ~ than [1]"
+  }
+]

@@ -124,6 +124,13 @@ export default function AdminDashboard() {
             <h3 className="font-medium text-gray-900">🔄 数据库同步</h3>
             <p className="text-sm text-gray-600 mt-1">将本地数据库数据覆盖到云端</p>
           </Link>
+          <Link
+            href="/admin/lex-profile-test"
+            className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <h3 className="font-medium text-gray-900">🔬 词汇分析测试</h3>
+            <p className="text-sm text-gray-600 mt-1">测试文本分词、难度分级与 AI 修复</p>
+          </Link>
         </div>
       </div>
     </div>

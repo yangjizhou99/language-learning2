@@ -1,0 +1,38 @@
+{
+  "timestamp": "2025-12-20T06:04:59.642Z",
+  "config": {
+    "tokenizer": "kuromoji",
+    "vocabDict": "default"
+  },
+  "testCount": 30,
+  "results": [
+    {
+      "grammarDict": "yapan",
+      "dictSize": 667,
+      "avgPatternsMatched": 12.033333333333333,
+      "avgByLevel": {
+        "N1": 0.5,
+        "N2": 0.4,
+        "N3": 2.3666666666666667,
+        "N4": 3.6666666666666665,
+        "N5": 5.1
+      },
+      "totalTexts": 30,
+      "processingTime": 535
+    },
+    {
+      "grammarDict": "hagoromo",
+      "dictSize": 1731,
+      "avgPatternsMatched": 18.033333333333335,
+      "avgByLevel": {
+        "N1": 0.06666666666666667,
+        "N2": 1.4333333333333333,
+        "N3": 2.1666666666666665,
+        "N4": 8.133333333333333,
+        "N5": 6.233333333333333
+      },
+      "totalTexts": 30,
+      "processingTime": 136
+    }
+  ]
+}

@@ -12,6 +12,8 @@ interface AcuTextProps {
   units: AcuUnit[];
   onConfirm: (mergedText: string, context: string) => void;
   selectedWords?: Array<{ word: string; context: string }>;
+  /** Predictions for each word: Map<word, { probability: number, confidence: string }> */
+  wordPredictions?: Map<string, { probability: number; confidence: 'high' | 'medium' | 'low' }>;
 }
 
 interface SelectedUnit {
@@ -19,7 +21,7 @@ interface SelectedUnit {
   index: number;
 }
 
-export default function AcuText({ text, lang, units, onConfirm, selectedWords = [] }: AcuTextProps) {
+export default function AcuText({ text, lang, units, onConfirm, selectedWords = [], wordPredictions }: AcuTextProps) {
   const [selectedUnits, setSelectedUnits] = useState<SelectedUnit[]>([]);
   const [editedText, setEditedText] = useState<string>(''); // 用于编辑生词文本
   const { t } = useLanguage();
@@ -331,6 +333,16 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
         const shouldSkipUnit = unit.span.length === 0;
 
         if (!shouldSkipUnit) {
+          // Get prediction for this unit (by surface form)
+          const prediction = wordPredictions?.get(unit.span);
+          const isPredictedUnknown = prediction && prediction.probability < 0.5;
+          const predictionColor = prediction
+            ? prediction.probability < 0.3 ? 'border-red-500'
+              : prediction.probability < 0.5 ? 'border-orange-400'
+                : prediction.probability < 0.7 ? 'border-yellow-400'
+                  : 'border-green-400'
+            : '';
+
           elements.push(
             <span
               key={`unit-${i}`}
@@ -356,13 +368,16 @@ export default function AcuText({ text, lang, units, onConfirm, selectedWords = 
                       ? 'bg-yellow-200 text-yellow-800 border-yellow-400 hover:bg-yellow-300 cursor-pointer'
                       : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 cursor-pointer'
                 }
+                ${isPredictedUnknown && !isSelected && !isAlreadySelectedWord ? `border-b-2 border-dashed ${predictionColor}` : ''}
               `}
               title={
                 isNonSelectableUnit
                   ? '不可选中'
-                  : isAlreadySelectedWord
-                    ? `已选择的生词: ${unit.span}`
-                    : `块 ${unitIndex + 1} (句子 ${unit.sid})`
+                  : prediction
+                    ? `预测认识概率: ${Math.round(prediction.probability * 100)}% (${prediction.confidence})`
+                    : isAlreadySelectedWord
+                      ? `已选择的生词: ${unit.span}`
+                      : `块 ${unitIndex + 1} (句子 ${unit.sid})`
               }
             >
               {unit.span}

@@ -117,10 +117,17 @@ export default function Home() {
       }
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('username, bio, goals, preferred_tone, native_lang, target_langs, domains')
+        .select('username, bio, goals, preferred_tone, native_lang, target_langs, domains, onboarding_completed')
         .eq('id', authUser.id)
         .single();
       setProfile(profileData || null);
+
+      // Redirect to onboarding if not completed
+      if (profileData && profileData.onboarding_completed === false) {
+        window.location.href = '/onboarding';
+        return;
+      }
+
       await fetchUserStats(authUser.id);
     };
     loadForUser();

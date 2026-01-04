@@ -1,0 +1,10388 @@
+[
+  {
+    "pattern": "そうだとしたら",
+    "level": "N2",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "によると〜そうだ",
+    "level": "N4",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（のこと）を〜という",
+    "level": "N4",
+    "definition": "命名・定義",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔期間〕+に+〔回数〕",
+    "level": "N5",
+    "definition": "基準",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔時間〕＋に",
+    "level": "N5",
+    "definition": "時点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔手段・方法〕＋で",
+    "level": "N5",
+    "definition": "手段・方法",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔場所〕＋で",
+    "level": "N5",
+    "definition": "動作の場所",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔場所：到着点〕＋に",
+    "level": "N5",
+    "definition": "到達点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔場所：存在〕＋に",
+    "level": "N5",
+    "definition": "存在地点・場所",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔人〕と（いっしょに）〜V",
+    "level": "N5",
+    "definition": "行為の相手（共同）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔人〕と～V",
+    "level": "N5",
+    "definition": "行為の相手",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量〕で〔数量〕",
+    "level": "N4",
+    "definition": "総計",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔名詞修飾節〕",
+    "level": "N5",
+    "definition": "［V/A/AN/N］＋N",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔名詞修飾節内でのガ/ノの交替〕",
+    "level": "N4",
+    "definition": "Ｖの連体修飾節＋名詞 （連体修飾節内でのガ/ノの交替）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "か",
+    "level": "N5",
+    "definition": "問いかけ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "が",
+    "level": "N5",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "が",
+    "level": "N5",
+    "definition": "前置き",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "か，〜か",
+    "level": "N5",
+    "definition": "疑問文（選択疑問）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "か",
+    "level": "N4",
+    "definition": "択一",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "か〜か",
+    "level": "N4",
+    "definition": "択一",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（が）する",
+    "level": "N4",
+    "definition": "状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことによると",
+    "level": "N2",
+    "definition": "可能性",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たり〜たり",
+    "level": "N4",
+    "definition": "繰り返し・習慣",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vて まもなく",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてやまない",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にNが〔数量〕ある",
+    "level": "N5",
+    "definition": "存在文：数量詞を含むもの（無生物）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にNが〔数量〕いる",
+    "level": "N5",
+    "definition": "存在文：数量詞を含むもの（有生物）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にNがある",
+    "level": "N5",
+    "definition": "存在文：アル （無生物）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にNがいる",
+    "level": "N5",
+    "definition": "存在文 ：イル （有生物）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "は〜が",
+    "level": "N5",
+    "definition": "状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "は〜が",
+    "level": "N4",
+    "definition": "状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "は～〔疑問詞〕",
+    "level": "N5",
+    "definition": "疑問詞疑問文",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も〜なら〜も〜",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も〜ば〜も〜",
+    "level": "N2",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も〜も",
+    "level": "N4",
+    "definition": "同類",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "やら〜やら",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるうちに",
+    "level": "N3",
+    "definition": "期間",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "を〜とする",
+    "level": "N3",
+    "definition": "決定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イA＜辞書形＞",
+    "level": "N5",
+    "definition": "イAの非過去 普通体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イA＋N",
+    "level": "N5",
+    "definition": "イA十名詞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナA・Nでございます",
+    "level": "N4",
+    "definition": "丁重：ナA/「名詞＋だ」の丁寧",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAさ",
+    "level": "N4",
+    "definition": "接尾語",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAじゃありません",
+    "level": "N5",
+    "definition": "ナAの非過去 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAじゃありませんでした",
+    "level": "N5",
+    "definition": "ナAの過去形 丁寧体否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAじゃない",
+    "level": "N5",
+    "definition": "ナAの非過去 普通体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAじゃなかった",
+    "level": "N5",
+    "definition": "ナAの過去形 普通体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAだ",
+    "level": "N5",
+    "definition": "ナA詞の非過去 普通体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAだった",
+    "level": "N5",
+    "definition": "ナAの過去形 普通体肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAで",
+    "level": "N5",
+    "definition": "ナAのテ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAでした",
+    "level": "N5",
+    "definition": "ナAの過去形 丁寧体肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAです",
+    "level": "N5",
+    "definition": "ナA詞の非過去 丁寧体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAではありません",
+    "level": "N5",
+    "definition": "ナAの非過去 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAではありませんでした",
+    "level": "N5",
+    "definition": "ナAの過去形 丁寧体否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAではない",
+    "level": "N5",
+    "definition": "ナAの非過去 普通体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAではなかった",
+    "level": "N5",
+    "definition": "ナAの過去形 普通体否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAな＋N",
+    "level": "N5",
+    "definition": "ナA連体形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAなの",
+    "level": "N4",
+    "definition": "ナA＋ノ（ノ＝名詞の代用）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAに＋V",
+    "level": "N5",
+    "definition": "ナAの副詞用法",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAにする",
+    "level": "N4",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAになる",
+    "level": "N4",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAかった",
+    "level": "N5",
+    "definition": "イAの過去形 普通体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAかったです",
+    "level": "N5",
+    "definition": "イAの過去形 丁寧体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAがる",
+    "level": "N4",
+    "definition": "第三者の感情",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAく",
+    "level": "N4",
+    "definition": "イAの副詞用法",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAくありません",
+    "level": "N4",
+    "definition": "イAの非過去 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAくありませんでした",
+    "level": "N4",
+    "definition": "イAの過去形 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAくする",
+    "level": "N4",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAくて",
+    "level": "N4",
+    "definition": "イAのテ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAくない",
+    "level": "N5",
+    "definition": "イAの非過去 普通体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAくないです",
+    "level": "N5",
+    "definition": "イAの非過去 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAくなかった",
+    "level": "N5",
+    "definition": "イAの過去形 普通体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAくなかったです",
+    "level": "N5",
+    "definition": "イAの過去形 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAくなる",
+    "level": "N4",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Aさ",
+    "level": "N4",
+    "definition": "接尾語",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAです",
+    "level": "N5",
+    "definition": "イAの非過去 丁寧体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAの",
+    "level": "N4",
+    "definition": "イA＋ノ（ノ＝名詞の代用）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋で＜手段・方法＞",
+    "level": "N5",
+    "definition": "手段・方法",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋で＜原因・理由＞",
+    "level": "N5",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋を〜V＜自動詞＞",
+    "level": "N5",
+    "definition": "起点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋を〜V＜自動詞＞",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋を〜V＜他動詞＞",
+    "level": "N5",
+    "definition": "動作の対象",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔格助詞〕＋も，〔格助詞〕＋も",
+    "level": "N4",
+    "definition": "同類",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋が Vｉ／Nを Vｔ",
+    "level": "N4",
+    "definition": "動詞の自・他",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋がほしい",
+    "level": "N5",
+    "definition": "希望：物",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nから＜場所・時間＞",
+    "level": "N5",
+    "definition": "起点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nじゃありません",
+    "level": "N5",
+    "definition": "「名詞＋だ」の非過去 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nじゃありませんでした",
+    "level": "N5",
+    "definition": "「名詞＋だ」の過去形 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nじゃない",
+    "level": "N5",
+    "definition": "「名詞＋だ」の非過去 普通体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nじゃなかった",
+    "level": "N5",
+    "definition": "「名詞＋だ」の過去形 普通体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nじゅう",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nじゅう",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nずくめ",
+    "level": "N2",
+    "definition": "状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nだ",
+    "level": "N5",
+    "definition": "「名詞＋だ」の非過去 普通体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nだった",
+    "level": "N5",
+    "definition": "「名詞＋だ」の過去形 普通体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nっぽい",
+    "level": "N4",
+    "definition": "様態・傾向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nで",
+    "level": "N4",
+    "definition": "「名詞＋だ」のテ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nでした",
+    "level": "N5",
+    "definition": "「名詞＋だ」の過去形 丁寧体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nです",
+    "level": "N5",
+    "definition": "「名詞＋だ」の非過去 丁寧体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nではありません",
+    "level": "N5",
+    "definition": "「名詞＋だ」の非過去 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nではありませんでした",
+    "level": "N5",
+    "definition": "「名詞＋だ」の過去形 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nではない",
+    "level": "N5",
+    "definition": "「名詞＋だ」の非過去 普通体否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nではなかった",
+    "level": "N5",
+    "definition": "「名詞＋だ」の過去形 普通体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋と＋N",
+    "level": "N5",
+    "definition": "名詞の等位接続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋という＋N",
+    "level": "N2",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋にして",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋にする",
+    "level": "N4",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋にする",
+    "level": "N4",
+    "definition": "決定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋になる",
+    "level": "N4",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N+の",
+    "level": "N5",
+    "definition": "名詞＋ノ（あとの名詞の省略）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N+の",
+    "level": "N4",
+    "definition": "名詞＋ノ（あとの名詞の省略）（格助詞等とともに述語の補語として）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋の＋N",
+    "level": "N5",
+    "definition": "所有",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋は",
+    "level": "N4",
+    "definition": "取り立て",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋は＋〔否定〕",
+    "level": "N4",
+    "definition": "否定強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋は〜にある",
+    "level": "N5",
+    "definition": "存在文の逆順（所在文）（無生物）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋は〜にいる",
+    "level": "N5",
+    "definition": "存在文の逆順（所在文）（有生物）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋まで＜場所・時間＞",
+    "level": "N5",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nまみれ",
+    "level": "N2",
+    "definition": "状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nめく",
+    "level": "N1",
+    "definition": "近似",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "NやN",
+    "level": "N5",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nらしい",
+    "level": "N3",
+    "definition": "典型",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋をください",
+    "level": "N5",
+    "definition": "依頼：物を要求する",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋をくださいませんか",
+    "level": "N4",
+    "definition": "依頼：丁寧に依頼する",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nじょう",
+    "level": "N2",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "V＜辞書形＞",
+    "level": "N5",
+    "definition": "動詞の非過去 普通体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vあまり",
+    "level": "N2",
+    "definition": "極端なことの結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vえる",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vおわる",
+    "level": "N4",
+    "definition": "終了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vマスかけ",
+    "level": "N3",
+    "definition": "途中・未完了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vかける",
+    "level": "N3",
+    "definition": "途中・未完了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vがたい",
+    "level": "N3",
+    "definition": "可能：不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vがち",
+    "level": "N3",
+    "definition": "傾向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vた",
+    "level": "N5",
+    "definition": "動詞の過去形 普通体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたがる",
+    "level": "N4",
+    "definition": "第三者の希望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vだす",
+    "level": "N4",
+    "definition": "開始",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vつづける",
+    "level": "N4",
+    "definition": "継続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vっぱなしだ",
+    "level": "N3",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vて",
+    "level": "N5",
+    "definition": "動詞のテ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vて，V",
+    "level": "N5",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vて，V",
+    "level": "N4",
+    "definition": "付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vて，V",
+    "level": "N4",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてあげる",
+    "level": "N4",
+    "definition": "受給：行為",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてある",
+    "level": "N4",
+    "definition": "状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていく",
+    "level": "N4",
+    "definition": "継続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていく",
+    "level": "N4",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていた",
+    "level": "N4",
+    "definition": "終了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていただきたい",
+    "level": "N4",
+    "definition": "尊敬：依頼・命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていただく",
+    "level": "N4",
+    "definition": "受給：行為（敬語）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていらっしゃる",
+    "level": "N4",
+    "definition": "尊敬：ている",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vている",
+    "level": "N5",
+    "definition": "継続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vている",
+    "level": "N4",
+    "definition": "状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vている",
+    "level": "N4",
+    "definition": "繰り返しの行為",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vている",
+    "level": "N4",
+    "definition": "終点・範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vている",
+    "level": "N4",
+    "definition": "状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vておく",
+    "level": "N4",
+    "definition": "終了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vておる",
+    "level": "N4",
+    "definition": "謙譲：ている",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてから",
+    "level": "N5",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくださいませんか",
+    "level": "N4",
+    "definition": "依頼：丁寧に依頼する",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくる",
+    "level": "N4",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくる",
+    "level": "N4",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくれる",
+    "level": "N4",
+    "definition": "受給：行為",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてみせる",
+    "level": "N3",
+    "definition": "開始",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてみる",
+    "level": "N4",
+    "definition": "開始",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてもらう",
+    "level": "N4",
+    "definition": "受給：行為",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてやる",
+    "level": "N4",
+    "definition": "受給：行為",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてる",
+    "level": "N4",
+    "definition": "開始",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vない",
+    "level": "N5",
+    "definition": "動詞の非過去 普通体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vないで，V",
+    "level": "N4",
+    "definition": "付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vないでください",
+    "level": "N4",
+    "definition": "依頼：相手に，行為をしないことを要求する",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vなかった",
+    "level": "N5",
+    "definition": "動詞の過去形 普通体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vながら",
+    "level": "N4",
+    "definition": "付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vなさい",
+    "level": "N4",
+    "definition": "命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vぬく",
+    "level": "N2",
+    "definition": "終了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まえに",
+    "level": "N4",
+    "definition": "前",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vました",
+    "level": "N5",
+    "definition": "動詞の過去形 丁寧体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vましょう",
+    "level": "N5",
+    "definition": "勧誘・勧め：いっしょにする",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vます",
+    "level": "N5",
+    "definition": "動詞の非過去 丁寧体 肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vません",
+    "level": "N5",
+    "definition": "動詞の非過去 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vませんか",
+    "level": "N5",
+    "definition": "勧誘・勧め：いっしょにする",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vませんか",
+    "level": "N5",
+    "definition": "勧誘・勧め：相手がする",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vませんでした",
+    "level": "N5",
+    "definition": "動詞の過去形 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vられる",
+    "level": "N4",
+    "definition": "受け身：直接受け身",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vられる",
+    "level": "N4",
+    "definition": "受け身：いわゆる非情の受身",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vられる",
+    "level": "N4",
+    "definition": "受け身：いわゆる迷惑の受け身",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vられる",
+    "level": "N4",
+    "definition": "尊敬語：受け身と同形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vられる",
+    "level": "N4",
+    "definition": "可能：可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vることがある",
+    "level": "N3",
+    "definition": "傾向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるばかりだ",
+    "level": "N3",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vはじめる",
+    "level": "N4",
+    "definition": "開始",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "V命令形",
+    "level": "N4",
+    "definition": "命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あいだ",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あえて",
+    "level": "N2",
+    "definition": "開始",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vあがる",
+    "level": "N2",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vあがる",
+    "level": "N4",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あがる＜行く＞",
+    "level": "N2",
+    "definition": "謙譲：行く",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あがる＜食べる・飲む＞",
+    "level": "N2",
+    "definition": "尊敬：食べる・飲む",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あくまで（も）",
+    "level": "N2",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あくまで（も）",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あげく(に)",
+    "level": "N2",
+    "definition": "最終的な結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あげく(に)",
+    "level": "N2",
+    "definition": "最終的な結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あげくのはてに（は）",
+    "level": "N2",
+    "definition": "結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あげる",
+    "level": "N5",
+    "definition": "受給：物",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vあげる",
+    "level": "N4",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あそこ",
+    "level": "N5",
+    "definition": "場所",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あたかも",
+    "level": "N2",
+    "definition": "類似性",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あちら",
+    "level": "N4",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あっち",
+    "level": "N5",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あっての",
+    "level": "N2",
+    "definition": "媒介",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あと",
+    "level": "N4",
+    "definition": "空間的関係：後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あと",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あと〔数量詞〕",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あとから",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あと（で）",
+    "level": "N4",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あとで",
+    "level": "N4",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あと（に）",
+    "level": "N4",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あとは〜だけ",
+    "level": "N3",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あの",
+    "level": "N5",
+    "definition": "指示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あまり（に）",
+    "level": "N2",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あまり〜〔否定〕",
+    "level": "N4",
+    "definition": "部分否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あまりに（も）〜と",
+    "level": "N3",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あまりの〜で",
+    "level": "N2",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あまりの〜に",
+    "level": "N2",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あるいは〜あるいは",
+    "level": "N2",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あるいは〜かもしれない",
+    "level": "N2",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あるのみだ",
+    "level": "N2",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あるまじき〜だ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あれ",
+    "level": "N5",
+    "definition": "指示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あれで",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あんな",
+    "level": "N4",
+    "definition": "様子・状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あまり（にも）〜と",
+    "level": "N3",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いい",
+    "level": "N4",
+    "definition": "断り",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いうまでもないことだが",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いうまでもなく",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いか",
+    "level": "N4",
+    "definition": "限界",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いか～〔数量詞〕",
+    "level": "N2",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いがい",
+    "level": "N4",
+    "definition": "例外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いがいに〜ない",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかが",
+    "level": "N4",
+    "definition": "様子・状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかなる〜（〔助詞〕）も",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかなる〜でも",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかなる〜とも",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかに〜ても",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかに〜といっても",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかに〜とはいえ",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかに〜Vようと（も）",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかにも",
+    "level": "N1",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかのように",
+    "level": "N3",
+    "definition": "同様",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかんだ",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかんにかかわらず",
+    "level": "N2",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかんによっては",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかんによらず",
+    "level": "N2",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いくつ＜個数＞",
+    "level": "N5",
+    "definition": "個数",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いくつ＜年齢＞",
+    "level": "N5",
+    "definition": "年齢",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いくら",
+    "level": "N5",
+    "definition": "値段",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いくら〜からといって（も）",
+    "level": "N3",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いくら〜ても",
+    "level": "N3",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いくら〜といっても",
+    "level": "N3",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いくらでも",
+    "level": "N2",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いくらなんでも",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いくらも〜ない",
+    "level": "N2",
+    "definition": "軽の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いご",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いざしらず",
+    "level": "N1",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いじょう",
+    "level": "N2",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いじょう",
+    "level": "N4",
+    "definition": "基準より上",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いぜん",
+    "level": "N4",
+    "definition": "前",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いぜん",
+    "level": "N2",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いたす",
+    "level": "N4",
+    "definition": "謙譲：する",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いただく",
+    "level": "N4",
+    "definition": "尊敬：物をもらう",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いただく＜飲食する＞",
+    "level": "N4",
+    "definition": "謙譲：食べる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いたり",
+    "level": "N1",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いちど〜たら",
+    "level": "N3",
+    "definition": "仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いちど〜と",
+    "level": "N3",
+    "definition": "仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いちど〜ば",
+    "level": "N3",
+    "definition": "条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いつ",
+    "level": "N5",
+    "definition": "時",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いっさい",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いったい",
+    "level": "N2",
+    "definition": "様子・状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いっぽうでは〜，たほうでは",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いない",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いまごろ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いまごろ〜たところで",
+    "level": "N2",
+    "definition": "逆接：無駄な結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いまごろ〜ても",
+    "level": "N2",
+    "definition": "時点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いまごろになって",
+    "level": "N2",
+    "definition": "時点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いまだ",
+    "level": "N3",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いまでこそ",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いまにも",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いまひとつ〜ない",
+    "level": "N2",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いらっしゃる＜いる＞",
+    "level": "N4",
+    "definition": "尊敬：いる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いらっしゃる＜行く＞",
+    "level": "N4",
+    "definition": "尊敬：行く",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いらっしゃる＜来る＞",
+    "level": "N4",
+    "definition": "尊敬：来る",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いわば",
+    "level": "N3",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うえ",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うえで",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うえで",
+    "level": "N2",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うえに",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うえは",
+    "level": "N2",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うかがう＜質問する＞",
+    "level": "N4",
+    "definition": "謙譲：尋ねる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うかがう＜聞く＞",
+    "level": "N4",
+    "definition": "謙譲：聞く",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うかがう＜訪ねる＞",
+    "level": "N4",
+    "definition": "謙譲：訪ねる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うけたまわる",
+    "level": "N3",
+    "definition": "謙譲：聞く",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うけたまわる",
+    "level": "N3",
+    "definition": "謙譲：受ける",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うち",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うちにはいらない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜いたす",
+    "level": "N4",
+    "definition": "尊敬・謙譲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜いただく",
+    "level": "N4",
+    "definition": "謙譲：てもらう",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜ください",
+    "level": "N4",
+    "definition": "尊敬：丁寧な指示・命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜くださる",
+    "level": "N4",
+    "definition": "尊敬：てくれる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜する",
+    "level": "N4",
+    "definition": "謙譲：相手にかかわる自分の行為",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜する",
+    "level": "N4",
+    "definition": "申し出",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜だ",
+    "level": "N4",
+    "definition": "尊敬：行為を表す名詞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜できる",
+    "level": "N4",
+    "definition": "謙譲：相手にかかわる自分の行為(可能）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜なさる",
+    "level": "N3",
+    "definition": "尊敬：する",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜になれる",
+    "level": "N4",
+    "definition": "尊敬：する(可能）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜もうしあげる",
+    "level": "N3",
+    "definition": "謙譲：する",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お～になる",
+    "level": "N4",
+    "definition": "尊敬：する",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おいでくださる",
+    "level": "N3",
+    "definition": "尊敬：来てくれる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おいでになる＜いる＞",
+    "level": "N4",
+    "definition": "尊敬：いる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おいでになる＜行く＞",
+    "level": "N4",
+    "definition": "尊敬：行く",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おいでになる＜来る＞",
+    "level": "N4",
+    "definition": "尊敬：来る",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おかげだ",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nおき",
+    "level": "N3",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おこしくださる",
+    "level": "N4",
+    "definition": "尊敬：来てくれる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おこしになる",
+    "level": "N4",
+    "definition": "尊敬：来る",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おそらく",
+    "level": "N4",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おそれがある",
+    "level": "N3",
+    "definition": "可能：可能性（悪いこと）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おっしゃる",
+    "level": "N4",
+    "definition": "尊敬：言う",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おまけに",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おめにかかる",
+    "level": "N4",
+    "definition": "謙譲：会う",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おめにかける",
+    "level": "N4",
+    "definition": "謙譲：見せる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "および",
+    "level": "N3",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おりから",
+    "level": "N2",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おりに",
+    "level": "N2",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "おる",
+    "level": "N4",
+    "definition": "謙譲：いる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "お〜ねがいます",
+    "level": "N2",
+    "definition": "謙譲：指示・依頼",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "が",
+    "level": "N5",
+    "definition": "主語",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "か〜ないか",
+    "level": "N4",
+    "definition": "選択",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "が〜なら〜も〜だ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かい",
+    "level": "N2",
+    "definition": "問いかけ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "がいい",
+    "level": "N1",
+    "definition": "当為",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "がいい",
+    "level": "N1",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かえって",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かぎり",
+    "level": "N3",
+    "definition": "限界",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かぎり（は）",
+    "level": "N3",
+    "definition": "限界",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かぎりがある",
+    "level": "N3",
+    "definition": "限界",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かぎりだ",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かぎりでは",
+    "level": "N3",
+    "definition": "限界",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かぎりなく〜にちかい",
+    "level": "N2",
+    "definition": "限界",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かくして",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "VNかたがた",
+    "level": "N2",
+    "definition": "付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かたわら",
+    "level": "N2",
+    "definition": "付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かつ",
+    "level": "N3",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "がてら",
+    "level": "N2",
+    "definition": "付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かというと",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かというと",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かといえば",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かどうか",
+    "level": "N4",
+    "definition": "引用",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かとおもうと",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かとおもうほど",
+    "level": "N2",
+    "definition": "比喩・比況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かとおもうまもなく",
+    "level": "N1",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かとおもえば",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かとおもえば",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かとおもえば〜も",
+    "level": "N2",
+    "definition": "予想外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かとおもったら",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かとなれば",
+    "level": "N1",
+    "definition": "話題の導入",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かとみると",
+    "level": "N1",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かな",
+    "level": "N4",
+    "definition": "問いかけ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かな",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "がな",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "がな",
+    "level": "N2",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かないかのうちに",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かなんか",
+    "level": "N4",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vかねない",
+    "level": "N3",
+    "definition": "可能：可能性（悪いこと）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vかねる",
+    "level": "N3",
+    "definition": "可能：不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かのごとく",
+    "level": "N2",
+    "definition": "比喩・比況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かのようだ",
+    "level": "N3",
+    "definition": "比喩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "がはやいか",
+    "level": "N2",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N+がほしいんですが",
+    "level": "N4",
+    "definition": "依頼",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かもしれない",
+    "level": "N4",
+    "definition": "推量・概言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かもわからない",
+    "level": "N4",
+    "definition": "推量・概言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "から",
+    "level": "N5",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（から）〜にかけ（て）",
+    "level": "N4",
+    "definition": "終点・範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からいうと",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からいえば",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からいって",
+    "level": "N3",
+    "definition": "立場・視点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からして",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からして",
+    "level": "N2",
+    "definition": "起点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からすると",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からすれば",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からだ",
+    "level": "N4",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からって",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からといって",
+    "level": "N3",
+    "definition": "逆接：理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からとて",
+    "level": "N1",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からには",
+    "level": "N3",
+    "definition": "理由：当然",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からは",
+    "level": "N3",
+    "definition": "理由：当然",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "から〜まで",
+    "level": "N5",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からみたら",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からみて",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からみると",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からみれば",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かりに〜たら",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かりに〜ても",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かりに〜としたら",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かりに〜としても",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かりに〜とすれば",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かりに〜ば",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かりにも〜いじょうは",
+    "level": "N2",
+    "definition": "立場・観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かりにも〜なら",
+    "level": "N2",
+    "definition": "立場・観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かろう",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かわり（に）",
+    "level": "N3",
+    "definition": "代理",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "がさいご",
+    "level": "N2",
+    "definition": "強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔極端な事例〕＋も",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "きらいがある",
+    "level": "N2",
+    "definition": "望ましくない傾向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "きり",
+    "level": "N3",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "きりだ",
+    "level": "N3",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vきる",
+    "level": "N3",
+    "definition": "終了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vマスきれる",
+    "level": "N3",
+    "definition": "終了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "きわまりない",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "きわまる",
+    "level": "N1",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nくさい",
+    "level": "N2",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "くせして",
+    "level": "N2",
+    "definition": "非難",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "くせに",
+    "level": "N3",
+    "definition": "非難",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "くださる",
+    "level": "N4",
+    "definition": "尊敬：物",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "くていらっしゃる",
+    "level": "N2",
+    "definition": "尊敬：イA",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "くらい",
+    "level": "N4",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ぐらい",
+    "level": "N4",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量・時間〕ぐらい",
+    "level": "N4",
+    "definition": "おおよその数量・時間",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "くらいだ",
+    "level": "N3",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ぐらいだ",
+    "level": "N3",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "くらいだから",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "くれる",
+    "level": "N4",
+    "definition": "受給：物",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "くわえて",
+    "level": "N3",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "けれど（も）",
+    "level": "N4",
+    "definition": "前置き",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "けれど（も）",
+    "level": "N4",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（ご）〜いたす",
+    "level": "N4",
+    "definition": "謙譲：する（スル動詞）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜いただく",
+    "level": "N4",
+    "definition": "謙譲：もらう（スル動詞）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜ください",
+    "level": "N4",
+    "definition": "尊敬：ください（ スル動詞）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜くださる",
+    "level": "N4",
+    "definition": "尊敬：くれる （ スル動詞）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜する",
+    "level": "N4",
+    "definition": "謙譲：する （スル動詞）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜だ",
+    "level": "N4",
+    "definition": "尊敬:継続 （スル動詞）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜できる",
+    "level": "N4",
+    "definition": "謙譲：「ご～する」の可能表現",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜です",
+    "level": "N4",
+    "definition": "尊敬：継続 （スル動詞）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（ご）〜なさる",
+    "level": "N4",
+    "definition": "尊敬：する（スル動詞）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜になる",
+    "level": "N4",
+    "definition": "尊敬：する（スル動詞）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜になれる",
+    "level": "N3",
+    "definition": "尊敬：「ごになる」の可能表現",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜ねがう",
+    "level": "N3",
+    "definition": "謙譲：ていねいな指示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ご〜もうしあげる",
+    "level": "N3",
+    "definition": "謙譲：する（スル動詞）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こう",
+    "level": "N4",
+    "definition": "様子・状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こういうふう",
+    "level": "N4",
+    "definition": "様子・状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ここ",
+    "level": "N5",
+    "definition": "場所",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ございます",
+    "level": "N4",
+    "definition": "謙譲：ある（所有）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ございます",
+    "level": "N4",
+    "definition": "丁重：ある（存在）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nごし",
+    "level": "N2",
+    "definition": "場所・方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こそ",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こそ〜〔逆接〕",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ごぞんじ",
+    "level": "N4",
+    "definition": "尊敬：知っている",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こちら",
+    "level": "N5",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こっち",
+    "level": "N5",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こと",
+    "level": "N4",
+    "definition": "文の名詞化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こともない",
+    "level": "N3",
+    "definition": "否定強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことができる",
+    "level": "N4",
+    "definition": "可能：可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことから",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ごとき",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ごとく",
+    "level": "N2",
+    "definition": "同様",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことこのうえない",
+    "level": "N1",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことだ",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことだ",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことだから",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことだし",
+    "level": "N3",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことだろう",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こととて",
+    "level": "N1",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こととなっている",
+    "level": "N3",
+    "definition": "結末",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことなく",
+    "level": "N2",
+    "definition": "付帯状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことなしに",
+    "level": "N2",
+    "definition": "付帯状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことなしに〜〔否定〕",
+    "level": "N2",
+    "definition": "付帯状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことに",
+    "level": "N2",
+    "definition": "心情",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ごと",
+    "level": "N3",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことにしている",
+    "level": "N4",
+    "definition": "決定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことにする",
+    "level": "N4",
+    "definition": "決定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことにする",
+    "level": "N2",
+    "definition": "結末",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことになっている",
+    "level": "N3",
+    "definition": "結末",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことになる",
+    "level": "N4",
+    "definition": "結末",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〜ことは〜〔逆接〕",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことはない",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことはならない",
+    "level": "N2",
+    "definition": "禁止",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "この",
+    "level": "N5",
+    "definition": "指示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ごらんくださる",
+    "level": "N4",
+    "definition": "尊敬：見てくれる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ごらんにいれる",
+    "level": "N3",
+    "definition": "謙譲：見せる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ごらんになる",
+    "level": "N4",
+    "definition": "尊敬:見る",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "これ",
+    "level": "N5",
+    "definition": "指示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "これまでだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "これいじょう〜〔条件〕",
+    "level": "N3",
+    "definition": "限界",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "これいじょう〜は〜〔否定表現〕",
+    "level": "N3",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "これといって〜〔否定〕",
+    "level": "N2",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こんな",
+    "level": "N4",
+    "definition": "様子・状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さあ",
+    "level": "N4",
+    "definition": "心情",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さいちゅうだ",
+    "level": "N3",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さい（に）",
+    "level": "N3",
+    "definition": "場面・場合",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さえ",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さえ〜ば",
+    "level": "N3",
+    "definition": "必要最低条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さしあげる",
+    "level": "N4",
+    "definition": "謙譲：物をあげる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さすが（に）〜だけあって",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さすが（に）",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さすがの〜も",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させてくれる",
+    "level": "N3",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させてもらう",
+    "level": "N3",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させてあげる",
+    "level": "N3",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させていただく",
+    "level": "N4",
+    "definition": "謙譲：させてもらう",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させていただけないでしょうか",
+    "level": "N3",
+    "definition": "自分の行為に対する許可を求める",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させてください",
+    "level": "N4",
+    "definition": "自己の行為に対する許可を求める",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させてくださる",
+    "level": "N3",
+    "definition": "尊敬：させてくれる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させてほしい（んだけれど）",
+    "level": "N3",
+    "definition": "許可要求",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させられる",
+    "level": "N4",
+    "definition": "使役＋受け身",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させる",
+    "level": "N4",
+    "definition": "使役：強制",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させる",
+    "level": "N4",
+    "definition": "使役：誘発・許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さっぱり〜〔否定表現〕",
+    "level": "N3",
+    "definition": "否定強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さて",
+    "level": "N4",
+    "definition": "話題転換",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ざるをえない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "し",
+    "level": "N4",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "し",
+    "level": "N4",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "し，〜から",
+    "level": "N4",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "し，それに",
+    "level": "N3",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "しか〜〔否定表現〕",
+    "level": "N4",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "しかし",
+    "level": "N4",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "しかし",
+    "level": "N4",
+    "definition": "話題転換",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "しかしながら",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "しかない",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "しかも",
+    "level": "N4",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "しだい",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "しだいだ",
+    "level": "N2",
+    "definition": "結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "しだいだ",
+    "level": "N2",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "しまつだ",
+    "level": "N1",
+    "definition": "結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "じゃ（あ）",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "じゃ（あ）",
+    "level": "N4",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "じゃあるまいし",
+    "level": "N2",
+    "definition": "強い否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "じゃないか",
+    "level": "N4",
+    "definition": "問いかけ・確認",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "じゃないか",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "じゃないが",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "じゃないだろうか",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vず",
+    "level": "N4",
+    "definition": "付帯状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "すえ（に）",
+    "level": "N3",
+    "definition": "結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "すぐ",
+    "level": "N4",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "すなわち",
+    "level": "N3",
+    "definition": "言い換え",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vずに",
+    "level": "N4",
+    "definition": "付帯状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vずにいる",
+    "level": "N3",
+    "definition": "継続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vずにおく",
+    "level": "N2",
+    "definition": "継続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vずに（は）いられない",
+    "level": "N3",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vずに（は）おかない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vずにはすまない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "すら～肯定",
+    "level": "N3",
+    "definition": "極端な例からの類推",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "すら〜〔否定表現〕",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばいいものを",
+    "level": "N2",
+    "definition": "非難",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せいか",
+    "level": "N3",
+    "definition": "不確実な理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せいだ",
+    "level": "N3",
+    "definition": "理由・非難",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せいにする",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せっかく〜からには",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せっかく〜のだから",
+    "level": "N3",
+    "definition": "前置き",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せっかくですが",
+    "level": "N3",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せっかくですから",
+    "level": "N3",
+    "definition": "承諾・同意",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せつな",
+    "level": "N1",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せめて〜だけでも",
+    "level": "N3",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せられたい",
+    "level": "N1",
+    "definition": "命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そう",
+    "level": "N4",
+    "definition": "指示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そういえば",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そうしたら",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そうすると",
+    "level": "N3",
+    "definition": "結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そうだ",
+    "level": "N4",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そうだ",
+    "level": "N4",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そうだ",
+    "level": "N4",
+    "definition": "予想・判断",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そこ",
+    "level": "N5",
+    "definition": "場所",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そこで",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そこで",
+    "level": "N4",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そして",
+    "level": "N4",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そちら",
+    "level": "N5",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そっち",
+    "level": "N5",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "その",
+    "level": "N5",
+    "definition": "指示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そのうえ",
+    "level": "N4",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そのうち",
+    "level": "N3",
+    "definition": "短時間",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そのはんめん（では）",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そばから",
+    "level": "N2",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それ",
+    "level": "N5",
+    "definition": "指示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それまでだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それが",
+    "level": "N2",
+    "definition": "予想外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それから",
+    "level": "N5",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それこそ",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それでこそ",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それでは",
+    "level": "N3",
+    "definition": "推論",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それでも",
+    "level": "N4",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それどころか",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それとも",
+    "level": "N4",
+    "definition": "選択",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それなら",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それに",
+    "level": "N4",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それにしては",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そればかりか",
+    "level": "N2",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それはそうと",
+    "level": "N2",
+    "definition": "話題転換",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それはそれとして",
+    "level": "N2",
+    "definition": "話題転換",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それを",
+    "level": "N2",
+    "definition": "予想外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ぞんじあげる",
+    "level": "N3",
+    "definition": "謙譲：知っている",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ぞんじる＜思う＞",
+    "level": "N3",
+    "definition": "謙譲：思う",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ぞんじる＜知る＞",
+    "level": "N3",
+    "definition": "謙譲：知る",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ぞんずる＜思う＞",
+    "level": "N3",
+    "definition": "謙譲：思う",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ぞんずる＜知る＞",
+    "level": "N3",
+    "definition": "謙譲：知る",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "そんな",
+    "level": "N4",
+    "definition": "様子・状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたい",
+    "level": "N5",
+    "definition": "希望：自分の行為への希望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だい",
+    "level": "N1",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だい",
+    "level": "N2",
+    "definition": "問いかけ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "VたいだけV",
+    "level": "N3",
+    "definition": "願望の範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたいとおもう",
+    "level": "N4",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたいばかりに",
+    "level": "N3",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたいものだ",
+    "level": "N3",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたうえ（で）",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたおぼえはない",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たかが",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たかが〜ぐらいで",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だから",
+    "level": "N4",
+    "definition": "結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だから〜のだ",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（だから）〜わけだ",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だからこそ",
+    "level": "N3",
+    "definition": "結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけ",
+    "level": "N4",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけ",
+    "level": "N4",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけあって",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけしか〜ない",
+    "level": "N3",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけでなく〜も",
+    "level": "N4",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけど",
+    "level": "N4",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけに",
+    "level": "N2",
+    "definition": "評価の理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけにかえって",
+    "level": "N2",
+    "definition": "期待",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけになおさら",
+    "level": "N2",
+    "definition": "期待",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけのことだ",
+    "level": "N2",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけのことはある",
+    "level": "N2",
+    "definition": "評価の理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たことがある",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たしかに〜かもしれない",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ただ",
+    "level": "N3",
+    "definition": "譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ただ〜のみ",
+    "level": "N3",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ただ〜のみならず",
+    "level": "N2",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ただし",
+    "level": "N4",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たって",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だって",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たっていい",
+    "level": "N2",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たってしようがない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たとい〜ても",
+    "level": "N1",
+    "definition": "逆接：仮定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たとえ〜ても",
+    "level": "N4",
+    "definition": "逆接：仮定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たとえば",
+    "level": "N4",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たとき（に）",
+    "level": "N4",
+    "definition": "時間関係：時",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたところ",
+    "level": "N3",
+    "definition": "終了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたところが",
+    "level": "N2",
+    "definition": "逆説",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたところだ",
+    "level": "N4",
+    "definition": "事態の局面：直後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（だ）とすると",
+    "level": "N3",
+    "definition": "推論",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（だ）とすれば",
+    "level": "N3",
+    "definition": "推論",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたとたん（に）",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だに",
+    "level": "N1",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だの",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だの〜だの",
+    "level": "N2",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたばかりだ",
+    "level": "N4",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たび（に）",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ため（に）",
+    "level": "N4",
+    "definition": "目的",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ため（に）",
+    "level": "N4",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたものでもない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たら",
+    "level": "N4",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たら",
+    "level": "N4",
+    "definition": "勧誘・勧め",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たら",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たら〜た",
+    "level": "N4",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たら〜だろう",
+    "level": "N4",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たら〜で",
+    "level": "N2",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たらいい",
+    "level": "N4",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たらいけない",
+    "level": "N4",
+    "definition": "当為・禁止",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だらけ",
+    "level": "N3",
+    "definition": "状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たらだめだ",
+    "level": "N4",
+    "definition": "当為・禁止",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たらどう（か）",
+    "level": "N3",
+    "definition": "助言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たらどんなに〜か",
+    "level": "N3",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たらよかった",
+    "level": "N3",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たり〜たりする",
+    "level": "N4",
+    "definition": "不定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たりとも〜〔否定表現〕",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たりなんかして",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たる",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だれ",
+    "level": "N5",
+    "definition": "人",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だろう",
+    "level": "N4",
+    "definition": "推量・概言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だろう",
+    "level": "N4",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だろうとおもう",
+    "level": "N4",
+    "definition": "推量・概言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だろうに",
+    "level": "N2",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ちっとも〜ない",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ちなみに",
+    "level": "N2",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ちゃ",
+    "level": "N4",
+    "definition": "順接：望ましくない結果（縮約形）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vちゃいられない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vちゃう",
+    "level": "N4",
+    "definition": "終了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ちゃだめだ",
+    "level": "N4",
+    "definition": "禁止・判断（縮約形）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nちゅう",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nちゅう",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ちょうだいする",
+    "level": "N4",
+    "definition": "謙譲：もらう",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ついでに",
+    "level": "N3",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ついでに",
+    "level": "N3",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ついては",
+    "level": "N1",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ついに",
+    "level": "N3",
+    "definition": "達成",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "つぎのように",
+    "level": "N3",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "っけ",
+    "level": "N2",
+    "definition": "確認",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "っけ",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vっこない",
+    "level": "N2",
+    "definition": "否定強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ったら",
+    "level": "N3",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ったらない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〜つ〜つ",
+    "level": "N2",
+    "definition": "繰り返しの行為",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "つつ",
+    "level": "N3",
+    "definition": "付帯状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "つつ",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vつつある",
+    "level": "N3",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "つつも",
+    "level": "N2",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "って",
+    "level": "N4",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "って",
+    "level": "N4",
+    "definition": "引用（縮約形）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "って",
+    "level": "N4",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ってば",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ってわけだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "つまり",
+    "level": "N4",
+    "definition": "言い換え",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "つまり〜のだ",
+    "level": "N3",
+    "definition": "言い換え",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "つもりだ",
+    "level": "N4",
+    "definition": "意志・予定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "であれ",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "であれ〜であれ",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "であろうとなかろうと",
+    "level": "N2",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ていい",
+    "level": "N4",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていく",
+    "level": "N4",
+    "definition": "継続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていただけますか",
+    "level": "N4",
+    "definition": "依頼",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていたところだ",
+    "level": "N3",
+    "definition": "事態の局面：継続・結果の状態の継続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていらい",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でいらっしゃる",
+    "level": "N3",
+    "definition": "尊敬：ナA",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でいらっしゃる",
+    "level": "N3",
+    "definition": "尊敬：N",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vている",
+    "level": "N4",
+    "definition": "終了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vているうちに",
+    "level": "N3",
+    "definition": "期間",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vているところだ",
+    "level": "N4",
+    "definition": "事態の局面：最中",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vているばあいではない",
+    "level": "N2",
+    "definition": "否定強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ておいでになる",
+    "level": "N2",
+    "definition": "尊敬：Vている",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てかまわない",
+    "level": "N4",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてからでないと",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてからでなければ",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてからというもの",
+    "level": "N2",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてください",
+    "level": "N5",
+    "definition": "依頼・指示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくださいますか",
+    "level": "N4",
+    "definition": "依頼",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくださる",
+    "level": "N4",
+    "definition": "尊敬：行為の受給",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくださる",
+    "level": "N4",
+    "definition": "依頼",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくる",
+    "level": "N4",
+    "definition": "継続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくれ",
+    "level": "N4",
+    "definition": "依頼・命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくれないか",
+    "level": "N3",
+    "definition": "依頼・命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてございます",
+    "level": "N3",
+    "definition": "丁重：「てある」補助動詞用法",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でさえ",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてさしあげる",
+    "level": "N4",
+    "definition": "尊敬：行為の受給",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てしかた（が）ない",
+    "level": "N3",
+    "definition": "心情",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でしかない",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてしまう",
+    "level": "N4",
+    "definition": "終了",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でしょう",
+    "level": "N4",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てしようがない",
+    "level": "N3",
+    "definition": "心情",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "です",
+    "level": "N5",
+    "definition": "丁寧語",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ですら",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てたまらない",
+    "level": "N3",
+    "definition": "心情",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてちょうだい",
+    "level": "N3",
+    "definition": "依頼・命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でなくてなんだろう",
+    "level": "N1",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てならない",
+    "level": "N3",
+    "definition": "心情",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ては",
+    "level": "N3",
+    "definition": "順接：望ましくない結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "では",
+    "level": "N2",
+    "definition": "順接：望ましくない結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "では",
+    "level": "N3",
+    "definition": "情報源",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "では",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "では",
+    "level": "N4",
+    "definition": "話題転換",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vては，（〜Vては）",
+    "level": "N2",
+    "definition": "反復",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ではあるまいか",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ではあるまいか",
+    "level": "N2",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ではあるまいし",
+    "level": "N2",
+    "definition": "強い否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てはいけない",
+    "level": "N4",
+    "definition": "禁止・当為の否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vて（は）いられない",
+    "level": "N3",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてばかりいる",
+    "level": "N4",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てはだめだ",
+    "level": "N4",
+    "definition": "禁止・判断",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てはどう",
+    "level": "N3",
+    "definition": "提案・勧誘",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ではないか",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ではないか",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のではないだろうか",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ではなかった（の）か",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ではなかろうか",
+    "level": "N3",
+    "definition": "主張(婉曲的断定)",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ではなく",
+    "level": "N4",
+    "definition": "否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてはならない",
+    "level": "N4",
+    "definition": "禁止・当為の否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてほしい",
+    "level": "N4",
+    "definition": "願望・要求",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてほしいんだけ（れ）ど",
+    "level": "N4",
+    "definition": "依頼",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてまいる",
+    "level": "N3",
+    "definition": "謙譲：てくる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてまいる",
+    "level": "N3",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてみえる",
+    "level": "N2",
+    "definition": "尊敬：てくる/ていく",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてみたら",
+    "level": "N4",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてみたら（どう）",
+    "level": "N4",
+    "definition": "勧誘・勧め",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてみてはじめて",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてみると",
+    "level": "N4",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてみれば",
+    "level": "N3",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ても",
+    "level": "N4",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でも",
+    "level": "N4",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でも",
+    "level": "N4",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ても〜ても",
+    "level": "N3",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "で（も）あり，〜でもある",
+    "level": "N2",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でもあるまい",
+    "level": "N1",
+    "definition": "場面・場合",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てもいい",
+    "level": "N4",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てもいい",
+    "level": "N4",
+    "definition": "譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てもいい",
+    "level": "N4",
+    "definition": "申し出",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てもかまわない",
+    "level": "N4",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てもしかたがない",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てもしようがない",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でもって",
+    "level": "N2",
+    "definition": "手段・媒介",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でもって",
+    "level": "N2",
+    "definition": "終点・範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でもって",
+    "level": "N2",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てもよろしい",
+    "level": "N3",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てもよろしい",
+    "level": "N3",
+    "definition": "譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てもよろしいでしょうか",
+    "level": "N4",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "てもよろしいですか",
+    "level": "N4",
+    "definition": "許可",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてもらいたい",
+    "level": "N3",
+    "definition": "要求",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてもらえないか",
+    "level": "N3",
+    "definition": "依頼",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてもらえまいか",
+    "level": "N1",
+    "definition": "依頼",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてもらえるか",
+    "level": "N3",
+    "definition": "依頼",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてもらおう",
+    "level": "N3",
+    "definition": "意志・意向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "と",
+    "level": "N4",
+    "definition": "引用",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "と",
+    "level": "N4",
+    "definition": "必然的な結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "と",
+    "level": "N4",
+    "definition": "条件：発見",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "と",
+    "level": "N3",
+    "definition": "前置き",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "と（は）はんたいに",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "と〜た",
+    "level": "N4",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "と〜た（ものだ）",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とあいまって",
+    "level": "N1",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とあって",
+    "level": "N2",
+    "definition": "状況・場合",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とあれば",
+    "level": "N2",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といい",
+    "level": "N4",
+    "definition": "当為",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といい〜といい",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "という",
+    "level": "N4",
+    "definition": "同格＝との",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "という",
+    "level": "N3",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "NというN",
+    "level": "N4",
+    "definition": "名称の導入",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ということ",
+    "level": "N4",
+    "definition": "文の名詞化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ということだ",
+    "level": "N4",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ということだ",
+    "level": "N4",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というと",
+    "level": "N3",
+    "definition": "話題の導入",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というと",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というと〜のことですか",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というところだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というのは〜〔名詞句〕だ",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というのは",
+    "level": "N3",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というのは〜のことだ",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というのは〜からだ",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というふう",
+    "level": "N3",
+    "definition": "内容説明",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というものだ",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というものではない",
+    "level": "N3",
+    "definition": "部分否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というより",
+    "level": "N3",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というより",
+    "level": "N3",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というよりむしろ〜だ",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というわけだ",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といえど（も）",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といえば",
+    "level": "N3",
+    "definition": "話題の導入",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といえば〜が",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といえば〜ぐらいのことだ",
+    "level": "N2",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といけない",
+    "level": "N4",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といった",
+    "level": "N3",
+    "definition": "内容説明",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といった",
+    "level": "N3",
+    "definition": "内容説明",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といったところだ",
+    "level": "N3",
+    "definition": "判断",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といったら",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といったらありはしない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といったらない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といって",
+    "level": "N2",
+    "definition": "補足",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といっている",
+    "level": "N4",
+    "definition": "発言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といっても",
+    "level": "N4",
+    "definition": "話題提示・譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といわず〜といわず",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といわれている",
+    "level": "N4",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どう",
+    "level": "N5",
+    "definition": "様子・状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どうして",
+    "level": "N5",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どうじに",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とうとう〜た",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どうも",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どうも〜そうだ",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どうも〜ようだ",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どうも〜らしい",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どうやら〜〔推量〕",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〜は〜とおなじ",
+    "level": "N4",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とおもいきや",
+    "level": "N2",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とおもう",
+    "level": "N4",
+    "definition": "推量・概言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とおもうと",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とおもうと",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とおもうまもなく",
+    "level": "N2",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とおもえば",
+    "level": "N2",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とおもったら",
+    "level": "N2",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とおもったら",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とおもわれる",
+    "level": "N3",
+    "definition": "主張(婉曲的断定)",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とおり（に）",
+    "level": "N4",
+    "definition": "同様",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どおり（に）",
+    "level": "N4",
+    "definition": "同様",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とか",
+    "level": "N3",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とか（〜とか）",
+    "level": "N4",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とかいう",
+    "level": "N3",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とか〜とか（いう）",
+    "level": "N2",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とかいうことだ",
+    "level": "N2",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とかく〜がちだ",
+    "level": "N2",
+    "definition": "傾向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とかで",
+    "level": "N2",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とき（に）",
+    "level": "N4",
+    "definition": "時間関係：同時（状態を表す述語に付く）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ときたひには",
+    "level": "N1",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ときたら",
+    "level": "N2",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ときに",
+    "level": "N1",
+    "definition": "話題転換",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ときには",
+    "level": "N3",
+    "definition": "軽の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どこ",
+    "level": "N5",
+    "definition": "場所",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どこか",
+    "level": "N4",
+    "definition": "不明確",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ところが",
+    "level": "N4",
+    "definition": "逆説",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どころか",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたところで",
+    "level": "N2",
+    "definition": "逆接：無駄な結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ところで",
+    "level": "N4",
+    "definition": "話題転換",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どころではない",
+    "level": "N2",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ところ",
+    "level": "N3",
+    "definition": "時点・状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ところの",
+    "level": "N2",
+    "definition": "連体修飾",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ところを",
+    "level": "N2",
+    "definition": "予想外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "としか〜ない",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "としたって",
+    "level": "N2",
+    "definition": "立場",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "としたところで",
+    "level": "N1",
+    "definition": "立場・視点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "としたら",
+    "level": "N4",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "として",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "として",
+    "level": "N4",
+    "definition": "立場",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "としても",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "としても",
+    "level": "N3",
+    "definition": "逆接：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とすぐ",
+    "level": "N4",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とする",
+    "level": "N3",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とすると",
+    "level": "N4",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とすると",
+    "level": "N3",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とすれば",
+    "level": "N4",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とすれば",
+    "level": "N3",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とちがって",
+    "level": "N4",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とちゅうで",
+    "level": "N4",
+    "definition": "途中",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どちら",
+    "level": "N5",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どちらかというと",
+    "level": "N3",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どっち",
+    "level": "N5",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〜と〜（と）どちら",
+    "level": "N5",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とどうじに",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とともに",
+    "level": "N3",
+    "definition": "一緒に",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となく",
+    "level": "N2",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どなた",
+    "level": "N4",
+    "definition": "人",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となったら",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となったら",
+    "level": "N3",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となっては",
+    "level": "N2",
+    "definition": "状況・時点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となると",
+    "level": "N3",
+    "definition": "条件：仮定（主題）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となると",
+    "level": "N2",
+    "definition": "推論",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となれば",
+    "level": "N3",
+    "definition": "条件：仮定・確定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となれば",
+    "level": "N2",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とにかく",
+    "level": "N3",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "との",
+    "level": "N3",
+    "definition": "引用",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どの",
+    "level": "N5",
+    "definition": "指示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どのぐらい＜数量・時間＞",
+    "level": "N5",
+    "definition": "数量・時間",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とのことだ",
+    "level": "N3",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とは",
+    "level": "N4",
+    "definition": "定義",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とは",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とは",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とはいいながら",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とはいうものの",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とはいうものの",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とはいえ",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とはいえ",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とはいっても",
+    "level": "N3",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とばかりに",
+    "level": "N2",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とばかりはいえない",
+    "level": "N2",
+    "definition": "例外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とまもなく",
+    "level": "N2",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とみると",
+    "level": "N2",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ともかぎらない",
+    "level": "N3",
+    "definition": "可能：否定の可能性",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ともかく",
+    "level": "N3",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ＶともなくＶ",
+    "level": "N2",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ともなしに",
+    "level": "N2",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ともなると",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ともなれば",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とやら",
+    "level": "N1",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とやら",
+    "level": "N1",
+    "definition": "話題の導入",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とよかった（のに）",
+    "level": "N3",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とりわけ",
+    "level": "N3",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どれ",
+    "level": "N5",
+    "definition": "選択",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どれぐらい＜数量・時間＞",
+    "level": "N5",
+    "definition": "数量・時間",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とんだ",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とんでもない",
+    "level": "N3",
+    "definition": "否定強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とんでもない",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どんな",
+    "level": "N5",
+    "definition": "様子・状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どんなに〜ても",
+    "level": "N4",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "な",
+    "level": "N4",
+    "definition": "命令、禁止",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないうちに",
+    "level": "N4",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ない（か）",
+    "level": "N3",
+    "definition": "誘い",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないかしら",
+    "level": "N2",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かしら",
+    "level": "N2",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないかな",
+    "level": "N3",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないことには",
+    "level": "N2",
+    "definition": "条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないことはない",
+    "level": "N3",
+    "definition": "部分否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないこともない",
+    "level": "N3",
+    "definition": "部分否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vないで",
+    "level": "N4",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vないでいる",
+    "level": "N3",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vないでくれ",
+    "level": "N3",
+    "definition": "依頼",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vないで（は）いられない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vないで（は）おかない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vないではすまない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないと",
+    "level": "N4",
+    "definition": "義務，勧告・忠告",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないと〜〔マイナス評価の内容〕",
+    "level": "N4",
+    "definition": "条件：必要条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないと〜ない",
+    "level": "N4",
+    "definition": "条件：必要条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないといけない",
+    "level": "N4",
+    "definition": "義務",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないとだめだ",
+    "level": "N4",
+    "definition": "義務",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないまでも",
+    "level": "N2",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないものだろうか",
+    "level": "N2",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ないものでもない",
+    "level": "N1",
+    "definition": "わずかな可能性",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なお",
+    "level": "N3",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vなおす",
+    "level": "N3",
+    "definition": "修正",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なか",
+    "level": "N5",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ながら",
+    "level": "N4",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ながら（に）",
+    "level": "N2",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ながらも",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なくして",
+    "level": "N2",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なくて",
+    "level": "N4",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なくては",
+    "level": "N3",
+    "definition": "非存在",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なくてはいけない",
+    "level": "N4",
+    "definition": "義務",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なくてはだめだ",
+    "level": "N4",
+    "definition": "義務",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なくてはならない",
+    "level": "N4",
+    "definition": "義務",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なくてもいい",
+    "level": "N4",
+    "definition": "不必要",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なくてもかまわない",
+    "level": "N4",
+    "definition": "不必要",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なくともよい",
+    "level": "N3",
+    "definition": "義務",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なければ〜た",
+    "level": "N3",
+    "definition": "条件：必要条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なければ〜ない",
+    "level": "N3",
+    "definition": "必要",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なければいけない",
+    "level": "N4",
+    "definition": "義務",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なければだめだ",
+    "level": "N4",
+    "definition": "義務",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なければならない",
+    "level": "N4",
+    "definition": "義務",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なさる",
+    "level": "N4",
+    "definition": "尊敬：する",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なしでは〜ない",
+    "level": "N3",
+    "definition": "条件：必要条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なしに（は）",
+    "level": "N3",
+    "definition": "付帯状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なぜ",
+    "level": "N4",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なぜか",
+    "level": "N3",
+    "definition": "不定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なぜかといえば〜からだ",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なぜなら（ば）〜からだ",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "など",
+    "level": "N5",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "など",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "など〜ものか",
+    "level": "N2",
+    "definition": "軽視",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なに",
+    "level": "N5",
+    "definition": "物",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なにかしら",
+    "level": "N2",
+    "definition": "不明確",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なにかというと",
+    "level": "N2",
+    "definition": "そのたびに",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なにがなんでも",
+    "level": "N2",
+    "definition": "意志・意向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なにがなんでも〜〔マイナス評価表現〕",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なにかにつけて",
+    "level": "N2",
+    "definition": "そのたびに",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なににもまして",
+    "level": "N1",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なにひとつ〜ない",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なにやら",
+    "level": "N2",
+    "definition": "不明確",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なにより",
+    "level": "N2",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なら",
+    "level": "N4",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なら",
+    "level": "N4",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なら（ば）",
+    "level": "N4",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ならいい",
+    "level": "N4",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ならでは",
+    "level": "N1",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ならでは",
+    "level": "N2",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ならびに",
+    "level": "N3",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なり",
+    "level": "N2",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なり〜なり",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なり（で）",
+    "level": "N1",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nなり",
+    "level": "N3",
+    "definition": "立場",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なる",
+    "level": "N4",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なるべくなら",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なるほど",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なん",
+    "level": "N5",
+    "definition": "物",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なん〔助数詞〕も",
+    "level": "N4",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なん〔助数詞〕も〜ない",
+    "level": "N4",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんか",
+    "level": "N3",
+    "definition": "軽の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんか",
+    "level": "N2",
+    "definition": "つなぎ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんか",
+    "level": "N4",
+    "definition": "不明確",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんか",
+    "level": "N3",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんか〜ない",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんか〜ものか",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんだか",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんて",
+    "level": "N3",
+    "definition": "軽の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんて",
+    "level": "N4",
+    "definition": "引用（＝なんと）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんて",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんと〜（の）だろう",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんという（〜）Ｎ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんとか",
+    "level": "N3",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんとしても",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんとなく",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんら〜ない",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なんらの〜も〜ない",
+    "level": "N1",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "に＜対象＞",
+    "level": "N5",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "に＋いく",
+    "level": "N5",
+    "definition": "移動の目的 動きを表す漢語名詞/Vマス",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "に＋かえる",
+    "level": "N4",
+    "definition": "移動の目的 動きを表す漢語名詞/Vマス",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "に＋くる",
+    "level": "N5",
+    "definition": "移動の目的 動きを表す漢語名詞/Vマス",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にあたって",
+    "level": "N3",
+    "definition": "状況・場合",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にあたらない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にあって",
+    "level": "N2",
+    "definition": "状況・場合",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にいたって",
+    "level": "N2",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にいたっては",
+    "level": "N2",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いたる",
+    "level": "N2",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（から）〜にいたるまで",
+    "level": "N2",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "において",
+    "level": "N4",
+    "definition": "場所・状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "におうじて",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "における",
+    "level": "N3",
+    "definition": "場所：状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかかわらず",
+    "level": "N3",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかかわりなく",
+    "level": "N3",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかかわる",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかぎって",
+    "level": "N3",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかぎらず",
+    "level": "N3",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかぎり",
+    "level": "N3",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかぎる",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかけては",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかけて（も）",
+    "level": "N2",
+    "definition": "心情",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかたくない",
+    "level": "N2",
+    "definition": "可能：容易",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかわって",
+    "level": "N4",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかんして",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にきまっている",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にくらべて",
+    "level": "N4",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にくわえて",
+    "level": "N3",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にこしたことはない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にこたえて",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にさいして",
+    "level": "N3",
+    "definition": "場面・場合",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にさきだって",
+    "level": "N2",
+    "definition": "前",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしたがって",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしたって",
+    "level": "N2",
+    "definition": "逆接：仮定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしたって",
+    "level": "N2",
+    "definition": "話題の導入",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしたところで",
+    "level": "N2",
+    "definition": "立場・視点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしたら",
+    "level": "N3",
+    "definition": "立場・視点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にして",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にして",
+    "level": "N1",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしてからが",
+    "level": "N1",
+    "definition": "起点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしては",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしてみれば",
+    "level": "N3",
+    "definition": "立場・視点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしても",
+    "level": "N2",
+    "definition": "立場",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしても",
+    "level": "N2",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしても",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしても〜にしても",
+    "level": "N2",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしろ",
+    "level": "N2",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしろ",
+    "level": "N2",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしろ〜にしろ",
+    "level": "N3",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にすぎない",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にすれば",
+    "level": "N3",
+    "definition": "立場・視点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にせよ",
+    "level": "N2",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にせよ〜にせよ",
+    "level": "N2",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にそって",
+    "level": "N2",
+    "definition": "基準",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にたいして",
+    "level": "N4",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にたえない",
+    "level": "N2",
+    "definition": "不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にたえる",
+    "level": "N2",
+    "definition": "価値がある",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にたりない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にたる",
+    "level": "N1",
+    "definition": "価値がある",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にちがいない",
+    "level": "N4",
+    "definition": "推量：強い確信",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "について",
+    "level": "N4",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "につき",
+    "level": "N3",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "につき",
+    "level": "N2",
+    "definition": "根拠",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "につけ〜につけ",
+    "level": "N2",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "につけて",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "につれて",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にとおもって",
+    "level": "N2",
+    "definition": "目的・目標",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にとって",
+    "level": "N4",
+    "definition": "立場",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にどと〜〔否定〕",
+    "level": "N4",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にとどまらない",
+    "level": "N2",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にともなって",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "になく",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "には",
+    "level": "N2",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にはおよばない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にはんして",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にひきかえ",
+    "level": "N2",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にほかならない",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にむけて",
+    "level": "N4",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にむけて",
+    "level": "N3",
+    "definition": "目的・目標",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にめんして",
+    "level": "N3",
+    "definition": "空間的関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にもせよ",
+    "level": "N1",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にもとづいて",
+    "level": "N3",
+    "definition": "根拠",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にもまして",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "によったら",
+    "level": "N2",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "によって",
+    "level": "N4",
+    "definition": "手段・方法",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "によって",
+    "level": "N3",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "によって",
+    "level": "N4",
+    "definition": "動作主",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "によらず",
+    "level": "N2",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "による",
+    "level": "N3",
+    "definition": "動作主",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "によると",
+    "level": "N4",
+    "definition": "情報源",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "によれば",
+    "level": "N4",
+    "definition": "情報源",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にわたって",
+    "level": "N3",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にそういない",
+    "level": "N2",
+    "definition": "推量：強い確信",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にそくして",
+    "level": "N2",
+    "definition": "判断基準",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ぬきで",
+    "level": "N3",
+    "definition": "非付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vぬまに",
+    "level": "N2",
+    "definition": "期間",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ね",
+    "level": "N5",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ねばならぬ",
+    "level": "N2",
+    "definition": "義務",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "の",
+    "level": "N4",
+    "definition": "文の名詞化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "の",
+    "level": "N4",
+    "definition": "問いかけ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "の",
+    "level": "N3",
+    "definition": "命令・禁止",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "の〜の",
+    "level": "N2",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "と〜のあいだ",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のあまり（に）",
+    "level": "N3",
+    "definition": "極端なことの結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のきわみ",
+    "level": "N1",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のだ",
+    "level": "N4",
+    "definition": "説明",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のだ",
+    "level": "N4",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のだから",
+    "level": "N4",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のだった",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のだろう",
+    "level": "N4",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ので",
+    "level": "N4",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のだ＋〔逆接〕",
+    "level": "N4",
+    "definition": "前置き",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のではなかったか",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のところ",
+    "level": "N3",
+    "definition": "時点・状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のなんのって",
+    "level": "N1",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のなんのと",
+    "level": "N1",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のに",
+    "level": "N4",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のに",
+    "level": "N4",
+    "definition": "目的・目標",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "(の)にたいして",
+    "level": "N4",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "は〜ぐらいのものだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のは〜ゆえである",
+    "level": "N2",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のまえに",
+    "level": "N5",
+    "definition": "空間的関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のみならず",
+    "level": "N2",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のもと（で）",
+    "level": "N3",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のもとに",
+    "level": "N3",
+    "definition": "条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "は",
+    "level": "N5",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "は",
+    "level": "N4",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば",
+    "level": "N4",
+    "definition": "条件：必然的な結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば",
+    "level": "N3",
+    "definition": "勧誘・勧め",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "は〜より",
+    "level": "N4",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔状態性述語〕ば～〔働きかけ〕",
+    "level": "N3",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔状態性述語〕ば～〔意志・希望〕",
+    "level": "N4",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば",
+    "level": "N4",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば〜た",
+    "level": "N4",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば〜だろう",
+    "level": "N4",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば〜ところだ（った）",
+    "level": "N3",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば〜のだが",
+    "level": "N3",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば〜のに",
+    "level": "N3",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば〜はずだ",
+    "level": "N3",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば〜ほど",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばあい",
+    "level": "N4",
+    "definition": "場面・場合",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばあいによると",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばあいもある",
+    "level": "N4",
+    "definition": "可能：可能性",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はい",
+    "level": "N5",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばいい",
+    "level": "N4",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はいうまでもない",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はおろか",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばかり",
+    "level": "N4",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばかりか",
+    "level": "N3",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばかりか〜まで",
+    "level": "N3",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるばかりだ",
+    "level": "N3",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばかりでなく",
+    "level": "N3",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばかりに",
+    "level": "N2",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばかりの",
+    "level": "N2",
+    "definition": "比喩・比況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばこそ",
+    "level": "N2",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はずがない",
+    "level": "N4",
+    "definition": "否定の断定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はずだ",
+    "level": "N4",
+    "definition": "必然",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はずだ",
+    "level": "N4",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はずだった",
+    "level": "N3",
+    "definition": "想定外の結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばそれまでだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はたして〜か",
+    "level": "N2",
+    "definition": "問いかけ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はたして〜した",
+    "level": "N1",
+    "definition": "結末",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はとにかく（として）",
+    "level": "N2",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はともかく（として）",
+    "level": "N2",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はとわず",
+    "level": "N3",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はべつとして",
+    "level": "N2",
+    "definition": "例外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はもちろん",
+    "level": "N3",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はもとより",
+    "level": "N2",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はんたいに",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はんめん",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ひとつ〜できない",
+    "level": "N2",
+    "definition": "可能：不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ひとつ〜〔否定〕",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ひとつには〜",
+    "level": "N2",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ひとり〜だけで（は）ない",
+    "level": "N1",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ひとり〜のみならず",
+    "level": "N1",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ふう",
+    "level": "N2",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ふと",
+    "level": "N2",
+    "definition": "偶然",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ふとした",
+    "level": "N2",
+    "definition": "様子・状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ぶり",
+    "level": "N2",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "へ",
+    "level": "N5",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "べからざる",
+    "level": "N1",
+    "definition": "禁止",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "べからず",
+    "level": "N2",
+    "definition": "禁止",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "べき",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "べく",
+    "level": "N2",
+    "definition": "目的",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "べくして〜た",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "べくもない",
+    "level": "N1",
+    "definition": "可能：不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "べし",
+    "level": "N2",
+    "definition": "命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほう",
+    "level": "N5",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほう",
+    "level": "N4",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほう",
+    "level": "N4",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほうが〜より（も）",
+    "level": "N5",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほうがいい",
+    "level": "N4",
+    "definition": "勧告",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほうがましだ",
+    "level": "N3",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほうがよかった",
+    "level": "N3",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほうが〜〔程度の副詞〕",
+    "level": "N2",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほかしかたない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほかない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほど",
+    "level": "N3",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほど",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほど〜〔否定〕",
+    "level": "N4",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほどだ",
+    "level": "N3",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ほどなく",
+    "level": "N2",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まい",
+    "level": "N2",
+    "definition": "否定の意志",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まい",
+    "level": "N2",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まいか",
+    "level": "N2",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まいとする",
+    "level": "N2",
+    "definition": "意志",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まいに",
+    "level": "N1",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まいる＜丁重語＞",
+    "level": "N4",
+    "definition": "丁重語：来る，行く",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まいる＜謙譲語＞",
+    "level": "N4",
+    "definition": "謙譲：行く",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まさか〜〔否定表現〕",
+    "level": "N3",
+    "definition": "予想外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まさか〜とはおもわなかった",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まさか〜ないだろう",
+    "level": "N3",
+    "definition": "予想外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まさかの",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まじき",
+    "level": "N2",
+    "definition": "当為",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ます",
+    "level": "N5",
+    "definition": "丁寧",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まず〜だろう",
+    "level": "N2",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まず〜まい",
+    "level": "N2",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "また",
+    "level": "N4",
+    "definition": "くり返し・習慣",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "また",
+    "level": "N3",
+    "definition": "選択",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "また",
+    "level": "N4",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "また",
+    "level": "N4",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まだ",
+    "level": "N4",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まだ〜〔肯定〕",
+    "level": "N4",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まだ〜〔否定表現〕",
+    "level": "N4",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "またしても",
+    "level": "N2",
+    "definition": "くり返し・習慣",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "またの",
+    "level": "N2",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "または",
+    "level": "N4",
+    "definition": "選択",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "またもや",
+    "level": "N2",
+    "definition": "くり返し・習慣",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まったく〜〔否定表現〕",
+    "level": "N4",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "までして",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "までだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "までに",
+    "level": "N5",
+    "definition": "限界",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "までのことだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "までのことはない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "までもない",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まま",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まま",
+    "level": "N4",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まもなく",
+    "level": "N4",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まるで",
+    "level": "N4",
+    "definition": "比喩・比況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まるで〜ない",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まんざら〜でもない",
+    "level": "N1",
+    "definition": "部分否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "みえる",
+    "level": "N3",
+    "definition": "尊敬：来る",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "みたいだ",
+    "level": "N4",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "みだりに",
+    "level": "N1",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "みるからに",
+    "level": "N2",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "むき",
+    "level": "N4",
+    "definition": "方向",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nむき",
+    "level": "N3",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nむけ",
+    "level": "N4",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "むしろ",
+    "level": "N3",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "むやみに",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "めしあがる＜飲む＞",
+    "level": "N4",
+    "definition": "尊敬：飲む",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "めしあがる＜食べる＞",
+    "level": "N4",
+    "definition": "尊敬：食べる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "めす",
+    "level": "N3",
+    "definition": "尊敬：着る/風邪をひく/年を取る/気に入る",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も",
+    "level": "N5",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も",
+    "level": "N4",
+    "definition": "予想以上",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も〜し，〜も",
+    "level": "N4",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も〜Vずに",
+    "level": "N4",
+    "definition": "非付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も〜が",
+    "level": "N2",
+    "definition": "認めと本来の意見",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も〜ない",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も〜なら",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も〜も",
+    "level": "N5",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もう",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もう 〔時間・年齢など〕",
+    "level": "N4",
+    "definition": "限界",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もう〜〔肯定〕",
+    "level": "N4",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もう〔数量詞〕",
+    "level": "N4",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もう〜〔否定表現〕",
+    "level": "N4",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もういい",
+    "level": "N4",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もうすこし",
+    "level": "N5",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もうちょっと",
+    "level": "N4",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もうひとつ〜ない",
+    "level": "N2",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もかまわず",
+    "level": "N2",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もさることながら",
+    "level": "N2",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もし（も）〜ても",
+    "level": "N4",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もし〜としても",
+    "level": "N4",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もしかしたら〜か",
+    "level": "N4",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もしかしたら〜かもしれない",
+    "level": "N4",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もしくは",
+    "level": "N3",
+    "definition": "選択",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もし（も）〜たら",
+    "level": "N4",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もちろん",
+    "level": "N4",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もっと",
+    "level": "N5",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もっとも",
+    "level": "N3",
+    "definition": "譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もっとも〜〔逆接〕",
+    "level": "N2",
+    "definition": "譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もっぱら",
+    "level": "N2",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（も）どうぜん",
+    "level": "N2",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もなにもない",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もの",
+    "level": "N2",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものも〜〔否定〕",
+    "level": "N2",
+    "definition": "否定強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものか",
+    "level": "N2",
+    "definition": "強い否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものがある",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものだ",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものだ",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものだ",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものだから",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もので",
+    "level": "N3",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もので（は）ない",
+    "level": "N2",
+    "definition": "禁止",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もので（は）ない",
+    "level": "N2",
+    "definition": "否定の断定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものとおもう",
+    "level": "N2",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものとかんがえられる",
+    "level": "N2",
+    "definition": "当然",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものとする",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものなら",
+    "level": "N2",
+    "definition": "仮定条件（実現の可能性低い）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものの",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ものを",
+    "level": "N2",
+    "definition": "逆接：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もまた",
+    "level": "N2",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もらう",
+    "level": "N5",
+    "definition": "受給：物",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もん",
+    "level": "N2",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もんか",
+    "level": "N2",
+    "definition": "強い否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もんじゃない",
+    "level": "N2",
+    "definition": "否定の断定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もんだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もんだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もんだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もんだから",
+    "level": "N2",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もんで",
+    "level": "N2",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "や",
+    "level": "N2",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "や",
+    "level": "N5",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "やいなや",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "やがて",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "やたら（に）",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "やなんか",
+    "level": "N3",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "やなんぞ",
+    "level": "N1",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "やらなにやら",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "やる",
+    "level": "N4",
+    "definition": "受給：物",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ゆえ（に）",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よ",
+    "level": "N4",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vよう",
+    "level": "N4",
+    "definition": "意志",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vよう",
+    "level": "N4",
+    "definition": "勧誘",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vよう",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vよう",
+    "level": "N3",
+    "definition": "申し出",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようか",
+    "level": "N2",
+    "definition": "反語",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようか",
+    "level": "N4",
+    "definition": "意志",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようか",
+    "level": "N4",
+    "definition": "勧誘・勧め",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようか",
+    "level": "N1",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようか",
+    "level": "N4",
+    "definition": "申し出",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うが",
+    "level": "N2",
+    "definition": "逆接：仮定・確定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようが〜Vまいが",
+    "level": "N2",
+    "definition": "逆接：仮定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うが〜うが",
+    "level": "N2",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vマスようがない",
+    "level": "N3",
+    "definition": "可能：不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようじゃないか",
+    "level": "N3",
+    "definition": "勧誘",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ようするに",
+    "level": "N2",
+    "definition": "結論",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ようだ",
+    "level": "N4",
+    "definition": "比喩・比況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ようだ",
+    "level": "N4",
+    "definition": "推量・概言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようったって",
+    "level": "N2",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようではないか",
+    "level": "N2",
+    "definition": "勧誘",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようとしない",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようと〜Vまいと",
+    "level": "N2",
+    "definition": "逆接：仮定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うと〜うと",
+    "level": "N2",
+    "definition": "逆接：仮定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようとおもう",
+    "level": "N4",
+    "definition": "意志",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようとする",
+    "level": "N4",
+    "definition": "意志",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようとする",
+    "level": "N3",
+    "definition": "起点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "うと（も）",
+    "level": "N2",
+    "definition": "逆接：仮定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ようだ",
+    "level": "N4",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるように",
+    "level": "N4",
+    "definition": "目的",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるよう（に）～〔伝達の動詞〕",
+    "level": "N4",
+    "definition": "引用",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるようにしている",
+    "level": "N4",
+    "definition": "習慣",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるようにする",
+    "level": "N4",
+    "definition": "意志",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようにも〜Vれない",
+    "level": "N2",
+    "definition": "可能：不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようにも〜〔否定〕",
+    "level": "N2",
+    "definition": "可能：不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vマスようもない",
+    "level": "N3",
+    "definition": "可能：不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vようものなら",
+    "level": "N2",
+    "definition": "条件：仮定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ようやく",
+    "level": "N3",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてよかろう",
+    "level": "N2",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よく",
+    "level": "N4",
+    "definition": "重の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よく（ぞ）",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よく（も）",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よく（も）〜ものだ",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よほど",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よもや〜〔否定〕",
+    "level": "N1",
+    "definition": "否定強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "より（も）",
+    "level": "N5",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "より（も）むしろ",
+    "level": "N3",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よりしかた（が）ない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よりしようがない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "より〜ほう",
+    "level": "N4",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よりほかしかた（が）ない",
+    "level": "N1",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よりほかない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "らしい",
+    "level": "N4",
+    "definition": "推量・概言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なら〜がいい",
+    "level": "N4",
+    "definition": "勧誘・勧め",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vること",
+    "level": "N3",
+    "definition": "命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるように",
+    "level": "N4",
+    "definition": "勧告・忠告・命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるようでは",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるようになる",
+    "level": "N4",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるいぜん",
+    "level": "N3",
+    "definition": "前",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるきにもならない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるぐらいなら（〜）むしろ",
+    "level": "N2",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vることには",
+    "level": "N2",
+    "definition": "情報源",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vることもあるまい",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるだけ〜Vて",
+    "level": "N2",
+    "definition": "起点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるだけは〜V",
+    "level": "N2",
+    "definition": "起点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるとき（に）",
+    "level": "N4",
+    "definition": "時間関係：前",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるところだ",
+    "level": "N4",
+    "definition": "事態の局面：直前",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるところによると",
+    "level": "N2",
+    "definition": "情報源",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるところによれば",
+    "level": "N3",
+    "definition": "情報源",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるなどする",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるに〜Vれない",
+    "level": "N2",
+    "definition": "可能：不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるにしたがって",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "には",
+    "level": "N4",
+    "definition": "目的・目標",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるには〜Vが",
+    "level": "N2",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるのだった",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるばかりだ",
+    "level": "N2",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるまで（のこと）もない",
+    "level": "N2",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるまでになる",
+    "level": "N2",
+    "definition": "変化",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるよりない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるよりほか（に）ない",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるわ〜Vるわ",
+    "level": "N1",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるんじゃない",
+    "level": "N4",
+    "definition": "禁止",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるんだ",
+    "level": "N3",
+    "definition": "命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vれないものは〜Vれない",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わ",
+    "level": "N4",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わ〜わ（で）",
+    "level": "N2",
+    "definition": "並立・列挙",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わけがない",
+    "level": "N3",
+    "definition": "強い否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わけだ",
+    "level": "N3",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わけだ",
+    "level": "N3",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わけだから",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わけではない",
+    "level": "N3",
+    "definition": "部分否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わけにいかない",
+    "level": "N3",
+    "definition": "可能：不可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わけ（は）ない",
+    "level": "N3",
+    "definition": "強い否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わずか",
+    "level": "N4",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わりと",
+    "level": "N4",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わりに（は）",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "を〜にひかえて",
+    "level": "N2",
+    "definition": "前",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をおいて",
+    "level": "N2",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をかいして",
+    "level": "N2",
+    "definition": "手段･方法",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をかぎりに",
+    "level": "N3",
+    "definition": "限界",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をかって",
+    "level": "N1",
+    "definition": "手段･方法",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をかわきりに",
+    "level": "N2",
+    "definition": "起点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をきっかけに",
+    "level": "N3",
+    "definition": "直接の原因・動機など",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をきんじえない",
+    "level": "N2",
+    "definition": "心情",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をけいきに",
+    "level": "N2",
+    "definition": "直接の原因・動機など",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をこめて",
+    "level": "N3",
+    "definition": "付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をぜんていに",
+    "level": "N3",
+    "definition": "前提",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をちゅうしんに",
+    "level": "N3",
+    "definition": "基準",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をつうじて",
+    "level": "N3",
+    "definition": "手段･方法",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をつうじて",
+    "level": "N3",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をとおして",
+    "level": "N3",
+    "definition": "媒介",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をとわず",
+    "level": "N3",
+    "definition": "非限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をぬきにして",
+    "level": "N3",
+    "definition": "除外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をのぞいて",
+    "level": "N3",
+    "definition": "例外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をはじめ（として）",
+    "level": "N3",
+    "definition": "起点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をふまえて",
+    "level": "N3",
+    "definition": "根拠",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をまえに（して）",
+    "level": "N3",
+    "definition": "時間的空間的関係・状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をめぐって",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をもって",
+    "level": "N2",
+    "definition": "手段・方法",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をもって",
+    "level": "N2",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をもとに（して）",
+    "level": "N3",
+    "definition": "根拠・材料・参考",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をものともせず（に）",
+    "level": "N2",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をよぎなくさせる",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をよぎなくされる",
+    "level": "N2",
+    "definition": "行動",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をよそに",
+    "level": "N2",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "んがためだ",
+    "level": "N1",
+    "definition": "目的",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "んだ",
+    "level": "N4",
+    "definition": "説明",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "んだって",
+    "level": "N4",
+    "definition": "確認",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "んだって",
+    "level": "N4",
+    "definition": "伝聞",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "んばかりだ",
+    "level": "N2",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いっぽう",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いっぽうだ",
+    "level": "N3",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いっぽう（で）",
+    "level": "N3",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔格助詞〕＋は",
+    "level": "N5",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔格助詞〕は〜〔否定〕",
+    "level": "N4",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔格助詞〕＋は〜，〔格助詞〕＋は〜",
+    "level": "N4",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔格助詞〕＋も",
+    "level": "N4",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕 〜か",
+    "level": "N4",
+    "definition": "問いかけ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕でも",
+    "level": "N4",
+    "definition": "全面的肯定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕〜たら〜のか",
+    "level": "N3",
+    "definition": "反語",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕〜ば〜のか",
+    "level": "N3",
+    "definition": "反語",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕〜ことか",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕であれ",
+    "level": "N2",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕〜ても",
+    "level": "N4",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕〜でも",
+    "level": "N4",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕〜うが",
+    "level": "N2",
+    "definition": "逆接：仮定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕〜うと",
+    "level": "N2",
+    "definition": "逆接：仮定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕〜か",
+    "level": "N5",
+    "definition": "問いかけ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕〜（の）やら",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕＋が",
+    "level": "N5",
+    "definition": "疑問詞疑問文",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔最小限の数量〕＋も〜ない",
+    "level": "N4",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もうしあげる",
+    "level": "N4",
+    "definition": "謙譲：言う",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もうす",
+    "level": "N4",
+    "definition": "謙譲：言う",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量〕からある",
+    "level": "N2",
+    "definition": "数量以上",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量詞〕あまり",
+    "level": "N3",
+    "definition": "数量の多少",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量詞〕から",
+    "level": "N2",
+    "definition": "基準より上",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量・時間〕くらい",
+    "level": "N4",
+    "definition": "おおよその数量・時間",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量詞〕＋にたいして",
+    "level": "N3",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量詞〕＋ばかり",
+    "level": "N3",
+    "definition": "概数",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量詞〕＋ほど",
+    "level": "N4",
+    "definition": "概数",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量詞〕＋も〜たら",
+    "level": "N3",
+    "definition": "条件：十分条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量詞〕＋も〜〔否定〕",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔数量詞〕＋も〜ば",
+    "level": "N3",
+    "definition": "条件：十分条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はいけんする",
+    "level": "N4",
+    "definition": "謙譲：見る",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はいしゃくする",
+    "level": "N3",
+    "definition": "謙譲：借りる",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はんめん",
+    "level": "N2",
+    "definition": "対比",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔疑問詞〕からともなく",
+    "level": "N2",
+    "definition": "起点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Aからず",
+    "level": "N2",
+    "definition": "否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nじゃないです",
+    "level": "N5",
+    "definition": "「名詞＋だ」の非過去 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nじゃなかったです",
+    "level": "N5",
+    "definition": "「名詞＋だ」の過去形 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nだったら",
+    "level": "N4",
+    "definition": "「名詞＋だ」のタラ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nで，〜",
+    "level": "N5",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nではないです",
+    "level": "N5",
+    "definition": "「名詞＋だ」の非過去 丁寧体否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nではなかったです",
+    "level": "N5",
+    "definition": "「名詞＋だ」の過去形 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nなら",
+    "level": "N5",
+    "definition": "「名詞＋だ」のバ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nに",
+    "level": "N5",
+    "definition": "「名詞＋だ」の副詞形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nぶり",
+    "level": "N3",
+    "definition": "時間の経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vうる",
+    "level": "N3",
+    "definition": "可能：可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vずに",
+    "level": "N4",
+    "definition": "非付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたら",
+    "level": "N4",
+    "definition": "動詞のタラ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたり",
+    "level": "N5",
+    "definition": "動詞のタリ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vて，V",
+    "level": "N4",
+    "definition": "付帯状況",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vていく",
+    "level": "N4",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vてくる",
+    "level": "N4",
+    "definition": "継続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vないで，V",
+    "level": "N4",
+    "definition": "非付帯状態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vなくて",
+    "level": "N3",
+    "definition": "動詞のナクテの形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vば",
+    "level": "N4",
+    "definition": "動詞のバ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vますように",
+    "level": "N3",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vよう",
+    "level": "N4",
+    "definition": "意志",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるのだ",
+    "level": "N3",
+    "definition": "命令",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vるようにしている",
+    "level": "N3",
+    "definition": "努力",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "V可能形",
+    "level": "N4",
+    "definition": "動詞可能形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "V使役形",
+    "level": "N4",
+    "definition": "動詞使役形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "V受け身形",
+    "level": "N4",
+    "definition": "動詞受け身形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あんまり",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAうございます",
+    "level": "N3",
+    "definition": "丁重：イA",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAかったら",
+    "level": "N4",
+    "definition": "イAのタラ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAくて",
+    "level": "N5",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAければ",
+    "level": "N4",
+    "definition": "イAのバ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いい",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いい",
+    "level": "N5",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いい",
+    "level": "N3",
+    "definition": "注意を促す",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いご",
+    "level": "N3",
+    "definition": "後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いずれか",
+    "level": "N3",
+    "definition": "不明確",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いつ〔格助詞〕でも",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いつか",
+    "level": "N4",
+    "definition": "不定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ぐらいだから",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "けど",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "けど",
+    "level": "N4",
+    "definition": "前置き",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "けど",
+    "level": "N4",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "けれど（も）",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こととなる",
+    "level": "N3",
+    "definition": "結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "させる",
+    "level": "N3",
+    "definition": "他動詞がないとき他動詞の代わりに使う",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "じゃないか",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "する",
+    "level": "N4",
+    "definition": "値段～である",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "する",
+    "level": "N4",
+    "definition": "時間がたつ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "せいぜい",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それでは",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それでは",
+    "level": "N5",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たかが〜くらいで",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "（だ）としたら",
+    "level": "N3",
+    "definition": "推論",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たら",
+    "level": "N4",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たら",
+    "level": "N4",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たら",
+    "level": "N4",
+    "definition": "突き放し",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たらいい",
+    "level": "N4",
+    "definition": "助言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だれ〔格助詞〕でも",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だれ〔格助詞〕も",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だれか",
+    "level": "N4",
+    "definition": "不明確",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ていらっしゃる",
+    "level": "N3",
+    "definition": "尊敬：イA",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ではないか",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ても〜ても",
+    "level": "N3",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でも〜でも",
+    "level": "N4",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "と〜た",
+    "level": "N3",
+    "definition": "継起（後）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どこ〔格助詞〕でも",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どこも～〔否定〕",
+    "level": "N4",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "としたら",
+    "level": "N3",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どちらか",
+    "level": "N4",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どなたか",
+    "level": "N4",
+    "definition": "不確定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となったら",
+    "level": "N2",
+    "definition": "話題の導入",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となると",
+    "level": "N3",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "となれば",
+    "level": "N3",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どのくらい＜数量・時間＞",
+    "level": "N5",
+    "definition": "数量・時間",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どれくらい＜数量・時間＞",
+    "level": "N5",
+    "definition": "数量・時間",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAじゃないです",
+    "level": "N5",
+    "definition": "ナAの非過去 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAじゃなかったです",
+    "level": "N5",
+    "definition": "ナAの過去形 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAだったら",
+    "level": "N5",
+    "definition": "ナAのタラ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAで，〜",
+    "level": "N5",
+    "definition": "並立",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAではないです",
+    "level": "N5",
+    "definition": "ナAの非過去 丁寧体 否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAではなかったです",
+    "level": "N5",
+    "definition": "ナAの過去形 丁寧体否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ナAなら",
+    "level": "N4",
+    "definition": "ナAのバ形",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なに〔格助詞〕でも",
+    "level": "N4",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なにも～〔否定〕",
+    "level": "N4",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "に＜目的＞",
+    "level": "N5",
+    "definition": "目的・目標",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしても〜にしても",
+    "level": "N3",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にしろ〜にしろ",
+    "level": "N3",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にせよ",
+    "level": "N3",
+    "definition": "立場",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にせよ〜にせよ",
+    "level": "N3",
+    "definition": "逆接：譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のではないか",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のではないか",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば〜で",
+    "level": "N2",
+    "definition": "条件：確定条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ば〜ていた",
+    "level": "N3",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "はあるが",
+    "level": "N3",
+    "definition": "逆接",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まず",
+    "level": "N3",
+    "definition": "前",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まず",
+    "level": "N3",
+    "definition": "他のことはともかくとして",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "も",
+    "level": "N3",
+    "definition": "付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もっとも",
+    "level": "N3",
+    "definition": "程度",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ゆえに",
+    "level": "N2",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ようだ",
+    "level": "N3",
+    "definition": "様態",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "よく",
+    "level": "N5",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わ",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "わずか（に）",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をとおして",
+    "level": "N3",
+    "definition": "範囲",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "んじゃないか",
+    "level": "N4",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "んじゃないか",
+    "level": "N4",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といい",
+    "level": "N3",
+    "definition": "願望",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にかぎる",
+    "level": "N2",
+    "definition": "限定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にめんして",
+    "level": "N3",
+    "definition": "空間的関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "によれば",
+    "level": "N2",
+    "definition": "場面・場合",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もんじゃない",
+    "level": "N2",
+    "definition": "否定の断定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "まま",
+    "level": "N4",
+    "definition": "対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばよかった",
+    "level": "N3",
+    "definition": "条件：反事実条件",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ばどう",
+    "level": "N3",
+    "definition": "助言",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といってもかごんではない",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とも",
+    "level": "N2",
+    "definition": "逆接：仮定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だからといって",
+    "level": "N3",
+    "definition": "原因・理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からこそ",
+    "level": "N3",
+    "definition": "結果",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こともあって",
+    "level": "N2",
+    "definition": "理由の付加",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なくもない",
+    "level": "N3",
+    "definition": "部分否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "こそ〜ものの",
+    "level": "N3",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "だけましだ",
+    "level": "N3",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "のさなかに",
+    "level": "N3",
+    "definition": "状況・場合",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〔人〕をして〜させる",
+    "level": "N3",
+    "definition": "使役：強制",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "あらゆる",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "イAみ",
+    "level": "N2",
+    "definition": "接尾語",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いまだに",
+    "level": "N3",
+    "definition": "経過",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いわゆる",
+    "level": "N2",
+    "definition": "例示",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かつて",
+    "level": "N3",
+    "definition": "過去のあるとき",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ことあるごとに",
+    "level": "N4",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たいして〜［否定］",
+    "level": "N3",
+    "definition": "部分否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "つまり",
+    "level": "N3",
+    "definition": "言い換えれば",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "どうせ〜なら",
+    "level": "N3",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "とうてい〜［否定］",
+    "level": "N2",
+    "definition": "絶対に～ない",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "もはや〜［否定］",
+    "level": "N2",
+    "definition": "今となっては～ない",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〜と（は）うってかわって",
+    "level": "N2",
+    "definition": "一転して、完全に変わって",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〜（の）ならまだしも",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〜ずじまい",
+    "level": "N2",
+    "definition": "終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nたるや",
+    "level": "N2",
+    "definition": "主張",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "といわんばかりに",
+    "level": "N2",
+    "definition": "様子",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ならいざしらず",
+    "level": "N1",
+    "definition": "無関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ならともかく",
+    "level": "N2",
+    "definition": "例外",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "さして〜〔否定〕",
+    "level": "N2",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vたためしがない",
+    "level": "N3",
+    "definition": "強い否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nにのっとって",
+    "level": "N3",
+    "definition": "根拠",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Nをものともせずに",
+    "level": "N3",
+    "definition": "観点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vて（も）もともと",
+    "level": "N3",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "むしろ〜こそ",
+    "level": "N3",
+    "definition": "比較",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vまくる",
+    "level": "N1",
+    "definition": "継続",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "Vしめる",
+    "level": "N1",
+    "definition": "使役",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いずれにしても",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "けっして〜〔否定〕",
+    "level": "N4",
+    "definition": "程度の強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "ひょっとすると",
+    "level": "N3",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "〜かれ，〜かれ",
+    "level": "N1",
+    "definition": "評価",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかに〜か",
+    "level": "N2",
+    "definition": "問いかけ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "いかに〜か",
+    "level": "N2",
+    "definition": "推量",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "かならずしも〜［否定］",
+    "level": "N3",
+    "definition": "部分否定",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "たりえる",
+    "level": "N1",
+    "definition": "可能：可能",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "からこそ",
+    "level": "N3",
+    "definition": "強調",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でしょうか",
+    "level": "N4",
+    "definition": "確認",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "でしょうか",
+    "level": "N3",
+    "definition": "問いかけ",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なら",
+    "level": "N4",
+    "definition": "条件：仮定条件（時間関係なし）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "なら",
+    "level": "N4",
+    "definition": "条件：仮定条件（前件が後件のまえに起こる）",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "それゆえ（に）",
+    "level": "N3",
+    "definition": "関連",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にもかかわらず",
+    "level": "N3",
+    "definition": "逆接・譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というのは",
+    "level": "N3",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というものは",
+    "level": "N3",
+    "definition": "主題",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "をかねて",
+    "level": "N3",
+    "definition": "関連・対応",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にあっても",
+    "level": "N3",
+    "definition": "逆接・譲歩",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "るところだった",
+    "level": "N3",
+    "definition": "時間的前後",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "るところだった",
+    "level": "N3",
+    "definition": "起点・終点",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋の＋N",
+    "level": "N3",
+    "definition": "性質・属性",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋の＋N",
+    "level": "N3",
+    "definition": "同格",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋の＋N",
+    "level": "N3",
+    "definition": "が/をの代わりのの",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋の＋N",
+    "level": "N3",
+    "definition": "「と」「まで」などの助詞に「の」がつく",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "N＋の＋N",
+    "level": "N3",
+    "definition": "場所",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "にそって",
+    "level": "N3",
+    "definition": "空間的関係",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "がため（に）",
+    "level": "N3",
+    "definition": "目的",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "がため（に）",
+    "level": "N3",
+    "definition": "理由",
+    "source": "hagoromo"
+  },
+  {
+    "pattern": "というわけで",
+    "level": "N3",
+    "definition": "終点",
+    "source": "hagoromo"
+  }
+]
