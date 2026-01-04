@@ -218,6 +218,62 @@ export function getDefaultUserProfile(): BayesianUserProfile {
     };
 }
 
+/**
+ * Article lex_profile structure (as saved in database)
+ */
+export interface ArticleLexProfile {
+    A1_A2: number;      // Count of N5/N4 level words
+    B1_B2: number;      // Count of N3 level words
+    C1_plus: number;    // Count of N2/N1 level words
+    unknown: number;    // Count of unknown/unclassified words
+    contentWordCount?: number;
+    totalTokens?: number;
+}
+
+/**
+ * Calculate precise unknown rate for an article based on its vocabulary distribution
+ * and user's mastery profile.
+ * 
+ * Formula: Unknown Rate = Σ (word_count × (1 - mastery)) / total_words
+ * 
+ * @param lexProfile - Article's vocabulary distribution from lex_profile field
+ * @param userProfile - User's Bayesian profile with JLPT mastery levels
+ * @returns Predicted unknown rate (0.0 - 1.0)
+ */
+export function calculatePreciseUnknownRate(
+    lexProfile: ArticleLexProfile,
+    userProfile: BayesianUserProfile
+): number {
+    const { jlptMastery } = userProfile;
+
+    // Calculate unknown rate for each CEFR band based on JLPT mastery
+    // A1_A2 maps to average of N5/N4 mastery
+    const a1a2UnknownRate = 1 - (jlptMastery.N5 + jlptMastery.N4) / 2;
+
+    // B1_B2 maps to N3 mastery
+    const b1b2UnknownRate = 1 - jlptMastery.N3;
+
+    // C1_plus maps to average of N2/N1 mastery
+    const c1plusUnknownRate = 1 - (jlptMastery.N2 + jlptMastery.N1) / 2;
+
+    // Unknown words assumed 80% unknown (conservative estimate)
+    const unknownWordRate = 0.80;
+
+    // Calculate total words and weighted unknown count
+    const total = lexProfile.A1_A2 + lexProfile.B1_B2 + lexProfile.C1_plus + lexProfile.unknown;
+
+    if (total === 0) return 0;
+
+    const weightedUnknown =
+        lexProfile.A1_A2 * a1a2UnknownRate +
+        lexProfile.B1_B2 * b1b2UnknownRate +
+        lexProfile.C1_plus * c1plusUnknownRate +
+        lexProfile.unknown * unknownWordRate;
+
+    return Math.max(0, Math.min(1, weightedUnknown / total));
+}
+
+
 // ==================== Constants ====================
 
 /** Base prior probabilities by JLPT level (P(known | level)) */

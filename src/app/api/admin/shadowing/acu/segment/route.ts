@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/admin';
 import { chatJSON } from '@/lib/ai/client';
-import { 
-  validateMarkedSentence, 
-  parseUnits, 
-  splitSentences, 
-  buildS1Prompt, 
-  buildS2Prompt, 
+import {
+  validateMarkedSentence,
+  parseUnits,
+  splitSentences,
+  buildS1Prompt,
+  buildS2Prompt,
   isTextTooLong,
   type AcuResult,
-  type AcuUnit 
+  type AcuUnit
 } from '@/lib/acu-utils';
 import { supabase } from '@/lib/supabase';
 
@@ -34,15 +34,15 @@ interface S1S2Result {
  * 执行 S1 阶段（过度细分）
  */
 async function executeS1(
-  sentence: string, 
-  lang: string, 
+  sentence: string,
+  lang: string,
   userId?: string
 ): Promise<S1S2Result> {
   // 处理对话格式，临时移除 A: 和 B: 标识符
   const isDialogue = /^[ABab][:：]\s/.test(sentence);
   let processedSentence = sentence;
   let dialoguePrefix = '';
-  
+
   if (isDialogue) {
     const match = sentence.match(/^([ABab][:：])\s*(.*)$/);
     if (match) {
@@ -76,10 +76,10 @@ async function executeS1(
     });
 
     let marked = content.trim();
-    
+
     // 清理 LLM 返回结果中的多余引号（更彻底的清理）
-    while ((marked.startsWith('"') && marked.endsWith('"')) || 
-           (marked.startsWith("'") && marked.endsWith("'"))) {
+    while ((marked.startsWith('"') && marked.endsWith('"')) ||
+      (marked.startsWith("'") && marked.endsWith("'"))) {
       if (marked.startsWith('"') && marked.endsWith('"')) {
         marked = marked.slice(1, -1);
       }
@@ -87,24 +87,24 @@ async function executeS1(
         marked = marked.slice(1, -1);
       }
     }
-    
+
     // 如果是对话格式，恢复对话标识符，但确保标识符不会被分块
     if (isDialogue && dialoguePrefix) {
       // 在对话标识符后添加星号，确保标识符与内容连接
       marked = dialoguePrefix + '*' + marked;
     }
-    
+
     console.log(`S1 返回结果: "${marked}"`);
-    
+
     // 直接返回 S1 结果，不进行校验
     console.log(`S1 直接返回结果`);
     return { marked, success: true };
   } catch (error) {
     console.error(`S1 调用异常:`, error);
-    return { 
-      marked: '', 
-      success: false, 
-      error: `S1 调用失败: ${error instanceof Error ? error.message : String(error)}` 
+    return {
+      marked: '',
+      success: false,
+      error: `S1 调用失败: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 }
@@ -113,7 +113,7 @@ async function executeS1(
  * 执行 S2 阶段（最小化合并）
  */
 async function executeS2(
-  markedSentence: string, 
+  markedSentence: string,
   userId?: string
 ): Promise<S1S2Result> {
   const systemPrompt = `你是"最小可理解块"裁判。输入为句子的"过度细分版"（已插*）。
@@ -143,7 +143,7 @@ async function executeS2(
     });
 
     let marked = content.trim();
-    
+
     // 清理 LLM 返回结果中的多余引号
     if (marked.startsWith('"') && marked.endsWith('"')) {
       marked = marked.slice(1, -1);
@@ -151,7 +151,7 @@ async function executeS2(
     if (marked.startsWith("'") && marked.endsWith("'")) {
       marked = marked.slice(1, -1);
     }
-    
+
     // 校验结果
     if (validateMarkedSentence(markedSentence.replace(/\*/g, ''), marked)) {
       return { marked, success: true };
@@ -159,10 +159,10 @@ async function executeS2(
       return { marked, success: false, error: 'S2 校验失败' };
     }
   } catch (error) {
-    return { 
-      marked: '', 
-      success: false, 
-      error: `S2 调用失败: ${error instanceof Error ? error.message : String(error)}` 
+    return {
+      marked: '',
+      success: false,
+      error: `S2 调用失败: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 }
@@ -171,8 +171,8 @@ async function executeS2(
  * 处理单个句子的 S1 流程，包含重试逻辑（已删除 S2 阶段）
  */
 async function processSentence(
-  sentence: string, 
-  lang: string, 
+  sentence: string,
+  lang: string,
   userId?: string
 ): Promise<string> {
   // S1 阶段（带重试）
@@ -212,8 +212,8 @@ export async function POST(req: NextRequest) {
 
     // 检查文本长度
     if (isTextTooLong(text)) {
-      return NextResponse.json({ 
-        error: `文本过长（${text.length} 字符），请分批处理或缩短文本` 
+      return NextResponse.json({
+        error: `文本过长（${text.length} 字符），请分批处理或缩短文本`
       }, { status: 400 });
     }
 
@@ -246,7 +246,7 @@ export async function POST(req: NextRequest) {
     const processedSentences: string[] = new Array(sentences.length);
     let successCount = 0;
     let failCount = 0;
-    
+
     // 使用并发池处理句子
     const processSentenceWithRetry = async (sentenceInfo: any, index: number) => {
       try {
@@ -276,15 +276,15 @@ export async function POST(req: NextRequest) {
         const globalIndex = sentences.indexOf(sentenceInfo);
         return processSentenceWithRetry(sentenceInfo, globalIndex);
       });
-      
+
       await Promise.all(promises);
-      
+
       // 批次间延迟，避免API限制
       if (batches.indexOf(batch) < batches.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 200));
       }
     }
-    
+
     console.log(`ACU 处理完成: 成功 ${successCount}/${sentences.length} 句`);
     if (failCount > 0) {
       console.warn(`有 ${failCount} 个句子处理失败，使用原句作为回退`);
@@ -292,7 +292,7 @@ export async function POST(req: NextRequest) {
 
     // 合并所有句子的结果
     const acu_marked = processedSentences.join(' ');
-    
+
     // 生成 ACU units
     const allUnits: AcuUnit[] = [];
     for (let i = 0; i < sentences.length; i++) {
@@ -308,7 +308,7 @@ export async function POST(req: NextRequest) {
       sentenceCount: sentences.length
     };
 
-    // 如果传入了 id，更新数据库
+    // 如果传入了 id，更新数据库（同时生成 lex_profile）
     if (id) {
       try {
         // 先获取现有的 notes 数据，避免覆盖
@@ -317,23 +317,78 @@ export async function POST(req: NextRequest) {
           .select('notes')
           .eq('id', id)
           .single();
-        
+
         if (fetchError) {
           console.error('获取现有数据失败:', fetchError);
           return NextResponse.json({ error: '获取现有数据失败' }, { status: 500 });
         }
-        
-        // 保留现有的 notes 数据，只更新 ACU 相关字段
+
+        // 生成 lex_profile（使用与 lex-profile-test 相同的配置）
+        let lexProfileData: any = null;
+        try {
+          console.log(`开始生成 Lex Profile: lang=${lang}`);
+
+          // 动态导入分析函数
+          const { analyzeLexProfileAsync } = await import('@/lib/recommendation/lexProfileAnalyzer');
+
+          // 使用 Kuromoji 分词器和 Combined 词典（位置参数）
+          // analyzeLexProfileAsync(text, lang, jaTokenizer, jaVocabDict, jaGrammarDict)
+          const analysisResult = await analyzeLexProfileAsync(
+            text,
+            lang as 'ja' | 'zh' | 'en',
+            'kuromoji',   // jaTokenizer
+            'combined',   // jaVocabDict (Combined Strong = 8,805词)
+            'combined'    // jaGrammarDict (Combined Strong = 3,273模式)
+          );
+
+          // 提取词汇分布和频度信息
+          lexProfileData = {
+            A1_A2: analysisResult.lexProfile.A1_A2,
+            B1_B2: analysisResult.lexProfile.B1_B2,
+            C1_plus: analysisResult.lexProfile.C1_plus,
+            unknown: analysisResult.lexProfile.unknown,
+            contentWordCount: analysisResult.contentWordCount,
+            totalTokens: analysisResult.tokens,
+            // 保存详细的词汇分布（用于更精确的计算）
+            tokenDetails: analysisResult.details?.tokenList?.slice(0, 100).map(t => ({
+              token: t.token,
+              level: t.originalLevel || t.broadCEFR || 'unknown',
+              frequencyRank: t.frequencyRank,
+              isContentWord: t.isContentWord,
+            })),
+          };
+
+          console.log(`Lex Profile 生成成功:`, {
+            A1_A2: lexProfileData.A1_A2,
+            B1_B2: lexProfileData.B1_B2,
+            C1_plus: lexProfileData.C1_plus,
+            unknown: lexProfileData.unknown,
+            contentWordCount: lexProfileData.contentWordCount,
+          });
+        } catch (lexError) {
+          console.error('Lex Profile 生成失败:', lexError);
+          // 继续保存 ACU，不影响主流程
+        }
+
+        // 保留现有的 notes 数据，更新 ACU 和 lex_profile 字段
         const existingNotes = existingDraft?.notes || {};
+        const updateData: any = {
+          notes: {
+            ...existingNotes,
+            acu_marked: result.acu_marked,
+            acu_units: result.units
+          }
+        };
+
+        // 如果 lex_profile 生成成功，保存到 notes.lex_profile
+        if (lexProfileData) {
+          updateData.notes.lex_profile = lexProfileData;
+          // 注意：shadowing_drafts 表没有独立的 lex_profile 字段，只存在 notes 里
+        }
+
         const { error } = await auth.supabase
           .from('shadowing_drafts')
-          .update({
-            notes: {
-              ...existingNotes,
-              acu_marked: result.acu_marked,
-              acu_units: result.units
-            }
-          })
+          .update(updateData)
           .eq('id', id);
 
         if (error) {
@@ -357,8 +412,8 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('ACU 生成失败:', error);
-    return NextResponse.json({ 
-      error: `处理失败: ${error instanceof Error ? error.message : String(error)}` 
+    return NextResponse.json({
+      error: `处理失败: ${error instanceof Error ? error.message : String(error)}`
     }, { status: 500 });
   }
 }

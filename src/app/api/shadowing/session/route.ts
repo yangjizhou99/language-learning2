@@ -122,6 +122,7 @@ export async function POST(req: NextRequest) {
       selected_words = [], // 添加selected_words参数
       notes = {},
       quiz_result = null, // Quiz comprehension test result
+      prediction_stats = null, // 预测统计数据 { predictedUnknown: string[], threshold: number }
     } = body;
 
     if (!item_id) {
@@ -236,6 +237,70 @@ export async function POST(req: NextRequest) {
         } catch (vocabImportError) {
           console.error('Error importing vocabulary:', vocabImportError);
           // Don't fail the session save if vocab import fails
+        }
+      }
+
+      // 1.5 Calculate and save prediction accuracy statistics
+      // Record stats even if no words marked (this means all predictions were "false positives" from user's perspective)
+      if (prediction_stats?.predictedUnknown?.length > 0) {
+        try {
+          const predictedSet = new Set<string>(prediction_stats.predictedUnknown as string[]);
+          const markedSet = new Set<string>(selected_words.map((w: Record<string, any>) => w.text as string));
+
+          // Calculate TP, FP, FN
+          let truePositive = 0;
+          let falsePositive = 0;
+          let falseNegative = 0;
+
+          for (const word of predictedSet) {
+            if (markedSet.has(word)) {
+              truePositive++;
+            } else {
+              falsePositive++;
+            }
+          }
+          for (const word of markedSet) {
+            if (!predictedSet.has(word)) {
+              falseNegative++;
+            }
+          }
+
+          // Calculate precision, recall, F1
+          const precision = truePositive / (truePositive + falsePositive) || 0;
+          const recall = truePositive / (truePositive + falseNegative) || 0;
+          const f1Score = precision + recall > 0
+            ? (2 * precision * recall) / (precision + recall)
+            : 0;
+
+          const accuracyStats = {
+            predictedCount: predictedSet.size,
+            markedCount: markedSet.size,
+            truePositive,
+            falsePositive,
+            falseNegative,
+            precision: Math.round(precision * 1000) / 1000,
+            recall: Math.round(recall * 1000) / 1000,
+            f1Score: Math.round(f1Score * 1000) / 1000,
+            threshold: prediction_stats.threshold || 0.5,
+            timestamp: new Date().toISOString(),
+          };
+
+          // Save to session notes
+          const existingNotes = session.notes || {};
+          await supabase
+            .from('shadowing_sessions')
+            .update({
+              notes: {
+                ...existingNotes,
+                prediction_accuracy: accuracyStats,
+              },
+            })
+            .eq('id', session.id);
+
+          console.log('[PredictionStats] Saved accuracy:', accuracyStats);
+        } catch (predStatsError) {
+          console.error('Error saving prediction stats:', predStatsError);
+          // Don't fail the session save if prediction stats fails
         }
       }
 

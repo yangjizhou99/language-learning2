@@ -106,9 +106,11 @@ import Link from 'next/link';
 import { loadFilters as loadShadowingFilters, saveFilters as saveShadowingFilters } from '@/lib/shadowingFilterStorage';
 import { deriveKanjiFuriganaSegments, sanitizeJapaneseReadingToHiragana } from '@/lib/japanese/furigana';
 import { performSimpleAnalysis } from '@/lib/shadowing/simpleAnalysis';
-import { getNextRecommendedItem, getRecommendationReason, RecommendationResult } from '@/lib/recommendation/nextItem';
+import { getNextRecommendedItem, getRecommendationReason, RecommendationResult, bayesianToUnknownRate, bayesianToRecommendedLevel } from '@/lib/recommendation/nextItem';
 import { NextPracticeCard } from '@/components/recommendation/NextPracticeCard';
 import { ThemePreference } from '@/lib/recommendation/preferences';
+import { BayesianUserProfile, calculatePreciseUnknownRate, ArticleLexProfile, predictKnowledgeProbability, extractWordFeatures, WordFeatures } from '@/lib/recommendation/vocabularyPredictor';
+import { usePredictedWords } from '@/hooks/usePredictedWords';
 
 // 题目数据类型
 interface ShadowingItem {
@@ -150,7 +152,24 @@ interface ShadowingItem {
   notes?: {
     acu_marked?: string;
     acu_units?: Array<{ span: string; start: number; end: number; sid: number }>;
+    lex_profile?: {
+      A1_A2: number;
+      B1_B2: number;
+      C1_plus: number;
+      unknown: number;
+      contentWordCount?: number;
+      totalTokens?: number;
+    };
     [key: string]: any;
+  };
+  // Direct lex_profile field (also stored at top level)
+  lex_profile?: {
+    A1_A2: number;
+    B1_B2: number;
+    C1_plus: number;
+    unknown: number;
+    contentWordCount?: number;
+    totalTokens?: number;
   };
   stats: {
     recordingCount: number;
@@ -485,6 +504,8 @@ export default function ShadowingPage() {
   const [nextRoleSuggestion, setNextRoleSuggestion] = useState<string | null>(null);
   // 依据用户历史表现的推荐等级（按语言）
   const [recommendedLevel, setRecommendedLevel] = useState<number | null>(null);
+  // Bayesian user profile for precise vocabulary prediction
+  const [bayesianProfile, setBayesianProfile] = useState<BayesianUserProfile | null>(null);
 
   // 故事线来源信息（用于返回故事线）
   const [storylineSource, setStorylineSource] = useState<{
@@ -624,6 +645,58 @@ export default function ShadowingPage() {
   const [loading, setLoading] = useState(false);
   const [currentItem, setCurrentItem] = useState<ShadowingItem | null>(null);
   const [currentSession, setCurrentSession] = useState<ShadowingSession | null>(null);
+
+  // Generate word predictions map for current item using Bayesian algorithm
+  const wordPredictions = useMemo(() => {
+    const predictions = new Map<string, { probability: number; confidence: 'high' | 'medium' | 'low' }>();
+
+    // Get tokenDetails from lex_profile (stored in notes.lex_profile.tokenDetails)
+    const lexProfile = currentItem?.notes?.lex_profile as { tokenDetails?: Array<{ token: string; level: string; frequencyRank?: number; isContentWord?: boolean }> } | undefined;
+    const tokenDetails = lexProfile?.tokenDetails;
+    if (!tokenDetails || !bayesianProfile) {
+      return predictions;
+    }
+
+    // Convert bayesianProfile to UserProfileForPrediction format
+    const userProfile = {
+      nativeLang: 'zh', // Default to Chinese as native language
+      abilityLevel: bayesianProfile.estimatedLevel || 3.0,
+      vocabUnknownRate: {
+        A1_A2: 1 - (bayesianProfile.jlptMastery.N5 + bayesianProfile.jlptMastery.N4) / 2,
+        B1_B2: 1 - bayesianProfile.jlptMastery.N3,
+        C1_plus: 1 - (bayesianProfile.jlptMastery.N2 + bayesianProfile.jlptMastery.N1) / 2,
+      },
+    };
+
+    // Calculate prediction for each token
+    for (const token of tokenDetails) {
+      if (!token.token || predictions.has(token.token)) continue;
+
+      try {
+        // Extract word features
+        const wordFeatures: WordFeatures = {
+          surface: token.token,
+          lemma: token.token,
+          level: token.level || 'unknown',
+          frequencyRank: token.frequencyRank || -1,
+          isKanji: /[\u4e00-\u9faf]/.test(token.token),
+          isLoanword: /^[ァ-ヴー]+$/.test(token.token),
+          length: token.token.length,
+        };
+
+        // Calculate prediction (no evidence for now)
+        const prediction = predictKnowledgeProbability(wordFeatures, userProfile, null);
+        predictions.set(token.token, {
+          probability: prediction.knownProbability,
+          confidence: prediction.confidence,
+        });
+      } catch (e) {
+        // Skip tokens that fail prediction
+      }
+    }
+
+    return predictions;
+  }, [currentItem, bayesianProfile]);
 
   // Difficulty Rating State
   const [selfDifficulty, setSelfDifficulty] = useState<'too_easy' | 'just_right' | 'a_bit_hard' | 'too_hard' | null>(null);
@@ -1994,13 +2067,16 @@ export default function ShadowingPage() {
         if (!session) return;
         const effectiveLang = lang || 'zh';
 
-        // Parallel fetch: recommended level API + profile vocab rate
+        // Parallel fetch: recommended level API + Bayesian vocabulary profile
         const [recResp, profileResp] = await Promise.all([
           fetch(`/api/shadowing/recommended?lang=${effectiveLang}`, {
             headers: { Authorization: `Bearer ${session.access_token}` },
             credentials: 'include',
           }),
-          supabase.from('profiles').select('vocab_unknown_rate').eq('id', user.id).single()
+          fetch('/api/vocabulary/profile', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            credentials: 'include',
+          })
         ]);
 
         if (recResp.ok) {
@@ -2010,8 +2086,26 @@ export default function ShadowingPage() {
           }
         }
 
-        if (profileResp.data?.vocab_unknown_rate) {
-          setVocabUnknownRate(profileResp.data.vocab_unknown_rate);
+        // Use Bayesian profile to set vocab unknown rate
+        if (profileResp.ok) {
+          const profileData = await profileResp.json();
+          console.log('[Bayesian Debug] Profile API response:', profileData);
+          if (profileData?.success && profileData?.profile) {
+            const bayesianProfile = profileData.profile as BayesianUserProfile;
+            console.log('[Bayesian Debug] jlptMastery:', bayesianProfile.jlptMastery);
+            const unknownRate = bayesianToUnknownRate(bayesianProfile);
+            console.log('[Bayesian Debug] Converted unknownRate:', unknownRate);
+            setVocabUnknownRate(unknownRate);
+            // Store the full profile for precise per-article prediction
+            setBayesianProfile(bayesianProfile);
+
+            // Optionally update recommended level from Bayesian profile
+            if (!recResp.ok && bayesianProfile.estimatedLevel) {
+              setRecommendedLevel(Math.round(bayesianProfile.estimatedLevel));
+            }
+          }
+        } else {
+          console.error('[Bayesian Debug] Profile API failed:', profileResp.status);
         }
 
       } catch {
@@ -3540,7 +3634,8 @@ export default function ShadowingPage() {
       const allWords = [...previousWords, ...selectedWords];
 
       // Prepare selected_words with CEFR data for backend processing
-      const selected_words_payload = selectedWords.map(w => {
+      // Use allWords (previousWords + selectedWords) since words marked in step 2 are in previousWords
+      const selected_words_payload = allWords.map(w => {
         const explanation = explanationCache[w.word] || userVocab.find(v => v.term === w.word)?.explanation;
         return {
           text: w.word,
@@ -3551,6 +3646,16 @@ export default function ShadowingPage() {
           explanation: explanation // Pass full explanation if needed
         };
       });
+
+      // Build prediction_stats for accuracy tracking
+      const predictedUnknownWords = [...wordPredictions.entries()]
+        .filter(([_, pred]) => pred.probability < 0.5)
+        .map(([word]) => word);
+
+      console.log('[PredictionStats Debug] wordPredictions size:', wordPredictions.size);
+      console.log('[PredictionStats Debug] predictedUnknownWords count:', predictedUnknownWords.length);
+      console.log('[PredictionStats Debug] selected_words count:', selected_words_payload.length);
+      console.log('[PredictionStats Debug] bayesianProfile exists:', !!bayesianProfile);
 
       await fetch('/api/shadowing/session', {
         method: 'POST',
@@ -3570,6 +3675,10 @@ export default function ShadowingPage() {
             answers: quizResult.answers,
             correct_count: quizResult.correctCount,
             total: quizResult.total,
+          } : null,
+          prediction_stats: predictedUnknownWords.length > 0 ? {
+            predictedUnknown: predictedUnknownWords,
+            threshold: 0.5,
           } : null,
         }),
       });
@@ -4296,20 +4405,63 @@ export default function ShadowingPage() {
                                     );
                                     const reason = recResult?.reason;
 
-                                    // Debug log for specific item if needed, or just rely on general observation
-                                    // if (it.level === 1) console.log('Item:', it.title, 'ThemeID:', it.theme_id, 'Pref:', pref, 'Reason:', reason);
+                                    // Calculate estimated unknown rate for this item
+                                    // Use lex_profile for precise calculation, fallback to level-based interpolation
+                                    const itemLexProfile = it.lex_profile || it.notes?.lex_profile;
+                                    let estimatedRate: number;
 
-                                    if (reason) {
-                                      return (
-                                        <div className="mb-2">
-                                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                                            <Sparkles className="w-3 h-3 mr-1" />
-                                            {reason}
+                                    if (itemLexProfile && bayesianProfile) {
+                                      // Precise calculation using article's vocabulary distribution
+                                      estimatedRate = calculatePreciseUnknownRate(
+                                        itemLexProfile as ArticleLexProfile,
+                                        bayesianProfile
+                                      );
+                                    } else {
+                                      // Fallback: interpolate between CEFR bands based on article level
+                                      const level = it.level || 1;
+                                      if (level <= 1) {
+                                        estimatedRate = vocabUnknownRate['A1_A2'] || 0;
+                                      } else if (level <= 2) {
+                                        const low = vocabUnknownRate['A1_A2'] || 0;
+                                        const high = vocabUnknownRate['B1_B2'] || 0;
+                                        estimatedRate = low + (high - low) * (level - 1);
+                                      } else if (level <= 3) {
+                                        estimatedRate = vocabUnknownRate['B1_B2'] || 0;
+                                      } else if (level <= 4) {
+                                        const low = vocabUnknownRate['B1_B2'] || 0;
+                                        const high = vocabUnknownRate['C1_plus'] || 0;
+                                        estimatedRate = low + (high - low) * (level - 3);
+                                      } else {
+                                        estimatedRate = vocabUnknownRate['C1_plus'] || 0;
+                                      }
+                                    }
+
+                                    const ratePercent = Math.round(estimatedRate * 100);
+
+                                    // Color coding based on rate
+                                    let rateColor = 'bg-green-50 text-green-700 border-green-100';
+                                    if (ratePercent > 20) rateColor = 'bg-red-50 text-red-700 border-red-100';
+                                    else if (ratePercent > 10) rateColor = 'bg-yellow-50 text-yellow-700 border-yellow-100';
+
+                                    return (
+                                      <>
+                                        {/* Prediction Badge - shows estimated unknown rate */}
+                                        <div className="mb-1">
+                                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${rateColor}`}>
+                                            📊 预测生词率: {ratePercent}%
                                           </span>
                                         </div>
-                                      );
-                                    }
-                                    return null;
+                                        {/* Recommendation reason */}
+                                        {reason && (
+                                          <div className="mb-2">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                              <Sparkles className="w-3 h-3 mr-1" />
+                                              {reason}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </>
+                                    );
                                   })()}
                                   <div className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">{it.text.substring(0, 60)}...</div>
                                   <div className="flex items-center gap-2 flex-wrap">
@@ -4665,6 +4817,7 @@ export default function ShadowingPage() {
                                   units={currentItem.notes.acu_units}
                                   onConfirm={handleWordSelect}
                                   selectedWords={[...previousWords, ...selectedWords]}
+                                  wordPredictions={wordPredictions}
                                 />
                               ) : (
                                 <div className="text-lg leading-[2.05]">

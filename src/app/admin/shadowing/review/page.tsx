@@ -1006,6 +1006,108 @@ export default function ShadowingReviewList() {
     }
   }
 
+  // Lex Profile 批量生成功能
+  async function generateLexProfileSelected() {
+    if (selected.size === 0) {
+      toast.error('请先选择要生成 Lex Profile 的草稿');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `确定要为选中 ${selected.size} 个草稿生成 Lex Profile 吗？\n此操作将分析文章词汇分布，用于预测生词率。`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setTtsLoading(true);
+    setCurrentOperation('acu'); // Use 'acu' since lex_profile is now integrated into ACU generation
+    setTtsTotal(selected.size);
+    setTtsDone(0);
+    setLog('开始生成 Lex Profile...');
+
+    const ids = Array.from(selected);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      // 分批处理
+      const batchSize = Math.max(1, Math.min(concurrency, ids.length));
+      for (let i = 0; i < ids.length; i += batchSize) {
+        const batch = ids.slice(i, i + batchSize);
+        const batchNum = Math.floor(i / batchSize) + 1;
+        const totalBatches = Math.ceil(ids.length / batchSize);
+
+        appendLog(`🔄 处理批次 ${batchNum}/${totalBatches} (${batch.length}个任务)`);
+
+        for (const id of batch) {
+          const item = items.find((x) => x.id === id);
+          setTtsCurrent(`生成 Lex Profile: ${item?.title || id}`);
+
+          try {
+            const response = await fetch('/api/admin/shadowing/batch-lex-profile', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({ itemIds: [id] }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || `HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.success && result.results?.[0]?.success) {
+              appendLog(`✅ Lex Profile 生成成功 (${id}): ${item?.title || id}`);
+              successCount++;
+            } else {
+              throw new Error(result.results?.[0]?.error || 'Lex Profile 生成失败');
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.error('Lex Profile 生成失败:', { id, message });
+            appendLog(`❌ Lex Profile 生成失败 (${id}): ${message}`);
+            failCount++;
+          } finally {
+            setTtsDone((v) => v + 1);
+          }
+        }
+
+        if (throttle > 0 && i + batchSize < ids.length) {
+          await wait(throttle);
+        }
+      }
+
+      if (failCount === 0) {
+        toast.success(`Lex Profile 生成完成：${ids.length}/${ids.length}`);
+      } else if (failCount < ids.length) {
+        toast.success(`部分生成成功：${successCount}/${ids.length}`);
+        toast.error(`有 ${failCount} 个草稿生成失败，请查看日志`);
+      } else {
+        toast.error('Lex Profile 生成失败，请检查日志');
+      }
+
+      setSelected(new Set());
+      setQ((q) => q + ' ');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Lex Profile 生成失败：${message}`);
+    } finally {
+      setTtsCurrent('');
+      setTtsLoading(false);
+      setCurrentOperation('tts');
+    }
+  }
+
   async function publishSelected() {
     if (selected.size === 0) return;
     const ids = Array.from(selected);
