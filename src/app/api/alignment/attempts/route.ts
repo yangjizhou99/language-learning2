@@ -103,8 +103,8 @@ async function getAuthSupabase(req: NextRequest) {
       get(name: string) {
         return cookieStore.get(name)?.value;
       },
-      set() {},
-      remove() {},
+      set() { },
+      remove() { },
     },
   });
 }
@@ -246,6 +246,7 @@ export async function POST(req: NextRequest) {
           },
           { role: 'user', content: prompt },
         ],
+        userId: user.id,
       });
       usage = normUsage(rawUsage);
       evaluation = JSON.parse(content);
@@ -258,17 +259,17 @@ export async function POST(req: NextRequest) {
       evaluation?.errors,
     )
       ? evaluation.errors
-          .map((item: any) => ({
-            type: item?.type || 'error',
-            original: item?.original || '',
-            correction: item?.correction || '',
-          }))
-          .filter((item: { type: string; original: string; correction: string }) => item.original && item.correction)
+        .map((item: any) => ({
+          type: item?.type || 'error',
+          original: item?.original || '',
+          correction: item?.correction || '',
+        }))
+        .filter((item: { type: string; original: string; correction: string }) => item.original && item.correction)
       : [];
     const normalizedSuggestions: string[] = Array.isArray(evaluation?.suggestions)
       ? evaluation.suggestions
-          .filter((s: any) => typeof s === 'string' && s.trim())
-          .map((s: string) => s.trim())
+        .filter((s: any) => typeof s === 'string' && s.trim())
+        .map((s: string) => s.trim())
       : [];
     const taskCompleted = Boolean(evaluation?.task_completed);
     const overallScore = taskCompleted ? (normalizedErrors.length === 0 ? 100 : 80) : 40;
@@ -288,9 +289,9 @@ export async function POST(req: NextRequest) {
     const wordCount = isDialogue ? null : countWords(userText);
     const turnCount = isDialogue
       ? userText
-          .split('\n')
-          .map((line) => line.trim())
-          .filter(Boolean).length
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean).length
       : null;
 
     const { data: lastAttempt } = await supabaseAdmin
