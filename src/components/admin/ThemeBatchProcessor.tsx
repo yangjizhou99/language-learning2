@@ -42,6 +42,7 @@ interface Theme {
     level: number;
     subtopic_count?: number;
     draft_count?: number;
+    item_count?: number;
 }
 
 interface CandidateVoice {
@@ -80,6 +81,7 @@ export default function ThemeBatchProcessor() {
     const [doSceneVector, setDoSceneVector] = useState(false);
     const [doQuiz, setDoQuiz] = useState(false);
     const [doUnpublish, setDoUnpublish] = useState(false);
+    const [doLexProfile, setDoLexProfile] = useState(false);
     const [transTargetLanguages, setTransTargetLanguages] = useState<string[]>([]);
 
     // 跳过选项
@@ -87,6 +89,7 @@ export default function ThemeBatchProcessor() {
     const [skipExistingSceneVector, setSkipExistingSceneVector] = useState(true);
     const [skipExistingACU, setSkipExistingACU] = useState(true);
     const [skipExistingQuiz, setSkipExistingQuiz] = useState(true);
+    const [skipExistingLexProfile, setSkipExistingLexProfile] = useState(true);
 
     // 性能参数
     const [themeConcurrency, setThemeConcurrency] = useState(2);
@@ -120,10 +123,10 @@ export default function ThemeBatchProcessor() {
                 .order('created_at', { ascending: false });
 
             if (!error && data) {
-                // 获取每个主题的草稿数量
+                // 获取每个主题的草稿和已发布项目数量
                 const themesWithCount = await Promise.all(
                     data.map(async (theme) => {
-                        const [subtopicRes, draftRes] = await Promise.all([
+                        const [subtopicRes, draftRes, itemRes] = await Promise.all([
                             supabase
                                 .from('shadowing_subtopics')
                                 .select('*', { count: 'exact', head: true })
@@ -133,11 +136,16 @@ export default function ThemeBatchProcessor() {
                                 .select('*', { count: 'exact', head: true })
                                 .eq('theme_id', theme.id)
                                 .eq('status', 'draft'),
+                            supabase
+                                .from('shadowing_items')
+                                .select('*', { count: 'exact', head: true })
+                                .eq('theme_id', theme.id),
                         ]);
                         return {
                             ...theme,
                             subtopic_count: subtopicRes.count || 0,
                             draft_count: draftRes.count || 0,
+                            item_count: itemRes.count || 0,
                         };
                     })
                 );
@@ -229,23 +237,32 @@ export default function ThemeBatchProcessor() {
                 .eq('status', 'draft')
                 .order('created_at', { ascending: true });
 
-            if (!drafts || drafts.length === 0) {
+            // 检查是否有草稿需要处理
+            const hasDrafts = drafts && drafts.length > 0;
+            const needsDrafts = doAudio || doACU || doTranslation || doPublish || doQuiz;
+
+            // 如果需要草稿但没有草稿，且不需要词汇分析，则返回
+            if (!hasDrafts && needsDrafts && !doLexProfile) {
                 setLogs(prev => [...prev, `⚠️ ${theme?.title}: 无待处理草稿`]);
                 setThemeStatuses(prev => ({ ...prev, [themeId]: 'done' }));
                 return true;
             }
 
-            setLogs(prev => [...prev, `📋 ${theme?.title}: 开始处理 ${drafts.length} 个草稿`]);
-
+            // 如果有草稿或需要其他处理
+            if (hasDrafts) {
+                setLogs(prev => [...prev, `📋 ${theme?.title}: 开始处理 ${drafts.length} 个草稿`]);
+            } else if (doLexProfile) {
+                setLogs(prev => [...prev, `📋 ${theme?.title}: 开始词汇分析（仅已发布项目）`]);
+            }
 
             // 生成语音
-            if (doAudio) {
-                await processDraftsBatch(drafts, themeId, 'audio', headers, theme?.lang || 'zh', voiceMapping);
+            if (doAudio && hasDrafts) {
+                await processDraftsBatch(drafts!, themeId, 'audio', headers, theme?.lang || 'zh', voiceMapping);
             }
 
             // 生成ACU
-            if (doACU) {
-                await processDraftsBatch(drafts, themeId, 'acu', headers, theme?.lang || 'zh');
+            if (doACU && hasDrafts) {
+                await processDraftsBatch(drafts!, themeId, 'acu', headers, theme?.lang || 'zh');
             }
 
             // 生成场景向量（针对小主题）
@@ -254,8 +271,8 @@ export default function ThemeBatchProcessor() {
             }
 
             // 生成翻译
-            if (doTranslation && transTargetLanguages.length > 0) {
-                await processDraftsBatch(drafts, themeId, 'translation', headers, theme?.lang || 'zh');
+            if (doTranslation && transTargetLanguages.length > 0 && hasDrafts) {
+                await processDraftsBatch(drafts!, themeId, 'translation', headers, theme?.lang || 'zh');
             }
 
             // 生成理解题 (在发布前处理，因为 API 查询 status='draft' 的草稿)
@@ -264,13 +281,18 @@ export default function ThemeBatchProcessor() {
             }
 
             // 自动发布 (在理解题生成后发布，quiz_questions 会一起复制到 items)
-            if (doPublish) {
-                await processDraftsBatch(drafts, themeId, 'publish', headers, theme?.lang || 'zh');
+            if (doPublish && hasDrafts) {
+                await processDraftsBatch(drafts!, themeId, 'publish', headers, theme?.lang || 'zh');
             }
 
             // 撤回发布 (将已发布的 items 删除，并将 drafts 恢复为 draft 状态)
             if (doUnpublish) {
                 await processThemeUnpublish(themeId, headers);
+            }
+
+            // 批量词汇分析 (分析草稿和已发布项目的词汇等级)
+            if (doLexProfile) {
+                await processThemeLexProfile(themeId, headers);
             }
 
             setThemeStatuses(prev => ({ ...prev, [themeId]: 'done' }));
@@ -509,6 +531,106 @@ export default function ThemeBatchProcessor() {
             setLogs(prev => [...prev, `   理解题: ${completed}成功 ${failed}失败`]);
         } catch (e: any) {
             setLogs(prev => [...prev, `   理解题: ${e.message}`]);
+        }
+    }
+
+    // 批量词汇分析：分析主题下所有草稿和已发布项目的词汇等级
+    async function processThemeLexProfile(themeId: string, headers: Record<string, string>) {
+        const theme = themes.find(t => t.id === themeId);
+
+        setCurrentProgress({
+            step: `${theme?.title} - 词汇分析`,
+            current: 0,
+            total: 1,
+            currentItem: ''
+        });
+
+        try {
+            // 获取草稿和已发布项目的ID
+            const [draftsRes, itemsRes] = await Promise.all([
+                supabase.from('shadowing_drafts').select('id, lex_profile').eq('theme_id', themeId),
+                supabase.from('shadowing_items').select('id, lex_profile').eq('theme_id', themeId),
+            ]);
+
+            const allItems: { id: string; type: 'draft' | 'item'; hasLexProfile: boolean }[] = [];
+
+            // 收集草稿
+            if (draftsRes.data) {
+                draftsRes.data.forEach(d => {
+                    const hasLexProfile = !!d.lex_profile;
+                    if (!skipExistingLexProfile || !hasLexProfile) {
+                        allItems.push({ id: d.id, type: 'draft', hasLexProfile });
+                    }
+                });
+            }
+
+            // 收集已发布项目
+            if (itemsRes.data) {
+                itemsRes.data.forEach(i => {
+                    const hasLexProfile = !!i.lex_profile;
+                    if (!skipExistingLexProfile || !hasLexProfile) {
+                        allItems.push({ id: i.id, type: 'item', hasLexProfile });
+                    }
+                });
+            }
+
+            if (allItems.length === 0) {
+                setLogs(prev => [...prev, `   词汇分析: 无待分析项目（已跳过已有分析）`]);
+                return;
+            }
+
+            setCurrentProgress(prev => ({
+                ...prev,
+                total: allItems.length,
+                currentItem: `共 ${allItems.length} 个项目待分析`
+            }));
+
+            let success = 0;
+            let fail = 0;
+
+            // 分批处理
+            for (let i = 0; i < allItems.length; i += draftConcurrency) {
+                const batch = allItems.slice(i, Math.min(i + draftConcurrency, allItems.length));
+
+                const results = await Promise.all(
+                    batch.map(async (item) => {
+                        try {
+                            const response = await fetch('/api/admin/shadowing/batch-lex-profile', {
+                                method: 'POST',
+                                headers,
+                                body: JSON.stringify({
+                                    itemIds: [item.id],
+                                    scope: item.type === 'draft' ? 'drafts' : 'items'
+                                }),
+                            });
+
+                            if (!response.ok) return false;
+
+                            const result = await response.json();
+                            return result.success && result.results?.[0]?.success;
+                        } catch (e) {
+                            return false;
+                        }
+                    })
+                );
+
+                success += results.filter(r => r).length;
+                fail += results.filter(r => !r).length;
+
+                setCurrentProgress(prev => ({
+                    ...prev,
+                    current: Math.min(i + batch.length, allItems.length)
+                }));
+
+                // 节流延迟
+                if (throttle > 0 && i + draftConcurrency < allItems.length) {
+                    await wait(throttle);
+                }
+            }
+
+            setLogs(prev => [...prev, `   词汇分析: ${success}成功 ${fail}失败`]);
+        } catch (e: any) {
+            setLogs(prev => [...prev, `   词汇分析: ${e.message}`]);
         }
     }
 
@@ -840,6 +962,10 @@ export default function ThemeBatchProcessor() {
         const theme = themes.find(t => t.id === id);
         return sum + (theme?.draft_count || 0);
     }, 0);
+    const totalItems = Array.from(selectedThemes).reduce((sum, id) => {
+        const theme = themes.find(t => t.id === id);
+        return sum + (theme?.item_count || 0);
+    }, 0);
 
     const getStatusIcon = (status: ThemeStatus) => {
         switch (status) {
@@ -928,7 +1054,10 @@ export default function ThemeBatchProcessor() {
                                     <Badge variant="secondary">L{theme.level}</Badge>
                                     <span className="flex-1 truncate">{theme.title}</span>
                                     <span className="text-muted-foreground text-xs">
-                                        {theme.draft_count}个草稿
+                                        {(theme.draft_count || 0) > 0 && `${theme.draft_count}草稿`}
+                                        {(theme.draft_count || 0) > 0 && (theme.item_count || 0) > 0 && ' / '}
+                                        {(theme.item_count || 0) > 0 && <span className="text-green-600">{theme.item_count}已发布</span>}
+                                        {(theme.draft_count || 0) === 0 && (theme.item_count || 0) === 0 && '无内容'}
                                     </span>
                                 </div>
                             ))}
@@ -939,8 +1068,9 @@ export default function ThemeBatchProcessor() {
                 {/* 选中统计 */}
                 {selectedCount > 0 && (
                     <div className="text-sm text-muted-foreground">
-                        已选择 <span className="font-medium text-foreground">{selectedCount}</span> 个主题，
-                        共 <span className="font-medium text-foreground">{totalDrafts}</span> 个草稿
+                        已选择 <span className="font-medium text-foreground">{selectedCount}</span> 个主题
+                        {totalDrafts > 0 && <span>，{totalDrafts} 个草稿</span>}
+                        {totalItems > 0 && <span className="text-green-600">，{totalItems} 个已发布</span>}
                     </div>
                 )}
 
@@ -1074,6 +1204,11 @@ export default function ThemeBatchProcessor() {
                             <HelpCircle className="w-4 h-4" />
                             <span>理解题</span>
                         </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-purple-600">
+                            <Checkbox checked={doLexProfile} onCheckedChange={(c) => setDoLexProfile(!!c)} />
+                            <BookOpen className="w-4 h-4" />
+                            <span>词汇分析</span>
+                        </label>
                         <label className="flex items-center gap-2 cursor-pointer text-red-600">
                             <Checkbox checked={doUnpublish} onCheckedChange={(c) => {
                                 setDoUnpublish(!!c);
@@ -1130,6 +1265,10 @@ export default function ThemeBatchProcessor() {
                         <label className="flex items-center gap-2 cursor-pointer">
                             <Checkbox checked={skipExistingQuiz} onCheckedChange={(c) => setSkipExistingQuiz(!!c)} />
                             <span>跳过已有理解题</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <Checkbox checked={skipExistingLexProfile} onCheckedChange={(c) => setSkipExistingLexProfile(!!c)} />
+                            <span>跳过已有词汇分析</span>
                         </label>
                     </div>
                 </div>

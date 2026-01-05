@@ -2867,6 +2867,14 @@ export default function ShadowingReviewList() {
               生成 ACU
             </Button>
             <Button
+              onClick={generateLexProfileSelected}
+              disabled={ttsLoading || publishing || selected.size === 0}
+              variant="outline"
+              className="border-purple-300 text-purple-600 hover:bg-purple-50"
+            >
+              批量词汇分析
+            </Button>
+            <Button
               onClick={publishSelected}
               disabled={publishing || selected.size === 0}
               variant="outline"

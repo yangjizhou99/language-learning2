@@ -103,6 +103,7 @@ export const ADMIN_SECTIONS: AdminNavSection[] = [
       { href: '/admin/pronunciation', label: '发音评测管理', icon: '🎤', match: 'startsWith' },
       { href: '/admin/alignment/packs', label: '对齐训练包', icon: '🧭', match: 'startsWith' },
       { href: '/admin/shadowing/items', label: 'Shadowing 素材', icon: '🎙️', match: 'startsWith' },
+      { href: '/admin/vocabulary', label: '词汇等级管理', icon: '📚', match: 'startsWith' },
       { href: '/admin/question-bank/export', label: '题库导出', icon: '📦', match: 'startsWith' },
     ],
   },
