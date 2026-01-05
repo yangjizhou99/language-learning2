@@ -11,11 +11,11 @@ import path from 'path';
 async function createZipFile(files: { path: string; name: string }[], outputPath: string): Promise<void> {
   const archiver = await import('archiver');
   const { createWriteStream } = await import('fs');
-  
+
   return new Promise((resolve, reject) => {
     const output = createWriteStream(outputPath);
     // 降低压缩级别以提高性能，减少内存使用
-    const archive = archiver.default('zip', { 
+    const archive = archiver.default('zip', {
       zlib: { level: 3 }, // 从9降低到3，平衡压缩率和性能
       forceLocalTime: true,
       forceZip64: false
@@ -104,14 +104,14 @@ async function createZipFile(files: { path: string; name: string }[], outputPath
 // 递归收集目录中的所有文件
 async function collectFilesFromDirectory(dirPath: string, basePath: string = ''): Promise<{ path: string; name: string }[]> {
   const files: { path: string; name: string }[] = [];
-  
+
   try {
     const items = await fsPromises.readdir(dirPath);
-    
+
     for (const item of items) {
       const itemPath = path.join(dirPath, item);
       const stats = await fsPromises.stat(itemPath);
-      
+
       if (stats.isDirectory()) {
         const subFiles = await collectFilesFromDirectory(itemPath, path.join(basePath, item));
         files.push(...subFiles);
@@ -125,7 +125,7 @@ async function collectFilesFromDirectory(dirPath: string, basePath: string = '')
   } catch (err) {
     console.error('收集文件失败:', err);
   }
-  
+
   return files;
 }
 
@@ -133,8 +133,8 @@ export async function POST(req: NextRequest) {
   try {
     await requireAdmin(req);
 
-    const { 
-      backupPath, 
+    const {
+      backupPath,
       backupType = 'all',
       incremental = false,
       overwriteExisting = false,
@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
     // 检测部署环境并优化备份路径
     const isDeployment = process.env.VERCEL || process.env.NODE_ENV === 'production';
     let effectiveBackupPath = backupPath;
-    
+
     // 在部署环境中，优先使用临时目录
     if (isDeployment) {
       if (backupPath === '/tmp/backups' || backupPath.includes('/tmp/')) {
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
       const stats = await fsPromises.stat(effectiveBackupPath);
       if (!stats.isDirectory()) {
         return NextResponse.json(
-          { 
+          {
             error: '备份路径不是目录',
             details: `路径 ${effectiveBackupPath} 存在但不是目录`,
             suggestions: ['请提供目录路径而不是文件路径']
@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : '未知错误';
         console.error(`创建备份目录失败: ${effectiveBackupPath}`, errorMessage);
-        
+
         // 在部署环境中提供更多建议
         const suggestions = isDeployment ? [
           '在部署环境中，建议使用 /tmp/backups 路径',
@@ -213,9 +213,9 @@ export async function POST(req: NextRequest) {
           '在 Linux/Mac 上检查父目录权限',
           '在 Windows 上以管理员身份运行'
         ];
-        
+
         return NextResponse.json(
-          { 
+          {
             error: '无法创建备份目录，请检查路径权限',
             details: errorMessage,
             suggestions,
@@ -243,9 +243,9 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '未知错误';
       console.error(`备份目录写入权限验证失败: ${effectiveBackupPath}`, errorMessage);
-      
+
       return NextResponse.json(
-        { 
+        {
           error: '备份目录无写入权限',
           details: errorMessage,
           suggestions: isDeployment ? [
@@ -296,8 +296,8 @@ export async function POST(req: NextRequest) {
     // 存储任务状态
     const backupTasks = getBackupTasks();
     tasks.forEach((task) => {
-      setBackupTask(task.id, { 
-        ...task, 
+      setBackupTask(task.id, {
+        ...task,
         backupPath: effectiveBackupPath,
         incremental,
         overwriteExisting,
@@ -310,7 +310,7 @@ export async function POST(req: NextRequest) {
     // 异步执行备份任务
     executeBackupTasks(tasks, effectiveBackupPath, incremental, overwriteExisting, compareWith, databaseType, backupType, tables);
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       tasks,
       backupType,
       message: `已启动${backupType === 'all' ? '全部' : backupType === 'database' ? '数据库' : '存储桶'}备份任务`
@@ -378,18 +378,19 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
 
     if (backupType === 'shadowing_safe') {
       // 固定顺序，减少外键/引用依赖问题
+      // 仅备份题库内容表，不包含用户数据（sessions, attempts）
       const order = [
         'shadowing_themes',
         'shadowing_subtopics',
+        'scene_tags',
+        'subtopic_scene_vectors',
         'shadowing_drafts',
-        'shadowing_items',
-        'shadowing_sessions',
-        'shadowing_attempts'
+        'shadowing_items'
       ];
       const set = new Set(order);
       tables = order.filter((t) => tables.includes(t));
-      // 明确只导出这6张表
-      console.log('Shadowing安全备份表顺序:', tables);
+      // 明确只导出这6张题库内容表
+      console.log('Shadowing题库内容备份表顺序:', tables);
     }
 
     console.log('获取到表列表:', tables);
@@ -424,7 +425,7 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
       const chunkPromises = tableChunk.map(async (tableName) => {
         try {
           console.log(`开始并行处理表: ${tableName}`);
-          
+
           // 并行获取表结构和数据
           const [columns, rows] = await Promise.all([
             getTableColumns(databaseType, tableName),
@@ -436,7 +437,7 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
 
           // 生成表的SQL内容
           const tableSQL = [];
-          
+
           // 生成CREATE TABLE语句（干净版本，无DEFAULT）
           tableSQL.push(`-- 表: ${tableName}`);
           tableSQL.push(`DROP TABLE IF EXISTS "${tableName}" CASCADE;`);
@@ -455,14 +456,14 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
 
           if (rows && rows.length > 0) {
             tableSQL.push(`-- 数据: ${tableName} (${rows.length} 行)`);
-            
+
             // 优化批处理大小 - 对shadowing_safe使用更小批次，降低失败概率
             const defaultBatch = Math.max(500, Math.min(2000, Math.floor(10000 / columns.length)));
             const batchSize = backupType === 'shadowing_safe' ? Math.min(500, defaultBatch) : defaultBatch;
-            
+
             for (let j = 0; j < rows.length; j += batchSize) {
               const batch = rows.slice(j, j + batchSize);
-              
+
               // 并行处理数据行
               const values = await Promise.all(batch.map(async (row) => {
                 const rowValues = columns.map((col: any) => {
@@ -470,19 +471,19 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
                   const dataType = (col.data_type || '').toLowerCase();
                   if (raw === null || raw === undefined) return 'NULL';
 
-                // 数组类型处理：优先检测值本身是否为数组
-                if (Array.isArray(raw)) {
-                  // 使用 PostgreSQL 的 ARRAY 构造器，避免花括号与转义混乱
-                  const items = raw.map((it) => {
-                    if (it === null || it === undefined) return 'NULL';
-                    if (typeof it === 'boolean') return it ? 'TRUE' : 'FALSE';
-                    const num = Number(it);
-                    if (Number.isFinite(num) && typeof it !== 'string') return String(num);
-                    const s = String(it).replace(/'/g, "''");
-                    return `'${s}'`;
-                  });
-                  return items.length > 0 ? `ARRAY[${items.join(', ')}]::text[]` : `ARRAY[]::text[]`;
-                }
+                  // 数组类型处理：优先检测值本身是否为数组
+                  if (Array.isArray(raw)) {
+                    // 使用 PostgreSQL 的 ARRAY 构造器，避免花括号与转义混乱
+                    const items = raw.map((it) => {
+                      if (it === null || it === undefined) return 'NULL';
+                      if (typeof it === 'boolean') return it ? 'TRUE' : 'FALSE';
+                      const num = Number(it);
+                      if (Number.isFinite(num) && typeof it !== 'string') return String(num);
+                      const s = String(it).replace(/'/g, "''");
+                      return `'${s}'`;
+                    });
+                    return items.length > 0 ? `ARRAY[${items.join(', ')}]::text[]` : `ARRAY[]::text[]`;
+                  }
 
                   // JSON/JSONB
                   if (dataType.includes('json')) {
@@ -513,20 +514,20 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
           }
 
           console.log(`完成处理表: ${tableName}, 行数: ${rows ? rows.length : 0}`);
-          return { 
-            tableName, 
-            sql: tableSQL.join('\n'), 
+          return {
+            tableName,
+            sql: tableSQL.join('\n'),
             rowCount: rows ? rows.length : 0,
             rows: isNdjsonExport ? rows : undefined,
             columns: isNdjsonExport ? columns : undefined
           };
         } catch (err) {
           console.error(`处理表 ${tableName} 时出错:`, err);
-          return { 
-            tableName, 
-            sql: `-- 错误: 无法导出表 ${tableName}\n-- ${err instanceof Error ? err.message : '未知错误'}\n`, 
+          return {
+            tableName,
+            sql: `-- 错误: 无法导出表 ${tableName}\n-- ${err instanceof Error ? err.message : '未知错误'}\n`,
             rowCount: 0,
-            error: true 
+            error: true
           };
         }
       });
@@ -534,7 +535,7 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
       // 等待当前批次完成
       const chunkResults = await Promise.all(chunkPromises);
       allTableResults.push(...chunkResults);
-      
+
       processedTables += tableChunk.length;
       const progressPercent = Math.round(10 + (processedTables / tables.length) * 70);
       task.message = `并行导出完成 ${processedTables}/${tables.length} 个表 (已导出 ${allTableResults.reduce((sum, r) => sum + r.rowCount, 0)} 行)`;
@@ -558,31 +559,31 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
     if (backupType === 'question_bank') scopePrefix = 'question-bank-ndjson';
     else if (backupType === 'custom') scopePrefix = 'custom-database-ndjson';
     else if (backupType === 'shadowing_safe') scopePrefix = 'shadowing-safe-ndjson';
-    
+
     const zipFilePath = path.join(backupPath, `${scopePrefix}-backup-${dbTypePrefix}-${timestamp}.zip`);
-    
+
     // NDJSON导出格式（默认）
     task.message = '正在创建NDJSON格式文件...';
     task.progress = 80;
     backupTasks.set(taskId, task);
-    
+
     // 创建临时目录
     const tempDir = path.join(backupPath, `temp-ndjson-${timestamp}`);
     await fsPromises.mkdir(tempDir, { recursive: true });
-    
+
     // 1. 创建schema.clean.sql (只包含DDL，无DEFAULT)
     const cleanSchemaContent = [];
     cleanSchemaContent.push('-- 数据库schema备份 (Clean版本)');
     cleanSchemaContent.push(`-- 创建时间: ${new Date().toISOString()}`);
     cleanSchemaContent.push('-- 此文件仅包含表结构定义，无数据和DEFAULT表达式');
     cleanSchemaContent.push('');
-    
+
     allTableResults.forEach(result => {
       if (!result.error) {
         const lines = result.sql.split('\n');
         const schemaLines = [];
         let inCreateTable = false;
-        
+
         for (const line of lines) {
           if (line.includes('CREATE TABLE')) {
             inCreateTable = true;
@@ -600,14 +601,14 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
         cleanSchemaContent.push(schemaLines.join('\n'));
       }
     });
-    
+
     const schemaFilePath = path.join(tempDir, 'schema.clean.sql');
     await fsPromises.writeFile(schemaFilePath, cleanSchemaContent.join('\n'), 'utf8');
-    
+
     // 2. 创建data目录和每表的NDJSON文件
     const dataDir = path.join(tempDir, 'data');
     await fsPromises.mkdir(dataDir, { recursive: true });
-    
+
     const manifest = {
       version: '1.0',
       format: 'ndjson',
@@ -618,12 +619,12 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
       total_rows: totalRows,
       total_tables: successTables
     };
-    
+
     for (const result of allTableResults) {
       if (!result.error && result.rows && result.columns) {
         const ndjsonFilePath = path.join(dataDir, `${result.tableName}.ndjson`);
         const ndjsonLines = [];
-        
+
         // 将每行转换为JSON对象并写入NDJSON
         for (const row of result.rows) {
           const jsonRow: any = {};
@@ -632,32 +633,32 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
           });
           ndjsonLines.push(JSON.stringify(jsonRow));
         }
-        
+
         await fsPromises.writeFile(ndjsonFilePath, ndjsonLines.join('\n'), 'utf8');
-        
+
         manifest.tables.push({
           name: result.tableName,
           rows: result.rowCount,
           columns: result.columns.length,
           data_file: `data/${result.tableName}.ndjson`
         });
-        
+
         console.log(`创建NDJSON文件: ${result.tableName}.ndjson (${result.rowCount} 行)`);
       }
     }
-    
+
     // 3. 创建manifest.json
     const manifestPath = path.join(tempDir, 'manifest.json');
     await fsPromises.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
-    
+
     // 4. 收集所有文件并创建ZIP
     task.message = '正在创建ZIP压缩文件...';
     task.progress = 90;
     backupTasks.set(taskId, task);
-    
+
     const files = await collectFilesFromDirectory(tempDir);
     await createZipFile(files, zipFilePath);
-    
+
     // 5. 清理临时目录
     await fsPromises.rm(tempDir, { recursive: true, force: true });
 
@@ -677,7 +678,7 @@ async function executeDatabaseBackup(taskId: string, backupPath: string, increme
     task.status = 'failed';
     task.message = `数据库备份失败: ${error instanceof Error ? error.message : '未知错误'}`;
     backupTasks.set(taskId, task);
-    
+
     // 添加更详细的错误信息
     if (error instanceof Error) {
       console.error('错误堆栈:', error.stack);
@@ -724,10 +725,10 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
       task.message = '正在检查对比备份文件...';
       task.progress = 5;
       backupTasks.set(taskId, task);
-      
+
       try {
         let compareBackupPath: string | null = null;
-        
+
         if (compareWith && compareWith !== 'auto') {
           // 使用指定的对比备份文件
           compareBackupPath = path.join(backupPath, compareWith);
@@ -735,10 +736,10 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
         } else {
           // 自动选择最新的备份文件
           const existingBackups = await fsPromises.readdir(backupPath);
-          const storageBackups = existingBackups.filter(file => 
+          const storageBackups = existingBackups.filter(file =>
             file.startsWith('storage-backup-') && file.endsWith('.zip')
           );
-          
+
           if (storageBackups.length > 0) {
             const latestBackup = storageBackups.sort().pop();
             if (latestBackup) {
@@ -747,23 +748,23 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
             }
           }
         }
-        
+
         if (compareBackupPath) {
           console.log(`增量备份：使用对比文件 ${compareBackupPath}`);
           // 解压并获取现有文件列表
           const tempExtractDir = path.join(backupPath, `temp-extract-${Date.now()}`);
           await fsPromises.mkdir(tempExtractDir, { recursive: true });
-          
+
           try {
             console.log(`增量备份：开始解压ZIP文件到 ${tempExtractDir}`);
             await extractZip(compareBackupPath, tempExtractDir);
             console.log(`增量备份：ZIP解压完成`);
-            
+
             // 等待解压完成，检查解压目录是否存在文件
             let retryCount = 0;
             const maxRetries = 10;
             let extractSuccess = false;
-            
+
             while (retryCount < maxRetries) {
               try {
                 const extractItems = await fsPromises.readdir(tempExtractDir);
@@ -775,22 +776,22 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
               } catch (err) {
                 console.log(`增量备份：等待解压完成... (${retryCount + 1}/${maxRetries})`);
               }
-              
+
               // 等待1秒后重试
               await new Promise(resolve => setTimeout(resolve, 1000));
               retryCount++;
             }
-            
+
             if (!extractSuccess) {
               throw new Error('解压目录为空或解压失败');
             }
-            
+
             console.log(`增量备份：解压验证完成，开始获取文件列表`);
-            
+
             // 查找storage目录，因为ZIP文件中的文件结构是 storage/bucket_name/file_path
             const storageDir = path.join(tempExtractDir, 'storage');
             let extractDirToProcess = tempExtractDir;
-            
+
             try {
               const storageDirStats = await fsPromises.stat(storageDir);
               if (storageDirStats.isDirectory()) {
@@ -802,14 +803,14 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
             } catch (err) {
               console.log(`增量备份：检查storage目录失败，使用根目录 ${tempExtractDir}`);
             }
-            
+
             existingBackupFiles = await getExistingFilesFromExtractedDir(extractDirToProcess);
             console.log(`增量备份：找到 ${existingBackupFiles.size} 个现有文件`);
-            
+
             // 调试信息：显示前10个现有文件
             const sampleFiles = Array.from(existingBackupFiles).slice(0, 10);
             console.log(`增量备份：现有文件示例:`, sampleFiles);
-            
+
             // 清理临时解压目录
             await fsPromises.rm(tempExtractDir, { recursive: true, force: true });
             console.log(`增量备份：临时目录清理完成`);
@@ -863,11 +864,11 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
 
         try {
           console.log(`开始并行处理存储桶: ${bucket.name}`);
-          
+
           // 递归获取所有文件（包括子目录）
           const allFiles = await getAllFilesFromBucket(supabase, bucket.name, '');
           console.log(`存储桶 ${bucket.name} 中找到 ${allFiles.length} 个文件`);
-          
+
           return { bucket, bucketDir, allFiles, error: null };
         } catch (err) {
           console.error(`获取存储桶 ${bucket.name} 文件列表失败:`, err);
@@ -878,7 +879,7 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
       // 等待当前批次完成
       const chunkResults = await Promise.all(bucketPromises);
       bucketResults.push(...chunkResults);
-      
+
       processedBuckets += bucketChunk.length;
       task.message = `已获取 ${processedBuckets}/${buckets.length} 个存储桶的文件列表`;
       task.progress = 10 + (processedBuckets / buckets.length) * 20;
@@ -888,12 +889,12 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
     // 现在并行下载所有文件
     const CONCURRENT_DOWNLOADS = 10; // 同时下载的文件数量
     const allDownloadTasks = [];
-    
+
     for (const bucketResult of bucketResults) {
       if (bucketResult.error || !bucketResult.bucketDir) continue;
-      
+
       const { bucket, bucketDir, allFiles } = bucketResult;
-      
+
       // 为当前存储桶创建下载任务
       for (const filePath of allFiles) {
         allDownloadTasks.push({
@@ -907,28 +908,28 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
 
     // 并行下载所有文件
     const totalDownloadTasks = allDownloadTasks.length;
-    
+
     console.log(`开始并行下载 ${totalDownloadTasks} 个文件，并发数: ${CONCURRENT_DOWNLOADS}`);
-    
+
     // 分批并行下载
     for (let i = 0; i < allDownloadTasks.length; i += CONCURRENT_DOWNLOADS) {
       const batch = allDownloadTasks.slice(i, i + CONCURRENT_DOWNLOADS);
-      
+
       const downloadPromises = batch.map(async (downloadTask) => {
         const { bucket, bucketDir, filePath, localPath } = downloadTask;
-        
+
         try {
           // 如果是增量备份，检查文件是否已存在
           if (incremental) {
             const normalizedPath = normalizeFilePath(filePath);
             let isFound = false;
-            
+
             // 多种方式检查文件是否存在
             if (existingBackupFiles.has(normalizedPath) ||
-                existingBackupFiles.has(`${bucket.name}/${normalizedPath}`)) {
+              existingBackupFiles.has(`${bucket.name}/${normalizedPath}`)) {
               isFound = true;
             }
-            
+
             if (!isFound) {
               for (const existingFile of existingBackupFiles) {
                 if (existingFile.endsWith(`/${normalizedPath}`) || existingFile === normalizedPath) {
@@ -937,7 +938,7 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
                 }
               }
             }
-            
+
             if (isFound) {
               return { success: true, skipped: true, filePath };
             }
@@ -954,11 +955,11 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
 
           // 确保目录存在
           await fsPromises.mkdir(path.dirname(localPath), { recursive: true });
-          
+
           // 写入文件
           const arrayBuffer = await (data as Blob).arrayBuffer();
           await fsPromises.writeFile(localPath, Buffer.from(arrayBuffer));
-          
+
           return { success: true, skipped: false, filePath };
         } catch (err) {
           console.error(`下载文件 ${filePath} 失败:`, err);
@@ -968,7 +969,7 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
 
       // 等待当前批次完成
       const batchResults = await Promise.all(downloadPromises);
-      
+
       // 统计结果
       batchResults.forEach(result => {
         if (result.success) {
@@ -1000,15 +1001,15 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
     task.message = '正在创建ZIP压缩文件...';
     task.progress = incremental ? 85 : 90; // 增量备份合并后是85%，普通备份是90%
     backupTasks.set(taskId, task);
-    
+
     const backupTypePrefix = incremental ? 'storage-incremental' : 'storage-backup';
     const zipFilePath = path.join(backupPath, `${backupTypePrefix}-${timestamp}.zip`);
-    
+
     // 在部署环境中监控内存使用
     if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
       const memUsage = process.memoryUsage();
       console.log(`压缩前内存使用: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, HeapUsed=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
-      
+
       if (memUsage.heapUsed > 100 * 1024 * 1024) { // 100MB
         console.log('压缩前内存使用较高，执行垃圾回收...');
         if (global.gc) {
@@ -1016,28 +1017,28 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
         }
       }
     }
-    
+
     const files = await collectFilesFromDirectory(tempStorageDir, 'storage');
-    
+
     // 调试信息：显示要打包的文件数量
     console.log(`准备创建ZIP文件，包含 ${files.length} 个文件`);
     if (files.length > 0) {
       console.log(`ZIP文件内容示例:`, files.slice(0, 5).map(f => f.name));
     }
-    
+
     // 检查文件数量，如果太多则分批处理
     if (files.length > 1000) {
       console.log(`文件数量较多 (${files.length})，将分批处理以避免内存问题`);
       task.message = `正在分批创建ZIP文件 (${files.length} 个文件)...`;
       backupTasks.set(taskId, task);
     }
-    
+
     try {
       await createZipFile(files, zipFilePath);
       console.log('ZIP文件创建成功');
     } catch (error) {
       console.error('ZIP文件创建失败:', error);
-      
+
       // 如果ZIP创建失败，尝试清理大文件后重试
       if (files.length > 100) {
         console.log('尝试清理大文件后重试...');
@@ -1049,29 +1050,29 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
             return true; // 如果无法获取文件大小，保留文件
           }
         });
-        
+
         console.log(`过滤后剩余 ${filteredFiles.length} 个文件`);
         await createZipFile(filteredFiles, zipFilePath);
       } else {
         throw error; // 重新抛出原始错误
       }
     }
-    
+
     // 删除临时存储目录
     task.message = '正在清理临时文件...';
     task.progress = incremental ? 95 : 95; // 清理阶段都是95%
     backupTasks.set(taskId, task);
-    
+
     await fsPromises.rm(tempStorageDir, { recursive: true, force: true });
 
     const stats = await fsPromises.stat(zipFilePath);
 
     // 更新任务状态
     task.status = 'completed';
-    const message = incremental 
+    const message = incremental
       ? `存储桶增量备份完成！共扫描 ${totalFiles} 个文件，下载 ${downloadedFiles} 个新文件，跳过 ${skippedFiles} 个现有文件，增量文件大小: ${(stats.size / 1024 / 1024).toFixed(2)} MB`
       : `存储桶备份完成！共下载 ${downloadedFiles}/${totalFiles} 个文件，文件大小: ${(stats.size / 1024 / 1024).toFixed(2)} MB`;
-    
+
     task.message = message;
     task.progress = 100;
     task.filePath = zipFilePath;
@@ -1088,17 +1089,17 @@ async function executeStorageBackup(taskId: string, backupPath: string, incremen
 
 async function getAllFilesFromBucket(supabase: any, bucketName: string, prefix: string = ''): Promise<string[]> {
   const allFiles: string[] = [];
-  
+
   try {
     let offset = 0;
     const limit = 1000; // 每页1000个文件
     let hasMore = true;
-    
+
     while (hasMore) {
       const { data: files, error } = await supabase.storage
         .from(bucketName)
-        .list(prefix, { 
-          limit, 
+        .list(prefix, {
+          limit,
           sortBy: { column: 'name', order: 'asc' },
           offset
         });
@@ -1117,12 +1118,12 @@ async function getAllFilesFromBucket(supabase: any, bucketName: string, prefix: 
       const concurrencyLimit = 5;
       for (let i = 0; i < files.length; i += concurrencyLimit) {
         const fileBatch = files.slice(i, i + concurrencyLimit);
-        
+
         await Promise.all(
           fileBatch.map(async (file: any) => {
             if (file.name) {
               const fullPath = prefix ? `${prefix}/${file.name}` : file.name;
-              
+
               if (file.metadata && file.metadata.size !== undefined) {
                 // 这是一个文件
                 allFiles.push(fullPath);
@@ -1147,7 +1148,7 @@ async function getAllFilesFromBucket(supabase: any, bucketName: string, prefix: 
       } else {
         offset += limit;
       }
-      
+
       // 在部署环境中监控内存使用
       if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
         const memUsage = process.memoryUsage();
@@ -1171,14 +1172,14 @@ async function getAllFilesFromBucket(supabase: any, bucketName: string, prefix: 
 // 从解压的目录中获取现有文件列表
 async function getExistingFilesFromExtractedDir(extractDir: string, relativePath: string = ''): Promise<Set<string>> {
   const files = new Set<string>();
-  
+
   try {
     const items = await fsPromises.readdir(extractDir);
-    
+
     for (const item of items) {
       const itemPath = path.join(extractDir, item);
       const stats = await fsPromises.stat(itemPath);
-      
+
       if (stats.isDirectory()) {
         // 递归处理子目录
         const subRelativePath = relativePath ? `${relativePath}/${item}` : item;
@@ -1195,7 +1196,7 @@ async function getExistingFilesFromExtractedDir(extractDir: string, relativePath
   } catch (err) {
     console.error('获取现有文件列表失败:', err);
   }
-  
+
   return files;
 }
 
@@ -1219,13 +1220,13 @@ async function extractZip(zipPath: string, extractDir: string): Promise<void> {
   const { exec } = await import('child_process');
   const { promisify } = await import('util');
   const execAsync = promisify(exec);
-  
+
   try {
     // 使用系统命令解压ZIP文件
     // Windows: PowerShell Expand-Archive
     // Linux/Mac: unzip
     const isWindows = process.platform === 'win32';
-    
+
     if (isWindows) {
       // Windows PowerShell解压
       await execAsync(`powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${extractDir}' -Force"`);
@@ -1233,7 +1234,7 @@ async function extractZip(zipPath: string, extractDir: string): Promise<void> {
       // Linux/Mac unzip
       await execAsync(`unzip -o '${zipPath}' -d '${extractDir}'`);
     }
-    
+
     console.log(`ZIP文件解压成功: ${zipPath} -> ${extractDir}`);
   } catch (error) {
     console.error('ZIP解压失败:', error);
@@ -1243,14 +1244,14 @@ async function extractZip(zipPath: string, extractDir: string): Promise<void> {
 
 async function getDirectorySize(dirPath: string): Promise<number> {
   let totalSize = 0;
-  
+
   try {
     const items = await fsPromises.readdir(dirPath);
-    
+
     for (const item of items) {
       const itemPath = path.join(dirPath, item);
       const stats = await fsPromises.stat(itemPath);
-      
+
       if (stats.isDirectory()) {
         totalSize += await getDirectorySize(itemPath);
       } else {
@@ -1260,7 +1261,7 @@ async function getDirectorySize(dirPath: string): Promise<number> {
   } catch (err) {
     console.error('计算目录大小失败:', err);
   }
-  
+
   return totalSize;
 }
 
