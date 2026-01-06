@@ -387,6 +387,44 @@ export async function POST(req: NextRequest) {
         // Don't fail the session save if this fails
       }
 
+      // 1.6 Update Cached Bayesian Profile
+      // This moves the heavy calculation from read-time (profile API) to write-time (session save)
+      try {
+        // Fetch all vocabulary knowledge for this user
+        // We need the full set to calculate accurate mastery levels
+        const { data: allKnowledge, error: knowledgeError } = await supabase
+          .from('user_vocabulary_knowledge')
+          .select('word, jlpt_level, frequency_rank, marked_unknown, exposure_count, not_marked_count')
+          .eq('user_id', user.id);
+
+        if (!knowledgeError && allKnowledge && allKnowledge.length > 0) {
+          const { calculateUserProfileFromEvidence } = await import('@/lib/recommendation/vocabularyPredictor');
+
+          const vocabRows = allKnowledge.map(row => ({
+            word: row.word,
+            jlpt_level: row.jlpt_level,
+            frequency_rank: row.frequency_rank,
+            marked_unknown: row.marked_unknown || false,
+            exposure_count: row.exposure_count || 0,
+            not_marked_count: row.not_marked_count || 0,
+          }));
+
+          const newProfile = calculateUserProfileFromEvidence(vocabRows);
+
+          // Save to profiles table
+          await supabase
+            .from('profiles')
+            .update({
+              bayesian_profile: newProfile
+            })
+            .eq('id', user.id);
+
+          console.log('[BayesianProfile] Updated cached profile for user', user.id);
+        }
+      } catch (profileUpdateError) {
+        console.error('Error updating Bayesian profile:', profileUpdateError);
+      }
+
       // 2. Update User Ability & Vocab Profile (Difficulty System)
       try {
         // Fetch User Profile & Item Metadata
