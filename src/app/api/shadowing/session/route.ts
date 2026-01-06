@@ -200,44 +200,106 @@ export async function POST(req: NextRequest) {
 
     // If status is 'completed' and there are selected words to import
     if (status === 'completed') {
+      console.log('[Session Save] Status is completed. Selected words:', selected_words?.length);
+
       // 1. Import selected words to user's vocabulary
       if (selected_words.length > 0) {
         try {
-          const vocabEntries = selected_words.map((word: Record<string, any>) => ({
-            user_id: user.id,
-            source_lang: word.lang || 'en',
-            target_lang: 'zh', // Default to Chinese
-            word: word.text,
-            definition: word.definition || '',
-            context: word.context || '',
-            source_type: 'shadowing',
-            source_id: item_id,
-            frequency_rank: word.frequency_rank || null,
-            cefr_level: word.cefr || null, // Store CEFR level if available
-            created_at: new Date().toISOString(),
-          }));
-
-          const { data: insertedVocab, error: vocabError } = await supabase
+          // Check for existing vocab entries to avoid duplicates (since no unique constraint exists)
+          const terms = selected_words.map((w: any) => w.text);
+          const { data: existingVocab } = await supabase
             .from('vocab_entries')
-            .upsert(vocabEntries, {
-              onConflict: 'user_id,word,source_lang',
-            })
-            .select('id');
+            .select('id, term, lang')
+            .eq('user_id', user.id)
+            .in('term', terms);
 
-          if (!vocabError && insertedVocab) {
+          const existingMap = new Map<string, string>();
+          if (existingVocab) {
+            existingVocab.forEach((v: any) => {
+              existingMap.set(`${v.term}_${v.lang}`, v.id);
+            });
+          }
+
+          // Build new vocab entries (without id, let database generate it)
+          const newEntries: any[] = [];
+
+          selected_words.forEach((word: Record<string, any>) => {
+            const lang = word.lang || 'ja'; // Default to Japanese
+            const existingId = existingMap.get(`${word.text}_${lang}`);
+
+            // Only add if not already existing
+            if (!existingId) {
+              newEntries.push({
+                user_id: user.id,
+                lang: lang,
+                native_lang: 'zh',
+                term: word.text,
+                explanation: {
+                  gloss_native: word.definition || '',
+                  ...word.explanation
+                },
+                context: word.context || '',
+                source: 'shadowing',
+                source_id: item_id,
+                cefr_level: word.cefr || null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              });
+            }
+          });
+
+          console.log('[Session Save] New vocab entries to insert:', newEntries.length);
+          console.log('[Session Save] Existing vocab entries:', existingMap.size);
+
+          let allVocabIds: string[] = [];
+
+          // Get IDs of existing entries
+          existingMap.forEach((id: string) => {
+            allVocabIds.push(id);
+          });
+
+          // Insert new entries only
+          if (newEntries.length > 0) {
+            console.log('[Session Save] Inserting vocab entries:', JSON.stringify(newEntries, null, 2));
+
+            const { data: insertedVocab, error: vocabError } = await supabase
+              .from('vocab_entries')
+              .insert(newEntries)
+              .select('id');
+
+            if (vocabError) {
+              console.error('[Session Save] Vocab insert error details:', JSON.stringify(vocabError, null, 2));
+            } else if (insertedVocab) {
+              console.log('[Session Save] Vocab insert success. IDs:', insertedVocab.map(v => v.id));
+              allVocabIds.push(...insertedVocab.map(v => v.id));
+            }
+          }
+
+          console.log('[Session Save] Total vocab IDs:', allVocabIds.length);
+
+          if (allVocabIds.length > 0) {
             // Update session with imported vocab IDs
-            const vocabIds = insertedVocab.map((v: { id: string }) => v.id);
-            await supabase
+            console.log('[Session Save] Updating session with vocab IDs:', allVocabIds);
+
+            const { error: updateError } = await supabase
               .from('shadowing_sessions')
               .update({
-                imported_vocab_ids: vocabIds,
+                imported_vocab_ids: allVocabIds,
               })
               .eq('id', session.id);
+
+            if (updateError) {
+              console.error('[Session Save] Failed to update session with vocab IDs:', updateError);
+            } else {
+              console.log('[Session Save] Successfully updated session with vocab IDs');
+            }
           }
         } catch (vocabImportError) {
-          console.error('Error importing vocabulary:', vocabImportError);
+          console.error('[Session Save] Error importing vocabulary:', vocabImportError);
           // Don't fail the session save if vocab import fails
         }
+      } else {
+        console.log('[Session Save] No selected words to import');
       }
 
       // 1.5 Calculate and save prediction accuracy statistics
@@ -453,7 +515,6 @@ export async function POST(req: NextRequest) {
           const profile = profileRes.data;
           const item = itemRes.data;
 
-          // Prepare Session Data for Calculation
           // Prepare Session Data for Calculation
           const sentenceScores = notes?.sentence_scores || {};
           const sentencesData = Object.values(sentenceScores).map((s: any) => ({
