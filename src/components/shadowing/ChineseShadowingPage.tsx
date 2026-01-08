@@ -57,6 +57,7 @@ import { Container } from '@/components/Container';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 const SelectablePassage = dynamic(() => import('@/components/SelectablePassage'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
 const AcuText = dynamic(() => import('@/components/shadowing/AcuText'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
+const LexText = dynamic(() => import('@/components/shadowing/LexText'), { ssr: false, loading: () => <div className="p-2 text-gray-500">加载中...</div> });
 import useUserPermissions from '@/hooks/useUserPermissions';
 import dynamic from 'next/dynamic';
 const AudioRecorder = dynamic(() => import('@/components/AudioRecorder'), { ssr: false });
@@ -159,6 +160,15 @@ interface ShadowingItem {
       unknown: number;
       contentWordCount?: number;
       totalTokens?: number;
+      tokenList?: Array<{
+        token: string;
+        lemma: string;
+        pos: string;
+        originalLevel: string;
+        broadCEFR: 'A1_A2' | 'B1_B2' | 'C1_plus' | 'unknown';
+        isContentWord: boolean;
+        compoundGrammar?: string;
+      }>;
     };
     [key: string]: any;
   };
@@ -170,6 +180,15 @@ interface ShadowingItem {
     unknown: number;
     contentWordCount?: number;
     totalTokens?: number;
+    tokenList?: Array<{
+      token: string;
+      lemma: string;
+      pos: string;
+      originalLevel: string;
+      broadCEFR: 'A1_A2' | 'B1_B2' | 'C1_plus' | 'unknown';
+      isContentWord: boolean;
+      compoundGrammar?: string;
+    }>;
   };
   stats: {
     recordingCount: number;
@@ -4809,8 +4828,21 @@ export default function ShadowingPage() {
                           {/* 移除顶部翻译块，翻译在下方专用模块中展示 */}
                           {(isVocabMode || step >= 2) ? (
                             <>
-                              {/* ACU 模式或自由框选模式（仅在步骤2时显示ACU模式） */}
-                              {isACUMode && currentItem?.notes?.acu_units && step === 2 ? (
+                              {/* Lex Profile 词汇分词模式（优先）或 ACU 模式（仅在步骤2时显示） */}
+                              {step === 2 && currentItem?.lex_profile?.tokenList && currentItem.lex_profile.tokenList.length > 0 ? (
+                                <LexText
+                                  text={currentItem.text}
+                                  lang={currentItem.lang}
+                                  tokenList={currentItem.lex_profile.tokenList}
+                                  onConfirm={(word, context, jlptLevel) => {
+                                    // Store JLPT level in wordData for later use
+                                    handleWordSelect(word, context);
+                                    // Note: jlptLevel will be captured from the token when saving
+                                  }}
+                                  selectedWords={[...previousWords, ...selectedWords]}
+                                  wordPredictions={wordPredictions}
+                                />
+                              ) : isACUMode && currentItem?.notes?.acu_units && step === 2 ? (
                                 <AcuText
                                   text={currentItem.text}
                                   lang={currentItem.lang}

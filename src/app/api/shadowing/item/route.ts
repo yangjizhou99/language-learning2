@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabaseAdmin
       .from('shadowing_items')
       .select(
-        'id, lang, level, title, text, audio_url, audio_bucket, audio_path, notes, duration_ms, tokens, cefr, meta, translations, trans_updated_at, created_at, sentence_timeline, quiz_questions',
+        'id, lang, level, title, text, audio_url, audio_bucket, audio_path, notes, duration_ms, tokens, cefr, meta, translations, trans_updated_at, created_at, sentence_timeline, quiz_questions, lex_profile',
       )
       .eq('id', id)
       .single();
