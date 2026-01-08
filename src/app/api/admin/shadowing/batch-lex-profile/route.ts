@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
                 console.log(`[BatchLexProfile] Analyzing item ${id} (lang: ${item.lang})...`);
                 const analysis = await analyzeLexProfileAsync(item.text, item.lang || 'ja');
 
-                // 3. Extract and save lex_profile
+                // 3. Extract and save lex_profile (including tokenList for word selection)
                 const lexProfile = {
                     A1_A2: analysis.lexProfile.A1_A2,
                     B1_B2: analysis.lexProfile.B1_B2,
@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
                     unknown: analysis.lexProfile.unknown,
                     contentWordCount: analysis.contentWordCount,
                     totalTokens: analysis.tokens,
+                    // Include tokenList for word-level selection in practice interface
+                    tokenList: analysis.details.tokenList,
                 };
 
                 const { error: updateError } = await supabase

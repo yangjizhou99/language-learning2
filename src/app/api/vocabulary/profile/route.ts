@@ -34,6 +34,25 @@ export async function GET(req: NextRequest) {
         }
         console.log('[VocabProfile] User authenticated:', user.id);
 
+        // 1. Try to get cached profile first
+        const { data: cachedProfileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('bayesian_profile, self_reported_jlpt, onboarding_completed')
+            .eq('id', user.id)
+            .single();
+
+        if (cachedProfileData?.bayesian_profile) {
+            console.log('[VocabProfile] Returning cached profile');
+            return NextResponse.json({
+                success: true,
+                profile: cachedProfileData.bayesian_profile,
+                source: 'cache',
+            });
+        }
+
+        // 2. If no cache, calculate from evidence (fallback)
+        console.log('[VocabProfile] Cache miss, calculating from evidence');
+
         // Fetch vocabulary knowledge data - handle missing table gracefully
         let knowledgeData: any[] | null = null;
         try {
@@ -66,6 +85,15 @@ export async function GET(req: NextRequest) {
             }));
 
             const profile = calculateUserProfileFromEvidence(vocabRows);
+
+            // Optional: Cache it now? 
+            // We can do a fire-and-forget update to populate the cache for next time
+            // But let's keep GET idempotent-ish and rely on session save to populate it primarily.
+            // Or we can populate it here to fix "cold cache" issues.
+            // Let's populate it here to be helpful.
+            try {
+                await supabase.from('profiles').update({ bayesian_profile: profile }).eq('id', user.id);
+            } catch (e) { /* ignore write error on GET */ }
 
             return NextResponse.json({
                 success: true,

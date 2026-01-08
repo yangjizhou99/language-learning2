@@ -12,6 +12,7 @@ import {
     calculateDifficultyScore,
 } from '@/lib/recommendation/difficulty';
 import { getUserPreferenceVectorsCached } from '@/lib/recommendation/preferences';
+import { calculateUserProfileFromEvidence, VocabKnowledgeRow } from '@/lib/recommendation/vocabularyPredictor';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -51,6 +52,7 @@ export async function GET(req: NextRequest) {
         }
 
         // 1. Fetch User Profile & Preferences (using cached-only to avoid LLM wait)
+        // We fetch bayesian_profile separately to handle cases where the migration hasn't been applied yet
         const [profileResult, prefs, userScenePrefsResult] = await Promise.all([
             supabase
                 .from('profiles')
@@ -58,12 +60,58 @@ export async function GET(req: NextRequest) {
                 .eq('id', user.id)
                 .single(),
             getUserPreferenceVectorsCached(user.id),
-            // Also fetch user's direct scene preferences for scene-based interest matching
             supabase
                 .from('user_scene_preferences')
                 .select('scene_id, weight')
                 .eq('user_id', user.id)
         ]);
+
+        // Try to fetch bayesian_profile separately
+        let bayesianProfile = null;
+        try {
+            const { data: bData, error: bError } = await supabase
+                .from('profiles')
+                .select('bayesian_profile')
+                .eq('id', user.id)
+                .single();
+
+            if (!bError && bData) {
+                bayesianProfile = bData.bayesian_profile;
+            }
+        } catch (e) {
+            console.warn('Failed to fetch bayesian_profile (column might be missing):', e);
+        }
+
+        // Fallback: If no cached profile, calculate from evidence
+        if (!bayesianProfile) {
+            try {
+                const { data: knowledgeData } = await supabase
+                    .from('user_vocabulary_knowledge')
+                    .select('word, jlpt_level, frequency_rank, marked_unknown, exposure_count, not_marked_count')
+                    .eq('user_id', user.id);
+
+                if (knowledgeData && knowledgeData.length > 0) {
+                    const vocabRows: VocabKnowledgeRow[] = knowledgeData.map(row => ({
+                        word: row.word,
+                        jlpt_level: row.jlpt_level,
+                        frequency_rank: row.frequency_rank,
+                        marked_unknown: row.marked_unknown || false,
+                        exposure_count: row.exposure_count || 0,
+                        not_marked_count: row.not_marked_count || 0,
+                    }));
+
+                    bayesianProfile = calculateUserProfileFromEvidence(vocabRows);
+
+                    // Cache it for next time (fire-and-forget)
+                    // We don't await this to keep response fast
+                    supabase.from('profiles').update({ bayesian_profile: bayesianProfile }).eq('id', user.id).then(({ error }) => {
+                        if (error) console.warn('Failed to cache calculated profile:', error);
+                    });
+                }
+            } catch (e) {
+                console.warn('Failed to calculate fallback profile:', e);
+            }
+        }
 
         // Check if user has scene preferences - if not, they need to set up their profile first
         const userScenePrefs = userScenePrefsResult.data || [];
@@ -72,7 +120,7 @@ export async function GET(req: NextRequest) {
                 success: false,
                 needsProfileSetup: true,
                 error: '请先在个人资料页面完成设置，以获得个性化推荐',
-            }, { status: 200 }); // Use 200 so frontend can handle gracefully
+            }, { status: 200 });
         }
 
         const { data: profile, error: profileError } = profileResult;
@@ -92,7 +140,9 @@ export async function GET(req: NextRequest) {
                 downRatio: 0.2,
                 upRatio: 0.2,
             },
+            bayesianProfile: bayesianProfile,
         };
+
 
         // Build user scene preference map for direct scene-based interest matching
         const userSceneMap = new Map<string, number>();
@@ -310,6 +360,7 @@ export async function GET(req: NextRequest) {
                 comprehensionRate: userState.comprehensionRate,
                 exploreConfig: userState.exploreConfig,
             },
+            bayesianProfile: bayesianProfile,
             difficultyRecommend: {
                 targetBand,
                 levelRange: { min: minLevel, max: maxLevel },

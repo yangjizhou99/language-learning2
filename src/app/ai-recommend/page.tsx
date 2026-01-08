@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { UserLevelCard } from '@/components/ai-recommend/UserLevelCard';
+import { BayesianMasteryCard } from '@/components/ai-recommend/BayesianMasteryCard';
 import { DifficultyRecommendCard } from '@/components/ai-recommend/DifficultyRecommendCard';
 import { PracticeRecommendList } from '@/components/ai-recommend/PracticeRecommendList';
 import { UserScenePreferencesCard } from '@/components/ai-recommend/UserScenePreferencesCard';
@@ -22,6 +22,12 @@ interface AIRecommendData {
             downRatio: number;
             upRatio: number;
         };
+    };
+    bayesianProfile?: {
+        jlptMastery: Record<string, number>;
+        estimatedLevel: number;
+        evidenceCount: number;
+        frequencyThreshold: number;
     };
     difficultyRecommend: {
         targetBand: 'down' | 'main' | 'up';
@@ -221,11 +227,9 @@ export default function AIRecommendPage() {
                     <div className="space-y-6">
                         {/* Top Row: User Level + Difficulty Recommend */}
                         <div className="grid md:grid-cols-2 gap-6">
-                            <UserLevelCard
-                                level={data.userLevel.level}
-                                vocabUnknownRate={data.userLevel.vocabUnknownRate}
-                                comprehensionRate={data.userLevel.comprehensionRate}
-                                exploreConfig={data.userLevel.exploreConfig}
+                            {/* Use Bayesian Card if available, otherwise fallback to legacy or hide */}
+                            <BayesianMasteryCard
+                                bayesianProfile={data.bayesianProfile || null}
                             />
                             <DifficultyRecommendCard
                                 targetBand={data.difficultyRecommend.targetBand}

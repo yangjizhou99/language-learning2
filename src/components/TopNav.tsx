@@ -45,6 +45,7 @@ import {
   TrendingUp,
   Map as MapIcon,
   Lightbulb,
+  LineChart,
 } from 'lucide-react';
 
 export default function TopNav() {
@@ -203,6 +204,12 @@ export default function TopNav() {
       label: t.nav.alignment_practice,
       icon: AlignCenter,
       show: permissions.can_access_alignment,
+    },
+    {
+      href: '/progress',
+      label: '成长足迹',
+      icon: LineChart,
+      show: !!email,
     },
     { href: '/vocab', label: t.nav.vocabulary, icon: BookOpen, show: true },
     { href: '/profile/stats', label: '学习统计', icon: TrendingUp, show: !!email },

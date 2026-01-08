@@ -1,71 +1,61 @@
-
-const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const path = require('path');
+const { Client } = require('pg');
 const dotenv = require('dotenv');
+const path = require('path');
 
-// Load .env.local manually to ensure we get the keys
-const envPath = path.resolve(process.cwd(), '.env.local');
-if (fs.existsSync(envPath)) {
-    const envConfig = dotenv.parse(fs.readFileSync(envPath));
-    for (const k in envConfig) {
-        process.env[k] = envConfig[k];
-    }
-}
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:15432/postgres';
 
-if (!SUPABASE_SERVICE_KEY) {
-    console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY not set');
-    process.exit(1);
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+const client = new Client({
+    connectionString: connectionString,
+});
 
 async function checkLexProfile() {
-    console.log('🔍 Checking shadowing_items for lex_profile data...\n');
+    try {
+        await client.connect();
+        console.log('Connected.');
 
-    const { data: items, error } = await supabase
-        .from('shadowing_items')
-        .select('id, title, lex_profile');
+        // Check structure of lex_profile column
+        const res = await client.query(`
+      SELECT id, title, lang, 
+             jsonb_typeof(lex_profile) as lex_profile_type,
+             lex_profile->'tokens' as tokens_count,
+             jsonb_array_length(lex_profile->'details'->'tokenList') as token_list_length,
+             lex_profile->'details'->'tokenList'->0 as first_token
+      FROM shadowing_items 
+      WHERE lex_profile IS NOT NULL
+        AND status = 'published'
+      LIMIT 5
+    `);
 
-    if (error) {
-        console.error('❌ Error fetching items:', error.message);
-        return;
-    }
-
-    const total = items.length;
-    let processed = 0;
-    let unprocessed = 0;
-    const examples = [];
-
-    items.forEach(item => {
-        const hasProfile = item.lex_profile && Object.keys(item.lex_profile).length > 0;
-        if (hasProfile) {
-            processed++;
-            if (examples.length < 3) {
-                examples.push(item);
-            }
-        } else {
-            unprocessed++;
-        }
-    });
-
-    console.log(`📊 Total Items: ${total}`);
-    console.log(`✅ Processed (has lex_profile): ${processed}`);
-    console.log(`⚠️  Unprocessed (empty/null): ${unprocessed}`);
-    console.log(`📈 Coverage: ${total > 0 ? ((processed / total) * 100).toFixed(1) : 0}%\n`);
-
-    if (examples.length > 0) {
-        console.log('📋 Examples of processed items:');
-        examples.forEach(item => {
-            console.log(`\nTitle: ${item.title}`);
-            console.log(`Lex Profile: ${JSON.stringify(item.lex_profile, null, 2)}`);
+        console.log('Published items with lex_profile:');
+        res.rows.forEach(row => {
+            console.log(`\n--- ${row.title} (${row.lang}) ---`);
+            console.log(`  Type: ${row.lex_profile_type}`);
+            console.log(`  Token count field: ${row.tokens_count}`);
+            console.log(`  TokenList length: ${row.token_list_length}`);
+            console.log(`  First token: ${JSON.stringify(row.first_token, null, 2)}`);
         });
-    } else {
-        console.log('ℹ️  No processed items found.');
+
+        // Check how many items have lex_profile
+        const countRes = await client.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE status = 'published') as published_total,
+        COUNT(*) FILTER (WHERE status = 'published' AND lex_profile IS NOT NULL) as published_with_lex,
+        COUNT(*) FILTER (WHERE status = 'published' AND lex_profile->'details'->'tokenList' IS NOT NULL) as published_with_tokenlist
+      FROM shadowing_items
+    `);
+
+        console.log('\n\n=== Summary ===');
+        console.log(`Published items: ${countRes.rows[0].published_total}`);
+        console.log(`With lex_profile: ${countRes.rows[0].published_with_lex}`);
+        console.log(`With tokenList: ${countRes.rows[0].published_with_tokenlist}`);
+
+    } catch (err) {
+        console.error('Error:', err);
+    } finally {
+        await client.end();
     }
 }
 
-checkLexProfile().catch(console.error);
+checkLexProfile();

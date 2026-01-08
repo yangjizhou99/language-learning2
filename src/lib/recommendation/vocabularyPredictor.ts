@@ -364,6 +364,12 @@ function getFrequencyFactor(rank: number): number {
  * Calculate likelihood ratio based on user evidence
  * Returns a multiplier for the prior odds
  */
+/**
+ * Calculate likelihood ratio based on user evidence
+ * Returns a multiplier for the prior odds
+ * 
+ * Improved with FSRS-inspired forgetting curve logic
+ */
 export function calculateLikelihood(
     evidence: UserWordEvidence | null
 ): number {
@@ -371,47 +377,58 @@ export function calculateLikelihood(
         return 1.0; // No evidence → no change
     }
 
+    const now = Date.now();
+
     // 1. Strong negative evidence: marked as unknown
     if (evidence.markedUnknown) {
         const daysSinceMarked = evidence.markedAt
-            ? (Date.now() - evidence.markedAt.getTime()) / (1000 * 60 * 60 * 24)
+            ? (now - evidence.markedAt.getTime()) / (1000 * 60 * 60 * 24)
             : 0;
 
         // Recent marking → strong evidence of not knowing
-        // But with time + exposure, might have learned
-        if (daysSinceMarked < 7) {
-            // Very recent: strong negative
+        if (daysSinceMarked < 1) {
+            return 0.10; // Extremely unlikely to know immediately after marking
+        } else if (daysSinceMarked < 7) {
             return 0.15;
         } else if (daysSinceMarked < 30) {
             // Within a month: moderate negative, consider subsequent exposure
-            const learningProgress = Math.min(1.0, evidence.notMarkedCount * 0.15);
-            return 0.25 + learningProgress * 0.50;
+            // If seen many times since marking, probability recovers slightly
+            const recovery = Math.min(0.5, evidence.notMarkedCount * 0.1);
+            return 0.25 + recovery;
         } else {
             // Old marking: weaker evidence, rely more on recent exposure
-            const learningProgress = Math.min(1.0, evidence.notMarkedCount * 0.20);
-            return 0.40 + learningProgress * 0.50;
+            const recovery = Math.min(0.6, evidence.notMarkedCount * 0.15);
+            return 0.40 + recovery;
         }
     }
 
-    // 2. Weak positive evidence: exposure without marking
-    // More exposures without marking → more likely known
-    if (evidence.exposureCount > 0 && evidence.notMarkedCount > 0) {
-        const exposureFactor = Math.min(2.0, 1.0 + evidence.notMarkedCount * 0.15);
-
-        // Apply forgetting curve if there's a gap
-        let retentionFactor = 1.0;
-        if (evidence.lastSeenAt) {
-            const daysSinceSeen = (Date.now() - evidence.lastSeenAt.getTime()) / (1000 * 60 * 60 * 24);
-            const stability = FORGETTING.baseStability * (1 + evidence.exposureCount * FORGETTING.stabilityGrowth);
-            retentionFactor = Math.exp(-daysSinceSeen / stability);
-        }
-
-        return exposureFactor * retentionFactor;
-    }
-
-    // 3. Just exposure without marking data
+    // 2. Positive evidence: exposure without marking
     if (evidence.exposureCount > 0) {
-        return 1.0 + evidence.exposureCount * 0.05; // Slight positive
+        // Base factor from number of exposures
+        // Diminishing returns: 1->1.2, 5->1.8, 10->2.1
+        const exposureFactor = 1.0 + Math.log(evidence.exposureCount + 1) * 0.4;
+
+        // Forgetting curve: Retention = exp(-t/S)
+        // Stability (S) increases with repetitions
+        let stability = FORGETTING.baseStability * Math.pow(1 + FORGETTING.stabilityGrowth, Math.min(10, evidence.exposureCount));
+
+        // Calculate time since last seen
+        let daysSinceSeen = 0;
+        if (evidence.lastSeenAt) {
+            daysSinceSeen = (now - evidence.lastSeenAt.getTime()) / (1000 * 60 * 60 * 24);
+        } else if (evidence.firstSeenAt) {
+            // Fallback if lastSeenAt missing
+            daysSinceSeen = (now - evidence.firstSeenAt.getTime()) / (1000 * 60 * 60 * 24);
+        }
+
+        // Apply forgetting
+        const retention = Math.exp(-daysSinceSeen / stability);
+
+        // Likelihood is boosted by exposure, but dampened by forgetting
+        // We ensure it doesn't drop below 1.0 if there was significant exposure (some residual memory)
+        const smoothedRetention = 0.4 + 0.6 * retention; // Never fully forget "that I saw it"
+
+        return 1.0 + (exposureFactor - 1.0) * smoothedRetention;
     }
 
     return 1.0;

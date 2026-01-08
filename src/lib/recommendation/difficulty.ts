@@ -17,6 +17,12 @@ export interface UserAbilityState {
         downRatio: number;
         upRatio: number;
     };
+    bayesianProfile?: {
+        jlptMastery: Record<string, number>;
+        estimatedLevel: number;
+        evidenceCount: number;
+        frequencyThreshold: number;
+    } | null;
 }
 
 export interface ShadowingItemMetadata {
@@ -216,11 +222,99 @@ export function calculateDifficultyScore(
     item: ShadowingItemMetadata,
     targetBand: 'down' | 'main' | 'up'
 ): number {
+    // 1. If we have Bayesian profile, use the new "Predicted Comprehension" logic
+    if (user.bayesianProfile) {
+        const predictedComprehension = calculatePredictedComprehension(user.bayesianProfile, item);
+        return computeComprehensionMatch(predictedComprehension, targetBand);
+    }
+
+    // 2. Fallback to legacy logic
     const levelScore = computeLevelMatch(user.level, item.level, targetBand);
     const lexScore = computeLexMatch(user.vocabUnknownRate, item.lexProfile);
 
     // Weighting: Level is primary, Lexical profile is secondary fine-tuning
     return 0.7 * levelScore + 0.3 * lexScore;
+}
+
+/**
+ * Calculate predicted comprehension rate (0.0 - 1.0) based on JLPT mastery
+ */
+function calculatePredictedComprehension(
+    profile: NonNullable<UserAbilityState['bayesianProfile']>,
+    item: ShadowingItemMetadata
+): number {
+    // 1. Estimate item's JLPT distribution from its CEFR lexProfile
+    // This is a heuristic since we don't have direct JLPT stats on items yet
+    // Mapping: A1/A2 -> N5/N4, B1 -> N3, B2 -> N2, C1+ -> N1
+
+    // Normalize lexProfile to ensure sum is 1.0 (or close to it)
+    const lex = item.lexProfile;
+    const totalWeight = (lex.A1_A2 || 0) + (lex.B1_B2 || 0) + (lex.C1_plus || 0);
+
+    if (totalWeight === 0) return 0.5; // Unknown item, assume 50%
+
+    // Distribute CEFR weights to JLPT levels
+    // A1_A2 (Beginner) -> Split between N5 and N4
+    const wN5 = ((lex.A1_A2 || 0) / totalWeight) * 0.6; // N5 is easiest
+    const wN4 = ((lex.A1_A2 || 0) / totalWeight) * 0.4;
+
+    // B1_B2 (Intermediate) -> Split between N3 and N2
+    const wN3 = ((lex.B1_B2 || 0) / totalWeight) * 0.6; // B1 ~ N3
+    const wN2 = ((lex.B1_B2 || 0) / totalWeight) * 0.4; // B2 ~ N2
+
+    // C1_plus (Advanced) -> N1
+    const wN1 = ((lex.C1_plus || 0) / totalWeight);
+
+    // 2. Calculate weighted mastery
+    // Comprehension = Sum(Weight_L * Mastery_L)
+    const mastery = profile.jlptMastery;
+
+    const score =
+        wN5 * (mastery.N5 || 0) +
+        wN4 * (mastery.N4 || 0) +
+        wN3 * (mastery.N3 || 0) +
+        wN2 * (mastery.N2 || 0) +
+        wN1 * (mastery.N1 || 0);
+
+    return Math.max(0, Math.min(1, score));
+}
+
+function computeComprehensionMatch(
+    predictedComprehension: number,
+    band: 'down' | 'main' | 'up'
+): number {
+    let idealComp = 0.85; // Default main
+    let tolerance = 0.1;
+
+    switch (band) {
+        case 'down':
+            // Consolidate: 95% - 100% comprehension
+            idealComp = 0.97;
+            tolerance = 0.05;
+            break;
+        case 'main':
+            // Learn: 80% - 90% comprehension (i+1)
+            idealComp = 0.85;
+            tolerance = 0.1;
+            break;
+        case 'up':
+            // Challenge: 60% - 75% comprehension
+            idealComp = 0.68;
+            tolerance = 0.12;
+            break;
+    }
+
+    const diff = Math.abs(predictedComprehension - idealComp);
+
+    // Gaussian-like drop-off
+    // If within tolerance, score is high. Outside, drops fast.
+    if (diff <= tolerance) {
+        return 1.0 - (diff / tolerance) * 0.2; // 0.8 - 1.0 inside tolerance
+    } else {
+        // Outside tolerance
+        const extraDiff = diff - tolerance;
+        return Math.max(0, 0.8 - extraDiff * 3.0); // Drop off
+    }
 }
 
 function computeLevelMatch(
