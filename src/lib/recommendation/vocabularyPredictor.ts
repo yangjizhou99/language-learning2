@@ -350,7 +350,11 @@ export function calculatePrior(
  * Get frequency factor for a given rank
  */
 function getFrequencyFactor(rank: number): number {
-    if (rank <= 0) return 0.80; // Not found → assume moderately rare
+    // When frequency rank is missing (rank <= 0), return 1.0 (neutral factor).
+    // This is because words without frequency data are often basic grammar/function words
+    // (particles, auxiliaries, etc.) which are actually the most common vocabulary.
+    // We shouldn't penalize them for missing frequency data.
+    if (rank <= 0) return 1.0;
 
     for (const band of FREQUENCY_FACTORS) {
         if (rank <= band.maxRank) {
@@ -639,3 +643,119 @@ export function calculateArticleDifficulty(
         explanation
     };
 }
+
+// ==================== Prediction Accuracy Feedback ====================
+
+/** Prediction accuracy feedback from session history */
+export interface PredictionAccuracyFeedback {
+    precision: number;      // Predicted unknown that were actually marked unknown
+    recall: number;         // Actual unknown that were predicted
+    f1Score: number;        // Harmonic mean of precision and recall
+    threshold: number;      // Threshold used for prediction
+    sampleSize: number;     // Number of predictions made
+}
+
+/**
+ * Adjust prediction threshold based on historical accuracy feedback
+ * 
+ * Strategy:
+ * - If precision is low (many false positives): raise threshold
+ * - If recall is low (missing many unknowns): lower threshold
+ * - Require minimum sample size for adjustment
+ * 
+ * @param currentThreshold - Current threshold (default 0.5)
+ * @param feedback - Accumulated accuracy feedback
+ * @returns Adjusted threshold
+ */
+export function adjustThresholdFromFeedback(
+    currentThreshold: number,
+    feedback: PredictionAccuracyFeedback | null
+): number {
+    // Default threshold
+    if (!feedback || feedback.sampleSize < 10) {
+        return currentThreshold;
+    }
+
+    const { precision, recall, sampleSize } = feedback;
+
+    // Calculate adjustment confidence based on sample size
+    // More samples = more aggressive adjustment
+    const adjustmentScale = Math.min(1.0, sampleSize / 50);
+
+    // Base adjustment step
+    const step = 0.05 * adjustmentScale;
+
+    // If precision is much lower than recall: too many false positives
+    // Raise threshold to be more conservative
+    if (precision < recall - 0.15) {
+        return Math.min(0.7, currentThreshold + step);
+    }
+
+    // If recall is much lower than precision: missing too many unknowns
+    // Lower threshold to catch more
+    if (recall < precision - 0.15) {
+        return Math.max(0.3, currentThreshold - step);
+    }
+
+    // If both are balanced and good (F1 > 0.5), keep current
+    if (feedback.f1Score >= 0.5) {
+        return currentThreshold;
+    }
+
+    // If both are low, prefer higher recall (catch more unknowns)
+    // This is safer for learning - better to show extras than miss
+    if (recall < 0.4) {
+        return Math.max(0.3, currentThreshold - step);
+    }
+
+    return currentThreshold;
+}
+
+/**
+ * Calculate cumulative accuracy feedback from multiple sessions
+ * 
+ * @param sessionFeedbacks - Array of per-session accuracy stats
+ * @returns Aggregated feedback for threshold adjustment
+ */
+export function aggregateAccuracyFeedback(
+    sessionFeedbacks: Array<{
+        precision: number;
+        recall: number;
+        predictedCount: number;
+        markedCount: number;
+    }>
+): PredictionAccuracyFeedback | null {
+    if (!sessionFeedbacks.length) return null;
+
+    // Weighted average by sample size
+    let totalPredicted = 0;
+    let totalMarked = 0;
+    let weightedPrecision = 0;
+    let weightedRecall = 0;
+
+    for (const fb of sessionFeedbacks) {
+        const weight = fb.predictedCount + fb.markedCount;
+        weightedPrecision += fb.precision * weight;
+        weightedRecall += fb.recall * weight;
+        totalPredicted += fb.predictedCount;
+        totalMarked += fb.markedCount;
+    }
+
+    const totalWeight = totalPredicted + totalMarked;
+    if (totalWeight === 0) return null;
+
+    const avgPrecision = weightedPrecision / totalWeight;
+    const avgRecall = weightedRecall / totalWeight;
+    const f1Score = avgPrecision + avgRecall > 0
+        ? (2 * avgPrecision * avgRecall) / (avgPrecision + avgRecall)
+        : 0;
+
+    return {
+        precision: Math.round(avgPrecision * 1000) / 1000,
+        recall: Math.round(avgRecall * 1000) / 1000,
+        f1Score: Math.round(f1Score * 1000) / 1000,
+        threshold: 0.5, // Default, will be overridden
+        sampleSize: sessionFeedbacks.length,
+    };
+}
+

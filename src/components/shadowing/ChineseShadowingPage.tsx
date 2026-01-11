@@ -110,7 +110,7 @@ import { performSimpleAnalysis } from '@/lib/shadowing/simpleAnalysis';
 import { getNextRecommendedItem, getRecommendationReason, RecommendationResult, bayesianToUnknownRate, bayesianToRecommendedLevel } from '@/lib/recommendation/nextItem';
 import { NextPracticeCard } from '@/components/recommendation/NextPracticeCard';
 import { ThemePreference } from '@/lib/recommendation/preferences';
-import { BayesianUserProfile, calculatePreciseUnknownRate, ArticleLexProfile, predictKnowledgeProbability, extractWordFeatures, WordFeatures } from '@/lib/recommendation/vocabularyPredictor';
+import { BayesianUserProfile, calculatePreciseUnknownRate, ArticleLexProfile, predictKnowledgeProbability, extractWordFeatures, WordFeatures, UserWordEvidence, adjustThresholdFromFeedback, PredictionAccuracyFeedback } from '@/lib/recommendation/vocabularyPredictor';
 import { usePredictedWords } from '@/hooks/usePredictedWords';
 
 // 题目数据类型
@@ -665,14 +665,75 @@ export default function ShadowingPage() {
   const [currentItem, setCurrentItem] = useState<ShadowingItem | null>(null);
   const [currentSession, setCurrentSession] = useState<ShadowingSession | null>(null);
 
+  // User vocabulary knowledge cache for Bayesian prediction with historical evidence
+  const [vocabKnowledge, setVocabKnowledge] = useState<Map<string, UserWordEvidence>>(new Map());
+
+  // Fetch user vocabulary knowledge when currentItem changes
+  useEffect(() => {
+    const tokens = currentItem?.lex_profile?.tokenList ||
+      (currentItem?.notes?.lex_profile as { tokenDetails?: Array<{ token: string }> })?.tokenDetails;
+    if (!tokens?.length) {
+      setVocabKnowledge(new Map());
+      return;
+    }
+
+    // Get unique words
+    const words = [...new Set(tokens.map((t: { token: string }) => t.token))].join(',');
+    if (!words) return;
+
+    // Fetch knowledge from API
+    const fetchKnowledge = async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(`/api/vocabulary/knowledge?words=${encodeURIComponent(words)}`, { headers });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.knowledge) {
+            // Convert API response to UserWordEvidence map
+            const knowledgeMap = new Map<string, UserWordEvidence>();
+            for (const [word, evidence] of Object.entries(data.knowledge)) {
+              const e = evidence as {
+                markedUnknown: boolean;
+                markedAt: string | null;
+                exposureCount: number;
+                notMarkedCount: number;
+                firstSeenAt: string | null;
+                lastSeenAt: string | null;
+              };
+              knowledgeMap.set(word, {
+                markedUnknown: e.markedUnknown,
+                markedAt: e.markedAt ? new Date(e.markedAt) : undefined,
+                exposureCount: e.exposureCount,
+                notMarkedCount: e.notMarkedCount,
+                firstSeenAt: e.firstSeenAt ? new Date(e.firstSeenAt) : undefined,
+                lastSeenAt: e.lastSeenAt ? new Date(e.lastSeenAt) : undefined,
+              });
+            }
+            setVocabKnowledge(knowledgeMap);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch vocabulary knowledge:', error);
+      }
+    };
+
+    fetchKnowledge();
+  }, [currentItem?.id]); // Re-fetch when item changes
+
+
   // Generate word predictions map for current item using Bayesian algorithm
   const wordPredictions = useMemo(() => {
     const predictions = new Map<string, { probability: number; confidence: 'high' | 'medium' | 'low' }>();
 
-    // Get tokenDetails from lex_profile (stored in notes.lex_profile.tokenDetails)
-    const lexProfile = currentItem?.notes?.lex_profile as { tokenDetails?: Array<{ token: string; level: string; frequencyRank?: number; isContentWord?: boolean }> } | undefined;
-    const tokenDetails = lexProfile?.tokenDetails;
-    if (!tokenDetails || !bayesianProfile) {
+    // Unified data source: prefer lex_profile.tokenList, fallback to notes.lex_profile.tokenDetails
+    // tokenList uses "originalLevel", tokenDetails uses "level" - we handle both
+    type TokenData = { token: string; originalLevel?: string; level?: string; frequencyRank?: number; isContentWord?: boolean };
+
+    const tokenList = currentItem?.lex_profile?.tokenList as TokenData[] | undefined;
+    const tokenDetailsFromNotes = (currentItem?.notes?.lex_profile as { tokenDetails?: TokenData[] })?.tokenDetails;
+    const tokens = tokenList || tokenDetailsFromNotes;
+
+    if (!tokens || !bayesianProfile) {
       return predictions;
     }
 
@@ -688,23 +749,36 @@ export default function ShadowingPage() {
     };
 
     // Calculate prediction for each token
-    for (const token of tokenDetails) {
+    for (const token of tokens) {
       if (!token.token || predictions.has(token.token)) continue;
 
       try {
+        // Extract pure JLPT level - handle both "originalLevel" (tokenList) and "level" (tokenDetails)
+        // Format might be "N3" or "grammar (N5)"
+        let extractedLevel = 'unknown';
+        const rawLevel = token.originalLevel || token.level || '';
+        const levelMatch = rawLevel.match(/N[1-5]/i);
+        if (levelMatch) {
+          extractedLevel = levelMatch[0].toUpperCase();
+        }
+
         // Extract word features
         const wordFeatures: WordFeatures = {
           surface: token.token,
           lemma: token.token,
-          level: token.level || 'unknown',
+          level: extractedLevel,
           frequencyRank: token.frequencyRank || -1,
           isKanji: /[\u4e00-\u9faf]/.test(token.token),
           isLoanword: /^[ァ-ヴー]+$/.test(token.token),
           length: token.token.length,
         };
 
-        // Calculate prediction (no evidence for now)
-        const prediction = predictKnowledgeProbability(wordFeatures, userProfile, null);
+        // Get user evidence for this word (includes forgetting curve data)
+        const evidence = vocabKnowledge.get(token.token) || null;
+
+        // Calculate prediction with user historical evidence
+        const prediction = predictKnowledgeProbability(wordFeatures, userProfile, evidence);
+
         predictions.set(token.token, {
           probability: prediction.knownProbability,
           confidence: prediction.confidence,
@@ -715,7 +789,14 @@ export default function ShadowingPage() {
     }
 
     return predictions;
-  }, [currentItem, bayesianProfile]);
+  }, [currentItem, bayesianProfile, vocabKnowledge]);
+
+  // Dynamic prediction threshold based on user's historical accuracy feedback
+  const predictionThreshold = useMemo(() => {
+    // Get accumulated prediction accuracy from bayesianProfile (if available)
+    const feedback = (bayesianProfile as any)?.predictionFeedback as PredictionAccuracyFeedback | undefined;
+    return adjustThresholdFromFeedback(0.5, feedback || null);
+  }, [bayesianProfile]);
 
   // Difficulty Rating State
   const [selfDifficulty, setSelfDifficulty] = useState<'too_easy' | 'just_right' | 'a_bit_hard' | 'too_hard' | null>(null);
@@ -3667,11 +3748,13 @@ export default function ShadowingPage() {
       });
 
       // Build prediction_stats for accuracy tracking
+      // Use dynamic threshold based on historical accuracy feedback
       const predictedUnknownWords = [...wordPredictions.entries()]
-        .filter(([_, pred]) => pred.probability < 0.5)
+        .filter(([_, pred]) => pred.probability < predictionThreshold)
         .map(([word]) => word);
 
       console.log('[PredictionStats Debug] wordPredictions size:', wordPredictions.size);
+      console.log('[PredictionStats Debug] predictionThreshold:', predictionThreshold);
       console.log('[PredictionStats Debug] predictedUnknownWords count:', predictedUnknownWords.length);
       console.log('[PredictionStats Debug] selected_words count:', selected_words_payload.length);
       console.log('[PredictionStats Debug] bayesianProfile exists:', !!bayesianProfile);
