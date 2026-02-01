@@ -1,5 +1,7 @@
 import frequencyData from './data/frequency.json';
 import frequencyPatchData from './data/frequency-patch.json';
+import frequencyEnData from './data/frequency-en.json';
+import frequencyPatchEnData from './data/frequency-patch-en.json';
 
 /**
  * Word Frequency Utility
@@ -34,6 +36,12 @@ if (Array.isArray(frequencyData)) {
 
 // Merge patch data into main map
 Object.assign(frequencyMap, frequencyPatchMap);
+
+// English frequency maps
+const frequencyEnMap: Record<string, number> = frequencyEnData as Record<string, number>;
+const frequencyPatchEnMap: Record<string, number> = frequencyPatchEnData as Record<string, number>;
+// Merge English patch data into English main map
+Object.assign(frequencyEnMap, frequencyPatchEnMap);
 
 // Common Kana words that are stored as Kanji in the frequency list
 // This maps the common Kana form to the Kanji form found in the list
@@ -175,7 +183,21 @@ export function getFrequencyRank(token: string, lemma?: string, lang: 'ja' | 'en
 
     // Handling for English
     if (lang === 'en') {
-        // 1. If level is provided, map to rank
+        // Normalize to lowercase for lookup
+        const tokenLower = token.toLowerCase();
+        const lemmaLower = lemma?.toLowerCase();
+
+        // 1. Try English frequency map (primary source: 30k words from OpenSubtitles)
+        let rank = frequencyEnMap[tokenLower];
+        if (rank) return rank;
+
+        // 2. Try lemma if provided
+        if (lemmaLower && lemmaLower !== tokenLower) {
+            rank = frequencyEnMap[lemmaLower];
+            if (rank) return rank;
+        }
+
+        // 3. Fallback: If CEFR level is provided, map to approximate rank
         if (level) {
             // Check direct match (A1, B2)
             if (EN_LEVEL_TO_RANK_BASE[level]) {
@@ -192,7 +214,7 @@ export function getFrequencyRank(token: string, lemma?: string, lang: 'ja' | 'en
             }
         }
 
-        // If no level or unknown level, treat as rare
+        // If not found anywhere, treat as rare
         return -1;
     }
 
