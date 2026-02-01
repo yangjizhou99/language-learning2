@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { text, lang, jaTokenizer, jaVocabDict, jaGrammarDict } = body;
+        const { text, lang, jaTokenizer, jaVocabDict, jaGrammarDict, enVocabDict } = body;
 
         if (!text || typeof text !== 'string') {
             return NextResponse.json({ error: 'text is required' }, { status: 400 });
@@ -68,10 +68,15 @@ export async function POST(req: NextRequest) {
         const validGrammarDicts: JaGrammarDict[] = ['yapan', 'hagoromo', 'combined'];
         const selectedGrammarDict: JaGrammarDict = validGrammarDicts.includes(jaGrammarDict) ? jaGrammarDict : 'yapan';
 
+        // Validate enVocabDict if provided
+        type EnVocabDict = 'default' | 'extended' | 'oxford3000' | 'oxford5000';
+        const validEnVocabDicts: EnVocabDict[] = ['default', 'extended', 'oxford3000', 'oxford5000'];
+        const selectedEnVocabDict: EnVocabDict = validEnVocabDicts.includes(enVocabDict) ? enVocabDict : 'extended';
+
         // Analyze the text with async version (supports multiple Japanese tokenizers and dictionaries)
-        const result = await analyzeLexProfileAsync(text, lang as SupportedLang, selectedTokenizer, selectedVocabDict, selectedGrammarDict);
+        const result = await analyzeLexProfileAsync(text, lang as SupportedLang, selectedTokenizer, selectedVocabDict, selectedGrammarDict, selectedEnVocabDict);
         const lexProfileForDB = toLexProfileForDB(result);
-        const dictSize = getDictionarySize(lang as SupportedLang, selectedVocabDict);
+        const dictSize = getDictionarySize(lang as SupportedLang, selectedVocabDict, selectedEnVocabDict);
 
         return NextResponse.json({
             success: true,

@@ -1,0 +1,74 @@
+{
+  "organized": {
+    "level": "B1",
+    "definition": "有组织的，有条理的",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:46:27.386Z"
+  },
+  "artisans": {
+    "level": "B2",
+    "definition": "工匠，手艺人",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:46:27.386Z"
+  },
+  "mechanized": {
+    "level": "B2",
+    "definition": "机械化的",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:46:27.386Z"
+  },
+  "unprecedented": {
+    "level": "C1",
+    "definition": "前所未有的",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:46:27.386Z"
+  },
+  "sustainability": {
+    "level": "B2",
+    "definition": "可持续性",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:46:27.386Z"
+  },
+  "footprint": {
+    "level": "B2",
+    "definition": "足迹，影响范围",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:46:27.386Z"
+  },
+  "renewable": {
+    "level": "B1",
+    "definition": "可再生的",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:46:27.386Z"
+  },
+  "infrastructure": {
+    "level": "B2",
+    "definition": "基础设施",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:46:27.386Z"
+  },
+  "chronic": {
+    "level": "C1",
+    "definition": "慢性的，长期的",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:46:27.386Z"
+  },
+  "productivity": {
+    "level": "B2",
+    "definition": "生产力，生产率",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:46:27.386Z"
+  },
+  "revolutionized": {
+    "level": "B2",
+    "definition": "彻底改变",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:58:44.848Z"
+  },
+  "algorithms": {
+    "level": "B1",
+    "definition": "算法",
+    "source": "llm",
+    "createdAt": "2026-02-01T05:58:44.848Z"
+  }
+}

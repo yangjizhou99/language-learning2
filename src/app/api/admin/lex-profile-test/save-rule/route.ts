@@ -32,11 +32,13 @@ interface GrammarRule {
 }
 
 interface SaveRuleRequest {
+    lang?: 'en' | 'ja' | 'zh';  // Language for the rules, defaults to 'ja'
     vocabEntries?: Array<{
         surface: string;
         reading?: string;
         definition?: string;
-        jlpt: string;
+        jlpt?: string;   // For Japanese
+        cefr?: string;   // For English
     }>;
     grammarChunks?: Array<{
         surface: string;
@@ -55,6 +57,7 @@ interface SaveRuleRequest {
 // File paths for rule storage
 const DATA_DIR = path.join(process.cwd(), 'src', 'data');
 const VOCAB_RULES_PATH = path.join(DATA_DIR, 'vocab', 'llm-vocab-rules.json');
+const VOCAB_RULES_EN_PATH = path.join(DATA_DIR, 'vocab', 'llm-vocab-rules-en.json');
 const GRAMMAR_RULES_PATH = path.join(DATA_DIR, 'grammar', 'llm-grammar-rules.json');
 
 async function loadJsonFile<T>(filePath: string): Promise<T> {
@@ -105,7 +108,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json() as SaveRuleRequest;
-        const { vocabEntries, grammarChunks } = body;
+        const { vocabEntries, grammarChunks, lang = 'ja' } = body;
 
         const timestamp = new Date().toISOString();
         let vocabSaved = 0;
@@ -113,12 +116,16 @@ export async function POST(req: NextRequest) {
 
         // Save vocab entries
         if (vocabEntries && vocabEntries.length > 0) {
-            const vocabRules = await loadJsonFile<Record<string, VocabRule>>(VOCAB_RULES_PATH);
+            // Select correct file based on language
+            const vocabFilePath = lang === 'en' ? VOCAB_RULES_EN_PATH : VOCAB_RULES_PATH;
+            const vocabRules = await loadJsonFile<Record<string, VocabRule>>(vocabFilePath);
 
             for (const entry of vocabEntries) {
-                if (entry.surface && entry.jlpt) {
+                // Get level from either jlpt (Japanese) or cefr (English)
+                const level = lang === 'en' ? entry.cefr : entry.jlpt;
+                if (entry.surface && level) {
                     vocabRules[entry.surface] = {
-                        level: entry.jlpt,
+                        level: level,
                         reading: entry.reading,
                         definition: entry.definition,
                         source: 'llm',
@@ -128,7 +135,7 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            await saveJsonFile(VOCAB_RULES_PATH, vocabRules);
+            await saveJsonFile(vocabFilePath, vocabRules);
         }
 
         // Save grammar chunks
@@ -192,15 +199,21 @@ export async function POST(req: NextRequest) {
 }
 
 // GET endpoint to retrieve current rules count
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
+        const { searchParams } = new URL(req.url);
+        const lang = searchParams.get('lang') || 'ja';
+
         const vocabRules = await loadJsonFile<Record<string, VocabRule>>(VOCAB_RULES_PATH);
+        const vocabRulesEn = await loadJsonFile<Record<string, VocabRule>>(VOCAB_RULES_EN_PATH);
         const grammarRules = await loadJsonFile<Record<string, GrammarRule>>(GRAMMAR_RULES_PATH);
 
         return NextResponse.json({
             vocabCount: Object.keys(vocabRules).length,
+            vocabEnCount: Object.keys(vocabRulesEn).length,
             grammarCount: Object.keys(grammarRules).length,
-            vocabRules,
+            vocabRules,  // Japanse rules
+            vocabRulesEn, // English rules
             grammarRules,
         });
     } catch (error) {
@@ -249,6 +262,7 @@ export async function DELETE(req: NextRequest) {
         // Clear files by saving empty objects
         await saveJsonFile(VOCAB_RULES_PATH, {});
         await saveJsonFile(GRAMMAR_RULES_PATH, {});
+        await saveJsonFile(VOCAB_RULES_EN_PATH, {});
 
         return NextResponse.json({
             success: true,
