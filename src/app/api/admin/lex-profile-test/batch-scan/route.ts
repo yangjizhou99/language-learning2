@@ -75,16 +75,17 @@ export async function POST(req: NextRequest) {
 
         // Parse request body for dictionary options
         const body = await req.json().catch(() => ({}));
+        const lang = body.lang || 'ja';  // Support English and Japanese
         const jaVocabDict = body.jaVocabDict || 'combined';
         const jaGrammarDict = body.jaGrammarDict || 'combined';
         const jaTokenizer = body.jaTokenizer || 'kuromoji';
 
-        // Fetch all Japanese items
+        // Fetch items for the specified language
         const adminClient = getServiceSupabase();
         const { data: items, error } = await adminClient
             .from('shadowing_items')
             .select('id, text, title, lang')
-            .eq('lang', 'ja')
+            .eq('lang', lang)
             .not('text', 'is', null)
             .order('created_at', { ascending: false });
 
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (!items || items.length === 0) {
-            return NextResponse.json({ error: 'No Japanese items found' }, { status: 404 });
+            return NextResponse.json({ error: `No ${lang === 'ja' ? 'Japanese' : 'English'} items found` }, { status: 404 });
         }
 
         // Collect unknown tokens
@@ -110,12 +111,13 @@ export async function POST(req: NextRequest) {
 
         for (const item of items) {
             try {
+                // Pass correct language and options to analyzer
                 const result = await analyzeLexProfileAsync(
                     item.text,
-                    'ja',
-                    jaTokenizer,
-                    jaVocabDict,
-                    jaGrammarDict
+                    lang as 'ja' | 'en' | 'zh',
+                    lang === 'ja' ? jaTokenizer : 'kuromoji',  // Only apply Japanese tokenizer for Japanese
+                    lang === 'ja' ? jaVocabDict : 'default',
+                    lang === 'ja' ? jaGrammarDict : 'yapan'
                 );
 
                 analyzedItems++;

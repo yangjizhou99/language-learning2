@@ -123,6 +123,9 @@ export default function LexProfileTestPage() {
     // Japanese grammar dictionary selection
     const [jaGrammarDict, setJaGrammarDict] = useState<'yapan' | 'hagoromo' | 'combined'>('combined');
 
+    // English vocabulary dictionary selection
+    const [enVocabDict, setEnVocabDict] = useState<'default' | 'extended' | 'oxford3000' | 'oxford5000'>('extended');
+
     // Word frequency display (simple JLPT-based scoring)
     const [showFrequency, setShowFrequency] = useState(false);
 
@@ -380,7 +383,7 @@ export default function LexProfileTestPage() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${session.access_token}`,
                 },
-                body: JSON.stringify({ text, lang, jaTokenizer, jaVocabDict, jaGrammarDict }),
+                body: JSON.stringify({ text, lang, jaTokenizer, jaVocabDict, jaGrammarDict, enVocabDict }),
             });
 
             const data = await res.json();
@@ -541,6 +544,7 @@ export default function LexProfileTestPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     task: 'level_assignment',
+                    lang,  // Pass current language for correct prompts
                     text: '', // No longer sending full text
                     tokens: result.details.tokenList,
                     unknownTokens: result.details.unknownTokens,
@@ -586,6 +590,7 @@ export default function LexProfileTestPage() {
                     Authorization: `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({
+                    lang,  // Pass current language for correct file
                     vocabEntries: llmLevelResult.vocab_entries,
                     grammarChunks: llmLevelResult.grammar_chunks,
                 }),
@@ -843,6 +848,7 @@ export default function LexProfileTestPage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         task: 'level_assignment',
+                        lang,  // Pass current language for correct prompts
                         text: '',
                         tokens: [],
                         unknownTokens: vocabBatch.map(v => v.token),
@@ -867,6 +873,7 @@ export default function LexProfileTestPage() {
                             Authorization: `Bearer ${session.access_token}`,
                         },
                         body: JSON.stringify({
+                            lang,  // Pass current language for correct file
                             vocabEntries: llmData.vocab_entries,
                             grammarChunks: llmData.grammar_chunks,
                         }),
@@ -901,7 +908,7 @@ export default function LexProfileTestPage() {
             if (!res.ok) throw new Error(data.error);
 
             setSavedRules({
-                vocab: data.vocabRules || {},
+                vocab: lang === 'en' ? (data.vocabRulesEn || {}) : (data.vocabRules || {}),
                 grammar: data.grammarRules || {},
             });
             setShowRulesPanel(true);
@@ -1475,6 +1482,25 @@ export default function LexProfileTestPage() {
                                             </label>
                                         </div>
                                     </>
+                                )}
+                                {/* English vocabulary dictionary selector */}
+                                {lang === 'en' && (
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">
+                                            英语词汇库
+                                            <span className="text-xs text-gray-500 ml-2">(可切换对比覆盖率)</span>
+                                        </label>
+                                        <select
+                                            value={enVocabDict}
+                                            onChange={(e) => setEnVocabDict(e.target.value as 'default' | 'extended' | 'oxford3000' | 'oxford5000')}
+                                            className="w-full p-2 border rounded"
+                                        >
+                                            <option value="extended">CEFR Extended (8,653词 - CEFR-J + C1/C2)</option>
+                                            <option value="default">CEFR Default (6,863词 - 原始)</option>
+                                            <option value="oxford5000">Oxford 5000 (4,954词 - A1-C1)</option>
+                                            <option value="oxford3000">Oxford 3000 (2,979词 - 核心词)</option>
+                                        </select>
+                                    </div>
                                 )}
                                 <div>
                                     <label className="block text-sm font-medium mb-1">文本内容</label>
@@ -2460,7 +2486,7 @@ export default function LexProfileTestPage() {
                                                                 </span>
                                                             </td>
                                                             {showFrequency && (() => {
-                                                                const rank = getFrequencyRank(t.token, t.lemma);
+                                                                const rank = getFrequencyRank(t.token, t.lemma, lang, t.originalLevel);
                                                                 return (
                                                                     <td className="px-2 py-1">
                                                                         <span className={`px-1.5 py-0.5 rounded text-xs font-mono ${getFrequencyColorClass(rank)}`}

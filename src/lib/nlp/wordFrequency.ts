@@ -141,17 +141,62 @@ export interface FrequencyScore {
     isGrammar: boolean;
 }
 
+// English Level to Rank Base mapping
+// This provides a proxy for frequency based on CEFR level
+const EN_LEVEL_TO_RANK_BASE: Record<string, number> = {
+    'A1': 500,
+    'A2': 1500,
+    'B1': 2500,
+    'B2': 3500,
+    'C1': 4500,
+    'C2': 5500,
+};
+
+// Also handle combined levels
+const EN_BROAD_LEVEL_TO_RANK_BASE: Record<string, number> = {
+    'A1_A2': 1000,
+    'B1_B2': 3000,
+    'C1_plus': 5000,
+};
+
 /**
- * Get frequency rank for a token
+ * Get frequency rank for a token (supports JA and EN)
  * Returns rank (1-based) or -1 if not found
  * 
  * @param token The surface form of the word
  * @param lemma Optional base form/lemma of the word (e.g. for verbs/adjectives)
+ * @param lang Language code ('ja' or 'en'), defaults to 'ja'
+ * @param level Optional CEFR level (used for English frequency estimation)
  */
-export function getFrequencyRank(token: string, lemma?: string): number {
+export function getFrequencyRank(token: string, lemma?: string, lang: 'ja' | 'en' | 'zh' = 'ja', level?: string): number {
     // 0. Check if it's a number (digits)
     // Treat numbers as very common (rank 100)
     if (/^[\d０-９]+$/.test(token)) return 100;
+
+    // Handling for English
+    if (lang === 'en') {
+        // 1. If level is provided, map to rank
+        if (level) {
+            // Check direct match (A1, B2)
+            if (EN_LEVEL_TO_RANK_BASE[level]) {
+                return EN_LEVEL_TO_RANK_BASE[level];
+            }
+            // Check formatted match (e.g. "A1 (Oxford)" -> "A1")
+            const cleanLevel = level.split(' ')[0].replace(/[^A-Za-z0-9]/g, '');
+            if (EN_LEVEL_TO_RANK_BASE[cleanLevel]) {
+                return EN_LEVEL_TO_RANK_BASE[cleanLevel];
+            }
+            // Check broad levels
+            if (EN_BROAD_LEVEL_TO_RANK_BASE[level]) {
+                return EN_BROAD_LEVEL_TO_RANK_BASE[level];
+            }
+        }
+
+        // If no level or unknown level, treat as rare
+        return -1;
+    }
+
+    // Default Japanese Logic
 
     // 0.5. Check Custom Frequency Map (Manual Overrides)
     if (CUSTOM_FREQUENCY_MAP[token]) return CUSTOM_FREQUENCY_MAP[token];
@@ -279,6 +324,8 @@ export function calculateFrequencyScores(
             t.pos === '複合語法' ||
             t.pos === '語法詞根';
 
+        // NOTE: Default to JA here for backward compatibility if called from backend?
+        // But backend doesn't call this. Frontend calls getFrequencyRank directly.
         const rank = getFrequencyRank(t.token, t.lemma);
 
         return {
