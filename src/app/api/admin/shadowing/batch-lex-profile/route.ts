@@ -20,13 +20,14 @@ export async function POST(req: NextRequest) {
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         const body = await req.json();
-        const { itemIds } = body as { itemIds: string[] };
+        const { itemIds, scope = 'items' } = body as { itemIds: string[], scope?: 'items' | 'drafts' };
+        const tableName = scope === 'drafts' ? 'shadowing_drafts' : 'shadowing_items';
 
         if (!itemIds || !Array.isArray(itemIds) || itemIds.length === 0) {
             return NextResponse.json({ error: 'itemIds array is required' }, { status: 400 });
         }
 
-        console.log(`[BatchLexProfile] Processing ${itemIds.length} items...`);
+        console.log(`[BatchLexProfile] Processing ${itemIds.length} items from ${tableName}...`);
 
         const results: { id: string; success: boolean; error?: string; lexProfile?: any }[] = [];
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
             try {
                 // 1. Fetch item text and language
                 const { data: item, error: fetchError } = await supabase
-                    .from('shadowing_items')
+                    .from(tableName)
                     .select('text, lang')
                     .eq('id', id)
                     .single();
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
                 };
 
                 const { error: updateError } = await supabase
-                    .from('shadowing_items')
+                    .from(tableName)
                     .update({ lex_profile: lexProfile })
                     .eq('id', id);
 

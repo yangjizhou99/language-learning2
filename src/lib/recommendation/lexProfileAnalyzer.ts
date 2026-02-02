@@ -1010,17 +1010,21 @@ function tokenizeEnglish(text: string, dict: Map<string, string>): TokenInfo[] {
 
         const broadCEFR = originalLevel
             ? mapToBroadCEFR(originalLevel, 'en')
-            : (isContentWord ? 'unknown' : 'grammar'); // If strictly grammar without level, broadCEFR is grammar? Actually mapToBroadCEFR handles levels. If unknown content word -> unknown. If grammar word without level -> unknown? No, broadCEFR should be correct.
+            : (isContentWord ? 'unknown' : 'grammar');
 
-        // Actually, mapToBroadCEFR usually handles standard levels.
+        // Calculate frequency rank for English words
+        const frequencyRank = isContentWord
+            ? getFrequencyRank(surface, lemma.toLowerCase(), 'en', originalLevel || undefined)
+            : undefined;
 
         tokens.push({
             token: surface,
             lemma: lemma.toLowerCase(),
             pos,
             originalLevel: originalLevel || 'unknown',
-            broadCEFR: originalLevel ? mapToBroadCEFR(originalLevel, 'en') : 'unknown',
+            broadCEFR,
             isContentWord,
+            frequencyRank,
         });
     });
 

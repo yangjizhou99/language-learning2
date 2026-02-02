@@ -89,7 +89,7 @@ export default function ThemeBatchProcessor() {
     const [skipExistingSceneVector, setSkipExistingSceneVector] = useState(true);
     const [skipExistingACU, setSkipExistingACU] = useState(true);
     const [skipExistingQuiz, setSkipExistingQuiz] = useState(true);
-    const [skipExistingLexProfile, setSkipExistingLexProfile] = useState(true);
+    const [skipExistingLexProfile, setSkipExistingLexProfile] = useState(false);
 
     // 性能参数
     const [themeConcurrency, setThemeConcurrency] = useState(2);
@@ -552,9 +552,15 @@ export default function ThemeBatchProcessor() {
                 supabase.from('shadowing_items').select('id, lex_profile').eq('theme_id', themeId),
             ]);
 
+            console.log('LexProfile Debug:', {
+                themeId,
+                draftsFound: draftsRes.data?.length,
+                itemsFound: itemsRes.data?.length,
+                skipSetting: skipExistingLexProfile
+            });
+
             const allItems: { id: string; type: 'draft' | 'item'; hasLexProfile: boolean }[] = [];
 
-            // 收集草稿
             if (draftsRes.data) {
                 draftsRes.data.forEach(d => {
                     const hasLexProfile = !!d.lex_profile;
