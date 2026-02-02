@@ -107,8 +107,8 @@ export default function LexProfileTestPage() {
     // New state for LLM level assignment
     const [isAssigningLevels, setIsAssigningLevels] = useState(false);
     const [llmLevelResult, setLlmLevelResult] = useState<{
-        vocab_entries: Array<{ surface: string; reading: string; definition: string; jlpt: string }>;
-        grammar_chunks: Array<{ surface: string; canonical: string; jlpt: string; definition?: string }>;
+        vocab_entries: Array<{ surface: string; reading: string; definition: string; jlpt: string; cefr?: string }>;
+        grammar_chunks: Array<{ surface: string; canonical: string; jlpt: string; definition?: string; cefr?: string }>;
         confidence: number;
     } | null>(null);
     const [isSavingRules, setIsSavingRules] = useState(false);
@@ -791,7 +791,8 @@ export default function LexProfileTestPage() {
                 body: JSON.stringify({
                     jaVocabDict,
                     jaGrammarDict,
-                    jaTokenizer
+                    jaTokenizer,
+                    lang
                 }),
             });
 
@@ -800,9 +801,9 @@ export default function LexProfileTestPage() {
 
             setBatchScanResult(data);
             toast.success(`扫描完成：${data.unknownVocab.length} 未知词汇, ${data.unmatchedGrammar.length} 未匹配语法`);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Batch scan error:', error);
-            toast.error('扫描失败');
+            toast.error(error.message || '扫描失败');
         } finally {
             setIsBatchScanning(false);
         }
@@ -879,7 +880,10 @@ export default function LexProfileTestPage() {
                         },
                         body: JSON.stringify({
                             lang,  // Pass current language for correct file
-                            vocabEntries: llmData.vocab_entries,
+                            vocabEntries: llmData.vocab_entries.map((v: any) => ({
+                                ...v,
+                                ...((lang === 'en' && v.cefr) ? { cefr: v.cefr } : {})
+                            })),
                             grammarChunks: llmData.grammar_chunks,
                         }),
                     });
@@ -969,6 +973,13 @@ export default function LexProfileTestPage() {
             case 'A1_A2': return 'bg-green-500';
             case 'B1_B2': return 'bg-yellow-500';
             case 'C1_plus': return 'bg-red-500';
+            // CEFR specific
+            case 'A1': return 'bg-green-400';
+            case 'A2': return 'bg-green-500';
+            case 'B1': return 'bg-yellow-400';
+            case 'B2': return 'bg-yellow-500';
+            case 'C1': return 'bg-red-400';
+            case 'C2': return 'bg-red-500';
             default: return 'bg-gray-400';
         }
     };
@@ -978,6 +989,13 @@ export default function LexProfileTestPage() {
             case 'A1_A2': return 'bg-green-100 text-green-800';
             case 'B1_B2': return 'bg-yellow-100 text-yellow-800';
             case 'C1_plus': return 'bg-red-100 text-red-800';
+            // CEFR specific
+            case 'A1': return 'bg-green-100 text-green-800';
+            case 'A2': return 'bg-green-200 text-green-900';
+            case 'B1': return 'bg-yellow-100 text-yellow-800';
+            case 'B2': return 'bg-yellow-200 text-yellow-900';
+            case 'C1': return 'bg-red-100 text-red-800';
+            case 'C2': return 'bg-red-200 text-red-900';
             default: return 'bg-gray-100 text-gray-800';
         }
     };
@@ -1041,13 +1059,25 @@ export default function LexProfileTestPage() {
                         <div className="space-y-4">
                             {/* Scan and Stats */}
                             <div className="flex gap-4 items-start">
-                                <Button
-                                    onClick={handleBatchScan}
-                                    disabled={isBatchScanning}
-                                    className="bg-purple-600 hover:bg-purple-700"
-                                >
-                                    {isBatchScanning ? '扫描中...' : '🔍 扫描题库'}
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    <select
+                                        value={lang}
+                                        onChange={(e) => setLang(e.target.value as any)}
+                                        className="h-10 border border-gray-300 rounded-md px-3 py-1 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        disabled={isBatchScanning}
+                                    >
+                                        <option value="ja">🇯🇵 日语 (Japanese)</option>
+                                        <option value="en">🇺🇸 英语 (English)</option>
+                                        <option value="zh">🇨🇳 中文 (Chinese)</option>
+                                    </select>
+                                    <Button
+                                        onClick={handleBatchScan}
+                                        disabled={isBatchScanning}
+                                        className="bg-purple-600 hover:bg-purple-700"
+                                    >
+                                        {isBatchScanning ? '扫描中...' : '🔍 扫描题库'}
+                                    </Button>
+                                </div>
 
                                 {batchScanResult && (
                                     <div className="flex-1 grid grid-cols-5 gap-3">
@@ -1995,12 +2025,8 @@ export default function LexProfileTestPage() {
                                                                                     {vocab.reading && <span className="text-xs text-gray-500 ml-1">[{vocab.reading}]</span>}
                                                                                     <span className="text-gray-600 text-xs block">{vocab.definition}</span>
                                                                                 </div>
-                                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${vocab.jlpt === 'N1' ? 'bg-red-100 text-red-700' :
-                                                                                    vocab.jlpt === 'N2' ? 'bg-orange-100 text-orange-700' :
-                                                                                        vocab.jlpt === 'N3' ? 'bg-yellow-100 text-yellow-700' :
-                                                                                            'bg-green-100 text-green-700'
-                                                                                    }`}>
-                                                                                    {vocab.jlpt}
+                                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${getLevelBadgeClass(vocab.cefr || vocab.jlpt)}`}>
+                                                                                    {vocab.cefr || vocab.jlpt}
                                                                                 </span>
                                                                             </div>
                                                                         ))}
@@ -2021,12 +2047,8 @@ export default function LexProfileTestPage() {
                                                                                     <span className="font-bold text-gray-800">{grammar.surface}</span>
                                                                                     <span className="text-xs text-gray-500 ml-2">→ {grammar.canonical}</span>
                                                                                 </div>
-                                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${grammar.jlpt === 'N1' ? 'bg-red-100 text-red-700' :
-                                                                                    grammar.jlpt === 'N2' ? 'bg-orange-100 text-orange-700' :
-                                                                                        grammar.jlpt === 'N3' ? 'bg-yellow-100 text-yellow-700' :
-                                                                                            'bg-green-100 text-green-700'
-                                                                                    }`}>
-                                                                                    {grammar.jlpt}
+                                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${getLevelBadgeClass(grammar.cefr || grammar.jlpt)}`}>
+                                                                                    {grammar.cefr || grammar.jlpt}
                                                                                 </span>
                                                                             </div>
                                                                         ))}

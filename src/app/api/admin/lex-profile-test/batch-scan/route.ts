@@ -81,20 +81,38 @@ export async function POST(req: NextRequest) {
         const jaTokenizer = body.jaTokenizer || 'kuromoji';
 
         // Fetch items for the specified language
+        // Fetch items for the specified language
         const adminClient = getServiceSupabase();
-        const { data: items, error } = await adminClient
+
+        // 1. Fetch Published Items
+        const { data: publishedItems, error: pubError } = await adminClient
             .from('shadowing_items')
             .select('id, text, title, lang')
             .eq('lang', lang)
             .not('text', 'is', null)
             .order('created_at', { ascending: false });
 
-        if (error) {
-            return NextResponse.json({ error: error.message }, { status: 500 });
+        if (pubError) {
+            return NextResponse.json({ error: pubError.message }, { status: 500 });
         }
 
-        if (!items || items.length === 0) {
-            return NextResponse.json({ error: `No ${lang === 'ja' ? 'Japanese' : 'English'} items found` }, { status: 404 });
+        // 2. Fetch Draft Items
+        const { data: draftItems, error: draftError } = await adminClient
+            .from('shadowing_drafts')
+            .select('id, text, title, lang')
+            .eq('lang', lang)
+            .not('text', 'is', null)
+            // .order('created_at', { ascending: false }) // created_at might be missing or different
+            .limit(1000); // Limit drafts to avoid OOM if too many
+
+        if (draftError) {
+            console.warn('Error fetching drafts:', draftError);
+        }
+
+        const items = [...(publishedItems || []), ...(draftItems || [])];
+
+        if (items.length === 0) {
+            return NextResponse.json({ error: `No ${lang === 'ja' ? 'Japanese' : lang === 'en' ? 'English' : 'Chinese'} items found in Published or Drafts` }, { status: 404 });
         }
 
         // Collect unknown tokens
@@ -127,7 +145,13 @@ export async function POST(req: NextRequest) {
                         totalVocabTokens++;
 
                         // Check frequency coverage
-                        const freqRank = getFrequencyRank(token.token, token.lemma);
+                        // Check frequency coverage
+                        const freqRank = getFrequencyRank(
+                            token.token,
+                            token.lemma,
+                            lang as 'ja' | 'en' | 'zh',
+                            token.originalLevel
+                        );
                         if (freqRank === -1) {
                             // Collect unknown frequency
                             const key = token.lemma || token.token;
