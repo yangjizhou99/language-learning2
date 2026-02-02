@@ -234,7 +234,7 @@ export default function ThemeBatchProcessor() {
                 .from('shadowing_drafts')
                 .select('*')
                 .eq('theme_id', themeId)
-                .eq('status', 'draft')
+                .in('status', ['draft', 'approved'])
                 .order('created_at', { ascending: true });
 
             // 检查是否有草稿需要处理
@@ -421,9 +421,21 @@ export default function ThemeBatchProcessor() {
                                     temperature: 0.2,
                                 }),
                             });
-                            return response.ok;
-                        } catch (e) {
-                            if (attempt === retries) return false;
+
+                            if (!response.ok) {
+                                const errText = await response.text();
+                                console.error(`SceneVector failed for ${subtopic.id}:`, errText);
+                                if (attempt === retries) {
+                                    setLogs(prev => [...prev, `   [Error] SceneVector ${subtopic.title}: ${errText.substring(0, 100)}`]);
+                                }
+                                throw new Error(errText); // Trigger catch/retry
+                            }
+                            return true;
+                        } catch (e: any) {
+                            if (attempt === retries) {
+                                console.error(`SceneVector final fail`, e);
+                                return false;
+                            }
                             await wait(1000 * (attempt + 1)); // 指数退避
                         }
                     }

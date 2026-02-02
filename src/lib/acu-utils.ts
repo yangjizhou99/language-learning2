@@ -31,21 +31,21 @@ export interface SentenceInfo {
 export function validateMarkedSentence(original: string, marked: string): boolean {
   // 不允许首尾星号
   if (marked.startsWith('*') || marked.endsWith('*')) return false;
-  
+
   // 不允许连续星号
   if (/\*\*/.test(marked)) return false;
-  
+
   // 对于对话格式，忽略 A: 和 B: 标识符进行校验
   const isDialogue = /^[AB]:/.test(original);
   if (isDialogue) {
     // 提取对话内容部分（去掉 A: 或 B: 前缀）
     const originalContent = original.replace(/^[AB]:\s*/, '');
     const markedContent = marked.replace(/^[AB]:\s*/, '');
-    
+
     // 只校验对话内容部分
     return markedContent.replace(/\*/g, '') === originalContent;
   }
-  
+
   // 去除星号后必须与原句完全一致
   return marked.replace(/\*/g, '') === original;
 }
@@ -61,7 +61,7 @@ export function parseUnits(marked: string, sentenceAbsStart: number, sid: number
   const parts = marked.split('*');
   const units: AcuUnit[] = [];
   let offset = 0;
-  
+
   for (const part of parts) {
     if (part.length > 0) {
       // 过滤掉不需要的块
@@ -69,19 +69,19 @@ export function parseUnits(marked: string, sentenceAbsStart: number, sid: number
         offset += part.length;
         continue;
       }
-      
+
       const start = sentenceAbsStart + offset;
       const end = start + part.length;
-      units.push({ 
-        span: part, 
-        start, 
-        end, 
-        sid 
+      units.push({
+        span: part,
+        start,
+        end,
+        sid
       });
     }
     offset += part.length;
   }
-  
+
   return units;
 }
 
@@ -93,16 +93,16 @@ export function parseUnits(marked: string, sentenceAbsStart: number, sid: number
 function shouldSkipPart(part: string): boolean {
   // 跳过纯空格
   if (/^\s+$/.test(part)) return true;
-  
+
   // 跳过纯标点符号（包含中英文标点）
   if (/^[，。！？、；：:""''（）【】\s]+$/.test(part)) return true;
-  
+
   // 跳过对话标识符（支持中英文冒号，大小写不敏感）
-  if (/^[ABab][:：]$/i.test(part)) return true;
-  
+  if (/^[ABab][:：]\s*$/i.test(part)) return true;
+
   // 跳过单个标点符号（包含中英文标点）
   if (/^[，。！？、；：:""''（）【】]$/.test(part)) return true;
-  
+
   return false;
 }
 
@@ -131,23 +131,23 @@ export function splitSentences(text: string, lang: 'zh' | 'en' | 'ja' | 'ko', ge
     const lines = src.includes('\n')
       ? src.split('\n').map((l) => l.trim()).filter(Boolean)
       : (() => {
-          const indices: number[] = [];
-          // 改进对话标记检测：支持 A: 和 B: 格式（大小写不敏感）
-          const re = /[ABab][:：]\s*/g;
-          let m: RegExpExecArray | null;
-          while ((m = re.exec(src)) !== null) {
-            indices.push(m.index);
-          }
-          if (indices.length === 0) return [src.trim()];
-          const arr: string[] = [];
-          for (let i = 0; i < indices.length; i++) {
-            const start = indices[i];
-            const end = i + 1 < indices.length ? indices[i + 1] : src.length;
-            const seg = src.slice(start, end).trim();
-            if (seg) arr.push(seg);
-          }
-          return arr;
-        })();
+        const indices: number[] = [];
+        // 改进对话标记检测：支持 A: 和 B: 格式（大小写不敏感）
+        const re = /[ABab][:：]\s*/g;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(src)) !== null) {
+          indices.push(m.index);
+        }
+        if (indices.length === 0) return [src.trim()];
+        const arr: string[] = [];
+        for (let i = 0; i < indices.length; i++) {
+          const start = indices[i];
+          const end = i + 1 < indices.length ? indices[i + 1] : src.length;
+          const seg = src.slice(start, end).trim();
+          if (seg) arr.push(seg);
+        }
+        return arr;
+      })();
 
     // 计算每行在原文中的绝对位置
     let cursor = 0;
@@ -261,12 +261,35 @@ export function buildS1Prompt(lang: string, sentence: string): string {
   // 处理对话格式，临时移除 A: 和 B: 标识符
   const isDialogue = /^[ABab][:：]\s/.test(sentence);
   let processedSentence = sentence;
-  
+
   if (isDialogue) {
     const match = sentence.match(/^([ABab][:：])\s*(.*)$/);
     if (match) {
       processedSentence = match[2];
     }
+  }
+
+  if (lang === 'en') {
+    return `Language: English (${lang})
+Original Sentence: "${processedSentence}"
+
+Please insert asterisks * at semantic boundaries within the sentence to create meaningful Learning Units (ACUs). 
+Requirements:
+1. Divide strictly into semantic chunks (phrases, clauses, idioms).
+2. DO NOT split strictly by single words unless the word stands alone meaningfully.
+3. Keep fixed collocations, phrasal verbs, and idioms together (e.g., "look for", "take care of", "in front of").
+4. Keep grammatical structures together (e.g., "have been waiting", "would like to").
+5. Punctuation can be separate or attached to the adjacent phrase.
+6. Asterisks * must ONLY be inserted BETWEEN characters (usually spaces). DO NOT modify original text.
+7. NO continuous asterisks **.
+8. Output ONLY the marked sentence.
+
+Examples:
+Original: "I would like to go to the supermarket with my friend."
+Output: "*I would like* to go *to the supermarket* with my friend*."
+
+Original: "She has been working on this project for two years."
+Output: "*She has been working* on this project *for two years*."`;
   }
 
   return `语言: ${lang}
