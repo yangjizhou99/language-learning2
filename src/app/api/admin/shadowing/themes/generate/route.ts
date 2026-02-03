@@ -8,7 +8,6 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // 大主题生成的系统提示词
-// 大主题生成的系统提示词
 const CURRICULUM_SYS = `You are a curriculum designer for language shadowing. 
 Produce CEFR-appropriate, teachable and diverse MACRO THEMES.
 - Each theme MUST be broad enough to support a CONTINUOUS STORY with multiple chapters/scenes.
@@ -85,6 +84,54 @@ Return JSON ONLY:
 Make sure themes.length = ${count}. If you produce more or fewer, self-correct before returning.`;
 }
 
+// 剧本大纲生成的提示词
+function buildScriptOnlyPrompt({
+  lang,
+  level,
+  genre,
+  theme,
+}: {
+  lang: string;
+  level: number;
+  genre: string;
+  theme: any;
+}) {
+  const langNameMap = { en: 'English', ja: '日本語', zh: '简体中文', ko: '한국어' } as const;
+  const L = langNameMap[lang as keyof typeof langNameMap] || 'English';
+
+  const scriptGuidance =
+    lang === 'en'
+      ? 'Provide a DETAILED script/plot outline as a NUMBERED LIST (5-10 scenes). DO NOT write actual dialogue lines. Focus on the narrative flow and how each scene connects to the next.'
+      : lang === 'ja'
+        ? '「1. ... 2. ...」の番号付きリスト（5-10シーン）で詳細なあらすじを記述。具体的なセリフは書かないこと。各シーンのつながりと物語の流れを重視する。'
+        : lang === 'ko'
+          ? '"1. ... 2. ... " 번호가 매겨진 목록(5-10 장면)으로 상세 줄거리를 기술. 구체적인 대사는 쓰지 말 것. 각 장면의 연결과 이야기의 흐름을 중시할 것.'
+          : '用"1. ... 2. ..."的编号列表形式详细描述故事大纲（5-10个场景）。不要写具体的对话台词。重点描述故事情节的发展和场景之间的连贯性。';
+
+  return `LANG=${L}
+LEVEL=L${level}
+GENRE=${genre}
+THEME_TITLE=${theme.title_cn || theme.title}
+THEME_DESC=${theme.rationale || theme.desc}
+
+Constraints:
+- Create a DETAILED script/plot outline for this specific theme.
+- The script must be a NUMBERED LIST (e.g. 1. Scene One... 2. Scene Two...).
+- Generate between 5 and 10 scenes.
+- Each scene must be a DIALOGUE SCENARIO (e.g., "A talks to B about...").
+- EVERY scene must involve a conversation between at least two characters. NO monologues or pure narration.
+- Start each scene with: [Interlocutors & Context] ... then expand on the plot.
+- DO NOT include specific dialogue lines (A: ..., B: ...).
+- Ensure strong narrative connections between scenes.
+- Write the script in ${L}.
+- ${scriptGuidance}
+
+Return JSON ONLY:
+{
+  "script": "1. ...\\n2. ...\\n..."  // 编号列表形式的剧本
+}`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     // const auth = await requireAdmin(req);
@@ -99,6 +146,8 @@ export async function POST(req: NextRequest) {
     const auth = { ok: true, user: { id: randomUUID() }, supabase };
     const body = await req.json();
     const {
+      step, // 'themes_only' | 'script_only' | undefined (默认生成主题)
+      theme, // For script_only step
       lang,
       level,
       genre,
@@ -113,6 +162,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
+    // 处理 script_only 步骤 - 为单个主题生成剧本大纲
+    if (step === 'script_only') {
+      if (!theme) {
+        return NextResponse.json({ error: 'Missing theme object for script generation' }, { status: 400 });
+      }
+
+      const prompt = buildScriptOnlyPrompt({ lang, level, genre, theme });
+
+      const result = await chatJSON({
+        provider: provider as 'openrouter' | 'deepseek' | 'openai',
+        model,
+        temperature,
+        timeoutMs: 60000,
+        messages: [
+          { role: 'system', content: 'You are a creative writer.' },
+          { role: 'user', content: prompt }
+        ]
+      });
+
+      let parsed;
+      try {
+        parsed = JSON.parse(result.content);
+      } catch (e) {
+        const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('Invalid JSON response');
+        }
+      }
+
+      // Calculate recommended_count from script
+      const script = parsed.script || '';
+      // Count lines that start with a number followed by a dot or parenthesis
+      const matches = script.match(/^\d+[\.|、|\)]/gm);
+      const calculatedCount = matches ? matches.length : 5; // Default to 5 if no numbering found
+      const recommended_count = Math.min(Math.max(calculatedCount, 3), 10); // Clamp between 3 and 10
+
+      return NextResponse.json({
+        success: true,
+        script: script,
+        recommended_count: recommended_count,
+      });
+    }
+
+    // 默认处理：生成主题列表
     // 获取现有主题信息
     const { data: existingThemes } = await supabase
       .from('shadowing_themes')
@@ -261,6 +356,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      themes: themesToProcess, // 返回完整主题数据供前端使用
       inserted_count: insertedData.length,
       inserted_themes: insertedData,
       message: `成功生成 ${insertedData.length} 个新主题（已避免与现有主题重复）`,

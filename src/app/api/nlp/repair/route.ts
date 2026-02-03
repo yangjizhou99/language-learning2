@@ -77,11 +77,50 @@ ${unrecognizedGrammar?.map(g => `- ${g}`).join('\n') || '无'}
         break;
 
       case 'level_assignment':
-        // Focused task for assigning JLPT levels to unknown tokens
+        // Focused task for assigning levels to unknown tokens
         // Now uses contextual snippets instead of full text for better efficiency
-        const { unknownTokensWithContext, unrecognizedGrammarWithContext } = body as any;
+        const { unknownTokensWithContext, unrecognizedGrammarWithContext, lang } = body as any;
 
-        systemPrompt = `你是日语JLPT分级专家。任务：为未识别等级的词汇和语法项分配JLPT等级。
+        if (lang === 'en') {
+          // English CEFR level assignment
+          systemPrompt = `You are an English CEFR level expert. Your task is to assign CEFR levels (A1, A2, B1, B2, C1, C2) to unknown English vocabulary.
+
+Output JSON only, must conform to schema.
+
+【Important】Level Guidelines:
+- A1: Very basic words (hello, goodbye, numbers 1-10, colors)
+- A2: Common everyday words (weather, family, shopping)
+- B1: Intermediate words (opinions, experiences, abstract concepts)
+- B2: Upper-intermediate words (complex topics, nuanced meanings)
+- C1: Advanced words (specialized vocabulary, formal language)
+- C2: Proficiency words (rare words, literary vocabulary)
+
+Schema: {
+  "vocab_entries": [
+    {"surface": "string", "definition": "string (brief Chinese definition)", "cefr": "A1"|"A2"|"B1"|"B2"|"C1"|"C2"}
+  ],
+  "confidence": number (0-1)
+}
+
+Notes:
+- cefr field must be one of: A1, A2, B1, B2, C1, C2
+- Provide brief Chinese definitions for each word
+- Focus on all words, including function words (prepositions, conjunctions, etc.)`;
+
+          // Build focused prompt with context snippets
+          const vocabLinesEn = unknownTokensWithContext?.length > 0
+            ? unknownTokensWithContext.map((item: { token: string; context: string }) =>
+              `- "${item.token}" context: "${item.context}"`
+            ).join('\n')
+            : 'None';
+
+          userPrompt = `Assign CEFR levels to these English vocabulary words (with context):
+${vocabLinesEn}
+
+Please assign appropriate CEFR levels (A1-C2) based on word difficulty and usage frequency.`;
+        } else {
+          // Japanese JLPT level assignment (existing logic)
+          systemPrompt = `你是日语JLPT分级专家。任务：为未识别等级的词汇和语法项分配JLPT等级。
 只输出 JSON，必须符合 schema。
 
 【重要】词汇/语法分类纠正：
@@ -155,20 +194,20 @@ Schema: {
 - 对于 pos_prefix/pos_suffix 类型，必须提供 posRequirement
 - 优先识别复合语法模式，而不是单独的碎片`;
 
-        // Build focused prompt with context snippets
-        const vocabLines = unknownTokensWithContext?.length > 0
-          ? unknownTokensWithContext.map((item: { token: string; context: string }) =>
-            `- 「${item.token}」 上下文: "${item.context}"`
-          ).join('\n')
-          : '无';
+          // Build focused prompt with context snippets
+          const vocabLines = unknownTokensWithContext?.length > 0
+            ? unknownTokensWithContext.map((item: { token: string; context: string }) =>
+              `- 「${item.token}」 上下文: "${item.context}"`
+            ).join('\n')
+            : '无';
 
-        const grammarLines = unrecognizedGrammarWithContext?.length > 0
-          ? unrecognizedGrammarWithContext.map((item: { token: string; context: string }) =>
-            `- 「${item.token}」 上下文: "${item.context}"`
-          ).join('\n')
-          : '无';
+          const grammarLines = unrecognizedGrammarWithContext?.length > 0
+            ? unrecognizedGrammarWithContext.map((item: { token: string; context: string }) =>
+              `- 「${item.token}」 上下文: "${item.context}"`
+            ).join('\n')
+            : '无';
 
-        userPrompt = `需要分配JLPT等级的词汇（附上下文）：
+          userPrompt = `需要分配JLPT等级的词汇（附上下文）：
 ${vocabLines}
 
 需要分配JLPT等级的语法项（附上下文）：
@@ -176,7 +215,9 @@ ${grammarLines}
 
 请根据上下文为每个项目分配合适的JLPT等级（N1-N5）。
 【特别注意】如果发现语法碎片可以组成复合语法模式，请识别并返回完整模式。`;
+        }
         break;
+
 
       default:
         // Fallback to original "all-in-one" behavior if task is missing (backward compatibility)

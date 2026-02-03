@@ -89,7 +89,7 @@ export default function ThemeBatchProcessor() {
     const [skipExistingSceneVector, setSkipExistingSceneVector] = useState(true);
     const [skipExistingACU, setSkipExistingACU] = useState(true);
     const [skipExistingQuiz, setSkipExistingQuiz] = useState(true);
-    const [skipExistingLexProfile, setSkipExistingLexProfile] = useState(true);
+    const [skipExistingLexProfile, setSkipExistingLexProfile] = useState(false);
 
     // 性能参数
     const [themeConcurrency, setThemeConcurrency] = useState(2);
@@ -234,7 +234,7 @@ export default function ThemeBatchProcessor() {
                 .from('shadowing_drafts')
                 .select('*')
                 .eq('theme_id', themeId)
-                .eq('status', 'draft')
+                .in('status', ['draft', 'approved'])
                 .order('created_at', { ascending: true });
 
             // 检查是否有草稿需要处理
@@ -421,9 +421,21 @@ export default function ThemeBatchProcessor() {
                                     temperature: 0.2,
                                 }),
                             });
-                            return response.ok;
-                        } catch (e) {
-                            if (attempt === retries) return false;
+
+                            if (!response.ok) {
+                                const errText = await response.text();
+                                console.error(`SceneVector failed for ${subtopic.id}:`, errText);
+                                if (attempt === retries) {
+                                    setLogs(prev => [...prev, `   [Error] SceneVector ${subtopic.title}: ${errText.substring(0, 100)}`]);
+                                }
+                                throw new Error(errText); // Trigger catch/retry
+                            }
+                            return true;
+                        } catch (e: any) {
+                            if (attempt === retries) {
+                                console.error(`SceneVector final fail`, e);
+                                return false;
+                            }
                             await wait(1000 * (attempt + 1)); // 指数退避
                         }
                     }
@@ -552,9 +564,15 @@ export default function ThemeBatchProcessor() {
                 supabase.from('shadowing_items').select('id, lex_profile').eq('theme_id', themeId),
             ]);
 
+            console.log('LexProfile Debug:', {
+                themeId,
+                draftsFound: draftsRes.data?.length,
+                itemsFound: itemsRes.data?.length,
+                skipSetting: skipExistingLexProfile
+            });
+
             const allItems: { id: string; type: 'draft' | 'item'; hasLexProfile: boolean }[] = [];
 
-            // 收集草稿
             if (draftsRes.data) {
                 draftsRes.data.forEach(d => {
                     const hasLexProfile = !!d.lex_profile;

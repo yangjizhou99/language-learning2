@@ -726,8 +726,8 @@ export default function ThemesPage() {
         }
 
         // 如果是主题生成任务，自动为每个主题生成剧本
-        if (task.type === 'themes' && result.themes) {
-          const themes = result.themes || result.inserted_themes || [];
+        if (task.type === 'themes' && (result.inserted_themes || result.themes)) {
+          const themes = result.inserted_themes || result.themes || [];
           let scriptProgress = 70;
           const progressIncrement = themes.length > 0 ? 25 / themes.length : 0;
 

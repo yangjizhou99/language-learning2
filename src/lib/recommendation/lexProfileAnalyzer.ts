@@ -18,6 +18,9 @@ export type JaVocabDict = 'default' | 'elzup' | 'tanos' | 'combined';
 // Japanese grammar dictionary options
 export type JaGrammarDict = 'yapan' | 'hagoromo' | 'combined';
 
+// English vocabulary dictionary options
+export type EnVocabDict = 'default' | 'extended' | 'oxford3000' | 'oxford5000';
+
 import TinySegmenter from 'tiny-segmenter';
 import { loadDefaultJapaneseParser } from 'budoux';
 
@@ -34,12 +37,34 @@ import {
 
 // Vocabulary data - loaded from JSON files
 /* eslint-disable @typescript-eslint/no-var-requires */
+// English dictionaries
 const enCefr = require('@/data/vocab/en-cefr.json') as Record<string, string>;
+const enCefrExtended = require('@/data/vocab/en-cefr-extended.json') as Record<string, string>;
+const enOxford3000 = require('@/data/vocab/en-oxford-3000.json') as Record<string, string>;
+const enOxford5000 = require('@/data/vocab/en-oxford-5000.json') as Record<string, string>;
+// Japanese dictionaries
 const jaJlpt = require('@/data/vocab/ja-jlpt.json') as Record<string, string>;
 const jaJlptElzup = require('@/data/vocab/ja-jlpt-elzup.json') as Record<string, string>;
 const jaJlptTanos = require('@/data/vocab/ja-jlpt-tanos.json') as Record<string, string>;
 const jaJlptCombined = require('@/data/vocab/ja-jlpt-combined.json') as Record<string, string>;
+// Chinese dictionary
 const zhHsk = require('@/data/vocab/zh-hsk.json') as Record<string, string>;
+
+// English vocabulary dictionary maps
+const enVocabDictionaries: Record<EnVocabDict, Map<string, string>> = {
+    default: new Map(Object.entries(enCefr)),
+    extended: new Map(Object.entries(enCefrExtended)),
+    oxford3000: new Map(Object.entries(enOxford3000)),
+    oxford5000: new Map(Object.entries(enOxford5000)),
+};
+
+// English dictionary metadata for UI display
+export const EN_VOCAB_DICT_INFO: Record<EnVocabDict, { name: string; size: number; source: string }> = {
+    default: { name: 'CEFR Default', size: Object.keys(enCefr).length, source: 'Original en-cefr.json' },
+    extended: { name: 'CEFR Extended', size: Object.keys(enCefrExtended).length, source: 'CEFR-J + Octanove C1/C2' },
+    oxford3000: { name: 'Oxford 3000', size: Object.keys(enOxford3000).length, source: 'Oxford Learners Dictionaries' },
+    oxford5000: { name: 'Oxford 5000', size: Object.keys(enOxford5000).length, source: 'Oxford Learners Dictionaries' },
+};
 
 // Japanese vocabulary dictionary maps
 const jaVocabDictionaries: Record<JaVocabDict, Map<string, string>> = {
@@ -81,15 +106,19 @@ const jaGrammarPatterns = jaGrammarYapan;
 
 
 // LLM-discovered rules (loaded dynamically for hot-reload support)
+// Japanese rules
 let llmVocabRulesCache: Record<string, { level: string }> | null = null;
 let llmGrammarRulesCache: Record<string, GrammarPattern> | null = null;
 let llmRulesLastLoad: number = 0;
+// English rules
+let llmVocabRulesEnCache: Record<string, { level: string }> | null = null;
+let llmRulesEnLastLoad: number = 0;
 const LLM_RULES_CACHE_TTL = 5000; // 5 seconds cache
 
-async function loadLLMRules(): Promise<{ vocab: Record<string, { level: string }>, grammar: Record<string, GrammarPattern> }> {
+async function loadLLMRules(): Promise<{ vocab: Record<string, { level: string }>, grammar: Record<string, GrammarPattern>, vocabEn: Record<string, { level: string }> }> {
     const now = Date.now();
-    if (llmVocabRulesCache && llmGrammarRulesCache && (now - llmRulesLastLoad) < LLM_RULES_CACHE_TTL) {
-        return { vocab: llmVocabRulesCache, grammar: llmGrammarRulesCache };
+    if (llmVocabRulesCache && llmGrammarRulesCache && llmVocabRulesEnCache && (now - llmRulesLastLoad) < LLM_RULES_CACHE_TTL) {
+        return { vocab: llmVocabRulesCache, grammar: llmGrammarRulesCache, vocabEn: llmVocabRulesEnCache };
     }
 
     try {
@@ -99,9 +128,11 @@ async function loadLLMRules(): Promise<{ vocab: Record<string, { level: string }
 
         const vocabPath = path.join(process.cwd(), 'src', 'data', 'vocab', 'llm-vocab-rules.json');
         const grammarPath = path.join(process.cwd(), 'src', 'data', 'grammar', 'llm-grammar-rules.json');
+        const vocabEnPath = path.join(process.cwd(), 'src', 'data', 'vocab', 'llm-vocab-rules-en.json');
 
         let vocab: Record<string, { level: string }> = {};
         let grammar: Record<string, GrammarPattern> = {};
+        let vocabEn: Record<string, { level: string }> = {};
 
         try {
             const vocabContent = await fs.readFile(vocabPath, 'utf-8');
@@ -113,14 +144,20 @@ async function loadLLMRules(): Promise<{ vocab: Record<string, { level: string }
             grammar = JSON.parse(grammarContent);
         } catch { /* File might not exist yet */ }
 
+        try {
+            const vocabEnContent = await fs.readFile(vocabEnPath, 'utf-8');
+            vocabEn = JSON.parse(vocabEnContent);
+        } catch { /* File might not exist yet */ }
+
         llmVocabRulesCache = vocab;
         llmGrammarRulesCache = grammar;
+        llmVocabRulesEnCache = vocabEn;
         llmRulesLastLoad = now;
 
-        return { vocab, grammar };
+        return { vocab, grammar, vocabEn };
     } catch {
         // Fallback for client-side or error cases
-        return { vocab: {}, grammar: {} };
+        return { vocab: {}, grammar: {}, vocabEn: {} };
     }
 }
 
@@ -131,6 +168,15 @@ function getLLMRulesSync(): { vocab: Record<string, { level: string }>, grammar:
         grammar: llmGrammarRulesCache || {},
     };
 }
+
+// Synchronous version for English rules
+function getLLMRulesEnSync(): { vocab: Record<string, { level: string }> } {
+    return {
+        vocab: llmVocabRulesEnCache || {},
+    };
+}
+
+
 /* eslint-enable @typescript-eslint/no-var-requires */
 
 // Grammar pattern interface (from YAPAN)
@@ -830,58 +876,163 @@ function mapToBroadCEFR(level: string, lang: SupportedLang): BroadCEFR | 'unknow
 /**
  * Tokenize English using compromise.js with lemmatization
  */
+/**
+ * Generate morphological variants for English word lookup
+ * Used to find base forms when the lemmatizer doesn't handle plurals/tenses correctly
+ */
+function getEnglishLemmaVariants(word: string): string[] {
+    const lower = word.toLowerCase();
+    const variants = new Set<string>([lower]);
+
+    // Plural nouns → singular
+    if (lower.endsWith('ies') && lower.length > 4) {
+        variants.add(lower.slice(0, -3) + 'y');  // industries → industry
+    }
+    if (lower.endsWith('es') && lower.length > 3) {
+        variants.add(lower.slice(0, -2));        // boxes → box
+        variants.add(lower.slice(0, -1));        // changes → change
+    }
+    if (lower.endsWith('s') && !lower.endsWith('ss') && lower.length > 2) {
+        variants.add(lower.slice(0, -1));        // amounts → amount
+    }
+
+    // Past tense/past participle → base form
+    if (lower.endsWith('ed') && lower.length > 3) {
+        variants.add(lower.slice(0, -2));        // processed → process
+        variants.add(lower.slice(0, -1));        // revolutionized → revolutionize
+        variants.add(lower.slice(0, -3) + 'y');  // studied → study
+        // Handle doubled consonants: stopped → stop
+        if (lower.length > 4 && lower[lower.length - 3] === lower[lower.length - 4]) {
+            variants.add(lower.slice(0, -3));    // stopped → stop
+        }
+    }
+
+    // Present participle → base form
+    if (lower.endsWith('ing') && lower.length > 4) {
+        variants.add(lower.slice(0, -3));        // learning → learn
+        variants.add(lower.slice(0, -3) + 'e');  // making → make
+        // Handle doubled consonants: running → run
+        if (lower.length > 5 && lower[lower.length - 4] === lower[lower.length - 5]) {
+            variants.add(lower.slice(0, -4));    // running → run
+        }
+    }
+
+    // Comparative/superlative adjectives → base form
+    if (lower.endsWith('er') && lower.length > 3) {
+        variants.add(lower.slice(0, -2));        // faster → fast
+        variants.add(lower.slice(0, -1));        // larger → large
+    }
+    if (lower.endsWith('est') && lower.length > 4) {
+        variants.add(lower.slice(0, -3));        // fastest → fast
+        variants.add(lower.slice(0, -2));        // largest → large
+    }
+
+    // Adverb → adjective
+    if (lower.endsWith('ly') && lower.length > 3) {
+        variants.add(lower.slice(0, -2));        // rapidly → rapid
+    }
+
+    return Array.from(variants);
+}
+
+/**
+ * Tokenize English using compromise.js with lemmatization
+ */
 function tokenizeEnglish(text: string, dict: Map<string, string>): TokenInfo[] {
     const doc = nlp(text);
     const tokens: TokenInfo[] = [];
+
+    // Helper to check if a tag exists (handles both array and object formats)
+    const hasTag = (tags: string[] | Record<string, boolean> | undefined, tag: string): boolean => {
+
+        if (!tags) return false;
+        if (Array.isArray(tags)) {
+            return tags.includes(tag);
+        }
+        // Object format: { Noun: true, Singular: true }
+        return tags[tag] === true;
+    };
 
     // Get all terms from the document
     doc.terms().forEach((term) => {
         const termData = term.json()[0];
         if (!termData) return;
 
-        const surface = termData.text?.toLowerCase() || '';
-        // Get lemma (root form)
-        const lemma = termData.root || termData.normal || surface;
-        const tags = termData.tags || [];
+        // The actual term info is in the first element of termData.terms array
+        const termInfo = termData.terms?.[0] || termData;
+
+        const surface = (termInfo.text || termData.text || '').toLowerCase();
+        // Get lemma (root form) - try multiple possible properties
+        const lemma = termInfo.root || termInfo.normal || termInfo.text || surface;
+        const tags = termInfo.tags;
 
         // Skip empty tokens and punctuation
         if (!surface || surface.match(/^[^\w]+$/)) return;
+
 
         // Determine POS from tags
         let pos = 'Unknown';
         let isContentWord = false;
 
-        if (tags.includes('Verb')) { pos = 'Verb'; isContentWord = true; }
-        else if (tags.includes('Noun')) { pos = 'Noun'; isContentWord = true; }
-        else if (tags.includes('Adjective')) { pos = 'Adjective'; isContentWord = true; }
-        else if (tags.includes('Adverb')) { pos = 'Adverb'; isContentWord = true; }
-        else if (tags.includes('Preposition')) pos = 'Preposition';
-        else if (tags.includes('Conjunction')) pos = 'Conjunction';
-        else if (tags.includes('Pronoun')) pos = 'Pronoun';
-        else if (tags.includes('Determiner')) pos = 'Determiner';
+        if (hasTag(tags, 'Verb')) { pos = 'Verb'; isContentWord = true; }
+        else if (hasTag(tags, 'Noun')) { pos = 'Noun'; isContentWord = true; }
+        else if (hasTag(tags, 'Adjective')) { pos = 'Adjective'; isContentWord = true; }
+        else if (hasTag(tags, 'Adverb')) { pos = 'Adverb'; isContentWord = true; }
+        else if (hasTag(tags, 'Preposition')) pos = 'Preposition';
+        else if (hasTag(tags, 'Conjunction')) pos = 'Conjunction';
+        else if (hasTag(tags, 'Pronoun')) pos = 'Pronoun';
+        else if (hasTag(tags, 'Determiner')) pos = 'Determiner';
 
+        // Look up in dictionary (try lemma first, then surface)
         // Look up in dictionary (try lemma first, then surface)
         let originalLevel = dict.get(lemma.toLowerCase());
         if (!originalLevel) {
             originalLevel = dict.get(surface);
         }
 
-        const broadCEFR = isContentWord
-            ? (originalLevel ? mapToBroadCEFR(originalLevel, 'en') : 'unknown')
+        // NEW: Try morphological variants if not found
+        if (!originalLevel) {
+            const variants = getEnglishLemmaVariants(surface);
+            for (const variant of variants) {
+                originalLevel = dict.get(variant);
+                if (originalLevel) break;
+            }
+        }
+
+        // Check English LLM rules if not found in main dictionary
+        if (!originalLevel) {
+            const llmRulesEn = getLLMRulesEnSync();
+            const llmEntry = llmRulesEn.vocab[lemma.toLowerCase()] || llmRulesEn.vocab[surface];
+            if (llmEntry?.level) {
+                originalLevel = llmEntry.level;
+            }
+        }
+
+        const broadCEFR = originalLevel
+            ? mapToBroadCEFR(originalLevel, 'en')
             : 'unknown';
+
+        // Calculate frequency rank for English words
+        const frequencyRank = isContentWord
+            ? getFrequencyRank(surface, lemma.toLowerCase(), 'en', originalLevel || undefined)
+            : undefined;
 
         tokens.push({
             token: surface,
             lemma: lemma.toLowerCase(),
             pos,
-            originalLevel: isContentWord ? (originalLevel || 'unknown') : 'grammar',
+            originalLevel: originalLevel || 'unknown',
             broadCEFR,
             isContentWord,
+            frequencyRank,
         });
     });
 
     return tokens;
 }
+
+
+
 
 /**
  * Normalize Japanese text before tokenization
@@ -1481,30 +1632,40 @@ function removeDialogueIdentifiers(text: string): string {
  * @param jaTokenizer - Japanese tokenizer to use (kuromoji, tinysegmenter, budoux) - default: kuromoji
  * @param jaVocabDict - Japanese vocabulary dictionary to use (default, elzup, tanos) - default: default
  * @param jaGrammarDict - Japanese grammar dictionary to use (yapan, hagoromo) - default: yapan
+ * @param enVocabDict - English vocabulary dictionary to use (default, extended, oxford3000, oxford5000) - default: extended
  */
 export async function analyzeLexProfileAsync(
     text: string,
     lang: SupportedLang,
     jaTokenizer: JaTokenizer = 'kuromoji',
     jaVocabDict: JaVocabDict = 'default',
-    jaGrammarDict: JaGrammarDict = 'yapan'
+    jaGrammarDict: JaGrammarDict = 'yapan',
+    enVocabDict: EnVocabDict = 'extended'
 ): Promise<LexProfileResult> {
     // Step 0: Normalize text by removing dialogue identifiers
     const cleanText = removeDialogueIdentifiers(text);
 
-    // Pre-load LLM rules for Japanese (warms cache for sync access during tokenization)
-    if (lang === 'ja') {
+    // Pre-load LLM rules for Japanese/English (warms cache for sync access during tokenization)
+    if (lang === 'ja' || lang === 'en') {
         await loadLLMRules();
     }
 
-    // Select dictionary based on language and jaVocabDict parameter
-    const dict = lang === 'ja' ? jaVocabDictionaries[jaVocabDict] : dictionaries[lang];
+    // Select dictionary based on language
+    let dict: Map<string, string>;
+    if (lang === 'ja') {
+        dict = jaVocabDictionaries[jaVocabDict];
+    } else if (lang === 'en') {
+        dict = enVocabDictionaries[enVocabDict];
+    } else {
+        dict = dictionaries[lang];
+    }
     let tokenInfoList: TokenInfo[];
 
     switch (lang) {
         case 'en':
             tokenInfoList = tokenizeEnglish(cleanText, dict);
             break;
+
         case 'ja':
             // Route to selected Japanese tokenizer
             switch (jaTokenizer) {
@@ -1774,13 +1935,22 @@ export function toLexProfileForDB(result: LexProfileResult): Record<BroadCEFR, n
  * Get dictionary size for a language
  * @param lang - Language code
  * @param jaVocabDict - Japanese vocabulary dictionary (only used when lang is 'ja')
+ * @param enVocabDict - English vocabulary dictionary (only used when lang is 'en')
  */
-export function getDictionarySize(lang: SupportedLang, jaVocabDict: JaVocabDict = 'default'): number {
+export function getDictionarySize(
+    lang: SupportedLang,
+    jaVocabDict: JaVocabDict = 'default',
+    enVocabDict: EnVocabDict = 'extended'
+): number {
     if (lang === 'ja') {
         return jaVocabDictionaries[jaVocabDict].size;
     }
+    if (lang === 'en') {
+        return enVocabDictionaries[enVocabDict].size;
+    }
     return dictionaries[lang].size;
 }
+
 
 
 

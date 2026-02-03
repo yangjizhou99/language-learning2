@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
   },
 
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '500mb',
+    },
+    // Allow large file uploads through Next.js dev server proxy (Next.js 16+)
+    proxyClientMaxBodySize: '500mb',
+  },
+
   // Keep native modules external so Webpack does not parse the .node binary
   serverExternalPackages: [
     'pinyin',

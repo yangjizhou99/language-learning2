@@ -107,8 +107,8 @@ export default function LexProfileTestPage() {
     // New state for LLM level assignment
     const [isAssigningLevels, setIsAssigningLevels] = useState(false);
     const [llmLevelResult, setLlmLevelResult] = useState<{
-        vocab_entries: Array<{ surface: string; reading: string; definition: string; jlpt: string }>;
-        grammar_chunks: Array<{ surface: string; canonical: string; jlpt: string; definition?: string }>;
+        vocab_entries: Array<{ surface: string; reading: string; definition: string; jlpt: string; cefr?: string }>;
+        grammar_chunks: Array<{ surface: string; canonical: string; jlpt: string; definition?: string; cefr?: string }>;
         confidence: number;
     } | null>(null);
     const [isSavingRules, setIsSavingRules] = useState(false);
@@ -122,6 +122,9 @@ export default function LexProfileTestPage() {
 
     // Japanese grammar dictionary selection
     const [jaGrammarDict, setJaGrammarDict] = useState<'yapan' | 'hagoromo' | 'combined'>('combined');
+
+    // English vocabulary dictionary selection
+    const [enVocabDict, setEnVocabDict] = useState<'default' | 'extended' | 'oxford3000' | 'oxford5000'>('extended');
 
     // Word frequency display (simple JLPT-based scoring)
     const [showFrequency, setShowFrequency] = useState(false);
@@ -203,11 +206,16 @@ export default function LexProfileTestPage() {
 
     useEffect(() => {
         loadFrequencyPatches();
-    }, []);
+    }, [lang]);
+
+    // Get the correct frequency API endpoint based on language
+    const getFrequencyApiEndpoint = () => {
+        return lang === 'en' ? '/api/nlp/frequency-repair-en' : '/api/nlp/frequency-repair';
+    };
 
     const loadFrequencyPatches = async () => {
         try {
-            const res = await fetch('/api/nlp/frequency-repair?action=list');
+            const res = await fetch(`${getFrequencyApiEndpoint()}?action=list`);
             const data = await res.json();
             if (data.patches) {
                 setFrequencyPatchList(data.patches);
@@ -220,15 +228,15 @@ export default function LexProfileTestPage() {
     const handleScan = async () => {
         setIsScanning(true);
         try {
-            const res = await fetch('/api/nlp/frequency-repair?action=scan');
+            const res = await fetch(`${getFrequencyApiEndpoint()}?action=scan`);
             const data = await res.json();
             if (data.error) throw new Error(data.error);
 
             setScanResult(data);
             if (data.unknownVocabCount === 0) {
-                toast.success('扫描完成：未发现缺失词频的单词 (100% 覆盖)');
+                toast.success(`扫描完成：未发现缺失词频的${lang === 'en' ? '英语' : '日语'}单词 (100% 覆盖)`);
             } else {
-                toast.info(`扫描完成：发现 ${data.unknownVocabCount} 个缺失词频的单词`);
+                toast.info(`扫描完成：发现 ${data.unknownVocabCount} 个缺失词频的${lang === 'en' ? '英语' : '日语'}单词`);
             }
         } catch (error) {
             console.error('Scan error:', error);
@@ -253,7 +261,7 @@ export default function LexProfileTestPage() {
             for (let i = 0; i < total; i += BATCH_SIZE) {
                 const batch = tokensToPatch.slice(i, i + BATCH_SIZE);
 
-                const res = await fetch('/api/nlp/frequency-repair', {
+                const res = await fetch(getFrequencyApiEndpoint(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tokens: batch }),
@@ -266,7 +274,7 @@ export default function LexProfileTestPage() {
             }
 
             await loadFrequencyPatches();
-            toast.success(`批量分配完成：${total} 个单词`);
+            toast.success(`批量分配完成：${total} 个${lang === 'en' ? '英语' : '日语'}单词`);
             // Re-scan to update stats
             handleScan();
         } catch (error) {
@@ -292,7 +300,7 @@ export default function LexProfileTestPage() {
             for (let i = 0; i < total; i += BATCH_SIZE) {
                 const batch = tokensToPatch.slice(i, i + BATCH_SIZE);
 
-                const res = await fetch('/api/nlp/frequency-repair', {
+                const res = await fetch(getFrequencyApiEndpoint(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tokens: batch }),
@@ -305,7 +313,7 @@ export default function LexProfileTestPage() {
             }
 
             await loadFrequencyPatches();
-            toast.success(`批量词频分配完成：${total} 个单词`);
+            toast.success(`批量词频分配完成：${total} 个${lang === 'en' ? '英语' : '日语'}单词`);
             // Re-scan to update stats
             handleBatchScan();
         } catch (error) {
@@ -317,14 +325,14 @@ export default function LexProfileTestPage() {
     };
 
     const handleDeleteAll = async () => {
-        if (!confirm('确定要删除所有已保存的词频补丁吗？此操作不可撤销。')) return;
+        if (!confirm(`确定要删除所有已保存的${lang === 'en' ? '英语' : '日语'}词频补丁吗？此操作不可撤销。`)) return;
 
         try {
-            const res = await fetch('/api/nlp/frequency-repair?action=delete_all');
+            const res = await fetch(`${getFrequencyApiEndpoint()}?action=delete_all`);
             if (!res.ok) throw new Error('Delete failed');
 
             await loadFrequencyPatches();
-            toast.success('已清空所有词频补丁');
+            toast.success(`已清空所有${lang === 'en' ? '英语' : '日语'}词频补丁`);
             handleScan(); // Refresh scan results
         } catch (error) {
             console.error('Delete error:', error);
@@ -380,7 +388,7 @@ export default function LexProfileTestPage() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${session.access_token}`,
                 },
-                body: JSON.stringify({ text, lang, jaTokenizer, jaVocabDict, jaGrammarDict }),
+                body: JSON.stringify({ text, lang, jaTokenizer, jaVocabDict, jaGrammarDict, enVocabDict }),
             });
 
             const data = await res.json();
@@ -541,6 +549,7 @@ export default function LexProfileTestPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     task: 'level_assignment',
+                    lang,  // Pass current language for correct prompts
                     text: '', // No longer sending full text
                     tokens: result.details.tokenList,
                     unknownTokens: result.details.unknownTokens,
@@ -586,6 +595,7 @@ export default function LexProfileTestPage() {
                     Authorization: `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({
+                    lang,  // Pass current language for correct file
                     vocabEntries: llmLevelResult.vocab_entries,
                     grammarChunks: llmLevelResult.grammar_chunks,
                 }),
@@ -781,7 +791,8 @@ export default function LexProfileTestPage() {
                 body: JSON.stringify({
                     jaVocabDict,
                     jaGrammarDict,
-                    jaTokenizer
+                    jaTokenizer,
+                    lang
                 }),
             });
 
@@ -790,9 +801,9 @@ export default function LexProfileTestPage() {
 
             setBatchScanResult(data);
             toast.success(`扫描完成：${data.unknownVocab.length} 未知词汇, ${data.unmatchedGrammar.length} 未匹配语法`);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Batch scan error:', error);
-            toast.error('扫描失败');
+            toast.error(error.message || '扫描失败');
         } finally {
             setIsBatchScanning(false);
         }
@@ -843,6 +854,7 @@ export default function LexProfileTestPage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         task: 'level_assignment',
+                        lang,  // Pass current language for correct prompts
                         text: '',
                         tokens: [],
                         unknownTokens: vocabBatch.map(v => v.token),
@@ -867,7 +879,11 @@ export default function LexProfileTestPage() {
                             Authorization: `Bearer ${session.access_token}`,
                         },
                         body: JSON.stringify({
-                            vocabEntries: llmData.vocab_entries,
+                            lang,  // Pass current language for correct file
+                            vocabEntries: llmData.vocab_entries.map((v: any) => ({
+                                ...v,
+                                ...((lang === 'en' && v.cefr) ? { cefr: v.cefr } : {})
+                            })),
                             grammarChunks: llmData.grammar_chunks,
                         }),
                     });
@@ -901,7 +917,7 @@ export default function LexProfileTestPage() {
             if (!res.ok) throw new Error(data.error);
 
             setSavedRules({
-                vocab: data.vocabRules || {},
+                vocab: lang === 'en' ? (data.vocabRulesEn || {}) : (data.vocabRules || {}),
                 grammar: data.grammarRules || {},
             });
             setShowRulesPanel(true);
@@ -957,6 +973,13 @@ export default function LexProfileTestPage() {
             case 'A1_A2': return 'bg-green-500';
             case 'B1_B2': return 'bg-yellow-500';
             case 'C1_plus': return 'bg-red-500';
+            // CEFR specific
+            case 'A1': return 'bg-green-400';
+            case 'A2': return 'bg-green-500';
+            case 'B1': return 'bg-yellow-400';
+            case 'B2': return 'bg-yellow-500';
+            case 'C1': return 'bg-red-400';
+            case 'C2': return 'bg-red-500';
             default: return 'bg-gray-400';
         }
     };
@@ -966,6 +989,13 @@ export default function LexProfileTestPage() {
             case 'A1_A2': return 'bg-green-100 text-green-800';
             case 'B1_B2': return 'bg-yellow-100 text-yellow-800';
             case 'C1_plus': return 'bg-red-100 text-red-800';
+            // CEFR specific
+            case 'A1': return 'bg-green-100 text-green-800';
+            case 'A2': return 'bg-green-200 text-green-900';
+            case 'B1': return 'bg-yellow-100 text-yellow-800';
+            case 'B2': return 'bg-yellow-200 text-yellow-900';
+            case 'C1': return 'bg-red-100 text-red-800';
+            case 'C2': return 'bg-red-200 text-red-900';
             default: return 'bg-gray-100 text-gray-800';
         }
     };
@@ -1029,13 +1059,25 @@ export default function LexProfileTestPage() {
                         <div className="space-y-4">
                             {/* Scan and Stats */}
                             <div className="flex gap-4 items-start">
-                                <Button
-                                    onClick={handleBatchScan}
-                                    disabled={isBatchScanning}
-                                    className="bg-purple-600 hover:bg-purple-700"
-                                >
-                                    {isBatchScanning ? '扫描中...' : '🔍 扫描题库'}
-                                </Button>
+                                <div className="flex items-center gap-2">
+                                    <select
+                                        value={lang}
+                                        onChange={(e) => setLang(e.target.value as any)}
+                                        className="h-10 border border-gray-300 rounded-md px-3 py-1 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        disabled={isBatchScanning}
+                                    >
+                                        <option value="ja">🇯🇵 日语 (Japanese)</option>
+                                        <option value="en">🇺🇸 英语 (English)</option>
+                                        <option value="zh">🇨🇳 中文 (Chinese)</option>
+                                    </select>
+                                    <Button
+                                        onClick={handleBatchScan}
+                                        disabled={isBatchScanning}
+                                        className="bg-purple-600 hover:bg-purple-700"
+                                    >
+                                        {isBatchScanning ? '扫描中...' : '🔍 扫描题库'}
+                                    </Button>
+                                </div>
 
                                 {batchScanResult && (
                                     <div className="flex-1 grid grid-cols-5 gap-3">
@@ -1472,6 +1514,41 @@ export default function LexProfileTestPage() {
                                             <label htmlFor="showFrequency" className="text-sm font-medium">
                                                 显示词频排名
                                                 <span className="text-xs text-gray-500 ml-2">(基于常用词表)</span>
+                                            </label>
+                                        </div>
+                                    </>
+                                )}
+                                {/* English vocabulary dictionary selector */}
+                                {lang === 'en' && (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">
+                                                英语词汇库
+                                                <span className="text-xs text-gray-500 ml-2">(可切换对比覆盖率)</span>
+                                            </label>
+                                            <select
+                                                value={enVocabDict}
+                                                onChange={(e) => setEnVocabDict(e.target.value as 'default' | 'extended' | 'oxford3000' | 'oxford5000')}
+                                                className="w-full p-2 border rounded"
+                                            >
+                                                <option value="extended">CEFR Extended (8,653词 - CEFR-J + C1/C2)</option>
+                                                <option value="default">CEFR Default (6,863词 - 原始)</option>
+                                                <option value="oxford5000">Oxford 5000 (4,954词 - A1-C1)</option>
+                                                <option value="oxford3000">Oxford 3000 (2,979词 - 核心词)</option>
+                                            </select>
+                                        </div>
+                                        {/* Word Frequency Display Toggle for English */}
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                id="showFrequencyEn"
+                                                checked={showFrequency}
+                                                onChange={(e) => setShowFrequency(e.target.checked)}
+                                                className="w-4 h-4"
+                                            />
+                                            <label htmlFor="showFrequencyEn" className="text-sm font-medium">
+                                                显示词频排名
+                                                <span className="text-xs text-gray-500 ml-2">(基于 30k OpenSubtitles 词频表)</span>
                                             </label>
                                         </div>
                                     </>
@@ -1948,12 +2025,8 @@ export default function LexProfileTestPage() {
                                                                                     {vocab.reading && <span className="text-xs text-gray-500 ml-1">[{vocab.reading}]</span>}
                                                                                     <span className="text-gray-600 text-xs block">{vocab.definition}</span>
                                                                                 </div>
-                                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${vocab.jlpt === 'N1' ? 'bg-red-100 text-red-700' :
-                                                                                    vocab.jlpt === 'N2' ? 'bg-orange-100 text-orange-700' :
-                                                                                        vocab.jlpt === 'N3' ? 'bg-yellow-100 text-yellow-700' :
-                                                                                            'bg-green-100 text-green-700'
-                                                                                    }`}>
-                                                                                    {vocab.jlpt}
+                                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${getLevelBadgeClass(vocab.cefr || vocab.jlpt)}`}>
+                                                                                    {vocab.cefr || vocab.jlpt}
                                                                                 </span>
                                                                             </div>
                                                                         ))}
@@ -1974,12 +2047,8 @@ export default function LexProfileTestPage() {
                                                                                     <span className="font-bold text-gray-800">{grammar.surface}</span>
                                                                                     <span className="text-xs text-gray-500 ml-2">→ {grammar.canonical}</span>
                                                                                 </div>
-                                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${grammar.jlpt === 'N1' ? 'bg-red-100 text-red-700' :
-                                                                                    grammar.jlpt === 'N2' ? 'bg-orange-100 text-orange-700' :
-                                                                                        grammar.jlpt === 'N3' ? 'bg-yellow-100 text-yellow-700' :
-                                                                                            'bg-green-100 text-green-700'
-                                                                                    }`}>
-                                                                                    {grammar.jlpt}
+                                                                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${getLevelBadgeClass(grammar.cefr || grammar.jlpt)}`}>
+                                                                                    {grammar.cefr || grammar.jlpt}
                                                                                 </span>
                                                                             </div>
                                                                         ))}
@@ -2328,9 +2397,7 @@ export default function LexProfileTestPage() {
                                                     <th className="px-2 py-1 text-left">词根</th>
                                                     <th className="px-2 py-1 text-left">词性</th>
                                                     <th className="px-2 py-1 text-left">等级</th>
-                                                    {showFrequency && (
-                                                        <th className="px-2 py-1 text-left">词频排名</th>
-                                                    )}
+                                                    <th className="px-2 py-1 text-left">词频</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y">
@@ -2459,8 +2526,8 @@ export default function LexProfileTestPage() {
                                                                     {t.originalLevel}
                                                                 </span>
                                                             </td>
-                                                            {showFrequency && (() => {
-                                                                const rank = getFrequencyRank(t.token, t.lemma);
+                                                            {(() => {
+                                                                const rank = getFrequencyRank(t.token, t.lemma, lang, t.originalLevel);
                                                                 return (
                                                                     <td className="px-2 py-1">
                                                                         <span className={`px-1.5 py-0.5 rounded text-xs font-mono ${getFrequencyColorClass(rank)}`}

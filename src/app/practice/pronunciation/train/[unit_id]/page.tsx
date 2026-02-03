@@ -35,7 +35,7 @@ interface TrainingData {
 export default function TrainPage() {
   const router = useRouter();
   const params = useParams();
-  const unitId = parseInt(params.unit_id as string);
+  const unitId = params ? parseInt(params.unit_id as string) : 0;
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<TrainingData | null>(null);
@@ -161,13 +161,12 @@ export default function TrainPage() {
                   {data.unit.current_mean.toFixed(1)}
                 </p>
                 <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    data.unit.grade === 'A'
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${data.unit.grade === 'A'
                       ? 'bg-green-100 text-green-700'
                       : data.unit.grade === 'B'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
                 >
                   {data.unit.grade} 级
                 </span>

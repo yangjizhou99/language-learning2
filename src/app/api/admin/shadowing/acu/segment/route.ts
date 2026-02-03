@@ -51,7 +51,21 @@ async function executeS1(
     }
   }
 
-  const systemPrompt = `你是"学习最小单元"划分器。请在【原句】中插入星号*作为语义边界，且：
+  let systemPrompt = '';
+
+  if (lang === 'en') {
+    systemPrompt = `You are a "Learning Unit" Segmenter.
+Please insert asterisks * at semantic boundaries in the [Original Sentence].
+Rules:
+- Insert * only. Do not change any original characters/spaces.
+- Insert * only between characters.
+- English should be split by meaningful chunks (phrases, clauses, idioms).
+- Punctuation can form its own chunk or attach to words.
+- Must split meaningfully. Do not leave the whole sentence unsplit.
+- If no * found, it is an error.
+- Output ONLY the marked sentence. No explanations.`;
+  } else {
+    systemPrompt = `你是"学习最小单元"划分器。请在【原句】中插入星号*作为语义边界，且：
 - 只能插入*；不得改动任何原字符（包括空格/标点/大小写）。
 - * 只能插在两个原字符之间；不得出现在句首/句尾；不得出现连续**。
 - 中文按"词"或"短语"划分，如"这个商品"、"价格是多少"、"98元"、"现在有活动"等。
@@ -59,6 +73,7 @@ async function executeS1(
 - 必须进行细分，不能整句不划分。
 - 如果原句没有星号，说明你没有进行细分，这是错误的。
 - 只输出插*后的句子，禁止任何解释。`;
+  }
 
   try {
     console.log(`S1 开始处理句子: "${sentence}"`);
@@ -114,9 +129,21 @@ async function executeS1(
  */
 async function executeS2(
   markedSentence: string,
+  lang: string, // Add lang parameter
   userId?: string
 ): Promise<S1S2Result> {
-  const systemPrompt = `你是"最小可理解块"裁判。输入为句子的"过度细分版"（已插*）。
+  let systemPrompt = '';
+
+  if (lang === 'en') {
+    systemPrompt = `You are a "Meaningful Block" merger. Input is an "Over-Segmented" English sentence (with asterisks *).
+Task: Merge adjacent segments ONLY IF they form a fixed idiom, phrasal verb, or grammatical structure that should be learned as one unit.
+Rules:
+- Remove * to merge. Do not change text/spaces. Do not add *.
+- Output the marked sentence. No explanations.
+- Merge examples: "look" + "up" -> "look up". "have" + "been" -> "have been".
+- Keep meaningful phrases distinct unless they are fixed collocations.`;
+  } else {
+    systemPrompt = `你是"最小可理解块"裁判。输入为句子的"过度细分版"（已插*）。
 任务：仅当"保留当前切分会损伤理解"（即再拆会导致片段无法独立解释/破坏固定搭配/名词化/短语动词等）时，才合并相邻片段；否则保持细分。
 要求：
 - 只能去掉某些*（进行合并）；不得改动任何原字符（含空格/标点/大小写），不得增加新*。
@@ -127,6 +154,7 @@ async function executeS2(
 - 名词化结构：中文"V+结果/程度/抽象名词"、日语连体+名、韩语[连体形+것/수(+格助词)] → 合为一块。
 - 名词+格助词（韩/日）、功能词链（て/で/は/が/を/に 等）通常应与核心词保持最小可理解边界，若拆后无法独立说明则合并。
 - URL/邮箱/代码/公式/数字+单位保持整体。`;
+  }
 
   try {
     const { content } = await chatJSON({
