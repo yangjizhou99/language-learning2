@@ -190,7 +190,7 @@ export default function AdminBackupPage() {
   // 获取对比选项
   const fetchCompareOptions = useCallback(async () => {
     if (!backupPath.trim()) return;
-    
+
     try {
       const response = await fetch(`/api/admin/backup/compare-list?backupPath=${encodeURIComponent(backupPath)}&backupType=${backupType}`);
       if (response.ok) {
@@ -208,14 +208,14 @@ export default function AdminBackupPage() {
       if (response.ok) {
         const data = await response.json();
         setEnvConfig(data);
-        
+
         // 如果当前选择的数据库类型不可用，自动切换到第一个可用的数据库
         if (data.config) {
           const availableTypes: DatabaseType[] = [];
           if (data.config.local?.available) availableTypes.push('local');
           if (data.config.prod?.available) availableTypes.push('prod');
           if (data.config.supabase?.available) availableTypes.push('supabase');
-          
+
           // 如果当前选择的数据库不可用，切换到第一个可用的
           setDatabaseType(prevType => {
             const currentAvailable = data.config[prevType]?.available;
@@ -235,7 +235,7 @@ export default function AdminBackupPage() {
     // 设置默认备份路径
     const defaultPath = 'D:\\backups\\language-learning';
     setBackupPath(defaultPath);
-    
+
     // 加载环境配置
     loadEnvConfig();
   }, [loadEnvConfig]);
@@ -333,7 +333,7 @@ export default function AdminBackupPage() {
 
   const autoSetBackupPath = async () => {
     setError(null);
-    
+
     // 常见的服务器备份路径列表
     const commonPaths = [
       '/tmp/backups',
@@ -405,9 +405,9 @@ export default function AdminBackupPage() {
       const progressInterval = setInterval(() => {
         setRestoreProgress(prev => {
           if (prev < 90) {
-            setRestoreMessage(prev < 30 ? '正在准备恢复...' : 
-                            prev < 60 ? '正在恢复数据库...' : 
-                            '正在恢复存储桶...');
+            setRestoreMessage(prev < 30 ? '正在准备恢复...' :
+              prev < 60 ? '正在恢复数据库...' :
+                '正在恢复存储桶...');
             return prev + Math.random() * 10;
           }
           return prev;
@@ -444,13 +444,15 @@ export default function AdminBackupPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || '恢复失败');
+        const errorMessage = errorData.error || '恢复失败';
+        const detailedMessage = errorData.details ? `${errorMessage}: ${errorData.details}` : errorMessage;
+        throw new Error(detailedMessage);
       }
 
       const data = await response.json();
       setRestoreProgress(100);
       setRestoreMessage('恢复完成');
-      
+
       // 显示成功消息
       setTimeout(() => {
         alert(`恢复完成: ${data.message}`);
@@ -460,7 +462,7 @@ export default function AdminBackupPage() {
         setRestoreProgress(0);
         setRestoreMessage('');
       }, 1000);
-      
+
     } catch (err) {
       setError(err instanceof Error ? err.message : '恢复失败');
       setRestoreMessage('恢复失败');
@@ -653,7 +655,7 @@ export default function AdminBackupPage() {
       });
 
       const data = await response.json();
-      
+
       if (data.error) {
         setError(data.error);
       } else {
@@ -680,7 +682,7 @@ export default function AdminBackupPage() {
     try {
       const mode = (document.querySelector('input[name="restoreMode"]:checked') as HTMLInputElement)?.value as 'full' | 'incremental';
       const restoreType = mode === 'incremental' ? 'incremental' : 'history';
-      
+
       const response = await fetch('/api/admin/backup/restore', {
         method: 'POST',
         headers: {
@@ -729,14 +731,14 @@ export default function AdminBackupPage() {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setDatabaseFunctions(prev => ({
           ...prev,
           ...data,
           message: data.message
         }));
-        
+
         // 重新检查函数状态
         setTimeout(() => {
           checkDatabaseFunctions();
@@ -1085,7 +1087,7 @@ export default function AdminBackupPage() {
                         ) : (
                           <div className="mt-1">
                             <p className="text-xs text-gray-600">
-                              简单方式: {bucket.simpleFileCount} 个文件 | 
+                              简单方式: {bucket.simpleFileCount} 个文件 |
                               递归方式: {bucket.recursiveFileCount} 个文件
                             </p>
                             {bucket.allFiles && bucket.allFiles.length > 0 && (
@@ -1167,7 +1169,7 @@ export default function AdminBackupPage() {
                   </div>
                   <div className="text-center p-4 bg-orange-50 rounded-lg">
                     <div className="text-2xl font-bold text-orange-600">
-                      {incrementalPreview.summary.filesToSkip > 0 ? 
+                      {incrementalPreview.summary.filesToSkip > 0 ?
                         Math.round((incrementalPreview.summary.filesToSkip / incrementalPreview.summary.totalFiles) * 100) : 0}%
                     </div>
                     <div className="text-sm text-orange-600">节省比例</div>
@@ -1185,7 +1187,7 @@ export default function AdminBackupPage() {
                           共 {bucket.totalFiles} 个文件
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-3 gap-4 mb-3">
                         <div className="text-center">
                           <div className="text-lg font-bold text-green-600">{bucket.filesToDownload}</div>
@@ -1294,14 +1296,14 @@ export default function AdminBackupPage() {
                       刷新
                     </Button>
                   </div>
-                  
+
                   {backupHistory.backups && backupHistory.backups.length > 0 ? (
                     <div className="space-y-4 max-h-96 overflow-y-auto">
                       {/* 按类型分组显示 */}
                       {['database', 'storage'].map((type) => {
                         const typeBackups = backupHistory.backups?.filter((backup: { type: string }) => backup.type === type) || [];
                         if (typeBackups.length === 0) return null;
-                        
+
                         return (
                           <div key={type} className="space-y-2">
                             <div className="flex items-center space-x-2 border-b pb-2">
@@ -1781,36 +1783,36 @@ export default function AdminBackupPage() {
                 </Select>
               </div>
 
-            {/* 恢复模式选择（追加/覆盖） */}
-            <div className="space-y-2">
-              <Label>恢复模式</Label>
-              <div className="flex flex-col md:flex-row md:space-x-6 space-y-2 md:space-y-0">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="restoreWriteMode"
-                    value="append"
-                    checked={writeMode === 'append'}
-                    onChange={() => setWriteMode('append')}
-                    disabled={isRestoringBackup}
-                    className="rounded"
-                  />
-                  <span className="text-sm">追加（不覆盖现有数据/文件）</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    name="restoreWriteMode"
-                    value="overwrite"
-                    checked={writeMode === 'overwrite'}
-                    onChange={() => setWriteMode('overwrite')}
-                    disabled={isRestoringBackup}
-                    className="rounded"
-                  />
-                  <span className="text-sm">覆盖（清空相关表并覆盖同名文件）</span>
-                </label>
+              {/* 恢复模式选择（追加/覆盖） */}
+              <div className="space-y-2">
+                <Label>恢复模式</Label>
+                <div className="flex flex-col md:flex-row md:space-x-6 space-y-2 md:space-y-0">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="restoreWriteMode"
+                      value="append"
+                      checked={writeMode === 'append'}
+                      onChange={() => setWriteMode('append')}
+                      disabled={isRestoringBackup}
+                      className="rounded"
+                    />
+                    <span className="text-sm">追加（不覆盖现有数据/文件）</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="restoreWriteMode"
+                      value="overwrite"
+                      checked={writeMode === 'overwrite'}
+                      onChange={() => setWriteMode('overwrite')}
+                      disabled={isRestoringBackup}
+                      className="rounded"
+                    />
+                    <span className="text-sm">覆盖（清空相关表并覆盖同名文件）</span>
+                  </label>
+                </div>
               </div>
-            </div>
 
               {restoreType === 'upload' && (
                 <div className="space-y-2">
@@ -1846,11 +1848,10 @@ export default function AdminBackupPage() {
                       {backupHistory.backups.map((backup, index) => (
                         <div
                           key={index}
-                          className={`p-2 border rounded cursor-pointer transition-colors ${
-                            selectedBackup === backup.path
+                          className={`p-2 border rounded cursor-pointer transition-colors ${selectedBackup === backup.path
                               ? 'bg-blue-50 border-blue-300'
                               : 'hover:bg-gray-50'
-                          }`}
+                            }`}
                           onClick={() => setSelectedBackup(backup.path)}
                         >
                           <div className="flex items-center justify-between">
@@ -1954,14 +1955,14 @@ export default function AdminBackupPage() {
                       <span>总体进度</span>
                       <span>{Math.round(backupStatus.reduce((sum, task) => sum + task.progress, 0) / backupStatus.length)}%</span>
                     </div>
-                    <Progress 
-                      value={backupStatus.reduce((sum, task) => sum + task.progress, 0) / backupStatus.length} 
-                      className="w-full h-2" 
+                    <Progress
+                      value={backupStatus.reduce((sum, task) => sum + task.progress, 0) / backupStatus.length}
+                      className="w-full h-2"
                     />
                   </div>
                 </div>
               )}
-              
+
               <div className="space-y-4">
                 {backupStatus.map((task) => (
                   <div key={task.id} className="border rounded-lg p-4">
@@ -2084,7 +2085,7 @@ export default function AdminBackupPage() {
                 {/* 增量备份合并 */}
                 <div className="space-y-4">
                   <h4 className="font-medium text-gray-800">增量备份合并</h4>
-                  
+
                   {/* 选择基础备份 */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">选择基础备份（完整备份）</label>
@@ -2183,9 +2184,9 @@ export default function AdminBackupPage() {
                           <div>
                             <p className="font-medium text-sm">{backup.filename}</p>
                             <p className="text-xs text-gray-500">
-                              {backup.type === 'full' ? '完整备份' : '增量备份'} • 
-                              {backup.category === 'database' ? '数据库' : '存储桶'} • 
-                              {formatFileSize(backup.size)} • 
+                              {backup.type === 'full' ? '完整备份' : '增量备份'} •
+                              {backup.category === 'database' ? '数据库' : '存储桶'} •
+                              {formatFileSize(backup.size)} •
                               {new Date(backup.createdAt).toLocaleString()}
                             </p>
                           </div>
@@ -2242,20 +2243,20 @@ export default function AdminBackupPage() {
                         刷新备份列表
                       </Button>
                     </div>
-                    
+
                     {backupHistory && backupHistory.backups && backupHistory.backups.length > 0 ? (
                       <div className="max-h-60 overflow-y-auto border rounded-lg p-2 space-y-1">
                         {backupHistory.backups
                           .filter(backup => backup.type === 'storage')
                           .map((backup) => {
                             const backupType = backup.backupType || 'unknown';
-                            const typeColor = backupType === 'full' ? 'text-green-600' : 
-                                            backupType === 'incremental' ? 'text-orange-600' : 
-                                            backupType === 'merged' ? 'text-blue-600' : 'text-gray-600';
-                            const typeIcon = backupType === 'full' ? '📦' : 
-                                           backupType === 'incremental' ? '📈' : 
-                                           backupType === 'merged' ? '🔗' : '❓';
-                            
+                            const typeColor = backupType === 'full' ? 'text-green-600' :
+                              backupType === 'incremental' ? 'text-orange-600' :
+                                backupType === 'merged' ? 'text-blue-600' : 'text-gray-600';
+                            const typeIcon = backupType === 'full' ? '📦' :
+                              backupType === 'incremental' ? '📈' :
+                                backupType === 'merged' ? '🔗' : '❓';
+
                             return (
                               <label key={backup.name} className="flex items-center space-x-2 p-3 hover:bg-gray-50 rounded cursor-pointer border">
                                 <input
@@ -2276,9 +2277,9 @@ export default function AdminBackupPage() {
                                   </div>
                                   <div className="text-xs text-gray-500 mt-1">
                                     <span className={`font-medium ${typeColor}`}>
-                                      {backupType === 'full' ? '完整备份' : 
-                                       backupType === 'incremental' ? '增量备份' : 
-                                       backupType === 'merged' ? '合并备份' : '未知类型'}
+                                      {backupType === 'full' ? '完整备份' :
+                                        backupType === 'incremental' ? '增量备份' :
+                                          backupType === 'merged' ? '合并备份' : '未知类型'}
                                     </span>
                                     <span className="mx-2">•</span>
                                     <span>{new Date(backup.createdAt).toLocaleString()}</span>
@@ -2343,7 +2344,7 @@ export default function AdminBackupPage() {
                 {restorePreview && (
                   <div className="space-y-4">
                     <h4 className="font-medium text-gray-800">恢复分析结果</h4>
-                    
+
                     {/* 总体统计 */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-3 bg-blue-50 rounded-lg">
@@ -2372,13 +2373,13 @@ export default function AdminBackupPage() {
                           <div className="flex items-center justify-between mb-2">
                             <h6 className="font-medium">{bucket.bucketName}</h6>
                             <div className="text-sm text-gray-500">
-                              {restorePreview.restoreType === 'incremental' 
+                              {restorePreview.restoreType === 'incremental'
                                 ? `恢复 ${bucket.filesToRestore} 个，跳过 ${bucket.filesToSkip} 个`
                                 : `恢复 ${bucket.filesToRestore} 个，覆盖 ${bucket.filesToOverwrite} 个`
                               }
                             </div>
                           </div>
-                          
+
                           {bucket.filesToRestore > 0 && (
                             <div className="mb-2">
                               <p className="text-sm text-gray-600 mb-1">需要恢复的文件示例：</p>
@@ -2392,7 +2393,7 @@ export default function AdminBackupPage() {
                               </div>
                             </div>
                           )}
-                          
+
                           {restorePreview.restoreType === 'full' && bucket.filesToOverwrite > 0 && (
                             <div>
                               <p className="text-sm text-gray-600 mb-1">将被覆盖的文件示例：</p>
@@ -2406,7 +2407,7 @@ export default function AdminBackupPage() {
                               </div>
                             </div>
                           )}
-                          
+
                           {restorePreview.restoreType === 'incremental' && bucket.filesToSkip > 0 && (
                             <div>
                               <p className="text-sm text-gray-600 mb-1">已存在跳过的文件示例：</p>

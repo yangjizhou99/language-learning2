@@ -10,7 +10,7 @@ import RetestComparisonChart from '@/components/pronunciation/RetestComparisonCh
 export default function RetestPage() {
   const router = useRouter();
   const params = useParams();
-  const unitId = parseInt(params.unit_id as string);
+  const unitId = params ? parseInt(params.unit_id as string) : 0;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +112,7 @@ export default function RetestPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               返回
             </Button>
-            
+
             <div className="flex items-center gap-2">
               <Settings className="w-4 h-4 text-gray-500" />
               <span className="text-sm text-gray-600">时间范围</span>
@@ -136,7 +136,7 @@ export default function RetestPage() {
                   再测对比分析
                 </h1>
                 <p className="text-gray-600">
-                  音节 <span className="font-mono font-semibold text-blue-600">{unitInfo.symbol}</span> 
+                  音节 <span className="font-mono font-semibold text-blue-600">{unitInfo.symbol}</span>
                   的训练效果分析
                 </p>
               </div>
@@ -171,7 +171,7 @@ export default function RetestPage() {
                 进行二次验证，确认当前水平
               </span>
             </Button>
-            
+
             <Button
               onClick={() => router.push(`/practice/pronunciation/train/${unitId}`)}
               variant="outline"

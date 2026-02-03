@@ -1010,7 +1010,7 @@ function tokenizeEnglish(text: string, dict: Map<string, string>): TokenInfo[] {
 
         const broadCEFR = originalLevel
             ? mapToBroadCEFR(originalLevel, 'en')
-            : (isContentWord ? 'unknown' : 'grammar');
+            : 'unknown';
 
         // Calculate frequency rank for English words
         const frequencyRank = isContentWord

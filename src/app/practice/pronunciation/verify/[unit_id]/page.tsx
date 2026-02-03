@@ -37,7 +37,7 @@ interface VerificationReport {
 export default function VerifyPage() {
   const router = useRouter();
   const params = useParams();
-  const unitId = parseInt(params.unit_id as string);
+  const unitId = params ? parseInt(params.unit_id as string) : 0;
 
   const [loading, setLoading] = useState(true);
   const [unit, setUnit] = useState<UnitInfo | null>(null);
@@ -295,9 +295,8 @@ export default function VerifyPage() {
               <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg mb-6">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">分数变化</span>
-                  <span className={`text-2xl font-bold ${
-                    report.change > 0 ? 'text-green-600' : report.change < 0 ? 'text-red-600' : 'text-gray-600'
-                  }`}>
+                  <span className={`text-2xl font-bold ${report.change > 0 ? 'text-green-600' : report.change < 0 ? 'text-red-600' : 'text-gray-600'
+                    }`}>
                     {report.change > 0 ? '+' : ''}{report.change} ({report.changePercent > 0 ? '+' : ''}{report.changePercent}%)
                   </span>
                 </div>
@@ -309,11 +308,10 @@ export default function VerifyPage() {
               </div>
 
               {/* 结论和建议 */}
-              <div className={`p-4 rounded-lg ${
-                report.advice.severity === 'high' ? 'bg-red-50 border border-red-200' :
-                report.advice.severity === 'medium' ? 'bg-yellow-50 border border-yellow-200' :
-                'bg-green-50 border border-green-200'
-              }`}>
+              <div className={`p-4 rounded-lg ${report.advice.severity === 'high' ? 'bg-red-50 border border-red-200' :
+                  report.advice.severity === 'medium' ? 'bg-yellow-50 border border-yellow-200' :
+                    'bg-green-50 border border-green-200'
+                }`}>
                 <p className="font-semibold text-gray-900 mb-2">
                   {report.advice.conclusion}
                 </p>

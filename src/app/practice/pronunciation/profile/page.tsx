@@ -21,6 +21,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     // 从URL参数获取语言设置
+    if (!searchParams) return;
     const langParam = searchParams.get('lang');
     if (langParam && ['zh-CN', 'en-US', 'ja-JP'].includes(langParam)) {
       setCurrentLang(langParam as 'zh-CN' | 'en-US' | 'ja-JP');
@@ -208,7 +209,7 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               {/* 雷达图 */}
               <RadarChart lang={currentLang} />
-              
+
               {/* 等级分布饼图 */}
               <GradeDistributionChart lang={currentLang} />
             </div>
@@ -224,7 +225,7 @@ export default function ProfilePage() {
                     共 {weakUnits.length} 个
                   </span>
                 </div>
-                
+
                 {/* 用户引导 */}
                 <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg">
                   <p className="text-sm text-orange-900">
@@ -234,7 +235,7 @@ export default function ProfilePage() {
                     然后为您提供针对性的训练内容。
                   </p>
                 </div>
-                
+
                 <WeakUnitsTable units={weakUnits} />
               </div>
             )}
@@ -262,13 +263,12 @@ export default function ProfilePage() {
                         {stat.mean.toFixed(1)}
                       </p>
                       <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          stat.grade === 'A'
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${stat.grade === 'A'
                             ? 'bg-green-100 text-green-700'
                             : stat.grade === 'B'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}
                       >
                         {stat.grade}
                       </span>

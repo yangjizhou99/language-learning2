@@ -70,5 +70,2537 @@
     "definition": "算法",
     "source": "llm",
     "createdAt": "2026-02-01T05:58:44.848Z"
+  },
+  "let's": {
+    "level": "A1",
+    "definition": "让我们（let us的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "i'm": {
+    "level": "A1",
+    "definition": "我是（I am的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "b": {
+    "level": "A1",
+    "definition": "字母B（可能指人名缩写或时间下午）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "i'll": {
+    "level": "A1",
+    "definition": "我将（I will的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "it's": {
+    "level": "A1",
+    "definition": "它是（it is的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "we'll": {
+    "level": "A1",
+    "definition": "我们将（we will的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "alex": {
+    "level": "A1",
+    "definition": "亚历克斯（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "don't": {
+    "level": "A1",
+    "definition": "不要（do not的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "i've": {
+    "level": "A1",
+    "definition": "我已经（I have的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "you're": {
+    "level": "A1",
+    "definition": "你是（you are的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "sarah": {
+    "level": "A1",
+    "definition": "莎拉（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "got": {
+    "level": "A1",
+    "definition": "得到（get的过去分词）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "i'd": {
+    "level": "A1",
+    "definition": "我会（I would的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "sam": {
+    "level": "A1",
+    "definition": "山姆（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "maya": {
+    "level": "A1",
+    "definition": "玛雅（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "leo": {
+    "level": "A1",
+    "definition": "利奥（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "we're": {
+    "level": "A1",
+    "definition": "我们是（we are的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "can't": {
+    "level": "A1",
+    "definition": "不能（cannot的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "he's": {
+    "level": "A1",
+    "definition": "他是（he is的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "that's": {
+    "level": "A1",
+    "definition": "那是（that is的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "made": {
+    "level": "A1",
+    "definition": "制作（make的过去分词）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "they're": {
+    "level": "A1",
+    "definition": "他们是（they are的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "pm": {
+    "level": "A1",
+    "definition": "下午（post meridiem的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "you'll": {
+    "level": "A1",
+    "definition": "你将（you will的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "mr": {
+    "level": "A1",
+    "definition": "先生（mister的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "jenkins": {
+    "level": "A1",
+    "definition": "詹金斯（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "consistency": {
+    "level": "B2",
+    "definition": "一致性，连贯性",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "manageable": {
+    "level": "B2",
+    "definition": "可管理的，易处理的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "you've": {
+    "level": "A1",
+    "definition": "你已经（you have的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "app": {
+    "level": "A2",
+    "definition": "应用程序（application的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:05.016Z"
+  },
+  "mia": {
+    "level": "A1",
+    "definition": "人名",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "it'll": {
+    "level": "A2",
+    "definition": "它将会",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "earlier": {
+    "level": "A2",
+    "definition": "更早",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "neighborhood": {
+    "level": "A2",
+    "definition": "社区",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "easier": {
+    "level": "A2",
+    "definition": "更容易",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "c": {
+    "level": "A1",
+    "definition": "字母C",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "mrs": {
+    "level": "A2",
+    "definition": "夫人",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "we'd": {
+    "level": "A2",
+    "definition": "我们会",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "math": {
+    "level": "A1",
+    "definition": "数学",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "okay": {
+    "level": "A1",
+    "definition": "好的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "dr": {
+    "level": "A2",
+    "definition": "医生",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "favorite": {
+    "level": "A1",
+    "definition": "最喜欢的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "cleanup": {
+    "level": "A2",
+    "definition": "清理",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "seen": {
+    "level": "A2",
+    "definition": "看见（过去分词）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "organize": {
+    "level": "B1",
+    "definition": "组织",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "won't": {
+    "level": "A2",
+    "definition": "不会",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "colorful": {
+    "level": "A2",
+    "definition": "多彩的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "they'll": {
+    "level": "A2",
+    "definition": "他们会",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "goodnight": {
+    "level": "A1",
+    "definition": "晚安",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "marco": {
+    "level": "A1",
+    "definition": "人名",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "patel": {
+    "level": "A1",
+    "definition": "姓氏",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "wellness": {
+    "level": "B1",
+    "definition": "健康",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "vacuum": {
+    "level": "A2",
+    "definition": "吸尘器",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "chores": {
+    "level": "A2",
+    "definition": "家务",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "lisa": {
+    "level": "A1",
+    "definition": "人名",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "everyone's": {
+    "level": "A2",
+    "definition": "每个人的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "ben": {
+    "level": "A1",
+    "definition": "人名",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "chen": {
+    "level": "A1",
+    "definition": "姓氏",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "jamie": {
+    "level": "A1",
+    "definition": "人名",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "café": {
+    "level": "A2",
+    "definition": "咖啡馆",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:26.998Z"
+  },
+  "here's": {
+    "level": "A1",
+    "definition": "這是（here is的縮寫）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "tom": {
+    "level": "A1",
+    "definition": "湯姆（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "timeline": {
+    "level": "B1",
+    "definition": "時間線",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "jordan": {
+    "level": "A1",
+    "definition": "喬丹（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "bought": {
+    "level": "A2",
+    "definition": "購買（buy的過去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "we've": {
+    "level": "A1",
+    "definition": "我們已經（we have的縮寫）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "felt": {
+    "level": "A2",
+    "definition": "感覺（feel的過去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "took": {
+    "level": "A2",
+    "definition": "拿、帶（take的過去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "came": {
+    "level": "A1",
+    "definition": "來（come的過去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "cozy": {
+    "level": "B1",
+    "definition": "舒適的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "anytime": {
+    "level": "A2",
+    "definition": "隨時",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "flavors": {
+    "level": "A2",
+    "definition": "味道、風味",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "heard": {
+    "level": "A2",
+    "definition": "聽到（hear的過去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "veggies": {
+    "level": "A2",
+    "definition": "蔬菜（vegetables的縮寫）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "haven't": {
+    "level": "A1",
+    "definition": "還沒有（have not的縮寫）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "gatherings": {
+    "level": "B1",
+    "definition": "聚會",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "colors": {
+    "level": "A1",
+    "definition": "顏色",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "neighbors": {
+    "level": "A2",
+    "definition": "鄰居",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "teeth": {
+    "level": "A1",
+    "definition": "牙齒（tooth的複數）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "pajamas": {
+    "level": "A2",
+    "definition": "睡衣",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "draft": {
+    "level": "B2",
+    "definition": "草稿、草案",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "savings": {
+    "level": "B1",
+    "definition": "儲蓄",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "ms": {
+    "level": "A1",
+    "definition": "女士（Miss或Mrs的縮寫）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "vacuuming": {
+    "level": "B1",
+    "definition": "用吸塵器清掃",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "johnson": {
+    "level": "A1",
+    "definition": "強森（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "protein": {
+    "level": "B1",
+    "definition": "蛋白質",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "allergies": {
+    "level": "B1",
+    "definition": "過敏",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "finalize": {
+    "level": "B2",
+    "definition": "最終確定",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "clay": {
+    "level": "B1",
+    "definition": "黏土",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "brought": {
+    "level": "A2",
+    "definition": "帶來（bring的過去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:11:52.146Z"
+  },
+  "mom's": {
+    "level": "A1",
+    "definition": "妈妈的（所有格）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "handmade": {
+    "level": "B1",
+    "definition": "手工制作的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "ragu": {
+    "level": "B2",
+    "definition": "肉酱（意大利语借词）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "durability": {
+    "level": "B2",
+    "definition": "耐用性",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "frustrating": {
+    "level": "B1",
+    "definition": "令人沮丧的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "checklist": {
+    "level": "A2",
+    "definition": "清单",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "prioritize": {
+    "level": "B2",
+    "definition": "优先考虑",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "luna": {
+    "level": "A1",
+    "definition": "露娜（专有名词，常作宠物名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "feet": {
+    "level": "A1",
+    "definition": "脚（复数）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "visibility": {
+    "level": "B2",
+    "definition": "可见度",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "chore": {
+    "level": "A2",
+    "definition": "家务",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "children": {
+    "level": "A1",
+    "definition": "孩子们（复数）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "skeptical": {
+    "level": "B2",
+    "definition": "怀疑的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "garcia": {
+    "level": "A1",
+    "definition": "加西亚（姓氏）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "taken": {
+    "level": "A2",
+    "definition": "被拿走的（过去分词）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "grown": {
+    "level": "A2",
+    "definition": "成长的（过去分词）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "bigger": {
+    "level": "A1",
+    "definition": "更大的（比较级）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "slept": {
+    "level": "A1",
+    "definition": "睡觉了（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "simmer": {
+    "level": "B1",
+    "definition": "炖煮",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "ran": {
+    "level": "A1",
+    "definition": "跑了（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "unwind": {
+    "level": "B1",
+    "definition": "放松",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "sent": {
+    "level": "A2",
+    "definition": "发送了（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "yogurt": {
+    "level": "A2",
+    "definition": "酸奶",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "budget's": {
+    "level": "A2",
+    "definition": "预算的（所有格）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "homesick": {
+    "level": "B1",
+    "definition": "想家的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "trivia": {
+    "level": "B2",
+    "definition": "琐事",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "you'd": {
+    "level": "A2",
+    "definition": "你会（缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "didn't": {
+    "level": "A1",
+    "definition": "没有（缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "wasn't": {
+    "level": "A1",
+    "definition": "不是（缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "chloe": {
+    "level": "A1",
+    "definition": "克洛伊（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:16.503Z"
+  },
+  "lunchbox": {
+    "level": "A1",
+    "definition": "午餐盒",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "she'll": {
+    "level": "A1",
+    "definition": "她将",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "apologize": {
+    "level": "A2",
+    "definition": "道歉",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "honor": {
+    "level": "B1",
+    "definition": "荣誉",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "grandmother's": {
+    "level": "A1",
+    "definition": "祖母的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "went": {
+    "level": "A1",
+    "definition": "去（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "jewelry": {
+    "level": "A2",
+    "definition": "珠宝",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "nonna": {
+    "level": "B1",
+    "definition": "祖母（意大利语）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "taught": {
+    "level": "A2",
+    "definition": "教（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "weather's": {
+    "level": "A1",
+    "definition": "天气的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "said": {
+    "level": "A1",
+    "definition": "说（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "isn't": {
+    "level": "A1",
+    "definition": "不是",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "doesn't": {
+    "level": "A1",
+    "definition": "不",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "cardio": {
+    "level": "B1",
+    "definition": "有氧运动",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "david": {
+    "level": "A1",
+    "definition": "大卫（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "dragon": {
+    "level": "A2",
+    "definition": "龙",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "prep": {
+    "level": "B1",
+    "definition": "准备",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "micro-habits": {
+    "level": "B2",
+    "definition": "微习惯",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "bland": {
+    "level": "B1",
+    "definition": "平淡的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "yesterday's": {
+    "level": "A1",
+    "definition": "昨天的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "mommy": {
+    "level": "A1",
+    "definition": "妈妈",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "taylor": {
+    "level": "A1",
+    "definition": "泰勒（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "intensity": {
+    "level": "B1",
+    "definition": "强度",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "easiest": {
+    "level": "A2",
+    "definition": "最容易的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "john": {
+    "level": "A1",
+    "definition": "约翰（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "everything's": {
+    "level": "A1",
+    "definition": "一切的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "workload": {
+    "level": "B1",
+    "definition": "工作量",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "grocery": {
+    "level": "A2",
+    "definition": "杂货",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "sturdy": {
+    "level": "B1",
+    "definition": "坚固的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "license": {
+    "level": "A2",
+    "definition": "许可证",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:12:39.493Z"
+  },
+  "flyers": {
+    "level": "A2",
+    "definition": "传单",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "robotics": {
+    "level": "B2",
+    "definition": "机器人技术",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "carbs": {
+    "level": "B1",
+    "definition": "碳水化合物",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "seattle": {
+    "level": "A2",
+    "definition": "西雅图",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "beige": {
+    "level": "A2",
+    "definition": "米色",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "repetitive": {
+    "level": "B1",
+    "definition": "重复的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "sarah's": {
+    "level": "A1",
+    "definition": "莎拉的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "sprinkles": {
+    "level": "A2",
+    "definition": "糖屑",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "streamers": {
+    "level": "A2",
+    "definition": "彩带",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "fettuccine": {
+    "level": "B1",
+    "definition": "宽面条",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "creamier": {
+    "level": "B1",
+    "definition": "更奶油的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "morgan": {
+    "level": "A1",
+    "definition": "摩根",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "told": {
+    "level": "A1",
+    "definition": "告诉",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "intriguing": {
+    "level": "B2",
+    "definition": "有趣的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "neighborhood's": {
+    "level": "A2",
+    "definition": "社区的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "coffee's": {
+    "level": "A1",
+    "definition": "咖啡的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "latte": {
+    "level": "A2",
+    "definition": "拿铁",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "logistics": {
+    "level": "B2",
+    "definition": "物流",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "mobilize": {
+    "level": "B2",
+    "definition": "动员",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "newsletter": {
+    "level": "B1",
+    "definition": "通讯",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "hesitant": {
+    "level": "B2",
+    "definition": "犹豫的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "pavilion": {
+    "level": "B1",
+    "definition": "亭子",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "hoodie": {
+    "level": "A2",
+    "definition": "连帽衫",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "drier": {
+    "level": "A2",
+    "definition": "更干燥的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "broom": {
+    "level": "A1",
+    "definition": "扫帚",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "flew": {
+    "level": "A1",
+    "definition": "飞",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "shovel": {
+    "level": "A2",
+    "definition": "铲子",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "sapling": {
+    "level": "B1",
+    "definition": "树苗",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "loosen": {
+    "level": "B1",
+    "definition": "松开",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "expiration": {
+    "level": "B2",
+    "definition": "到期",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:01.965Z"
+  },
+  "setup": {
+    "level": "B1",
+    "definition": "设置、安排",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "t-shirts": {
+    "level": "A1",
+    "definition": "T恤衫",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "glue": {
+    "level": "A2",
+    "definition": "胶水",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "fundraiser": {
+    "level": "B2",
+    "definition": "筹款活动",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "they'd": {
+    "level": "A2",
+    "definition": "他们会/他们有（they would/they had的缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "shortfalls": {
+    "level": "B2",
+    "definition": "短缺、不足",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "lee": {
+    "level": "C1",
+    "definition": "庇护处、避风处（通常指人名或地理术语）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "terrier": {
+    "level": "B1",
+    "definition": "梗犬（一种狗）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "hashtags": {
+    "level": "B1",
+    "definition": "话题标签（社交媒体）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "#funfest2024": {
+    "level": "B1",
+    "definition": "2024趣味节话题标签",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "relatable": {
+    "level": "B2",
+    "definition": "相关的、可关联的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "shelves": {
+    "level": "A2",
+    "definition": "架子（复数）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "granola": {
+    "level": "B1",
+    "definition": "格兰诺拉麦片",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "happier": {
+    "level": "A2",
+    "definition": "更快乐的（happy的比较级）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "haters": {
+    "level": "B1",
+    "definition": "讨厌者、批评者",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "internet": {
+    "level": "A2",
+    "definition": "互联网",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "providers": {
+    "level": "B1",
+    "definition": "提供者、供应商",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "burnt": {
+    "level": "A2",
+    "definition": "烧焦的（burn的过去分词）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "centers": {
+    "level": "A2",
+    "definition": "中心（复数）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "potluck": {
+    "level": "B1",
+    "definition": "百乐餐（每人带一道菜的聚餐）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "joe": {
+    "level": "A2",
+    "definition": "乔（人名，也指普通人）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "allergy": {
+    "level": "B1",
+    "definition": "过敏",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "cupcakes": {
+    "level": "A2",
+    "definition": "纸杯蛋糕",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "dietary": {
+    "level": "B1",
+    "definition": "饮食的、与饮食相关的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "veggie": {
+    "level": "A2",
+    "definition": "蔬菜（口语）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "beginner's": {
+    "level": "A2",
+    "definition": "初学者的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "charades": {
+    "level": "B1",
+    "definition": "猜字游戏",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "funniest": {
+    "level": "A2",
+    "definition": "最有趣的（funny的最高级）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "torn": {
+    "level": "B1",
+    "definition": "撕裂的、犹豫不决的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "trowel": {
+    "level": "B2",
+    "definition": "泥铲、小铲子",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:28.146Z"
+  },
+  "howling": {
+    "level": "B1",
+    "definition": "呼啸的（形容风声）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "brisk": {
+    "level": "B2",
+    "definition": "清新的（形容天气）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "fluffy": {
+    "level": "A2",
+    "definition": "毛茸茸的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "grandchildren": {
+    "level": "A2",
+    "definition": "孙辈",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "lopsided": {
+    "level": "B2",
+    "definition": "不平衡的，歪斜的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "imperfection": {
+    "level": "B2",
+    "definition": "不完美",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "coordinating": {
+    "level": "B1",
+    "definition": "协调（动词进行时）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "connection": {
+    "level": "B1",
+    "definition": "联系，连接",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "dough": {
+    "level": "A2",
+    "definition": "面团",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "snug": {
+    "level": "B1",
+    "definition": "舒适的，贴身的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "shouldn't": {
+    "level": "A2",
+    "definition": "不应该（缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "helen": {
+    "level": "A1",
+    "definition": "海伦（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "urgency": {
+    "level": "B2",
+    "definition": "紧迫性",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "authentic": {
+    "level": "B2",
+    "definition": "正宗的，真实的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "shortcuts": {
+    "level": "B1",
+    "definition": "捷径",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "tarps": {
+    "level": "B2",
+    "definition": "防水布（复数）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "money's": {
+    "level": "A1",
+    "definition": "钱的（所有格）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "family's": {
+    "level": "A1",
+    "definition": "家庭的（所有格）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "honored": {
+    "level": "B2",
+    "definition": "感到荣幸的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "recreate": {
+    "level": "B2",
+    "definition": "重现，再创造",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "coordinate": {
+    "level": "B1",
+    "definition": "协调",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "finalized": {
+    "level": "B2",
+    "definition": "最终确定的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "hub": {
+    "level": "B2",
+    "definition": "中心，枢纽",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "italian": {
+    "level": "A1",
+    "definition": "意大利的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "thai": {
+    "level": "A1",
+    "definition": "泰国的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "mushy": {
+    "level": "B1",
+    "definition": "糊状的，软烂的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "necklace's": {
+    "level": "A1",
+    "definition": "项链的（所有格）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "sterling": {
+    "level": "C1",
+    "definition": "纯银的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "craftsmanship": {
+    "level": "C1",
+    "definition": "工艺，手艺",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "freshness": {
+    "level": "B1",
+    "definition": "新鲜度",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:13:52.260Z"
+  },
+  "d": {
+    "level": "A1",
+    "definition": "字母D",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "heatwaves": {
+    "level": "B1",
+    "definition": "热浪",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "flavor": {
+    "level": "A2",
+    "definition": "风味",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "anecdote": {
+    "level": "B2",
+    "definition": "轶事",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "perfection": {
+    "level": "B1",
+    "definition": "完美",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "spent": {
+    "level": "A2",
+    "definition": "花费（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "nature's": {
+    "level": "A2",
+    "definition": "自然的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "spring's": {
+    "level": "A2",
+    "definition": "春天的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "autumn's": {
+    "level": "A2",
+    "definition": "秋天的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "renewal": {
+    "level": "B2",
+    "definition": "更新",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "winter's": {
+    "level": "A2",
+    "definition": "冬天的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "snowfall": {
+    "level": "A2",
+    "definition": "降雪",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "errand": {
+    "level": "B1",
+    "definition": "差事",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "reschedule": {
+    "level": "B1",
+    "definition": "重新安排",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "mindset": {
+    "level": "B2",
+    "definition": "心态",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "realizing": {
+    "level": "B1",
+    "definition": "意识到",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "homemade": {
+    "level": "A2",
+    "definition": "自制的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "she'd": {
+    "level": "A2",
+    "definition": "她会/她有",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "vendor": {
+    "level": "B1",
+    "definition": "供应商",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "smoothies": {
+    "level": "A2",
+    "definition": "冰沙",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "couldn't": {
+    "level": "A1",
+    "definition": "不能",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "energized": {
+    "level": "B1",
+    "definition": "充满活力的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "overslept": {
+    "level": "A2",
+    "definition": "睡过头",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "congrats": {
+    "level": "A2",
+    "definition": "恭喜",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "streak": {
+    "level": "B2",
+    "definition": "连胜",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "criticizing": {
+    "level": "B1",
+    "definition": "批评",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "minimal": {
+    "level": "B2",
+    "definition": "最小的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "steakhouse": {
+    "level": "A2",
+    "definition": "牛排馆",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "coworker": {
+    "level": "A2",
+    "definition": "同事",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "appetizers": {
+    "level": "A2",
+    "definition": "开胃菜",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:14.719Z"
+  },
+  "alarm's": {
+    "level": "A1",
+    "definition": "闹钟的（所有格）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "fell": {
+    "level": "A2",
+    "definition": "掉落（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "transformative": {
+    "level": "C1",
+    "definition": "变革性的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "holistic": {
+    "level": "C1",
+    "definition": "整体的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "grew": {
+    "level": "A2",
+    "definition": "成长（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "neighbor": {
+    "level": "A1",
+    "definition": "邻居",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "would've": {
+    "level": "B1",
+    "definition": "would have的缩写",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "pizza's": {
+    "level": "A1",
+    "definition": "披萨的（所有格）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "sushi": {
+    "level": "A2",
+    "definition": "寿司",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "sweetie": {
+    "level": "A2",
+    "definition": "亲爱的（昵称）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "building's": {
+    "level": "A1",
+    "definition": "建筑物的（所有格）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "flashlight": {
+    "level": "A2",
+    "definition": "手电筒",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "vibrant": {
+    "level": "B2",
+    "definition": "充满活力的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "loop": {
+    "level": "B1",
+    "definition": "循环",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "landmark": {
+    "level": "B1",
+    "definition": "地标",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "soy": {
+    "level": "A2",
+    "definition": "大豆",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "chili": {
+    "level": "A2",
+    "definition": "辣椒",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "flakes": {
+    "level": "B1",
+    "definition": "薄片",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "fahrenheit": {
+    "level": "B1",
+    "definition": "华氏度",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "brand's": {
+    "level": "A2",
+    "definition": "品牌的（所有格）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "sodium": {
+    "level": "B2",
+    "definition": "钠",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "tutorial": {
+    "level": "B1",
+    "definition": "教程",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "interface": {
+    "level": "B2",
+    "definition": "界面",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "merrier": {
+    "level": "B1",
+    "definition": "更欢乐的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "greasy": {
+    "level": "B1",
+    "definition": "油腻的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "login": {
+    "level": "A2",
+    "definition": "登录",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "username": {
+    "level": "A2",
+    "definition": "用户名",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "finicky": {
+    "level": "C1",
+    "definition": "挑剔的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "swipe": {
+    "level": "B1",
+    "definition": "滑动",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "rang": {
+    "level": "A2",
+    "definition": "响起（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:14:37.911Z"
+  },
+  "preheat": {
+    "level": "A2",
+    "definition": "预热",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "tryout": {
+    "level": "B1",
+    "definition": "试训",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "defense": {
+    "level": "B1",
+    "definition": "防守",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "workspace": {
+    "level": "A2",
+    "definition": "工作空间",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "insert": {
+    "level": "A2",
+    "definition": "插入",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "pinch": {
+    "level": "B1",
+    "definition": "一小撮",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "sweetness": {
+    "level": "A2",
+    "definition": "甜味",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "dosage": {
+    "level": "B2",
+    "definition": "剂量",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "cafeteria's": {
+    "level": "A2",
+    "definition": "自助餐厅的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "workday": {
+    "level": "A2",
+    "definition": "工作日",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "emphasized": {
+    "level": "B2",
+    "definition": "强调",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "canvas": {
+    "level": "B1",
+    "definition": "画布",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "they've": {
+    "level": "A2",
+    "definition": "他们已经",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "spoke": {
+    "level": "A1",
+    "definition": "说",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "max's": {
+    "level": "A1",
+    "definition": "麦克斯的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "vent": {
+    "level": "B2",
+    "definition": "发泄",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "vending": {
+    "level": "B1",
+    "definition": "贩卖",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "almonds": {
+    "level": "A2",
+    "definition": "杏仁",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "frisbee": {
+    "level": "A2",
+    "definition": "飞盘",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "streetlight": {
+    "level": "A2",
+    "definition": "路灯",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "city's": {
+    "level": "A1",
+    "definition": "城市的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "accountable": {
+    "level": "B2",
+    "definition": "负责的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "bedtime": {
+    "level": "A2",
+    "definition": "就寝时间",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "chords": {
+    "level": "B1",
+    "definition": "和弦",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "fertilizer": {
+    "level": "B1",
+    "definition": "肥料",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "gardengrow": {
+    "level": "B1",
+    "definition": "花园种植",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "thrive": {
+    "level": "B2",
+    "definition": "茁壮成长",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "aren't": {
+    "level": "A1",
+    "definition": "不是",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "compact": {
+    "level": "B1",
+    "definition": "紧凑的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "organizers": {
+    "level": "B1",
+    "definition": "组织者",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:00.263Z"
+  },
+  "hydration": {
+    "level": "B1",
+    "definition": "补水",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "burnout": {
+    "level": "B2",
+    "definition": "倦怠",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "sauté": {
+    "level": "B1",
+    "definition": "炒",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "held": {
+    "level": "A2",
+    "definition": "举行",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "amenities": {
+    "level": "B1",
+    "definition": "设施",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "chorus": {
+    "level": "B1",
+    "definition": "合唱",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "lightweight": {
+    "level": "A2",
+    "definition": "轻量",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "crackers": {
+    "level": "A1",
+    "definition": "饼干",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "whimpers": {
+    "level": "B2",
+    "definition": "呜咽",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "tentatively": {
+    "level": "C1",
+    "definition": "试探性地",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "wags": {
+    "level": "B1",
+    "definition": "摇摆",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "sunscreen": {
+    "level": "A2",
+    "definition": "防晒霜",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "sweaty": {
+    "level": "A2",
+    "definition": "出汗的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "hypoallergenic": {
+    "level": "C1",
+    "definition": "低过敏性的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "advisor": {
+    "level": "B1",
+    "definition": "顾问",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "groceries": {
+    "level": "A2",
+    "definition": "食品杂货",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "instagram": {
+    "level": "A2",
+    "definition": "Instagram",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "facebook": {
+    "level": "A2",
+    "definition": "Facebook",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "cafes": {
+    "level": "A2",
+    "definition": "咖啡馆",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "vibe": {
+    "level": "B2",
+    "definition": "氛围",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "quad": {
+    "level": "B2",
+    "definition": "四方院",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "l": {
+    "level": "A1",
+    "definition": "L",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "pricey": {
+    "level": "B1",
+    "definition": "昂贵的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "airbnb": {
+    "level": "A2",
+    "definition": "Airbnb",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "chargers": {
+    "level": "A2",
+    "definition": "充电器",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "toiletries": {
+    "level": "A2",
+    "definition": "洗漱用品",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "emma": {
+    "level": "A1",
+    "definition": "Emma",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "brutal": {
+    "level": "B2",
+    "definition": "残酷的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "soreness": {
+    "level": "B1",
+    "definition": "酸痛",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "slippery": {
+    "level": "A2",
+    "definition": "滑的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:22.508Z"
+  },
+  "doable": {
+    "level": "B1",
+    "definition": "可行的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "demotivating": {
+    "level": "B2",
+    "definition": "令人失去动力的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "treadmill": {
+    "level": "B1",
+    "definition": "跑步机",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "motivational": {
+    "level": "B1",
+    "definition": "激励的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "dad's": {
+    "level": "A1",
+    "definition": "爸爸的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "clearance": {
+    "level": "B1",
+    "definition": "清仓",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "remodel": {
+    "level": "B2",
+    "definition": "改造",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "specializing": {
+    "level": "B2",
+    "definition": "专攻",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "hamster": {
+    "level": "A2",
+    "definition": "仓鼠",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "variable": {
+    "level": "B1",
+    "definition": "变量",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "sync": {
+    "level": "B2",
+    "definition": "同步",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "clara": {
+    "level": "A1",
+    "definition": "克拉拉（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "christmas": {
+    "level": "A1",
+    "definition": "圣诞节",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "bob": {
+    "level": "A1",
+    "definition": "鲍勃（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "wore": {
+    "level": "A2",
+    "definition": "穿（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "reindeer": {
+    "level": "A2",
+    "definition": "驯鹿",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "snowman": {
+    "level": "A1",
+    "definition": "雪人",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "kept": {
+    "level": "A2",
+    "definition": "保持（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "grandma's": {
+    "level": "A1",
+    "definition": "奶奶的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "impactful": {
+    "level": "B2",
+    "definition": "有影响力的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "oatmeal": {
+    "level": "A2",
+    "definition": "燕麦粥",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "gels": {
+    "level": "B2",
+    "definition": "凝胶（复数）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "proteins": {
+    "level": "B1",
+    "definition": "蛋白质（复数）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "basil": {
+    "level": "B1",
+    "definition": "罗勒",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "gave": {
+    "level": "A2",
+    "definition": "给（过去式）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "halfway": {
+    "level": "B1",
+    "definition": "中途",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "people's": {
+    "level": "A1",
+    "definition": "人们的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "vermont": {
+    "level": "A2",
+    "definition": "佛蒙特州",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "siblings": {
+    "level": "A2",
+    "definition": "兄弟姐妹",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "lounging": {
+    "level": "B2",
+    "definition": "懒散地躺着",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:15:45.161Z"
+  },
+  "casserole": {
+    "level": "B1",
+    "definition": "砂锅菜",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "pantry": {
+    "level": "B1",
+    "definition": "食品储藏室",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "cutback": {
+    "level": "B2",
+    "definition": "削减",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "categorize": {
+    "level": "B2",
+    "definition": "分类",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "club's": {
+    "level": "A2",
+    "definition": "俱乐部的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "jot": {
+    "level": "B1",
+    "definition": "草草记下",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "pricier": {
+    "level": "B1",
+    "definition": "更贵的",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "notch": {
+    "level": "B2",
+    "definition": "等级",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "squats": {
+    "level": "B1",
+    "definition": "深蹲",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "accelerator": {
+    "level": "B1",
+    "definition": "油门",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "spoilers": {
+    "level": "B2",
+    "definition": "剧透",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "mold": {
+    "level": "B1",
+    "definition": "霉菌",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "renovation": {
+    "level": "B2",
+    "definition": "翻新",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "milestones": {
+    "level": "B2",
+    "definition": "里程碑",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "chris": {
+    "level": "A1",
+    "definition": "克里斯（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "j.k.": {
+    "level": "A1",
+    "definition": "J.K.（人名缩写）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "rowling": {
+    "level": "A1",
+    "definition": "罗琳（姓氏）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "harry": {
+    "level": "A1",
+    "definition": "哈利（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "potter": {
+    "level": "A1",
+    "definition": "波特（姓氏）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "azkaban": {
+    "level": "C1",
+    "definition": "阿兹卡班（专有名词）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "agatha": {
+    "level": "A1",
+    "definition": "阿加莎（人名）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "christie": {
+    "level": "A1",
+    "definition": "克里斯蒂（姓氏）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "orient": {
+    "level": "B2",
+    "definition": "东方",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "wwi": {
+    "level": "B2",
+    "definition": "第一次世界大战",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "seatbelt": {
+    "level": "A2",
+    "definition": "安全带",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "headlights": {
+    "level": "A2",
+    "definition": "前灯",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "wipers": {
+    "level": "A2",
+    "definition": "雨刷",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "mph": {
+    "level": "B1",
+    "definition": "英里每小时",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "he'd": {
+    "level": "A2",
+    "definition": "他会/他有",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "vaccinations": {
+    "level": "B2",
+    "definition": "疫苗接种",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:08.516Z"
+  },
+  "microchipping": {
+    "level": "B2",
+    "definition": "植入微型芯片（用于宠物识别）",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:12.042Z"
+  },
+  "cafe": {
+    "level": "A2",
+    "definition": "咖啡馆",
+    "source": "llm",
+    "createdAt": "2026-02-02T15:16:32.135Z"
   }
 }
