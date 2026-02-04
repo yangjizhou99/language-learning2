@@ -29,6 +29,7 @@ export interface ShadowingItemMetadata {
     id: string;
     level: number; // 1.0 ~ 6.0
     lexProfile: Record<BroadCEFR, number>;
+    lang?: string; // 'ja', 'en', 'zh', 'ko' etc.
 }
 
 export type SelfDifficulty = 'too_easy' | 'just_right' | 'a_bit_hard' | 'too_hard';
@@ -222,13 +223,17 @@ export function calculateDifficultyScore(
     item: ShadowingItemMetadata,
     targetBand: 'down' | 'main' | 'up'
 ): number {
-    // 1. If we have Bayesian profile, use the new "Predicted Comprehension" logic
-    if (user.bayesianProfile) {
+    // 1. JLPT-based Bayesian profile scoring is only applicable for Japanese content
+    // For other languages (English, Chinese, Korean), use CEFR-based fallback logic
+    const isJapanese = item.lang === 'ja';
+
+    if (user.bayesianProfile && isJapanese) {
+        // Use JLPT mastery for Japanese content
         const predictedComprehension = calculatePredictedComprehension(user.bayesianProfile, item);
         return computeComprehensionMatch(predictedComprehension, targetBand);
     }
 
-    // 2. Fallback to legacy logic
+    // 2. CEFR-based scoring for English and other languages (or fallback for Japanese without Bayesian profile)
     const levelScore = computeLevelMatch(user.level, item.level, targetBand);
     const lexScore = computeLexMatch(user.vocabUnknownRate, item.lexProfile);
 

@@ -66,6 +66,7 @@ export function parseUnits(marked: string, sentenceAbsStart: number, sid: number
     if (part.length > 0) {
       // 过滤掉不需要的块
       if (shouldSkipPart(part)) {
+        // Only increment offset once for skipped parts, then continue
         offset += part.length;
         continue;
       }
@@ -78,8 +79,10 @@ export function parseUnits(marked: string, sentenceAbsStart: number, sid: number
         end,
         sid
       });
+      // Increment offset after adding the unit
+      offset += part.length;
     }
-    offset += part.length;
+    // Note: Do NOT increment offset here again - it was already done above
   }
 
   return units;

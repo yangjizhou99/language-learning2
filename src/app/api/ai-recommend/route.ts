@@ -263,6 +263,7 @@ export async function GET(req: NextRequest) {
                 id: item.id,
                 level: item.base_level || item.level,
                 lexProfile: item.lex_profile || {},
+                lang: item.lang, // Pass language for language-aware scoring
             };
 
             const difficultyScore = calculateDifficultyScore(userState, metadata, targetBand);
@@ -323,7 +324,45 @@ export async function GET(req: NextRequest) {
             };
         });
 
-        // 6. Sort and Return
+        // 6. Group by language and sort within each group
+        const recommendationsByLang: Record<string, typeof scored> = {};
+        for (const rec of scored) {
+            const lang = rec.item.lang || 'unknown';
+            if (!recommendationsByLang[lang]) {
+                recommendationsByLang[lang] = [];
+            }
+            recommendationsByLang[lang].push(rec);
+        }
+
+        // Sort each language group and take top 5
+        const langDisplayNames: Record<string, string> = {
+            'ja': '日本語',
+            'en': 'English',
+            'zh': '中文',
+            'ko': '한국어',
+        };
+
+        const groupedRecommendations: Array<{
+            lang: string;
+            langName: string;
+            recommendations: typeof scored;
+        }> = [];
+
+        for (const lang of targetLangs) {
+            const langRecs = recommendationsByLang[lang] || [];
+            langRecs.sort((a, b) => b.score - a.score);
+            const topRecs = langRecs.slice(0, 5);
+
+            if (topRecs.length > 0) {
+                groupedRecommendations.push({
+                    lang,
+                    langName: langDisplayNames[lang] || lang.toUpperCase(),
+                    recommendations: topRecs,
+                });
+            }
+        }
+
+        // Also keep flat recommendations for backward compatibility
         scored.sort((a, b) => b.score - a.score);
         const topRecommendations = scored.slice(0, 5);
 
@@ -367,7 +406,9 @@ export async function GET(req: NextRequest) {
                 reason: bandReason,
             },
             userScenePreferences: userScenePrefsWithNames,
-            recommendations: topRecommendations,
+            targetLangs, // Include target languages in response
+            recommendationsByLang: groupedRecommendations, // New grouped format
+            recommendations: topRecommendations, // Keep for backward compatibility
         });
 
     } catch (error) {

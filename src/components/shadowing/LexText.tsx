@@ -176,8 +176,10 @@ export default function LexText({ text, lang, tokenList, onConfirm, selectedWord
                 const token = tokenList[tokenIndex];
                 const tokenText = token.token;
 
-                // 在当前行中寻找这个token
-                const foundPos = line.indexOf(tokenText, linePos);
+                // 在当前行中寻找这个token（忽略大小写）
+                const lineSubset = line.slice(linePos);
+                const matchIndex = lineSubset.toLowerCase().indexOf(tokenText.toLowerCase());
+                const foundPos = matchIndex === -1 ? -1 : linePos + matchIndex;
 
                 if (foundPos === -1 || foundPos > linePos + 10) {
                     // token不在这一行，或者距离太远，输出当前位置的字符然后继续
@@ -208,6 +210,9 @@ export default function LexText({ text, lang, tokenList, onConfirm, selectedWord
                         </span>
                     );
                 }
+
+                // 提取原文中的文本用于显示（保留原有大小写）
+                const displayTokenText = line.substring(foundPos, foundPos + tokenText.length);
 
                 // 渲染token
                 const isSelected = selectedTokens.some(st => st.index === tokenIndex);
@@ -251,9 +256,9 @@ export default function LexText({ text, lang, tokenList, onConfirm, selectedWord
                             }
               ${isPredictedUnknown && !isSelected && !isAlreadySelectedWord ? `border-b-2 border-dashed ${predictionColor}` : ''}
             `}
-                        title={`${tokenText} (${token.lemma}) - ${token.originalLevel} - ${token.pos}${token.frequencyRank ? ` | #${token.frequencyRank} ${freqDisplay}` : ''}${prediction ? ` | 预测: ${Math.round(prediction.probability * 100)}%` : ''}`}
+                        title={`${displayTokenText} (${token.lemma}) - ${token.originalLevel} - ${token.pos}${token.frequencyRank ? ` | #${token.frequencyRank} ${freqDisplay}` : ''}${prediction ? ` | 预测: ${Math.round(prediction.probability * 100)}%` : ''}`}
                     >
-                        {tokenText}
+                        {displayTokenText}
                     </span>
                 );
 
