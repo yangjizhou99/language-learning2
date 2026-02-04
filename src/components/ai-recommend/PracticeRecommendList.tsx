@@ -45,6 +45,8 @@ interface PracticeRecommendListProps {
     recommendations: RecommendItem[];
     isLoading?: boolean;
     onRefresh?: () => void;
+    langName?: string; // Display name for the language (e.g., "English", "日本語")
+    lang?: string; // Language code (e.g., "en", "ja")
 }
 
 const levelColors: Record<number, string> = {
@@ -60,16 +62,30 @@ export function PracticeRecommendList({
     recommendations,
     isLoading = false,
     onRefresh,
+    langName,
+    lang,
 }: PracticeRecommendListProps) {
+    // Language-specific gradient colors
+    const langGradients: Record<string, string> = {
+        'ja': 'from-red-500/10 via-pink-500/10 to-rose-500/10',
+        'en': 'from-blue-500/10 via-indigo-500/10 to-violet-500/10',
+        'zh': 'from-amber-500/10 via-orange-500/10 to-yellow-500/10',
+        'ko': 'from-emerald-500/10 via-teal-500/10 to-cyan-500/10',
+    };
+
+    const cardGradient = lang && langGradients[lang]
+        ? langGradients[lang]
+        : 'from-indigo-500/10 via-purple-500/10 to-pink-500/10';
+
     return (
-        <Card className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 border-white/20 backdrop-blur-sm">
+        <Card className={`bg-gradient-to-br ${cardGradient} border-white/20 backdrop-blur-sm`}>
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-lg">
                         <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
                             <Sparkles className="w-5 h-5 text-white" />
                         </div>
-                        个性化推荐
+                        {langName ? `${langName} 推荐` : '个性化推荐'}
                         {/* Algorithm Explanation Dialog */}
                         <Dialog>
                             <DialogTrigger asChild>

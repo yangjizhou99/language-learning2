@@ -12,6 +12,36 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 
+interface RecommendItem {
+    item: {
+        id: string;
+        title: string;
+        level: number;
+        genre?: string;
+        theme_id?: string;
+        subtopic_id?: string;
+        lang?: string;
+    };
+    score: number;
+    scoreBreakdown?: {
+        interest: number;
+        difficulty: number;
+        formula: string;
+    };
+    sceneWeights?: Array<{
+        scene_id: string;
+        name_cn: string;
+        weight: number;
+    }>;
+    reason: string;
+}
+
+interface LangRecommendationGroup {
+    lang: string;
+    langName: string;
+    recommendations: RecommendItem[];
+}
+
 interface AIRecommendData {
     userLevel: {
         level: number;
@@ -39,17 +69,9 @@ interface AIRecommendData {
         name_cn: string;
         weight: number;
     }>;
-    recommendations: Array<{
-        item: {
-            id: string;
-            title: string;
-            level: number;
-            genre?: string;
-            theme_id?: string;
-        };
-        score: number;
-        reason: string;
-    }>;
+    targetLangs?: string[];
+    recommendationsByLang?: LangRecommendationGroup[];
+    recommendations: RecommendItem[];
 }
 
 export default function AIRecommendPage() {
@@ -245,12 +267,27 @@ export default function AIRecommendPage() {
                             isLoading={isLoading}
                         />
 
-                        {/* Bottom Row: Practice Recommendations */}
-                        <PracticeRecommendList
-                            recommendations={data.recommendations}
-                            isLoading={isLoading}
-                            onRefresh={handleRefresh}
-                        />
+                        {/* Bottom Row: Practice Recommendations - Grouped by Language */}
+                        {data.recommendationsByLang && data.recommendationsByLang.length > 0 ? (
+                            // Show language-grouped recommendations
+                            data.recommendationsByLang.map((langGroup) => (
+                                <PracticeRecommendList
+                                    key={langGroup.lang}
+                                    recommendations={langGroup.recommendations}
+                                    isLoading={isLoading}
+                                    onRefresh={handleRefresh}
+                                    langName={langGroup.langName}
+                                    lang={langGroup.lang}
+                                />
+                            ))
+                        ) : (
+                            // Fallback to flat recommendations
+                            <PracticeRecommendList
+                                recommendations={data.recommendations}
+                                isLoading={isLoading}
+                                onRefresh={handleRefresh}
+                            />
+                        )}
                     </div>
                 ) : null}
             </div>
