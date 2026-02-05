@@ -37,6 +37,7 @@ interface SentenceCardProps {
   onRetry: () => void;
   highlightReview?: boolean;
   renderText?: (text: string) => React.ReactNode;
+  isRoleActive?: boolean;
 }
 
 // 根据评分获取颜色方案 - Pastel柔和配色
@@ -92,6 +93,7 @@ export default function SentenceCard({
   onRetry,
   highlightReview = false,
   renderText,
+  isRoleActive = false,
 }: SentenceCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const colors = getScoreColor(score);
@@ -492,7 +494,9 @@ export default function SentenceCard({
           ? 'border-amber-200 bg-amber-50/40 shadow-amber-100'
           : isExpanded
             ? 'border-blue-200 bg-blue-50/30 shadow-blue-100'
-            : colors.border + ' ' + colors.bg
+            : isRoleActive
+              ? 'border-indigo-300 bg-indigo-50/60 shadow-indigo-100 ring-2 ring-indigo-100'
+              : colors.border + ' ' + colors.bg
         }`}
     >
       {/* 句子标题栏 */}

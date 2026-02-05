@@ -602,6 +602,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
   const [roleAutoStarted, setRoleAutoStarted] = useState(false);
   const [roleStepSignal, setRoleStepSignal] = useState(0);
   const roleIndexRef = useRef(0);
+  // 新增状态用于跟踪并渲染当前活跃的句子索引（Role Mode）
+  const [currentRoleIndex, setCurrentRoleIndex] = useState<number | null>(null);
   const rolePendingResolveRef = useRef<(() => void) | null>(null);
   const roleCancelledRef = useRef(false);
   const roleProcessingRef = useRef(false); // 防止重复触发
@@ -1064,8 +1066,6 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       setIsRecognizing(false);
       clearSilenceTimer();
 
-      // 设置 finalText 以触发评分计算（评分保存后会自动推进）
-      // 捕获当前录音目标索引，防止延迟后索引已变化
       const textToSave = tempFinalTextRef.current || tempCombinedTextRef.current || '';
       const targetIndex = recordingForIndexRef.current;
       if (textToSave && targetIndex !== null) {
@@ -1089,8 +1089,6 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         roleSpeakingStartTimeRef.current = null;
       }
 
-      // 设置 finalText 以触发评分计算（评分保存后会自动推进）
-      // 捕获当前录音目标索引，防止延迟后索引已变化
       const textToSave = tempFinalTextRef.current || tempCombinedTextRef.current || '';
       const targetIndex = recordingForIndexRef.current;
       if (textToSave && targetIndex !== null) {
@@ -1463,7 +1461,9 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     setRoleAutoState('idle');
     setIsRecognizing(false);
     cleanupRecognition();
+    cleanupRecognition();
     cleanupAudio();
+    setCurrentRoleIndex(null); // 清除高亮
   }, [cleanupAudio, cleanupRecognition]);
 
   // 统一的推进到下一句的函数
@@ -1499,9 +1499,12 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       return;
     }
 
+
     // 推进到下一句
     const oldIndex = roleIndexRef.current;
     roleIndexRef.current += 1;
+    // 更新渲染状态
+    setCurrentRoleIndex(roleIndexRef.current);
 
     // 先重置处理标记，确保 useEffect 能检测到新的索引
     roleProcessingRef.current = false;
@@ -1525,6 +1528,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     if (!roleAutoStarted || roleIndexRef.current >= segments.length) {
       roleIndexRef.current = 0;
     }
+    setCurrentRoleIndex(roleIndexRef.current); // 更新高亮状态
     // 清理状态
     setIsRecognizing(false);
     setDisplayText('');
@@ -1755,6 +1759,28 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     }
   }, [derivedRoleSegments, isRoleMode, normalizedActiveRole, onRoleRoundComplete, roleAutoState, roleStepSignal, start, stopRoleAutomation, ensureMicReleased, cleanupAudio, advanceToNextSegment]);
 
+  // 分角色模式：监听识别结束并确保推进（类比跟读模式的推进逻辑）
+  // 当语音识别结束且没有通过正常评分流程（如无任何识别结果）推进时，强制兜底推进
+  useEffect(() => {
+    if (!isRoleMode || roleAutoState !== 'running') return;
+
+    // 当识别刚刚停止时
+    if (!isRecognizing && rolePendingResolveRef.current) {
+      // 给一点宽限时间让评分保存逻辑先执行（如果有文本的话）
+      // 如果没有文本（finalText没变），评分逻辑不会执行，rolePendingResolveRef会保留
+      const timer = setTimeout(() => {
+        if (rolePendingResolveRef.current) {
+          console.log('[RoleMode] Recognition ended without score update, auto-advancing (fallback)...');
+          const resolve = rolePendingResolveRef.current;
+          rolePendingResolveRef.current = null;
+          resolve();
+        }
+      }, 500); // 500ms 足够让状态更新完成
+
+      return () => clearTimeout(timer);
+    }
+  }, [isRoleMode, roleAutoState, isRecognizing]);
+
   const handleSentenceClick = async (index: number) => {
     // 如果点击的是当前展开的句子，则折叠
     if (expandedIndex === index) {
@@ -1783,6 +1809,21 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     }).length;
     return { practiced, total, goodCount };
   }, [sentenceScores, total]);
+
+  // Role Mode 自动滚动到当前句子
+  useEffect(() => {
+    if (isRoleMode && currentRoleIndex !== null && derivedRoleSegments[currentRoleIndex]) {
+      const segment = derivedRoleSegments[currentRoleIndex];
+      const targetIndex = segment.index ?? 0;
+      const element = document.getElementById(`sentence-${targetIndex}`);
+      if (element) {
+        // 稍微延迟滚动以确保渲染完成
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, [currentRoleIndex, isRoleMode, derivedRoleSegments]);
 
   if (!isRoleMode) {
     return nonRoleContent;
@@ -1907,6 +1948,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
                     }}
                   highlightReview={highlightUnperfect && !!score && Math.round((score.score || 0) * 100) < 100}
                   renderText={renderText}
+                  isRoleActive={isRoleMode && derivedRoleSegments[currentRoleIndex ?? -1]?.index === index}
                 />
               );
             })}
