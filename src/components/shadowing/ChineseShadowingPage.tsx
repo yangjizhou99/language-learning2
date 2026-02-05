@@ -2595,8 +2595,9 @@ export default function ShadowingPage() {
         const itemId = searchParams?.get('item');
         explicitItemRef.current = !!itemId;
         const auto = searchParams?.get('autostart') === '1';
+        const src = searchParams?.get('src');
         // 从每日一题等入口自动进入某道题时，显示整页加载动画，直至题目加载完成
-        if (itemId && auto) {
+        if (itemId && (auto || src === 'storyline')) {
           setInitialDeepLinkLoading(true);
         }
         if (!itemId) return;
@@ -3670,38 +3671,22 @@ export default function ShadowingPage() {
     try {
       const headers = await getAuthHeaders();
 
-      // Auto-save vocab
-      let savedVocabCount = 0;
-      if (selectedWords.length > 0) {
-        try {
-          const entries = selectedWords.map((item) => ({
-            term: item.word,
-            lang: item.lang,
-            native_lang: language, // Fallback to interface language if profile not available
-            source: 'shadowing',
-            source_id: currentItem.id,
-            context: item.context,
-            tags: [],
-            explanation: item.explanation || null,
-          }));
+      // Prepare all data upfront before parallel calls
+      const allWords = [...previousWords, ...selectedWords];
 
-          const vocabResponse = await fetch('/api/vocab/bulk_create', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ entries }),
-          });
+      // Prepare vocab entries for bulk_create
+      const vocabEntries = selectedWords.length > 0 ? selectedWords.map((item) => ({
+        term: item.word,
+        lang: item.lang,
+        native_lang: language,
+        source: 'shadowing',
+        source_id: currentItem.id,
+        context: item.context,
+        tags: [],
+        explanation: item.explanation || null,
+      })) : [];
 
-          if (vocabResponse.ok) {
-            savedVocabCount = entries.length;
-            setPreviousWords((prev) => [...prev, ...selectedWords]);
-            setSelectedWords([]);
-          }
-        } catch (e) {
-          console.warn('Vocab auto-save failed', e);
-        }
-      }
-
-      // 2. Save attempt
+      // Prepare attempt metrics
       const metrics = {
         overallScore: finalScore,
         sentenceScores: sentenceScores,
@@ -3712,29 +3697,7 @@ export default function ShadowingPage() {
         time_sec: practiceTime,
       };
 
-      const attemptResponse = await fetch('/api/shadowing/attempts', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          item_id: currentItem.id,
-          lang: currentItem.lang,
-          level: currentItem.level,
-          metrics: {
-            ...metrics,
-            selfDifficulty: difficultyToUse,
-          },
-        }),
-      });
-
-      if (!attemptResponse.ok) {
-        throw new Error('Failed to save attempt');
-      }
-
-      // 3. Save session (optional, but good for keeping track of vocab/recordings if any)
-      const allWords = [...previousWords, ...selectedWords];
-
-      // Prepare selected_words with CEFR data for backend processing
-      // Use allWords (previousWords + selectedWords) since words marked in step 2 are in previousWords
+      // Prepare session payload
       const selected_words_payload = allWords.map(w => {
         const explanation = explanationCache[w.word] || userVocab.find(v => v.term === w.word)?.explanation;
         return {
@@ -3742,62 +3705,93 @@ export default function ShadowingPage() {
           lang: w.lang,
           context: w.context,
           definition: explanation?.gloss_native || '',
-          cefr: (explanation as any)?.cefr || null, // Pass CEFR level
-          explanation: explanation // Pass full explanation if needed
+          cefr: (explanation as any)?.cefr || null,
+          explanation: explanation
         };
       });
 
-      // Build prediction_stats for accuracy tracking
-      // Use dynamic threshold based on historical accuracy feedback
       const predictedUnknownWords = [...wordPredictions.entries()]
         .filter(([_, pred]) => pred.probability < predictionThreshold)
         .map(([word]) => word);
 
-      console.log('[PredictionStats Debug] wordPredictions size:', wordPredictions.size);
-      console.log('[PredictionStats Debug] predictionThreshold:', predictionThreshold);
-      console.log('[PredictionStats Debug] predictedUnknownWords count:', predictedUnknownWords.length);
-      console.log('[PredictionStats Debug] selected_words count:', selected_words_payload.length);
-      console.log('[PredictionStats Debug] bayesianProfile exists:', !!bayesianProfile);
+      // PARALLEL EXECUTION: Run all critical saves simultaneously
+      const savePromises: Promise<any>[] = [];
 
-      await fetch('/api/shadowing/session', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          item_id: currentItem.id,
-          status: 'completed',
-          self_difficulty: difficultyToUse,
-          recordings: currentRecordings,
-          picked_preview: allWords,
-          selected_words: selected_words_payload,
-          notes: {
-            sentence_scores: sentenceScores,
-            speaking_duration: sessionSpeakingDuration
-          },
-          quiz_result: quizResult ? {
-            answers: quizResult.answers,
-            correct_count: quizResult.correctCount,
-            total: quizResult.total,
-          } : null,
-          prediction_stats: predictedUnknownWords.length > 0 ? {
-            predictedUnknown: predictedUnknownWords,
-            threshold: 0.5,
-          } : null,
-        }),
-      });
+      // 1. Vocab bulk create (if any words)
+      if (vocabEntries.length > 0) {
+        savePromises.push(
+          fetch('/api/vocab/bulk_create', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ entries: vocabEntries }),
+          }).then(res => {
+            if (res.ok) {
+              setPreviousWords((prev) => [...prev, ...selectedWords]);
+              setSelectedWords([]);
+            }
+            return res;
+          }).catch(e => console.warn('Vocab auto-save failed', e))
+        );
+      }
+
+      // 2. Save attempt
+      savePromises.push(
+        fetch('/api/shadowing/attempts', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            item_id: currentItem.id,
+            lang: currentItem.lang,
+            level: currentItem.level,
+            metrics: { ...metrics, selfDifficulty: difficultyToUse },
+          }),
+        })
+      );
+
+      // 3. Save session
+      savePromises.push(
+        fetch('/api/shadowing/session', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            item_id: currentItem.id,
+            status: 'completed',
+            self_difficulty: difficultyToUse,
+            recordings: currentRecordings,
+            picked_preview: allWords,
+            selected_words: selected_words_payload,
+            notes: {
+              sentence_scores: sentenceScores,
+              speaking_duration: sessionSpeakingDuration
+            },
+            quiz_result: quizResult ? {
+              answers: quizResult.answers,
+              correct_count: quizResult.correctCount,
+              total: quizResult.total,
+            } : null,
+            prediction_stats: predictedUnknownWords.length > 0 ? {
+              predictedUnknown: predictedUnknownWords,
+              threshold: 0.5,
+            } : null,
+          }),
+        })
+      );
+
+      // Wait for all critical saves to complete
+      await Promise.all(savePromises);
 
       setSuccessMessage(t.shadowing.practice_saved || '练习已保存');
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
 
-      // Invalidate cache
-      try {
-        await fetch('/api/cache/invalidate', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ pattern: 'shadowing:catalog*' }),
-        });
-      } catch (e) { console.warn(e); }
+      // NON-BLOCKING: Cache invalidate and refresh - fire and forget
+      fetch('/api/cache/invalidate', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ pattern: 'shadowing:catalog*' }),
+      }).catch(() => { });
 
+      // Refresh items in background (don't await)
       fetchItems();
 
     } catch (error) {
@@ -4025,7 +4019,23 @@ export default function ShadowingPage() {
           <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-sm text-gray-600">
-              {t.shadowing.daily_loading || '正在为你加载今日题目...'}
+              {storylineSource.isFromStoryline
+                ? '正在加载练习内容...'
+                : (t.shadowing.daily_loading || '正在为你加载今日题目...')}
+            </p>
+          </div>
+        </div>
+      )}
+      {/* 保存中的全屏遮罩 - 阻止用户操作 */}
+      {saving && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 flex flex-col items-center gap-4 shadow-2xl border border-gray-100 dark:border-gray-700">
+            <div className="w-12 h-12 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              正在保存...
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              请稍候，不要关闭或刷新页面
             </p>
           </div>
         </div>

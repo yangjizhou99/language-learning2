@@ -201,7 +201,9 @@ export async function POST(req: NextRequest) {
     // If status is 'completed' and there are selected words to import
     if (status === 'completed') {
       console.log('[Session Save] Status is completed. Selected words:', selected_words?.length);
+      const startTime = Date.now();
 
+      // CRITICAL PATH: Only vocab import is blocking (user needs to see their vocab saved)
       // 1. Import selected words to user's vocabulary
       if (selected_words.length > 0) {
         try {
@@ -248,9 +250,6 @@ export async function POST(req: NextRequest) {
             }
           });
 
-          console.log('[Session Save] New vocab entries to insert:', newEntries.length);
-          console.log('[Session Save] Existing vocab entries:', existingMap.size);
-
           let allVocabIds: string[] = [];
 
           // Get IDs of existing entries
@@ -260,349 +259,292 @@ export async function POST(req: NextRequest) {
 
           // Insert new entries only
           if (newEntries.length > 0) {
-            console.log('[Session Save] Inserting vocab entries:', JSON.stringify(newEntries, null, 2));
-
             const { data: insertedVocab, error: vocabError } = await supabase
               .from('vocab_entries')
               .insert(newEntries)
               .select('id');
 
-            if (vocabError) {
-              console.error('[Session Save] Vocab insert error details:', JSON.stringify(vocabError, null, 2));
-            } else if (insertedVocab) {
-              console.log('[Session Save] Vocab insert success. IDs:', insertedVocab.map(v => v.id));
+            if (!vocabError && insertedVocab) {
               allVocabIds.push(...insertedVocab.map(v => v.id));
             }
           }
 
-          console.log('[Session Save] Total vocab IDs:', allVocabIds.length);
-
           if (allVocabIds.length > 0) {
             // Update session with imported vocab IDs
-            console.log('[Session Save] Updating session with vocab IDs:', allVocabIds);
-
-            const { error: updateError } = await supabase
+            await supabase
               .from('shadowing_sessions')
               .update({
                 imported_vocab_ids: allVocabIds,
               })
               .eq('id', session.id);
-
-            if (updateError) {
-              console.error('[Session Save] Failed to update session with vocab IDs:', updateError);
-            } else {
-              console.log('[Session Save] Successfully updated session with vocab IDs');
-            }
           }
         } catch (vocabImportError) {
           console.error('[Session Save] Error importing vocabulary:', vocabImportError);
           // Don't fail the session save if vocab import fails
         }
-      } else {
-        console.log('[Session Save] No selected words to import');
       }
 
-      // 1.5 Calculate and save prediction accuracy statistics
-      // Record stats even if no words marked (this means all predictions were "false positives" from user's perspective)
-      if (prediction_stats?.predictedUnknown?.length > 0) {
+      console.log(`[Session Save] Critical path completed in ${Date.now() - startTime}ms`);
+
+      // NON-CRITICAL PATH: Run analytics and profile updates in background
+      // These don't need to block the user response
+      const backgroundTasks = async () => {
+        const bgStartTime = Date.now();
         try {
-          const predictedSet = new Set<string>(prediction_stats.predictedUnknown as string[]);
-          const markedSet = new Set<string>(selected_words.map((w: Record<string, any>) => w.text as string));
+          // 1.5 Calculate and save prediction accuracy statistics
+          if (prediction_stats?.predictedUnknown?.length > 0) {
+            try {
+              const predictedSet = new Set<string>(prediction_stats.predictedUnknown as string[]);
+              const markedSet = new Set<string>(selected_words.map((w: Record<string, any>) => w.text as string));
 
-          // Calculate TP, FP, FN
-          let truePositive = 0;
-          let falsePositive = 0;
-          let falseNegative = 0;
+              let truePositive = 0;
+              let falsePositive = 0;
+              let falseNegative = 0;
 
-          for (const word of predictedSet) {
-            if (markedSet.has(word)) {
-              truePositive++;
-            } else {
-              falsePositive++;
-            }
-          }
-          for (const word of markedSet) {
-            if (!predictedSet.has(word)) {
-              falseNegative++;
-            }
-          }
-
-          // Calculate precision, recall, F1
-          const precision = truePositive / (truePositive + falsePositive) || 0;
-          const recall = truePositive / (truePositive + falseNegative) || 0;
-          const f1Score = precision + recall > 0
-            ? (2 * precision * recall) / (precision + recall)
-            : 0;
-
-          const accuracyStats = {
-            predictedCount: predictedSet.size,
-            markedCount: markedSet.size,
-            truePositive,
-            falsePositive,
-            falseNegative,
-            precision: Math.round(precision * 1000) / 1000,
-            recall: Math.round(recall * 1000) / 1000,
-            f1Score: Math.round(f1Score * 1000) / 1000,
-            threshold: prediction_stats.threshold || 0.5,
-            timestamp: new Date().toISOString(),
-          };
-
-          // Save to session notes
-          const existingNotes = session.notes || {};
-          await supabase
-            .from('shadowing_sessions')
-            .update({
-              notes: {
-                ...existingNotes,
-                prediction_accuracy: accuracyStats,
-              },
-            })
-            .eq('id', session.id);
-
-          console.log('[PredictionStats] Saved accuracy:', accuracyStats);
-        } catch (predStatsError) {
-          console.error('Error saving prediction stats:', predStatsError);
-          // Don't fail the session save if prediction stats fails
-        }
-      }
-
-      // 1.5. Record vocabulary knowledge for Bayesian prediction
-      // Track all content words: marked as unknown vs seen but not marked
-      try {
-        // Fetch article text to get all tokens
-        const { data: itemData } = await supabase
-          .from('shadowing_items')
-          .select('text, lang')
-          .eq('id', item_id_db)
-          .single();
-
-        if (itemData?.text && itemData?.lang === 'ja') {
-          const { analyzeLexProfileAsync } = await import('@/lib/recommendation/lexProfileAnalyzer');
-          const { getFrequencyRank } = await import('@/lib/nlp/wordFrequency');
-
-          const result = await analyzeLexProfileAsync(itemData.text, 'ja');
-          const contentTokens = result.details.tokenList.filter(t => t.isContentWord);
-
-          // Build set of marked unknown words
-          const markedUnknownSet = new Set(
-            selected_words.map((w: Record<string, any>) => w.text)
-          );
-
-          const now = new Date().toISOString();
-
-          // Process each content word
-          for (const token of contentTokens) {
-            const word = token.token;
-            const isMarkedUnknown = markedUnknownSet.has(word);
-
-            // Check if record exists
-            const { data: existing } = await supabase
-              .from('user_vocabulary_knowledge')
-              .select('id, exposure_count, not_marked_count, marked_unknown')
-              .eq('user_id', user.id)
-              .eq('word', word)
-              .single();
-
-            if (existing) {
-              // Update existing record
-              const updates: Record<string, unknown> = {
-                exposure_count: (existing.exposure_count || 0) + 1,
-                last_seen_at: now,
-              };
-
-              if (isMarkedUnknown) {
-                updates.marked_unknown = true;
-                updates.marked_at = now;
-              } else if (!existing.marked_unknown) {
-                // Seen but not marked → weak positive evidence
-                updates.not_marked_count = (existing.not_marked_count || 0) + 1;
+              for (const word of predictedSet) {
+                if (markedSet.has(word)) {
+                  truePositive++;
+                } else {
+                  falsePositive++;
+                }
+              }
+              for (const word of markedSet) {
+                if (!predictedSet.has(word)) {
+                  falseNegative++;
+                }
               }
 
+              const precision = truePositive / (truePositive + falsePositive) || 0;
+              const recall = truePositive / (truePositive + falseNegative) || 0;
+              const f1Score = precision + recall > 0
+                ? (2 * precision * recall) / (precision + recall)
+                : 0;
+
+              const accuracyStats = {
+                predictedCount: predictedSet.size,
+                markedCount: markedSet.size,
+                truePositive,
+                falsePositive,
+                falseNegative,
+                precision: Math.round(precision * 1000) / 1000,
+                recall: Math.round(recall * 1000) / 1000,
+                f1Score: Math.round(f1Score * 1000) / 1000,
+                threshold: prediction_stats.threshold || 0.5,
+                timestamp: new Date().toISOString(),
+              };
+
+              const existingNotes = session.notes || {};
               await supabase
-                .from('user_vocabulary_knowledge')
-                .update(updates)
-                .eq('id', existing.id);
-            } else {
-              // Insert new record
-              await supabase
-                .from('user_vocabulary_knowledge')
-                .insert({
-                  user_id: user.id,
-                  word,
-                  lemma: token.lemma || word,
-                  jlpt_level: token.originalLevel?.match(/N[1-5]/)?.[0] || null,
-                  frequency_rank: getFrequencyRank(word, token.lemma) || null,
-                  marked_unknown: isMarkedUnknown,
-                  marked_at: isMarkedUnknown ? now : null,
-                  exposure_count: 1,
-                  not_marked_count: isMarkedUnknown ? 0 : 1,
-                  first_seen_at: now,
-                  last_seen_at: now,
-                });
+                .from('shadowing_sessions')
+                .update({
+                  notes: {
+                    ...existingNotes,
+                    prediction_accuracy: accuracyStats,
+                  },
+                })
+                .eq('id', session.id);
+            } catch (e) {
+              console.error('BG: Error saving prediction stats:', e);
             }
           }
 
-          console.log(`[VocabKnowledge] Recorded ${contentTokens.length} tokens, ${markedUnknownSet.size} marked unknown`);
-        }
-      } catch (vocabKnowledgeError) {
-        console.error('Error recording vocabulary knowledge:', vocabKnowledgeError);
-        // Don't fail the session save if this fails
-      }
-
-      // 1.6 Update Cached Bayesian Profile
-      // This moves the heavy calculation from read-time (profile API) to write-time (session save)
-      try {
-        // Fetch all vocabulary knowledge for this user
-        // We need the full set to calculate accurate mastery levels
-        const { data: allKnowledge, error: knowledgeError } = await supabase
-          .from('user_vocabulary_knowledge')
-          .select('word, jlpt_level, frequency_rank, marked_unknown, exposure_count, not_marked_count')
-          .eq('user_id', user.id);
-
-        if (!knowledgeError && allKnowledge && allKnowledge.length > 0) {
-          const { calculateUserProfileFromEvidence } = await import('@/lib/recommendation/vocabularyPredictor');
-
-          const vocabRows = allKnowledge.map(row => ({
-            word: row.word,
-            jlpt_level: row.jlpt_level,
-            frequency_rank: row.frequency_rank,
-            marked_unknown: row.marked_unknown || false,
-            exposure_count: row.exposure_count || 0,
-            not_marked_count: row.not_marked_count || 0,
-          }));
-
-          const newProfile = calculateUserProfileFromEvidence(vocabRows);
-
-          // Save to profiles table
-          await supabase
-            .from('profiles')
-            .update({
-              bayesian_profile: newProfile
-            })
-            .eq('id', user.id);
-
-          console.log('[BayesianProfile] Updated cached profile for user', user.id);
-        }
-      } catch (profileUpdateError) {
-        console.error('Error updating Bayesian profile:', profileUpdateError);
-      }
-
-      // 2. Update User Ability & Vocab Profile (Difficulty System)
-      try {
-        // Fetch User Profile & Item Metadata
-        const [profileRes, itemRes] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select('ability_level, vocab_unknown_rate, explore_config, comprehension_rate')
-            .eq('id', user.id)
-            .single(),
-          supabase
+          // 1.5. Record vocabulary knowledge for Japanese content only
+          const { data: itemData } = await supabase
             .from('shadowing_items')
-            .select('level, base_level, lex_profile, tokens')
+            .select('text, lang')
             .eq('id', item_id_db)
-            .single(),
-        ]);
+            .single();
 
-        if (profileRes.data && itemRes.data) {
-          const {
-            calculateSessionSkill,
-            updateAbilityLevel,
-            updateVocabUnknownRate,
-            updateComprehensionRate,
-            updateExploreConfig,
-          } = await import('@/lib/recommendation/difficulty');
+          if (itemData?.text && itemData?.lang === 'ja') {
+            try {
+              const { analyzeLexProfileAsync } = await import('@/lib/recommendation/lexProfileAnalyzer');
+              const { getFrequencyRank } = await import('@/lib/nlp/wordFrequency');
 
-          const profile = profileRes.data;
-          const item = itemRes.data;
+              const result = await analyzeLexProfileAsync(itemData.text, 'ja');
+              const contentTokens = result.details.tokenList.filter(t => t.isContentWord);
+              const markedUnknownSet = new Set(selected_words.map((w: Record<string, any>) => w.text));
+              const now = new Date().toISOString();
+              const uniqueWords = [...new Set(contentTokens.map(t => t.token))];
 
-          // Prepare Session Data for Calculation
-          const sentenceScores = notes?.sentence_scores || {};
-          const sentencesData = Object.values(sentenceScores).map((s: any) => ({
-            sentenceId: 'unknown',
-            firstScore: s.firstScore ?? s.score ?? 0,
-            bestScore: s.bestScore ?? s.score ?? 0,
-            attempts: s.attempts || 1,
-          }));
+              const tokenDataMap = new Map<string, typeof contentTokens[0]>();
+              for (const token of contentTokens) {
+                if (!tokenDataMap.has(token.token)) {
+                  tokenDataMap.set(token.token, token);
+                }
+              }
 
-          // Fallback to recordings if sentence_scores is empty
-          const finalSentences = sentencesData.length > 0 ? sentencesData : (recordings || []).map((r: any) => ({
-            sentenceId: r.fileName || 'unknown',
-            firstScore: r.score || 0,
-            bestScore: r.score || 0,
-            attempts: 1,
-          }));
+              const wordCounts = new Map<string, number>();
+              for (const token of contentTokens) {
+                wordCounts.set(token.token, (wordCounts.get(token.token) || 0) + 1);
+              }
 
-          const sessionData = {
-            userId: user.id,
-            itemId: item_id_db,
-            itemLevel: item.base_level || item.level || 1.0, // Fallback to integer level
-            sentences: finalSentences,
-            totalTimeSec: 0, // Not critical for now
-            selfDifficulty: body.self_difficulty as any,
-            newWords: selected_words.map((w: any) => ({
-              word: w.text,
-              cefrLevel: w.cefr,
-            })),
-            itemLexProfile: item.lex_profile || {},
-            quizResult: quiz_result ? {
-              correctCount: quiz_result.correct_count ?? quiz_result.correctCount ?? 0,
-              total: quiz_result.total ?? 0,
-            } : undefined,
-          };
+              const { data: existingRecords } = await supabase
+                .from('user_vocabulary_knowledge')
+                .select('id, word, exposure_count, not_marked_count, marked_unknown')
+                .eq('user_id', user.id)
+                .in('word', uniqueWords);
 
-          // Calculate New State
-          const estimatedTokens = item.tokens || 100; // Use actual tokens or fallback
+              const existingMap = new Map((existingRecords || []).map(r => [r.word, r]));
+              const recordsToInsert: any[] = [];
+              const recordsToUpdate: { id: string; data: Record<string, unknown> }[] = [];
 
-          const sessionSkill = calculateSessionSkill(sessionData, estimatedTokens);
+              for (const word of uniqueWords) {
+                const isMarkedUnknown = markedUnknownSet.has(word);
+                const existing = existingMap.get(word);
+                const token = tokenDataMap.get(word)!;
+                const occurrences = wordCounts.get(word) || 1;
 
-          const newAbilityLevel = updateAbilityLevel(
-            profile.ability_level || 1.0,
-            sessionData.itemLevel,
-            sessionSkill
-          );
+                if (existing) {
+                  const updates: Record<string, unknown> = {
+                    exposure_count: (existing.exposure_count || 0) + occurrences,
+                    last_seen_at: now,
+                  };
+                  if (isMarkedUnknown) {
+                    updates.marked_unknown = true;
+                    updates.marked_at = now;
+                  } else if (!existing.marked_unknown) {
+                    updates.not_marked_count = (existing.not_marked_count || 0) + occurrences;
+                  }
+                  recordsToUpdate.push({ id: existing.id, data: updates });
+                } else {
+                  recordsToInsert.push({
+                    user_id: user.id,
+                    word,
+                    lemma: token.lemma || word,
+                    jlpt_level: token.originalLevel?.match(/N[1-5]/)?.[0] || null,
+                    frequency_rank: getFrequencyRank(word, token.lemma) || null,
+                    marked_unknown: isMarkedUnknown,
+                    marked_at: isMarkedUnknown ? now : null,
+                    exposure_count: occurrences,
+                    not_marked_count: isMarkedUnknown ? 0 : occurrences,
+                    first_seen_at: now,
+                    last_seen_at: now,
+                  });
+                }
+              }
 
-          const newVocabRate = updateVocabUnknownRate(
-            profile.vocab_unknown_rate || {},
-            sessionData,
-            estimatedTokens
-          );
+              if (recordsToInsert.length > 0) {
+                await supabase.from('user_vocabulary_knowledge').insert(recordsToInsert);
+              }
 
-          // Update comprehension rate based on quiz result
-          const newComprehensionRate = updateComprehensionRate(
-            profile.comprehension_rate ?? 0.8, // Default to 80%
-            sessionData.quizResult
-          );
+              if (recordsToUpdate.length > 0) {
+                const chunkSize = 50;
+                for (let i = 0; i < recordsToUpdate.length; i += chunkSize) {
+                  const chunk = recordsToUpdate.slice(i, i + chunkSize);
+                  await Promise.all(
+                    chunk.map(({ id, data }) =>
+                      supabase.from('user_vocabulary_knowledge').update(data).eq('id', id)
+                    )
+                  );
+                }
+              }
 
-          // Update Explore Config (Learning Strategy)
-          const newExploreConfig = updateExploreConfig(
-            profile.explore_config || { mainRatio: 0.6, downRatio: 0.2, upRatio: 0.2 },
-            newComprehensionRate,
-            sessionSkill
-          );
-
-          // Update Profile
-          await supabase
-            .from('profiles')
-            .update({
-              ability_level: newAbilityLevel,
-              vocab_unknown_rate: newVocabRate,
-              comprehension_rate: newComprehensionRate,
-              explore_config: newExploreConfig,
-            })
-            .eq('id', user.id);
-
-          // Update Session with self_difficulty
-          if (body.self_difficulty) {
-            await supabase
-              .from('shadowing_sessions')
-              .update({ self_difficulty: body.self_difficulty })
-              .eq('id', session.id);
+              console.log(`[VocabKnowledge] BG processed ${uniqueWords.length} words`);
+            } catch (e) {
+              console.error('BG: Error recording vocab knowledge:', e);
+            }
           }
+
+          // 1.6 Update Cached Bayesian Profile (only for Japanese users with vocab knowledge)
+          if (itemData?.lang === 'ja') {
+            try {
+              const { data: allKnowledge } = await supabase
+                .from('user_vocabulary_knowledge')
+                .select('word, jlpt_level, frequency_rank, marked_unknown, exposure_count, not_marked_count')
+                .eq('user_id', user.id);
+
+              if (allKnowledge && allKnowledge.length > 0) {
+                const { calculateUserProfileFromEvidence } = await import('@/lib/recommendation/vocabularyPredictor');
+                const vocabRows = allKnowledge.map(row => ({
+                  word: row.word,
+                  jlpt_level: row.jlpt_level,
+                  frequency_rank: row.frequency_rank,
+                  marked_unknown: row.marked_unknown || false,
+                  exposure_count: row.exposure_count || 0,
+                  not_marked_count: row.not_marked_count || 0,
+                }));
+
+                const newProfile = calculateUserProfileFromEvidence(vocabRows);
+                await supabase.from('profiles').update({ bayesian_profile: newProfile }).eq('id', user.id);
+                console.log('[BayesianProfile] BG updated profile');
+              }
+            } catch (e) {
+              console.error('BG: Error updating Bayesian profile:', e);
+            }
+          }
+
+          // 2. Update User Ability & Vocab Profile (Difficulty System)
+          try {
+            const [profileRes, itemRes] = await Promise.all([
+              supabase.from('profiles').select('ability_level, vocab_unknown_rate, explore_config, comprehension_rate').eq('id', user.id).single(),
+              supabase.from('shadowing_items').select('level, base_level, lex_profile, tokens').eq('id', item_id_db).single(),
+            ]);
+
+            if (profileRes.data && itemRes.data) {
+              const { calculateSessionSkill, updateAbilityLevel, updateVocabUnknownRate, updateComprehensionRate, updateExploreConfig } = await import('@/lib/recommendation/difficulty');
+
+              const profile = profileRes.data;
+              const item = itemRes.data;
+              const sentenceScores = notes?.sentence_scores || {};
+              const sentencesData = Object.values(sentenceScores).map((s: any) => ({
+                sentenceId: 'unknown',
+                firstScore: s.firstScore ?? s.score ?? 0,
+                bestScore: s.bestScore ?? s.score ?? 0,
+                attempts: s.attempts || 1,
+              }));
+
+              const finalSentences = sentencesData.length > 0 ? sentencesData : (recordings || []).map((r: any) => ({
+                sentenceId: r.fileName || 'unknown',
+                firstScore: r.score || 0,
+                bestScore: r.score || 0,
+                attempts: 1,
+              }));
+
+              const sessionData = {
+                userId: user.id,
+                itemId: item_id_db,
+                itemLevel: item.base_level || item.level || 1.0,
+                sentences: finalSentences,
+                totalTimeSec: 0,
+                selfDifficulty: body.self_difficulty as any,
+                newWords: selected_words.map((w: any) => ({ word: w.text, cefrLevel: w.cefr })),
+                itemLexProfile: item.lex_profile || {},
+                quizResult: quiz_result ? { correctCount: quiz_result.correct_count ?? quiz_result.correctCount ?? 0, total: quiz_result.total ?? 0 } : undefined,
+              };
+
+              const estimatedTokens = item.tokens || 100;
+              const sessionSkill = calculateSessionSkill(sessionData, estimatedTokens);
+              const newAbilityLevel = updateAbilityLevel(profile.ability_level || 1.0, sessionData.itemLevel, sessionSkill);
+              const newVocabRate = updateVocabUnknownRate(profile.vocab_unknown_rate || {}, sessionData, estimatedTokens);
+              const newComprehensionRate = updateComprehensionRate(profile.comprehension_rate ?? 0.8, sessionData.quizResult);
+              const newExploreConfig = updateExploreConfig(profile.explore_config || { mainRatio: 0.6, downRatio: 0.2, upRatio: 0.2 }, newComprehensionRate, sessionSkill);
+
+              await supabase.from('profiles').update({
+                ability_level: newAbilityLevel,
+                vocab_unknown_rate: newVocabRate,
+                comprehension_rate: newComprehensionRate,
+                explore_config: newExploreConfig,
+              }).eq('id', user.id);
+
+              if (body.self_difficulty) {
+                await supabase.from('shadowing_sessions').update({ self_difficulty: body.self_difficulty }).eq('id', session.id);
+              }
+            }
+          } catch (e) {
+            console.error('BG: Error updating difficulty state:', e);
+          }
+
+          console.log(`[Session Save] BG tasks completed in ${Date.now() - bgStartTime}ms`);
+        } catch (e) {
+          console.error('[Session Save] BG task error:', e);
         }
-      } catch (difficultyError) {
-        console.error('Error updating difficulty state:', difficultyError);
-        // Don't fail the request
-      }
+      };
+
+      // Fire and forget - don't await background tasks
+      // TEMPORARILY DISABLED for debugging - uncomment when stable
+      // backgroundTasks().catch(e => console.error('[Session Save] BG error:', e));
+
+      console.log(`[Session Save] Returning response after ${Date.now() - startTime}ms (BG tasks DISABLED for testing)`);
     }
 
     return NextResponse.json({
@@ -614,3 +556,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

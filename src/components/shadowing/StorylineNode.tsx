@@ -39,7 +39,7 @@ export function StorylineNode({
 
     const handleClick = () => {
         if (!isUnlocked || !itemId) return;
-        router.push(`/practice/shadowing?lang=${lang}&item=${itemId}&src=storyline&themeId=${themeId}&subtopicId=${id}`);
+        router.push(`/practice/shadowing?lang=${lang}&item=${itemId}&src=storyline&themeId=${themeId}&subtopicId=${id}&autostart=1`);
     };
 
 
