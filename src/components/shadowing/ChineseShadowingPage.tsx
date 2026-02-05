@@ -2595,8 +2595,9 @@ export default function ShadowingPage() {
         const itemId = searchParams?.get('item');
         explicitItemRef.current = !!itemId;
         const auto = searchParams?.get('autostart') === '1';
+        const src = searchParams?.get('src');
         // 从每日一题等入口自动进入某道题时，显示整页加载动画，直至题目加载完成
-        if (itemId && auto) {
+        if (itemId && (auto || src === 'storyline')) {
           setInitialDeepLinkLoading(true);
         }
         if (!itemId) return;
@@ -4018,7 +4019,9 @@ export default function ShadowingPage() {
           <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <p className="text-sm text-gray-600">
-              {t.shadowing.daily_loading || '正在为你加载今日题目...'}
+              {storylineSource.isFromStoryline
+                ? '正在加载练习内容...'
+                : (t.shadowing.daily_loading || '正在为你加载今日题目...')}
             </p>
           </div>
         </div>
