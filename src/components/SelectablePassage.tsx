@@ -249,27 +249,64 @@ export default function SelectablePassage({
       // 找到选中文本在原文中的位置
       const selectedText = normalizedText.substring(startIndex, endIndex);
 
-      // 按句子分割（支持中英文标点符号）
-      const sentences = normalizedText.split(/[.!?。！？；;]/);
+      // 定义句子结束标记（支持中英日韩文标点）
+      const sentenceEndMarkers = /[.!?。！？]/;
 
-      // 找到包含选中文本的句子
-      for (const sentence of sentences) {
-        if (sentence.includes(selectedText)) {
-          // 清理句子，移除多余的空白字符
-          return sentence.trim();
+      // 从选中位置向前找到句子开始位置
+      let sentenceStart = startIndex;
+      for (let i = startIndex - 1; i >= 0; i--) {
+        if (sentenceEndMarkers.test(normalizedText[i])) {
+          // 找到前一个句子的结束标记，当前位置就是句子开始
+          sentenceStart = i + 1;
+          break;
+        }
+        if (i === 0) {
+          sentenceStart = 0;
         }
       }
 
-      // 如果没找到完整句子，则按逗号分割
-      const clauses = normalizedText.split(/[,，]/);
-      for (const clause of clauses) {
-        if (clause.includes(selectedText)) {
-          return clause.trim();
+      // 从选中位置向后找到句子结束位置（包括标点符号）
+      let sentenceEnd = endIndex;
+      for (let i = endIndex; i < normalizedText.length; i++) {
+        if (sentenceEndMarkers.test(normalizedText[i])) {
+          // 找到句子结束标记，包括这个标点符号
+          sentenceEnd = i + 1;
+          break;
+        }
+        if (i === normalizedText.length - 1) {
+          sentenceEnd = normalizedText.length;
         }
       }
 
-      // 如果还是没找到，返回选中文本本身
-      return selectedText;
+      // 提取完整句子
+      let context = normalizedText.substring(sentenceStart, sentenceEnd).trim();
+
+      // 如果句子太长（超过200个字符），则只取选中词前后各100个字符
+      const maxContextLength = 200;
+      if (context.length > maxContextLength) {
+        const selectedStart = startIndex - sentenceStart;
+        const selectedEnd = endIndex - sentenceStart;
+        const beforeLength = 100;
+        const afterLength = 100;
+
+        const contextStart = Math.max(0, selectedStart - beforeLength);
+        const contextEnd = Math.min(context.length, selectedEnd + afterLength);
+
+        let truncatedContext = context.substring(contextStart, contextEnd).trim();
+
+        // 添加省略号提示
+        if (contextStart > 0) {
+          truncatedContext = '...' + truncatedContext;
+        }
+        if (contextEnd < context.length) {
+          truncatedContext = truncatedContext + '...';
+        }
+
+        context = truncatedContext;
+      }
+
+      // 如果仍然没有获得有效的上下文，返回选中文本本身
+      return context || selectedText;
     };
 
     // 处理选择的通用函数

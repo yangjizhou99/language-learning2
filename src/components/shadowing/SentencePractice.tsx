@@ -848,27 +848,43 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
       return;
     }
 
+    // 在角色模式下，使用录音时的索引而不是当前展开的索引
+    // 因为自动推进可能导致expandedIndex已经变化
+    const scoreIndex = isRoleMode && recordingForIndexRef.current !== null
+      ? recordingForIndexRef.current
+      : expandedIndex;
+
+    console.log('[角色模式评分] scoreIndex:', scoreIndex, 'expandedIndex:', expandedIndex, 'recordingForIndexRef:', recordingForIndexRef.current);
+
     // 验证是否应该保存评分（防止录音文本被保存到错误的句子）
-    const shouldSaveScore = recordingForIndexRef.current === null || recordingForIndexRef.current === expandedIndex;
+    const shouldSaveScore = recordingForIndexRef.current === null || recordingForIndexRef.current === scoreIndex;
 
     if (isRoleMode) {
       const activeSegment = derivedRoleSegments.find((seg, idx) => {
         const segIndex = typeof seg.index === 'number' ? seg.index : idx;
-        return segIndex === expandedIndex;
+        return segIndex === scoreIndex;
       });
+
+      console.log('[角色模式评分] activeSegment check - scoreIndex:', scoreIndex,
+        'activeSegment:', activeSegment,
+        'normalizedActiveRole:', normalizedActiveRole,
+        'segment.speaker:', activeSegment?.speaker,
+        'normalized speaker:', activeSegment ? normalizeSpeakerSymbol(activeSegment.speaker) : 'N/A');
 
       if (
         activeSegment &&
         normalizeSpeakerSymbol(activeSegment.speaker) !== normalizedActiveRole
       ) {
+        console.log('[角色模式评分] 跳过：说话人不匹配');
         return;
       }
     }
 
     // 只在索引匹配时才保存评分
+
     if (shouldSaveScore) {
       setSentenceScores(prev => {
-        const existing = prev[expandedIndex];
+        const existing = prev[scoreIndex];
         const newScore = {
           score: currentMetrics.score,
           finalText: finalText,
@@ -879,9 +895,17 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           firstScore: existing?.firstScore ?? currentMetrics.score,
           bestScore: Math.max(existing?.bestScore || 0, currentMetrics.score),
         };
+
+        // 通知父组件分数更新 (使用setTimeout避免由于并在渲染期间更新父组件导致的React错误)
+        if (onSentenceScoreUpdate) {
+          setTimeout(() => {
+            onSentenceScoreUpdate(scoreIndex, newScore);
+          }, 0);
+        }
+
         return {
           ...prev,
-          [expandedIndex]: newScore,
+          [scoreIndex]: newScore,
         };
       });
 
@@ -1091,12 +1115,37 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
 
       const textToSave = tempFinalTextRef.current || tempCombinedTextRef.current || '';
       const targetIndex = recordingForIndexRef.current;
+
       if (textToSave && targetIndex !== null) {
+        console.log('[RoleMode] onend: saving text for index', targetIndex, 'current recordingForIndexRef:', recordingForIndexRef.current);
+        // 直接设置，不使用setTimeout
+        if (recordingForIndexRef.current === targetIndex) {
+          setFinalText(textToSave);
+        } else if (isRoleMode && rolePendingResolveRef.current) {
+          // 角色模式下，如果索引不匹配（例如recordingForIndexRef已变成null），
+          // 但我们仍在等待评分（rolePendingResolveRef存在），
+          // 则强制保存，因为我们知道这大概率是正确的句子
+          console.warn('[RoleMode] Index mismatch but forcing update:', targetIndex, recordingForIndexRef.current);
+
+          // 临时恢复recordingForIndexRef以便useEffect能正确读取
+          // 注意：这有点hacky，但为了修正时序问题
+          const originalRef = recordingForIndexRef.current;
+          recordingForIndexRef.current = targetIndex;
+          setFinalText(textToSave);
+          // 不需要在本次渲染周期内恢复originalRef，因为useEffect会在setFinalText后的渲染中运行
+          // 而recordingForIndexRef.current不是React state，所以...
+          // 等等，如果我们在同一个callback里改了ref并触发setState
+          // React会在稍后运行useEffect。那时候ref的值是多少？
+          // 如果我们在useEffect里读取ref，它将是targetIndex。这是我们想要的！
+        }
+      } else if (isRoleMode && targetIndex !== null && rolePendingResolveRef.current) {
+        // 角色模式下，即使没有识别到文字，也需要保存一个0分的评分并推进
         setTimeout(() => {
-          // 只有当索引仍然匹配时才设置finalText
-          if (recordingForIndexRef.current === targetIndex) {
-            setFinalText(textToSave);
-          }
+          // 下面这个检查有点多余，因为我们已经知道要强制推进了
+          // 但为了保持一致性，还是通过无声文本触发评分流程
+          const originalRef = recordingForIndexRef.current;
+          recordingForIndexRef.current = targetIndex;
+          setFinalText(' ');
         }, 100);
       }
     };
@@ -1108,7 +1157,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
     };
   }, [language, t.shadowing?.alert_messages?.microphone_permission_denied_mobile, t.shadowing?.alert_messages?.microphone_permission_denied_desktop, t.shadowing?.alert_messages?.microphone_audio_capture_error, t.shadowing?.alert_messages?.microphone_service_not_allowed]);
 
-  const start = useCallback(() => {
+  const start = useCallback((forceIndex?: number) => {
     if (!recognitionRef.current) {
       toast.error(t.shadowing?.alert_messages?.speech_recognition_not_supported || '当前浏览器不支持实时语音识别。\n\n建议使用最新版Chrome浏览器。');
       return;
@@ -1120,7 +1169,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
         return;
       }
       isStartingRef.current = true;
-      recordingForIndexRef.current = expandedIndex; // 记录录音目标句子索引
+      // 优先使用强制索引，解决角色模式自动流程中 expandedIndex 状态更新滞后的问题
+      recordingForIndexRef.current = typeof forceIndex === 'number' ? forceIndex : expandedIndex;
       setDisplayText('');
       setFinalText('');
       tempFinalTextRef.current = '';
@@ -1661,7 +1711,8 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
           return;
         }
         // 调用 start() 开始录音，就像点击了麦克风按钮一样
-        start();
+        // 显式传入 targetIndex，避免依赖 expandedIndex 的异步更新
+        start(targetIndex);
       }, 100);
 
     } else {
@@ -1761,25 +1812,7 @@ function SentencePracticeDefault({ originalText, language, className = '', audio
 
   // 分角色模式：监听识别结束并确保推进（类比跟读模式的推进逻辑）
   // 当语音识别结束且没有通过正常评分流程（如无任何识别结果）推进时，强制兜底推进
-  useEffect(() => {
-    if (!isRoleMode || roleAutoState !== 'running') return;
 
-    // 当识别刚刚停止时
-    if (!isRecognizing && rolePendingResolveRef.current) {
-      // 给一点宽限时间让评分保存逻辑先执行（如果有文本的话）
-      // 如果没有文本（finalText没变），评分逻辑不会执行，rolePendingResolveRef会保留
-      const timer = setTimeout(() => {
-        if (rolePendingResolveRef.current) {
-          console.log('[RoleMode] Recognition ended without score update, auto-advancing (fallback)...');
-          const resolve = rolePendingResolveRef.current;
-          rolePendingResolveRef.current = null;
-          resolve();
-        }
-      }, 500); // 500ms 足够让状态更新完成
-
-      return () => clearTimeout(timer);
-    }
-  }, [isRoleMode, roleAutoState, isRecognizing]);
 
   const handleSentenceClick = async (index: number) => {
     // 如果点击的是当前展开的句子，则折叠
