@@ -2806,6 +2806,11 @@ export default function ShadowingPage() {
                 return exists ? prev : [target as ShadowingItem, ...prev];
               });
             }
+          } else if (resp.status === 404) {
+            // 题目已不存在，清除缓存
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem(`shadowing:lastItem:${keyLang}`);
+            }
           }
         }
         if (target) {
@@ -2813,6 +2818,7 @@ export default function ShadowingPage() {
         }
       } catch { }
     })();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, lang]);
 

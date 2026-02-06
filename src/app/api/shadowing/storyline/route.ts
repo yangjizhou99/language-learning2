@@ -117,9 +117,9 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // Helper function to get lastPractice in a single query
+        // 1. 获取最后一次练习记录 (Keep purely for "Default Expanded" logic)
+        // This is a fast single-row query with indexes
         const getLastPractice = async () => {
-            // Get the latest session with nested joins to item -> subtopic -> theme
             const { data: lastSession } = await supabase
                 .from('shadowing_sessions')
                 .select(`
@@ -161,328 +161,58 @@ export async function GET(req: NextRequest) {
             return null;
         };
 
-        // Helper function to get themes
-        const getThemes = async () => {
-            let themesQuery = supabase
-                .from('shadowing_themes')
-                .select('id, title, desc, lang, level, genre, created_at')
-                .eq('status', 'active');
-
-            if (lang) themesQuery = themesQuery.eq('lang', lang);
-            if (level) themesQuery = themesQuery.eq('level', parseInt(level));
-
-            return themesQuery
-                .order('level', { ascending: true })
-                .order('created_at', { ascending: true });
+        // 2. Fetch Storyline Data via Optimized RPC
+        // The RPC returns aggregated json for themes, subtopics, and progress
+        const getStorylineData = async () => {
+            const { data, error } = await supabase.rpc('get_storyline_complete', {
+                p_user_id: user.id,
+                p_lang: lang || null,
+                p_level: level ? parseInt(level) : null
+            });
+            return { data, error };
         };
 
-        // Run lastPractice and themes queries IN PARALLEL
-        const [lastPracticeResult, themesResult] = await Promise.all([
+        // Run in parallel
+        const [lastPracticeResult, storylineResult] = await Promise.all([
             getLastPractice(),
-            getThemes()
+            getStorylineData()
         ]);
 
-        const lastPractice = lastPracticeResult;
-        const { data: themes, error: themesError } = themesResult;
-
-        if (themesError) {
-            console.error('Themes query error:', themesError);
-            return NextResponse.json({ error: 'Failed to load themes' }, { status: 400 });
+        if (storylineResult.error) {
+            console.error('Storyline RPC error:', storylineResult.error);
+            return NextResponse.json({ error: 'Failed to load storyline' }, { status: 500 });
         }
 
-        if (!themes || themes.length === 0) {
-            return NextResponse.json({ themes: [], lastPractice });
-        }
+        // Sort Helper (The RPC already sorts by Level/Created, but we need dynamic sorting by status)
+        // RPC relies on 'order by' in SQL.
+        // We might want to re-sort here if the SQL sort wasn't dynamic enough (SQL sorted by level/date).
+        // The Requirement: "进行中 > 已完成 > 未开始".
+        // We can do this sort in JS quickly since the payload is now small (aggregated).
+        let themes = storylineResult.data || [];
 
-        const themeIds = themes.map((t) => t.id);
-
-        // 2. 获取所有相关的子主题
-        const { data: subtopics, error: subtopicsError } = await supabase
-            .from('shadowing_subtopics')
-            .select('id, title, one_line, theme_id, created_at')
-            .in('theme_id', themeIds)
-            .eq('status', 'active')
-            .order('created_at', { ascending: true });
-
-        if (subtopicsError) {
-            console.error('Subtopics query error:', subtopicsError);
-            return NextResponse.json({ error: 'Failed to load subtopics' }, { status: 400 });
-        }
-
-        // 3. 获取所有相关的题目及其练习状态
-        const subtopicIds = (subtopics || []).map((s) => s.id);
-
-        // Run items, sessions, and vectors queries in PARALLEL
-        const batchSize = 100; // Increased batch size for fewer round trips
-
-        // Prepare batch queries for items
-        const itemBatches: PromiseLike<any>[] = [];
-        for (let i = 0; i < subtopicIds.length; i += batchSize) {
-            const batch = subtopicIds.slice(i, i + batchSize);
-            itemBatches.push(
-                supabase
-                    .from('shadowing_items')
-                    .select('id, subtopic_id')
-                    .in('subtopic_id', batch)
-            );
-        }
-
-        // Prepare batch queries for scene vectors
-        const vectorBatches: PromiseLike<any>[] = [];
-        for (let i = 0; i < subtopicIds.length; i += batchSize) {
-            const batch = subtopicIds.slice(i, i + batchSize);
-            vectorBatches.push(
-                supabase
-                    .from('subtopic_scene_vectors')
-                    .select(`
-                         subtopic_id,
-                         weight,
-                         scene:scene_tags!inner(scene_id, name_cn)
-                     `)
-                    .in('subtopic_id', batch)
-                    .order('weight', { ascending: false })
-            );
-        }
-
-        // Sessions query
-        const sessionsPromise = supabase
-            .from('shadowing_sessions')
-            .select('item_id, notes, recordings')
-            .eq('user_id', user.id)
-            .eq('status', 'completed');
-
-        // Execute ALL queries in parallel
-        const [itemResults, vectorResults, sessionsResult] = await Promise.all([
-            Promise.all(itemBatches),
-            Promise.all(vectorBatches),
-            sessionsPromise
-        ]);
-
-        // 3. Process items
-        let items: { id: string; subtopic_id: string | null }[] = [];
-        for (const { data: itemsData, error: itemsError } of itemResults) {
-            if (itemsError) {
-                console.error('Items query error:', itemsError);
-            } else if (itemsData) {
-                items = [...items, ...itemsData];
-            }
-        }
-
-        // 4. 获取用户的练习记录 (包含分数信息)
-        const practicedItemsMap = new Map<string, number>(); // itemId -> score
-
-        if (sessionsResult.error) {
-            console.error('Sessions query error:', sessionsResult.error);
-        }
-
-        const allSessions = sessionsResult.data || [];
-
-        // Calculate scores for each session
-        allSessions.forEach((session: any) => {
-            let totalScore = 0;
-            let count = 0;
-
-            // Try to get scores from notes.sentence_scores first
-            if (session.notes && session.notes.sentence_scores) {
-                const scores = Object.values(session.notes.sentence_scores) as any[];
-                if (scores.length > 0) {
-                    // Calculate average of best scores
-                    const sum = scores.reduce((acc: number, curr: any) => {
-                        let score = curr.bestScore || curr.score || 0;
-                        // Fix: If score is <= 1 (decimal), convert to percentage
-                        if (score <= 1 && score > 0) score *= 100;
-                        return acc + score;
-                    }, 0);
-                    totalScore = sum;
-                    count = scores.length;
-                }
-            }
-
-            // Fallback to recordings if no sentence_scores
-            if (count === 0 && session.recordings && Array.isArray(session.recordings)) {
-                const validRecordings = session.recordings.filter((r: any) => typeof r.score === 'number');
-                if (validRecordings.length > 0) {
-                    const sum = validRecordings.reduce((acc: number, curr: any) => {
-                        let score = curr.score;
-                        // Fix: If score is <= 1 (decimal), convert to percentage
-                        if (score <= 1 && score > 0) score *= 100;
-                        return acc + score;
-                    }, 0);
-                    totalScore = sum;
-                    count = validRecordings.length;
-                }
-            }
-
-            if (count > 0) {
-                const avgScore = Math.round(totalScore / count);
-                practicedItemsMap.set(session.item_id, avgScore);
-            } else {
-                // Mark as practiced but no score (e.g. 0)
-                practicedItemsMap.set(session.item_id, 0);
-            }
-        });
-
-        // 5. 获取小主题的场景向量（Top 2）
-        const subtopicScenesMap = new Map<string, { id: string; name: string; weight: number }[]>();
-        let allVectors: any[] = [];
-        let needsFallback = false;
-
-        for (const { data: vectors, error: vectorsError } of vectorResults) {
-            if (vectorsError) {
-                // Check if this is a foreign key relationship error
-                if (vectorsError.code === 'PGRST200') {
-                    needsFallback = true;
-                    console.warn('Scene vectors foreign key missing, using fallback query');
-                } else {
-                    console.error('Scene vectors query error:', vectorsError);
-                }
-            } else if (vectors) {
-                allVectors = [...allVectors, ...vectors];
-            }
-        }
-
-        // Fallback: If foreign key relationship is missing, fetch scene_tags separately
-        if (needsFallback && subtopicIds.length > 0) {
-            try {
-                // Get vectors without join
-                const { data: rawVectors } = await supabase
-                    .from('subtopic_scene_vectors')
-                    .select('subtopic_id, scene_id, weight')
-                    .in('subtopic_id', subtopicIds)
-                    .order('weight', { ascending: false });
-
-                if (rawVectors && rawVectors.length > 0) {
-                    // Get unique scene_ids
-                    const sceneIds = [...new Set(rawVectors.map((v: any) => v.scene_id))];
-
-                    // Fetch scene_tags separately
-                    const { data: sceneTags } = await supabase
-                        .from('scene_tags')
-                        .select('scene_id, name_cn')
-                        .in('scene_id', sceneIds);
-
-                    // Create a lookup map
-                    const sceneTagsMap = new Map<string, string>();
-                    (sceneTags || []).forEach((tag: any) => {
-                        sceneTagsMap.set(tag.scene_id, tag.name_cn);
-                    });
-
-                    // Transform vectors to expected format
-                    allVectors = rawVectors.map((v: any) => ({
-                        subtopic_id: v.subtopic_id,
-                        weight: v.weight,
-                        scene: {
-                            scene_id: v.scene_id,
-                            name_cn: sceneTagsMap.get(v.scene_id) || v.scene_id
-                        }
-                    }));
-                }
-            } catch (fallbackError) {
-                console.error('Scene vectors fallback query error:', fallbackError);
-            }
-        }
-
-        if (allVectors.length > 0) {
-            allVectors.forEach((v: any) => {
-                const list = subtopicScenesMap.get(v.subtopic_id) || [];
-                if (list.length < 2) { // 只取前2个
-                    list.push({
-                        id: v.scene.scene_id,
-                        name: v.scene.name_cn,
-                        weight: v.weight
-                    });
-                    subtopicScenesMap.set(v.subtopic_id, list);
-                }
-            });
-        }
-
-        // 6. 构建返回数据结构
-        // 创建 subtopic -> item 映射
-        const subtopicToItem = new Map<string, string>();
-        items.forEach((item) => {
-            if (item.subtopic_id) {
-                subtopicToItem.set(item.subtopic_id, item.id);
-            }
-        });
-
-        // 按 theme 分组 subtopics
-        const subtopicsByTheme = new Map<string, typeof subtopics>();
-        (subtopics || []).forEach((s) => {
-            const list = subtopicsByTheme.get(s.theme_id) || [];
-            list.push(s);
-            subtopicsByTheme.set(s.theme_id, list);
-        });
-
-        const result: ThemeWithSubtopics[] = themes.map((theme) => {
-            const themeSubtopics = subtopicsByTheme.get(theme.id) || [];
-
-            const subtopicsWithProgress: SubtopicWithProgress[] = themeSubtopics.map((s, index) => {
-                const itemId = subtopicToItem.get(s.id) || null;
-                const isPracticed = itemId ? practicedItemsMap.has(itemId) : false;
-                const score = itemId && isPracticed ? practicedItemsMap.get(itemId)! : null;
-
-                return {
-                    id: s.id,
-                    title: s.title,
-                    one_line: s.one_line,
-                    itemId,
-                    isPracticed,
-                    score,
-                    order: index + 1,
-                    top_scenes: subtopicScenesMap.get(s.id) || [],
-                };
-            });
-
-            const completedSubtopics = subtopicsWithProgress.filter((s) => s.isPracticed);
-            const completed = completedSubtopics.length;
-
-            // Calculate theme average score
-            let averageScore: number | null = null;
-            if (completed > 0) {
-                const totalScore = completedSubtopics.reduce((acc, curr) => acc + (curr.score || 0), 0);
-                averageScore = Math.round(totalScore / completed);
-            }
-
-            return {
-                id: theme.id,
-                title: theme.title,
-                desc: theme.desc,
-                lang: theme.lang,
-                level: theme.level,
-                genre: theme.genre,
-                subtopics: subtopicsWithProgress,
-                progress: {
-                    completed,
-                    total: subtopicsWithProgress.length,
-                },
-                averageScore,
-            };
-        });
-
-        // 过滤掉没有子主题的主题
-        const filteredResult = result.filter((t) => t.subtopics.length > 0);
-
-        // 按进度排序：进行中 > 已完成 > 未开始，同等级内按此排序
-        const sortedResult = filteredResult.sort((a, b) => {
-            // 先按等级排序
+        // Dynamic Sort for UI Priority
+        themes = themes.sort((a: any, b: any) => {
+            // 1. Level Ascending
             if (a.level !== b.level) return a.level - b.level;
 
-            // 计算进度状态：2=进行中, 1=已完成, 0=未开始
-            const getProgressStatus = (t: typeof a) => {
-                if (t.progress.completed > 0 && t.progress.completed < t.progress.total) return 2; // 进行中
-                if (t.progress.completed === t.progress.total && t.progress.total > 0) return 1; // 已完成
-                return 0; // 未开始
+            // 2. Status Priority: In Progress (2) > Completed (1) > Not Started (0)
+            const getStatus = (t: any) => {
+                const { completed, total } = t.progress;
+                if (completed > 0 && completed < total) return 2;
+                if (completed === total && total > 0) return 1;
+                return 0;
             };
-
-            return getProgressStatus(b) - getProgressStatus(a);
+            return getStatus(b) - getStatus(a);
         });
 
         return NextResponse.json({
-            themes: sortedResult,
-            lastPractice
+            themes,
+            lastPractice: lastPracticeResult
         });
+
     } catch (error) {
         console.error('Error in shadowing storyline API:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
+

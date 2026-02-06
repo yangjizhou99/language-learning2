@@ -109,144 +109,98 @@ export default function Home() {
   } | null>(null);
   const [dueCount, setDueCount] = useState<number>(0);
 
+  // Main Effect: Fetch all initial data aggregated
   useEffect(() => {
-    const loadForUser = async () => {
+    const initHome = async () => {
       if (!authUser) {
         setProfile(null);
-        return;
-      }
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('username, bio, goals, preferred_tone, native_lang, target_langs, domains, onboarding_completed')
-        .eq('id', authUser.id)
-        .single();
-      setProfile(profileData || null);
-
-      // Redirect to onboarding if not completed
-      if (profileData && profileData.onboarding_completed === false) {
-        window.location.href = '/onboarding';
+        setDaily(null);
+        setDailySecond(null);
+        setDailyKorean(null);
+        setDueCount(0);
         return;
       }
 
-      await fetchUserStats(authUser.id);
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch('/api/home/init', { cache: 'no-store', headers });
+        if (!res.ok) throw new Error('Init failed');
+
+        const data = await res.json();
+
+        // Profile
+        if (data.profile) {
+          setProfile(data.profile);
+          // Redirect check
+          if (data.profile.onboarding_completed === false) {
+            window.location.href = '/onboarding';
+            return;
+          }
+        }
+
+        // Stats
+        if (data.stats) {
+          setStats(prev => ({ ...prev, ...data.stats }));
+          setStatsLoaded(true);
+        }
+
+        // Daily Tasks
+        if (data.daily) setDaily(data.daily);
+        else if (data.profile?.target_langs?.[0]) setDaily({ lang: data.profile.target_langs[0], level: 2, error: 'failed' });
+
+        if (data.dailySecond) setDailySecond(data.dailySecond);
+        else setDailySecond(null);
+
+        if (data.dailyKorean) setDailyKorean(data.dailyKorean);
+        else setDailyKorean(null);
+
+        // Due Count
+        setDueCount(typeof data.dueCount === 'number' ? data.dueCount : 0);
+
+      } catch (e) {
+        console.error('Home init error', e);
+        // Fallback or partial error handling could go here
+        setStatsLoaded(true);
+      }
     };
-    loadForUser();
-  }, [authUser]);
 
-  // 进入首页后，根据用户母语自动调整界面语言（每次进入都检查）
+    initHome();
+  }, [authUser, getAuthHeaders]); // Removed complex dependencies
+
+  // Auto-set UI language based on profile (keep separate as it depends on profile state)
   useEffect(() => {
-    if (!authUser) return;
-    const native = profile?.native_lang;
-    if (!native) return;
+    if (!authUser || !profile?.native_lang) return;
+    const native = profile.native_lang;
     const mapped = native === 'zh' ? 'zh' : native === 'ja' ? 'ja' : native === 'en' ? 'en' : null;
     if (mapped) setLanguage(mapped as Lang);
   }, [authUser, profile?.native_lang, setLanguage]);
 
-  // 资料或权限准备好后再拉取每日任务（主/次目标语言），避免早期为空
-  useEffect(() => {
-    (async () => {
-      if (!authUser || !permissions.can_access_shadowing) return;
-      const preferred = (profile?.target_langs?.[0] as 'zh' | 'ja' | 'en' | 'ko') || null;
-      const second = (profile?.target_langs?.[1] as 'zh' | 'ja' | 'en' | 'ko') || null;
-      const hasKorean = profile?.target_langs?.includes('ko') || false;
-      const koreanIsThird = hasKorean && preferred !== 'ko' && second !== 'ko';
-
-      if (!preferred) { setDaily(null); setDailySecond(null); setDailyKorean(null); return; }
-      try {
-        const headers = await getAuthHeaders();
-        const fetchDaily = async (lang: 'zh' | 'ja' | 'en' | 'ko') => {
-          const r = await fetch(`/api/shadowing/daily?lang=${lang}`, { cache: 'no-store', credentials: 'include', headers });
-          const d = await r.json();
-          return { ok: r.ok, data: d } as const;
-        };
-        const promises = [
-          fetchDaily(preferred),
-          second ? fetchDaily(second) : Promise.resolve(null),
-          koreanIsThird ? fetchDaily('ko') : Promise.resolve(null),
-        ];
-        const [pRes, sRes, kRes] = await Promise.all(promises);
-
-        if (pRes?.ok) setDaily(pRes.data);
-        else setDaily({ lang: preferred, level: 2, error: pRes?.data?.error || 'failed' });
-
-        if (second && sRes) {
-          if (sRes.ok) setDailySecond(sRes.data);
-          else setDailySecond({ lang: second, level: 2, error: sRes.data?.error || 'failed' });
-        } else {
-          setDailySecond(null);
-        }
-
-        if (koreanIsThird && kRes) {
-          if (kRes.ok) setDailyKorean(kRes.data);
-          else setDailyKorean({ lang: 'ko', level: 2, error: kRes.data?.error || 'failed' });
-        } else {
-          setDailyKorean(null);
-        }
-      } catch {
-        setDaily({ lang: preferred, level: 2, error: 'network' });
-        if (second) setDailySecond({ lang: second, level: 2, error: 'network' });
-        if (koreanIsThird) setDailyKorean({ lang: 'ko', level: 2, error: 'network' });
-      }
-    })();
-  }, [authUser, permissions.can_access_shadowing, profile?.target_langs, getAuthHeaders]);
-
-  // 拉取今日需复习的生词数量（分页 total）
-  useEffect(() => {
-    (async () => {
-      if (!authUser) return;
-      try {
-        const headers = await getAuthHeaders();
-        const r = await fetch(`/api/vocab/review/due?page=1&limit=1`, { cache: 'no-store', credentials: 'include', headers });
-        if (!r.ok) { setDueCount(0); return; }
-        const d = await r.json();
-        const total = d?.pagination?.total ?? 0;
-        setDueCount(typeof total === 'number' ? total : 0);
-      } catch {
-        setDueCount(0);
-      }
-    })();
-  }, [authUser, getAuthHeaders]);
-
-  // 窗口聚焦时刷新每日任务与复习数量
+  // Window Focus Revalidation (Keep separate but call same API?)
+  // Optimization: Call the aggregate API again on focus to keep everything strict sync
   useEffect(() => {
     if (!authUser) return;
     const onFocus = () => {
-      // 触发依赖变更以复用已有 effect：使用时间戳 state 会更复杂，这里直接调用内部逻辑
+      // Reuse the logic? Or just simplified re-fetch?
+      // Let's re-fetch the aggregate to ensure consistency
       (async () => {
         try {
           const headers = await getAuthHeaders();
-          const preferred = (profile?.target_langs?.[0] as 'zh' | 'ja' | 'en' | 'ko') || null;
-          const second = (profile?.target_langs?.[1] as 'zh' | 'ja' | 'en' | 'ko') || null;
-          const hasKorean = profile?.target_langs?.includes('ko') || false;
-          const koreanIsThird = hasKorean && preferred !== 'ko' && second !== 'ko';
-
-          if (preferred) {
-            const r = await fetch(`/api/shadowing/daily?lang=${preferred}`, { cache: 'no-store', credentials: 'include', headers });
-            const d = await r.json();
-            setDaily(r.ok ? d : { lang: preferred, level: 2, error: d?.error || 'failed' });
-          }
-          if (second) {
-            const r2 = await fetch(`/api/shadowing/daily?lang=${second}`, { cache: 'no-store', credentials: 'include', headers });
-            const d2 = await r2.json();
-            setDailySecond(r2.ok ? d2 : { lang: second, level: 2, error: d2?.error || 'failed' });
-          }
-          if (koreanIsThird) {
-            const r3 = await fetch(`/api/shadowing/daily?lang=ko`, { cache: 'no-store', credentials: 'include', headers });
-            const d3 = await r3.json();
-            setDailyKorean(r3.ok ? d3 : { lang: 'ko', level: 2, error: d3?.error || 'failed' });
-          }
-          const vr = await fetch(`/api/vocab/review/due?page=1&limit=1`, { cache: 'no-store', credentials: 'include', headers });
-          if (vr.ok) {
-            const vd = await vr.json();
-            const total = vd?.pagination?.total ?? 0;
-            setDueCount(typeof total === 'number' ? total : 0);
+          const res = await fetch('/api/home/init', { cache: 'no-store', headers });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.stats) setStats(prev => ({ ...prev, ...data.stats }));
+            if (data.daily) setDaily(data.daily);
+            if (data.dailySecond) setDailySecond(data.dailySecond);
+            if (data.dailyKorean) setDailyKorean(data.dailyKorean);
+            setDueCount(data.dueCount ?? 0);
           }
         } catch { }
       })();
     };
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
-  }, [authUser, getAuthHeaders, profile?.target_langs]);
+  }, [authUser, getAuthHeaders]);
+
 
   const fetchUserStats = async (userId: string) => {
     try {

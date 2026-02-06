@@ -183,20 +183,28 @@ async function loadPreferenceVectors(
   const BATCH_SIZE = 50;
   let allVectors: SubtopicSceneVectorRow[] = [];
 
+  const promises = [];
   for (let i = 0; i < subtopicIds.length; i += BATCH_SIZE) {
     const batch = subtopicIds.slice(i, i + BATCH_SIZE);
-    const { data: batchVectors, error: batchErr } = await supabase
-      .from('subtopic_scene_vectors')
-      .select('subtopic_id, scene_id, weight')
-      .in('subtopic_id', batch);
+    promises.push(
+      supabase
+        .from('subtopic_scene_vectors')
+        .select('subtopic_id, scene_id, weight')
+        .in('subtopic_id', batch)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Failed to load subtopic_scene_vectors batch:', error);
+            return [];
+          }
+          return data as SubtopicSceneVectorRow[] | null;
+        })
+    );
+  }
 
-    if (batchErr) {
-      console.error('Failed to load subtopic_scene_vectors batch:', batchErr);
-      continue; // Skip this batch but continue with others
-    }
-
+  const results = await Promise.all(promises);
+  for (const batchVectors of results) {
     if (batchVectors) {
-      allVectors = allVectors.concat(batchVectors as SubtopicSceneVectorRow[]);
+      allVectors = allVectors.concat(batchVectors);
     }
   }
 
