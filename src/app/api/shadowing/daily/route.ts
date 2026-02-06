@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
 import { getServiceSupabase } from '@/lib/supabaseAdmin';
+import { getDailyShadowingItem } from '@/lib/practice/daily-service';
 
 export async function GET(req: NextRequest) {
   try {
-    // Bearer 优先，其次 Cookie 方式（与其它shadowing接口一致）
+    // 鉴权逻辑：Bearer 优先，其次 Cookie
     const authHeader = req.headers.get('authorization') || '';
     const cookieHeader = req.headers.get('cookie') || '';
     const hasBearer = /^Bearer\s+/.test(authHeader);
@@ -59,113 +59,38 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const lang = (url.searchParams.get('lang') || 'en').toLowerCase();
 
-    // 鉴权
+    // 验证用户身份
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
-    // 拉取该语言的所有等级已审核题目（不再使用推荐等级）
+    // 使用 Service 获取数据 (Service 内部使用了 Service Key 或传递 Admin Client? 
+    // 原代码使用了 getServiceSupabase() 来绕过 RLS 获取所有题目。
+    // 我们应该继续使用 Admin Client 来获取 pool，但是 sessions 状态是基于 user 的。
+    // getDailyShadowingItem 需要传入 Supabase Client。
+    // 如果我们传 user client, check RLS. shadowing_items RLS usually allows 'authenticated' read approved.
+    // 原代码 explicit referencing 'supabaseAdmin'.
+    // 让我们确保 getDailyShadowingItem 足够灵活。
+    // 如果我们传入 admin client，user_id 必须显式传。
+    // 如果我们传入 user client，一切正常且安全。
+    // 原代码用 admin 可能是为了避免 RLS 复杂性或者性能？
+    // shadowing_items 一般是 public read for approved. sessions is private.
+    // 且看 getDailyShadowingItem 签名: (supabase, userId, lang).
+    // 如果传 admin client, 它可以读所有 sessions 吗？是的。
+    // 如果传 user client, 它可以读 items 吗？只有 approved. 
+    // 我们的 service logic 中用了 .eq('status', 'approved')，所以 user client 也应该可以。
+    // 但是原代码 Line 69: `const supabaseAdmin = getServiceSupabase();`
+    // 为了保持一致性和最大权限（防止 future RLS change broken），我们可以传 admin client。
+
     const supabaseAdmin = getServiceSupabase();
-    const { data: items, error: itemsError } = await supabaseAdmin
-      .from('shadowing_items')
-      .select('*')
-      .eq('lang', lang)
-      .order('created_at', { ascending: false })
-      .limit(500);
-    if (itemsError) {
-      return NextResponse.json({ error: 'items_query_failed' }, { status: 500 });
+    const result = await getDailyShadowingItem(supabaseAdmin, user.id, lang);
+
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    const allItems = items || [];
-    if (allItems.length === 0) {
-      return NextResponse.json({ lang, level: null, phase: 'cleared' });
-    }
-
-    const itemIds = allItems.map((i) => i.id);
-    const { data: sessions } = await supabaseAdmin
-      .from('shadowing_sessions')
-      .select('item_id, status')
-      .eq('user_id', user.id)
-      .in('item_id', itemIds);
-
-    const sessionByItem = new Map<string, 'draft' | 'completed'>();
-    (sessions || []).forEach((s: { item_id: string; status: 'draft' | 'completed' }) => {
-      if (s?.item_id) sessionByItem.set(s.item_id, s.status);
-    });
-
-    const unpracticed = allItems.filter((i) => !sessionByItem.has(i.id));
-    const unfinished = allItems.filter((i) => sessionByItem.get(i.id) === 'draft');
-
-    // 计算“当日种子题”完成态（独立于池挑选逻辑，便于前端展示今日是否完成）
-    const seedAll = `${user.id}:${lang}:${new Date().toISOString().slice(0, 10)}`;
-    const idxAll = parseInt(crypto.createHash('sha1').update(seedAll).digest('hex').slice(0, 8), 16) % allItems.length;
-    const rawToday = allItems[idxAll] as Record<string, any>;
-    const todayDone = !!rawToday && sessionByItem.get(rawToday.id) === 'completed';
-    const hasChoice = (arr: unknown[]) => Array.isArray(arr) && arr.length > 0;
-
-    let pool = unpracticed;
-    let phase: 'unpracticed' | 'unfinished' | 'cleared' = 'unpracticed';
-    if (!hasChoice(pool)) {
-      pool = unfinished;
-      phase = hasChoice(pool) ? 'unfinished' : 'cleared';
-    }
-
-    if (phase === 'cleared') {
-      return NextResponse.json({ lang, level: null, phase: 'cleared', message: '恭喜清空题库', today_done: todayDone });
-    }
-
-    // 当日内固定题目：使用基于日期种子的 rawToday，避免完成后换题
-    const raw = rawToday as Record<string, any>;
-    // 读取主题与小主题信息（如有）
-    let theme: { id: string; title: string; desc?: string } | undefined;
-    let subtopic: { id: string; title: string; one_line?: string } | undefined;
-    try {
-      if (raw?.theme_id) {
-        const { data: t } = await supabaseAdmin
-          .from('shadowing_themes')
-          .select('id, title, desc')
-          .eq('id', raw.theme_id)
-          .single();
-        if (t) theme = t as any;
-      }
-      if (raw?.subtopic_id) {
-        const { data: s } = await supabaseAdmin
-          .from('shadowing_subtopics')
-          .select('id, title, one_line')
-          .eq('id', raw.subtopic_id)
-          .single();
-        if (s) subtopic = s as any;
-      }
-    } catch { }
-    const resolvedAudio =
-      raw.audio_url || raw?.notes?.audio_url ||
-      (raw.audio_bucket && raw.audio_path
-        ? `/api/storage-proxy?path=${encodeURIComponent(raw.audio_path)}&bucket=${encodeURIComponent(raw.audio_bucket)}`
-        : null);
-    const item = {
-      id: raw.id,
-      lang: raw.lang,
-      level: raw.level,
-      title: raw.title,
-      text: raw.text,
-      audio_url: resolvedAudio,
-      duration_ms: raw.duration_ms,
-      tokens: raw.tokens,
-      cefr: raw.cefr,
-      meta: raw.meta,
-      translations: raw.translations,
-      trans_updated_at: raw.trans_updated_at,
-      sentence_timeline: raw.sentence_timeline,
-      created_at: raw.created_at,
-      theme_id: raw.theme_id,
-      subtopic_id: raw.subtopic_id,
-      theme,
-      subtopic,
-      notes: raw.notes, // 包含 acu_units 等ACU相关数据
-    };
-
-    return NextResponse.json({ lang, level: raw.level, phase, item, today_done: todayDone });
+    return NextResponse.json(result);
   } catch (e) {
     console.error('daily api failed', e);
     return NextResponse.json({ error: 'server_error' }, { status: 500 });

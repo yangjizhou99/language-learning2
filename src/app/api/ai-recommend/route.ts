@@ -192,21 +192,32 @@ export async function GET(req: NextRequest) {
             query = query.in('lang', targetLangs);
         }
 
-        const { data: items, error: itemsError } = await query.limit(50);
+        // Optimization: Fetch practiced IDs first, then exclude them in DB query
+        // This ensures we get 50 VALID candidates, instead of fetching 50 and filtering them out
+        const { data: practicedSessions } = await supabase
+            .from('shadowing_sessions')
+            .select('item_id')
+            .eq('user_id', user.id);
+
+        const practicedIds = (practicedSessions || []).map(s => s.item_id);
+
+        if (practicedIds.length > 0) {
+            // Split into chunks if too large (Supabase limit ~65k chars in URL, strict limit on params)
+            // If < 2000 items, safe to pass. If more, maybe multiple exclusions or raw filter.
+            // PostgREST `not.in` usually handles reasonable array sizes.
+            // If massive, we might need a RPC, but for now assuming < 5000 is okay.
+            query = query.not('id', 'in', `(${practicedIds.join(',')})`);
+        }
+
+        const { data: items, error: itemsError } = await query.limit(50); // Get 50 real candidates
 
         if (itemsError) {
             console.error('Error fetching items:', itemsError);
             return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 });
         }
 
-        // Filter out practiced items
-        const { data: practicedSessions } = await supabase
-            .from('shadowing_sessions')
-            .select('item_id')
-            .eq('user_id', user.id);
-
-        const practicedIds = new Set(practicedSessions?.map(s => s.item_id) || []);
-        const candidates = (items || []).filter(item => !practicedIds.has(item.id));
+        // Candidates are already filtered by DB
+        const candidates = items || [];
 
         // 4.5. Fetch scene vectors for candidates' subtopics
         const subtopicIds = [...new Set(candidates.map(item => item.subtopic_id).filter(Boolean))];
