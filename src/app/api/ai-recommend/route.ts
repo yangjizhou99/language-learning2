@@ -53,17 +53,13 @@ export async function GET(req: NextRequest) {
 
         // 1. Fetch User Profile & Preferences (using cached-only to avoid LLM wait)
         // We fetch bayesian_profile separately to handle cases where the migration hasn't been applied yet
-        const [profileResult, prefs, userScenePrefsResult] = await Promise.all([
+        const [profileResult, prefs] = await Promise.all([
             supabase
                 .from('profiles')
                 .select('ability_level, vocab_unknown_rate, explore_config, comprehension_rate, target_langs')
                 .eq('id', user.id)
                 .single(),
-            getUserPreferenceVectorsCached(user.id),
-            supabase
-                .from('user_scene_preferences')
-                .select('scene_id, weight')
-                .eq('user_id', user.id)
+            getUserPreferenceVectorsCached(user.id)
         ]);
 
         // Try to fetch bayesian_profile separately
@@ -114,7 +110,13 @@ export async function GET(req: NextRequest) {
         }
 
         // Check if user has scene preferences - if not, they need to set up their profile first
-        const userScenePrefs = userScenePrefsResult.data || [];
+        let userScenePrefs: { scene_id: string; weight: number }[] = [];
+        if (prefs && prefs.sceneMap) {
+            for (const [id, weight] of prefs.sceneMap.entries()) {
+                userScenePrefs.push({ scene_id: id, weight });
+            }
+        }
+
         if (!prefs || userScenePrefs.length === 0) {
             return NextResponse.json({
                 success: false,
@@ -149,7 +151,6 @@ export async function GET(req: NextRequest) {
         for (const pref of userScenePrefs) {
             userSceneMap.set(pref.scene_id, pref.weight);
         }
-        console.log('[ai-recommend] user scene prefs count:', userSceneMap.size);
 
         // 2. Pick Target Band (Explore vs Exploit)
         const targetBand = pickTargetBand(userState);
@@ -211,8 +212,6 @@ export async function GET(req: NextRequest) {
         const subtopicIds = [...new Set(candidates.map(item => item.subtopic_id).filter(Boolean))];
         let sceneVectorMap = new Map<string, { scene_id: string; name_cn: string; weight: number }[]>();
 
-        console.log('[ai-recommend] subtopicIds count:', subtopicIds.length);
-
         if (subtopicIds.length > 0) {
             // First, get all scene vectors
             const { data: vectors, error: vectorsError } = await supabase
@@ -220,8 +219,6 @@ export async function GET(req: NextRequest) {
                 .select('subtopic_id, scene_id, weight')
                 .in('subtopic_id', subtopicIds)
                 .order('weight', { ascending: false });
-
-            console.log('[ai-recommend] vectors result:', vectors?.length || 0, 'error:', vectorsError?.message);
 
             if (!vectorsError && vectors && vectors.length > 0) {
                 // Get unique scene_ids to fetch scene names
@@ -232,8 +229,6 @@ export async function GET(req: NextRequest) {
                     .from('scene_tags')
                     .select('scene_id, name_cn')
                     .in('scene_id', sceneIds);
-
-                console.log('[ai-recommend] sceneTags result:', sceneTags?.length || 0, 'error:', tagsError?.message);
 
                 // Create a map for quick lookup
                 const sceneNameMap = new Map<string, string>();
@@ -273,7 +268,7 @@ export async function GET(req: NextRequest) {
 
             // Calculate interest score based on scene vector matching
             // Formula: sum(user_scene_weight * item_scene_weight) / max_possible_score
-            let interestScore = prefs.themeMap.get(item.theme_id || '') || 0.3; // fallback to theme-based
+            let interestScore = prefs!.themeMap.get(item.theme_id || '') || 0.3; // fallback to theme-based
 
             if (userSceneMap.size > 0 && sceneWeights.length > 0) {
                 let dotProduct = 0;
