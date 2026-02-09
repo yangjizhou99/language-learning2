@@ -1779,9 +1779,11 @@ export default function ShadowingPage() {
     );
   };
   // 带发音的生词显示组件
+  // 带发音的生词显示组件
   const WordWithPronunciation = ({
     word,
     explanation,
+    lang,
   }: {
     word: string;
     explanation?: {
@@ -1790,14 +1792,19 @@ export default function ShadowingPage() {
       pos?: string;
       senses?: Array<{ example_target: string; example_native: string }>;
     };
+    lang?: string;
   }) => {
     return (
       <div className="flex items-center gap-2">
         <span className="font-medium text-gray-700">{word}</span>
         {explanation?.pronunciation && (
           (() => {
-            const san = sanitizeJapaneseReadingToHiragana(explanation.pronunciation || '');
-            const toShow = san || explanation.pronunciation;
+            let toShow = explanation.pronunciation;
+            if (lang === 'ja' || (!lang && /[\s\u3040-\u309f\u30a0-\u30ff]/.test(toShow))) {
+              const san = sanitizeJapaneseReadingToHiragana(explanation.pronunciation || '');
+              toShow = san || explanation.pronunciation;
+            }
+
             return (
               <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs text-gray-600">{toShow}</span>
             );
@@ -3605,6 +3612,8 @@ export default function ShadowingPage() {
 
   // 统一的完成并保存函数 - 整合session保存和练习结果记录
   const unifiedCompleteAndSave = async (explicitDifficulty?: 'too_easy' | 'just_right' | 'a_bit_hard' | 'too_hard') => {
+    // 0. Re-entry guard: 防止重复提交
+    if (saving) return;
     if (!currentItem || !user) return;
 
     const difficultyToUse = explicitDifficulty || selfDifficulty;
@@ -3622,75 +3631,70 @@ export default function ShadowingPage() {
     }
 
     setSaving(true);
-
-    // 立即更新本地状态，确保UI即时响应
-    const practiceTime = practiceStartTime
-      ? Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000)
-      : 0;
-
-    // 1. 立即更新题库列表状态
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === currentItem.id
-          ? {
-            ...item,
-            isPracticed: true,
-            stats: {
-              ...item.stats,
-              recordingCount: currentRecordings.length,
-              vocabCount: selectedWords.length,
-              practiceTime,
-              lastPracticed: new Date().toISOString(),
-            },
-          }
-          : item,
-      ),
-    );
-
-    // Calculate overall score from sentenceScores
-    const scores = Object.values(sentenceScores);
-    let overallScore = 0;
-    let validCount = 0;
-
-    scores.forEach((s: any) => {
-      if (typeof s.score === 'number') {
-        overallScore += s.score;
-        validCount++;
-      }
-    });
-
-    const finalScore = validCount > 0 ? (overallScore / validCount) * 100 : 0;
-
-    // Construct scoring result for display
-    const newScoringResult = {
-      score: finalScore,
-      details: scores, // Store sentence details
-      originalText: currentItem.text,
-      transcription: '',
-      accuracy: finalScore / 100,
-      feedback: '',
-    };
-
-    setScoringResult(newScoringResult);
-    setPracticeComplete(true);
+    // 设置超时保护，防止无限等待
+    const timeoutId = setTimeout(() => {
+      setSaving(false);
+      toast.error((t.shadowing as any).save_timeout || '保存超时，请重试');
+    }, 15000); // 15秒超时
 
     try {
+      // 立即更新本地状态，确保UI即时响应
+      const practiceTime = practiceStartTime
+        ? Math.floor((new Date().getTime() - practiceStartTime.getTime()) / 1000)
+        : 0;
+
+      // 1. 立即更新题库列表状态
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === currentItem.id
+            ? {
+              ...item,
+              isPracticed: true,
+              stats: {
+                ...item.stats,
+                recordingCount: currentRecordings.length,
+                vocabCount: selectedWords.length,
+                practiceTime,
+                lastPracticed: new Date().toISOString(),
+              },
+            }
+            : item,
+        ),
+      );
+
+      // Calculate overall score from sentenceScores
+      const scores = Object.values(sentenceScores);
+      let overallScore = 0;
+      let validCount = 0;
+
+      scores.forEach((s: any) => {
+        if (typeof s.score === 'number') {
+          overallScore += s.score;
+          validCount++;
+        }
+      });
+
+      const finalScore = validCount > 0 ? (overallScore / validCount) * 100 : 0;
+
+      // Construct scoring result for display
+      const newScoringResult = {
+        score: finalScore,
+        details: scores, // Store sentence details
+        originalText: currentItem.text,
+        transcription: '',
+        accuracy: finalScore / 100,
+        feedback: '',
+      };
+
+      setScoringResult(newScoringResult);
+      setPracticeComplete(true);
+
       const headers = await getAuthHeaders();
 
       // Prepare all data upfront before parallel calls
       const allWords = [...previousWords, ...selectedWords];
 
-      // Prepare vocab entries for bulk_create
-      const vocabEntries = selectedWords.length > 0 ? selectedWords.map((item) => ({
-        term: item.word,
-        lang: item.lang,
-        native_lang: language,
-        source: 'shadowing',
-        source_id: currentItem.id,
-        context: item.context,
-        tags: [],
-        explanation: item.explanation || null,
-      })) : [];
+
 
       // Prepare attempt metrics
       const metrics = {
@@ -3721,28 +3725,21 @@ export default function ShadowingPage() {
         .map(([word]) => word);
 
       // PARALLEL EXECUTION: Run all critical saves simultaneously
+      // Helper for fetching with timeout (simulated by Promise.race)
+      const fetchWithTimeout = (url: string, options: RequestInit, timeoutMs: number = 10000) => {
+        return Promise.race([
+          fetch(url, options),
+          new Promise<Response>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timed out')), timeoutMs)
+          )
+        ]);
+      };
+
       const savePromises: Promise<any>[] = [];
 
-      // 1. Vocab bulk create (if any words)
-      if (vocabEntries.length > 0) {
-        savePromises.push(
-          fetch('/api/vocab/bulk_create', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({ entries: vocabEntries }),
-          }).then(res => {
-            if (res.ok) {
-              setPreviousWords((prev) => [...prev, ...selectedWords]);
-              setSelectedWords([]);
-            }
-            return res;
-          }).catch(e => console.warn('Vocab auto-save failed', e))
-        );
-      }
-
-      // 2. Save attempt
+      // 1. Save attempt
       savePromises.push(
-        fetch('/api/shadowing/attempts', {
+        fetchWithTimeout('/api/shadowing/attempts', {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -3756,7 +3753,7 @@ export default function ShadowingPage() {
 
       // 3. Save session
       savePromises.push(
-        fetch('/api/shadowing/session', {
+        fetchWithTimeout('/api/shadowing/session', {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -3786,6 +3783,15 @@ export default function ShadowingPage() {
       // Wait for all critical saves to complete
       await Promise.all(savePromises);
 
+      // Clear the main timeout if successful
+      clearTimeout(timeoutId);
+
+      // Successfully saved, update local state for vocab
+      if (selectedWords.length > 0) {
+        setPreviousWords((prev) => [...prev, ...selectedWords]);
+        setSelectedWords([]);
+      }
+
       setSuccessMessage(t.shadowing.practice_saved || '练习已保存');
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
@@ -3802,8 +3808,12 @@ export default function ShadowingPage() {
 
     } catch (error) {
       console.error('Save failed:', error);
-      toast.error(t.shadowing.save_failed || '保存失败');
+      // Only show error if not already handled by timeout
+      if (saving) {
+        toast.error(t.shadowing.save_failed || '保存失败');
+      }
     } finally {
+      clearTimeout(timeoutId);
       setSaving(false);
     }
   };
@@ -4832,8 +4842,6 @@ export default function ShadowingPage() {
                                 }));
                                 const correctCount = answers.filter(a => a.correct).length;
                                 setQuizResult({ answers, correctCount, total: questions.length });
-                                // 自动保存草稿
-                                saveDraft();
                               }}
                               disabled={Object.keys(selectedQuizAnswers).length < currentItem.quiz_questions.length}
                               className="w-full mt-4 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-md font-medium"
@@ -5500,6 +5508,7 @@ export default function ShadowingPage() {
                                 <WordWithPronunciation
                                   word={item.word}
                                   explanation={item.explanation || wordExplanations[item.word]}
+                                  lang={currentItem?.lang || item.lang || 'en'}
                                 />
                                 <Button
                                   variant="ghost"
@@ -5623,6 +5632,7 @@ export default function ShadowingPage() {
                                 <WordWithPronunciation
                                   word={item.word}
                                   explanation={item.explanation || wordExplanations[item.word]}
+                                  lang={currentItem?.lang || item.lang || 'en'}
                                 />
                                 <Button
                                   variant="ghost"

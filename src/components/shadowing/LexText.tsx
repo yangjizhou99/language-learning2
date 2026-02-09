@@ -108,18 +108,126 @@ export default function LexText({ text, lang, tokenList, onConfirm, selectedWord
     }, [selectedTokens]);
 
     // 获取上下文
+
+
+    // 预处理文本：处理对话格式换行（统一逻辑）
+    const processedText = useMemo(() => {
+        let textToProcess = text;
+        if ((lang === 'ko' || lang === 'en' || lang === 'ja') && textToProcess.includes('A:') && textToProcess.includes('B:') && !textToProcess.includes('\n')) {
+            textToProcess = textToProcess.replace(/\s+B:/g, '\nB:');
+            textToProcess = textToProcess.replace(/([^A])\s+A:/g, '$1\nA:');
+        }
+        return textToProcess;
+    }, [text, lang]);
+
+    // 计算每个token在原文中的位置范围
+    const tokenRanges = useMemo(() => {
+        if (!tokenList.length) return [];
+
+        const ranges: Array<{ start: number; end: number; tokenIndex: number }> = [];
+        const lowerText = processedText.toLowerCase();
+        let currentPos = 0;
+
+        tokenList.forEach((token, index) => {
+            const tokenText = token.token.toLowerCase();
+            // 在当前位置之后寻找token
+            const matchIndex = lowerText.indexOf(tokenText, currentPos);
+
+            if (matchIndex !== -1 && matchIndex < currentPos + 50) { // 限制查找范围，防止跨度过大匹配错误
+                ranges.push({
+                    start: matchIndex,
+                    end: matchIndex + token.token.length,
+                    tokenIndex: index
+                });
+                currentPos = matchIndex + token.token.length;
+            } else {
+                // 如果找不到（可能是标点差异等），尝试跳过
+                // 这种情况下该token可能无法正确映射，或者我们简单地略过它
+                // console.warn(`Token not found in text: ${token.token}`);
+            }
+        });
+
+        return ranges;
+    }, [processedText, tokenList]);
+
+    // 获取上下文 - 从原文中提取完整句子
     const getContext = useCallback(() => {
-        if (selectedTokens.length === 0) return '';
-        const sortedTokens = [...selectedTokens].sort((a, b) => a.index - b.index);
-        const firstIndex = sortedTokens[0].index;
-        const lastIndex = sortedTokens[sortedTokens.length - 1].index;
+        if (selectedTokens.length === 0 || tokenRanges.length === 0) return '';
 
-        // 获取前后5个token作为上下文
-        const contextStart = Math.max(0, firstIndex - 5);
-        const contextEnd = Math.min(tokenList.length - 1, lastIndex + 5);
+        const sortedSelectedIndices = selectedTokens.map(st => st.index).sort((a, b) => a - b);
+        const firstTokenIndex = sortedSelectedIndices[0];
+        const lastTokenIndex = sortedSelectedIndices[sortedSelectedIndices.length - 1];
 
-        return tokenList.slice(contextStart, contextEnd + 1).map(t => t.token).join('');
-    }, [selectedTokens, tokenList]);
+        // 找到对应的原文范围
+        const startRange = tokenRanges.find(r => r.tokenIndex === firstTokenIndex);
+        const endRange = tokenRanges.find(r => r.tokenIndex === lastTokenIndex);
+
+        if (!startRange || !endRange) {
+            // 回退到旧逻辑（仅作为防御性编程）
+            const contextStart = Math.max(0, firstTokenIndex - 5);
+            const contextEnd = Math.min(tokenList.length - 1, lastTokenIndex + 5);
+            return tokenList.slice(contextStart, contextEnd + 1).map(t => t.token).join(' ');
+        }
+
+        // 在原文中向前后查找句子边界
+        const sentenceSplitters = /[.!?:;。\！\？\n]/;
+
+        // 向前查找
+        let sentenceStart = startRange.start;
+        // 限制回溯字符数，防止性能问题
+        const maxLookBack = 150;
+        let lookedBack = 0;
+
+        while (sentenceStart > 0 && lookedBack < maxLookBack) {
+            const char = processedText[sentenceStart - 1];
+            if (sentenceSplitters.test(char)) {
+                // 找到了上一个句子的结束符，但不包含它
+                break;
+            }
+            sentenceStart--;
+            lookedBack++;
+        }
+
+        // 如果是因为 maxLookBack 停止，尝试找一个空格作为妥协
+        if (lookedBack >= maxLookBack) {
+            const spaceIndex = processedText.lastIndexOf(' ', startRange.start - 50);
+            if (spaceIndex !== -1 && spaceIndex > sentenceStart) sentenceStart = spaceIndex + 1;
+        }
+
+        // 处理对话标识符 A: / B: (如果是行首)
+        // 检查 sentenceStart 前面是否有 "A: " 或 "B: "
+        const potentialSpeakerStart = Math.max(0, sentenceStart - 4);
+        const prefix = processedText.slice(potentialSpeakerStart, sentenceStart);
+        if (/[ABab][:：]\s*$/.test(prefix)) {
+            // 包含 speaker
+            const match = prefix.match(/[ABab][:：]\s*$/);
+            if (match) sentenceStart -= match[0].length;
+        }
+
+
+        // 向后查找
+        let sentenceEnd = endRange.end;
+        const maxLookForward = 150;
+        let lookedForward = 0;
+
+        while (sentenceEnd < processedText.length && lookedForward < maxLookForward) {
+            const char = processedText[sentenceEnd];
+            if (sentenceSplitters.test(char)) {
+                // 包含了当前句子的结束符
+                sentenceEnd++;
+                break;
+            }
+            sentenceEnd++;
+            lookedForward++;
+        }
+
+        if (lookedForward >= maxLookForward) {
+            const spaceIndex = processedText.indexOf(' ', endRange.end + 50);
+            if (spaceIndex !== -1 && spaceIndex < sentenceEnd) sentenceEnd = spaceIndex;
+        }
+
+        return processedText.slice(sentenceStart, sentenceEnd).trim();
+    }, [selectedTokens, tokenRanges, processedText, tokenList]);
 
     useEffect(() => {
         const mergedText = getMergedText();
@@ -149,141 +257,128 @@ export default function LexText({ text, lang, tokenList, onConfirm, selectedWord
             return <div className="text-gray-500">暂无分词数据</div>;
         }
 
-        // 处理对话格式换行
-        let processedText = text;
-        if ((lang === 'ko' || lang === 'en' || lang === 'ja') && processedText.includes('A:') && processedText.includes('B:') && !processedText.includes('\n')) {
-            processedText = processedText.replace(/\s+B:/g, '\nB:');
-            processedText = processedText.replace(/([^A])\s+A:/g, '$1\nA:');
-        }
+        // 使用预处理后的文本进行渲染，逻辑与之前不同
+        // 我们利用计算好的 tokenRanges 来渲染
 
-        // 按行分割处理
+        const elements: React.ReactNode[] = [];
+        let lastPos = 0;
+
+        // 按行分割 processedText 以便处理换行显示
+        // 但为了保持 token 可点击，我们需要更精细的控制
+        // 这里采用一种混合策略：遍历 processedText，根据 tokenRanges 插入 token 元素
+
+        // 为了支持换行，我们按行处理
         const lines = processedText.split('\n');
+        let currentTokenIndex = 0;
+        let globalPos = 0;
 
-        // 为每个token在原文中找到实际位置
-        let tokenIndex = 0;
-        const result: React.ReactElement[] = [];
+        return lines.map((line, lineIdx) => {
+            const lineStartPos = globalPos;
+            const lineEndPos = globalPos + line.length;
+            const lineElements: React.ReactNode[] = [];
 
-        lines.forEach((line, lineIdx) => {
-            if (lineIdx > 0) {
-                result.push(<br key={`br-${lineIdx}`} />);
-            }
+            let currentLinePos = 0; // 相对于当前行的位置
 
-            // 在这一行中寻找并渲染token
-            let linePos = 0;
-            const lineElements: React.ReactElement[] = [];
+            while (currentLinePos < line.length) {
+                // 检查当前是否有 token 在这个位置开始
+                const currentGlobalStart = lineStartPos + currentLinePos;
 
-            while (linePos < line.length && tokenIndex < tokenList.length) {
-                const token = tokenList[tokenIndex];
-                const tokenText = token.token;
+                // 找到起始位置 >= currentGlobalStart 的第一个 token range
+                // tokenRanges 是按顺序的
+                let range: { start: number; end: number; tokenIndex: number } | undefined;
 
-                // 在当前行中寻找这个token（忽略大小写）
-                const lineSubset = line.slice(linePos);
-                const matchIndex = lineSubset.toLowerCase().indexOf(tokenText.toLowerCase());
-                const foundPos = matchIndex === -1 ? -1 : linePos + matchIndex;
-
-                if (foundPos === -1 || foundPos > linePos + 10) {
-                    // token不在这一行，或者距离太远，输出当前位置的字符然后继续
-                    if (linePos < line.length) {
-                        // 检查是否是标点或空格
-                        const char = line[linePos];
-                        lineElements.push(
-                            <span key={`char-${lineIdx}-${linePos}`} className="text-gray-700">
-                                {char}
-                            </span>
-                        );
-                        linePos++;
+                // 优化查找：从 currentTokenIndex 开始找
+                for (let i = currentTokenIndex; i < tokenRanges.length; i++) {
+                    if (tokenRanges[i].start >= currentGlobalStart) {
+                        // 找到了最近的一个 token (可能是当前位置，也可能是之后)
+                        // 还要确保这个 token 在当前行内开始
+                        if (tokenRanges[i].start < lineEndPos) {
+                            range = tokenRanges[i];
+                            currentTokenIndex = i; // 更新索引，下次从这里开始
+                        }
+                        break; // 只要找到第一个 >= 的就行
                     }
-
-                    // 如果到达行尾但token还没找到，说明token在下一行
-                    if (linePos >= line.length) {
-                        break;
-                    }
-                    continue;
                 }
 
-                // 输出token之前的内容（标点、空格等）
-                if (foundPos > linePos) {
-                    const beforeText = line.slice(linePos, foundPos);
+                if (range && range.start === currentGlobalStart) {
+                    // 这是一个 token 的开始
+                    const token = tokenList[range.tokenIndex];
+                    const displayTokenText = line.slice(currentLinePos, currentLinePos + (range.end - range.start));
+
+                    const isSelected = selectedTokens.some(st => st.index === range!.tokenIndex);
+                    const isAlreadySelectedWord = isAlreadySelected(range!.tokenIndex);
+                    const prediction = wordPredictions?.get(token.token);
+                    const isPredictedUnknown = prediction && prediction.probability < 0.5;
+                    const predictionColor = prediction
+                        ? prediction.probability < 0.3 ? 'border-red-500'
+                            : prediction.probability < 0.5 ? 'border-orange-400'
+                                : prediction.probability < 0.7 ? 'border-yellow-400'
+                                    : 'border-green-400'
+                        : '';
+                    const freqDisplay = token.frequencyRank
+                        ? token.frequencyRank <= 500 ? '常用'
+                            : token.frequencyRank <= 2000 ? '较常用'
+                                : token.frequencyRank <= 5000 ? '不常用'
+                                    : '罕见'
+                        : '';
+
+                    // 捕获循环变量
+                    const idx = range.tokenIndex;
+
                     lineElements.push(
-                        <span key={`before-${lineIdx}-${linePos}`} className="text-gray-700">
-                            {beforeText}
+                        <span
+                            key={`token-${lineIdx}-${idx}`}
+                            onClick={() => handleTokenClick(token, idx)}
+                            onTouchStart={(e) => e.preventDefault()}
+                            onTouchEnd={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleTokenClick(token, idx);
+                            }}
+                            className={`
+                  inline-block px-1 py-0.5 mx-0.5 rounded transition-all
+                  touch-manipulation select-none
+                  ${isSelected
+                                    ? 'bg-blue-500 text-white border-blue-600 shadow-md cursor-pointer'
+                                    : isAlreadySelectedWord
+                                        ? 'bg-yellow-200 text-yellow-800 border-yellow-400 hover:bg-yellow-300 cursor-pointer'
+                                        : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 cursor-pointer'
+                                }
+                  ${isPredictedUnknown && !isSelected && !isAlreadySelectedWord ? `border-b-2 border-dashed ${predictionColor}` : ''}
+                `}
+                            title={`${displayTokenText} (${token.lemma}) - ${token.originalLevel} - ${token.pos}${token.frequencyRank ? ` | #${token.frequencyRank} ${freqDisplay}` : ''}${prediction ? ` | 预测: ${Math.round(prediction.probability * 100)}%` : ''}`}
+                        >
+                            {displayTokenText}
                         </span>
                     );
+
+                    currentLinePos += (range.end - range.start);
+                    // 移动到下一个 token (虽然循环会自动处理，但逻辑上 currentTokenIndex 指向下一个)
+                    currentTokenIndex++;
+                } else {
+                    // 当前位置不是 token 的开始，输出普通文本直到下一个 token 或行尾
+                    let nextStop = line.length; // 默认直到行尾
+                    if (range) {
+                        // 如果这行后面还有 token，直到那个 token 的开始
+                        nextStop = range.start - lineStartPos;
+                    }
+
+                    const textSegment = line.slice(currentLinePos, nextStop);
+                    if (textSegment) {
+                        lineElements.push(<span key={`text-${lineIdx}-${currentLinePos}`} className="text-gray-700">{textSegment}</span>);
+                    }
+                    currentLinePos = nextStop;
                 }
-
-                // 提取原文中的文本用于显示（保留原有大小写）
-                const displayTokenText = line.substring(foundPos, foundPos + tokenText.length);
-
-                // 渲染token
-                const isSelected = selectedTokens.some(st => st.index === tokenIndex);
-                const isAlreadySelectedWord = isAlreadySelected(tokenIndex);
-
-                const prediction = wordPredictions?.get(tokenText);
-                const isPredictedUnknown = prediction && prediction.probability < 0.5;
-                const predictionColor = prediction
-                    ? prediction.probability < 0.3 ? 'border-red-500'
-                        : prediction.probability < 0.5 ? 'border-orange-400'
-                            : prediction.probability < 0.7 ? 'border-yellow-400'
-                                : 'border-green-400'
-                    : '';
-
-                const freqDisplay = token.frequencyRank
-                    ? token.frequencyRank <= 500 ? '常用'
-                        : token.frequencyRank <= 2000 ? '较常用'
-                            : token.frequencyRank <= 5000 ? '不常用'
-                                : '罕见'
-                    : '';
-
-                const currentTokenIndex = tokenIndex; // 捕获当前值
-                lineElements.push(
-                    <span
-                        key={`token-${lineIdx}-${tokenIndex}`}
-                        onClick={() => handleTokenClick(token, currentTokenIndex)}
-                        onTouchStart={(e) => e.preventDefault()}
-                        onTouchEnd={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleTokenClick(token, currentTokenIndex);
-                        }}
-                        className={`
-              inline-block px-1 py-0.5 mx-0.5 rounded transition-all
-              touch-manipulation select-none
-              ${isSelected
-                                ? 'bg-blue-500 text-white border-blue-600 shadow-md cursor-pointer'
-                                : isAlreadySelectedWord
-                                    ? 'bg-yellow-200 text-yellow-800 border-yellow-400 hover:bg-yellow-300 cursor-pointer'
-                                    : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 cursor-pointer'
-                            }
-              ${isPredictedUnknown && !isSelected && !isAlreadySelectedWord ? `border-b-2 border-dashed ${predictionColor}` : ''}
-            `}
-                        title={`${displayTokenText} (${token.lemma}) - ${token.originalLevel} - ${token.pos}${token.frequencyRank ? ` | #${token.frequencyRank} ${freqDisplay}` : ''}${prediction ? ` | 预测: ${Math.round(prediction.probability * 100)}%` : ''}`}
-                    >
-                        {displayTokenText}
-                    </span>
-                );
-
-                linePos = foundPos + tokenText.length;
-                tokenIndex++;
             }
 
-            // 输出行尾剩余内容
-            if (linePos < line.length) {
-                const remaining = line.slice(linePos);
-                lineElements.push(
-                    <span key={`end-${lineIdx}`} className="text-gray-700">
-                        {remaining}
-                    </span>
-                );
-            }
+            globalPos += line.length + 1; // +1 用于换行符
 
-            result.push(
+            return (
                 <div key={`line-${lineIdx}`} className="mb-2">
                     {lineElements}
                 </div>
             );
         });
-
-        return <>{result}</>;
     };
 
 
