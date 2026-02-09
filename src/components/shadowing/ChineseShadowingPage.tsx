@@ -1779,9 +1779,11 @@ export default function ShadowingPage() {
     );
   };
   // 带发音的生词显示组件
+  // 带发音的生词显示组件
   const WordWithPronunciation = ({
     word,
     explanation,
+    lang,
   }: {
     word: string;
     explanation?: {
@@ -1790,14 +1792,19 @@ export default function ShadowingPage() {
       pos?: string;
       senses?: Array<{ example_target: string; example_native: string }>;
     };
+    lang?: string;
   }) => {
     return (
       <div className="flex items-center gap-2">
         <span className="font-medium text-gray-700">{word}</span>
         {explanation?.pronunciation && (
           (() => {
-            const san = sanitizeJapaneseReadingToHiragana(explanation.pronunciation || '');
-            const toShow = san || explanation.pronunciation;
+            let toShow = explanation.pronunciation;
+            if (lang === 'ja' || (!lang && /[\s\u3040-\u309f\u30a0-\u30ff]/.test(toShow))) {
+              const san = sanitizeJapaneseReadingToHiragana(explanation.pronunciation || '');
+              toShow = san || explanation.pronunciation;
+            }
+
             return (
               <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs text-gray-600">{toShow}</span>
             );
@@ -5500,6 +5507,7 @@ export default function ShadowingPage() {
                                 <WordWithPronunciation
                                   word={item.word}
                                   explanation={item.explanation || wordExplanations[item.word]}
+                                  lang={currentItem?.lang || item.lang || 'en'}
                                 />
                                 <Button
                                   variant="ghost"
@@ -5623,6 +5631,7 @@ export default function ShadowingPage() {
                                 <WordWithPronunciation
                                   word={item.word}
                                   explanation={item.explanation || wordExplanations[item.word]}
+                                  lang={currentItem?.lang || item.lang || 'en'}
                                 />
                                 <Button
                                   variant="ghost"
