@@ -222,6 +222,15 @@ export async function POST(req: NextRequest) {
             });
           }
 
+          // Fetch user profile to get native_lang
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('native_lang')
+            .eq('id', user.id)
+            .single();
+
+          const userNativeLang = profile?.native_lang || 'zh';
+
           // Build new vocab entries (without id, let database generate it)
           const newEntries: any[] = [];
 
@@ -234,7 +243,7 @@ export async function POST(req: NextRequest) {
               newEntries.push({
                 user_id: user.id,
                 lang: lang,
-                native_lang: 'zh',
+                native_lang: userNativeLang,
                 term: word.text,
                 explanation: {
                   gloss_native: word.definition || '',
